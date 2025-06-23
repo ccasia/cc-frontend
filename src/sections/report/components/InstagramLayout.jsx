@@ -1,30 +1,32 @@
+/* eslint-disable react/prop-types */
 import { Box, Grid, Typography } from '@mui/material';
-import { ContentInfoHeader, ContentImageCard, StatsLegend } from './shared-components';
 
-const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) => {
-  return (
-    <Grid container spacing={3}>
-      {/* Content Image and Caption */}
-      <Grid item xs={12} md={5}>
-        <ContentImageCard content={content} />
-      </Grid>
+import { StatsLegend, ContentImageCard, ContentInfoHeader } from './shared-components';
 
-      {/* Right side content */}
-      <Grid item xs={12} md={7}>
-        {/* Account, Content Type, Date Posted Row */}
-        <ContentInfoHeader content={content} />
+// eslint-disable-next-line react/prop-types
+const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) => (
+  <Grid container spacing={3}>
+    {/* Content Image and Caption */}
+    <Grid item xs={12} md={5}>
+      <ContentImageCard content={content} />
+    </Grid>
 
-        {/* Content Engagement Section */}
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            sx={{
-              fontSize: { xs: 20, sm: 24 },
-              fontWeight: 600,
-              mb: 2,
-            }}
-          >
-            Content Engagement
-          </Typography>
+    {/* Right side content */}
+    <Grid item xs={12} md={7}>
+      {/* Account, Content Type, Date Posted Row */}
+      <ContentInfoHeader content={content} />
+
+      {/* Content Engagement Section */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          sx={{
+            fontSize: { xs: 20, sm: 24 },
+            fontWeight: 600,
+            mb: 2,
+          }}
+        >
+          Content Engagement
+        </Typography>
 
           <Box
             sx={{
@@ -72,6 +74,8 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
             })}
           </Box>
         </Box>
+      </Box>
+
 
         {/* Circular Stats with Campaign Averages */}
         <Box sx={{ overflowX: 'auto', mb: 2, display: { sm: 'flex' }, justifyContent: 'center' }}>
@@ -107,10 +111,20 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
           </Box>
         </Box>
 
-        <StatsLegend />
+
+        <Grid item xs={12} md={4}>
+          {renderCircularStat({
+            width: '75%',
+            label: 'Shares',
+            value: content.metrics?.shares || 0,
+            metricKey: 'shares',
+          })}
+        </Grid>
       </Grid>
+
+      <StatsLegend />
     </Grid>
-  );
-};
+  </Grid>
+);
 
 export default InstagramLayout;

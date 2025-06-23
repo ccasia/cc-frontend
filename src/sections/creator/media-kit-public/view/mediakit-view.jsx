@@ -1,21 +1,14 @@
-import jsPDF from 'jspdf';
 import { m } from 'framer-motion';
-import { toPng } from 'html-to-image';
-import React, { useRef, useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   Box,
   Chip,
-  Menu,
   Stack,
-  Alert,
   Avatar,
   Button,
-  Dialog,
+  Divider,
   useTheme,
-  MenuItem,
-  Backdrop,
-  Snackbar,
   Container,
   Typography,
   IconButton,
@@ -42,6 +35,7 @@ const calculateEngagementRate = (totalLikes, followers) => {
   if (!(totalLikes || followers)) return null;
   return ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2);
 };
+
 
 // Format number function (conversion is like this: 50000 -> 50K, 50100 -> 50.1K)
 const formatNumber = (num) => {
@@ -74,11 +68,7 @@ const MediaKit = ({ id, noBigScreen }) => {
   const theme = useTheme();
   const router = useRouter();
   const smDown = useResponsive('down', 'sm');
-  const mdDown = useResponsive('down', 'md');
-  const isDesktop = useResponsive('up', 'md');
-
   const { data, isLoading, isError } = useSWRGetCreatorByID(id);
-  const [currentTab, setCurrentTab] = useState('instagram');
 
   // Share functionality
   const containerRef = useRef(null);
@@ -97,11 +87,8 @@ const MediaKit = ({ id, noBigScreen }) => {
     severity: 'success',
   });
 
-  // Mobile preview state
-  const [mobilePreview, setMobilePreview] = useState({
-    open: false,
-    imageUrl: '',
-  });
+
+  const [currentTab, setCurrentTab] = useState('instagram');
 
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
@@ -109,13 +96,14 @@ const MediaKit = ({ id, noBigScreen }) => {
         followers: data?.creator?.instagramUser?.followers_count || 0,
         engagement_rate: `${
           calculateEngagementRate(
-            (data?.creator?.instagramUser?.totalLikes ?? 0) +
-              (data?.creator?.instagramUser?.totalComments ?? 0),
+            data?.creator?.instagramUser?.instagramVideo?.reduce(
+              (sum, acc) => sum + parseInt(acc.like_count, 10),
+              0
+            ),
             data?.creator?.instagramUser?.followers_count
           ) || 0
-        }`,
-        averageLikes: data?.creator?.instagramUser?.averageLikes || 0,
-        averageComments: data?.creator?.instagramUser?.averageComments || 0,
+        }%`,
+        averageLikes: data?.creator?.instagramUser?.average_like || 0,
         username: data?.creator?.instagramUser?.username,
       };
     }
@@ -125,7 +113,6 @@ const MediaKit = ({ id, noBigScreen }) => {
         followers: data?.creator?.tiktokUser?.follower_count || 0,
         engagement_rate: data?.creator?.tiktokUser?.follower_count || 0,
         averageLikes: data?.creator?.tiktokUser?.likes_count || 0,
-        averageComments: data?.creator?.tiktokUser?.averageComments || 0,
       };
     }
 
@@ -135,6 +122,7 @@ const MediaKit = ({ id, noBigScreen }) => {
       averageLikes: 0,
     };
   }, [data, currentTab]);
+
 
   // Helper function for screenshot styles
   const getScreenshotStyles = useCallback(
@@ -758,6 +746,7 @@ const MediaKit = ({ id, noBigScreen }) => {
     }
   }, [captureLoading, captureState]);
 
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -778,22 +767,33 @@ const MediaKit = ({ id, noBigScreen }) => {
   }
 
   return (
-    <>
-      <Container
-        maxWidth="xl"
+    <Container maxWidth="xl" sx={{ position: 'relative' }}>
+      <Box sx={{ mb: 2, mt: 2 }}>
+        <IconButton
+          onClick={() => router.push(paths.dashboard.creator.mediaKitLists)}
+          sx={{
+            backgroundColor: 'white',
+            boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+            '&:hover': {
+              backgroundColor: '#f5f5f5',
+            },
+          }}
+        >
+          <Iconify icon="eva:arrow-back-fill" width={24} />
+        </IconButton>
+      </Box>
+
+      {/* Desktop View */}
+      <Box
         sx={{
-          position: 'relative',
-          bgcolor: '#FFFFFF',
-          minHeight: '100vh',
-          pb: 8,
-          mb: 6,
-          overflow: 'visible',
-          height: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
+          display: { xs: 'none', md: 'block' },
+          position: 'absolute',
+          top: 20,
+          right: 24,
+          zIndex: 10,
         }}
-        ref={containerRef}
       >
+
         {/* Back Button */}
         <Box sx={{ mb: 2, mt: 2 }} ref={backButtonRef}>
           <IconButton
@@ -810,21 +810,50 @@ const MediaKit = ({ id, noBigScreen }) => {
           </IconButton>
         </Box>
 
-        {/* Desktop View */}
-        <Box
+        <Button
+          variant="contained"
           sx={{
-            display: { xs: 'none', md: 'block' },
-            position: 'absolute',
-            top: 20,
-            right: 24,
-            zIndex: 10,
+            backgroundColor: '#1340FF',
+            color: '#FFFFFF',
+            borderRadius: 1.25,
+            borderBottom: '3px solid #10248c',
+            '&:hover': {
+              backgroundColor: '#1340FF',
+              opacity: 0.9,
+              borderBottom: '3px solid #10248c',
+            },
+            px: 3,
+            fontWeight: 600,
+            fontSize: 16,
+            height: 44,
           }}
-          ref={desktopShareButtonRef}
         >
+          Share
+        </Button>
+      </Box>
+
+
+      {/* Mobile View */}
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        width="100%"
+        mb={{ xs: 3, sm: 4, md: 6 }}
+      >
+        <Box
+          component="img"
+          src="/logo/cultcreativelogo.svg"
+          alt="Cult Creative Logo"
+          draggable="false"
+          sx={{
+            height: { xs: 60, sm: 100, md: 120 },
+          }}
+        />
+        {/* Mobile Share Button */}
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
           <Button
             variant="contained"
-            onClick={handleMenuOpen}
-            disabled={captureLoading}
             sx={{
               backgroundColor: '#1340FF',
               color: '#FFFFFF',
@@ -837,89 +866,14 @@ const MediaKit = ({ id, noBigScreen }) => {
               },
               px: 3,
               fontWeight: 600,
-              fontSize: 16,
-              height: 44,
+              fontSize: 14,
+              height: 40,
             }}
           >
-            {getButtonText()}
+            Share
           </Button>
-          <Menu
-            anchorEl={menuAnchorEl}
-            open={menuOpen}
-            onClose={handleMenuClose}
-            onClick={handleMenuClose}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            slotProps={{
-              paper: {
-                sx: {
-                  backgroundColor: 'white',
-                  backgroundImage: 'none',
-                  boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '2px solid #e7e7e7',
-                  borderRadius: 1,
-                  mt: 1,
-                  width: 200,
-                  overflow: 'visible',
-                },
-              },
-            }}
-            MenuListProps={{
-              sx: {
-                backgroundColor: 'white',
-                p: 0.5,
-              },
-            }}
-          >
-            <MenuItem
-              onClick={(event) => {
-                event.stopPropagation();
-                captureScreenshot();
-                handleMenuClose();
-              }}
-              sx={{
-                borderRadius: 1,
-                backgroundColor: 'white',
-                color: 'black',
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                p: 1.5,
-                '&:hover': {
-                  backgroundColor: '#f5f5f5',
-                },
-              }}
-            >
-              Download as Image
-            </MenuItem>
-            <MenuItem
-              onClick={(event) => {
-                event.stopPropagation();
-                capturePdf();
-                handleMenuClose();
-              }}
-              sx={{
-                borderRadius: 1,
-                backgroundColor: 'white',
-                color: 'black',
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                p: 1.5,
-                '&:hover': {
-                  backgroundColor: '#f5f5f5',
-                },
-              }}
-            >
-              Download as PDF
-            </MenuItem>
-          </Menu>
         </Box>
+      </Stack>
 
         {/* Mobile View */}
         <Stack
@@ -1111,18 +1065,37 @@ const MediaKit = ({ id, noBigScreen }) => {
               src={data?.photoURL}
             />
 
+
+      {/* Creator Details */}
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={{ xs: 4, md: 15 }}
+        justifyContent="space-between"
+      >
+        <Stack flex="1">
+          <Stack direction="row" alignItems="center">
+
             <Typography
               sx={{
-                fontSize: 14,
-                color: '#231F20',
-                fontWeight: 400,
                 fontFamily: 'Aileron, sans-serif',
+                fontWeight: 400,
+                fontSize: 40,
               }}
-              my={1}
-              mt={2}
-              mb={2}
             >
-              {data?.creator?.mediaKit?.about}
+              {data?.creator?.mediaKit?.displayName ?? data?.name}
+            </Typography>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <Typography fontSize={16} color="#231F20">
+              {data?.creator?.pronounce}
+            </Typography>
+            <Iconify icon="mdi:dot" color="#231F20" />
+            <Typography fontSize={16} color="#231F20">
+              {data?.country}
+            </Typography>
+            <Iconify icon="mdi:dot" color="#231F20" />
+            <Typography fontSize={16} color="#231F20">
+              {data?.email}
             </Typography>
           </Stack>
 
@@ -1196,42 +1169,31 @@ const MediaKit = ({ id, noBigScreen }) => {
               <Button
                 variant="outlined"
                 startIcon={<Iconify icon="mdi:instagram" width={24} />}
+
+          <Stack direction="row" alignItems="center" spacing={1} mt={2} flexWrap="wrap">
+            {data?.creator?.interests.map((interest) => (
+              <Chip
+                key={interest?.id}
+                label={interest.name.toUpperCase()}
+
                 sx={{
-                  fontSize: '1rem',
-                  py: 1.5,
-                  px: 3,
-                  minWidth: '140px',
-                  height: '48px',
-                  borderWidth: 2,
-                  borderColor: currentTab === 'instagram' ? '#1340FF' : 'rgba(0, 0, 0, 0.12)',
-                  ...(currentTab === 'instagram' && {
-                    color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
-                    boxShadow: 'none',
-                    borderColor: '#1340FF',
-                    borderWidth: 2,
-                  }),
-                }}
-                onClick={() => setCurrentTab('instagram')}
-              >
-                Instagram
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<Iconify icon="ic:baseline-tiktok" width={24} />}
-                sx={{
-                  fontSize: '1rem',
-                  py: 1.5,
-                  px: 3,
-                  minWidth: '140px',
-                  height: '48px',
-                  borderWidth: 2,
-                  borderColor: currentTab === 'tiktok' ? '#1340FF' : 'rgba(0, 0, 0, 0.12)',
-                  ...(currentTab === 'tiktok' && {
-                    color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
-                    boxShadow: 'none',
-                    borderColor: '#1340FF',
-                    borderWidth: 2,
-                  }),
+                  bgcolor: '#FFF',
+                  border: 1,
+                  borderColor: '#EBEBEB',
+                  borderRadius: 0.8,
+                  color: '#8E8E93',
+                  height: '32px',
+                  boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                  '& .MuiChip-label': {
+                    fontWeight: 600,
+                    px: 1.5,
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginTop: '-3px',
+                  },
+                  '&:hover': { bgcolor: '#FFF' },
                 }}
                 onClick={() => setCurrentTab('tiktok')}
               >
@@ -1522,21 +1484,32 @@ const MediaKit = ({ id, noBigScreen }) => {
                 </Typography>
               </Stack>
             </Stack>
+
           </Stack>
-        )}
 
-        {/* <Divider sx={{ my: 3 }} /> */}
-        {/* Bottom View */}
+          <Avatar
+            sx={{
+              mt: 2,
+              width: { xs: 150, sm: 200, md: 240 },
+              height: { xs: 150, sm: 200, md: 240 },
+            }}
+            src={data?.photoURL}
+          />
 
-        <Typography fontWeight={700} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1} mt={3}>
-          Top Content{' '}
-          {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
-        </Typography>
-
-        <MediaKitSocial currentTab={currentTab} data={data} sx={{ mb: 4 }} />
-      </Container>
-
-      {/* ----------------------------------------------------------------------------------------------------------------------------------------------------------*/}
+          <Typography
+            sx={{
+              fontSize: 14,
+              color: '#231F20',
+              fontWeight: 400,
+              fontFamily: 'Aileron, sans-serif',
+            }}
+            my={1}
+            mt={2}
+            mb={2}
+          >
+            {data?.creator?.mediaKit?.about}
+          </Typography>
+        </Stack>
 
       {/* Hidden Desktop-only Layout for Screenshot */}
       <Container
@@ -1566,93 +1539,57 @@ const MediaKit = ({ id, noBigScreen }) => {
           mb={4}
           mt={2}
         >
+
+        {/* Social Media Stats */}
+//         <Stack flex="1" alignItems={{ xs: 'start', md: 'flex-start' }} spacing={3}>
+          {/* Divider for mobile screens only */}
+
           <Box
-            component="img"
-            src="/logo/cultcreativelogo.svg"
-            alt="Cult Creative Logo"
-            draggable="false"
-            sx={{ height: 120 }}
+            sx={{
+              display: { xs: 'block', sm: 'none' },
+              width: '100%',
+              height: '1px',
+              backgroundColor: '#E7E7E7',
+              mb: 2,
+            }}
           />
-        </Stack>
 
-        {/* Creator Details - Desktop Layout with adjusted spacing */}
-        <Stack direction="row" spacing={8} justifyContent="space-between">
-          <Stack flex="1.2">
-            <Stack direction="row" alignItems="center">
-              <Typography
-                sx={{
-                  fontFamily: 'Aileron, sans-serif',
-                  fontWeight: 400,
-                  fontSize: 48,
-                }}
-              >
-                {data?.creator?.mediaKit?.displayName ?? data?.name}
-              </Typography>
-            </Stack>
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              <Typography fontSize={16} color="#231F20">
-                {data?.creator?.pronounce}
-              </Typography>
-              <Iconify icon="mdi:dot" color="#231F20" />
-              <Typography fontSize={16} color="#231F20">
-                {data?.country}
-              </Typography>
-              <Iconify icon="mdi:dot" color="#231F20" />
-              <Typography fontSize={16} color="#231F20">
-                {data?.email}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1} mt={2} flexWrap="wrap">
-              {data?.creator?.interests.map((interest) => (
-                <Chip
-                  key={interest?.id}
-                  label={interest.name.toUpperCase()}
-                  sx={{
-                    bgcolor: '#FFF',
-                    border: 1,
-                    borderColor: '#EBEBEB',
-                    borderRadius: 0.8,
-                    color: '#8E8E93',
-                    height: '32px',
-                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                    '& .MuiChip-label': {
-                      fontWeight: 600,
-                      px: 1.5,
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginTop: '-3px',
-                    },
-                    '&:hover': { bgcolor: '#FFF' },
-                  }}
-                />
-              ))}
-            </Stack>
-
-            <Avatar
-              sx={{
-                mt: 2,
-                width: 240,
-                height: 240,
-              }}
-              src={data?.photoURL}
-            />
-
+          {/* Total Audience Section */}
+          <Stack alignItems="flex-start" sx={{ pl: { xs: 1, sm: 0 } }}>
             <Typography
-              sx={{
-                fontSize: 14,
-                color: '#231F20',
-                fontWeight: 400,
-                fontFamily: 'Aileron, sans-serif',
+              variant="h2"
+              color="#231F20"
+              fontFamily="Aileron, sans-serif"
+              fontWeight={600}
+              component={m.div}
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1 }}
+              transition={{
+                duration: 1,
+                type: 'spring',
               }}
-              my={1}
-              mt={2}
-              mb={2}
+              lineHeight={0.5}
+              mb={1}
+              align="left"
+              sx={{ fontSize: { xs: '3rem', md: '4rem' } }}
             >
-              {data?.creator?.mediaKit?.about}
+              {/* Total audience value - can be added later */}
+              {socialMediaAnalytics.followers}
             </Typography>
+            <Box
+              component="span"
+              sx={{
+                color: '#231F20',
+                fontSize: { xs: '2rem', md: '3rem' },
+                fontFamily: 'Aileron, sans-serif',
+                fontWeight: 300,
+                letterSpacing: '0.05em',
+                textAlign: 'left',
+                display: 'block',
+              }}
+            >
+              Total Audience
+            </Box>
           </Stack>
 
           {/* Social Media Stats - with reduced width */}
@@ -1696,62 +1633,94 @@ const MediaKit = ({ id, noBigScreen }) => {
                   px: 3,
                   minWidth: '140px',
                   height: '48px',
-                  borderWidth: 2,
-                  borderColor: currentTab === 'instagram' ? '#1340FF' : 'rgba(0, 0, 0, 0.12)',
-                  ...(currentTab === 'instagram' && {
-                    color: '#1340FF',
-                    boxShadow: 'none',
-                    borderColor: '#1340FF',
-                    borderWidth: 2,
-                  }),
-                }}
-              >
-                Instagram
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<Iconify icon="ic:baseline-tiktok" width={24} />}
-                sx={{
-                  fontSize: '1rem',
-                  py: 1.5,
-                  px: 3,
-                  minWidth: '140px',
-                  height: '48px',
-                  borderWidth: 2,
-                  borderColor: currentTab === 'tiktok' ? '#1340FF' : 'rgba(0, 0, 0, 0.12)',
-                  ...(currentTab === 'tiktok' && {
-                    color: '#1340FF',
-                    boxShadow: 'none',
-                    borderColor: '#1340FF',
-                    borderWidth: 2,
-                  }),
-                }}
-              >
-                TikTok
-              </Button>
-            </Stack>
 
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            my={2}
+            color="text.secondary"
+            sx={{ pl: { xs: 1, sm: 0 } }}
+          >
+            <Button
+              variant="outlined"
+              startIcon={<Iconify icon="mdi:instagram" width={24} />}
+              sx={{
+                fontSize: '1rem',
+                py: 1.5,
+                px: 3,
+                minWidth: '140px',
+                height: '48px',
+                borderWidth: 2,
+                borderColor: currentTab === 'instagram' ? '#1340FF' : 'rgba(0, 0, 0, 0.12)',
+                ...(currentTab === 'instagram' && {
+                  color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
+                  boxShadow: 'none',
+                  borderColor: '#1340FF',
+
+                  borderWidth: 2,
+                }),
+              }}
+              onClick={() => setCurrentTab('instagram')}
+            >
+              Instagram
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Iconify icon="ic:baseline-tiktok" width={24} />}
+              sx={{
+                fontSize: '1rem',
+                py: 1.5,
+                px: 3,
+                minWidth: '140px',
+                height: '48px',
+                borderWidth: 2,
+                borderColor: currentTab === 'tiktok' ? '#1340FF' : 'rgba(0, 0, 0, 0.12)',
+                ...(currentTab === 'tiktok' && {
+                  color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
+                  boxShadow: 'none',
+                  borderColor: '#1340FF',
+                  borderWidth: 2,
+                }),
+              }}
+              onClick={() => setCurrentTab('tiktok')}
+            >
+              Tiktok
+            </Button>
+          </Stack>
+
+          {!smDown && (
             <Stack width="100%">
               <Stack
                 direction="row"
                 alignItems="flex-start"
                 justifyContent="flex-start"
                 spacing={6}
-                sx={{ p: 2 }}
+                flexWrap={{ xs: 'wrap', md: 'nowrap' }}
+                sx={{
+                  p: 2,
+                }}
               >
                 <Stack spacing={2}>
                   {/* Followers */}
                   <Stack alignItems="flex-start">
                     <Typography
-                      fontWeight={400}
+                      variant="h3"
                       color="#1340FF"
                       fontFamily="Instrument Serif"
+                      component={m.div}
+                      initial={{ scale: 0.5 }}
+                      animate={{ scale: 1 }}
+                      transition={{
+                        duration: 1,
+                        type: 'spring',
+                      }}
                       lineHeight={1}
                       mb={1}
                       align="left"
-                      sx={{ fontSize: '3.5rem' }}
+                      sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                     >
-                      {formatNumber(socialMediaAnalytics.followers)}
+                      {socialMediaAnalytics.followers}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -1759,7 +1728,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                       fontFamily="Aileron, sans-serif"
                       fontWeight={600}
                       align="left"
-                      sx={{ fontSize: '1.3rem' }}
+                      sx={{ fontSize: { xs: '0.9rem', md: '1.3rem' } }}
                     >
                       Followers
                     </Typography>
@@ -1779,16 +1748,24 @@ const MediaKit = ({ id, noBigScreen }) => {
                   {/* Average likes */}
                   <Stack alignItems="flex-start">
                     <Typography
-                      fontWeight={400}
+                      variant="h3"
                       color="#1340FF"
                       fontFamily="Instrument Serif"
+                      component={m.div}
+                      initial={{ scale: 0.5 }}
+                      animate={{ scale: 1 }}
+                      transition={{
+                        duration: 1,
+                        type: 'spring',
+                      }}
                       lineHeight={1}
                       mb={1}
                       align="left"
-                      sx={{ fontSize: '3.5rem' }}
+                      sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                     >
+
                       {formatNumber(socialMediaAnalytics.averageLikes)}
-                      {/* {socialMediaAnalytics.averageLikes?.toFixed(2)} */}
+
                     </Typography>
                     <Typography
                       variant="caption"
@@ -1796,7 +1773,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                       fontFamily="Aileron, sans-serif"
                       fontWeight={600}
                       align="left"
-                      sx={{ fontSize: '1.3rem' }}
+                      sx={{ fontSize: { xs: '0.9rem', md: '1.3rem' } }}
                     >
                       Avg Likes
                     </Typography>
@@ -1807,16 +1784,22 @@ const MediaKit = ({ id, noBigScreen }) => {
                   {/* Average Comments */}
                   <Stack alignItems="flex-start">
                     <Typography
-                      fontWeight={400}
+                      variant="h3"
                       color="#1340FF"
                       fontFamily="Instrument Serif"
+                      component={m.div}
+                      initial={{ scale: 0.5 }}
+                      animate={{ scale: 1 }}
+                      transition={{
+                        duration: 1,
+                        type: 'spring',
+                      }}
                       lineHeight={1}
                       mb={1}
                       align="left"
-                      sx={{ fontSize: '3.5rem' }}
+                      sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                     >
                       {formatNumber(socialMediaAnalytics.averageComments)}
-                      {/* {socialMediaAnalytics.averageComments?.toFixed(2)} */}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -1824,7 +1807,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                       fontFamily="Aileron, sans-serif"
                       fontWeight={600}
                       align="left"
-                      sx={{ fontSize: '1.3rem' }}
+                      sx={{ fontSize: { xs: '0.9rem', md: '1.3rem' } }}
                     >
                       Avg Comments
                     </Typography>
@@ -1844,13 +1827,20 @@ const MediaKit = ({ id, noBigScreen }) => {
                   {/* Total Engagement */}
                   <Stack alignItems="flex-start">
                     <Typography
-                      fontWeight={400}
+                      variant="h3"
                       color="#1340FF"
                       fontFamily="Instrument Serif"
+                      component={m.div}
+                      initial={{ scale: 0.5 }}
+                      animate={{ scale: 1 }}
+                      transition={{
+                        duration: 1,
+                        type: 'spring',
+                      }}
                       lineHeight={1}
                       mb={1}
                       align="left"
-                      sx={{ fontSize: '3.5rem' }}
+                      sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                     >
                       {formatNumber(socialMediaAnalytics.engagement_rate)}
                     </Typography>
@@ -1860,7 +1850,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                       fontFamily="Aileron, sans-serif"
                       fontWeight={600}
                       align="left"
-                      sx={{ fontSize: '1.3rem' }}
+                      sx={{ fontSize: { xs: '0.9rem', md: '1.3rem' } }}
                     >
                       Total Engagement
                     </Typography>
@@ -1868,8 +1858,10 @@ const MediaKit = ({ id, noBigScreen }) => {
                 </Stack>
               </Stack>
             </Stack>
-          </Stack>
+          )}
         </Stack>
+      </Stack>
+
 
         <Box sx={{ flexGrow: 1 }}>
           <Typography
@@ -1925,281 +1917,127 @@ const MediaKit = ({ id, noBigScreen }) => {
         </Alert>
       </Snackbar>
 
-      {/* Loading Backdrop */}
-      <Backdrop
-        sx={{
-          color: '#fff',
-          // zIndex: captureState === 'capturing' ? -1 : theme.zIndex.drawer + 1,
-          zIndex: theme.zIndex.drawer + 1,
-          backdropFilter: 'blur(8px)',
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
-          transition: 'all 0.3s ease-in-out',
-        }}
-        open={captureLoading}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'rgba(255, 255, 255, 0.98)',
-            borderRadius: 2,
-            py: 4,
-            px: { xs: 3, sm: 4 },
-            width: { xs: '85%', sm: '340px' },
-            boxShadow: '0 12px 24px rgba(0, 0, 0, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.4)',
-            animation: captureLoading ? 'fadeIn 0.4s ease-out forwards' : 'none',
-            '@keyframes fadeIn': {
-              from: { opacity: 0, transform: 'scale(0.95)' },
-              to: { opacity: 1, transform: 'scale(1)' },
-            },
-          }}
-        >
-          <Box
-            sx={{
-              position: 'relative',
-              width: 80,
-              height: 80,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mb: 1,
-              animation: captureLoading ? 'fadeInSpin 0.5s ease-out forwards' : 'none',
-              '@keyframes fadeInSpin': {
-                from: { opacity: 0, transform: 'rotate(-20deg)' },
-                to: { opacity: 1, transform: 'rotate(0deg)' },
-              },
-            }}
+      {smDown && (
+        <Stack spacing={3} sx={{ py: 2, my: 2 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            spacing={1}
+            sx={{ width: '100%', pl: 2 }}
           >
-            {/* backdrop for circle */}
-            <Box
-              sx={{
-                position: 'absolute',
-                width: 70,
-                height: 70,
-                borderRadius: '50%',
-                border: '1px solid rgba(0, 0, 0, 0.08)',
-                overflow: 'hidden',
-                backgroundColor: '#2E3033',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                animation: captureLoading ? 'pulseIn 0.6s ease-out forwards' : 'none',
-                '@keyframes pulseIn': {
-                  '0%': { opacity: 0, transform: 'scale(0.9)' },
-                  '70%': { opacity: 1, transform: 'scale(1.05)' },
-                  '100%': { opacity: 1, transform: 'scale(1)' },
-                },
-              }}
-            >
-              {/* progress fill */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  height: '100%',
-                  width: (() => {
-                    switch (captureState) {
-                      case 'complete':
-                        return '100%';
-                      case 'processing':
-                        return '75%';
-                      case 'capturing':
-                        return '50%';
-                      case 'rendering':
-                        return '25%';
-                      default:
-                        return '10%';
-                    }
-                  })(),
-                  backgroundColor: '#1340FF',
-                  transition: 'width 0.8s ease-out',
-                }}
-              />
-            </Box>
+            {/* Followers */}
+            <Stack alignItems="flex-start" sx={{ flex: 1 }}>
+              <Typography
+                variant="h5"
+                color="#1340FF"
+                fontWeight={400}
+                fontFamily="Instrument Serif"
+                mb={1}
+                align="left"
+                sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
+              >
+                {socialMediaAnalytics.followers}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="#1340FF"
+                fontFamily="Aileron, sans-serif"
+                fontWeight={600}
+                align="left"
+                sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+              >
+                Followers
+              </Typography>
+            </Stack>
 
-            {/* Cult logo in the center */}
-            <Box
-              component="img"
-              src="/logo/newlogo.svg"
-              alt="Cult Creative"
-              sx={{
-                width: 32,
-                height: 32,
-                position: 'relative',
-                zIndex: 2,
-                filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-                animation: captureLoading ? 'popIn 0.6s 0.2s ease-out forwards' : 'none',
-                opacity: 0,
-                '@keyframes popIn': {
-                  '0%': { opacity: 0, transform: 'scale(0.8)' },
-                  '70%': { opacity: 1, transform: 'scale(1.1)' },
-                  '100%': { opacity: 1, transform: 'scale(1)' },
-                },
-              }}
-            />
-          </Box>
 
-          <Typography
-            sx={{
-              mt: 1.5,
-              mb: 0.5,
-              fontWeight: 600,
-              fontSize: 16,
-              color: '#231F20',
-              fontFamily: 'Aileron, sans-serif',
-              textAlign: 'center',
-              letterSpacing: '0.01em',
-              animation: captureLoading ? 'slideUp 0.5s 0.3s ease-out forwards' : 'none',
-              opacity: 0,
-              transform: 'translateY(10px)',
-              '@keyframes slideUp': {
-                to: { opacity: 1, transform: 'translateY(0)' },
-              },
-            }}
-          >
-            {captureState === 'preparing' && 'Preparing media kit...'}
-            {captureState === 'rendering' && 'Loading all content...'}
-            {captureState === 'capturing' && 'Capturing...'}
-            {captureState === 'processing' && 'Finalizing download...'}
-            {captureState === 'complete' && 'Download complete!'}
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'rgba(0, 0, 0, 0.6)',
-              fontFamily: 'Aileron, sans-serif',
-              textAlign: 'center',
-              maxWidth: '240px',
-              fontSize: 13,
-              lineHeight: 1.4,
-              animation: captureLoading ? 'fadeIn 0.5s 0.4s ease-out forwards' : 'none',
-              opacity: 0,
-              '@keyframes fadeIn': {
-                to: { opacity: 1 },
-              },
-            }}
-          >
-            Please wait while we prepare your Media Kit
-          </Typography>
-        </Box>
-      </Backdrop>
+            {/* Average Comments */}
+            <Stack alignItems="flex-start" sx={{ flex: 1 }}>
+              <Typography
+                variant="h5"
+                color="#1340FF"
+                fontWeight={400}
+                fontFamily="Instrument Serif"
+                mb={1}
+                align="left"
+                sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
+              >
+                0 {/* Change to actual number later */}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="#1340FF"
+                fontFamily="Aileron, sans-serif"
+                fontWeight={600}
+                align="left"
+                sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+              >
+                Avg Comments
+              </Typography>
+            </Stack>
 
-      {/* Mobile Image Preview Modal */}
-      <Dialog
-        open={mobilePreview.open}
-        onClose={closeMobilePreview}
-        fullScreen
-        PaperProps={{
-          sx: {
-            backgroundColor: 'rgb(0, 0, 0)',
-            overflow: 'visible',
-            position: 'relative',
-          },
-        }}
-        sx={{
-          zIndex: 9999,
-          '& .MuiDialog-container': {
-            alignItems: 'center',
-            justifyContent: 'center',
-          },
-          '& .MuiDialog-paper': {
-            m: 0,
-            width: '100%',
-            height: '100%',
-          },
-        }}
-      >
-        {/* Close button */}
-        <Button
-          onClick={closeMobilePreview}
-          sx={{
-            position: 'fixed',
-            top: 20,
-            right: 20,
-            minWidth: '38px',
-            width: '38px',
-            height: '38px',
-            p: 0,
-            bgcolor: '#FFFFFF',
-            color: '#000000',
-            border: '1px solid #E7E7E7',
-            borderBottom: '3px solid #E7E7E7',
-            borderRadius: '8px',
-            fontWeight: 650,
-            zIndex: 9999,
-            '&:hover': {
-              bgcolor: '#F5F5F5',
-            },
-          }}
-        >
-          X
-        </Button>
+            {/* Average likes */}
+            <Stack alignItems="flex-start" sx={{ flex: 1 }}>
+              <Typography
+                variant="h5"
+                color="#1340FF"
+                fontWeight={400}
+                fontFamily="Instrument Serif"
+                mb={1}
+                align="left"
+                sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
+              >
+                {socialMediaAnalytics.averageLikes}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="#1340FF"
+                fontFamily="Aileron, sans-serif"
+                fontWeight={600}
+                align="left"
+                sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+              >
+                Avg Likes
+              </Typography>
+            </Stack>
 
-        {/* Image */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <Box
-            component="img"
-            src={mobilePreview.imageUrl}
-            alt={`${data?.creator?.mediaKit?.displayName || data?.name} Media Kit`}
-            sx={{
-              maxWidth: '100%',
-              maxHeight: '90vh',
-              objectFit: 'contain',
-            }}
-          />
-        </Box>
+            {/* Total Engagement */}
+            <Stack alignItems="flex-start" sx={{ flex: 1 }}>
+              <Typography
+                variant="h5"
+                color="#1340FF"
+                fontWeight={400}
+                fontFamily="Instrument Serif"
+                mb={1}
+                align="left"
+                sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
+              >
+                {socialMediaAnalytics.engagement_rate}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="#1340FF"
+                fontFamily="Aileron, sans-serif"
+                fontWeight={600}
+                align="left"
+                sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+              >
+                Total Engagement
+              </Typography>
+            </Stack>
+          </Stack>
+        </Stack>
+      )}
 
-        {/* Instructions */}
-        <Box
-          className="instructions"
-          sx={{
-            position: 'fixed',
-            bottom: 20,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'auto',
-            maxWidth: '80%',
-            backgroundColor: 'white',
-            color: 'black',
-            textAlign: 'center',
-            padding: '8px 16px',
-            fontFamily: 'sans-serif',
-            borderRadius: 1.5,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1,
-            fontSize: '12px',
-            fontWeight: 500,
-          }}
-        >
-          <svg
-            width="18"
-            height="20"
-            viewBox="0 0 21 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z"
-              fill="#1340FF"
-            />
-          </svg>
-          Long-press the image to save to your gallery
-        </Box>
-      </Dialog>
-    </>
+      <Divider sx={{ my: 3 }} />
+      {/* Bottom View */}
+
+      <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1}>
+        Top Content {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`}
+      </Typography>
+
+      <MediaKitSocial currentTab={currentTab} data={data} />
+    </Container>
   );
 };
 

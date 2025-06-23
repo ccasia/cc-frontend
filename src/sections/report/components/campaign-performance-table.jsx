@@ -1,31 +1,29 @@
-import React, { useState } from 'react';
-import {
-  Avatar,
-  Button,
-  Typography,
-  Box,
-  CircularProgress
-} from '@mui/material';
-import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
+import React from 'react';
 import { useNavigate } from 'react-router';
+
+import { Box, Avatar, Button, Typography, CircularProgress } from '@mui/material';
+
+import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
 
   const { data: submissionData, isLoading } = useGetAllSubmissions();
-  
+
   const reportList = React.useMemo(() => {
     if (!submissionData) return [];
-    
+
     return submissionData?.submissions
       ?.filter((submission) => {
         if (!submission.content) return false;
-        
+
         // More specific regex patterns for actual post links
+
         const instagramPostRegex = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
         const tiktokPostRegex = /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/(?:video|photo)\/\d+/i;
         
         return instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
+
       })
       ?.map((submission) => ({
         id: submission.id,
@@ -44,7 +42,6 @@ const CampaignPerformanceTable = () => {
         // If campaign names are the same, sort by creator name
         return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
       });
-
   }, [submissionData]);
 
   if (isLoading) {
@@ -63,9 +60,9 @@ const CampaignPerformanceTable = () => {
       campaignId: row.campaignId,
       userId: row.userId,
       creatorName: row.creatorName,
-      campaignName: row.campaignName
+      campaignName: row.campaignName,
     });
-    
+
     navigate(`/dashboard/report/view?${params.toString()}`);
   };
 
@@ -140,7 +137,7 @@ const CampaignPerformanceTable = () => {
                   color: '#666',
                 }}
               >
-                Creator's Email
+                Creator&apos;s Email
               </Typography>
             </Box>
             <Box sx={{ flex: '0 0 30%' }}>
@@ -175,13 +172,15 @@ const CampaignPerformanceTable = () => {
                   },
                 }}
               >
-                <Box sx={{ 
-                  flex: '0 0 20%', 
-                  minWidth: 200, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 2 
-                }}>
+                <Box
+                  sx={{
+                    flex: '0 0 20%',
+                    minWidth: 200,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
                   <Avatar
                     src={row.creatorAvatar}
                     sx={{
@@ -261,7 +260,7 @@ const CampaignPerformanceTable = () => {
                       '&:active': {
                         boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
                         transform: 'translateY(1px)',
-                      }
+                      },
                     }}
                   >
                     View Performance Report

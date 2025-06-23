@@ -10,6 +10,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 // import Accordion from '@mui/material/Accordion';
 // import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 // import AccordionSummary from '@mui/material/AccordionSummary';
+import { alpha } from '@mui/system';
 // import AccordionDetails from '@mui/material/AccordionDetails';
 import { grey } from '@mui/material/colors';
 // import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -19,7 +20,6 @@ import {
   Tabs,
   Chip,
   Stack,
-  alpha,
   Button,
   Dialog,
   Avatar,
@@ -311,19 +311,17 @@ const CampaignFirstDraft = ({
 
   // Helper function to get tab options for dropdown
   const getTabOptions = () => {
-    const options = [
-      { value: 0, label: 'Draft Videos', icon: 'solar:video-library-bold' }
-    ];
-    
+    const options = [{ value: 0, label: 'Draft Videos', icon: 'solar:video-library-bold' }];
+
     if (submission?.rawFootages?.length > 0) {
       options.push({ value: 1, label: 'Raw Footage', icon: 'solar:camera-bold' });
     }
 
     if (submission?.photos?.length > 0) {
-      options.push({ 
-        value: submission?.rawFootages?.length > 0 ? 2 : 1, 
-        label: 'Photos', 
-        icon: 'solar:gallery-wide-bold' 
+      options.push({
+        value: submission?.rawFootages?.length > 0 ? 2 : 1,
+        label: 'Photos',
+        icon: 'solar:gallery-wide-bold',
       });
     }
 
@@ -1090,14 +1088,14 @@ const CampaignFirstDraft = ({
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                       Content Requiring Changes
                     </Typography>
-                    
+
                     {submission.feedback
-                      .filter(feedback => 
-                        feedback.type === 'REQUEST' && (
-                          feedback.videosToUpdate?.length > 0 || 
-                          feedback.photosToUpdate?.length > 0 || 
-                          feedback.rawFootageToUpdate?.length > 0
-                        )
+                      .filter(
+                        (feedback) =>
+                          feedback.type === 'REQUEST' &&
+                          (feedback.videosToUpdate?.length > 0 ||
+                            feedback.photosToUpdate?.length > 0 ||
+                            feedback.rawFootageToUpdate?.length > 0)
                       )
                       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                       .map((feedback, feedbackIndex) => (
@@ -1115,7 +1113,8 @@ const CampaignFirstDraft = ({
                               {feedback.admin?.name || 'Admin'}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {feedback.admin?.role || 'Admin'} • {dayjs(feedback.createdAt).format('MMM DD, YYYY')}
+                              {feedback.admin?.role || 'Admin'} •{' '}
+                              {dayjs(feedback.createdAt).format('MMM DD, YYYY')}
                             </Typography>
                           </Box>
 
@@ -1146,7 +1145,7 @@ const CampaignFirstDraft = ({
                                     sx={{
                                       bgcolor: 'warning.main',
                                       color: 'warning.contrastText',
-                                      fontWeight: 500
+                                      fontWeight: 500,
                                     }}
                                   />
                                 ))}
@@ -1155,153 +1154,188 @@ const CampaignFirstDraft = ({
                           )}
 
                           {/* Show specific videos that need changes */}
-                          {feedback.videosToUpdate && feedback.videosToUpdate.length > 0 && deliverables?.videos && (
-                            <Box sx={{ mb: 2 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                                Videos requiring changes:
-                              </Typography>
-                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
-                                {deliverables.videos
-                                  .filter(video => feedback.videosToUpdate.includes(video.id))
-                                  .map((video, index) => (
-                                    <Box
-                                      key={video.id}
-                                      sx={{
-                                        p: 2,
-                                        border: '2px solid',
-                                        borderColor: 'warning.main',
-                                        borderRadius: 1,
-                                        bgcolor: 'background.paper'
-                                      }}
-                                    >
-                                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                                        Video {index + 1}
-                                      </Typography>
+                          {feedback.videosToUpdate &&
+                            feedback.videosToUpdate.length > 0 &&
+                            deliverables?.videos && (
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                  Videos requiring changes:
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                                    gap: 2,
+                                  }}
+                                >
+                                  {deliverables.videos
+                                    .filter((video) => feedback.videosToUpdate.includes(video.id))
+                                    .map((video, index) => (
                                       <Box
+                                        key={video.id}
                                         sx={{
-                                          position: 'relative',
-                                          width: '100%',
-                                          paddingTop: '56.25%',
+                                          p: 2,
+                                          border: '2px solid',
+                                          borderColor: 'warning.main',
                                           borderRadius: 1,
-                                          overflow: 'hidden',
-                                          bgcolor: 'black',
+                                          bgcolor: 'background.paper',
                                         }}
                                       >
+                                        <Typography
+                                          variant="subtitle2"
+                                          sx={{ mb: 1, fontWeight: 600 }}
+                                        >
+                                          Video {index + 1}
+                                        </Typography>
                                         <Box
-                                          component="video"
-                                          src={video.url}
-                                          controls
                                           sx={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
+                                            position: 'relative',
                                             width: '100%',
-                                            height: '100%',
-                                            objectFit: 'contain',
+                                            paddingTop: '56.25%',
+                                            borderRadius: 1,
+                                            overflow: 'hidden',
+                                            bgcolor: 'black',
                                           }}
-                                        />
+                                        >
+                                          <Box
+                                            component="video"
+                                            src={video.url}
+                                            controls
+                                            sx={{
+                                              position: 'absolute',
+                                              top: 0,
+                                              left: 0,
+                                              width: '100%',
+                                              height: '100%',
+                                              objectFit: 'contain',
+                                            }}
+                                          />
+                                        </Box>
                                       </Box>
-                                    </Box>
-                                  ))}
+                                    ))}
+                                </Box>
                               </Box>
-                            </Box>
-                          )}
+                            )}
 
                           {/* Show specific photos that need changes */}
-                          {feedback.photosToUpdate && feedback.photosToUpdate.length > 0 && deliverables?.photos && (
-                            <Box sx={{ mb: 2 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                                Photos requiring changes:
-                              </Typography>
-                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
-                                {deliverables.photos
-                                  .filter(photo => feedback.photosToUpdate.includes(photo.id))
-                                  .map((photo, index) => (
-                                    <Box
-                                      key={photo.id}
-                                      sx={{
-                                        border: '2px solid',
-                                        borderColor: 'warning.main',
-                                        borderRadius: 1,
-                                        overflow: 'hidden',
-                                        bgcolor: 'background.paper'
-                                      }}
-                                    >
+                          {feedback.photosToUpdate &&
+                            feedback.photosToUpdate.length > 0 &&
+                            deliverables?.photos && (
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                  Photos requiring changes:
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: {
+                                      xs: 'repeat(2, 1fr)',
+                                      sm: 'repeat(3, 1fr)',
+                                    },
+                                    gap: 2,
+                                  }}
+                                >
+                                  {deliverables.photos
+                                    .filter((photo) => feedback.photosToUpdate.includes(photo.id))
+                                    .map((photo, index) => (
                                       <Box
-                                        component="img"
-                                        src={photo.url}
-                                        alt={`Photo ${index + 1}`}
+                                        key={photo.id}
                                         sx={{
-                                          width: '100%',
-                                          height: 150,
-                                          objectFit: 'cover',
-                                          cursor: 'pointer'
-                                        }}
-                                        onClick={() => handleImageClick(index)}
-                                      />
-                                      <Box sx={{ p: 1 }}>
-                                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                                          Photo {index + 1}
-                                        </Typography>
-                                      </Box>
-                                    </Box>
-                                  ))}
-                              </Box>
-                            </Box>
-                          )}
-
-                          {/* Show specific raw footage that needs changes */}
-                          {feedback.rawFootageToUpdate && feedback.rawFootageToUpdate.length > 0 && deliverables?.rawFootages && (
-                            <Box>
-                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                                Raw footage requiring changes:
-                              </Typography>
-                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
-                                {deliverables.rawFootages
-                                  .filter(footage => feedback.rawFootageToUpdate.includes(footage.id))
-                                  .map((footage, index) => (
-                                    <Box
-                                      key={footage.id}
-                                      sx={{
-                                        p: 2,
-                                        border: '2px solid',
-                                        borderColor: 'warning.main',
-                                        borderRadius: 1,
-                                        bgcolor: 'background.paper'
-                                      }}
-                                    >
-                                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                                        Raw Footage {index + 1}
-                                      </Typography>
-                                      <Box
-                                        sx={{
-                                          position: 'relative',
-                                          width: '100%',
-                                          paddingTop: '56.25%',
+                                          border: '2px solid',
+                                          borderColor: 'warning.main',
                                           borderRadius: 1,
                                           overflow: 'hidden',
-                                          bgcolor: 'black',
+                                          bgcolor: 'background.paper',
                                         }}
                                       >
                                         <Box
-                                          component="video"
-                                          src={footage.url}
-                                          controls
+                                          component="img"
+                                          src={photo.url}
+                                          alt={`Photo ${index + 1}`}
                                           sx={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
                                             width: '100%',
-                                            height: '100%',
-                                            objectFit: 'contain',
+                                            height: 150,
+                                            objectFit: 'cover',
+                                            cursor: 'pointer',
                                           }}
+                                          onClick={() => handleImageClick(index)}
                                         />
+                                        <Box sx={{ p: 1 }}>
+                                          <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                            Photo {index + 1}
+                                          </Typography>
+                                        </Box>
                                       </Box>
-                                    </Box>
-                                  ))}
+                                    ))}
+                                </Box>
                               </Box>
-                            </Box>
-                          )}
+                            )}
+
+                          {/* Show specific raw footage that needs changes */}
+                          {feedback.rawFootageToUpdate &&
+                            feedback.rawFootageToUpdate.length > 0 &&
+                            deliverables?.rawFootages && (
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                  Raw footage requiring changes:
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                                    gap: 2,
+                                  }}
+                                >
+                                  {deliverables.rawFootages
+                                    .filter((footage) =>
+                                      feedback.rawFootageToUpdate.includes(footage.id)
+                                    )
+                                    .map((footage, index) => (
+                                      <Box
+                                        key={footage.id}
+                                        sx={{
+                                          p: 2,
+                                          border: '2px solid',
+                                          borderColor: 'warning.main',
+                                          borderRadius: 1,
+                                          bgcolor: 'background.paper',
+                                        }}
+                                      >
+                                        <Typography
+                                          variant="subtitle2"
+                                          sx={{ mb: 1, fontWeight: 600 }}
+                                        >
+                                          Raw Footage {index + 1}
+                                        </Typography>
+                                        <Box
+                                          sx={{
+                                            position: 'relative',
+                                            width: '100%',
+                                            paddingTop: '56.25%',
+                                            borderRadius: 1,
+                                            overflow: 'hidden',
+                                            bgcolor: 'black',
+                                          }}
+                                        >
+                                          <Box
+                                            component="video"
+                                            src={footage.url}
+                                            controls
+                                            sx={{
+                                              position: 'absolute',
+                                              top: 0,
+                                              left: 0,
+                                              width: '100%',
+                                              height: '100%',
+                                              objectFit: 'contain',
+                                            }}
+                                          />
+                                        </Box>
+                                      </Box>
+                                    ))}
+                                </Box>
+                              </Box>
+                            )}
                         </Box>
                       ))}
                   </Box>
@@ -1436,7 +1470,7 @@ const CampaignFirstDraft = ({
                       ))}
                   </Box>
                 )}
-                  
+
                 <Button
                   onClick={display.onTrue}
                   variant="contained"
@@ -1529,7 +1563,7 @@ const CampaignFirstDraft = ({
               >
                 {/* Mobile Dropdown */}
                 <Box sx={{ display: { xs: 'block', sm: 'none' }, mb: 2 }}>
-                  <FormControl fullWidth variant="outlined" size="small" sx={{mt: 1}}>
+                  <FormControl fullWidth variant="outlined" size="small" sx={{ mt: 1 }}>
                     <InputLabel id="mobile-tab-select-label">Select Content</InputLabel>
                     <Select
                       labelId="mobile-tab-select-label"
@@ -1558,11 +1592,13 @@ const CampaignFirstDraft = ({
                 </Box>
 
                 {/* Desktop Layout */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  height: { xs: 'auto', sm: '100%' },
-                  flexDirection: { xs: 'column', sm: 'row' } 
-                }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    height: { xs: 'auto', sm: '100%' },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                  }}
+                >
                   {/* Left Side Tabs */}
                   <Box
                     sx={{
@@ -1608,47 +1644,51 @@ const CampaignFirstDraft = ({
                         label="Draft Videos"
                         icon={<Iconify icon="solar:video-library-bold" width={20} />}
                         iconPosition="start"
-                        sx={{ 
+                        sx={{
                           opacity: 1,
                           color: tabIndex === 0 ? '#1340FF' : 'text.secondary',
                           '&.Mui-selected': { color: '#1340FF' },
                         }}
                       />
-                      
+
                       {submission?.rawFootages?.length > 0 && (
                         <Tab
                           label="Raw Footage"
                           icon={<Iconify icon="solar:camera-bold" width={20} />}
                           iconPosition="start"
-                          sx={{ 
+                          sx={{
                             opacity: 1,
                             color: tabIndex === 1 ? '#1340FF' : 'text.secondary',
                             '&.Mui-selected': { color: '#1340FF' },
                           }}
                         />
                       )}
-                      
+
                       {submission?.photos?.length > 0 && (
                         <Tab
                           label="Photos"
                           icon={<Iconify icon="solar:gallery-wide-bold" width={20} />}
                           iconPosition="start"
-                          sx={{ 
+                          sx={{
                             opacity: 1,
-                            color: tabIndex === (submission?.rawFootages?.length > 0 ? 2 : 1) ? '#1340FF' : 'text.secondary',
+                            color:
+                              tabIndex === (submission?.rawFootages?.length > 0 ? 2 : 1)
+                                ? '#1340FF'
+                                : 'text.secondary',
                             '&.Mui-selected': { color: '#1340FF' },
                           }}
                         />
                       )}
-                      
+
                       {submission?.caption && (
                         <Tab
                           label="Caption"
                           icon={<Iconify icon="solar:document-text-bold" width={20} />}
                           iconPosition="start"
-                          sx={{ 
+                          sx={{
                             opacity: 1,
-                            color: tabIndex === getTabIndex('caption') ? '#1340FF' : 'text.secondary',
+                            color:
+                              tabIndex === getTabIndex('caption') ? '#1340FF' : 'text.secondary',
                             '&.Mui-selected': { color: '#1340FF' },
                           }}
                         />
@@ -1657,12 +1697,14 @@ const CampaignFirstDraft = ({
                   </Box>
 
                   {/* Right Side Content */}
-                  <Box sx={{ 
-                    flexGrow: 1, 
-                    pl: { xs: 0, sm: 3 }, 
-                    overflow: 'auto',
-                    width: '100%'
-                  }}>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      pl: { xs: 0, sm: 3 },
+                      overflow: 'auto',
+                      width: '100%',
+                    }}
+                  >
                     {/* Draft Videos Content */}
                     {tabIndex === 0 && (
                       <Box sx={{ width: '100%' }}>
@@ -1671,39 +1713,40 @@ const CampaignFirstDraft = ({
                           {(campaign?.campaignCredits && deliverables?.videos?.length > 0
                             ? deliverables.videos
                             : [{ url: submission?.content }]
-                          ).map((videoItem, index) => (
-                            index === selectedVideoIndex && (
-                              <Box
-                                key={`large-${videoItem.id || index}`}
-                                sx={{
-                                  position: 'relative',
-                                  width: '100%',
-                                  height: 0,
-                                  paddingTop: { xs: '75%', sm: 'min(450px, 56.25%)' },
-                                  bgcolor: 'black',
-                                  borderRadius: 2,
-                                  mb: 2,
-                                  overflow: 'hidden',
-                                }}
-                              >
+                          ).map(
+                            (videoItem, index) =>
+                              index === selectedVideoIndex && (
                                 <Box
-                                  component="video"
-                                  autoPlay={false}
-                                  controls
+                                  key={`large-${videoItem.id || index}`}
                                   sx={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
+                                    position: 'relative',
                                     width: '100%',
-                                    height: '100%',
-                                    objectFit: 'contain',
+                                    height: 0,
+                                    paddingTop: { xs: '75%', sm: 'min(450px, 56.25%)' },
+                                    bgcolor: 'black',
+                                    borderRadius: 2,
+                                    mb: 2,
+                                    overflow: 'hidden',
                                   }}
                                 >
-                                  <source src={videoItem.url} />
+                                  <Box
+                                    component="video"
+                                    autoPlay={false}
+                                    controls
+                                    sx={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'contain',
+                                    }}
+                                  >
+                                    <source src={videoItem.url} />
+                                  </Box>
                                 </Box>
-                              </Box>
-                            )
-                          ))}
+                              )
+                          )}
                         </Box>
 
                         {/* Thumbnails */}
@@ -1711,12 +1754,14 @@ const CampaignFirstDraft = ({
                           ? deliverables.videos
                           : [{ url: submission?.content }]
                         ).length > 1 && (
-                          <Box sx={{ 
-                            display: 'flex', 
-                            flexWrap: 'wrap', 
-                            gap: 1.5,
-                            justifyContent: { xs: 'center', sm: 'flex-start' }
-                          }}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: 1.5,
+                              justifyContent: { xs: 'center', sm: 'flex-start' },
+                            }}
+                          >
                             {(campaign?.campaignCredits && deliverables?.videos?.length > 0
                               ? deliverables.videos
                               : [{ url: submission?.content }]
@@ -1770,49 +1815,52 @@ const CampaignFirstDraft = ({
                       <Box sx={{ width: '100%' }}>
                         {/* Large preview area */}
                         <Box sx={{ mb: 3 }}>
-                          {submission.rawFootages.map((footage, index) => (
-                            index === selectedRawFootageIndex && (
-                              <Box
-                                key={`large-footage-${footage.id || index}`}
-                                sx={{
-                                  position: 'relative',
-                                  width: '100%',
-                                  height: 0,
-                                  paddingTop: { xs: '75%', sm: 'min(450px, 56.25%)' },
-                                  bgcolor: 'black',
-                                  borderRadius: 2,
-                                  mb: 2,
-                                  overflow: 'hidden',
-                                }}
-                              >
+                          {submission.rawFootages.map(
+                            (footage, index) =>
+                              index === selectedRawFootageIndex && (
                                 <Box
-                                  component="video"
-                                  autoPlay={false}
-                                  controls
+                                  key={`large-footage-${footage.id || index}`}
                                   sx={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
+                                    position: 'relative',
                                     width: '100%',
-                                    height: '100%',
-                                    objectFit: 'contain',
+                                    height: 0,
+                                    paddingTop: { xs: '75%', sm: 'min(450px, 56.25%)' },
+                                    bgcolor: 'black',
+                                    borderRadius: 2,
+                                    mb: 2,
+                                    overflow: 'hidden',
                                   }}
                                 >
-                                  <source src={footage.url} />
+                                  <Box
+                                    component="video"
+                                    autoPlay={false}
+                                    controls
+                                    sx={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'contain',
+                                    }}
+                                  >
+                                    <source src={footage.url} />
+                                  </Box>
                                 </Box>
-                              </Box>
-                            )
-                          ))}
+                              )
+                          )}
                         </Box>
 
                         {/* Thumbnails */}
                         {submission.rawFootages.length > 1 && (
-                          <Box sx={{ 
-                            display: 'flex', 
-                            flexWrap: 'wrap', 
-                            gap: 1.5,
-                            justifyContent: { xs: 'center', sm: 'flex-start' }
-                          }}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: 1.5,
+                              justifyContent: { xs: 'center', sm: 'flex-start' },
+                            }}
+                          >
                             {submission.rawFootages.map((footage, index) => (
                               <Box
                                 key={`thumb-footage-${footage.id || index}`}
@@ -1859,73 +1907,77 @@ const CampaignFirstDraft = ({
                     )}
 
                     {/* Photos Content */}
-                    {tabIndex === (submission?.rawFootages?.length > 0 ? 2 : 1) && submission?.photos?.length > 0 && (
-                      <Box sx={{ width: '100%' }}>
-                        {/* Large preview area */}
-                        <Box sx={{ mb: 3 }}>
-                          {submission.photos.map((photo, index) => (
-                            index === selectedPhotoIndex && (
+                    {tabIndex === (submission?.rawFootages?.length > 0 ? 2 : 1) &&
+                      submission?.photos?.length > 0 && (
+                        <Box sx={{ width: '100%' }}>
+                          {/* Large preview area */}
+                          <Box sx={{ mb: 3 }}>
+                            {submission.photos.map(
+                              (photo, index) =>
+                                index === selectedPhotoIndex && (
+                                  <Box
+                                    key={`large-photo-${photo.id || index}`}
+                                    sx={{
+                                      width: '100%',
+                                      display: 'flex',
+                                      justifyContent: 'center',
+                                      mb: 2,
+                                    }}
+                                  >
+                                    <Box
+                                      component="img"
+                                      src={photo.url}
+                                      alt={`Photo ${index + 1}`}
+                                      sx={{
+                                        maxWidth: '100%',
+                                        maxHeight: { xs: '300px', sm: '450px' },
+                                        borderRadius: 2,
+                                        objectFit: 'contain',
+                                      }}
+                                    />
+                                  </Box>
+                                )
+                            )}
+                          </Box>
+
+                          {/* Thumbnails */}
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: 1.5,
+                              justifyContent: { xs: 'center', sm: 'flex-start' },
+                            }}
+                          >
+                            {submission.photos.map((photo, index) => (
                               <Box
-                                key={`large-photo-${photo.id || index}`}
+                                key={`thumb-photo-${photo.id || index}`}
+                                onClick={() => setSelectedPhotoIndex(index)}
                                 sx={{
-                                  width: '100%',
-                                  display: 'flex',
-                                  justifyContent: 'center',
-                                  mb: 2,
+                                  width: { xs: '80px', sm: '100px' },
+                                  height: { xs: '80px', sm: '100px' },
+                                  borderRadius: 1.5,
+                                  overflow: 'hidden',
+                                  cursor: 'pointer',
+                                  border: selectedPhotoIndex === index ? '2px solid' : 'none',
+                                  borderColor: 'primary.main',
                                 }}
                               >
                                 <Box
                                   component="img"
                                   src={photo.url}
-                                  alt={`Photo ${index + 1}`}
+                                  alt={`Thumbnail ${index + 1}`}
                                   sx={{
-                                    maxWidth: '100%',
-                                    maxHeight: { xs: '300px', sm: '450px' },
-                                    borderRadius: 2,
-                                    objectFit: 'contain',
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
                                   }}
                                 />
                               </Box>
-                            )
-                          ))}
+                            ))}
+                          </Box>
                         </Box>
-
-                        {/* Thumbnails */}
-                        <Box sx={{ 
-                          display: 'flex', 
-                          flexWrap: 'wrap', 
-                          gap: 1.5,
-                          justifyContent: { xs: 'center', sm: 'flex-start' }
-                        }}>
-                          {submission.photos.map((photo, index) => (
-                            <Box
-                              key={`thumb-photo-${photo.id || index}`}
-                              onClick={() => setSelectedPhotoIndex(index)}
-                              sx={{
-                                width: { xs: '80px', sm: '100px' },
-                                height: { xs: '80px', sm: '100px' },
-                                borderRadius: 1.5,
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                border: selectedPhotoIndex === index ? '2px solid' : 'none',
-                                borderColor: 'primary.main',
-                              }}
-                            >
-                              <Box
-                                component="img"
-                                src={photo.url}
-                                alt={`Thumbnail ${index + 1}`}
-                                sx={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                }}
-                              />
-                            </Box>
-                          ))}
-                        </Box>
-                      </Box>
-                    )}
+                      )}
 
                     {/* Caption Content */}
                     {tabIndex === getTabIndex('caption') && submission?.caption && (
@@ -1937,10 +1989,7 @@ const CampaignFirstDraft = ({
                           width: '100%',
                         }}
                       >
-                        <Typography
-                          variant="body1"
-                          sx={{ color: 'text.primary', lineHeight: 1.8 }}
-                        >
+                        <Typography variant="body1" sx={{ color: 'text.primary', lineHeight: 1.8 }}>
                           {submission?.caption}
                         </Typography>
                       </Box>

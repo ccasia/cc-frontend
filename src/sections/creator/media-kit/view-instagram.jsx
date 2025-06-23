@@ -23,7 +23,7 @@ import Iconify from 'src/components/iconify';
 // Utility function to format numbers
 export const formatNumber = (num) => {
   if (!num && num !== 0) return '0';
-  
+
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -132,7 +132,9 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                   </Stack>
                   <Stack direction="row" alignItems="center" spacing={0.5}>
                     <Iconify icon="iconamoon:comment" width={20} />
-                    <Typography variant="subtitle2">{formatNumber(content?.comments_count)}</Typography>
+                    <Typography variant="subtitle2">
+                      {formatNumber(content?.comments_count)}
+                    </Typography>
                   </Stack>
                 </Stack>
               </Box>
@@ -216,6 +218,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
               height: { xs: 400, sm: 450, md: 550 },
               width: '100%',
               overflow: 'hidden',
+              borderRadius: 3,
               cursor: 'pointer',
               '&:hover .image': {
                 scale: 1.05,
@@ -304,7 +307,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
 
   // Get the real data from store
   const realTopContent = instagramData?.medias?.sortedVideos;
-  
+
   // Check if we have real content
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
   const isConnected = !!user?.creator?.isFacebookConnected;
@@ -351,7 +354,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
           </Typography>
 
           <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-          Connect your Instagram to showcase your top content and analytics.
+            Connect your Instagram to showcase your top content and analytics.
           </Typography>
 
           <Button
@@ -417,7 +420,9 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
               pt: 1,
             }}
           >
-            {contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} mobileCarousel />}
+            {contentToShow.length > 0 && (
+              <TopContentGrid topContents={contentToShow} mobileCarousel />
+            )}
           </Box>
         </Box>
       ) : (
