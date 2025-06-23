@@ -16,17 +16,33 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
       {/* Account, Content Type, Date Posted Row */}
       <ContentInfoHeader content={content} />
 
-      {/* Content Engagement Section - TikTok Layout (3 cards in column, interactions and shares on right) */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          sx={{
-            fontSize: { xs: 20, sm: 24 },
-            fontWeight: 600,
-            mb: 3,
-          }}
-        >
-          Content Engagement
-        </Typography>
+					<Box
+						sx={{
+							height: 'auto',
+							display: 'grid',
+							gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr'},
+							alignContent: 'center'
+						}}
+					>
+						{/* Left column: Engagement cards */}
+						<Box
+							sx={{
+								display: 'flex',
+								flexDirection: 'column',
+								gap: { xs: '16px', sm: '20px' },
+								justifyContent: 'space-between',
+								pr: 2
+							}}
+						>
+							{renderEngagementCard({
+								height: 130,
+								icon: 'mdi:eye-outline',
+								title: 'Views',
+								value: content.metrics?.views || 0,
+								metricKey: 'views',
+								color: '#D3D3D3'
+							})}
+
 
         <Box
           sx={{
@@ -64,30 +80,41 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
               color: '#E7E7E7',
             })}
 
-            {renderEngagementCard({
-              height: 130,
-              icon: 'mdi:comment-outline',
-              title: 'Comments',
-              value: content.metrics?.comments || 0,
-              metricKey: 'comments',
-              color: '#F5F5F5',
-            })}
-          </Box>
+						{/* Right column: Circular stats */}
+						<Box
+							sx={{
+								mt: { xs: 4, sm: 0 }
+							}}
+						>
+							<Box
+								sx={{
+									overflowX: { xs: 'auto', md: 'visible' },
+									display: 'flex',
+									justifyContent: 'center',
+								}}
+							>
+								<Box
+									sx={{
+										display: 'flex',
+										gap: 3,
+										flexDirection: { xs: 'row', md: 'column' },
+										minWidth: { xs: 'min-content', md: 'auto' },
+									}}
+								>
+									{renderCircularStat({
+										label: 'Interactions',
+										value: content.metrics?.total_interactions || 0,
+										metricKey: 'totalInteractions'
+									})}
 
-          {/* Right column: Circular stats */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              mt: { xs: 4, sm: 0 },
-            }}
-          >
-            {renderCircularStat({
-              label: 'Interactions',
-              value: content.metrics?.total_interactions || 0,
-              metricKey: 'totalInteractions',
-            })}
+									{renderCircularStat({
+										label: 'Shares',
+										value: content.metrics?.shares || 0,
+										metricKey: 'shares'
+									})}
+								</Box>
+							</Box>
+
 
             {renderCircularStat({
               label: 'Shares',

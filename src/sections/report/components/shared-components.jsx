@@ -6,15 +6,14 @@ export const ContentInfoHeader = ({ content }) => (
   <Box
     sx={{
       display: 'flex',
-      mb: 3,
-      pb: 2,
+      mb: 4,
     }}
   >
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <Typography sx={{ fontSize: { xs: 18, sm: 20 }, color: '#666', mb: 1 }}>Account</Typography>
+      <Typography sx={{ fontSize: { xs: 14, sm: 20 }, color: '#666', mb: 1 }}>Account</Typography>
       <Typography
         sx={{
-          fontSize: { xs: 30, sm: 36 },
+          fontSize: { xs: 20, sm: 36 },
           color: '#0066FF',
           fontWeight: 400,
           fontFamily: '"Instrument Serif", serif',
@@ -31,12 +30,11 @@ export const ContentInfoHeader = ({ content }) => (
     />
 
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <Typography sx={{ fontSize: { xs: 18, sm: 20 }, color: '#666', mb: 1 }}>
-        Content Type
-      </Typography>
+      <Typography sx={{ fontSize: { xs: 14, sm: 20 }, color: '#666', mb: 1 }}>Content Type</Typography>
+
       <Typography
         sx={{
-          fontSize: { xs: 30, sm: 36 },
+          fontSize: { xs: 20, sm: 36 },
           color: '#0066FF',
           fontWeight: 400,
           fontFamily: '"Instrument Serif", serif',
@@ -53,12 +51,12 @@ export const ContentInfoHeader = ({ content }) => (
     />
 
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <Typography sx={{ fontSize: { xs: 18, sm: 20 }, color: '#666', mb: 1 }}>
-        Date Posted
-      </Typography>
+
+      <Typography sx={{ fontSize: { xs: 14, sm: 20 }, color: '#666', mb: 1 }}>Date Posted</Typography>
+
       <Typography
         sx={{
-          fontSize: { xs: 30, sm: 36 },
+          fontSize: { xs: 20, sm: 36 },
           color: '#0066FF',
           fontWeight: 400,
           fontFamily: '"Instrument Serif", serif',
@@ -93,15 +91,21 @@ export const ContentImageCard = ({ content }) => (
     />
     <Box
       sx={{
-        p: 2,
+        height: 70,
+        overflow: 'hidden'
       }}
     >
       <Typography
         sx={{
           fontSize: 14,
           color: '#333',
-          mb: 0,
+          mt: 2,
           lineHeight: 1.4,
+          display: '-webkit-box',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical'
         }}
       >
         {content.caption ||

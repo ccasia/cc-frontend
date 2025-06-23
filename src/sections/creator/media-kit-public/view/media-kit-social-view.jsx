@@ -7,7 +7,7 @@ import MediaKitSocialContentTiktok from '../view-tiktok';
 import MediaKitPartnership from '../medit-kit-partnerships';
 import MediaKitSocialContentInstagram from '../view-instagram';
 
-const MediaKitSocial = ({ currentTab, data, sx, className }) => (
+const MediaKitSocial = ({ currentTab, data, sx, className, forceDesktop = false }) => (
   <Box
     sx={{
       borderRadius: 2,
@@ -24,10 +24,13 @@ const MediaKitSocial = ({ currentTab, data, sx, className }) => (
     {currentTab === 'instagram' && (
       <MediaKitSocialContentInstagram
         instagramVideos={data?.creator?.instagramUser?.instagramVideo}
+        forceDesktop={forceDesktop}
       />
     )}
     {currentTab === 'tiktok' && (
-      <MediaKitSocialContentTiktok tiktokVideos={data?.creator?.tiktokUser?.tiktokVideo} />
+      <MediaKitSocialContentTiktok 
+      tiktokVideos={data?.creator?.tiktokUser?.tiktokVideo} 
+      forceDesktop={forceDesktop} />
     )}
     {currentTab === 'partnerships' && <MediaKitPartnership />}
   </Box>
@@ -40,4 +43,5 @@ MediaKitSocial.propTypes = {
   data: PropTypes.object,
   sx: PropTypes.object,
   className: PropTypes.string,
+  forceDesktop: PropTypes.bool,
 };

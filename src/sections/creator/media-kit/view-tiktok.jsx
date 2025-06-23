@@ -1,7 +1,7 @@
 import React from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { keyframes } from '@emotion/react';
+// import { keyframes } from '@emotion/react';
 import { enqueueSnackbar } from 'notistack';
 
 import {
@@ -37,10 +37,10 @@ const formatNumber = (num) => {
   return num.toString();
 };
 
-const typeAnimation = keyframes`
-  from { width: 0; }
-  to { width: 100%; }
-`;
+// const typeAnimation = keyframes`
+//   from { width: 0; }
+//   to { width: 100%; }
+// `;
 
 const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
@@ -163,9 +163,11 @@ TopContentGrid.propTypes = {
   ).isRequired,
 };
 
-const MediaKitSocialContent = ({ tiktok }) => {
-  // const theme = useTheme();
+const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
+  const theme = useTheme();
   const { user } = useAuthContext();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
+
 
   const tiktokData = useSocialMediaData((state) => state.tiktok);
 
@@ -225,4 +227,5 @@ export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
   tiktok: PropTypes.object,
+  forceDesktop: PropTypes.bool,
 };

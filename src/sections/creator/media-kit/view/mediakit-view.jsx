@@ -69,20 +69,30 @@ const MediaKitCreator = () => {
 
   const desktopLayoutRef = useRef(null);
 
-  // Utility function to format numbers
+  // Format number function (conversion is like this: 50000 -> 50K, 50100 -> 50.1K)
   const formatNumber = (num) => {
     if (!num && num !== 0) return '0';
 
     if (num >= 1000000000) {
-      return `${(num / 1000000000).toFixed(1)}G`;
+      const formatted = (num / 1000000000).toFixed(1);
+      return formatted.endsWith('.0') ? `${Math.floor(num / 1000000000)}G` : `${formatted}G`;
     }
     if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`;
+      const formatted = (num / 1000000).toFixed(1);
+      return formatted.endsWith('.0') ? `${Math.floor(num / 1000000)}M` : `${formatted}M`;
     }
     if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
+      const formatted = (num / 1000).toFixed(1);
+      return formatted.endsWith('.0') ? `${Math.floor(num / 1000)}K` : `${formatted}K`;
     }
-    return num.toString();
+    // For 1s, 10s, 100s: show as integer, no decimals
+    return Math.floor(num).toString();
+  };
+
+  // Utility function to format total audience numbers with commas
+  const formatTotalAudience = (num) => {
+    if (!num && num !== 0) return '0';
+    return num.toLocaleString();
   };
 
   const getInstagram = useCallback(async () => {
@@ -116,7 +126,7 @@ const MediaKitCreator = () => {
     if (!(totalLikes || followers)) return null;
     return ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2);
   }, []);
-
+  
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
@@ -191,6 +201,12 @@ const MediaKitCreator = () => {
 
   const getScreenshotStyles = useCallback(
     () => `
+      .desktop-screenshot-view {
+        padding-bottom: 24px !important;
+        padding-right: 24px !important;
+        padding-left: 38px !important;
+        box-sizing: border-box !important;
+      }
       .desktop-screenshot-view .MuiBox-root[style*="border-radius: 2px"] {
         margin-bottom: 16px !important;
         padding-bottom: 16px !important;
@@ -204,9 +220,6 @@ const MediaKitCreator = () => {
       }
       .desktop-screenshot-view .desktop-screenshot-mediakit .MuiGrid-item {
         padding-bottom: 8px !important;
-      }
-      .desktop-screenshot-view {
-        padding-bottom: 24px !important;
       }
       .desktop-screenshot-view .MuiContainer-root {
         padding-bottom: 16px !important;
@@ -290,8 +303,8 @@ const MediaKitCreator = () => {
         setCaptureLoading(true);
         setCaptureState('preparing');
 
-        // Choose which element to capture based on screen size
-        const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
+        // Always use the hidden desktop layout for consistent output regardless of screen size
+        const element = desktopLayoutRef.current;
 
         if (!element) {
           setSnackbar({
@@ -302,119 +315,74 @@ const MediaKitCreator = () => {
           return;
         }
 
-        if (isDesktop) {
-          // Desktop direct capture method
-          // Save current scroll position
-          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        // Use hidden desktop layout method for all captures
+        // Temporarily apply a style fix to remove extra padding
+        const styleFixForMedia = document.createElement('style');
+        styleFixForMedia.textContent = getScreenshotStyles();
+        document.head.appendChild(styleFixForMedia);
 
-          // Hide share buttons during capture
-          let desktopButtonDisplay = null;
+        // Make the desktop layout visible just for the capture
+        const originalVisibility = element.style.visibility;
+        const originalPosition = element.style.position;
+        const originalLeft = element.style.left;
+        const originalZIndex = element.style.zIndex;
 
-          if (desktopShareButtonRef.current) {
-            desktopButtonDisplay = desktopShareButtonRef.current.style.display;
-            desktopShareButtonRef.current.style.display = 'none';
-          }
+        // Add class for CSS override
+        element.classList.add('desktop-screenshot-view');
 
-          // Scroll to top to ensure entire content is visible
-          window.scrollTo(0, 0);
+        // Temporarily make the element visible but off-screen for rendering
+        element.style.visibility = 'visible';
+        element.style.position = 'fixed';
+        element.style.left = '0';
+        element.style.top = '0';
+        element.style.zIndex = '-1';
 
-          // Ensure all images and iframes are loaded
-          await ensureContentLoaded(element);
+        // Ensure all images and iframes are loaded
+        await ensureContentLoaded(element);
 
-          // Take the screenshot
-          const dataUrl = await toPng(element, {
-            quality: 0.95,
-            pixelRatio: 2,
-            backgroundColor: '#ffffff',
-            height: element.scrollHeight,
-            width: 1200,
-            cacheBust: true,
-          });
+        // Calculate the actual width of the element to center it properly
+        const elementWidth = element.scrollWidth;
+        const canvasWidth = 1200;
+        const horizontalPadding = (canvasWidth - elementWidth) / 2;
 
-          // Restore share button visibility
-          if (desktopShareButtonRef.current) {
-            desktopShareButtonRef.current.style.display = desktopButtonDisplay;
-          }
+        // Take the screenshot with centering
+        const dataUrl = await toPng(element, {
+          quality: 0.95,
+          pixelRatio: 2,
+          backgroundColor: '#ffffff',
+          height: element.scrollHeight + 80, // padding top/bottom
+          width: canvasWidth, // canvas width
+          cacheBust: true,
+          style: {
+            transform: `translate(${horizontalPadding}px, 40px)`, // centering horizontally and add top margin
+            transformOrigin: 'top left',
+          },
+        });
 
-          // Restore scroll position
-          window.scrollTo(0, scrollTop);
+        // Restore original styles
+        element.style.visibility = originalVisibility;
+        element.style.position = originalPosition;
+        element.style.left = originalLeft;
+        element.style.zIndex = originalZIndex;
+        element.classList.remove('desktop-screenshot-view');
 
-          setCaptureState('processing');
+        // Remove temporary style fix
+        document.head.removeChild(styleFixForMedia);
 
-          if (!isMobile) {
-            // Create and trigger download for desktop
-            const link = document.createElement('a');
-            link.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.png`;
-            link.href = dataUrl;
-            link.click();
-          } else {
-            // Open in-page preview for mobile
-            setMobilePreview({
-              open: true,
-              imageUrl: dataUrl,
-            });
-          }
+        setCaptureState('processing');
+
+        if (!isMobile) {
+          // Create and trigger download for desktop
+          const link = document.createElement('a');
+          link.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.png`;
+          link.href = dataUrl;
+          link.click();
         } else {
-          // Small screen method using hidden desktop layout
-          // Temporarily apply a style fix to remove extra padding
-          const styleFixForMedia = document.createElement('style');
-          styleFixForMedia.textContent = getScreenshotStyles();
-          document.head.appendChild(styleFixForMedia);
-
-          // Make the desktop layout visible just for the capture
-          const originalVisibility = element.style.visibility;
-          const originalPosition = element.style.position;
-          const originalLeft = element.style.left;
-          const originalZIndex = element.style.zIndex;
-
-          // Add class for CSS override
-          element.classList.add('desktop-screenshot-view');
-
-          // Temporarily make the element visible but off-screen for rendering
-          element.style.visibility = 'visible';
-          element.style.position = 'fixed';
-          element.style.left = '0';
-          element.style.top = '0';
-          element.style.zIndex = '-1';
-
-          // Ensure all images and iframes are loaded
-          await ensureContentLoaded(element);
-
-          // Take the screenshot
-          const dataUrl = await toPng(element, {
-            quality: 0.95,
-            pixelRatio: 2,
-            backgroundColor: '#ffffff',
-            height: element.scrollHeight,
-            width: element.scrollWidth,
-            cacheBust: true,
+          // Open in-page preview for mobile
+          setMobilePreview({
+            open: true,
+            imageUrl: dataUrl,
           });
-
-          // Restore original styles
-          element.style.visibility = originalVisibility;
-          element.style.position = originalPosition;
-          element.style.left = originalLeft;
-          element.style.zIndex = originalZIndex;
-          element.classList.remove('desktop-screenshot-view');
-
-          // Remove temporary style fix
-          document.head.removeChild(styleFixForMedia);
-
-          setCaptureState('processing');
-
-          if (!isMobile) {
-            // Create and trigger download for desktop
-            const link = document.createElement('a');
-            link.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.png`;
-            link.href = dataUrl;
-            link.click();
-          } else {
-            // Open in-page preview for mobile
-            setMobilePreview({
-              open: true,
-              imageUrl: dataUrl,
-            });
-          }
         }
 
         const successMessage = isMobile ? 'Done!' : 'Screenshot saved successfully!';
@@ -442,7 +410,7 @@ const MediaKitCreator = () => {
     [
       user?.creator?.mediaKit?.displayName,
       user?.name,
-      isDesktop,
+      // isDesktop,
       getScreenshotStyles,
       ensureContentLoaded,
     ]
@@ -461,7 +429,10 @@ const MediaKitCreator = () => {
       setCaptureLoading(true);
       setCaptureState('preparing');
 
-      const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
+      // const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
+
+      // Always use the hidden desktop layout for consistent output regardless of screen size
+      const element = desktopLayoutRef.current;
 
       if (!element) {
         setSnackbar({
@@ -472,69 +443,50 @@ const MediaKitCreator = () => {
         return;
       }
 
-      let dataUrl;
+      // Use hidden desktop layout method for all PDF captures
+      const styleFixForMedia = document.createElement('style');
+      styleFixForMedia.textContent = getScreenshotStyles();
+      document.head.appendChild(styleFixForMedia);
 
-      if (isDesktop) {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        let desktopButtonDisplay = null;
-        if (desktopShareButtonRef.current) {
-          desktopButtonDisplay = desktopShareButtonRef.current.style.display;
-          desktopShareButtonRef.current.style.display = 'none';
-        }
-        window.scrollTo(0, 0);
+      element.classList.add('desktop-screenshot-view');
+      const originalVisibility = element.style.visibility;
+      const originalPosition = element.style.position;
+      const originalLeft = element.style.left;
+      const originalZIndex = element.style.zIndex;
 
-        // Ensure all images and iframes are loaded
-        await ensureContentLoaded(element);
+      element.style.visibility = 'visible';
+      element.style.position = 'fixed';
+      element.style.left = '0';
+      element.style.top = '0';
+      element.style.zIndex = '-1';
 
-        dataUrl = await toPng(element, {
-          quality: 1.0,
-          pixelRatio: 4,
-          backgroundColor: '#ffffff',
-          height: element.scrollHeight,
-          width: 1200,
-          cacheBust: true,
-        });
+      // Ensure all images and iframes are loaded
+      await ensureContentLoaded(element);
 
-        if (desktopShareButtonRef.current) {
-          desktopShareButtonRef.current.style.display = desktopButtonDisplay;
-        }
-        window.scrollTo(0, scrollTop);
-      } else {
-        const styleFixForMedia = document.createElement('style');
-        styleFixForMedia.textContent = getScreenshotStyles();
-        document.head.appendChild(styleFixForMedia);
+      // Calculate the actual width of the element to center it properly
+      const elementWidth = element.scrollWidth;
+      const canvasWidth = 1200;
+      const horizontalPadding = (canvasWidth - elementWidth) / 2;
 
-        element.classList.add('desktop-screenshot-view');
-        const originalVisibility = element.style.visibility;
-        const originalPosition = element.style.position;
-        const originalLeft = element.style.left;
-        const originalZIndex = element.style.zIndex;
+      const dataUrl = await toPng(element, {
+        quality: 1.0,
+        pixelRatio: 4,
+        backgroundColor: '#ffffff',
+        height: element.scrollHeight + 80,
+        width: canvasWidth,
+        cacheBust: true,
+        style: {
+          transform: `translate(${horizontalPadding}px, 40px)`,
+          transformOrigin: 'top left',
+        },
+      });
 
-        element.style.visibility = 'visible';
-        element.style.position = 'fixed';
-        element.style.left = '0';
-        element.style.top = '0';
-        element.style.zIndex = '-1';
-
-        // Ensure all images and iframes are loaded
-        await ensureContentLoaded(element);
-
-        dataUrl = await toPng(element, {
-          quality: 1.0,
-          pixelRatio: 4,
-          backgroundColor: '#ffffff',
-          height: element.scrollHeight,
-          width: element.scrollWidth,
-          cacheBust: true,
-        });
-
-        element.style.visibility = originalVisibility;
-        element.style.position = originalPosition;
-        element.style.left = originalLeft;
-        element.style.zIndex = originalZIndex;
-        element.classList.remove('desktop-screenshot-view');
-        document.head.removeChild(styleFixForMedia);
-      }
+      element.style.visibility = originalVisibility;
+      element.style.position = originalPosition;
+      element.style.left = originalLeft;
+      element.style.zIndex = originalZIndex;
+      element.classList.remove('desktop-screenshot-view');
+      document.head.removeChild(styleFixForMedia);
 
       setCaptureState('processing');
       // Create a new image to get the dimensions
@@ -607,7 +559,7 @@ const MediaKitCreator = () => {
   }, [
     user?.creator?.mediaKit?.displayName,
     user?.name,
-    isDesktop,
+    // isDesktop,
     getScreenshotStyles,
     ensureContentLoaded,
   ]);
@@ -1003,6 +955,7 @@ const MediaKitCreator = () => {
             sx={{
               mt: { xs: 4, md: 0 },
               width: '100%',
+              ml: { xs: 0, md: 18, lg: -2, xl: -4 },
             }}
           >
             {/* Divider for mobile screens only */}
@@ -1035,8 +988,10 @@ const MediaKitCreator = () => {
                 align="left"
                 sx={{ fontSize: { xs: '3rem', md: '4rem' } }}
               >
-                0 {/* Change to actual number later */}
-              </Typography>
+
+                  {formatTotalAudience(socialMediaAnalytics.followers)}
+                </Typography>
+
               <Box
                 component="span"
                 sx={{
@@ -1181,7 +1136,8 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.averageLikes?.toFixed(2)}
+                        {formatNumber(socialMediaAnalytics.averageLikes)}
+                        {/* {socialMediaAnalytics.averageLikes?.toFixed(2)} */}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1215,7 +1171,8 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.averageComments?.toFixed(2)}
+                        {formatNumber(socialMediaAnalytics.averageComments)}
+                        {/* {socialMediaAnalytics.averageComments?.toFixed(2)} */}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1258,7 +1215,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.engagement_rate}
+                        {formatNumber(socialMediaAnalytics.engagement_rate)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1322,7 +1279,8 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.averageLikes?.toFixed(2)}
+                  {formatNumber(socialMediaAnalytics.averageLikes)}
+                  {/* {socialMediaAnalytics.averageLikes?.toFixed(2)} */}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1347,7 +1305,8 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.averageComments?.toFixed(2)}
+                  {formatNumber(socialMediaAnalytics.averageComments)}
+                  {/* {socialMediaAnalytics.averageComments?.toFixed(2)} */}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1372,7 +1331,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.engagement_rate}
+                  {formatNumber(socialMediaAnalytics.engagement_rate)}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1480,6 +1439,7 @@ const MediaKitCreator = () => {
           height: 'auto',
           overflow: 'visible',
           pb: 2,
+          px: 0,
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -1598,7 +1558,7 @@ const MediaKitCreator = () => {
                 align="left"
                 sx={{ fontSize: '4rem' }}
               >
-                0 {/* Change to actual number later */}
+                {formatTotalAudience(socialMediaAnalytics.followers)}
               </Typography>
               <Box
                 component="span"
@@ -1717,7 +1677,8 @@ const MediaKitCreator = () => {
                       align="left"
                       sx={{ fontSize: '3.5rem' }}
                     >
-                      {socialMediaAnalytics.averageLikes.toFixed(2)}
+                      {formatNumber(socialMediaAnalytics.averageLikes)}
+                      {/* {socialMediaAnalytics.averageLikes.toFixed(2)} */}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -1744,7 +1705,8 @@ const MediaKitCreator = () => {
                       align="left"
                       sx={{ fontSize: '3.5rem' }}
                     >
-                      {socialMediaAnalytics.averageComments?.toFixed(2)}
+                      {formatNumber(socialMediaAnalytics.averageComments)}
+                      {/* {socialMediaAnalytics.averageComments?.toFixed(2)} */}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -1780,7 +1742,7 @@ const MediaKitCreator = () => {
                       align="left"
                       sx={{ fontSize: '3.5rem' }}
                     >
-                      {socialMediaAnalytics.engagement_rate}
+                      {formatNumber(socialMediaAnalytics.engagement_rate)}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -1803,7 +1765,7 @@ const MediaKitCreator = () => {
 
         <Box sx={{ flexGrow: 1 }}>
           <Typography
-            fontWeight={600}
+            fontWeight={700}
             fontFamily="Aileron, sans-serif"
             fontSize="24px"
             mb={1}
@@ -1815,6 +1777,7 @@ const MediaKitCreator = () => {
           <MediaKitSocial
             currentTab={currentTab}
             className="desktop-screenshot-mediakit"
+            forceDesktop
             sx={{
               '& > div > div': {
                 flexDirection: 'row !important',

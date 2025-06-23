@@ -262,10 +262,10 @@ const CampaignDetailView = ({ id }) => {
               label: `Invoices (${campaignInvoices?.length || 0})`,
               value: 'invoices',
             },
-            {
-              label: `Logistics (${campaign?.logistic?.length || 0})`,
-              value: 'logistics',
-            },
+            // {
+            //   label: `Logistics (${campaign?.logistic?.length || 0})`,
+            //   value: 'logistics',
+            // },
           ].map((tab) => (
             <Button
               key={tab.value}

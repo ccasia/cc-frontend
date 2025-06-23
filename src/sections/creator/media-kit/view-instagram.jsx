@@ -1,7 +1,7 @@
 import React from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { keyframes } from '@emotion/react';
+// import { keyframes } from '@emotion/react';
 
 import {
   Box,
@@ -36,10 +36,10 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
-const typeAnimation = keyframes`
-  from { width: 0; }
-  to { width: 100%; }
-`;
+// const typeAnimation = keyframes`
+//   from { width: 0; }
+//   to { width: 100%; }
+// `;
 
 const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const theme = useTheme();
@@ -299,11 +299,11 @@ TopContentGrid.propTypes = {
   mobileCarousel: PropTypes.bool,
 };
 
-const MediaKitSocialContent = ({ instagram }) => {
+const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
   const { user } = useAuthContext();
   const instagramData = useSocialMediaData((state) => state.instagram);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
 
   // Get the real data from store
   const realTopContent = instagramData?.medias?.sortedVideos;
@@ -436,4 +436,5 @@ export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
   instagram: PropTypes.object,
+  forceDesktop: PropTypes.bool,
 };
