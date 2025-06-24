@@ -86,8 +86,8 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
 
   // Filter admin activity logs
   const adminRows =
-    allRows
-      ?.filter(
+    (
+      allRows?.filter(
         (row) =>
           (row.action.includes('approved') &&
             (row.action.includes('pitch') ||
@@ -99,61 +99,49 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
           row.action.includes('sent the Agreement to') ||
           (row.action.includes('withdrew') && row.action.includes('from the campaign')) ||
           row.action.includes('requested changes on') ||
+          row.action.includes('requested changes to') ||
           row.action.includes('changed the amount from') ||
           row.action.includes('resent the Agreement to') ||
           (row.action.includes('created') && !row.action.includes('Created the Campaign')) ||
           row.action.includes('edited the Campaign Details')
-      )
-    ) ||
-    row.action.includes('rejected') && row.action.includes('pitch') ||
-    row.action.includes('sent the Agreement to') ||
-    row.action.includes('withdrew') && row.action.includes('from the campaign') ||
-    (row.action.includes('requested changes on') || row.action.includes('requested changes to')) ||
-    row.action.includes('changed the amount from') ||
-    row.action.includes('resent the Agreement to') ||
-    row.action.includes('created') && !row.action.includes('Created the Campaign') ||
-    row.action.includes('edited the Campaign Details')
-  ).map(row => {
-    // Extract submission type from the action text
-    let submissionType = 'Unknown';
-    if (row.action.includes('pitch')) {
-      submissionType = 'Pitch';
-    } else if (row.action.includes('Agreement')) {
-      submissionType = 'Agreement';
-    } else if (row.action.includes('First Draft')) {
-      submissionType = 'First Draft';
-    } else if (row.action.includes('Final Draft')) {
-      submissionType = 'Final Draft';
-    } else if (row.action.includes('Posting Link')) {
-      submissionType = 'Posting Link';
-    } else if (row.action.includes('withdrew')) {
-      submissionType = 'Withdrawal';
-    } else if (row.action.includes('created')) {
-      submissionType = 'Campaign';
-    } else if (row.action.includes('edited')) {
-      submissionType = 'Campaign';
-    } else if (row.action.includes('changed the amount')) {
-      submissionType = 'Agreement';
-    } else if (row.action.includes('requested changes')) {
-      if (row.action.includes('First Draft')) {
+      ) || []
+    ).map((row) => {
+      // Extract submission type from the action text
+      let submissionType = 'Unknown';
+
+      if (row.action.includes('pitch')) {
+        submissionType = 'Pitch';
+      } else if (row.action.includes('Agreement')) {
+        submissionType = 'Agreement';
+      } else if (row.action.includes('First Draft')) {
         submissionType = 'First Draft';
       } else if (row.action.includes('Final Draft')) {
         submissionType = 'Final Draft';
       } else if (row.action.includes('Posting Link')) {
         submissionType = 'Posting Link';
-      } else if (row.action.includes('Agreement')) {
+      } else if (row.action.includes('withdrew')) {
+        submissionType = 'Withdrawal';
+      } else if (row.action.includes('created') || row.action.includes('edited')) {
+        submissionType = 'Campaign';
+      } else if (row.action.includes('changed the amount')) {
         submissionType = 'Agreement';
-      } else {
-        submissionType = 'Unknown';
+      } else if (row.action.includes('requested changes')) {
+        if (row.action.includes('First Draft')) {
+          submissionType = 'First Draft';
+        } else if (row.action.includes('Final Draft')) {
+          submissionType = 'Final Draft';
+        } else if (row.action.includes('Posting Link')) {
+          submissionType = 'Posting Link';
+        } else if (row.action.includes('Agreement')) {
+          submissionType = 'Agreement';
+        }
       }
-    }
-    
-    return {
-      ...row,
-      submissionType
-    };
-  }) || [];
 
+      return {
+        ...row,
+        submissionType,
+      };
+    }) || [];
 
   const getRows = () => {
     switch (currentTab) {
@@ -412,14 +400,29 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
         <Scrollbar sx={{ maxHeight: '60vh', minHeight: '60vh' }}>
           {rows?.length > 0 ? (
             <Box>
-                <Table sx={{ minWidth: 650 }}>
-                  <TableHead>
-                    <TableRow>
+              <Table sx={{ minWidth: 650 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      width={currentTab === 'creator' || currentTab === 'admin' ? '25%' : '30%'}
+                      sx={{
+                        pl: 2,
+                        py: 2,
+                        fontWeight: 700,
+                        color: '#000000',
+                        backgroundColor: '#f8f9fa',
+                        borderBottom: '2px solid #e9ecef',
+                        fontSize: '0.8rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      🕐 Date & Time
+                    </TableCell>
+                    {(currentTab === 'creator' || currentTab === 'admin') && (
                       <TableCell
-                        width={(currentTab === 'creator' || currentTab === 'admin') ? '25%' : '30%'}
-
+                        width="15%"
                         sx={{
-                          pl: 2,
                           py: 2,
                           fontWeight: 700,
                           color: '#000000',
@@ -430,401 +433,382 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                           letterSpacing: 0.5,
                         }}
                       >
-                        🕐 Date & Time
+                        🏷️ Type
                       </TableCell>
-                      {(currentTab === 'creator' || currentTab === 'admin') && (
-                        <TableCell
-                          width="15%"
-                          sx={{
-                            py: 2,
-                            fontWeight: 700,
-                            color: '#000000',
+                    )}
+                    <TableCell
+                      width={currentTab === 'creator' || currentTab === 'admin' ? '38%' : '50%'}
+                      sx={{
+                        py: 2,
+                        fontWeight: 700,
+                        color: '#000000',
+                        backgroundColor: '#f8f9fa',
+                        borderBottom: '2px solid #e9ecef',
+                        fontSize: '0.8rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      ⚡ Action
+                    </TableCell>
+                    <TableCell
+                      width={currentTab === 'creator' || currentTab === 'admin' ? '22%' : '20%'}
+                      sx={{
+                        pr: 2,
+                        py: 2,
+                        fontWeight: 700,
+                        color: '#000000',
+                        backgroundColor: '#f8f9fa',
+                        borderBottom: '2px solid #e9ecef',
+                        fontSize: '0.8rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      👤 Performed By
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {rows.map((row, index) => {
+                    // Select icon based on action type with varied colors
+                    let actionIcon = 'solar:info-circle-bold';
+                    let actionColor = '#6b7280';
+
+                    if (
+                      row.action.toLowerCase().includes('created') ||
+                      row.action.toLowerCase().includes('generated')
+                    ) {
+                      actionIcon = 'solar:add-circle-bold';
+                      actionColor = '#10b981';
+                    } else if (row.action.toLowerCase().includes('updated')) {
+                      actionIcon = 'solar:pen-bold';
+                      actionColor = '#f59e0b';
+                    } else if (
+                      row.action.toLowerCase().includes('deleted') ||
+                      row.action.toLowerCase().includes('removed')
+                    ) {
+                      actionIcon = 'solar:trash-bin-minimalistic-bold';
+                      actionColor = '#ef4444';
+                    } else if (row.action.toLowerCase().includes('approved')) {
+                      actionIcon = 'solar:check-circle-bold';
+                      actionColor = '#10b981';
+                    } else if (row.action.toLowerCase().includes('rejected')) {
+                      actionIcon = 'solar:close-circle-bold';
+                      actionColor = '#ef4444';
+                    } else if (row.action.toLowerCase().includes('requested changes')) {
+                      actionIcon = 'solar:refresh-circle-bold';
+                      actionColor = '#f59e0b';
+                    } else if (row.action.toLowerCase().includes('shortlisted')) {
+                      actionIcon = 'solar:star-bold';
+                      actionColor = '#fbbf24';
+                    } else if (row.action.toLowerCase().includes('invoice')) {
+                      actionIcon = 'solar:bill-list-bold';
+                      actionColor = '#8b5cf6';
+                    } else if (row.action.toLowerCase().includes('submitted')) {
+                      actionIcon = 'solar:upload-bold';
+                      actionColor = '#3b82f6';
+                    }
+
+                    return (
+                      <TableRow
+                        key={row.id}
+                        sx={{
+                          transition: 'all 0.2s ease-in-out',
+                          '&:hover': {
                             backgroundColor: '#f8f9fa',
-                            borderBottom: '2px solid #e9ecef',
-                            fontSize: '0.8rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: 0.5,
-                          }}
-                        >
-                          🏷️ Type
-                        </TableCell>
-                      )}
-                      <TableCell
-
-                        width={(currentTab === 'creator' || currentTab === 'admin') ? '38%' : '50%'}
-
-                        sx={{
-                          py: 2,
-                          fontWeight: 700,
-                          color: '#000000',
-                          backgroundColor: '#f8f9fa',
-                          borderBottom: '2px solid #e9ecef',
-                          fontSize: '0.8rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: 0.5,
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                          },
+                          '&:last-of-type td': {
+                            borderBottom: 0,
+                          },
+                          backgroundColor: index % 2 === 0 ? '#ffffff' : '#fafbfc',
                         }}
                       >
-                        ⚡ Action
-                      </TableCell>
-                      <TableCell
-                        width={(currentTab === 'creator' || currentTab === 'admin') ? '22%' : '20%'}
-
-                        sx={{
-                          pr: 2,
-                          py: 2,
-                          fontWeight: 700,
-                          color: '#000000',
-                          backgroundColor: '#f8f9fa',
-                          borderBottom: '2px solid #e9ecef',
-                          fontSize: '0.8rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: 0.5,
-                        }}
-                      >
-                        👤 Performed By
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-                    {rows.map((row, index) => {
-                      // Select icon based on action type with varied colors
-                      let actionIcon = 'solar:info-circle-bold';
-                      let actionColor = '#6b7280';
-
-                      if (
-                        row.action.toLowerCase().includes('created') ||
-                        row.action.toLowerCase().includes('generated')
-                      ) {
-                        actionIcon = 'solar:add-circle-bold';
-                        actionColor = '#10b981';
-                      } else if (row.action.toLowerCase().includes('updated')) {
-                        actionIcon = 'solar:pen-bold';
-                        actionColor = '#f59e0b';
-                      } else if (
-                        row.action.toLowerCase().includes('deleted') ||
-                        row.action.toLowerCase().includes('removed')
-                      ) {
-                        actionIcon = 'solar:trash-bin-minimalistic-bold';
-                        actionColor = '#ef4444';
-                      } else if (row.action.toLowerCase().includes('approved')) {
-                        actionIcon = 'solar:check-circle-bold';
-                        actionColor = '#10b981';
-                      } else if (row.action.toLowerCase().includes('rejected')) {
-                        actionIcon = 'solar:close-circle-bold';
-                        actionColor = '#ef4444';
-                      } else if (row.action.toLowerCase().includes('requested changes')) {
-                        actionIcon = 'solar:refresh-circle-bold';
-                        actionColor = '#f59e0b';
-                      } else if (row.action.toLowerCase().includes('shortlisted')) {
-                        actionIcon = 'solar:star-bold';
-                        actionColor = '#fbbf24';
-                      } else if (row.action.toLowerCase().includes('invoice')) {
-                        actionIcon = 'solar:bill-list-bold';
-                        actionColor = '#8b5cf6';
-                      } else if (row.action.toLowerCase().includes('submitted')) {
-                        actionIcon = 'solar:upload-bold';
-                        actionColor = '#3b82f6';
-                      }
-
-                      return (
-                        <TableRow
-                          key={row.id}
+                        <TableCell
                           sx={{
-                            transition: 'all 0.2s ease-in-out',
-                            '&:hover': {
-                              backgroundColor: '#f8f9fa',
-                              transform: 'translateY(-1px)',
-                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                            },
-                            '&:last-of-type td': {
-                              borderBottom: 0,
-                            },
-                            backgroundColor: index % 2 === 0 ? '#ffffff' : '#fafbfc',
+                            pl: 2,
+                            py: 1.5,
+                            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
                           }}
                         >
+                          <Box
+                            sx={{
+                              backgroundColor: '#f8f9fa',
+                              borderRadius: 1.5,
+                              px: 1.5,
+                              py: 0.75,
+                              border: '1px solid #e9ecef',
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#212529',
+                                fontWeight: 400,
+                                fontSize: '0.8rem',
+                              }}
+                            >
+                              {row.datePerformed}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+
+                        {(currentTab === 'creator' || currentTab === 'admin') && (
                           <TableCell
                             sx={{
-                              pl: 2,
                               py: 1.5,
                               borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
                             }}
                           >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                textTransform: 'uppercase',
+                                fontWeight: 700,
+                                display: 'inline-block',
+                                px: 1.5,
+                                py: 0.5,
+                                fontSize: '0.75rem',
+                                borderRadius: 0.8,
+                                bgcolor: 'white',
+                                border: '1px solid',
+                                borderBottom: '3px solid',
+                                // Creator activity colors
+                                ...(currentTab === 'creator' &&
+                                  row.submissionType === 'Agreement' && {
+                                    color: '#1976d2',
+                                    borderColor: '#1976d2',
+                                  }),
+                                ...(currentTab === 'creator' &&
+                                  row.submissionType === 'First Draft' && {
+                                    color: '#ed6c02',
+                                    borderColor: '#ed6c02',
+                                  }),
+                                ...(currentTab === 'creator' &&
+                                  row.submissionType === 'Final Draft' && {
+                                    color: '#9c27b0',
+                                    borderColor: '#9c27b0',
+                                  }),
+                                ...(currentTab === 'creator' &&
+                                  row.submissionType === 'Posting Link' && {
+                                    color: '#2e7d32',
+                                    borderColor: '#2e7d32',
+                                  }),
+                                ...(currentTab === 'creator' &&
+                                  row.submissionType === 'Pitch' && {
+                                    color: '#f57c00',
+                                    borderColor: '#f57c00',
+                                  }),
+                                // Admin activity colors
+                                ...(currentTab === 'admin' &&
+                                  row.submissionType === 'Agreement' && {
+                                    color: '#1976d2',
+                                    borderColor: '#1976d2',
+                                  }),
+                                ...(currentTab === 'admin' &&
+                                  row.submissionType === 'First Draft' && {
+                                    color: '#ed6c02',
+                                    borderColor: '#ed6c02',
+                                  }),
+                                ...(currentTab === 'admin' &&
+                                  row.submissionType === 'Final Draft' && {
+                                    color: '#9c27b0',
+                                    borderColor: '#9c27b0',
+                                  }),
+                                ...(currentTab === 'admin' &&
+                                  row.submissionType === 'Posting Link' && {
+                                    color: '#2e7d32',
+                                    borderColor: '#2e7d32',
+                                  }),
+                                ...(currentTab === 'admin' &&
+                                  row.submissionType === 'Pitch' && {
+                                    color: '#f57c00',
+                                    borderColor: '#f57c00',
+                                  }),
+                                ...(currentTab === 'admin' &&
+                                  row.submissionType === 'Withdrawal' && {
+                                    color: '#f44336',
+                                    borderColor: '#f44336',
+                                  }),
+                                ...(currentTab === 'admin' &&
+                                  row.submissionType === 'Campaign' && {
+                                    color: '#673ab7',
+                                    borderColor: '#673ab7',
+                                  }),
+                              }}
+                            >
+                              {row.submissionType}
+                            </Typography>
+                          </TableCell>
+                        )}
+
+                        <TableCell
+                          sx={{
+                            py: 1.5,
+                            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                             <Box
                               sx={{
-                                backgroundColor: '#f8f9fa',
-                                borderRadius: 1.5,
-                                px: 1.5,
-                                py: 0.75,
-                                border: '1px solid #e9ecef',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                background: `linear-gradient(45deg, ${actionColor}15, ${actionColor}08)`,
+                                border: `2px solid ${actionColor}30`,
+                                color: actionColor,
                               }}
                             >
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  color: '#212529',
-                                  fontWeight: 400,
-                                  fontSize: '0.8rem',
-                                }}
-                              >
-                                {row.datePerformed}
-                              </Typography>
+                              <Iconify icon={actionIcon} width={16} />
                             </Box>
-                          </TableCell>
+                            <Box sx={{ flex: 1 }}>
+                              {(() => {
+                                const actionText = row.action;
 
-                          {(currentTab === 'creator' || currentTab === 'admin') && (
-                            <TableCell
-                              sx={{
-                                py: 1.5,
-                                borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-                              }}
-                            >
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  textTransform: 'uppercase',
-                                  fontWeight: 700,
-                                  display: 'inline-block',
-                                  px: 1.5,
-                                  py: 0.5,
-                                  fontSize: '0.75rem',
-                                  borderRadius: 0.8,
-                                  bgcolor: 'white',
-                                  border: '1px solid',
-                                  borderBottom: '3px solid',
-                                  // Creator activity colors
-                                  ...(currentTab === 'creator' &&
-                                    row.submissionType === 'Agreement' && {
-                                      color: '#1976d2',
-                                      borderColor: '#1976d2',
-                                    }),
-                                  ...(currentTab === 'creator' &&
-                                    row.submissionType === 'First Draft' && {
-                                      color: '#ed6c02',
-                                      borderColor: '#ed6c02',
-                                    }),
-                                  ...(currentTab === 'creator' &&
-                                    row.submissionType === 'Final Draft' && {
-                                      color: '#9c27b0',
-                                      borderColor: '#9c27b0',
-                                    }),
-                                  ...(currentTab === 'creator' &&
-                                    row.submissionType === 'Posting Link' && {
-                                      color: '#2e7d32',
-                                      borderColor: '#2e7d32',
-                                    }),
-                                  ...(currentTab === 'creator' &&
-                                    row.submissionType === 'Pitch' && {
-                                      color: '#f57c00',
-                                      borderColor: '#f57c00',
-                                    }),
-                                  // Admin activity colors
-                                  ...(currentTab === 'admin' &&
-                                    row.submissionType === 'Agreement' && {
-                                      color: '#1976d2',
-                                      borderColor: '#1976d2',
-                                    }),
-                                  ...(currentTab === 'admin' &&
-                                    row.submissionType === 'First Draft' && {
-                                      color: '#ed6c02',
-                                      borderColor: '#ed6c02',
-                                    }),
-                                  ...(currentTab === 'admin' &&
-                                    row.submissionType === 'Final Draft' && {
-                                      color: '#9c27b0',
-                                      borderColor: '#9c27b0',
-                                    }),
-                                  ...(currentTab === 'admin' &&
-                                    row.submissionType === 'Posting Link' && {
-                                      color: '#2e7d32',
-                                      borderColor: '#2e7d32',
-                                    }),
-                                  ...(currentTab === 'admin' &&
-                                    row.submissionType === 'Pitch' && {
-                                      color: '#f57c00',
-                                      borderColor: '#f57c00',
-                                    }),
-                                  ...(currentTab === 'admin' &&
-                                    row.submissionType === 'Withdrawal' && {
-                                      color: '#f44336',
-                                      borderColor: '#f44336',
-                                    }),
-                                  ...(currentTab === 'admin' &&
-                                    row.submissionType === 'Campaign' && {
-                                      color: '#673ab7',
-                                      borderColor: '#673ab7',
-                                    }),
-                                }}
-                              >
-                                {row.submissionType}
-                              </Typography>
-                            </TableCell>
-                          )}
+                                // Check if this is a creator activity
+                                if (actionText.toLowerCase().includes('creator')) {
+                                  // Extract creator name from quotes
+                                  const creatorMatch = actionText.match(/Creator "([^"]+)"/);
+                                  if (creatorMatch) {
+                                    const creatorName = creatorMatch[1];
+                                    const beforeCreator = actionText.substring(
+                                      0,
+                                      creatorMatch.index
+                                    );
+                                    const afterCreator = actionText.substring(
+                                      creatorMatch.index + creatorMatch[0].length
+                                    );
 
-                          <TableCell
-                            sx={{
-                              py: 1.5,
-                              borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: '50%',
-                                  background: `linear-gradient(45deg, ${actionColor}15, ${actionColor}08)`,
-                                  border: `2px solid ${actionColor}30`,
-                                  color: actionColor,
-                                }}
-                              >
-                                <Iconify icon={actionIcon} width={16} />
-                              </Box>
-                              <Box sx={{ flex: 1 }}>
-                                {(() => {
-                                  const actionText = row.action;
-
-                                  // Check if this is a creator activity
-                                  if (actionText.toLowerCase().includes('creator')) {
-                                    // Extract creator name from quotes
-                                    const creatorMatch = actionText.match(/Creator "([^"]+)"/);
-                                    if (creatorMatch) {
-                                      const creatorName = creatorMatch[1];
-                                      const beforeCreator = actionText.substring(
-                                        0,
-                                        creatorMatch.index
-                                      );
-                                      const afterCreator = actionText.substring(
-                                        creatorMatch.index + creatorMatch[0].length
-                                      );
-
-                                      return (
+                                    return (
+                                      <Typography
+                                        variant="body2"
+                                        sx={{
+                                          lineHeight: 1.4,
+                                          fontSize: '0.875rem',
+                                          color: '#212529',
+                                        }}
+                                      >
+                                        {beforeCreator}Creator{' '}
                                         <Typography
-                                          variant="body2"
+                                          component="span"
                                           sx={{
-                                            lineHeight: 1.4,
+                                            fontWeight: 700,
+                                            color: '#000000',
+                                            backgroundColor: '#f8f9fa',
+                                            px: 0.75,
+                                            py: 0.25,
+                                            borderRadius: 0.75,
                                             fontSize: '0.875rem',
-                                            color: '#212529',
+                                            border: '1px solid #e9ecef',
                                           }}
                                         >
-                                          {beforeCreator}Creator{' '}
-                                          <Typography
-                                            component="span"
-                                            sx={{
-                                              fontWeight: 700,
-                                              color: '#000000',
-                                              backgroundColor: '#f8f9fa',
-                                              px: 0.75,
-                                              py: 0.25,
-                                              borderRadius: 0.75,
-                                              fontSize: '0.875rem',
-                                              border: '1px solid #e9ecef',
-                                            }}
-                                          >
-                                            {creatorName}
-                                          </Typography>
-                                          {afterCreator}
+                                          {creatorName}
                                         </Typography>
-                                      );
-                                    }
+                                        {afterCreator}
+                                      </Typography>
+                                    );
                                   }
+                                }
 
-                                  // For admin activities, make admin names bold
-                                  if (actionText.toLowerCase().includes('admin')) {
-                                    const adminMatch = actionText.match(/Admin "([^"]+)"/);
-                                    if (adminMatch) {
-                                      const adminName = adminMatch[1];
-                                      const beforeAdmin = actionText.substring(0, adminMatch.index);
-                                      const afterAdmin = actionText.substring(
-                                        adminMatch.index + adminMatch[0].length
-                                      );
+                                // For admin activities, make admin names bold
+                                if (actionText.toLowerCase().includes('admin')) {
+                                  const adminMatch = actionText.match(/Admin "([^"]+)"/);
+                                  if (adminMatch) {
+                                    const adminName = adminMatch[1];
+                                    const beforeAdmin = actionText.substring(0, adminMatch.index);
+                                    const afterAdmin = actionText.substring(
+                                      adminMatch.index + adminMatch[0].length
+                                    );
 
-                                      return (
+                                    return (
+                                      <Typography
+                                        variant="body2"
+                                        sx={{
+                                          lineHeight: 1.4,
+                                          fontSize: '0.875rem',
+                                          color: '#212529',
+                                        }}
+                                      >
+                                        {beforeAdmin}Admin{' '}
                                         <Typography
-                                          variant="body2"
+                                          component="span"
                                           sx={{
-                                            lineHeight: 1.4,
+                                            fontWeight: 700,
+                                            color: '#000000',
+                                            backgroundColor: '#f8f9fa',
+                                            px: 0.75,
+                                            py: 0.25,
+                                            borderRadius: 0.75,
                                             fontSize: '0.875rem',
-                                            color: '#212529',
+                                            border: '1px solid #e9ecef',
                                           }}
                                         >
-                                          {beforeAdmin}Admin{' '}
-                                          <Typography
-                                            component="span"
-                                            sx={{
-                                              fontWeight: 700,
-                                              color: '#000000',
-                                              backgroundColor: '#f8f9fa',
-                                              px: 0.75,
-                                              py: 0.25,
-                                              borderRadius: 0.75,
-                                              fontSize: '0.875rem',
-                                              border: '1px solid #e9ecef',
-                                            }}
-                                          >
-                                            {adminName}
-                                          </Typography>
-                                          {afterAdmin}
+                                          {adminName}
                                         </Typography>
-                                      );
-                                    }
+                                        {afterAdmin}
+                                      </Typography>
+                                    );
                                   }
+                                }
 
-                                  // Default: return original text
-                                  return (
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        lineHeight: 1.4,
-                                        fontSize: '0.875rem',
-                                        color: '#212529',
-                                      }}
-                                    >
-                                      {actionText}
-                                    </Typography>
-                                  );
-                                })()}
-                              </Box>
+                                // Default: return original text
+                                return (
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      lineHeight: 1.4,
+                                      fontSize: '0.875rem',
+                                      color: '#212529',
+                                    }}
+                                  >
+                                    {actionText}
+                                  </Typography>
+                                );
+                              })()}
                             </Box>
-                          </TableCell>
+                          </Box>
+                        </TableCell>
 
-                          <TableCell
+                        <TableCell
+                          sx={{
+                            pr: 2,
+                            py: 1.5,
+                            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+                          }}
+                        >
+                          <Box
                             sx={{
-                              pr: 2,
-                              py: 1.5,
-                              borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+                              backgroundColor: '#f8f9fa',
+                              borderRadius: 1.5,
+                              px: 1.5,
+                              py: 0.75,
+                              border: '1px solid #e9ecef',
+                              textAlign: 'center',
                             }}
                           >
-                            <Box
+                            <Typography
+                              variant="body2"
                               sx={{
-                                backgroundColor: '#f8f9fa',
-                                borderRadius: 1.5,
-                                px: 1.5,
-                                py: 0.75,
-                                border: '1px solid #e9ecef',
-                                textAlign: 'center',
+                                color: '#212529',
+                                fontWeight: 400,
+                                fontSize: '0.8rem',
                               }}
                             >
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  color: '#212529',
-                                  fontWeight: 400,
-                                  fontSize: '0.8rem',
-                                }}
-                              >
-                                {row.performedBy}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                              {row.performedBy}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </Box>
           ) : (
             <Box
