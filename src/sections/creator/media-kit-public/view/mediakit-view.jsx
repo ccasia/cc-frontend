@@ -413,7 +413,7 @@ const MediaKit = ({ id, noBigScreen }) => {
         const canvasWidth = 1200;
         const horizontalPadding = (canvasWidth - elementWidth) / 2;
 
-        // Take the screenshot with centering
+        // Take the screenshot with centering (shifted 3px to the right)
         const dataUrl = await toPng(element, {
           quality: 0.95,
           pixelRatio: 2,
@@ -422,7 +422,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           width: canvasWidth, // canvas width
           cacheBust: true,
           style: {
-            transform: `translate(${horizontalPadding}px, 40px)`, // centering horizontally and add top margin
+            transform: `translate(${horizontalPadding + 3}px, 40px)`, // centering horizontally and add top margin, shifted 3px right
             transformOrigin: 'top left',
           },
         });
@@ -525,23 +525,23 @@ const MediaKit = ({ id, noBigScreen }) => {
       //   let desktopButtonDisplay = null;
       //   let backButtonDisplay = null;
       //   let logoContainerOriginalMargin = null;
-      //   
+      //
       //   if (desktopShareButtonRef.current) {
       //     desktopButtonDisplay = desktopShareButtonRef.current.style.display;
       //     desktopShareButtonRef.current.style.display = 'none';
       //   }
-      //   
+      //
       //   if (backButtonRef.current) {
       //     backButtonDisplay = backButtonRef.current.style.display;
       //     backButtonRef.current.style.display = 'none';
       //   }
-      //   
+      //
       //   // Add top margin to logo container to compensate for hidden back button
       //   if (logoContainerRef.current) {
       //     logoContainerOriginalMargin = logoContainerRef.current.style.marginTop;
       //     logoContainerRef.current.style.marginTop = '32px';
       //   }
-      //   
+      //
       //   window.scrollTo(0, 0);
 
       //   // Ensure all images and iframes are loaded
@@ -567,22 +567,22 @@ const MediaKit = ({ id, noBigScreen }) => {
       //   if (desktopShareButtonRef.current) {
       //     desktopShareButtonRef.current.style.display = desktopButtonDisplay;
       //   }
-      //   
+      //
       //   if (backButtonRef.current) {
       //     backButtonRef.current.style.display = backButtonDisplay;
       //   }
-      //   
+      //
       //   // Restore logo container margin
       //   if (logoContainerRef.current) {
       //     logoContainerRef.current.style.marginTop = logoContainerOriginalMargin;
       //   }
-      //   
+      //
       //   window.scrollTo(0, scrollTop);
       // } else {
       //   const styleFixForMedia = document.createElement('style');
       //   styleFixForMedia.textContent = getScreenshotStyles();
       //   document.head.appendChild(styleFixForMedia);
-        
+
       // Use hidden desktop layout method for all PDF captures
       const styleFixForMedia = document.createElement('style');
       styleFixForMedia.textContent = getScreenshotStyles();
@@ -629,7 +629,7 @@ const MediaKit = ({ id, noBigScreen }) => {
         width: canvasWidth,
         cacheBust: true,
         style: {
-          transform: `translate(${horizontalPadding}px, 40px)`,
+          transform: `translate(${horizontalPadding + 3}px, 40px)`,
           transformOrigin: 'top left',
         },
       });

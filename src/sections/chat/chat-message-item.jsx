@@ -1,21 +1,21 @@
-import PropTypes from 'prop-types';
+/* eslint-disable jsx-a11y/media-has-caption */
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Link from '@mui/material/Link';
 import Dialog from '@mui/material/Dialog';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FileThumbnail from 'src/components/file-thumbnail';
-import Image from 'src/components/image';
 
 // ----------------------------------------------------------------------
 
@@ -105,7 +105,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
               }}
               onClick={handleImageClick}
             />
-            
+
             {/* Loading indicator for optimistic files */}
             {isOptimisticFile && (
               <Box
@@ -123,7 +123,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
               </Box>
             )}
           </Box>
-          
+
           {/* Image Modal */}
           <Dialog
             open={imageModalOpen}
@@ -165,7 +165,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
               >
                 <Iconify icon="eva:close-fill" />
               </IconButton>
-              
+
               <Image
                 src={file}
                 alt="attachment"
@@ -216,7 +216,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
                 <source src={file} type={fileType} />
                 Your browser does not support the video tag.
               </video>
-              
+
               {/* Play overlay */}
               <Box
                 className="play-overlay"
@@ -235,7 +235,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
                 <Iconify icon="eva:play-circle-fill" sx={{ color: 'white', fontSize: 40 }} />
               </Box>
             </Box>
-            
+
             {/* Loading indicator for optimistic files */}
             {isOptimisticFile && (
               <Box
@@ -253,7 +253,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
               </Box>
             )}
           </Box>
-          
+
           {/* Video Modal */}
           <Dialog
             open={videoModalOpen}
@@ -295,7 +295,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
               >
                 <Iconify icon="eva:close-fill" />
               </IconButton>
-              
+
               <video
                 controls
                 autoPlay
@@ -318,9 +318,9 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
     if (isAudio) {
       return (
         <Box sx={{ mt: 1, maxWidth: 300, position: 'relative' }}>
-          <audio 
-            controls 
-            style={{ 
+          <audio
+            controls
+            style={{
               width: '100%',
               opacity: isOptimisticFile ? 0.7 : 1,
             }}
@@ -328,7 +328,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
             <source src={file} type={fileType} />
             Your browser does not support the audio tag.
           </audio>
-          
+
           {/* Loading indicator for optimistic files */}
           {isOptimisticFile && (
             <Box
@@ -364,10 +364,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
           position: 'relative',
         }}
       >
-        <FileThumbnail
-          file={fileType}
-          sx={{ width: 32, height: 32, flexShrink: 0 }}
-        />
+        <FileThumbnail file={fileType} sx={{ width: 32, height: 32, flexShrink: 0 }} />
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
           <Typography variant="body2" noWrap>
             {getFileName(file)}
@@ -376,7 +373,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
             {fileType}
           </Typography>
         </Box>
-        
+
         {isOptimisticFile ? (
           <CircularProgress size={16} />
         ) : (
@@ -449,7 +446,7 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
         </Typography>
       )}
       {renderAttachment()}
-      
+
       {/* Sending indicator for optimistic messages */}
       {isOptimistic && !file && (
         <Box
@@ -467,10 +464,10 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
 
   if (isGrouped && !isMe) {
     return (
-      <Stack 
-        direction="row" 
-        justifyContent="unset" 
-        sx={{ 
+      <Stack
+        direction="row"
+        justifyContent="unset"
+        sx={{
           mb: 0.5,
           ml: '44px',
         }}
@@ -509,24 +506,20 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
           {sender?.name}
         </Typography>
       )}
-      <Stack 
-        direction="row" 
-        justifyContent={isMe ? 'flex-end' : 'unset'} 
-        alignItems="flex-start"
-      >
+      <Stack direction="row" justifyContent={isMe ? 'flex-end' : 'unset'} alignItems="flex-start">
         {!isMe && (
-          <Avatar 
-            alt={sender?.name} 
-            src={sender?.photoURL} 
-            sx={{ 
-              width: 32, 
-              height: 32, 
+          <Avatar
+            alt={sender?.name}
+            src={sender?.photoURL}
+            sx={{
+              width: 32,
+              height: 32,
               mr: 1,
               mt: 0,
-            }} 
+            }}
           />
         )}
-        
+
         <Stack
           direction="row"
           alignItems="center"

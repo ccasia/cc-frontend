@@ -18,13 +18,11 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import Photos from './finalDraft/photos';
-import DraftVideos from './finalDraft/draft-videos';
 import RawFootages from './finalDraft/raw-footage';
-import FeedbackDisplay from './finalDraft/feedback-display';
+import DraftVideos from './finalDraft/draft-videos';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 

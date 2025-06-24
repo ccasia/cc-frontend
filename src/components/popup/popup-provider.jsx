@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useContext, useCallback, createContext, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useContext, useCallback, createContext } from 'react';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -34,6 +34,7 @@ const PopupProvider = ({ children }) => {
   }, []);
 
   // Listen for shortlisting socket events
+  // eslint-disable-next-line consistent-return
   useEffect(() => {
     if (socket && user?.role === 'creator') {
       const handleShortlisted = (data) => {
@@ -65,7 +66,7 @@ const PopupProvider = ({ children }) => {
   return (
     <PopupContext.Provider value={memoizedValue}>
       {children}
-      
+
       {/* Shortlisting Popup */}
       <ShortlistingPopup
         open={shortlistingPopup.open}

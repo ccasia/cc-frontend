@@ -1,6 +1,7 @@
+/* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
-import PropTypes from 'prop-types';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
 import {
   Box,
@@ -41,55 +42,67 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
       }));
 
   // Filter invoice-related logs
-  const invoiceRows = allRows?.filter(row => 
-    row.action.toLowerCase().includes('invoice') &&
-    !row.action.toLowerCase().includes('during withdrawal') && // Exclude withdrawal-related invoice logs
-    (
-      row.action.toLowerCase().includes('deleted invoice') ||
-      row.action.toLowerCase().includes('approved invoice') ||
-      row.action.toLowerCase().includes('was generated')
-    )
-  ) || [];
+  const invoiceRows =
+    allRows?.filter(
+      (row) =>
+        row.action.toLowerCase().includes('invoice') &&
+        !row.action.toLowerCase().includes('during withdrawal') && // Exclude withdrawal-related invoice logs
+        (row.action.toLowerCase().includes('deleted invoice') ||
+          row.action.toLowerCase().includes('approved invoice') ||
+          row.action.toLowerCase().includes('was generated'))
+    ) || [];
 
   // Filter creator activity logs
-  const creatorRows = allRows?.filter(row => 
-    (
-      row.action.includes('pitched for') ||
-      row.action.includes('submitted the Agreement') ||
-      row.action.includes('submitted First Draft') ||
-      row.action.includes('submitted Final Draft') ||
-      row.action.includes('submitted Posting Link')
-    )
-  ).map(row => {
-    // Extract submission type from the action text
-    let submissionType = 'Unknown';
-    if (row.action.includes('pitched for')) {
-      submissionType = 'Pitch';
-    } else if (row.action.includes('submitted the Agreement')) {
-      submissionType = 'Agreement';
-    } else if (row.action.includes('submitted First Draft')) {
-      submissionType = 'First Draft';
-    } else if (row.action.includes('submitted Final Draft')) {
-      submissionType = 'Final Draft';
-    } else if (row.action.includes('submitted Posting Link')) {
-      submissionType = 'Posting Link';
-    }
-    
-    return {
-      ...row,
-      submissionType
-    };
-  }) || [];
+  const creatorRows =
+    allRows
+      ?.filter(
+        (row) =>
+          row.action.includes('pitched for') ||
+          row.action.includes('submitted the Agreement') ||
+          row.action.includes('submitted First Draft') ||
+          row.action.includes('submitted Final Draft') ||
+          row.action.includes('submitted Posting Link')
+      )
+      .map((row) => {
+        // Extract submission type from the action text
+        let submissionType = 'Unknown';
+        if (row.action.includes('pitched for')) {
+          submissionType = 'Pitch';
+        } else if (row.action.includes('submitted the Agreement')) {
+          submissionType = 'Agreement';
+        } else if (row.action.includes('submitted First Draft')) {
+          submissionType = 'First Draft';
+        } else if (row.action.includes('submitted Final Draft')) {
+          submissionType = 'Final Draft';
+        } else if (row.action.includes('submitted Posting Link')) {
+          submissionType = 'Posting Link';
+        }
+
+        return {
+          ...row,
+          submissionType,
+        };
+      }) || [];
 
   // Filter admin activity logs
-  const adminRows = allRows?.filter(row => 
-    (
-      row.action.includes('approved') && (
-        row.action.includes('pitch') ||
-        row.action.includes('Agreement') ||
-        row.action.includes('First Draft') ||
-        row.action.includes('Final Draft') ||
-        row.action.includes('Posting Link')
+  const adminRows =
+    allRows
+      ?.filter(
+        (row) =>
+          (row.action.includes('approved') &&
+            (row.action.includes('pitch') ||
+              row.action.includes('Agreement') ||
+              row.action.includes('First Draft') ||
+              row.action.includes('Final Draft') ||
+              row.action.includes('Posting Link'))) ||
+          (row.action.includes('rejected') && row.action.includes('pitch')) ||
+          row.action.includes('sent the Agreement to') ||
+          (row.action.includes('withdrew') && row.action.includes('from the campaign')) ||
+          row.action.includes('requested changes on') ||
+          row.action.includes('changed the amount from') ||
+          row.action.includes('resent the Agreement to') ||
+          (row.action.includes('created') && !row.action.includes('Created the Campaign')) ||
+          row.action.includes('edited the Campaign Details')
       )
     ) ||
     row.action.includes('rejected') && row.action.includes('pitch') ||
@@ -141,6 +154,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
     };
   }) || [];
 
+
   const getRows = () => {
     switch (currentTab) {
       case 'invoice':
@@ -157,7 +171,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
   const rows = getRows();
 
   const campaignImage = campaign?.campaignBrief?.images?.[0] || '';
-  
+
   // fallback
   const getFirstLetter = (name) => (name ? name.charAt(0).toUpperCase() : 'C');
 
@@ -203,7 +217,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
         >
           <Iconify icon="eva:close-fill" width={20} />
         </IconButton>
-      
+
         <DialogTitle sx={{ pt: 4, pb: 3, pr: 6 }}>
           <Stack direction="row" spacing={3} alignItems="center">
             <Box
@@ -265,7 +279,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                 </Avatar>
               )}
             </Box>
-            
+
             <Box sx={{ flex: 1 }}>
               <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
                 <Typography
@@ -302,11 +316,11 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                   </Typography>
                 </Box>
               </Stack>
-              
+
               {campaign?.name && (
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
+                <Typography
+                  variant="body1"
+                  sx={{
                     color: '#6c757d',
                     fontWeight: 500,
                     fontSize: '1rem',
@@ -365,26 +379,26 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                 },
               }}
             >
-              <Tab 
-                label={`All (${allRows?.length || 0})`} 
+              <Tab
+                label={`All (${allRows?.length || 0})`}
                 value="all"
                 icon={<Iconify icon="solar:list-bold" width={18} />}
                 iconPosition="start"
               />
-              <Tab 
-                label={`Invoice (${invoiceRows?.length || 0})`} 
+              <Tab
+                label={`Invoice (${invoiceRows?.length || 0})`}
                 value="invoice"
                 icon={<Iconify icon="solar:bill-list-bold" width={18} />}
                 iconPosition="start"
               />
-              <Tab 
-                label={`Creator (${creatorRows?.length || 0})`} 
+              <Tab
+                label={`Creator (${creatorRows?.length || 0})`}
                 value="creator"
                 icon={<Iconify icon="solar:user-bold" width={18} />}
                 iconPosition="start"
               />
-              <Tab 
-                label={`Admin (${adminRows?.length || 0})`} 
+              <Tab
+                label={`Admin (${adminRows?.length || 0})`}
                 value="admin"
                 icon={<Iconify icon="solar:shield-user-bold" width={18} />}
                 iconPosition="start"
@@ -403,6 +417,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                     <TableRow>
                       <TableCell
                         width={(currentTab === 'creator' || currentTab === 'admin') ? '25%' : '30%'}
+
                         sx={{
                           pl: 2,
                           py: 2,
@@ -435,7 +450,9 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                         </TableCell>
                       )}
                       <TableCell
+
                         width={(currentTab === 'creator' || currentTab === 'admin') ? '38%' : '50%'}
+
                         sx={{
                           py: 2,
                           fontWeight: 700,
@@ -451,6 +468,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                       </TableCell>
                       <TableCell
                         width={(currentTab === 'creator' || currentTab === 'admin') ? '22%' : '20%'}
+
                         sx={{
                           pr: 2,
                           py: 2,
@@ -467,21 +485,26 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                       </TableCell>
                     </TableRow>
                   </TableHead>
-                  
+
                   <TableBody>
                     {rows.map((row, index) => {
                       // Select icon based on action type with varied colors
                       let actionIcon = 'solar:info-circle-bold';
                       let actionColor = '#6b7280';
-                      
-                      if (row.action.toLowerCase().includes('created') || row.action.toLowerCase().includes('generated')) {
+
+                      if (
+                        row.action.toLowerCase().includes('created') ||
+                        row.action.toLowerCase().includes('generated')
+                      ) {
                         actionIcon = 'solar:add-circle-bold';
                         actionColor = '#10b981';
                       } else if (row.action.toLowerCase().includes('updated')) {
                         actionIcon = 'solar:pen-bold';
                         actionColor = '#f59e0b';
-                      } else if (row.action.toLowerCase().includes('deleted') || 
-                                row.action.toLowerCase().includes('removed')) {
+                      } else if (
+                        row.action.toLowerCase().includes('deleted') ||
+                        row.action.toLowerCase().includes('removed')
+                      ) {
                         actionIcon = 'solar:trash-bin-minimalistic-bold';
                         actionColor = '#ef4444';
                       } else if (row.action.toLowerCase().includes('approved')) {
@@ -503,10 +526,10 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                         actionIcon = 'solar:upload-bold';
                         actionColor = '#3b82f6';
                       }
-                      
+
                       return (
-                        <TableRow 
-                          key={row.id} 
+                        <TableRow
+                          key={row.id}
                           sx={{
                             transition: 'all 0.2s ease-in-out',
                             '&:hover': {
@@ -514,14 +537,14 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                               transform: 'translateY(-1px)',
                               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                             },
-                            '&:last-of-type td': { 
-                              borderBottom: 0 
+                            '&:last-of-type td': {
+                              borderBottom: 0,
                             },
                             backgroundColor: index % 2 === 0 ? '#ffffff' : '#fafbfc',
                           }}
                         >
-                          <TableCell 
-                            sx={{ 
+                          <TableCell
+                            sx={{
                               pl: 2,
                               py: 1.5,
                               borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
@@ -548,10 +571,10 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                               </Typography>
                             </Box>
                           </TableCell>
-                          
+
                           {(currentTab === 'creator' || currentTab === 'admin') && (
-                            <TableCell 
-                              sx={{ 
+                            <TableCell
+                              sx={{
                                 py: 1.5,
                                 borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
                               }}
@@ -570,64 +593,76 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                                   border: '1px solid',
                                   borderBottom: '3px solid',
                                   // Creator activity colors
-                                  ...(currentTab === 'creator' && row.submissionType === 'Agreement' && {
-                                    color: '#1976d2',
-                                    borderColor: '#1976d2',
-                                  }),
-                                  ...(currentTab === 'creator' && row.submissionType === 'First Draft' && {
-                                    color: '#ed6c02',
-                                    borderColor: '#ed6c02',
-                                  }),
-                                  ...(currentTab === 'creator' && row.submissionType === 'Final Draft' && {
-                                    color: '#9c27b0',
-                                    borderColor: '#9c27b0',
-                                  }),
-                                  ...(currentTab === 'creator' && row.submissionType === 'Posting Link' && {
-                                    color: '#2e7d32',
-                                    borderColor: '#2e7d32',
-                                  }),
-                                  ...(currentTab === 'creator' && row.submissionType === 'Pitch' && {
-                                    color: '#f57c00',
-                                    borderColor: '#f57c00',
-                                  }),
+                                  ...(currentTab === 'creator' &&
+                                    row.submissionType === 'Agreement' && {
+                                      color: '#1976d2',
+                                      borderColor: '#1976d2',
+                                    }),
+                                  ...(currentTab === 'creator' &&
+                                    row.submissionType === 'First Draft' && {
+                                      color: '#ed6c02',
+                                      borderColor: '#ed6c02',
+                                    }),
+                                  ...(currentTab === 'creator' &&
+                                    row.submissionType === 'Final Draft' && {
+                                      color: '#9c27b0',
+                                      borderColor: '#9c27b0',
+                                    }),
+                                  ...(currentTab === 'creator' &&
+                                    row.submissionType === 'Posting Link' && {
+                                      color: '#2e7d32',
+                                      borderColor: '#2e7d32',
+                                    }),
+                                  ...(currentTab === 'creator' &&
+                                    row.submissionType === 'Pitch' && {
+                                      color: '#f57c00',
+                                      borderColor: '#f57c00',
+                                    }),
                                   // Admin activity colors
-                                  ...(currentTab === 'admin' && row.submissionType === 'Agreement' && {
-                                    color: '#1976d2',
-                                    borderColor: '#1976d2',
-                                  }),
-                                  ...(currentTab === 'admin' && row.submissionType === 'First Draft' && {
-                                    color: '#ed6c02',
-                                    borderColor: '#ed6c02',
-                                  }),
-                                  ...(currentTab === 'admin' && row.submissionType === 'Final Draft' && {
-                                    color: '#9c27b0',
-                                    borderColor: '#9c27b0',
-                                  }),
-                                  ...(currentTab === 'admin' && row.submissionType === 'Posting Link' && {
-                                    color: '#2e7d32',
-                                    borderColor: '#2e7d32',
-                                  }),
-                                  ...(currentTab === 'admin' && row.submissionType === 'Pitch' && {
-                                    color: '#f57c00',
-                                    borderColor: '#f57c00',
-                                  }),
-                                  ...(currentTab === 'admin' && row.submissionType === 'Withdrawal' && {
-                                    color: '#f44336',
-                                    borderColor: '#f44336',
-                                  }),
-                                  ...(currentTab === 'admin' && row.submissionType === 'Campaign' && {
-                                    color: '#673ab7',
-                                    borderColor: '#673ab7',
-                                  }),
+                                  ...(currentTab === 'admin' &&
+                                    row.submissionType === 'Agreement' && {
+                                      color: '#1976d2',
+                                      borderColor: '#1976d2',
+                                    }),
+                                  ...(currentTab === 'admin' &&
+                                    row.submissionType === 'First Draft' && {
+                                      color: '#ed6c02',
+                                      borderColor: '#ed6c02',
+                                    }),
+                                  ...(currentTab === 'admin' &&
+                                    row.submissionType === 'Final Draft' && {
+                                      color: '#9c27b0',
+                                      borderColor: '#9c27b0',
+                                    }),
+                                  ...(currentTab === 'admin' &&
+                                    row.submissionType === 'Posting Link' && {
+                                      color: '#2e7d32',
+                                      borderColor: '#2e7d32',
+                                    }),
+                                  ...(currentTab === 'admin' &&
+                                    row.submissionType === 'Pitch' && {
+                                      color: '#f57c00',
+                                      borderColor: '#f57c00',
+                                    }),
+                                  ...(currentTab === 'admin' &&
+                                    row.submissionType === 'Withdrawal' && {
+                                      color: '#f44336',
+                                      borderColor: '#f44336',
+                                    }),
+                                  ...(currentTab === 'admin' &&
+                                    row.submissionType === 'Campaign' && {
+                                      color: '#673ab7',
+                                      borderColor: '#673ab7',
+                                    }),
                                 }}
                               >
                                 {row.submissionType}
                               </Typography>
                             </TableCell>
                           )}
-                          
-                          <TableCell 
-                            sx={{ 
+
+                          <TableCell
+                            sx={{
                               py: 1.5,
                               borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
                             }}
@@ -651,22 +686,34 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                               <Box sx={{ flex: 1 }}>
                                 {(() => {
                                   const actionText = row.action;
-                                  
+
                                   // Check if this is a creator activity
                                   if (actionText.toLowerCase().includes('creator')) {
                                     // Extract creator name from quotes
                                     const creatorMatch = actionText.match(/Creator "([^"]+)"/);
                                     if (creatorMatch) {
                                       const creatorName = creatorMatch[1];
-                                      const beforeCreator = actionText.substring(0, creatorMatch.index);
-                                      const afterCreator = actionText.substring(creatorMatch.index + creatorMatch[0].length);
-                                      
+                                      const beforeCreator = actionText.substring(
+                                        0,
+                                        creatorMatch.index
+                                      );
+                                      const afterCreator = actionText.substring(
+                                        creatorMatch.index + creatorMatch[0].length
+                                      );
+
                                       return (
-                                        <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: '0.875rem', color: '#212529' }}>
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            lineHeight: 1.4,
+                                            fontSize: '0.875rem',
+                                            color: '#212529',
+                                          }}
+                                        >
                                           {beforeCreator}Creator{' '}
-                                          <Typography 
-                                            component="span" 
-                                            sx={{ 
+                                          <Typography
+                                            component="span"
+                                            sx={{
                                               fontWeight: 700,
                                               color: '#000000',
                                               backgroundColor: '#f8f9fa',
@@ -684,21 +731,30 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                                       );
                                     }
                                   }
-                                  
+
                                   // For admin activities, make admin names bold
                                   if (actionText.toLowerCase().includes('admin')) {
                                     const adminMatch = actionText.match(/Admin "([^"]+)"/);
                                     if (adminMatch) {
                                       const adminName = adminMatch[1];
                                       const beforeAdmin = actionText.substring(0, adminMatch.index);
-                                      const afterAdmin = actionText.substring(adminMatch.index + adminMatch[0].length);
-                                      
+                                      const afterAdmin = actionText.substring(
+                                        adminMatch.index + adminMatch[0].length
+                                      );
+
                                       return (
-                                        <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: '0.875rem', color: '#212529' }}>
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            lineHeight: 1.4,
+                                            fontSize: '0.875rem',
+                                            color: '#212529',
+                                          }}
+                                        >
                                           {beforeAdmin}Admin{' '}
-                                          <Typography 
-                                            component="span" 
-                                            sx={{ 
+                                          <Typography
+                                            component="span"
+                                            sx={{
                                               fontWeight: 700,
                                               color: '#000000',
                                               backgroundColor: '#f8f9fa',
@@ -716,10 +772,17 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                                       );
                                     }
                                   }
-                                  
+
                                   // Default: return original text
                                   return (
-                                    <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: '0.875rem', color: '#212529' }}>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        lineHeight: 1.4,
+                                        fontSize: '0.875rem',
+                                        color: '#212529',
+                                      }}
+                                    >
                                       {actionText}
                                     </Typography>
                                   );
@@ -727,9 +790,9 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                               </Box>
                             </Box>
                           </TableCell>
-                          
-                          <TableCell 
-                            sx={{ 
+
+                          <TableCell
+                            sx={{
                               pr: 2,
                               py: 1.5,
                               borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
@@ -800,27 +863,47 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                   }}
                 >
                   <Iconify
-                    icon={currentTab === 'invoice' ? 'solar:bill-list-broken' : currentTab === 'creator' ? 'solar:user-broken' : currentTab === 'admin' ? 'solar:shield-user-broken' : 'solar:list-broken'}
+                    icon={
+                      currentTab === 'invoice'
+                        ? 'solar:bill-list-broken'
+                        : currentTab === 'creator'
+                          ? 'solar:user-broken'
+                          : currentTab === 'admin'
+                            ? 'solar:shield-user-broken'
+                            : 'solar:list-broken'
+                    }
                     width={32}
                     height={32}
-                    sx={{ 
+                    sx={{
                       color: '#495057',
                       opacity: 0.7,
                     }}
                   />
                 </Box>
-                <Typography variant="h6" gutterBottom sx={{ color: '#212529', fontWeight: 700, fontSize: '1.1rem' }}>
-                  {currentTab === 'invoice' ? 'No Invoice Activities 📄' : currentTab === 'creator' ? 'No Creator Activities 👨‍🎨' : currentTab === 'admin' ? 'No Admin Activities 👨‍💼' : 'No Activities Yet 📝'}
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{ color: '#212529', fontWeight: 700, fontSize: '1.1rem' }}
+                >
+                  {currentTab === 'invoice'
+                    ? 'No Invoice Activities 📄'
+                    : currentTab === 'creator'
+                      ? 'No Creator Activities 👨‍🎨'
+                      : currentTab === 'admin'
+                        ? 'No Admin Activities 👨‍💼'
+                        : 'No Activities Yet 📝'}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6c757d', lineHeight: 1.5, fontSize: '0.875rem' }}>
-                  {currentTab === 'invoice' 
-                    ? 'No invoice-related actions have been recorded for this campaign yet. Once invoices are created or managed, they\'ll appear here! 💰'
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#6c757d', lineHeight: 1.5, fontSize: '0.875rem' }}
+                >
+                  {currentTab === 'invoice'
+                    ? "No invoice-related actions have been recorded for this campaign yet. Once invoices are created or managed, they'll appear here! 💰"
                     : currentTab === 'creator'
                       ? 'No creator-related actions have been recorded for this campaign yet. Creator activities like submissions will show up here! 🎨'
                       : currentTab === 'admin'
                         ? 'No admin-related actions have been recorded for this campaign yet. Admin approvals and changes will be tracked here! ⚡'
-                        : 'No activities have been recorded for this campaign yet. All actions will be logged here as they happen! 🚀'
-                  }
+                        : 'No activities have been recorded for this campaign yet. All actions will be logged here as they happen! 🚀'}
                 </Typography>
               </Box>
             </Box>
