@@ -249,7 +249,27 @@ const ReportingView = () => {
   }, [searchParams, fetchContentData]);
 
   const handleBack = () => {
-    navigate('/dashboard/report');
+    // Get return navigation state from URL params
+    const returnPage = searchParams.get('returnPage');
+    const returnCampaign = searchParams.get('returnCampaign');
+    
+    // Build the return URL with preserved state
+    let returnUrl = '/dashboard/report';
+    const params = new URLSearchParams();
+    
+    if (returnPage && returnPage !== '1') {
+      params.set('page', returnPage);
+    }
+    
+    if (returnCampaign && returnCampaign !== 'all') {
+      params.set('campaign', returnCampaign);
+    }
+    
+    if (params.toString()) {
+      returnUrl += `?${params.toString()}`;
+    }
+    
+    navigate(returnUrl);
   };
 
   const renderCircularStat = ({ width, label, value, metricKey }) => {
