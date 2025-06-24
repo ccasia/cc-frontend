@@ -111,7 +111,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                   width: '100%',
                   transition: 'all .3s ease',
                   objectFit: 'cover',
-                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.media_url}) center/cover no-repeat`,
+                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.media_type === 'VIDEO' ? content?.thumbnail_url : content?.media_url}) center/cover no-repeat`,
                 }}
               />
               <Box
