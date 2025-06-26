@@ -59,6 +59,7 @@ import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
+import CampaignAnalytics from '../campaign-analytics';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -217,7 +218,7 @@ const CampaignDetailView = ({ id }) => {
           position: 'relative',
           width: '100%',
           overflowX: 'auto',
-          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
           '&::after': {
             content: '""',
             position: 'absolute',
@@ -234,8 +235,6 @@ const CampaignDetailView = ({ id }) => {
           justifyContent="space-between"
           sx={{
             width: { xs: '100%', sm: 'auto' },
-            overflowX: 'auto',
-            scrollbarWidth: 'none',
           }}
         >
           {[
@@ -259,6 +258,10 @@ const CampaignDetailView = ({ id }) => {
               value: 'deliverables',
             },
             {
+              label: 'Campaign Analytics',
+              value: 'analytics'
+            },
+            {
               label: `Invoices (${campaignInvoices?.length || 0})`,
               value: 'invoices',
             },
@@ -273,7 +276,7 @@ const CampaignDetailView = ({ id }) => {
               size="large"
               onClick={() => handleChangeTab(null, tab.value)}
               sx={{
-                px: { xs: 1, sm: 1.5 },
+                px: { xs: 1, sm: 1.2 },
                 py: 0.5,
                 pb: 1,
                 minWidth: !lgUp && 'fit-content',
@@ -400,6 +403,7 @@ const CampaignDetailView = ({ id }) => {
     ),
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
     deliverables: <CampaignCreatorDeliverables campaign={campaign} />,
+    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />
   };
 
   const formatDate = (dateString) => {

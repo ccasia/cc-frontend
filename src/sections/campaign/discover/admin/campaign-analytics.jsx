@@ -1,0 +1,599 @@
+import React, { useMemo } from 'react';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  Grid,
+  Stack,
+  LinearProgress,
+  Chip,
+  Card,
+  CardContent,
+  Avatar,
+  Tooltip,
+  IconButton,
+  Link,
+} from '@mui/material';
+
+import { useSocialInsights } from 'src/hooks/use-social-insights';
+import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
+import { 
+  calculateSummaryStats, 
+  getMetricValue, 
+  formatNumber, 
+  calculateEngagementRate 
+} from 'src/utils/socialMetricsCalculator';
+import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
+import Iconify from 'src/components/iconify';
+
+const CampaignAnalytics = ({ campaign }) => {
+  const campaignId = campaign?.id;
+  const submissions = campaign?.submission || [];
+
+  // Extract posting submissions with URLs directly from campaign prop
+  const postingSubmissions = useMemo(() => 
+    extractPostingSubmissions(submissions), 
+    [submissions]
+  );
+
+  // Get platform type (since each campaign has only one platform)
+  const platformType = postingSubmissions.length > 0 ? postingSubmissions[0].platform : null;
+
+  // Fetch insights for posting submissions
+  const { 
+    data: insightsData, 
+    isLoading: loadingInsights, 
+    failedUrls,
+    error: insightsError 
+  } = useSocialInsights(postingSubmissions, campaignId);
+
+  console.log('Insight data: ', insightsData)
+
+  // Calculate summary statistics
+  const summaryStats = useMemo(() => 
+    calculateSummaryStats(insightsData), 
+    [insightsData]
+  );
+
+  // No campaign
+  if (!campaign) {
+    return (
+      <Alert severity="warning" sx={{ mt: 2 }}>
+        Campaign information not available.
+      </Alert>
+    );
+  }
+
+  // No campaign ID
+  if (!campaignId) {
+    return (
+      <Alert severity="warning" sx={{ mt: 2 }}>
+        Campaign ID not available.
+      </Alert>
+    );
+  }
+
+  // Platform Overview Layout Component - Matches the design exactly
+  const PlatformOverviewLayout = ({ platform, postCount, insightsData, summaryStats }) => {
+    const calculateAdditionalMetrics = () => {
+      const metrics = {};
+      
+      if (platform === 'Instagram') {
+        metrics.totalShares = insightsData.reduce((sum, item) => 
+          sum + getMetricValue(item.insight, 'shares'), 0);
+        metrics.totalReach = insightsData.reduce((sum, item) => 
+          sum + getMetricValue(item.insight, 'reach'), 0);
+        metrics.totalInteractions = insightsData.reduce((sum, item) => 
+          sum + getMetricValue(item.insight, 'total_interactions'), 0);
+        metrics.creditsUsed = { used: 17, total: 30 };
+        
+      } else if (platform === 'TikTok') {
+        const avgEngagement = insightsData.length > 0 ? 
+          insightsData.reduce((sum, item) => {
+            const views = getMetricValue(item.insight, 'views');
+            const likes = getMetricValue(item.insight, 'likes');
+            const comments = getMetricValue(item.insight, 'comments');
+            const engagementRate = views > 0 ? ((likes + comments) / views) * 100 : 0;
+            return sum + engagementRate;
+          }, 0) / insightsData.length : 0;
+        
+        metrics.avgEngagement = avgEngagement;
+        metrics.totalShares = insightsData.reduce((sum, item) => 
+          sum + getMetricValue(item.insight, 'shares'), 0);
+        metrics.creditsUsed = { used: 17, total: 30 };
+      }
+      
+      return metrics;
+    };
+
+    const additionalMetrics = calculateAdditionalMetrics();
+
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Grid container spacing={3} sx={{ minHeight: 200 }}>
+          {/* Left: Platform Overview Card */}
+          <Grid item xs={12} md={2.5}>
+            <Box 
+              borderRadius={3}
+              sx={{ 
+                height: '400px',
+                backgroundColor: '#F5F5F5',
+              }}
+            >
+              <Box sx={{ textAlign: 'center', px: 3, py: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <Typography textAlign={'left'} variant="h4" fontWeight={600} gutterBottom fontFamily={'Aileron'} color={'#231F20'}>
+                  Postings
+                </Typography>
+                
+                <Box 
+                  sx={{ 
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center', 
+                    my: 2
+                  }}
+                >
+                  <Typography 
+                    variant="h4" 
+                    sx={{ 
+                      color: '#000000B2',
+                      fontWeight: '400',
+                      mb: 1
+                    }}
+                  >
+                    {postCount}
+                  </Typography>
+                  
+                  <Box
+                    sx={{
+                      width: 54,
+                      height: 159,
+                      backgroundColor: '#1340FF',
+                      borderRadius: 100,
+                      mb: 2
+                    }}
+                  />
+
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      color: '#000000B2',
+                      fontStyle: 'italic',
+                      fontSize: '1rem'
+                    }}
+                  >
+                    {platform}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Grid>
+
+          {/* Middle: Empty placeholder for future content */}
+          <Grid item xs={12} md={5.5}>
+            <Box 
+              sx={{ 
+                height: '400px',
+                backgroundColor: '#F5F5F5',
+                borderRadius: 3
+              }}
+            >
+              <Box sx={{ 
+                height: '100%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                py: 4
+              }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  Coming Soon
+                </Typography>
+              </Box>
+            </Box>
+          </Grid>
+
+          {/* Right: Platform-specific metrics */}
+          <Grid item xs={12} md={4}>
+            <Box sx={{ height: '100%' }}>
+              <Box>
+                {platform === 'Instagram' && (
+                  <Grid container columnSpacing={3} sx={{ mt: { xs: 0, md: 6 }, my: 4 }}>
+                    <Grid item xs={6}>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                          {formatNumber(additionalMetrics.totalShares)}
+                        </Typography>
+                        <Typography mb={4} fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                          Total Shares
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                          {additionalMetrics.creditsUsed.used}/{additionalMetrics.creditsUsed.total}
+                        </Typography>
+                        <Typography mb={4} fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                          Credits Used
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    
+                    <Grid item xs={6}>
+                      <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                      <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+                    </Grid>
+                    
+                    <Grid item xs={6}>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography mt={1} fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                          {formatNumber(additionalMetrics.totalReach)}
+                        </Typography>
+                        <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                          Total Reach
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography mt={1} fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                          {((additionalMetrics.totalInteractions / summaryStats.totalViews) * 100).toFixed(1)}%
+                        </Typography>
+                        <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                          Interactions
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                )}
+
+                {platform === 'TikTok' && (
+                  <Grid container spacing={3} sx={{ height: '100%', alignContent: 'center' }}>
+                    <Grid item xs={12}>
+                      <Box sx={{ textAlign: 'center', mb: 3 }}>
+                        <Typography variant="h4" color="primary" fontWeight="bold">
+                          {additionalMetrics.avgEngagement.toFixed(1)}%
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Avg Engagement
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    
+                    <Grid item xs={6}>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography variant="h5" color="primary" fontWeight="bold">
+                          {additionalMetrics.creditsUsed.used}/{additionalMetrics.creditsUsed.total}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Credits Used
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography variant="h5" color="primary" fontWeight="bold">
+                          {formatNumber(additionalMetrics.totalShares)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Total Shares
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                )}
+              </Box>
+            </Box>
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  };
+
+  // Core Metrics Section (Views, Likes, Comments)
+  const CoreMetricsSection = ({ insightsData, summaryStats }) => {
+    if (!summaryStats) return null;
+
+    return (
+      <Box sx={{ mb: 3 }}>
+        
+        <Grid container spacing={2}>
+          <Grid item xs={4}>
+            <Card variant="outlined">
+              <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                <Typography variant="h4" color="primary" fontWeight="bold">
+                  {formatNumber(summaryStats.totalViews)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Views
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={4}>
+            <Card variant="outlined">
+              <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                <Typography variant="h4" color="error.main" fontWeight="bold">
+                  {formatNumber(summaryStats.totalLikes)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Likes
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={4}>
+            <Card variant="outlined">
+              <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                <Typography variant="h4" color="info.main" fontWeight="bold">
+                  {formatNumber(summaryStats.totalComments)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Comments
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  };
+
+  const UserPerformanceCard = ({ submission, insightData, engagementRate, loadingInsights }) => {
+    const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
+    
+    return (
+      <Grid item xs={12}>
+        <Box px={4} borderRadius={1} border={'2px solid #F5F5F5'}>
+          <Box sx={{ py: 1 }}>
+            <Box display="flex" alignItems="center">
+              {/* Left Side: Creator Info */}
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Avatar 
+                  sx={{ 
+                    width: 48, 
+                    height: 48,
+                    bgcolor: submission.platform === 'Instagram' ? '#E4405F' : '#000000'
+                  }}
+                >
+                  {loadingCreator ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    creator?.user?.name?.charAt(0) || 'U'
+                  )}
+                </Avatar>
+                <Box width={230} >
+                  <Typography variant='h5' fontWeight={500}>
+                    {loadingCreator ? 'Loading...' : creator?.user?.name || 'Unknown Creator'}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" textOverflow={'ellipsis'} overflow={'auto'} sx={{ scrollbarWidth: 'none'}}>
+                    {creator?.user?.email || submission.user}
+                  </Typography>
+                </Box>
+              </Stack>
+
+              {/* Center: Metrics Display */}
+              {insightData ? (
+                <Box display="flex" alignItems={'center'} mr={'auto'} ml={2}>
+                  {/* Views */}
+                  <Box sx={{ mx: 1 }}>
+                    <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
+                      Views
+                    </Typography>
+                    <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
+                      {formatNumber(getMetricValue(insightData.insight, 'views'))}
+                    </Typography>
+                  </Box>
+
+                  {/* Divider */}
+                  <Box sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 4 }} />
+
+                  {/* Likes */}
+                  <Box>
+                    <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
+                      Likes
+                    </Typography>
+                    <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
+                      {formatNumber(getMetricValue(insightData.insight, 'likes'))}
+                    </Typography>
+                  </Box>
+
+                  {/* Divider */}
+                  <Box sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 4 }} />
+
+                  {/* Comments */}
+                  <Box>
+                    <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
+                      Comments
+                    </Typography>
+                    <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
+                      {formatNumber(getMetricValue(insightData.insight, 'comments'))}
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : loadingInsights ? (
+                <Box display="flex" alignItems="center" py={2} ml={4}>
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Loading metrics...
+                  </Typography>
+                </Box>
+              ) : (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  Analytics data not available for this post.
+                </Alert>
+              )}
+
+              {/* Right Side: Thumbnail Preview */}
+              {insightData ? (
+                <Box>
+                  <Link
+                    href={insightData.postUrl}
+                    target="_blank"
+                    rel="noopener"
+                    sx={{ 
+                      display: 'block',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        opacity: 0.8,
+                        transition: 'opacity 0.2s'
+                      }
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={insightData.thumbnail || insightData.video.media_url}
+                      alt="Post thumbnail"
+                      sx={{
+                        width: 150,
+                        height: 80,
+                        borderRadius: 2,
+                        objectFit: 'cover',
+                        border: '1px solid #e0e0e0',
+                        filter: 'brightness(0.9)', // Makes image lighter
+                        opacity: 0.7, // Additional lightening effect
+                        '&:hover': {
+                          filter: 'brightness(1)', // Return to original brightness
+                          opacity: 1, // Return to full opacity
+                          transition: 'filter 0.3s ease, opacity 0.3s ease' // Smooth transition
+                        }
+                      }}
+                    />
+                  </Link>
+                </Box>
+              ) : (
+                // Fallback: External link icon if no thumbnail
+                <Box sx={{ ml: 4 }}>
+                  <Tooltip title="View Post">
+                    <IconButton 
+                      component={Link}
+                      href={submission.postUrl} 
+                      target="_blank" 
+                      rel="noopener"
+                      size="small"
+                    >
+                      <Iconify icon="solar:external-link-outline" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Grid>
+    );
+  };
+
+  return (
+    <Box>
+      <Typography fontSize={24} fontWeight={600} fontFamily={'Aileron'} gutterBottom>
+        Performance Summary
+      </Typography>
+      
+      {/* Debug Information - only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          <Typography variant="subtitle2">Debug Info:</Typography>
+          <Typography variant="body2">
+            Campaign ID: {campaignId}<br />
+            Campaign Name: {campaign?.name}<br />
+            Total Submissions: {submissions?.length || 0}<br />
+            Posting Submissions: {postingSubmissions.length}<br />
+            Platform: {platformType}<br />
+            Insights Loaded: {insightsData.length}
+          </Typography>
+        </Alert>
+      )}
+
+      {/* Loading state for insights */}
+      {loadingInsights && (
+        <Box sx={{ mb: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+            <CircularProgress size={20} />
+            <Typography color="text.secondary">
+              Loading insights data... ({insightsData.length}/{postingSubmissions.length} completed)
+            </Typography>
+          </Stack>
+          <LinearProgress 
+            variant="determinate" 
+            value={postingSubmissions.length > 0 ? (insightsData.length / postingSubmissions.length) * 100 : 0} 
+          />
+        </Box>
+      )}
+
+      {/* Error Alert */}
+      {insightsError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Error loading insights: {insightsError?.message || 'Unknown error'}
+        </Alert>
+      )}
+
+      {/* Failed URLs Alert */}
+      {failedUrls.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Unable to fetch analytics for {failedUrls.length} post(s):
+          </Typography>
+          {failedUrls.map((failed, index) => (
+            <Typography key={index} variant="body2" sx={{ ml: 1 }}>
+              • {failed.user?.name || 'Unknown'} ({failed.platform}): {failed.reason}
+              {failed.requiresReconnection && (
+                <Chip 
+                  label="Reconnection Required" 
+                  size="small" 
+                  color="warning" 
+                  sx={{ ml: 1 }} 
+                />
+              )}
+            </Typography>
+          ))}
+        </Alert>
+      )}
+
+      {/* Core Metrics Section */}
+      <CoreMetricsSection 
+        insightsData={insightsData}
+        summaryStats={summaryStats}
+      />
+
+      {/* Platform Overview and Additional Metrics Layout */}
+      {platformType && summaryStats && (
+        <PlatformOverviewLayout 
+          platform={platformType}
+          postCount={postingSubmissions.length}
+          insightsData={insightsData}
+          summaryStats={summaryStats}
+        />
+      )}
+
+      <Grid container spacing={1}>
+        {postingSubmissions.map((submission) => {
+          const insightData = insightsData.find(data => data.submissionId === submission.id);
+          const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
+          
+          return <UserPerformanceCard 
+            key={submission.id} 
+            submission={submission} 
+            insightData={insightData} 
+            engagementRate={engagementRate} 
+            loadingInsights={loadingInsights} 
+          />;
+        })}
+        
+        {postingSubmissions.length === 0 && (
+          <Grid item xs={12}>
+            <Alert severity="info">
+              No approved posting submissions with Instagram or TikTok links found for this campaign.
+            </Alert>
+          </Grid>
+        )}
+      </Grid>
+    </Box>
+  );
+};
+
+export default CampaignAnalytics;
