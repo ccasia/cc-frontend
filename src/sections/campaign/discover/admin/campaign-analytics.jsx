@@ -14,6 +14,7 @@ import {
   Tooltip,
   IconButton,
   Link,
+  Divider,
 } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
@@ -74,7 +75,6 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   }
 
-  // Platform Overview Layout Component - Matches the design exactly
   const PlatformOverviewLayout = ({ platform, postCount, insightsData, summaryStats }) => {
     const calculateAdditionalMetrics = () => {
       const metrics = {};
@@ -294,7 +294,6 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   };
 
-  // Core Metrics Section (Views, Likes, Comments)
   const CoreMetricsSection = ({ insightsData, summaryStats }) => {
     if (!summaryStats) return null;
 
@@ -343,14 +342,18 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   };
 
-  const UserPerformanceCard = ({ submission, insightData, engagementRate, loadingInsights }) => {
+  const UserPerformanceCard = ({ submission, insightData, loadingInsights }) => {
     const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
     
     return (
       <Grid item xs={12}>
         <Box px={4} borderRadius={1} border={'2px solid #F5F5F5'}>
           <Box sx={{ py: 1 }}>
-            <Box display="flex" alignItems="center">
+            {/* Desktop Layout (md+) */}
+            <Box 
+              display={{ xs: 'none', md: 'flex' }} 
+              alignItems="center"
+            >
               {/* Left Side: Creator Info */}
               <Stack direction="row" spacing={2} alignItems="center">
                 <Avatar 
@@ -454,20 +457,162 @@ const CampaignAnalytics = ({ campaign }) => {
                         borderRadius: 2,
                         objectFit: 'cover',
                         border: '1px solid #e0e0e0',
-                        filter: 'brightness(0.9)', // Makes image lighter
-                        opacity: 0.7, // Additional lightening effect
+                        filter: 'brightness(0.9)',
+                        opacity: 0.7,
                         '&:hover': {
-                          filter: 'brightness(1)', // Return to original brightness
-                          opacity: 1, // Return to full opacity
-                          transition: 'filter 0.3s ease, opacity 0.3s ease' // Smooth transition
+                          filter: 'brightness(1)',
+                          opacity: 1,
+                          transition: 'filter 0.3s ease, opacity 0.3s ease'
                         }
                       }}
                     />
                   </Link>
                 </Box>
               ) : (
-                // Fallback: External link icon if no thumbnail
                 <Box sx={{ ml: 4 }}>
+                  <Tooltip title="View Post">
+                    <IconButton 
+                      component={Link}
+                      href={submission.postUrl} 
+                      target="_blank" 
+                      rel="noopener"
+                      size="small"
+                    >
+                      <Iconify icon="solar:external-link-outline" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
+            </Box>
+
+            {/* Mobile Layout (xs) */}
+            <Box 
+              display={{ xs: 'flex', md: 'none' }} 
+              flexDirection="column"
+              sx={{ py: 2 }}
+            >
+              {/* Top: Creator Info */}
+              <Box display="flex" alignItems="center" mb={2}>
+                <Avatar 
+                  sx={{ 
+                    width: 40, 
+                    height: 40,
+                    bgcolor: submission.platform === 'Instagram' ? '#E4405F' : '#000000',
+                    mr: 2
+                  }}
+                >
+                  {loadingCreator ? (
+                    <CircularProgress size={18} />
+                  ) : (
+                    creator?.user?.name?.charAt(0) || 'U'
+                  )}
+                </Avatar>
+                <Box>
+                  <Typography variant='h6' fontWeight={500}>
+                    {loadingCreator ? 'Loading...' : creator?.user?.name || 'Unknown Creator'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ 
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '200px'
+                  }}>
+                    {creator?.user?.email || submission.user}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Middle: Metrics */}
+              {insightData ? (
+                <Box display="flex" justifyContent="center" alignItems="center" mb={2}>
+                  {/* Views */}
+                  <Box sx={{ textAlign: 'center', mx: 2 }}>
+                    <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
+                      Views
+                    </Typography>
+                    <Typography fontFamily={'Instrument Serif'} fontSize={28} fontWeight={400} color={'#1340FF'}>
+                      {formatNumber(getMetricValue(insightData.insight, 'views'))}
+                    </Typography>
+                  </Box>
+
+                  {/* Divider */}
+                  <Divider sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }} />
+
+                  {/* Likes */}
+                  <Box sx={{ textAlign: 'center', mx: 2 }}>
+                    <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
+                      Likes
+                    </Typography>
+                    <Typography fontFamily={'Instrument Serif'} fontSize={28} fontWeight={400} color={'#1340FF'}>
+                      {formatNumber(getMetricValue(insightData.insight, 'likes'))}
+                    </Typography>
+                  </Box>
+
+                  {/* Divider */}
+                  <Divider sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }} />
+
+                  {/* Comments */}
+                  <Box sx={{ textAlign: 'center', mx: 2 }}>
+                    <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
+                      Comments
+                    </Typography>
+                    <Typography fontFamily={'Instrument Serif'} fontSize={28} fontWeight={400} color={'#1340FF'}>
+                      {formatNumber(getMetricValue(insightData.insight, 'comments'))}
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : loadingInsights ? (
+                <Box display="flex" alignItems="center" justifyContent="center" py={3}>
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Loading metrics...
+                  </Typography>
+                </Box>
+              ) : (
+                <Alert severity="info" sx={{ my: 2 }}>
+                  Analytics data not available for this post.
+                </Alert>
+              )}
+
+              {/* Bottom: Thumbnail */}
+              {insightData ? (
+                <Box display="flex" justifyContent="center">
+                  <Link
+                    href={insightData.postUrl}
+                    target="_blank"
+                    rel="noopener"
+                    sx={{ 
+                      display: 'block',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        opacity: 0.8,
+                        transition: 'opacity 0.2s'
+                      }
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={insightData.thumbnail || insightData.video.media_url}
+                      alt="Post thumbnail"
+                      sx={{
+                        width: 300,
+                        height: 90,
+                        borderRadius: 2,
+                        objectFit: 'cover',
+                        border: '1px solid #e0e0e0',
+                        filter: 'brightness(0.9)',
+                        opacity: 0.7,
+                        '&:hover': {
+                          filter: 'brightness(1)',
+                          opacity: 1,
+                          transition: 'filter 0.3s ease, opacity 0.3s ease'
+                        }
+                      }}
+                    />
+                  </Link>
+                </Box>
+              ) : (
+                <Box display="flex" justifyContent="center">
                   <Tooltip title="View Post">
                     <IconButton 
                       component={Link}
