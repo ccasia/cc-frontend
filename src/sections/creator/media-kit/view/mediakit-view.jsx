@@ -987,16 +987,65 @@ const MediaKitCreator = () => {
                 {user?.creator?.mediaKit?.displayName ?? user?.name}
               </Typography>
             </Stack>
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              <Typography fontSize={16} color="#231F20">
+            <Stack 
+              direction="row" 
+              alignItems="center" 
+              spacing={0.5}
+              sx={{ 
+                flexWrap: 'wrap',
+                maxWidth: '100%',
+                overflow: 'hidden'
+              }}
+            >
+              <Typography 
+                fontSize={{ xs: 12, sm: 14, md: 16 }} 
+                color="#231F20"
+                sx={{ 
+                  whiteSpace: 'nowrap',
+                  minWidth: 'fit-content'
+                }}
+              >
                 {user?.creator?.pronounce}
               </Typography>
-              <Iconify icon="mdi:dot" color="#231F20" />
-              <Typography fontSize={16} color="#231F20">
-                {user?.country}
-              </Typography>
-              <Iconify icon="mdi:dot" color="#231F20" />
-              <Typography fontSize={16} color="#231F20">
+              <Iconify 
+                icon="mdi:dot" 
+                color="#231F20" 
+                sx={{ 
+                  fontSize: { xs: 12, sm: 14, md: 16 },
+                  minWidth: 'fit-content',
+                  flexShrink: 0
+                }} 
+              />
+                             <Typography 
+                 fontSize={{ xs: 12, sm: 14, md: 16 }} 
+                 color="#231F20"
+                 sx={{ 
+                   whiteSpace: 'nowrap',
+                   minWidth: 'fit-content'
+                 }}
+               >
+                 {user?.city ? `${user?.city}, ${user?.country}` : user?.country}
+               </Typography>
+              <Iconify 
+                icon="mdi:dot" 
+                color="#231F20" 
+                sx={{ 
+                  fontSize: { xs: 12, sm: 14, md: 16 },
+                  minWidth: 'fit-content',
+                  flexShrink: 0
+                }} 
+              />
+              <Typography 
+                fontSize={{ xs: 12, sm: 14, md: 16 }} 
+                color="#231F20"
+                sx={{ 
+                  whiteSpace: 'nowrap',
+                  minWidth: 'fit-content',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: { xs: '120px', sm: '200px', md: 'none' }
+                }}
+              >
                 {user?.email}
               </Typography>
             </Stack>
@@ -1583,16 +1632,65 @@ const MediaKitCreator = () => {
                 {user?.creator?.mediaKit?.displayName ?? user?.name}
               </Typography>
             </Stack>
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              <Typography fontSize={16} color="#231F20">
+            <Stack 
+              direction="row" 
+              alignItems="center" 
+              spacing={0.5}
+              sx={{ 
+                flexWrap: 'wrap',
+                maxWidth: '100%',
+                overflow: 'hidden'
+              }}
+            >
+              <Typography 
+                fontSize={16}
+                color="#231F20"
+                sx={{ 
+                  whiteSpace: 'nowrap',
+                  minWidth: 'fit-content'
+                }}
+              >
                 {user?.creator?.pronounce}
               </Typography>
-              <Iconify icon="mdi:dot" color="#231F20" />
-              <Typography fontSize={16} color="#231F20">
-                {user?.country}
-              </Typography>
-              <Iconify icon="mdi:dot" color="#231F20" />
-              <Typography fontSize={16} color="#231F20">
+              <Iconify 
+                icon="mdi:dot" 
+                color="#231F20" 
+                sx={{ 
+                  fontSize: 16,
+                  minWidth: 'fit-content',
+                  flexShrink: 0
+                }} 
+              />
+                             <Typography 
+                 fontSize={16}
+                 color="#231F20"
+                 sx={{ 
+                   whiteSpace: 'nowrap',
+                   minWidth: 'fit-content'
+                 }}
+               >
+                 {user?.city ? `${user?.city}, ${user?.country}` : user?.country}
+               </Typography>
+              <Iconify 
+                icon="mdi:dot" 
+                color="#231F20" 
+                sx={{ 
+                  fontSize: 16,
+                  minWidth: 'fit-content',
+                  flexShrink: 0
+                }} 
+              />
+              <Typography 
+                fontSize={16}
+                color="#231F20"
+                sx={{ 
+                  whiteSpace: 'nowrap',
+                  minWidth: 'fit-content',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '300px'
+                }}
+              >
                 {user?.email}
               </Typography>
             </Stack>
