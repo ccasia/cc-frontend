@@ -117,8 +117,8 @@ const MediaKitCreator = () => {
   const getTiktok = useCallback(async () => {
     try {
       isLoading.onTrue();
-      const res = await axiosInstance.get(endpoints.creators.social.instagramV2(user?.id));
-      setInstagram(res.data);
+      const res = await axiosInstance.get(endpoints.creators.social.tiktok(user?.id));
+      setTiktok(res.data);
     } catch (error) {
       return;
     } finally {
