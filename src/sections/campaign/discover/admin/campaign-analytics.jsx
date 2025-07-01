@@ -6,7 +6,6 @@ import {
   Alert,
   Grid,
   Stack,
-  LinearProgress,
   Chip,
   Card,
   CardContent,
@@ -171,7 +170,7 @@ const CampaignAnalytics = ({ campaign }) => {
           </Grid>
 
           {/* Middle: Empty placeholder for future content */}
-          <Grid item xs={12} md={5.5}>
+          <Grid item xs={12} md={platform === 'Instagram' ? 5.5 : 7}>
             <Box 
               sx={{ 
                 height: '400px',
@@ -194,7 +193,7 @@ const CampaignAnalytics = ({ campaign }) => {
           </Grid>
 
           {/* Right: Platform-specific metrics */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={ platform === 'Instagram' ? 4 : 2 }>
             <Box sx={{ height: '100%' }}>
               <Box>
                 {platform === 'Instagram' && (
@@ -252,39 +251,43 @@ const CampaignAnalytics = ({ campaign }) => {
                 )}
 
                 {platform === 'TikTok' && (
-                  <Grid container spacing={3} sx={{ height: '100%', alignContent: 'center' }}>
-                    <Grid item xs={12}>
-                      <Box sx={{ textAlign: 'center', mb: 3 }}>
-                        <Typography variant="h4" color="primary" fontWeight="bold">
-                          {additionalMetrics.avgEngagement.toFixed(1)}%
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Avg Engagement
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    
-                    <Grid item xs={6}>
-                      <Box sx={{ textAlign: 'left' }}>
-                        <Typography variant="h5" color="primary" fontWeight="bold">
-                          {additionalMetrics.creditsUsed.used}/{additionalMetrics.creditsUsed.total}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Credits Used
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ textAlign: 'left' }}>
-                        <Typography variant="h5" color="primary" fontWeight="bold">
-                          {formatNumber(additionalMetrics.totalShares)}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Total Shares
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
+                  <Box sx={{ width: { xs: '100%', md: 170 }}}>
+                    {/* Avg Engagement */}
+                    <Box sx={{ textAlign: 'left', mb: 3 }}>
+                      <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                        {additionalMetrics.avgEngagement.toFixed(1)}%
+                      </Typography>
+                      <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                        Avg Engagement
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Box sx={{ borderBottom: '1px solid #1340FF' }} />
+
+                    {/* Credits Used */}
+                    <Box sx={{ textAlign: 'left', mb: 3, mt: 1 }}>
+                      <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                        {additionalMetrics.creditsUsed.used}/{additionalMetrics.creditsUsed.total}
+                      </Typography>
+                      <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                        Credits Used
+                      </Typography>
+                    </Box>
+
+                    {/* Divider */}
+                    <Box sx={{ borderBottom: '1px solid #1340FF' }} />
+
+                    {/* Total Shares */}
+                    <Box sx={{ textAlign: 'left', mt: 1 }}>
+                      <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                        {formatNumber(additionalMetrics.totalShares)}
+                      </Typography>
+                      <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                        Total Shares
+                      </Typography>
+                    </Box>
+                  </Box>
                 )}
               </Box>
             </Box>
@@ -301,7 +304,7 @@ const CampaignAnalytics = ({ campaign }) => {
       <Box sx={{ mb: 3 }}>
         
         <Grid container spacing={2}>
-          <Grid item xs={4}>
+          <Grid item xs={3}>
             <Card variant="outlined">
               <CardContent sx={{ textAlign: 'center', py: 3 }}>
                 <Typography variant="h4" color="primary" fontWeight="bold">
@@ -313,7 +316,7 @@ const CampaignAnalytics = ({ campaign }) => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={4}>
+          <Grid item xs={3}>
             <Card variant="outlined">
               <CardContent sx={{ textAlign: 'center', py: 3 }}>
                 <Typography variant="h4" color="error.main" fontWeight="bold">
@@ -325,7 +328,7 @@ const CampaignAnalytics = ({ campaign }) => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={4}>
+          <Grid item xs={3}>
             <Card variant="outlined">
               <CardContent sx={{ textAlign: 'center', py: 3 }}>
                 <Typography variant="h4" color="info.main" fontWeight="bold">
@@ -337,6 +340,20 @@ const CampaignAnalytics = ({ campaign }) => {
               </CardContent>
             </Card>
           </Grid>
+          {insightsData[0].platform === 'Instagram' && 
+            <Grid item xs={3}>
+              <Card variant="outlined">
+                <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                  <Typography variant="h4" color="info.main" fontWeight="bold">
+                    {formatNumber(summaryStats.totalSaved)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Saved
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          }
         </Grid>
       </Box>
     );
@@ -369,7 +386,7 @@ const CampaignAnalytics = ({ campaign }) => {
                     creator?.user?.name?.charAt(0) || 'U'
                   )}
                 </Avatar>
-                <Box width={230} >
+                <Box width={230}>
                   <Typography variant='h5' fontWeight={500}>
                     {loadingCreator ? 'Loading...' : creator?.user?.name || 'Unknown Creator'}
                   </Typography>
@@ -383,7 +400,7 @@ const CampaignAnalytics = ({ campaign }) => {
               {insightData ? (
                 <Box display="flex" alignItems={'center'} mr={'auto'} ml={2}>
                   {/* Views */}
-                  <Box sx={{ mx: 1 }}>
+                  <Box sx={{ width: 80 }}>
                     <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
                       Views
                     </Typography>
@@ -663,10 +680,6 @@ const CampaignAnalytics = ({ campaign }) => {
               Loading insights data... ({insightsData.length}/{postingSubmissions.length} completed)
             </Typography>
           </Stack>
-          <LinearProgress 
-            variant="determinate" 
-            value={postingSubmissions.length > 0 ? (insightsData.length / postingSubmissions.length) * 100 : 0} 
-          />
         </Box>
       )}
 
