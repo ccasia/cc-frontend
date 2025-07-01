@@ -33,6 +33,8 @@ import Iconify from 'src/components/iconify';
 
 import MediaKitSocial from './media-kit-social-view';
 
+
+
 const MediaKitCreator = () => {
   const theme = useTheme();
   const smDown = useResponsive('down', 'sm');
@@ -43,6 +45,8 @@ const MediaKitCreator = () => {
   const setInstagram = useSocialMediaData((state) => state.setInstagram);
   const tiktok = useSocialMediaData((state) => state.tiktok);
   const instagram = useSocialMediaData((state) => state.instagram);
+  
+
   const isLoading = useBoolean();
   const instaLoading = useBoolean();
   const containerRef = useRef(null);
@@ -100,21 +104,21 @@ const MediaKitCreator = () => {
   const getInstagram = useCallback(async () => {
     try {
       instaLoading.onTrue();
-      const res = await axiosInstance.get(endpoints.creators.social.instagramV2(user?.id));
-      setInstagram(res.data);
+      const response = await axiosInstance.get(`${endpoints.creator.getInstagram}/${user?.id}`);
+      setInstagram(response.data);
     } catch (error) {
       return;
     } finally {
       instaLoading.onFalse();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setInstagram]);
+  }, [setInstagram, user?.id]);
 
   const getTiktok = useCallback(async () => {
     try {
       isLoading.onTrue();
-      const res = await axiosInstance.get(endpoints.creators.social.tiktok(user?.id));
-      setTiktok(res.data);
+      const response = await axiosInstance.get(`${endpoints.creator.getTiktok}/${user?.id}`);
+      setTiktok(response.data);
     } catch (error) {
       return;
     } finally {
@@ -122,7 +126,7 @@ const MediaKitCreator = () => {
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setTiktok]);
+  }, [setTiktok, user?.id]);
 
   const calculateEngagementRate = useCallback((totalLikes, followers) => {
     if (!(totalLikes || followers)) return null;
@@ -701,9 +705,13 @@ const MediaKitCreator = () => {
   }, [pdfReadyState.pdfUrl]);
 
   useEffect(() => {
-    getInstagram();
-    getTiktok();
-  }, [getInstagram, getTiktok]);
+    if (user?.creator?.isFacebookConnected) {
+      getInstagram();
+    }
+    if (user?.creator?.isTiktokConnected) {
+      getTiktok();
+    }
+  }, [getInstagram, getTiktok, user?.creator?.isFacebookConnected, user?.creator?.isTiktokConnected]);
 
   if (isLoading.value || instaLoading.value) {
     return (
@@ -972,7 +980,7 @@ const MediaKitCreator = () => {
         {/* Creator Details */}
         <Stack
           direction={{ xs: 'column', md: 'row' }}
-          spacing={{ xs: 4, md: 15 }}
+          spacing={{ xs: 2, md: 15 }} // Reduced mobile spacing to bring sections closer
           justifyContent="space-between"
         >
           <Stack flex="1">
@@ -1095,8 +1103,8 @@ const MediaKitCreator = () => {
                 fontFamily: 'Aileron, sans-serif',
               }}
               my={1}
-              mt={2}
-              mb={2}
+              mt={1} // Reduced top margin to bring closer to avatar
+              mb={2} // Small gap before social media stats
             >
               {user?.creator?.mediaKit?.about}
             </Typography>
@@ -1106,23 +1114,14 @@ const MediaKitCreator = () => {
           <Stack
             flex="1"
             alignItems={{ xs: 'start', md: 'flex-start' }}
-            spacing={3}
+            spacing={2} // Reduced spacing between social media elements
             sx={{
-              mt: { xs: 4, md: 0 },
+              mt: { xs: 2, md: 0 }, // Small gap on mobile after about text
               width: '100%',
               ml: { xs: 0, md: 18, lg: -2, xl: -4 },
             }}
           >
-            {/* Divider for mobile screens only */}
-            <Box
-              sx={{
-                display: { xs: 'block', sm: 'none' },
-                width: '100%',
-                height: '1px',
-                backgroundColor: '#E7E7E7',
-                mb: 2,
-              }}
-            />
+
 
             {/* Total Audience Section */}
             <Stack alignItems="flex-start" sx={{ pl: { xs: 0, sm: 0 } }}>
@@ -1469,7 +1468,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '0.75rem', sm: '1rem' } }}
                 >
-                  Avg Comments
+                  Avg<br />Comments
                 </Typography>
               </Stack>
 
@@ -1740,15 +1739,15 @@ const MediaKitCreator = () => {
                 fontFamily: 'Aileron, sans-serif',
               }}
               my={1}
-              mt={2}
-              mb={2}
+              mt={1} // Reduced top margin to bring closer to avatar
+              mb={2} // Small gap before social media stats
             >
               {user?.creator?.mediaKit?.about}
             </Typography>
           </Stack>
 
           {/* Social Media Stats - with reduced width */}
-          <Stack flex="0.8" alignItems="flex-start" spacing={3}>
+          <Stack flex="0.8" alignItems="flex-start" spacing={2}> {/* Reduced spacing */}
             {/* Total Audience Section */}
             <Stack alignItems="flex-start">
               <Typography
@@ -2003,11 +2002,7 @@ const MediaKitCreator = () => {
                 width: '100% !important',
               },
             }}
-            data={(() => {
-              if (currentTab === 'instagram') return { instagram };
-              if (currentTab === 'tiktok') return { tiktok };
-              return null;
-            })()}
+
           />
         </Box>
       </Container>
