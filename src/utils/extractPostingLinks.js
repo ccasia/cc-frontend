@@ -1,3 +1,14 @@
+const isValidSubmission = (submission) => {
+  // Skip submissions that are likely to have issues
+  const content = submission.content?.toLowerCase() || '';
+  
+  // Add any known patterns that indicate problematic posts
+  const hasValidContent = content.includes('instagram.com') || content.includes('tiktok.com');
+  const isRecent = new Date(submission.createdAt) > new Date('2023-01-01'); // Adjust date as needed
+  
+  return hasValidContent && isRecent;
+};
+
 export const extractPostingSubmissions = (submissions) => {
   if (!Array.isArray(submissions)) return [];
 
@@ -25,7 +36,10 @@ export const extractPostingSubmissions = (submissions) => {
   
   const extractedSubmissions = [];
   
-  postings.forEach(submission => {
+  const validPostings = postings.filter(isValidSubmission);
+  console.log('Valid postings after filtering:', validPostings.length);
+
+  validPostings.forEach(submission => {
     // Enhanced regex patterns for better URL matching
     const instagramRegex = /https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/g;
     const tiktokRegex = /https?:\/\/(www\.)?(vm\.|m\.)?tiktok\.com\/[^\s]+/g;
