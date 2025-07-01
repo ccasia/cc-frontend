@@ -57,7 +57,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
           flexDirection: 'row',
           flexWrap: 'nowrap',
           width: '100%',
-          gap: 0.5,
+          gap: 3, // Increased gap between cards in mobile carousel
           justifyContent: 'flex-start',
           alignItems: 'stretch',
           overflowX: 'auto',
@@ -80,11 +80,13 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
               scrollSnapAlign: 'center',
               borderRadius: 0,
               overflow: 'hidden',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-              bgcolor: 'background.paper',
+              boxShadow: 'none', // Remove visible box shadow
+              bgcolor: 'transparent', // Make background transparent
               display: 'flex',
               flexDirection: 'column',
               mx: 0,
+              height: 'auto', // Allow card to expand based on content
+              minHeight: 520, // Minimum height to accommodate image + caption
             }}
             onClick={() => {
               const a = document.createElement('a');
@@ -97,9 +99,10 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
               component="div"
               sx={{
                 position: 'relative',
-                height: 400,
+                height: 420, // Larger image height, smaller caption space
                 width: '100%',
                 overflow: 'hidden',
+                flexShrink: 0, // Prevent image from shrinking
               }}
             >
               <CardMedia
@@ -137,26 +140,49 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                 </Stack>
               </Box>
             </Box>
-            <Typography
-              variant="body2"
+            <Box
               sx={{
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                fontSize: '0.8rem',
-                mt: 2,
-                mx: 2,
-                mb: 2,
-                color: 'text.primary',
-                fontWeight: 500,
-                width: '100%',
-                maxWidth: '100%',
-                lineHeight: 1.5,
+                flex: 1, // Take remaining space in the card
+                display: 'flex',
+                flexDirection: 'column',
+                pt: 1.5,
+                px: 0.5, // Reduced left/right padding to move caption more to the left
+                pb: 0.5, // Reduced bottom padding to bring bottom line closer
+                minHeight: 0, // Allow content to shrink if needed
+                maxHeight: 120, // Limit caption area height
+                border: 'none', // Remove any borders
+                boxShadow: 'none', // Remove any shadows
+                bgcolor: 'transparent', // Make background transparent
               }}
             >
-              {`${content.caption.slice(0, 100)}...`}
-            </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: '0.8rem',
+                  color: 'text.primary',
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  hyphens: 'auto',
+                  flex: 1, // Take available space
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  ...(content.caption?.length > 120 ? {
+                    // For longer captions, allow more space
+                    maxHeight: 'none', // Remove height restriction
+                  } : {
+                    // For shorter captions, use line clamp
+                    display: '-webkit-box',
+                    WebkitLineClamp: 5,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }),
+                }}
+              >
+                {content.caption}
+              </Typography>
+            </Box>
           </Box>
         ))}
       </Box>
@@ -207,16 +233,25 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
             width: { xs: '100%', sm: '30%', md: 350 },
             minWidth: { xs: '280px', sm: '250px', md: '320px' },
             maxWidth: { xs: '100%', sm: '350px' },
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: 0,
+            overflow: 'hidden',
+            boxShadow: 'none', // Remove visible box shadow
+            bgcolor: 'transparent', // Make background transparent
+            height: 'auto', // Allow card to expand
+            minHeight: { xs: 580, sm: 600, md: 650 }, // Reduced minimum height for desktop
           }}
         >
           <Box
             component="div"
             sx={{
               position: 'relative',
-              height: { xs: 400, sm: 450, md: 550 },
+              height: { xs: 420, sm: 500, md: 580 }, // Larger heights for more prominent media content
               width: '100%',
               overflow: 'hidden',
               cursor: 'pointer',
+              flexShrink: 0, // Prevent image from shrinking
               '&:hover .image': {
                 scale: 1.05,
               },
@@ -264,23 +299,59 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
             </Box>
           </Box>
 
-          <Typography
-            variant="body2"
-            className="media-kit-caption"
+          <Box
             sx={{
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              mt: 1,
-              color: 'text.primary',
-              width: '100%',
-              maxWidth: '100%',
+              flex: 0, // Don't take remaining space, only what's needed
+              display: 'flex',
+              flexDirection: 'column',
+              pt: 1,
+              px: 0.5, // Reduced left/right padding to move caption more to the left
+              pb: 0.5, // Reduced bottom padding to bring bottom line closer
+              minHeight: 'auto', // Let content determine height
+              maxHeight: 60, // Much shorter caption area for desktop - more rectangular
+              border: 'none', // Remove any borders
+              boxShadow: 'none', // Remove any shadows
+              bgcolor: 'transparent', // Make background transparent
             }}
           >
-            {`${content?.caption?.slice(0, 80)}...`}
-          </Typography>
+            <Typography
+              variant="body2"
+              className="media-kit-caption"
+              sx={{
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                color: 'text.primary',
+                lineHeight: 1.4,
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                hyphens: 'auto',
+                flex: 1, // Take available space
+                                  ...(() => {
+                  const length = content?.caption?.length || 0;
+                  const isLongCaption = length > 120;
+                  
+                  if (isLongCaption) {
+                    // For longer captions, limit lines for desktop
+                    return {
+                      display: '-webkit-box',
+                      WebkitLineClamp: isMobile ? 4 : 2, // Even fewer lines for desktop
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    };
+                  } else {
+                    // For shorter captions, use line clamp
+                    return {
+                      display: '-webkit-box',
+                      WebkitLineClamp: isMobile ? 3 : 2, // Fewer lines for desktop
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    };
+                  }
+                })(),
+              }}
+            >
+              {content?.caption}
+            </Typography>
+          </Box>
         </Box>
       ))}
     </Box>
@@ -309,6 +380,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
   const isConnected = !!user?.creator?.isFacebookConnected;
 
+  // Show connect Instagram prompt if not connected
   if (!isConnected) {
     // Show connect Instagram prompt
     return (
@@ -383,7 +455,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
     );
   }
 
-  // Only show grid if connected and has content
+  // Use real content if available
   const contentToShow = hasContent ? realTopContent : [];
 
   return (
@@ -404,7 +476,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
               flexDirection: 'row',
               flexWrap: 'nowrap',
               width: '100%',
-              gap: 0.5,
+              gap: 2, // Increased gap between cards in mobile carousel
               justifyContent: 'flex-start',
               alignItems: 'stretch',
               overflowX: 'auto',
@@ -417,11 +489,11 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
               pt: 1,
             }}
           >
-            {contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} mobileCarousel />}
+            <TopContentGrid topContents={contentToShow} mobileCarousel />
           </Box>
         </Box>
       ) : (
-        contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} />
+        <TopContentGrid topContents={contentToShow} />
       )}
     </Box>
   );
