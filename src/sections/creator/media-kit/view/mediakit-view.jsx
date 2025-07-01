@@ -694,45 +694,79 @@ const MediaKitCreator = () => {
         const fileName = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.pdf`;
         const file = new File([blob], fileName, { type: 'application/pdf' });
 
-        // Check if Web Share API is supported and can share files
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: `${user?.creator?.mediaKit?.displayName || user?.name} - Media Kit`,
-            text: 'Check out my media kit!',
-          });
+        // Check if iOS Safari and Web Share API is supported
+        if (isIOSSafari() && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          // For iOS Safari, only use Web Share API - don't fallback to blob download
+          try {
+            await navigator.share({
+              files: [file],
+              title: `${user?.creator?.mediaKit?.displayName || user?.name} - Media Kit`,
+              text: 'Check out my media kit!',
+            });
+            
+            setSnackbar({
+              open: true,
+              message: 'PDF shared successfully!',
+              severity: 'success',
+            });
+            return;
+          } catch (shareError) {
+            // If user cancels share dialog, don't show error or fallback
+            if (shareError.name === 'AbortError') {
+              console.log('User cancelled share dialog');
+              return;
+            }
+            
+            console.error('Error sharing PDF:', shareError);
+            setSnackbar({
+              open: true,
+              message: 'Share was cancelled or failed',
+              severity: 'info',
+            });
+            return;
+          }
+        } else {
+          // Direct download for non-iOS Safari browsers
+          window.location.href = pdfReadyState.pdfUrl;
           
           setSnackbar({
             open: true,
-            message: 'PDF shared successfully!',
+            message: 'PDF downloaded successfully!',
             severity: 'success',
           });
-        } else {
-          // Fallback to direct download if Web Share API is not supported
-          window.location.href = pdfReadyState.pdfUrl;
         }
       } catch (error) {
-        console.error('Error sharing PDF:', error);
-        // Fallback to direct download on error
-        window.location.href = pdfReadyState.pdfUrl;
-        
+        console.error('Error preparing PDF:', error);
         setSnackbar({
           open: true,
-          message: 'Opened PDF for manual save',
-          severity: 'info',
+          message: 'Failed to prepare PDF',
+          severity: 'error',
         });
       }
       
-      // Clean up
-      setTimeout(() => {
-        URL.revokeObjectURL(pdfReadyState.pdfUrl);
-        setPdfReadyState({ ready: false, pdfUrl: null });
-        setCaptureLoading(false);
-        setCaptureState('idle');
-        setCaptureType('');
-      }, 1000);
+      // Clean up - only for non-iOS Safari browsers
+      if (!isIOSSafari()) {
+        setTimeout(() => {
+          URL.revokeObjectURL(pdfReadyState.pdfUrl);
+          setPdfReadyState({ ready: false, pdfUrl: null });
+          setCaptureLoading(false);
+          setCaptureState('idle');
+          setCaptureType('');
+        }, 1000);
+      }
     }
-  }, [pdfReadyState.pdfUrl, user?.creator?.mediaKit?.displayName, user?.name]);
+  }, [pdfReadyState.pdfUrl, user?.creator?.mediaKit?.displayName, user?.name, isIOSSafari]);
+
+  // Function to handle closing the PDF ready state
+  const handleClosePdfReady = useCallback(() => {
+    if (pdfReadyState.pdfUrl) {
+      URL.revokeObjectURL(pdfReadyState.pdfUrl);
+    }
+    setPdfReadyState({ ready: false, pdfUrl: null });
+    setCaptureLoading(false);
+    setCaptureState('idle');
+    setCaptureType('');
+  }, [pdfReadyState.pdfUrl]);
 
   useEffect(() => {
     getInstagram();
@@ -2083,12 +2117,40 @@ const MediaKitCreator = () => {
             boxShadow: '0 12px 24px rgba(0, 0, 0, 0.1)',
             border: '1px solid rgba(255, 255, 255, 0.4)',
             animation: captureLoading ? 'fadeIn 0.4s ease-out forwards' : 'none',
+            position: 'relative',
             '@keyframes fadeIn': {
               from: { opacity: 0, transform: 'scale(0.95)' },
               to: { opacity: 1, transform: 'scale(1)' },
             },
           }}
         >
+          {/* Close button for PDF ready state only */}
+          {pdfReadyState.ready && (
+            <Button
+              onClick={handleClosePdfReady}
+              sx={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                minWidth: '38px',
+                width: '38px',
+                height: '38px',
+                p: 0,
+                bgcolor: '#FFFFFF',
+                color: '#000000',
+                border: '1px solid #E7E7E7',
+                borderBottom: '3px solid #E7E7E7',
+                borderRadius: '8px',
+                fontWeight: 650,
+                zIndex: 10,
+                '&:hover': {
+                  bgcolor: '#F5F5F5',
+                },
+              }}
+            >
+              X
+            </Button>
+          )}
           <Box
             sx={{
               position: 'relative',
