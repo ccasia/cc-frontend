@@ -648,7 +648,7 @@ const MediaKitCreator = () => {
     if (!captureLoading && !pdfReadyState.ready) return '';
 
     if (pdfReadyState.ready) {
-      return 'Your PDF is ready!';
+      return 'PDF ready to share!';
     }
 
     if (isIOSSafari() && captureType === 'pdf') {
@@ -684,21 +684,55 @@ const MediaKitCreator = () => {
     }
   }, [captureLoading, captureState, captureType, pdfReadyState.ready, isIOSSafari]);
 
-  // Function to handle opening the PDF for iOS Safari
-  const handleOpenPdf = useCallback(() => {
+  // Function to handle sharing the PDF using Web Share API for iOS Safari
+  const handleSharePdf = useCallback(async () => {
     if (pdfReadyState.pdfUrl) {
-      window.location.href = pdfReadyState.pdfUrl;
+      try {
+        // Convert the PDF blob URL to a File object for sharing
+        const response = await fetch(pdfReadyState.pdfUrl);
+        const blob = await response.blob();
+        const fileName = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.pdf`;
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+
+        // Check if Web Share API is supported and can share files
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `${user?.creator?.mediaKit?.displayName || user?.name} - Media Kit`,
+            text: 'Check out my media kit!',
+          });
+          
+          setSnackbar({
+            open: true,
+            message: 'PDF shared successfully!',
+            severity: 'success',
+          });
+        } else {
+          // Fallback to direct download if Web Share API is not supported
+          window.location.href = pdfReadyState.pdfUrl;
+        }
+      } catch (error) {
+        console.error('Error sharing PDF:', error);
+        // Fallback to direct download on error
+        window.location.href = pdfReadyState.pdfUrl;
+        
+        setSnackbar({
+          open: true,
+          message: 'Opened PDF for manual save',
+          severity: 'info',
+        });
+      }
       
       // Clean up
-             setTimeout(() => {
-         URL.revokeObjectURL(pdfReadyState.pdfUrl);
-         setPdfReadyState({ ready: false, pdfUrl: null });
-         setCaptureLoading(false);
-         setCaptureState('idle');
-         setCaptureType('');
-       }, 1000);
+      setTimeout(() => {
+        URL.revokeObjectURL(pdfReadyState.pdfUrl);
+        setPdfReadyState({ ready: false, pdfUrl: null });
+        setCaptureLoading(false);
+        setCaptureState('idle');
+        setCaptureType('');
+      }, 1000);
     }
-  }, [pdfReadyState.pdfUrl]);
+  }, [pdfReadyState.pdfUrl, user?.creator?.mediaKit?.displayName, user?.name]);
 
   useEffect(() => {
     getInstagram();
@@ -2166,27 +2200,27 @@ const MediaKitCreator = () => {
           {/* Open PDF and Save text for PDF ready state */}
           {pdfReadyState.ready && (
             <Typography
-              sx={{
-                mt: 1,
-                fontWeight: 500,
-                fontSize: 14,
-                color: '#666',
-                fontFamily: 'Aileron, sans-serif',
-                textAlign: 'center',
-                animation: 'fadeInUp 0.5s 0.4s ease-out forwards',
-                opacity: 0,
-                transform: 'translateY(8px)',
-                '@keyframes fadeInUp': {
-                  to: { opacity: 1, transform: 'translateY(0)' },
-                },
-              }}
-            >
-              Open PDF and Save
-            </Typography>
+                sx={{
+                  mt: 1,
+                  fontWeight: 500,
+                  fontSize: 14,
+                  color: '#666',
+                  fontFamily: 'Aileron, sans-serif',
+                  textAlign: 'center',
+                  animation: 'fadeInUp 0.5s 0.4s ease-out forwards',
+                  opacity: 0,
+                  transform: 'translateY(8px)',
+                  '@keyframes fadeInUp': {
+                    to: { opacity: 1, transform: 'translateY(0)' },
+                  },
+                }}
+              >
+                Tap button to open Share menu
+              </Typography>
           )}
           
           {/* iOS Safari Instructions - Show during rendering/capturing states for PDF only */}
-          {isIOSSafari() && captureType === 'pdf' && (captureState === 'rendering' || captureState === 'capturing') && (
+          {isIOSSafari() && captureType === 'pdf' && (captureState === 'rendering' || captureState === 'capturing' || captureState === 'processing') && (
             <Box
               sx={{
                 mt: 2,
@@ -2213,7 +2247,7 @@ const MediaKitCreator = () => {
                   mb: 1,
                 }}
               >
-                📱 How to save on iOS:
+                📱 Almost ready! Next step:
               </Typography>
               <Box
                 sx={{
@@ -2228,12 +2262,12 @@ const MediaKitCreator = () => {
                   lineHeight: 1.4,
                 }}
               >
-                <span>Tap the Share button</span>
+                <span>Download PDF</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ margin: '0 2px' }}>
                   <path d="M0 0h24v24H0V0z" fill="none"/>
                   <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/>
                 </svg>
-                <span>then &quot;Save to Files&quot;</span>
+                <span>→ Save to Files</span>
                 <svg width="14" height="14" viewBox="0 0 1024 1024" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '2px' }}>
                   <path d="M960 238c0-26.6-18.8-46-45.6-46H397.8c-5.6 0-8.6-1.2-12.2-4.8l-45-45-0.4-0.4c-9.8-9.2-17.8-13.8-34.6-13.8H113.4C85.8 128 64 148.6 64 174v147.4c0 3.2 3.4 3 6 1.4s10-2.8 14-2.8h856c4 0 11.4 1.2 14 2.8 2.6 1.6 6 1.8 6-1.4V238zM64 832.8c0 35 28.4 63.2 63.2 63.2H896c35.2 0 64-28.8 64-64V408c0-17.6-14.4-32-32-32H96c-17.6 0-32 14.4-32 32v424.8z"/>
                 </svg>
@@ -2276,7 +2310,7 @@ const MediaKitCreator = () => {
                     mb: 1,
                   }}
                 >
-                  📱 Remember to save:
+                  📱 Download PDF
                 </Typography>
                 <Box
                   sx={{
@@ -2291,7 +2325,7 @@ const MediaKitCreator = () => {
                     lineHeight: 1.4,
                   }}
                 >
-                  <span>Tap Share</span>
+                  <span> Download PDF </span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ margin: '0 2px' }}>
                     <path d="M0 0h24v24H0V0z" fill="none"/>
                     <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/>
@@ -2305,7 +2339,7 @@ const MediaKitCreator = () => {
 
               <Button
                 variant="contained"
-                onClick={handleOpenPdf}
+                onClick={handleSharePdf}
                 sx={{
                   backgroundColor: '#1340FF',
                   color: '#FFFFFF',
@@ -2323,7 +2357,7 @@ const MediaKitCreator = () => {
                   textTransform: 'none',
                 }}
               >
-                Open PDF
+                Download PDF
               </Button>
             </Box>
           )}
