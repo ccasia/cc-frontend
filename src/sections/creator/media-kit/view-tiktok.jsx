@@ -59,7 +59,7 @@ const TopContentGrid = ({ topContents }) => {
           flexDirection: 'row',
           flexWrap: 'nowrap',
           width: '100%',
-          gap: 0.5,
+          gap: 3, // Copy Instagram gap value for consistency
           justifyContent: 'flex-start',
           alignItems: 'stretch',
           overflowX: 'auto',
@@ -76,26 +76,28 @@ const TopContentGrid = ({ topContents }) => {
           <Box
             key={index}
             sx={{
-              minWidth: 240,
-              maxWidth: 280,
+              minWidth: 200, // Copy Instagram card sizing
+              maxWidth: 240, // Copy Instagram card sizing
               flex: '0 0 auto',
               scrollSnapAlign: 'center',
               borderRadius: 0,
               overflow: 'hidden',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-              bgcolor: 'background.paper',
+              boxShadow: 'none', // Remove visible box shadow
+              bgcolor: 'transparent', // Make background transparent
               display: 'flex',
               flexDirection: 'column',
               mx: 0,
+              height: 'auto', // Copy Instagram card styling
+              minHeight: 520, // Copy Instagram minimum height
             }}
           >
             <Box
               sx={{
                 position: 'relative',
-                height: 400,
+                height: 420, // Copy Instagram image height for consistency
                 width: '100%',
                 overflow: 'hidden',
-                borderRadius: 1,
+                borderRadius: 0,
               }}
             >
               <iframe
@@ -105,7 +107,7 @@ const TopContentGrid = ({ topContents }) => {
                   height: '100%', 
                   width: '100%', 
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '0px',
                 }}
                 allowFullScreen
               />
@@ -133,26 +135,49 @@ const TopContentGrid = ({ topContents }) => {
                 </Stack>
               </Box>
             </Box>
-            <Typography
-              variant="body2"
+            <Box
               sx={{
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                fontSize: '0.8rem',
-                mt: 2,
-                mx: 2,
-                mb: 2,
-                color: 'text.primary',
-                fontWeight: 500,
-                width: '100%',
-                maxWidth: '100%',
-                lineHeight: 1.5,
+                flex: 1, // Copy Instagram caption wrapper styling
+                display: 'flex',
+                flexDirection: 'column',
+                pt: 1.5, // Copy Instagram padding
+                px: 0.5, // Copy Instagram padding
+                pb: 0.5, // Copy Instagram padding
+                minHeight: 0, // Copy Instagram styling
+                maxHeight: 120, // Copy Instagram caption height limit
+                border: 'none', // Copy Instagram styling
+                boxShadow: 'none', // Copy Instagram styling
+                bgcolor: 'transparent', // Copy Instagram styling
               }}
             >
-              {content.video_description || 'No description available'}
-            </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: '0.8rem', // Copy Instagram font size
+                  color: 'text.primary',
+                  fontWeight: 500, // Copy Instagram font weight
+                  lineHeight: 1.4, // Copy Instagram line height
+                  wordBreak: 'break-word', // Copy Instagram word break
+                  overflowWrap: 'break-word', // Copy Instagram overflow wrap
+                  hyphens: 'auto', // Copy Instagram hyphens
+                  flex: 1, // Copy Instagram flex styling
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  ...((content.video_description?.length || 0) > 120 ? {
+                    // Copy Instagram long caption handling
+                    maxHeight: 'none', // Remove height restriction
+                  } : {
+                    // Copy Instagram short caption handling
+                    display: '-webkit-box',
+                    WebkitLineClamp: 5, // Copy Instagram line clamp
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }),
+                }}
+              >
+                {content.video_description || 'No description available'}
+              </Typography>
+            </Box>
           </Box>
         ))}
       </Box>
@@ -202,10 +227,10 @@ const TopContentGrid = ({ topContents }) => {
           <Box
             sx={{
               position: 'relative',
-              height: { xs: 400, sm: 450, md: 550 },
+              height: { xs: 480, sm: 550, md: 650 },
               width: '100%',
               overflow: 'hidden',
-              borderRadius: 1,
+              borderRadius: 0,
               cursor: 'pointer',
             }}
           >
@@ -216,7 +241,7 @@ const TopContentGrid = ({ topContents }) => {
                 height: '100%', 
                 width: '100%', 
                 border: 'none',
-                borderRadius: '4px',
+                borderRadius: '0px',
               }}
               allowFullScreen
             />
@@ -231,7 +256,7 @@ const TopContentGrid = ({ topContents }) => {
                 p: isMobile ? 2 : 1.5,
                 px: 2,
                 mb: 1,
-                borderRadius: '0 0 4px 4px',
+                borderRadius: '0 0 0px 0px',
                 pointerEvents: 'none', // Allow clicks to pass through to iframe
                 background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
               }}
@@ -253,23 +278,55 @@ const TopContentGrid = ({ topContents }) => {
             </Box>
           </Box>
           
-          <Typography
-            variant="body2"
-            className="media-kit-caption"
+          <Box
             sx={{
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
               mt: 1,
-              color: 'text.primary',
-              width: '100%',
-              maxWidth: '100%',
+              maxHeight: isMobile ? 120 : 50, // Much shorter caption area for desktop - more rectangular
+              overflow: 'hidden',
+              border: 'none', // Remove any borders
+              boxShadow: 'none', // Remove any shadows
+              bgcolor: 'transparent', // Make background transparent
             }}
           >
-            {`${content?.video_description?.slice(0, 80)}...`}
-          </Typography>
+            <Typography
+              variant="body2"
+              className="media-kit-caption"
+              sx={{
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                color: 'text.primary',
+                width: '100%',
+                maxWidth: '100%',
+                lineHeight: 1.4,
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                hyphens: 'auto',
+                ...(() => {
+                  const length = content?.video_description?.length || 0;
+                  const isLongCaption = length > 120;
+                  
+                  if (isLongCaption) {
+                    // For longer captions, limit lines for desktop
+                    return {
+                      display: '-webkit-box',
+                      WebkitLineClamp: isMobile ? 4 : 2, // Even fewer lines for desktop
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    };
+                  } else {
+                    // For shorter captions, use line clamp
+                    return {
+                      display: '-webkit-box',
+                      WebkitLineClamp: isMobile ? 3 : 2, // Fewer lines for desktop
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    };
+                  }
+                })(),
+              }}
+            >
+              {content?.video_description}
+            </Typography>
+          </Box>
         </Box>
       ))}
     </Box>
@@ -314,6 +371,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
     }
   };
 
+  // Show connect TikTok prompt if not connected
   if (!isConnected) {
     // Show connect TikTok prompt
     return (
@@ -340,7 +398,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
             sx={{
               width: 72,
               height: 72,
-              borderRadius: 2,
+              borderRadius: 0,
               bgcolor: '#FFFFFF',
               boxShadow: '0px 0px 15px 0px rgba(0, 0, 0, 0.1)',
               display: 'flex',
@@ -386,7 +444,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
     );
   }
 
-  // Only show grid if connected and has content
+  // Use real content if available
   const contentToShow = hasContent ? realTopContent : [];
 
   // Carousel for mobile, grid for desktop
@@ -408,7 +466,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
               flexDirection: 'row',
               flexWrap: 'nowrap',
               width: '100%',
-              gap: 0.5,
+              gap: 2, // Match Instagram wrapper container gap
               justifyContent: 'flex-start',
               alignItems: 'stretch',
               overflowX: 'auto',
@@ -421,11 +479,11 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
               pt: 1,
             }}
           >
-            {contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} mobileCarousel />}
+            <TopContentGrid topContents={contentToShow} mobileCarousel />
           </Box>
         </Box>
       ) : (
-        contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} />
+        <TopContentGrid topContents={contentToShow} />
       )}
     </Box>
   );
