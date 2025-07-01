@@ -104,21 +104,21 @@ const MediaKitCreator = () => {
   const getInstagram = useCallback(async () => {
     try {
       instaLoading.onTrue();
-      const response = await axiosInstance.get(`${endpoints.creator.getInstagram}/${user?.id}`);
-      setInstagram(response.data);
+      const res = await axiosInstance.get(endpoints.creators.social.instagramV2(user?.id));
+      setInstagram(res.data);
     } catch (error) {
       return;
     } finally {
       instaLoading.onFalse();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setInstagram, user?.id]);
+  }, [setInstagram]);
 
   const getTiktok = useCallback(async () => {
     try {
       isLoading.onTrue();
-      const response = await axiosInstance.get(`${endpoints.creator.getTiktok}/${user?.id}`);
-      setTiktok(response.data);
+      const res = await axiosInstance.get(endpoints.creators.social.instagramV2(user?.id));
+      setInstagram(res.data);
     } catch (error) {
       return;
     } finally {
@@ -126,7 +126,7 @@ const MediaKitCreator = () => {
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setTiktok, user?.id]);
+  }, [setTiktok]);
 
   const calculateEngagementRate = useCallback((totalLikes, followers) => {
     if (!(totalLikes || followers)) return null;
@@ -705,13 +705,9 @@ const MediaKitCreator = () => {
   }, [pdfReadyState.pdfUrl]);
 
   useEffect(() => {
-    if (user?.creator?.isFacebookConnected) {
-      getInstagram();
-    }
-    if (user?.creator?.isTiktokConnected) {
-      getTiktok();
-    }
-  }, [getInstagram, getTiktok, user?.creator?.isFacebookConnected, user?.creator?.isTiktokConnected]);
+    getInstagram();
+    getTiktok();
+  }, [getInstagram, getTiktok]);
 
   if (isLoading.value || instaLoading.value) {
     return (
@@ -2002,6 +1998,11 @@ const MediaKitCreator = () => {
                 width: '100% !important',
               },
             }}
+            data={(() => {
+              if (currentTab === 'instagram') return { instagram };
+              if (currentTab === 'tiktok') return { tiktok };
+              return null;
+            })()}
 
           />
         </Box>
