@@ -50,7 +50,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
-  const topThreeContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 3);
+  const topThreeContents = (topContents || []).sort((a, b) => a?.like_count > b?.like_count).slice(0, 3);
 
   // Carousel layout for mobile
   if (isMobile) {
