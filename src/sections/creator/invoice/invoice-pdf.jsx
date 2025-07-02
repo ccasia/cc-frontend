@@ -144,7 +144,7 @@ const InvoicePDF = ({ data }) => {
                   <Text>Cult Creative Sdn. Bhd. (1374477-W)</Text>
                   <Text style={{ marginVertical: 4 }}>(+60)12-849 6499</Text>
                   <Text style={{ lineHeight: 1.4 }}>
-                    5-3A, Block A, Jaya One, No.72A, Jalan Universiti,, 46200 Petaling Jaya, Selangor
+                    5-3A, Block A, Jaya One, No.72A, Jalan Universiti, 46200 Petaling Jaya, Selangor
                   </Text>
                 </View>
               </View>
