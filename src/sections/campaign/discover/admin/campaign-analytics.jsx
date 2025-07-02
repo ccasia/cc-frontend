@@ -14,6 +14,7 @@ import {
   IconButton,
   Link,
   Divider,
+  Button,
 } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
@@ -26,6 +27,7 @@ import {
 } from 'src/utils/socialMetricsCalculator';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import Iconify from 'src/components/iconify';
+import CacheMonitor from 'src/utils/cacheMonitor';
 
 const CampaignAnalytics = ({ campaign }) => {
   const campaignId = campaign?.id;
@@ -45,16 +47,19 @@ const CampaignAnalytics = ({ campaign }) => {
     data: insightsData, 
     isLoading: loadingInsights, 
     failedUrls,
-    error: insightsError 
+    error: insightsError,
+    loadingProgress,
+    clearCache
   } = useSocialInsights(postingSubmissions, campaignId);
-
-  console.log('Insight data: ', insightsData)
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => 
     calculateSummaryStats(insightsData), 
     [insightsData]
   );
+
+  console.log('Summary stats: ', summaryStats)
+  console.log('Insights data: ', insightsData)
 
   // No campaign
   if (!campaign) {
@@ -170,7 +175,7 @@ const CampaignAnalytics = ({ campaign }) => {
           </Grid>
 
           {/* Middle: Empty placeholder for future content */}
-          <Grid item xs={12} md={platform === 'Instagram' ? 5.5 : 7}>
+          <Grid item xs={12} md={5.5}>
             <Box 
               sx={{ 
                 height: '400px',
@@ -193,15 +198,15 @@ const CampaignAnalytics = ({ campaign }) => {
           </Grid>
 
           {/* Right: Platform-specific metrics */}
-          <Grid item xs={12} md={ platform === 'Instagram' ? 4 : 2 }>
+          <Grid item xs={12} md={4}>
             <Box sx={{ height: '100%' }}>
-              <Box>
-                {platform === 'Instagram' && (
-                  <Grid container columnSpacing={3} sx={{ mt: { xs: 0, md: 6 }, my: 4 }}>
+              <Box sx={{ width: { xs: '100%', md: 330 }}}>
+                {summaryStats && (
+                  <Grid container columnSpacing={2} sx={{ mt: { xs: 0, md: 6 } }}>
                     <Grid item xs={6}>
                       <Box sx={{ textAlign: 'left' }}>
                         <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                          {formatNumber(additionalMetrics.totalShares)}
+                          {summaryStats.totalShares}
                         </Typography>
                         <Typography mb={4} fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
                           Total Shares
@@ -230,17 +235,17 @@ const CampaignAnalytics = ({ campaign }) => {
                     <Grid item xs={6}>
                       <Box sx={{ textAlign: 'left' }}>
                         <Typography mt={1} fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                          {formatNumber(additionalMetrics.totalReach)}
+                          {summaryStats.avgEngagementRate}%
                         </Typography>
                         <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
-                          Total Reach
+                          Engagement Rate
                         </Typography>
                       </Box>
                     </Grid>
                     <Grid item xs={6}>
                       <Box sx={{ textAlign: 'left' }}>
                         <Typography mt={1} fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                          {((additionalMetrics.totalInteractions / summaryStats.totalViews) * 100).toFixed(1)}%
+                          {summaryStats.totalInteractions}
                         </Typography>
                         <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
                           Interactions
@@ -248,46 +253,6 @@ const CampaignAnalytics = ({ campaign }) => {
                       </Box>
                     </Grid>
                   </Grid>
-                )}
-
-                {platform === 'TikTok' && (
-                  <Box sx={{ width: { xs: '100%', md: 170 }}}>
-                    {/* Avg Engagement */}
-                    <Box sx={{ textAlign: 'left', mb: 3 }}>
-                      <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                        {additionalMetrics.avgEngagement.toFixed(1)}%
-                      </Typography>
-                      <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
-                        Avg Engagement
-                      </Typography>
-                    </Box>
-
-                    {/* Divider */}
-                    <Box sx={{ borderBottom: '1px solid #1340FF' }} />
-
-                    {/* Credits Used */}
-                    <Box sx={{ textAlign: 'left', mb: 3, mt: 1 }}>
-                      <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                        {additionalMetrics.creditsUsed.used}/{additionalMetrics.creditsUsed.total}
-                      </Typography>
-                      <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
-                        Credits Used
-                      </Typography>
-                    </Box>
-
-                    {/* Divider */}
-                    <Box sx={{ borderBottom: '1px solid #1340FF' }} />
-
-                    {/* Total Shares */}
-                    <Box sx={{ textAlign: 'left', mt: 1 }}>
-                      <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                        {formatNumber(additionalMetrics.totalShares)}
-                      </Typography>
-                      <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
-                        Total Shares
-                      </Typography>
-                    </Box>
-                  </Box>
                 )}
               </Box>
             </Box>
@@ -659,15 +624,41 @@ const CampaignAnalytics = ({ campaign }) => {
       {/* Debug Information - only in development */}
       {process.env.NODE_ENV === 'development' && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          <Typography variant="subtitle2">Debug Info:</Typography>
-          <Typography variant="body2">
-            Campaign ID: {campaignId}<br />
-            Campaign Name: {campaign?.name}<br />
-            Total Submissions: {submissions?.length || 0}<br />
-            Posting Submissions: {postingSubmissions.length}<br />
-            Platform: {platformType}<br />
-            Insights Loaded: {insightsData.length}
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+            <Box>
+              <Typography variant="subtitle2">Debug Info:</Typography>
+              <Typography variant="body2">
+                Campaign ID: {campaignId}<br />
+                Campaign Name: {campaign?.name}<br />
+                Total Submissions: {submissions?.length || 0}<br />
+                Posting Submissions: {postingSubmissions.length}<br />
+                Platform: {platformType}<br />
+                Insights Loaded: {insightsData.length}<br />
+                Loading Progress: {loadingProgress?.loaded || 0}/{loadingProgress?.total || 0}
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={1}>
+              <Button 
+                size="small" 
+                variant="outlined" 
+                onClick={() => {
+                  clearCache();
+                  window.location.reload();
+                }}
+                sx={{ fontSize: '0.75rem', py: 0.5 }}
+              >
+                Clear Cache & Reload
+              </Button>
+              <Button 
+                size="small" 
+                variant="outlined" 
+                onClick={() => CacheMonitor.getStats()}
+                sx={{ fontSize: '0.75rem', py: 0.5 }}
+              >
+                Cache Stats
+              </Button>
+            </Stack>
+          </Stack>
         </Alert>
       )}
 
@@ -677,9 +668,34 @@ const CampaignAnalytics = ({ campaign }) => {
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
             <CircularProgress size={20} />
             <Typography color="text.secondary">
-              Loading insights data... ({insightsData.length}/{postingSubmissions.length} completed)
+              Loading insights data... ({loadingProgress?.loaded || 0}/{loadingProgress?.total || postingSubmissions.length} completed)
             </Typography>
           </Stack>
+          {loadingProgress?.total > 0 && (
+            <Box sx={{ width: '100%', mt: 1 }}>
+              <Box
+                sx={{
+                  height: 4,
+                  backgroundColor: '#f0f0f0',
+                  borderRadius: 2,
+                  overflow: 'hidden'
+                }}
+              >
+                <Box
+                  sx={{
+                    height: '100%',
+                    backgroundColor: '#1340FF',
+                    borderRadius: 2,
+                    width: `${((loadingProgress.loaded / loadingProgress.total) * 100)}%`,
+                    transition: 'width 0.3s ease'
+                  }}
+                />
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                {Math.round((loadingProgress.loaded / loadingProgress.total) * 100)}% complete
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 
