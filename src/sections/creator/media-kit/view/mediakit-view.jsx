@@ -33,8 +33,6 @@ import Iconify from 'src/components/iconify';
 
 import MediaKitSocial from './media-kit-social-view';
 
-
-
 const MediaKitCreator = () => {
   const theme = useTheme();
   const smDown = useResponsive('down', 'sm');
@@ -1976,6 +1974,7 @@ const MediaKitCreator = () => {
             currentTab={currentTab}
             className="desktop-screenshot-mediakit"
             forceDesktop
+            // data={{ instagram, tiktok }}
             sx={{
               '& > div > div': {
                 flexDirection: 'row !important',
