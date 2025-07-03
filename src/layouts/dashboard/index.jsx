@@ -54,10 +54,11 @@ export default function DashboardLayout({ children }) {
 
   const { user } = useAuthContext();
   const { socket, isOnline } = useSocketContext();
-  const [hasSubmittedKWSP, setHasSubmittedKWSP] = useState(false);
+  // KWSP functionality disabled
+  // const [hasSubmittedKWSP, setHasSubmittedKWSP] = useState(false);
 
   const bugFormDialog = useBoolean();
-  const kwspFormDialog = useBoolean();
+  // const kwspFormDialog = useBoolean();
 
   const schema = yup.object().shape({
     stepsToReproduce: yup.string().required('Steps to reproduce is required'),
@@ -81,31 +82,32 @@ export default function DashboardLayout({ children }) {
     formState: { isDirty, isSubmitting },
   } = methods;
 
-  const kwspSchema = yup.object().shape({
-    fullName: yup.string().required('Full name is required'),
-    nricPassport: yup.string().required('NRIC/Passport number is required'),
-  });
+  // KWSP functionality disabled
+  // const kwspSchema = yup.object().shape({
+  //   fullName: yup.string().required('Full name is required'),
+  //   nricPassport: yup.string().required('NRIC/Passport number is required'),
+  // });
 
-  const kwspMethods = useForm({
-    resolver: yupResolver(kwspSchema),
-    defaultValues: {
-      fullName: '',
-      nricPassport: '',
-    },
-  });
+  // const kwspMethods = useForm({
+  //   resolver: yupResolver(kwspSchema),
+  //   defaultValues: {
+  //     fullName: '',
+  //     nricPassport: '',
+  //   },
+  // });
 
-  const {
-    handleSubmit: handleKwspSubmit,
-    reset: resetKwsp,
-    formState: { isSubmitting: isKwspSubmitting },
-  } = kwspMethods;
+  // const {
+  //   handleSubmit: handleKwspSubmit,
+  //   reset: resetKwsp,
+  //   formState: { isSubmitting: isKwspSubmitting },
+  // } = kwspMethods;
 
-  // Check KWSP submission status
-  useEffect(() => {
-    if (user?.hasSubmittedKWSP) {
-      setHasSubmittedKWSP(true);
-    }
-  }, [user]);
+  // KWSP functionality disabled
+  // useEffect(() => {
+  //   if (user?.hasSubmittedKWSP) {
+  //     setHasSubmittedKWSP(true);
+  //   }
+  // }, [user]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
@@ -168,26 +170,27 @@ export default function DashboardLayout({ children }) {
     }
   });
 
-  const onKwspSubmit = handleKwspSubmit(async (data) => {
-    try {
-      const response = await axiosInstance.post('/api/kwsp/submit', {
-        fullName: data.fullName,
-        nricPassport: data.nricPassport,
-      });
-
-      // Update local state immediately
-      setHasSubmittedKWSP(true);
-
-      resetKwsp();
-      enqueueSnackbar('Your details have been submitted successfully!', { variant: 'success' });
-      kwspFormDialog.onFalse();
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      enqueueSnackbar('Failed to submit form. Please try again.', {
-        variant: 'error',
-      });
-    }
-  });
+  // KWSP functionality disabled
+  // const onKwspSubmit = handleKwspSubmit(async (data) => {
+  //   try {
+  //     const response = await axiosInstance.post('/api/kwsp/submit', {
+  //       fullName: data.fullName,
+  //       nricPassport: data.nricPassport,
+  //     });
+  //
+  //     // Update local state immediately
+  //     setHasSubmittedKWSP(true);
+  //
+  //     resetKwsp();
+  //     enqueueSnackbar('Your details have been submitted successfully!', { variant: 'success' });
+  //     kwspFormDialog.onFalse();
+  //   } catch (error) {
+  //     console.error('Error submitting form:', error);
+  //     enqueueSnackbar('Failed to submit form. Please try again.', {
+  //       variant: 'error',
+  //     });
+  //   }
+  // });
 
   const feedbackButton = (
     <Box
@@ -225,37 +228,38 @@ export default function DashboardLayout({ children }) {
     </Box>
   );
 
-  const kwspButton = !hasSubmittedKWSP && (
-    <Box
-      component="div"
-      sx={{
-        position: 'fixed',
-        transform: 'rotate(-90deg)',
-        transformOrigin: 'bottom right',
-        top: { xs: 280, sm: 300, md: 320 },
-        right: { xs: 8, sm: 12, md: 15 },
-        zIndex: 9999,
-      }}
-    >
-      <Button
-        variant="contained"
-        onClick={kwspFormDialog.onTrue}
-        sx={{
-          border: 1,
-          borderBottomRightRadius: 0,
-          borderBottomLeftRadius: 0,
-          backgroundColor: '#1340FF',
-          whiteSpace: 'nowrap',
-          fontSize: { xs: '10px', sm: '11px', md: '14px' },
-          py: { xs: 0.5, sm: 0.75, md: 1 },
-          px: { xs: 1, sm: 1.5, md: 2 },
-          minWidth: { xs: 100, sm: 160, md: 220 },
-        }}
-      >
-        Earn RM100 with KWSP i-Saraan!
-      </Button>
-    </Box>
-  );
+  // KWSP functionality disabled
+  // const kwspButton = !hasSubmittedKWSP && (
+  //   <Box
+  //     component="div"
+  //     sx={{
+  //       position: 'fixed',
+  //       transform: 'rotate(-90deg)',
+  //       transformOrigin: 'bottom right',
+  //       top: { xs: 280, sm: 300, md: 320 },
+  //       right: { xs: 8, sm: 12, md: 15 },
+  //       zIndex: 9999,
+  //     }}
+  //   >
+  //     <Button
+  //       variant="contained"
+  //       onClick={kwspFormDialog.onTrue}
+  //       sx={{
+  //         border: 1,
+  //         borderBottomRightRadius: 0,
+  //         borderBottomLeftRadius: 0,
+  //         backgroundColor: '#1340FF',
+  //         whiteSpace: 'nowrap',
+  //         fontSize: { xs: '10px', sm: '11px', md: '14px' },
+  //         py: { xs: 0.5, sm: 0.75, md: 1 },
+  //         px: { xs: 1, sm: 1.5, md: 2 },
+  //         minWidth: { xs: 100, sm: 160, md: 220 },
+  //       }}
+  //     >
+  //       Earn RM100 with KWSP i-Saraan!
+  //     </Button>
+  //   </Box>
+  // );
 
   const feedbackForm = (
     <Dialog
@@ -332,108 +336,109 @@ export default function DashboardLayout({ children }) {
     </Dialog>
   );
 
-  const kwspForm = (
-    <Dialog
-      open={kwspFormDialog.value}
-      maxWidth="md"
-      fullWidth
-      sx={{
-        '& .MuiDialog-paper': {
-          scrollbarWidth: 'none',
-          '@media (max-width: 600px)': {
-            margin: '16px',
-            maxHeight: 'calc(100% - 32px)',
-          },
-        },
-      }}
-    >
-      <FormProvider methods={kwspMethods} onSubmit={onKwspSubmit}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" px={1}>
-          <DialogTitle sx={{ p: { xs: 2, sm: 3 } }}>
-            <Typography
-              sx={{
-                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                fontSize: { xs: 24, sm: 30 },
-                fontWeight: 300,
-              }}
-            >
-              💰 Opt in for KWSP i-Saraan
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: { xs: 12, sm: 14 },
-                color: 'text.secondary',
-                mt: 1,
-              }}
-            >
-              No registration needed. Just drop your details below!
-            </Typography>
-          </DialogTitle>
-          <IconButton 
-            onClick={kwspFormDialog.onFalse}
-            sx={{ 
-              '@media (max-width: 600px)': {
-                mt: 2,
-                mr: 0,
-                ml: -3
-              }
-            }}
-          >
-            <Iconify icon="charm:cross" width={20} />
-          </IconButton>
-        </Stack>
-        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
-          <Stack spacing={{ xs: 2, sm: 3 }}>
-            <FormField label="Full Name">
-              <RHFTextField
-                name="fullName"
-                placeholder="Enter your full name"
-                size="small"
-              />
-            </FormField>
-
-            <FormField label="NRIC/Passport Number">
-              <RHFTextField
-                name="nricPassport"
-                placeholder="Enter your NRIC/Passport No."
-                size="small"
-              />
-            </FormField>
-
-            <Typography
-              sx={{
-                fontSize: { xs: 12, sm: 14 },
-                color: 'text.secondary',
-                mt: 2,
-              }}
-            >
-              By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan initiative. You will be notified via email once the funds have been transferred!
-            </Typography>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
-          <LoadingButton
-            variant="contained"
-            type="submit"
-            loading={isKwspSubmitting}
-            sx={{
-              background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
-              boxShadow: '0px -3px 0px 0px rgba(68, 68, 77, 0.45) inset',
-              '&:hover': {
-                background: '#1340FF',
-              },
-              '&.Mui-disabled': {
-                background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
-                color: 'rgba(255, 255, 255, 0.5)',
-              },
-            }}
-          >
-            Submit Details
-          </LoadingButton>
-        </DialogActions>
-      </FormProvider>
-    </Dialog>
-  );
+  // KWSP functionality disabled
+  // const kwspForm = (
+  //   <Dialog
+  //     open={kwspFormDialog.value}
+  //     maxWidth="md"
+  //     fullWidth
+  //     sx={{
+  //       '& .MuiDialog-paper': {
+  //         scrollbarWidth: 'none',
+  //         '@media (max-width: 600px)': {
+  //           margin: '16px',
+  //           maxHeight: 'calc(100% - 32px)',
+  //         },
+  //       },
+  //     }}
+  //   >
+  //     <FormProvider methods={kwspMethods} onSubmit={onKwspSubmit}>
+  //       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" px={1}>
+  //         <DialogTitle sx={{ p: { xs: 2, sm: 3 } }}>
+  //           <Typography
+  //             sx={{
+  //               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+  //               fontSize: { xs: 24, sm: 30 },
+  //               fontWeight: 300,
+  //             }}
+  //           >
+  //             💰 Opt in for KWSP i-Saraan
+  //           </Typography>
+  //           <Typography
+  //             sx={{
+  //               fontSize: { xs: 12, sm: 14 },
+  //               color: 'text.secondary',
+  //               mt: 1,
+  //             }}
+  //           >
+  //             No registration needed. Just drop your details below!
+  //           </Typography>
+  //         </DialogTitle>
+  //         <IconButton 
+  //           onClick={kwspFormDialog.onFalse}
+  //           sx={{ 
+  //             '@media (max-width: 600px)': {
+  //               mt: 2,
+  //               mr: 0,
+  //               ml: -3
+  //             }
+  //           }}
+  //         >
+  //           <Iconify icon="charm:cross" width={20} />
+  //         </IconButton>
+  //       </Stack>
+  //       <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
+  //         <Stack spacing={{ xs: 2, sm: 3 }}>
+  //           <FormField label="Full Name">
+  //             <RHFTextField
+  //               name="fullName"
+  //               placeholder="Enter your full name"
+  //               size="small"
+  //             />
+  //           </FormField>
+  //
+  //           <FormField label="NRIC/Passport Number">
+  //             <RHFTextField
+  //               name="nricPassport"
+  //               placeholder="Enter your NRIC/Passport No."
+  //               size="small"
+  //             />
+  //           </FormField>
+  //
+  //           <Typography
+  //             sx={{
+  //               fontSize: { xs: 12, sm: 14 },
+  //               color: 'text.secondary',
+  //               mt: 2,
+  //             }}
+  //           >
+  //             By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan initiative. You will be notified via email once the funds have been transferred!
+  //           </Typography>
+  //         </Stack>
+  //       </DialogContent>
+  //       <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
+  //         <LoadingButton
+  //           variant="contained"
+  //           type="submit"
+  //           loading={isKwspSubmitting}
+  //           sx={{
+  //             background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+  //             boxShadow: '0px -3px 0px 0px rgba(68, 68, 77, 0.45) inset',
+  //             '&:hover': {
+  //               background: '#1340FF',
+  //             },
+  //             '&.Mui-disabled': {
+  //               background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+  //               color: 'rgba(255, 255, 255, 0.5)',
+  //             },
+  //           }}
+  //         >
+  //           Submit Details
+  //         </LoadingButton>
+  //       </DialogActions>
+  //     </FormProvider>
+  //   </Dialog>
+  // );
 
   if (isMini) {
     return (
@@ -465,9 +470,10 @@ export default function DashboardLayout({ children }) {
 
           <Main>{children}</Main>
           {feedbackButton}
-          {kwspButton}
+          {/* KWSP functionality disabled */}
+          {/* {kwspButton} */}
           {feedbackForm}
-          {kwspForm}
+          {/* {kwspForm} */}
         </Box>
       </Box>
     );
@@ -510,9 +516,10 @@ export default function DashboardLayout({ children }) {
         <Main>{children}</Main>
 
         {feedbackButton}
-        {kwspButton}
+        {/* KWSP functionality disabled */}
+        {/* {kwspButton} */}
         {feedbackForm}
-        {kwspForm}
+        {/* {kwspForm} */}
       </Box>
     </Box>
   );
