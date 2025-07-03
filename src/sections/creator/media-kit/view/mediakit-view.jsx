@@ -140,9 +140,8 @@ const MediaKitCreator = () => {
             (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0),
             instagram?.overview?.followers_count
           ) || 0
-        }`,
-        averageLikes: instagram?.medias?.averageLikes || 0,
-        averageComments: instagram?.medias?.averageComments || 0,
+        }%`,
+        averageLikes: instagram?.instagramUser?.average_like || 0,
         username: instagram?.instagramUser?.username,
       };
     }
@@ -1186,12 +1185,12 @@ const MediaKitCreator = () => {
 
 
             {/* Total Audience Section */}
-            <Stack alignItems="flex-start" sx={{ pl: { xs: 0, sm: 0 } }}>
+            <Stack alignItems="flex-start" sx={{ pl: { xs: 1, sm: 0 } }}>
               <Typography
                 variant="h2"
                 color="#231F20"
                 fontFamily="Aileron, sans-serif"
-                fontWeight={900}
+                fontWeight={600}
                 component={m.div}
                 initial={{ scale: 0.5 }}
                 animate={{ scale: 1 }}
@@ -1204,8 +1203,10 @@ const MediaKitCreator = () => {
                 align="left"
                 sx={{ fontSize: { xs: '3rem', md: '4rem' } }}
               >
+
                   {formatTotalAudience(socialMediaAnalytics.followers)}
                 </Typography>
+
               <Box
                 component="span"
                 sx={{
@@ -1213,7 +1214,7 @@ const MediaKitCreator = () => {
                   fontSize: { xs: '2rem', md: '3rem' },
                   fontFamily: 'Aileron, sans-serif',
                   fontWeight: 300,
-                  // letterSpacing: '0.05em',
+                  letterSpacing: '0.05em',
                   textAlign: 'left',
                   display: 'block',
                 }}
@@ -1565,9 +1566,8 @@ const MediaKitCreator = () => {
         {/* <Divider sx={{ my: 3 }} /> */}
         {/* Bottom View */}
 
-        <Typography fontWeight={700} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1} mt={3}>
-          Top Content{' '}
-          {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
+        <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1}>
+          Top Content {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`}
         </Typography>
 
         {/* {smDown && (

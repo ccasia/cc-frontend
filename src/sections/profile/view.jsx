@@ -6,16 +6,16 @@ import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import { Link, useParams, useLocation } from 'react-router-dom';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
-  Grid,
   Card,
-  Stack,
+  Grid,
   alpha,
+  Stack,
   Avatar,
   Button,
   MenuItem,
@@ -61,6 +61,7 @@ const Profile = () => {
   const theme = useTheme();
   const { user } = useAuthContext();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [image, setImage] = useState(null);
   const { section } = useParams();
@@ -888,12 +889,13 @@ const Profile = () => {
   // Contents
   const adminContents = (
     <>
-      {currentTab === 'security' && <AccountSecurity />}
+      {currentTab === 'security' && (
+        <AccountSecurity />
+      )}
 
       {currentTab === 'general' && (
         <Grid container spacing={3}>
           {renderPicture}
-
           {renderForm}
         </Grid>
       )}
@@ -904,7 +906,9 @@ const Profile = () => {
 
   const creatorContents = (
     <>
-      {currentTab === 'security' && <AccountSecurity />}
+      {currentTab === 'security' && (
+        <AccountSecurity />
+      )}
 
       {currentTab === 'paymentForm' && <PaymentFormProfile user={user} />}
 

@@ -1,77 +1,78 @@
+/* eslint-disable react/prop-types */
 import { Box, Grid, Typography } from '@mui/material';
-import { ContentInfoHeader, ContentImageCard, StatsLegend } from './shared-components';
 
-const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) => {
-  return (
-    <Grid container spacing={3}>
-      {/* Content Image and Caption */}
-      <Grid item xs={12} md={5}>
-        <ContentImageCard content={content} />
-      </Grid>
+import { StatsLegend, ContentImageCard, ContentInfoHeader } from './shared-components';
 
-      {/* Right side content */}
-      <Grid item xs={12} md={7}>
-        {/* Account, Content Type, Date Posted Row */}
-        <ContentInfoHeader content={content} />
+const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) => (
+  <Grid container spacing={3}>
+    {/* Content Image and Caption */}
+    <Grid item xs={12} md={5}>
+      <ContentImageCard content={content} />
+    </Grid>
 
-        {/* Content Engagement Section */}
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            sx={{
-              fontSize: { xs: 20, sm: 24 },
-              fontWeight: 600,
-              mb: 2,
-            }}
-          >
-            Content Engagement
-          </Typography>
+    {/* Right side content */}
+    <Grid item xs={12} md={7}>
+      {/* Account, Content Type, Date Posted Row */}
+      <ContentInfoHeader content={content} />
 
-          <Box
-            sx={{
-              height: 'auto',
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: '1fr 1fr',
-                md: '1fr 1fr',
-              },
-              gridTemplateRows: {
-                xs: 'repeat(4, 1fr)',
-                sm: '1fr 1fr',
-                md: '1fr 1fr',
-              },
-              gap: 3,
-            }}
-          >
-            {renderEngagementCard({
-              icon: 'mdi:eye-outline',
-              title: 'Views',
-              value: content.metrics?.views || 0,
-              metricKey: 'views',
-            })}
+      {/* Content Engagement Section */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          sx={{
+            fontSize: { xs: 20, sm: 24 },
+            fontWeight: 600,
+            mb: 2,
+          }}
+        >
+          Content Engagement
+        </Typography>
 
-            {renderEngagementCard({
-              icon: 'mdi:heart-outline',
-              title: 'Likes',
-              value: content.metrics?.likes || 0,
-              metricKey: 'likes',
-            })}
+        <Box
+          sx={{
+            height: 'auto',
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: '1fr 1fr',
+              md: '1fr 1fr',
+            },
+            gridTemplateRows: {
+              xs: 'repeat(4, 1fr)',
+              sm: '1fr 1fr',
+              md: '1fr 1fr',
+            },
+            gap: 3,
+          }}
+        >
+          {renderEngagementCard({
+            icon: 'mdi:eye-outline',
+            title: 'Views',
+            value: content.metrics?.views || 0,
+            metricKey: 'views',
+          })}
 
-            {renderEngagementCard({
-              icon: 'mdi:comment-outline',
-              title: 'Comments',
-              value: content.metrics?.comments || 0,
-              metricKey: 'comments',
-            })}
+          {renderEngagementCard({
+            icon: 'mdi:heart-outline',
+            title: 'Likes',
+            value: content.metrics?.likes || 0,
+            metricKey: 'likes',
+          })}
 
-            {renderEngagementCard({
-              icon: 'mdi:bookmark-outline',
-              title: 'Saved',
-              value: content.metrics?.saved || 0,
-              metricKey: 'saved',
-            })}
-          </Box>
+          {renderEngagementCard({
+            icon: 'mdi:comment-outline',
+            title: 'Comments',
+            value: content.metrics?.comments || 0,
+            metricKey: 'comments',
+          })}
+
+          {renderEngagementCard({
+            icon: 'mdi:bookmark-outline',
+            title: 'Saved',
+            value: content.metrics?.saved || 0,
+            metricKey: 'saved',
+          })}
         </Box>
+      </Box>
 
         {/* Circular Stats with Campaign Averages */}
         <Box sx={{ overflowX: 'auto', display: { sm: 'flex' }, justifyContent: 'center' }}>
@@ -95,22 +96,21 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
                 })}
               </Grid>
 
-              <Grid item xs={4} md={4}>
-                {renderCircularStat({
-                  width: '75%',
-                  label: 'Shares',
-                  value: content.metrics?.shares || 0,
-                  metricKey: 'shares'
-                })}
-              </Grid>
+            <Grid item xs={4} md={4}>
+              {renderCircularStat({
+                width: '75%',
+                label: 'Shares',
+                value: content.metrics?.shares || 0,
+                metricKey: 'shares',
+              })}
             </Grid>
-          </Box>
+          </Grid>
         </Box>
+      </Box>
 
-        <StatsLegend />
-      </Grid>
+      <StatsLegend />
     </Grid>
-  );
-};
+  </Grid>
+);
 
 export default InstagramLayout;

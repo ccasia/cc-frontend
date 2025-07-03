@@ -1,16 +1,19 @@
 import * as Yup from 'yup';
 import { enqueueSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, Controller } from 'react-hook-form';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Grid, Fade, Stack, Paper, Popper, IconButton, Typography, InputAdornment } from '@mui/material';
+import { Box, Grid, Fade, Stack, Paper, Modal, Popper, Button, Avatar, IconButton, Typography, InputAdornment } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
@@ -19,10 +22,14 @@ import FormProvider from 'src/components/hook-form/form-provider';
 const AccountSecurity = () => {
   const password = useBoolean();
   const [loading, setLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const mdDown = useResponsive('down', 'lg');
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const id = open ? 'popper' : undefined;
+  const { user } = useAuthContext();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClose = (event) => {
@@ -125,6 +132,21 @@ const AccountSecurity = () => {
       ))}
     </Stack>
   );
+
+  const handleDeleteAccount = async () => {
+    try {
+      setIsDeleting(true);
+      await axiosInstance.delete('/api/auth/account');
+      enqueueSnackbar('Account deleted successfully', { variant: 'success' });
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to delete account', { variant: 'error' });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -309,12 +331,11 @@ const AccountSecurity = () => {
               </Typography>
             </Box>
 
-            <Stack alignItems="flex-start">
+            <Stack direction="row" spacing={2} alignItems="flex-start">
               <LoadingButton
                 type="submit"
                 variant="contained"
                 loading={loading}
-                // disabled={!isDirty}
                 sx={{
                   background: isDirty
                     ? '#1340FF'
@@ -331,10 +352,153 @@ const AccountSecurity = () => {
               >
                 Update
               </LoadingButton>
+
+              {/* <Button
+                variant="contained"
+                color="error"
+                onClick={() => setDeleteDialogOpen(true)}
+                startIcon={<Iconify icon="mdi:delete" />}
+                disabled={user?.role === 'admin' || user?.role === 'superadmin'}
+                sx={{
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  borderRadius: '10px',
+                  borderBottom: '3px solid #b71c1c',
+                  transition: 'none',
+                  width: { xs: '100%', sm: '160px' },
+                  height: '44px',
+                }}
+              >
+                Delete Account
+              </Button> */}
             </Stack>
           </Stack>
         </Grid>
       </Grid>
+
+      <Modal
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+        }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            width: { xs: '90%', sm: 400 },
+            maxWidth: 400,
+            bgcolor: 'background.paper',
+            borderRadius: 3,
+            boxShadow: 24,
+            p: 4,
+            textAlign: 'center',
+          }}
+        >
+          {/* Close button */}
+          <IconButton
+            onClick={() => setDeleteDialogOpen(false)}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              color: 'text.secondary',
+            }}
+          >
+            <Iconify icon="mingcute:close-line" width={20} />
+          </IconButton>
+
+          {/* Red Circle with Warning Emoji */}
+          <Box sx={{ mb: 3 }}>
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                margin: '0 auto',
+                bgcolor: '#F04438',
+                mb: 2,
+                fontSize: '2rem',
+              }}
+            >
+              ⚠️
+            </Avatar>
+          </Box>
+
+          {/* Delete Account Text - Black */}
+          <Typography
+            variant="h4"
+            sx={{
+              mb: 1,
+              fontWeight: 700,
+              color: '#000000',
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              fontSize: { xs: '2rem', sm: '2.25rem' },
+            }}
+          >
+            Delete Account
+          </Typography>
+
+          {/* Warning Text - Gray */}
+          <Typography
+            variant="body1"
+            sx={{
+              mb: 4,
+              fontWeight: 400,
+              color: '#666666',
+              lineHeight: 1.5,
+            }}
+          >
+            Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.
+          </Typography>
+
+          {/* Action Buttons */}
+          <Stack direction="row" spacing={2} justifyContent="center">
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => setDeleteDialogOpen(false)}
+              sx={{
+                borderColor: '#E0E0E0',
+                color: '#666666',
+                '&:hover': {
+                  borderColor: '#BDBDBD',
+                  bgcolor: '#F5F5F5',
+                },
+                fontWeight: 600,
+                py: 1.5,
+                px: 3,
+                minWidth: 100,
+              }}
+            >
+              Cancel
+            </Button>
+            
+            <LoadingButton
+              variant="contained"
+              size="large"
+              onClick={handleDeleteAccount}
+              loading={isDeleting}
+              sx={{
+                bgcolor: '#F04438',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: '#D92D20',
+                },
+                fontWeight: 600,
+                py: 1.5,
+                px: 3,
+                minWidth: 140,
+              }}
+            >
+              Delete Account
+            </LoadingButton>
+          </Stack>
+        </Box>
+      </Modal>
+
       <Popper
         id={id}
         open={open}

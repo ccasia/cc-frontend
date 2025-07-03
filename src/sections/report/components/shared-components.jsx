@@ -1,5 +1,6 @@
+/* eslint-disable react/prop-types */
 // components/reporting/SharedComponents.jsx
-import { Box, Typography, Divider } from '@mui/material';
+import { Box, Divider, Typography } from '@mui/material';
 
 export const ContentInfoHeader = ({ content }) => (
   <Box
@@ -30,6 +31,7 @@ export const ContentInfoHeader = ({ content }) => (
 
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <Typography sx={{ fontSize: { xs: 14, sm: 20 }, color: '#666', mb: 1 }}>Content Type</Typography>
+
       <Typography
         sx={{
           fontSize: { xs: 20, sm: 36 },
@@ -49,7 +51,9 @@ export const ContentInfoHeader = ({ content }) => (
     />
 
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+
       <Typography sx={{ fontSize: { xs: 14, sm: 20 }, color: '#666', mb: 1 }}>Date Posted</Typography>
+
       <Typography
         sx={{
           fontSize: { xs: 20, sm: 36 },
@@ -104,7 +108,8 @@ export const ContentImageCard = ({ content }) => (
           WebkitBoxOrient: 'vertical'
         }}
       >
-        {content.caption || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna.'}
+        {content.caption ||
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna.'}
       </Typography>
     </Box>
   </Box>
@@ -114,9 +119,9 @@ export const StatsLegend = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
       <Box
-				component="img"
-				alt="legend_marker"
-				src="/assets/icons/components/ic_legend_marker_gray.svg"
+        component="img"
+        alt="legend_marker"
+        src="/assets/icons/components/ic_legend_marker_gray.svg"
         width={20}
         mr={0.5}
       />
@@ -127,9 +132,9 @@ export const StatsLegend = () => (
 
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
       <Box
-				component="img"
-				alt="legend_marker"
-				src="/assets/icons/components/ic_legend_marker.svg"
+        component="img"
+        alt="legend_marker"
+        src="/assets/icons/components/ic_legend_marker.svg"
         width={20}
         mr={0.5}
       />
