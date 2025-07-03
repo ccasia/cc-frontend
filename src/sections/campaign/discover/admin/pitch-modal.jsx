@@ -3,7 +3,7 @@
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useMemo, useState, useEffect } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
@@ -195,7 +195,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
 
   const handleShortlistedProfileClick = (e) => {
     e.stopPropagation();
-    navigate(`/dashboard/campaign/discover/detail/${campaign.id}/creator/${currentPitch?.user?.id}`);
+    navigate(
+      `/dashboard/campaign/discover/detail/${campaign.id}/creator/${currentPitch?.user?.id}`
+    );
   };
 
   return (
@@ -249,7 +251,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 direction={{ xs: 'column', sm: 'row' }}
                 alignItems={{ xs: 'flex-start', sm: 'center' }}
                 spacing={2}
-                sx={{ pr: { xs: 0, sm: 8 } }} 
+                sx={{ pr: { xs: 0, sm: 8 } }}
               >
                 {/* Creator Info */}
                 <Avatar
@@ -263,10 +265,14 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   }}
                 />
                 <Stack spacing={0.5}>
-                  <Typography sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20' }}>
+                  <Typography
+                    sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20' }}
+                  >
                     {currentPitch?.user?.name}
                   </Typography>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}>
+                  <Typography
+                    sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}
+                  >
                     {currentPitch?.user?.email}
                   </Typography>
 
@@ -354,14 +360,16 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Stack>
 
               {/* Social Media Icons - Desktop */}
-              <Box sx={{ 
-                display: { xs: 'none', sm: 'block' },
-                position: 'absolute',
-                right: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 9,
-              }}>
+              <Box
+                sx={{
+                  display: { xs: 'none', sm: 'block' },
+                  position: 'absolute',
+                  right: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 9,
+                }}
+              >
                 <Stack direction="row" spacing={1}>
                   {currentPitch?.user?.creator?.instagram && (
                     <Tooltip title="Instagram Profile">
@@ -499,14 +507,23 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 >
                   <Stack direction="row" spacing={0} width="100%" justifyContent="flex-end">
                     {/* First stat */}
-                    <Box sx={{ flex: 0, display: 'flex', justifyContent: 'flex-end', minWidth: '80px' }}>
+                    <Box
+                      sx={{
+                        flex: 0,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        minWidth: '80px',
+                      }}
+                    >
                       <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
                         <Box
                           component="img"
                           src="/assets/icons/overview/purpleGroup.svg"
                           sx={{ width: 20, height: 20 }}
                         />
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>N/A</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                          N/A
+                        </Typography>
                         <Typography
                           variant="caption"
                           color="#8e8e93"
@@ -516,26 +533,35 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             overflow: 'visible',
                             width: '100%',
                             fontSize: '12px',
-                            textAlign: 'right'
+                            textAlign: 'right',
                           }}
                         >
                           Followers
                         </Typography>
                       </Stack>
                     </Box>
-                    
+
                     {/* Divider */}
                     <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
-                    
+
                     {/* Second stat */}
-                    <Box sx={{ flex: 0, display: 'flex', justifyContent: 'flex-end', minWidth: '120px' }}>
+                    <Box
+                      sx={{
+                        flex: 0,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        minWidth: '120px',
+                      }}
+                    >
                       <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
                         <Box
                           component="img"
                           src="/assets/icons/overview/greenChart.svg"
                           sx={{ width: 20, height: 20 }}
                         />
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>N/A</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                          N/A
+                        </Typography>
                         <Typography
                           variant="caption"
                           color="#8e8e93"
@@ -545,26 +571,35 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             overflow: 'visible',
                             width: '100%',
                             fontSize: '12px',
-                            textAlign: 'right'
+                            textAlign: 'right',
                           }}
                         >
                           Engagement Rate
                         </Typography>
                       </Stack>
                     </Box>
-                    
+
                     {/* Divider */}
                     <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
-                    
+
                     {/* Third stat */}
-                    <Box sx={{ flex: 0, display: 'flex', justifyContent: 'flex-end', minWidth: '105px' }}>
+                    <Box
+                      sx={{
+                        flex: 0,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        minWidth: '105px',
+                      }}
+                    >
                       <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
                         <Box
                           component="img"
                           src="/assets/icons/overview/bubbleHeart.svg"
                           sx={{ width: 20, height: 20 }}
                         />
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>N/A</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                          N/A
+                        </Typography>
                         <Typography
                           variant="caption"
                           color="#8e8e93"
@@ -574,7 +609,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             overflow: 'visible',
                             width: '100%',
                             fontSize: '12px',
-                            textAlign: 'right'
+                            textAlign: 'right',
                           }}
                         >
                           Average Likes
@@ -587,7 +622,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             </Grid>
 
             <Divider />
-
           </Stack>
         </Box>
 
@@ -628,9 +662,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     ) : (
                       <Box
                         component="img"
-                          src="/assets/icons/components/ic_letterpitch.svg"
-                          sx={{ width: 64, height: 64 }}
-                        />
+                        src="/assets/icons/components/ic_letterpitch.svg"
+                        sx={{ width: 64, height: 64 }}
+                      />
                     )}
                     <Stack>
                       <Typography variant="h6">

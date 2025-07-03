@@ -242,6 +242,7 @@ export const endpoints = {
     allcreatorAgreement: '/api/campaign/getCreatorAgreements',
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
     sendAgreement: `/api/campaign/sendAgreement`,
+    resendAgreement: `/api/campaign/resendAgreement`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
     linkNewAgreement: `/api/campaign/linkNewAgreement`,
     removeCreator: `/api/campaign/removeCreatorFromCampaign`,

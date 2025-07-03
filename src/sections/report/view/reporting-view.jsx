@@ -1,15 +1,8 @@
+/* eslint-disable no-nested-ternary */
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import {
-  Box,
-  Card,
-  Stack,
-  Button,
-  Container,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Card, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -17,9 +10,9 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
+import TikTokLayout from '../components/TikTokLayout';
 // Import platform-specific layout components
 import InstagramLayout from '../components/InstagramLayout';
-import TikTokLayout from '../components/TikTokLayout';
 
 const ReportingView = () => {
   const navigate = useNavigate();
@@ -35,7 +28,7 @@ const ReportingView = () => {
     creatorId: '',
     creatorName: '',
     campaignId: '',
-    campaignName: '',    
+    campaignName: '',
     metrics: null,
     campaignAverages: null,
     campaignComparison: null,
@@ -48,7 +41,8 @@ const ReportingView = () => {
       const formatted = (num / 1000000).toFixed(1);
       // Remove .0 if the decimal part is zero
       return `${formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted}M`;
-    } else if (num >= 1000) {
+    }
+    if (num >= 1000) {
       const formatted = (num / 1000).toFixed(1);
       // Remove .0 if the decimal part is zero
       return `${formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted}K`;
@@ -112,7 +106,7 @@ const ReportingView = () => {
   // Fetch content data using the media insight endpoint
   const fetchContentData = useCallback(async (postUrl, userId, campaignId) => {
     setLoading(true);
-    setContent(prev => ({ ...prev, error: null }));
+    setContent((prev) => ({ ...prev, error: null }));
 
     try {
       const parsedUrl = parseContentUrl(postUrl);
@@ -123,21 +117,20 @@ const ReportingView = () => {
 
       if (parsedUrl.platform === 'Instagram') {
         // Build URL with campaignId if provided
-        let apiUrl = endpoints.creators.social.getInstagramMediaInsight(userId, encodeURIComponent(postUrl), campaignId);
+        const apiUrl = endpoints.creators.social.getInstagramMediaInsight(
+          userId,
+          encodeURIComponent(postUrl),
+          campaignId
+        );
 
         const response = await axiosInstance.get(apiUrl);
 
         if (response.data?.video && response.data?.insight) {
-          const { 
-            video, 
-            insight, 
-            campaignAverages, 
-            campaignComparison, 
-            hasCampaignData 
-          } = response.data;
+          const { video, insight, campaignAverages, campaignComparison, hasCampaignData } =
+            response.data;
 
           const currentMetricsMap = {};
-          insight.forEach(item => {
+          insight.forEach((item) => {
             currentMetricsMap[item.name] = item.value;
           });
 
@@ -151,7 +144,7 @@ const ReportingView = () => {
             total_interactions: currentMetricsMap.total_interactions || 0,
           };
 
-          setContent(prev => ({
+          setContent((prev) => ({
             ...prev,
             account: 'Instagram',
             contentType: parsedUrl.type,
@@ -159,9 +152,9 @@ const ReportingView = () => {
             mediaUrl: video.thumbnail_url || video.media_url,
             caption: video.caption,
             metrics: currentMetrics,
-            campaignAverages: campaignAverages,
-            campaignComparison: campaignComparison,
-            hasCampaignData: hasCampaignData,
+            campaignAverages,
+            campaignComparison,
+            hasCampaignData,
             videoData: video,
             insightData: insight,
           }));
@@ -169,25 +162,24 @@ const ReportingView = () => {
           throw new Error('No video data found for this URL');
         }
       } else if (parsedUrl.platform === 'TikTok') {
-        let apiUrl = endpoints.creators.social.getTikTokMediaInsight(userId, encodeURIComponent(postUrl), campaignId);
+        const apiUrl = endpoints.creators.social.getTikTokMediaInsight(
+          userId,
+          encodeURIComponent(postUrl),
+          campaignId
+        );
 
         const response = await axiosInstance.get(apiUrl);
 
         if (response.data?.video && response.data?.insight) {
-          const { 
-            video, 
-            insight, 
-            campaignAverages, 
-            campaignComparison, 
-            hasCampaignData
-          } = response.data;
+          const { video, insight, campaignAverages, campaignComparison, hasCampaignData } =
+            response.data;
 
           const metricsMap = {};
-          insight.forEach(item => {
+          insight.forEach((item) => {
             metricsMap[item.name] = item.value;
           });
 
-          setContent(prev => ({
+          setContent((prev) => ({
             ...prev,
             account: 'TikTok',
             contentType: parsedUrl.type,
@@ -201,8 +193,8 @@ const ReportingView = () => {
               shares: video.share_count || metricsMap.shares || 0,
               total_interactions: metricsMap.total_interactions || 0,
             },
-            campaignAverages: campaignAverages,
-            campaignComparison: campaignComparison,
+            campaignAverages,
+            campaignComparison,
             hasCampaignData: hasCampaignData || false,
             videoData: video,
             insightData: insight,
@@ -215,9 +207,12 @@ const ReportingView = () => {
       }
     } catch (error) {
       console.error('Error fetching content:', error);
-      setContent(prev => ({
+      setContent((prev) => ({
         ...prev,
-        error: error.response?.data?.message || error.message || 'Failed to fetch content data. Please try again.',
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to fetch content data. Please try again.',
       }));
     } finally {
       setLoading(false);
@@ -233,7 +228,7 @@ const ReportingView = () => {
 
     if (urlParam && userId) {
       setUrl(urlParam);
-      setContent(prev => ({
+      setContent((prev) => ({
         ...prev,
         creatorId: userId || '',
         creatorName: creatorName || '',
@@ -254,13 +249,17 @@ const ReportingView = () => {
 
   const renderCircularStat = ({ width, label, value, metricKey }) => {
     const displayValue = value || 0;
-    
+
     // Use campaign averages if available, otherwise fallback to hardcoded values
     let avgValue = 0;
     let percentageDiff = 0;
     let isAboveAverage = false;
 
-    if (content.hasCampaignData && content.campaignComparison && content.campaignComparison[metricKey]) {
+    if (
+      content.hasCampaignData &&
+      content.campaignComparison &&
+      content.campaignComparison[metricKey]
+    ) {
       const comparison = content.campaignComparison[metricKey];
       avgValue = comparison.average;
       percentageDiff = Math.abs(comparison.change);
@@ -268,24 +267,36 @@ const ReportingView = () => {
     } else {
       // Fallback values if no campaign data
       const fallbackAverages = {
-        'total_interactions': 300,
-        'reach': 8000,
-        'shares': 100
+        total_interactions: 300,
+        reach: 8000,
+        shares: 100,
       };
       avgValue = fallbackAverages[metricKey] || 0;
       isAboveAverage = displayValue > avgValue;
       percentageDiff = avgValue > 0 ? Math.abs(((displayValue - avgValue) / avgValue) * 100) : 0;
     }
-    
+
     // Calculate current progress as percentage of average
     // If current is above average, show full circle (100%)
     // If current is below average, show partial circle based on ratio
-    const currentProgress = isAboveAverage ? 100 : avgValue > 0 ? (displayValue / avgValue) * 100 : 0;
+    // eslint-disable-next-line no-nested-ternary
+    const currentProgress = isAboveAverage
+      ? 100
+      : avgValue > 0
+        ? (displayValue / avgValue) * 100
+        : 0;
 
     const comparisonText = content.hasCampaignData ? 'campaign avg' : 'average creator';
 
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', sm: 'center', md: 'center' }, width: '100%' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: { xs: 'center', sm: 'center', md: 'center' },
+          width: '100%',
+        }}
+      >
         <Typography
           sx={{
             fontSize: 24,
@@ -310,7 +321,7 @@ const ReportingView = () => {
               position: 'absolute',
             }}
           />
-          
+
           {/* Current value circle - partial based on performance vs average */}
           <CircularProgress
             variant="determinate"
@@ -321,7 +332,7 @@ const ReportingView = () => {
               color: '#1340FF',
             }}
           />
-          
+
           <Box
             sx={{
               top: 0,
@@ -348,7 +359,7 @@ const ReportingView = () => {
             >
               {formatNumber(displayValue)}
             </Typography>
-            
+
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
               <Iconify
                 icon={isAboveAverage ? 'mdi:arrow-up' : 'mdi:arrow-down'}
@@ -363,19 +374,19 @@ const ReportingView = () => {
                   ml: 0.5,
                 }}
               >
-                {Math.round(percentageDiff)}% 
+                {Math.round(percentageDiff)}%
               </Typography>
               <Typography
                 sx={{
                   fontSize: 12,
                   color: '#666',
-                  ml: 0.5
+                  ml: 0.5,
                 }}
               >
                 from
               </Typography>
             </Box>
-            
+
             <Typography
               sx={{
                 fontSize: 12,
@@ -397,7 +408,11 @@ const ReportingView = () => {
     let comparisonText = 'campaign average';
 
     // Use campaign comparison data if available
-    if (content.hasCampaignData && content.campaignComparison && content.campaignComparison[metricKey]) {
+    if (
+      content.hasCampaignData &&
+      content.campaignComparison &&
+      content.campaignComparison[metricKey]
+    ) {
       const comparison = content.campaignComparison[metricKey];
       changeDisplay = comparison.changeText;
       changeIsPositive = comparison.isAboveAverage;
@@ -425,7 +440,7 @@ const ReportingView = () => {
           sx={{
             display: 'flex',
             flexDirection: 'row',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
           }}
         >
           {/* Left side - Title and comparison info */}
@@ -448,24 +463,26 @@ const ReportingView = () => {
               {title}
             </Typography>
 
-            {/* Comparison section */}            
+            {/* Comparison section */}
             <Box
               sx={{
                 display: 'flex',
                 flexDirection: 'row',
-                alignItems: 'center'
+                alignItems: 'center',
               }}
             >
-              {content.hasCampaignData && changeDisplay !== '--' && !changeDisplay.startsWith('0%') && (
-                <Iconify
-                  icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
-                  sx={{
-                    width: 18,
-                    height: 17,
-                    color: changeIsPositive ? '#1ABF66' : '#F44336',
-                  }}
-                />
-              )}
+              {content.hasCampaignData &&
+                changeDisplay !== '--' &&
+                !changeDisplay.startsWith('0%') && (
+                  <Iconify
+                    icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+                    sx={{
+                      width: 18,
+                      height: 17,
+                      color: changeIsPositive ? '#1ABF66' : '#F44336',
+                    }}
+                  />
+                )}
               <Typography
                 sx={{
                   fontWeight: 500,
@@ -590,11 +607,7 @@ const ReportingView = () => {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       {/* Header Section */}
-      <Stack
-        direction="column"
-        alignItems="flex-start"
-        sx={{ mb: 5 }}
-      >
+      <Stack direction="column" alignItems="flex-start" sx={{ mb: 5 }}>
         <Button
           startIcon={<Iconify icon="ion:chevron-back" />}
           onClick={handleBack}
@@ -604,7 +617,6 @@ const ReportingView = () => {
             fontWeight: 600,
             '&:hover': { backgroundColor: 'transparent' },
             mb: 2,
-            mt: 1,
           }}
         >
           Back
@@ -613,20 +625,18 @@ const ReportingView = () => {
         <Stack
           direction={{ md: 'row' }}
           sx={{ width: '100%' }}
-          justifyContent='space-between'
+          justifyContent="space-between"
           alignContent={{ xs: 'flex-start' }}
           flexDirection={{ xs: 'column-reverse', md: 'row' }}
         >
           {/* Left side: Creator Name and Title */}
-          <Box
-            alignSelf={{ xs: 'flex-start', md: 'center' }}
-          >
+          <Box alignSelf={{ xs: 'flex-start', md: 'center' }}>
             <Typography
               sx={{
                 fontFamily: 'Aileron',
                 fontSize: { xs: 32, md: 42 },
                 fontWeight: 400,
-                lineHeight: { xs: '35px', sm: '50px'}
+                lineHeight: { xs: '35px', sm: '50px' },
               }}
             >
               {content.creatorName}
@@ -637,7 +647,7 @@ const ReportingView = () => {
                 fontFamily: 'Aileron',
                 fontSize: { xs: 32, md: 42 },
                 fontWeight: 400,
-                lineHeight: { xs: '35px', sm: '50px'}
+                lineHeight: { xs: '35px', sm: '50px' },
               }}
             >
               Content Performance Report
@@ -651,7 +661,7 @@ const ReportingView = () => {
             sx={{
               height: { xs: 50, sm: 100, md: 130 },
               alignSelf: { xs: 'flex-start', md: 'center' },
-              mb: { xs: 2, md: 0 }
+              mb: { xs: 2, md: 0 },
             }}
           />
         </Stack>
@@ -675,9 +685,7 @@ const ReportingView = () => {
       )}
 
       {/* Content Report */}
-      {!loading && !content.error && content.metrics && (
-        renderContentDetails()
-      )}
+      {!loading && !content.error && content.metrics && renderContentDetails()}
 
       {/* Empty State */}
       {!loading && !content.error && !content.metrics && (

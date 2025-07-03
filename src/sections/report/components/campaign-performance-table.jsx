@@ -1,18 +1,9 @@
-import React, { useState, useMemo } from 'react';
-import {
-  Avatar,
-  Button,
-  Typography,
-  Box,
-  CircularProgress,
-  MenuItem,
-  Select,
-  FormControl,
-} from '@mui/material';
-import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
-import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
-import { useGetAllCreators } from 'src/api/creator';
+import React from 'react';
 import { useNavigate } from 'react-router';
+
+import { Box, Avatar, Button, Typography, CircularProgress } from '@mui/material';
+
+import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
@@ -20,35 +11,25 @@ const CampaignPerformanceTable = () => {
   const [selectedCampaign, setSelectedCampaign] = useState('all');
   const itemsPerPage = 7;
 
-  const { data: submissionData, isLoading: isLoadingSubmissions } = useGetAllSubmissions();
-  const { data: creatorData } = useGetAllCreators();
-  
-  const reportList = useMemo(() => {
-    if (!submissionData?.submissions || !creatorData) return [];
+  const { data: submissionData, isLoading } = useGetAllSubmissions();
 
-    const urlValidators = {
-      instagram: {
-        regex: /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i,
-      },
-      tiktok: {
-        regex: /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/(?:video|photo)\/\d+/i,
-      }
-    };
+  const reportList = React.useMemo(() => {
+    if (!submissionData) return [];
 
-    return submissionData.submissions
-      .filter(submission => {
-        if (!submission.content || !submission.user?.id) return false;
+    return submissionData?.submissions
+      ?.filter((submission) => {
+        if (!submission.content) return false;
 
-        // Find the creator connection data using the user's creator data
-        const creator = creatorData.find(c => c.id === submission.user.id);
-        if (!creator?.creator) return false;
+        // More specific regex patterns for actual post links
 
-        // Check for valid URLs and matching platform connections
-        const hasInstagramContent = urlValidators.instagram.regex.test(submission.content);
-        const hasTiktokContent = urlValidators.tiktok.regex.test(submission.content);
+        const instagramPostRegex =
+          /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
+        const tiktokPostRegex =
+          /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
 
-        return (hasInstagramContent && creator.creator.isFacebookConnected) ||
-              (hasTiktokContent && creator.creator.isTiktokConnected);
+        return (
+          instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content)
+        );
       })
       .map(submission => ({
         id: submission.id,
@@ -65,8 +46,7 @@ const CampaignPerformanceTable = () => {
         const campaignCompare = a.campaignName.localeCompare(b.campaignName);
         return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
       });
-
-  }, [submissionData, creatorData]);
+  }, [submissionData]);
 
   // Get unique campaigns for filter dropdown
   const uniqueCampaigns = useMemo(() => {
@@ -96,9 +76,9 @@ const CampaignPerformanceTable = () => {
       campaignId: row.campaignId,
       userId: row.userId,
       creatorName: row.creatorName,
-      campaignName: row.campaignName
+      campaignName: row.campaignName,
     });
-    
+
     navigate(`/dashboard/report/view?${params.toString()}`);
   };
 
@@ -248,7 +228,7 @@ const CampaignPerformanceTable = () => {
                   color: '#666',
                 }}
               >
-                Creator's Email
+                Creator&apos;s Email
               </Typography>
             </Box>
             <Box sx={{ flex: '0 0 25%' }}>
@@ -283,14 +263,15 @@ const CampaignPerformanceTable = () => {
                   },
                 }}
               >
-                <Box sx={{ 
-                  flex: '0 0 25%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  maxWidth: 300,
-                  gap: 2,
-                  pr: 2
-                }}>
+                <Box
+                  sx={{
+                    flex: '0 0 20%',
+                    minWidth: 200,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
                   <Avatar
                     src={row.creatorAvatar}
                     sx={{
@@ -370,7 +351,7 @@ const CampaignPerformanceTable = () => {
                       '&:active': {
                         boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
                         transform: 'translateY(1px)',
-                      }
+                      },
                     }}
                   >
                     View Performance Report
