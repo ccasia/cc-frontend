@@ -340,7 +340,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                     };
-                  } else {
+                  } 
                     // For shorter captions, use line clamp
                     return {
                       display: '-webkit-box',
@@ -348,7 +348,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                     };
-                  }
+                  
                 })(),
               }}
             >

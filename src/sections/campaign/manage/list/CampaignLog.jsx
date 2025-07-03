@@ -10,7 +10,6 @@ import {
   Table,
   Paper,
   Stack,
-  Button,
   Dialog,
   Avatar,
   TableRow,
@@ -21,7 +20,6 @@ import {
   IconButton,
   DialogTitle,
   DialogContent,
-  DialogActions,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';

@@ -1,7 +1,17 @@
-import React from 'react';
-import { useNavigate } from 'react-router';
+import React, { useMemo } from 'react';
+import { useState, useNavigate } from 'react-router';
 
-import { Box, Avatar, Button, Typography, CircularProgress } from '@mui/material';
+import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
+import {
+  Box,
+  Avatar,
+  Button,
+  Select,
+  MenuItem,
+  Typography,
+  FormControl,
+  CircularProgress,
+} from '@mui/material';
 
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
@@ -11,7 +21,7 @@ const CampaignPerformanceTable = () => {
   const [selectedCampaign, setSelectedCampaign] = useState('all');
   const itemsPerPage = 7;
 
-  const { data: submissionData, isLoading } = useGetAllSubmissions();
+  const { data: submissionData, isLoadingSubmissions } = useGetAllSubmissions();
 
   const reportList = React.useMemo(() => {
     if (!submissionData) return [];
@@ -31,7 +41,7 @@ const CampaignPerformanceTable = () => {
           instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content)
         );
       })
-      .map(submission => ({
+      .map((submission) => ({
         id: submission.id,
         creatorName: submission.user?.name || 'N/A',
         creatorEmail: submission.user?.email || 'N/A',
@@ -40,7 +50,7 @@ const CampaignPerformanceTable = () => {
         content: submission.content,
         submissionId: submission.id,
         campaignId: submission.campaignId,
-        userId: submission.user?.id
+        userId: submission.user?.id,
       }))
       .sort((a, b) => {
         const campaignCompare = a.campaignName.localeCompare(b.campaignName);
@@ -50,14 +60,14 @@ const CampaignPerformanceTable = () => {
 
   // Get unique campaigns for filter dropdown
   const uniqueCampaigns = useMemo(() => {
-    const campaigns = [...new Set(reportList.map(item => item.campaignName))];
-    return campaigns.filter(name => name !== 'N/A').sort();
+    const campaigns = [...new Set(reportList.map((item) => item.campaignName))];
+    return campaigns.filter((name) => name !== 'N/A').sort();
   }, [reportList]);
 
   // Filter reports based on selected campaign
   const filteredReports = useMemo(() => {
     if (selectedCampaign === 'all') return reportList;
-    return reportList.filter(report => report.campaignName === selectedCampaign);
+    return reportList.filter((report) => report.campaignName === selectedCampaign);
   }, [reportList, selectedCampaign]);
 
   if (isLoadingSubmissions) {
@@ -83,11 +93,11 @@ const CampaignPerformanceTable = () => {
   };
 
   const handleNextPage = () => {
-    setCurrentPage(prev => prev + 1);
+    setCurrentPage((prev) => prev + 1);
   };
 
   const handlePrevPage = () => {
-    setCurrentPage(prev => prev - 1);
+    setCurrentPage((prev) => prev - 1);
   };
 
   const handleCampaignFilterChange = (event) => {
@@ -113,7 +123,7 @@ const CampaignPerformanceTable = () => {
           fontSize: { xs: 18, md: 24 },
           fontWeight: 600,
           color: '#333',
-          mb: 2
+          mb: 2,
         }}
       >
         Your Campaigns
@@ -123,7 +133,6 @@ const CampaignPerformanceTable = () => {
       <Box sx={{ mb: 2 }}>
         <FormControl sx={{ width: 400 }}>
           <Select
-            
             value={selectedCampaign}
             onChange={handleCampaignFilterChange}
             displayEmpty
@@ -157,7 +166,7 @@ const CampaignPerformanceTable = () => {
                 color: '#231F20',
                 height: 20,
                 width: 20,
-              }
+              },
             }}
           >
             <MenuItem value="all" sx={{ fontSize: '14px', fontWeight: 400 }}>
@@ -363,14 +372,16 @@ const CampaignPerformanceTable = () => {
 
           {/* Pagination Controls - Clean minimal design */}
           {totalPages > 1 && (
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              mt: 3,
-              pb: 2,
-              gap: 0.3
-            }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                mt: 3,
+                pb: 2,
+                gap: 0.3,
+              }}
+            >
               {/* Previous Button */}
               <Button
                 onClick={handlePrevPage}
@@ -399,9 +410,10 @@ const CampaignPerformanceTable = () => {
               {(() => {
                 const pageButtons = [];
                 const showEllipsis = totalPages > 3;
-                
+
                 if (!showEllipsis) {
                   // Show all pages if 3 or fewer
+                  // eslint-disable-next-line no-plusplus
                   for (let i = 1; i <= totalPages; i++) {
                     pageButtons.push(
                       <Button
@@ -458,7 +470,12 @@ const CampaignPerformanceTable = () => {
                   }
 
                   // Show current page and adjacent pages
-                  for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                  for (
+                    let i = Math.max(2, currentPage - 1);
+                    i <= Math.min(totalPages - 1, currentPage + 1);
+                    // eslint-disable-next-line no-plusplus
+                    i++
+                  ) {
                     pageButtons.push(
                       <Button
                         key={i}
@@ -563,7 +580,9 @@ const CampaignPerformanceTable = () => {
                   mb: 1,
                 }}
               >
-                {selectedCampaign === 'all' ? 'No campaigns found' : `No results for "${selectedCampaign}"`}
+                {selectedCampaign === 'all'
+                  ? 'No campaigns found'
+                  : `No results for "${selectedCampaign}"`}
               </Typography>
               <Typography
                 sx={{
@@ -571,10 +590,9 @@ const CampaignPerformanceTable = () => {
                   color: '#999',
                 }}
               >
-                {selectedCampaign === 'all' 
+                {selectedCampaign === 'all'
                   ? 'Campaigns with completed submissions from creators with connected social accounts will appear here'
-                  : 'Try selecting a different campaign or check "All Campaigns"'
-                }
+                  : 'Try selecting a different campaign or check "All Campaigns"'}
               </Typography>
             </Box>
           )}
