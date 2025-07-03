@@ -25,25 +25,7 @@ const CampaignPerformanceTable = () => {
   const [selectedCampaign, setSelectedCampaign] = useState('all');
   const itemsPerPage = 7;
 
-  const { data: submissionData, isLoading } = useGetAllSubmissions();
-
-  const reportList = React.useMemo(() => {
-    if (!submissionData) return [];
-
-    return submissionData?.submissions
-      ?.filter((submission) => {
-        if (!submission.content) return false;
-
-        // More specific regex patterns for actual post links
-
-        const instagramPostRegex =
-          /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
-        const tiktokPostRegex =
-          /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
-
-        return (
-          instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content)
-        );
+  
   const { data: submissionData, isLoading: isLoadingSubmissions } = useGetAllSubmissions();
   const { data: creatorData } = useGetAllCreators();
   
@@ -90,8 +72,6 @@ const CampaignPerformanceTable = () => {
         return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
       });
   }, [submissionData]);
-
-  }, [submissionData, creatorData]);
 
   // Get unique campaigns for filter dropdown
   const uniqueCampaigns = useMemo(() => {
@@ -317,14 +297,6 @@ const CampaignPerformanceTable = () => {
                     gap: 2,
                   }}
                 >
-                <Box sx={{ 
-                  flex: '0 0 25%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  maxWidth: 300,
-                  gap: 2,
-                  pr: 2
-                }}>
                   <Avatar
                     src={row.creatorAvatar}
                     sx={{
