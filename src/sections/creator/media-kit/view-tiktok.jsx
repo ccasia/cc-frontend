@@ -6,7 +6,6 @@ import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
-  Grid,
   Stack,
   alpha,
   Button,
@@ -22,13 +21,12 @@ import { useSocialMediaData } from 'src/utils/store';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 
 
 // Utility function to format numbers
-const formatNumber = (num) => {
+export const formatNumber = (num) => {
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -191,13 +189,18 @@ const TopContentGrid = ({ topContents }) => {
   }
 
   // Desktop layout (unchanged)
-
-  const topFiveContents = topContents?.slice(0, 5);
-
   return (
-    <Grid
-      container
-      spacing={isMobile ? 1 : 2}
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        flexWrap: { xs: 'nowrap', md: 'nowrap' },
+        width: '100%',
+        gap: { xs: 2, md: 4 },
+        justifyContent: { xs: 'center', sm: 'flex-start' },
+        alignItems: { xs: 'center', sm: 'flex-start' },
+        overflow: 'auto'
+      }}
       component={m.div}
       variants={{
         hidden: { opacity: 0 },
@@ -211,39 +214,28 @@ const TopContentGrid = ({ topContents }) => {
       animate="show"
       initial="hidden"
     >
-      {topFiveContents.map((content, index) => (
-        <Grid
-          item
-          xs={12}
-          md={4}
-          sm={6}
+      {displayContents.length > 0 && displayContents.map((content, index) => (
+        <Box
           key={index}
           component={m.div}
           variants={{
             hidden: { opacity: 0, y: 50 },
             show: { opacity: 1, y: 0 },
           }}
+          sx={{
+            width: { xs: '100%', sm: '30%', md: 350 },
+            minWidth: { xs: '280px', sm: '250px', md: '320px' },
+            maxWidth: { xs: '100%', sm: '350px' },
+          }}
         >
-          <Box height={600} borderRadius={2} overflow="hidden">
-            <iframe
-              src={content?.embed_link}
-              title="tiktok"
-              style={{ height: '100%', width: '100%' }}
-            />
-          </Box>
-          {/* <Box
+          <Box
             sx={{
               position: 'relative',
               height: { xs: 480, sm: 550, md: 650 },
               width: '100%',
-              height: 600,
               overflow: 'hidden',
               borderRadius: 0,
-              borderRadius: 3,
               cursor: 'pointer',
-              '&:hover .image': {
-                scale: 1.05,
-              },
             }}
           >
             <iframe
@@ -256,16 +248,6 @@ const TopContentGrid = ({ topContents }) => {
                 borderRadius: '0px',
               }}
               allowFullScreen
-            <CardMedia
-              component="Box"
-              className="image"
-              alt={`Top content ${index + 1}`}
-              sx={{
-                height: 1,
-                transition: 'all .2s linear',
-                objectFit: 'cover',
-                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.cover_image_url}) lightgray 50% / cover no-repeat`,
-              }}
             />
 
             <Box
@@ -284,25 +266,6 @@ const TopContentGrid = ({ topContents }) => {
               }}
               className="media-kit-engagement-icons"
             >
-                px: 3,
-                borderRadius: '0 0 24px 24px',
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{
-                  overflow: 'hidden',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 5,
-                  WebkitBoxOrient: 'vertical',
-                  animation: `${typeAnimation} 0.5s steps(40, end)`,
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  mb: 1,
-                }}
-              >
-                {`${content?.video_description?.slice(0, 50)}...`}
-              </Typography>
-
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="material-symbols:favorite-outline" width={20} />
@@ -311,7 +274,9 @@ const TopContentGrid = ({ topContents }) => {
 
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="iconamoon:comment" width={20} />
-                  <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
+                  <Typography variant="subtitle2">
+                    {formatNumber(content?.comment)}
+                  </Typography>
                 </Stack>
               </Stack>
             </Box>
@@ -369,19 +334,22 @@ const TopContentGrid = ({ topContents }) => {
         </Box>
       ))}
     </Box>
-          </Box> */}
-        </Grid>
-      ))}
-    </Grid>
   );
 };
 
 TopContentGrid.propTypes = {
   topContents: PropTypes.arrayOf(
     PropTypes.shape({
-      image_url: PropTypes.string.isRequired,
+      embed_link: PropTypes.string,
+      video_description: PropTypes.string,
+      like: PropTypes.number,
+      comment: PropTypes.number,
     })
-  ).isRequired,
+  ),
+};
+
+TopContentGrid.defaultProps = {
+  topContents: [],
 };
 
 const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
@@ -419,18 +387,23 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   // Show connect TikTok prompt if not connected (bypassed for demo)
   if (!isConnected) {
     // Show connect TikTok prompt
-  if (!user?.creator?.isTiktokConnected)
     return (
-      <Label
-        color="info"
+      <Box
+        component={m.div}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
         sx={{
-          height: 250,
-          textAlign: 'center',
-          borderStyle: 'dashed',
-          borderColor: theme.palette.divider,
-          borderWidth: 1.5,
-          bgcolor: alpha(theme.palette.warning.main, 0.16),
-          width: 1,
+          height: { xs: 450, sm: 500, md: 550 },
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100%',
+          borderRadius: 2,
+          mb: 4,
+          bgcolor: alpha(theme.palette.background.neutral, 0.4),
+          border: `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
+          boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
         }}
       >
         <Stack spacing={3} alignItems="center" sx={{ maxWidth: 320, textAlign: 'center', p: 3 }}>
@@ -457,22 +430,34 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
             Connect your TikTok account to showcase your top content and analytics in your media kit.
           </Typography>
 
-        <Stack spacing={1} alignItems="center">
-          <Typography variant="subtitle2">Your tiktok account is not connected.</Typography>
           <Button
-            variant="outlined"
-            size="medium"
-            sx={{ borderRadius: 0.5 }}
-            startIcon={<Iconify icon="logos:tiktok-icon" width={18} />}
+            variant="contained"
+            size="large"
+            sx={{
+              borderRadius: 1.5,
+              px: 3,
+              py: 1.5,
+              mt: 2,
+              backgroundColor: '#000000',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              '&:hover': {
+                backgroundColor: '#222222',
+                boxShadow: '0 6px 15px rgba(0,0,0,0.2)',
+              },
+            }}
+            startIcon={<Iconify icon="mingcute:link-line" width={22} />}
             onClick={connectTiktok}
           >
             Connect TikTok
           </Button>
         </Stack>
-      </Label>
+      </Box>
     );
   }
 
+  // Carousel for mobile, grid for desktop
   return (
     <Box>
       {isMobile ? (
@@ -1216,13 +1201,6 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
              </Box>
            </Box>
         </Box>
-    <Box width={1}>
-      {tiktokData?.videos?.data?.videos.length ? (
-        <TopContentGrid topContents={tiktokData?.videos?.data?.videos} />
-      ) : (
-        <Typography variant="subtitle1" color="text.secondary" textAlign="center">
-          No top content data available
-        </Typography>
       )}
     </Box>
   );
