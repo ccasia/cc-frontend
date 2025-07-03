@@ -91,7 +91,7 @@ export const ContentImageCard = ({ content }) => (
     />
     <Box
       sx={{
-        height: 70,
+        height: 75,
         overflow: 'hidden'
       }}
     >
@@ -116,7 +116,7 @@ export const ContentImageCard = ({ content }) => (
 );
 
 export const StatsLegend = () => (
-  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
+  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
       <Box
         component="img"

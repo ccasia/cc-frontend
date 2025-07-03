@@ -309,12 +309,12 @@ const ReportingView = () => {
           {label}
         </Typography>
 
-        <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2, width: 165, height: 165 }}>
+        <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2, width: 160, height: 160 }}>
           {/* Average circle - always full (100%) */}
           <CircularProgress
             variant="determinate"
             value={100}
-            size={165}
+            size={160}
             thickness={6}
             sx={{
               color: '#bbb',
@@ -326,7 +326,7 @@ const ReportingView = () => {
           <CircularProgress
             variant="determinate"
             value={currentProgress}
-            size={165}
+            size={160}
             thickness={6}
             sx={{
               color: '#1340FF',
@@ -403,8 +403,8 @@ const ReportingView = () => {
   };
 
   const renderEngagementCard = ({ height, title, value, metricKey }) => {
-    let changeDisplay = '--';
-    let changeIsPositive = false;
+    let changeDisplay = '+100%';
+    let changeIsPositive = true;
     let comparisonText = 'campaign average';
 
     // Use campaign comparison data if available
@@ -634,7 +634,7 @@ const ReportingView = () => {
             <Typography
               sx={{
                 fontFamily: 'Aileron',
-                fontSize: { xs: 32, md: 48 },
+                fontSize: { xs: 32, md: 42 },
                 fontWeight: 400,
                 lineHeight: { xs: '35px', sm: '50px' },
               }}
@@ -645,7 +645,7 @@ const ReportingView = () => {
             <Typography
               sx={{
                 fontFamily: 'Aileron',
-                fontSize: { xs: 32, md: 48 },
+                fontSize: { xs: 32, md: 42 },
                 fontWeight: 400,
                 lineHeight: { xs: '35px', sm: '50px' },
               }}
@@ -659,7 +659,7 @@ const ReportingView = () => {
             src="/logo/cultcreativelogo.svg"
             alt="Cult Creative Logo"
             sx={{
-              height: { xs: 50, sm: 100, md: 144 },
+              height: { xs: 50, sm: 100, md: 130 },
               alignSelf: { xs: 'flex-start', md: 'center' },
               mb: { xs: 2, md: 0 },
             }}
