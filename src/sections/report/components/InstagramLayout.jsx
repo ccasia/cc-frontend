@@ -74,27 +74,27 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
         </Box>
       </Box>
 
-      {/* Circular Stats with Campaign Averages */}
-      <Box sx={{ overflowX: 'auto', display: { sm: 'flex' }, justifyContent: 'center' }}>
-        <Box sx={{ minWidth: 'min-content' }}>
-          <Grid container spacing={4} sx={{ width: { xs: 'max-content', sm: 'auto' } }}>
-            <Grid item xs={4} md={4}>
-              {renderCircularStat({
-                width: '75%',
-                label: 'Interactions',
-                value: content.metrics?.total_interactions || 0,
-                metricKey: 'totalInteractions',
-              })}
-            </Grid>
-
-            <Grid item xs={4} md={4}>
-              {renderCircularStat({
-                width: '75%',
-                label: 'Reach',
-                value: content.metrics?.reach || 0,
-                metricKey: 'reach',
-              })}
-            </Grid>
+        {/* Circular Stats with Campaign Averages */}
+        <Box sx={{ overflowX: 'auto', display: { sm: 'flex' }, justifyContent: 'center' }}>
+          <Box sx={{ minWidth: 'min-content' }}>
+            <Grid container spacing={4} sx={{ width: { xs: 'max-content', sm: 'auto' } }}>
+              <Grid item xs={4} md={4}>
+                {renderCircularStat({
+                  width: '75%',
+                  label: 'Interactions',
+                  value: content.metrics?.total_interactions || 0,
+                  metricKey: 'totalInteractions'
+                })}
+              </Grid>
+              
+              <Grid item xs={4} md={4}>
+                {renderCircularStat({
+                  width: '75%',
+                  label: 'Reach',
+                  value: content.metrics?.reach || 0,
+                  metricKey: 'reach'
+                })}
+              </Grid>
 
             <Grid item xs={4} md={4}>
               {renderCircularStat({

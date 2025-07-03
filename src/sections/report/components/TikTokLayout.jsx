@@ -75,32 +75,32 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
             })}
           </Box>
 
-          {/* Right column: Circular stats */}
-          <Box
-            sx={{
-              mt: { xs: 4, sm: 0 },
-            }}
-          >
-            <Box
-              sx={{
-                overflowX: { xs: 'auto', md: 'visible' },
-                display: 'flex',
-                justifyContent: 'center',
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: { xs: 4, md: 0 },
-                  flexDirection: { xs: 'row', md: 'column' },
-                  minWidth: { xs: 'min-content', md: 'auto' },
-                }}
-              >
-                {renderCircularStat({
-                  label: 'Interactions',
-                  value: content.metrics?.total_interactions || 0,
-                  metricKey: 'totalInteractions',
-                })}
+						{/* Right column: Circular stats */}
+						<Box
+							sx={{
+								mt: { xs: 4, sm: 0 }
+							}}
+						>
+							<Box
+								sx={{
+									overflowX: { xs: 'auto', md: 'visible' },
+									display: 'flex',
+									justifyContent: 'center',
+								}}
+							>
+								<Box
+									sx={{
+										display: 'flex',
+										gap: { xs: 4, md: 0 },
+										flexDirection: { xs: 'row', md: 'column' },
+										minWidth: { xs: 'min-content', md: 'auto' },
+									}}
+								>
+									{renderCircularStat({
+										label: 'Interactions',
+										value: content.metrics?.total_interactions || 0,
+										metricKey: 'totalInteractions'
+									})}
 
                 {renderCircularStat({
                   label: 'Shares',
