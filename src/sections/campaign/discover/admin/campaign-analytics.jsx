@@ -264,67 +264,122 @@ const CampaignAnalytics = ({ campaign }) => {
 
   const CoreMetricsSection = ({ insightsData, summaryStats }) => {
     if (!summaryStats) return null;
+    
+    // Define metrics configuration
+    const metricsConfig = [
+      {
+        key: 'views',
+        label: 'Views',
+        value: summaryStats.totalViews
+      },
+      {
+        key: 'likes', 
+        label: 'Likes',
+        value: summaryStats.totalLikes
+      },
+      {
+        key: 'comments',
+        label: 'Comments', 
+        value: summaryStats.totalComments
+      },
+      {
+        key: 'saved',
+        label: 'Saved',
+        value: summaryStats.totalSaved,
+        // Only show for Instagram
+        condition: insightsData[0]?.platform === 'Instagram'
+      }
+    ].filter(metric => metric.condition !== false);
+
+    const renderEngagementCard = ({ title, value }) => {
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            py: 2,
+            px: { sm: 3, xs: 6 },
+            height: 116,
+            background: '#F5F5F5',
+            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+            borderRadius: '20px',
+          }}
+        >
+          {/* Main content container */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+          >
+            {/* Left side - Title only */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+              }}
+            >
+              {/* Title */}
+              <Typography
+                sx={{
+                  fontWeight: 400,
+                  fontSize: 20,
+                  color: '#636366',
+                }}
+              >
+                {title}
+              </Typography>
+            </Box>
+
+            {/* Right side - Value in blue box */}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: 79,
+                height: 79,
+                background: '#1340FF',
+                borderRadius: '8px',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 400,
+                  fontSize: 24,
+                  color: '#FFFFFF',
+                }}
+              >
+                {typeof value === 'number' ? formatNumber(value) : value}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      );
+    };
 
     return (
       <Box sx={{ mb: 3 }}>
-        
         <Grid container spacing={2}>
-          <Grid item xs={3}>
-            <Card variant="outlined">
-              <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                <Typography variant="h4" color="primary" fontWeight="bold">
-                  {formatNumber(summaryStats.totalViews)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Views
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={3}>
-            <Card variant="outlined">
-              <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                <Typography variant="h4" color="error.main" fontWeight="bold">
-                  {formatNumber(summaryStats.totalLikes)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Likes
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={3}>
-            <Card variant="outlined">
-              <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                <Typography variant="h4" color="info.main" fontWeight="bold">
-                  {formatNumber(summaryStats.totalComments)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Comments
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          {insightsData[0].platform === 'Instagram' && 
-            <Grid item xs={3}>
-              <Card variant="outlined">
-                <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                  <Typography variant="h4" color="info.main" fontWeight="bold">
-                    {formatNumber(summaryStats.totalSaved)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Saved
-                  </Typography>
-                </CardContent>
-              </Card>
+          {metricsConfig.map((metric) => (
+            <Grid item xs={3} key={metric.key}>
+              {renderEngagementCard({
+                title: metric.label,
+                value: metric.value
+              })}
             </Grid>
-          }
+          ))}
         </Grid>
       </Box>
     );
   };
 
-  const UserPerformanceCard = ({ submission, insightData, loadingInsights }) => {
+  const UserPerformanceCard = ({ engagementRate, submission, insightData, loadingInsights }) => {
     const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
     
     return (
@@ -364,6 +419,19 @@ const CampaignAnalytics = ({ campaign }) => {
               {/* Center: Metrics Display */}
               {insightData ? (
                 <Box display="flex" alignItems={'center'} mr={'auto'} ml={2}>
+                  {/* Engagement Rate */}
+                  <Box>
+                    <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
+                      Engagement Rate
+                    </Typography>
+                    <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
+                      {engagementRate}%
+                    </Typography>
+                  </Box> 
+
+                  {/* Divider */}
+                  <Divider sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }} />
+
                   {/* Views */}
                   <Box sx={{ width: 80 }}>
                     <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
@@ -375,7 +443,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   </Box>
 
                   {/* Divider */}
-                  <Box sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 4 }} />
+                  <Divider sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }} />
 
                   {/* Likes */}
                   <Box>
@@ -388,7 +456,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   </Box>
 
                   {/* Divider */}
-                  <Box sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 4 }} />
+                  <Divider sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }} />
 
                   {/* Comments */}
                   <Box>
@@ -507,8 +575,21 @@ const CampaignAnalytics = ({ campaign }) => {
               {/* Middle: Metrics */}
               {insightData ? (
                 <Box display="flex" justifyContent="center" alignItems="center" mb={2}>
+                  {/* Engagement Rate */}
+                  <Box sx={{ textAlign: 'center'}}>
+                    <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
+                      Engagement
+                    </Typography>
+                    <Typography fontFamily={'Instrument Serif'} fontSize={28} fontWeight={400} color={'#1340FF'}>
+                      {engagementRate}%
+                    </Typography>
+                  </Box>
+
+                  {/* Divider */}
+                  <Divider sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }} />
+
                   {/* Views */}
-                  <Box sx={{ textAlign: 'center', mx: 2 }}>
+                  <Box sx={{ textAlign: 'center'}}>
                     <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
                       Views
                     </Typography>
@@ -521,7 +602,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   <Divider sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }} />
 
                   {/* Likes */}
-                  <Box sx={{ textAlign: 'center', mx: 2 }}>
+                  <Box sx={{ textAlign: 'center'}}>
                     <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
                       Likes
                     </Typography>
@@ -534,7 +615,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   <Divider sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }} />
 
                   {/* Comments */}
-                  <Box sx={{ textAlign: 'center', mx: 2 }}>
+                  <Box sx={{ textAlign: 'center'}}>
                     <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
                       Comments
                     </Typography>
