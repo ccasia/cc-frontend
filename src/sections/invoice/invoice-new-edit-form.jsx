@@ -873,7 +873,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
   const handleDownload = async () => {
     try {
-      const blob = await pdf(<InvoicePDF data={invoice} />).toBlob();
+      const blob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
       link.download = `${invoice?.invoiceNumber}.pdf`;
