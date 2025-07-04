@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -7,8 +7,6 @@ import {
   Grid,
   Stack,
   Chip,
-  Card,
-  CardContent,
   Avatar,
   Tooltip,
   IconButton,
@@ -16,7 +14,7 @@ import {
   Divider,
   Button,
 } from '@mui/material';
-
+import Iconify from 'src/components/iconify';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import { 
@@ -26,12 +24,13 @@ import {
   calculateEngagementRate 
 } from 'src/utils/socialMetricsCalculator';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
-import Iconify from 'src/components/iconify';
 import CacheMonitor from 'src/utils/cacheMonitor';
+import { PieChart, Pie, Cell, ResponsiveContainer, LabelList } from 'recharts';
 
 const CampaignAnalytics = ({ campaign }) => {
   const campaignId = campaign?.id;
   const submissions = campaign?.submission || [];
+  const [selectedPlatform, setSelectedPlatform] = useState('ALL');
 
   // Extract posting submissions with URLs directly from campaign prop
   const postingSubmissions = useMemo(() => 
@@ -39,10 +38,31 @@ const CampaignAnalytics = ({ campaign }) => {
     [submissions]
   );
 
-  // Get platform type (since each campaign has only one platform)
-  const platformType = postingSubmissions.length > 0 ? postingSubmissions[0].platform : null;
+  // Get available platforms in the campaign
+  const availablePlatforms = useMemo(() => {
+    const platforms = [...new Set(postingSubmissions.map(sub => sub.platform))];
+    return platforms.filter(Boolean);
+  }, [postingSubmissions]);
 
-  // Fetch insights for posting submissions
+  // Filter submissions based on selected platform
+  const filteredSubmissions = useMemo(() => {
+    if (selectedPlatform === 'ALL') {
+      return postingSubmissions;
+    }
+    return postingSubmissions.filter(sub => sub.platform === selectedPlatform);
+  }, [postingSubmissions, selectedPlatform]);
+
+  // Get platform counts for beam display
+  const platformCounts = useMemo(() => {
+    const counts = { Instagram: 0, TikTok: 0 };
+    postingSubmissions.forEach(sub => {
+      if (sub.platform === 'Instagram') counts.Instagram++;
+      if (sub.platform === 'TikTok') counts.TikTok++;
+    });
+    return counts;
+  }, [postingSubmissions]);
+
+  // Fetch insights for posting submissions (always fetch all, filter for display)
   const { 
     data: insightsData, 
     isLoading: loadingInsights, 
@@ -52,10 +72,21 @@ const CampaignAnalytics = ({ campaign }) => {
     clearCache
   } = useSocialInsights(postingSubmissions, campaignId);
 
-  // Calculate summary statistics
+  // Filter insights data based on selected platform
+  const filteredInsightsData = useMemo(() => {
+    if (selectedPlatform === 'ALL') {
+      return insightsData;
+    }
+    return insightsData.filter(data => {
+      const submission = postingSubmissions.find(sub => sub.id === data.submissionId);
+      return submission?.platform === selectedPlatform;
+    });
+  }, [insightsData, selectedPlatform, postingSubmissions]);
+
+  // Calculate summary statistics based on filtered data
   const summaryStats = useMemo(() => 
-    calculateSummaryStats(insightsData), 
-    [insightsData]
+    calculateSummaryStats(filteredInsightsData), 
+    [filteredInsightsData]
   );
 
   console.log('Summary stats: ', summaryStats)
@@ -79,185 +110,532 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   }
 
-  const PlatformOverviewLayout = ({ platform, postCount, insightsData, summaryStats }) => {
+  const PlatformToggle = () => {
+    const platformConfig = [
+      { key: 'ALL', label: 'Overview', icon: null, color: '#1340FF' },
+      { key: 'Instagram', label: 'Instagram', icon: 'simple-icons:instagram', color: '#C13584' },
+      { key: 'TikTok', label: 'TikTok', icon: 'simple-icons:tiktok', color: '#000000' }
+    ];
+
+    // Filter to only show platforms that exist in the campaign
+    const availablePlatformConfig = platformConfig.filter(config => 
+      config.key === 'ALL' || availablePlatforms.includes(config.key)
+    );
+    
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: '10px', mb: 1 }}>
+          {availablePlatformConfig.map((config) => (
+            <Button
+              key={config.key}
+              onClick={() => setSelectedPlatform(config.key)}
+              variant="outlined"
+              sx={{
+                width: 125,
+                height: 40,
+                borderRadius: '8px',
+                borderWidth: '2px',
+                bgcolor: 'transparent',
+                color: selectedPlatform === config.key ? config.color : '#9E9E9E',
+                border: selectedPlatform === config.key ? `2px solid ${config.color}` : '2px solid #9E9E9E',
+                fontWeight: 600,
+                fontSize: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  border: `2px solid ${config.color}`,
+                  color: config.color,
+                  // Target the icon inside the button on hover
+                  '& .iconify': {
+                  color: config.color,
+                  },
+                },
+              }}
+            >
+              {config.icon && (
+                <Iconify 
+                  icon={config.icon} 
+                  className="iconify"
+                  sx={{
+                    height: 20,
+                    width: 20,
+                    mr: config.key === 'TikTok' ? 0.5 : 1,
+                    color: selectedPlatform === config.key ? config.color : '#9E9E9E',
+                  }} 
+                />
+              )}
+              {config.label}
+            </Button>
+          ))}
+        </Box>
+      </Box>
+    );
+  };
+
+  const PlatformOverviewLayout = ({ postCount, insightsData, summaryStats, platformCounts, selectedPlatform }) => {
     const calculateAdditionalMetrics = () => {
       const metrics = {};
       
-      if (platform === 'Instagram') {
-        metrics.totalShares = insightsData.reduce((sum, item) => 
-          sum + getMetricValue(item.insight, 'shares'), 0);
-        metrics.totalReach = insightsData.reduce((sum, item) => 
-          sum + getMetricValue(item.insight, 'reach'), 0);
-        metrics.totalInteractions = insightsData.reduce((sum, item) => 
-          sum + getMetricValue(item.insight, 'total_interactions'), 0);
-        metrics.creditsUsed = { used: 17, total: 30 };
-        
-      } else if (platform === 'TikTok') {
-        const avgEngagement = insightsData.length > 0 ? 
-          insightsData.reduce((sum, item) => {
-            const views = getMetricValue(item.insight, 'views');
-            const likes = getMetricValue(item.insight, 'likes');
-            const comments = getMetricValue(item.insight, 'comments');
-            const engagementRate = views > 0 ? ((likes + comments) / views) * 100 : 0;
-            return sum + engagementRate;
-          }, 0) / insightsData.length : 0;
-        
-        metrics.avgEngagement = avgEngagement;
-        metrics.totalShares = insightsData.reduce((sum, item) => 
-          sum + getMetricValue(item.insight, 'shares'), 0);
-        metrics.creditsUsed = { used: 17, total: 30 };
-      }
+      // Calculate metrics based on current insights data (filtered or all)
+      metrics.totalShares = insightsData.reduce((sum, item) => 
+        sum + getMetricValue(item.insight, 'shares'), 0);
+      metrics.totalReach = insightsData.reduce((sum, item) => 
+        sum + getMetricValue(item.insight, 'reach'), 0);
+      metrics.totalInteractions = insightsData.reduce((sum, item) => 
+        sum + getMetricValue(item.insight, 'total_interactions'), 0);
+      
+      // Calculate average engagement rate
+      const avgEngagement = insightsData.length > 0 ? 
+        insightsData.reduce((sum, item) => {
+          const views = getMetricValue(item.insight, 'views');
+          const likes = getMetricValue(item.insight, 'likes');
+          const comments = getMetricValue(item.insight, 'comments');
+          const engagementRate = views > 0 ? ((likes + comments) / views) * 100 : 0;
+          return sum + engagementRate;
+        }, 0) / insightsData.length : 0;
+      
+      metrics.avgEngagement = avgEngagement;
+      metrics.creditsUsed = { used: 17, total: 30 };
       
       return metrics;
     };
 
     const additionalMetrics = calculateAdditionalMetrics();
 
-    return (
-      <Box sx={{ mb: 3 }}>
-        <Grid container spacing={3} sx={{ minHeight: 200 }}>
-          {/* Left: Platform Overview Card */}
-          <Grid item xs={12} md={2.5}>
-            <Box 
-              borderRadius={3}
-              sx={{ 
-                height: '400px',
-                backgroundColor: '#F5F5F5',
-              }}
-            >
-              <Box sx={{ textAlign: 'center', px: 3, py: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <Typography textAlign={'left'} variant="h4" fontWeight={600} gutterBottom fontFamily={'Aileron'} color={'#231F20'}>
-                  Postings
-                </Typography>
-                
-                <Box 
+    const PostingsCard = () => {
+      return (
+        <Box sx={{ textAlign: 'center', px: 3, py: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <Typography textAlign={'left'} variant="h4" fontWeight={600} gutterBottom fontFamily={'Aileron'} color={'#231F20'}>
+            Postings
+          </Typography>
+          
+          <Box 
+            sx={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center', 
+              my: 2
+            }}
+          >  
+            {/* Dual Platform Beam Display */}
+            <Box sx={{ display: 'flex', gap: 4, mb: 2, alignItems: 'flex-end' }}>
+              {/* Instagram Beam */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* Post count above beam */}
+                <Typography 
+                  variant="h6" 
                   sx={{ 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center', 
-                    my: 2
+                    color: '#1340FF',
+                    fontSize: '1.25rem',
+                    fontWeight: 600,
+                    mb: 1,
+                    minHeight: '1.5rem'
                   }}
                 >
-                  <Typography 
-                    variant="h4" 
-                    sx={{ 
-                      color: '#000000B2',
-                      fontWeight: '400',
-                      mb: 1
-                    }}
-                  >
-                    {postCount}
-                  </Typography>
-                  
-                  <Box
-                    sx={{
-                      width: 54,
-                      height: 159,
-                      backgroundColor: '#1340FF',
-                      borderRadius: 100,
-                      mb: 2
-                    }}
-                  />
-
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
-                      color: '#000000B2',
-                      fontStyle: 'italic',
-                      fontSize: '1rem'
-                    }}
-                  >
-                    {platform}
-                  </Typography>
-                </Box>
+                  {platformCounts.Instagram > 0 ? platformCounts.Instagram : ''}
+                </Typography>
+                
+                <Box
+                  sx={{
+                    width: 54,
+                    height: (() => {
+                      const maxCount = Math.max(platformCounts.Instagram, platformCounts.TikTok);
+                      const minHeight = 30;
+                      const maxHeight = 170;
+                      if (maxCount === 0) return minHeight;
+                      return minHeight + ((platformCounts.Instagram / maxCount) * (maxHeight - minHeight));
+                    })(),
+                    backgroundColor: (() => {
+                      // Fill conditions based on selection and post count
+                      if (platformCounts.Instagram === 0) return '#F5F5F5';
+                      if (selectedPlatform === 'ALL') return '#1340FF';
+                      if (selectedPlatform === 'Instagram') return '#1340FF';
+                      return '#F5F5F5';
+                    })(),
+                    border: '1px solid #1340FF',
+                    borderRadius: 100,
+                    mb: 1,
+                    transition: 'all 0.3s ease'
+                  }}
+                />
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#1340FF',
+                    fontSize: 16,
+                    fontWeight: 200,
+                    fontStyle: 'italic',
+                    textAlign: 'center'
+                  }}
+                >
+                  Instagram
+                </Typography>
               </Box>
-            </Box>
-          </Grid>
-
-          {/* Middle: Empty placeholder for future content */}
-          <Grid item xs={12} md={5.5}>
-            <Box 
-              sx={{ 
-                height: '400px',
-                backgroundColor: '#F5F5F5',
-                borderRadius: 3
-              }}
-            >
-              <Box sx={{ 
-                height: '100%', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                py: 4
-              }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                  Coming Soon
+              
+              {/* TikTok Beam */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* Post count above beam */}
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    color: '#1340FF',
+                    fontSize: '1.25rem',
+                    fontWeight: 600,
+                    mb: 1,
+                    minHeight: '1.5rem'
+                  }}
+                >
+                  {platformCounts.TikTok > 0 ? platformCounts.TikTok : ''}
+                </Typography>
+                
+                <Box
+                  sx={{
+                    width: 54,
+                    height: (() => {
+                      const maxCount = Math.max(platformCounts.Instagram, platformCounts.TikTok);
+                      const minHeight = 10;
+                      const maxHeight = 170;
+                      if (maxCount === 0) return minHeight;
+                      return minHeight + ((platformCounts.TikTok / maxCount) * (maxHeight - minHeight));
+                    })(),
+                    backgroundColor: (() => {
+                      // Fill conditions based on selection and post count
+                      if (platformCounts.TikTok === 0) return '#F5F5F5';
+                      if (selectedPlatform === 'ALL') return '#1340FF';
+                      if (selectedPlatform === 'TikTok') return '#1340FF';
+                      return '#F5F5F5';
+                    })(),
+                    border: '1px solid #1340FF',
+                    borderRadius: 100,
+                    mb: 1,
+                    transition: 'all 0.3s ease'
+                  }}
+                />
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#1340FF',
+                    fontSize: 16,
+                    fontWeight: 200,
+                    fontStyle: 'italic',
+                    textAlign: 'center'
+                  }}
+                >
+                  TikTok
                 </Typography>
               </Box>
             </Box>
-          </Grid>
+          </Box>
+        </Box>
+      )
+    }
 
-          {/* Right: Platform-specific metrics */}
-          <Grid item xs={12} md={4}>
-            <Box sx={{ height: '100%' }}>
-              <Box sx={{ width: { xs: '100%', md: 330 }}}>
-                {summaryStats && (
-                  <Grid container columnSpacing={2} sx={{ mt: { xs: 0, md: 6 } }}>
-                    <Grid item xs={6}>
-                      <Box sx={{ textAlign: 'left' }}>
-                        <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                          {summaryStats.totalShares}
-                        </Typography>
-                        <Typography mb={4} fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
-                          Total Shares
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ textAlign: 'left' }}>
-                        <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                          {additionalMetrics.creditsUsed.used}/{additionalMetrics.creditsUsed.total}
-                        </Typography>
-                        <Typography mb={4} fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
-                          Credits Used
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    
-                    <Grid item xs={6}>
-                      <Box sx={{ borderBottom: '2px solid #1340FF' }} />
-                    </Grid>
+    const TopEngagementCard = () => {
+      // Find the creator with the highest engagement rate
+      const topEngagementCreator = useMemo(() => {
+      if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
+      
+      let highestEngagement = -1;
+      let topCreator = null;
+      
+      filteredInsightsData.forEach(insightData => {
+        const submission = filteredSubmissions.find(sub => sub.id === insightData.submissionId);
+        if (submission) {
+          const engagementRate = calculateEngagementRate(insightData.insight);
+          if (engagementRate > highestEngagement) {
+            highestEngagement = engagementRate;
+            topCreator = {
+              ...submission,
+              engagementRate,
+              insightData
+            };
+          }
+        }
+      });
+      
+      return topCreator;
+    }, [filteredInsightsData, filteredSubmissions]);
 
-                    <Grid item xs={6}>
-                      <Box sx={{ borderBottom: '2px solid #1340FF' }} />
-                    </Grid>
-                    
-                    <Grid item xs={6}>
-                      <Box sx={{ textAlign: 'left' }}>
-                        <Typography mt={1} fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                          {summaryStats.avgEngagementRate}%
-                        </Typography>
-                        <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
-                          Engagement Rate
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ textAlign: 'left' }}>
-                        <Typography mt={1} fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                          {summaryStats.totalInteractions}
-                        </Typography>
-                        <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
-                          Interactions
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                )}
-              </Box>
+    const { data: creator } = useGetCreatorById(topEngagementCreator?.user);
+
+    if (!topEngagementCreator) return null;
+
+    return (
+      <Box
+        borderRadius={3}
+        sx={{ 
+          height: '400px',
+          backgroundColor: '#F5F5F5',
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start' 
+        }}
+      >
+        <Typography variant="h4" fontWeight={600} fontFamily={'Aileron'} color={'#231F20'}>
+          Top Engagement
+        </Typography>
+        
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}>
+          <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF" textAlign="center">
+            {topEngagementCreator.engagementRate}%
+          </Typography>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar 
+              sx={{ 
+                width: 45, 
+                height: 45,
+                bgcolor: topEngagementCreator.platform === 'Instagram' ? '#E4405F' : '#000000',
+                mr: 2
+              }}
+            >
+              {creator?.user?.name?.charAt(0) || 'U'}
+            </Avatar>
+            <Box>
+              <Typography variant="h6" fontWeight={600} color="#231F20" sx={{ textAlign: 'left' }}>
+                {creator?.user?.name || 'Unknown Creator'}
+              </Typography>
+              <Typography variant="body2" color="#636366" sx={{ textAlign: 'left' }}>
+                @{creator?.user?.name?.toLowerCase().replace(/\s+/g, '') || 'unknown'}
+              </Typography>
             </Box>
-          </Grid>
+          </Box>
+        </Box>
+        
+        <Box sx={{ alignSelf: 'center' }}>
+          <Link
+            href={topEngagementCreator.insightData.postUrl}
+            target="_blank"
+            rel="noopener"
+            sx={{ 
+              display: 'block',
+              textDecoration: 'none',
+              '&:hover': {
+                opacity: 0.8,
+                transition: 'opacity 0.2s'
+              }
+            }}
+          >
+            <Box
+              component="img"
+              src={topEngagementCreator.insightData.thumbnail || topEngagementCreator.insightData.video?.media_url}
+              alt="Top performing post"
+              sx={{
+                width: 290,
+                height: 170,
+                borderRadius: 2,
+                objectFit: 'cover',
+                objectPosition: 'left top',
+                mt: 2,
+                border: '1px solid #e0e0e0'
+              }}
+            />
+          </Link>
+        </Box>
+      </Box>
+    );
+  };
+
+    return (
+      <Box sx={{ mb: 3 }}>
+      <Grid container justifyContent={'center'} height={400}>
+        {/* Left Condition: Platform Overview Card */}
+        {availablePlatforms.length > 1 && selectedPlatform === 'ALL' &&
+        <Grid item xs={12} md={2.5} alignContent={'center'} bgcolor={'#F5F5F5'} borderRadius={3} mr={2}>
+          <PostingsCard />
         </Grid>
+        }
+
+        {/* Left: Engagement Breakdown Chart */}
+        <Grid item xs={12} md={5} mr={2} alignContent={'center'} bgcolor={'#F5F5F5'} borderRadius={3}>
+          {/* Donut Chart with Labels */}
+          <Box
+            justifyItems={'center'}
+            width={'100%'}
+            height={'100%'}
+          >
+            <ResponsiveContainer width="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
+                    { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
+                    { name: 'Shares', value: summaryStats.totalShares, color: '#0062CD' }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value, percent, cx, cy, midAngle, innerRadius, outerRadius }) => {
+                    const radius = innerRadius + (outerRadius - innerRadius) * 1.4;
+                    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+                    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+                    
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#636366"
+                        textAnchor={x > cx ? 'start' : 'end'}
+                        dominantBaseline="central"
+                        fontSize={14}
+                        fontStyle="italic"
+                      >
+                        <tspan x={x} dy="-0.5em" fontSize={14} fontStyle="italic">
+                          {`Avg ${name}`}
+                        </tspan>
+                        <tspan x={x} dy="1.2em" fontSize={16} fontWeight="400" fill={
+                          name === 'Likes' ? '#1340FF' : 
+                          name === 'Comments' ? '#8A5AFE' : '#0062CD'
+                        }>
+                          {formatNumber(value)}
+                        </tspan>
+                      </text>
+                    );
+                  }}
+                  outerRadius={140}
+                  innerRadius={86}
+                  fill="#8884d8"
+                  dataKey="value"
+                  stroke='none'
+                >
+                  {[
+                    { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
+                    { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
+                    { name: 'Shares', value: summaryStats.totalShares, color: '#0062CD' }
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                
+                {/* Center text */}
+                <text
+                  x="50%"
+                  y="42%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={25}
+                  fontWeight={600}
+                  fill="#000"
+                  fontFamily="Aileron"
+                >
+                  {formatNumber(summaryStats.totalLikes + summaryStats.totalComments + summaryStats.totalShares)}
+                </text>
+                <text
+                  x="50%"
+                  y="49%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={25}
+                  fontWeight={600}
+                  fill="#000"
+                  fontFamily="Aileron"
+                >
+                  Average
+                </text>
+                <text
+                  x="50%"
+                  y="56%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={25}
+                  fontWeight={600}
+                  fill="#000"
+                  fontFamily="Aileron"
+                >
+                  Interactions
+                </text>
+              </PieChart>
+            </ResponsiveContainer>
+          </Box>
+        </Grid>
+
+        {/* Middle: Platform-specific metrics */}
+        <Grid item xs={12} md={4} alignContent={'center'} bgcolor={'#F5F5F5'} borderRadius={3}>
+          <Box sx={{ 
+            backgroundColor: '#F5F5F5',
+            borderRadius: 3,
+          }}>
+            {summaryStats && (
+            <Grid container sx={{ mt: { xs: 0 }}} justifyContent={'center'} columnGap={2} padding={2} mb={2}>
+              <Grid item xs={6}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                {summaryStats.totalPosts}
+                </Typography>
+                <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                {availablePlatforms.length > 1 && (
+                  selectedPlatform === 'ALL'
+                  ? 'Total Creators'
+                  : selectedPlatform === 'Instagram'
+                    ? 'Instagram Posts'
+                    : selectedPlatform === 'TikTok'
+                    ? 'TikTok Posts'
+                    : ''
+                )}
+                {availablePlatforms.length < 2 && `${insightsData[0].platform} Posts`}
+                </Typography>
+              </Box>
+              </Grid>
+              <Grid item xs={5}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                {selectedPlatform === 'TikTok' ? 'TBD' : summaryStats.totalReach}
+                </Typography>
+                <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                {selectedPlatform === 'TikTok' ? 'TBD' : 'Reach'}
+                </Typography>
+              </Box>
+              </Grid>
+              
+              <Grid item xs={6} mt={3} mb={2}>
+              <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+              </Grid>
+
+              <Grid item xs={5} mt={3} mb={2}>
+              <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+              </Grid>
+              
+              <Grid item xs={6}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                {summaryStats.avgEngagementRate}%
+                </Typography>
+                <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                Engagement Rate
+                </Typography>
+              </Box>
+              </Grid>
+              <Grid item xs={5}>
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
+                {summaryStats.totalShares}
+                </Typography>
+                <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
+                Total Shares
+                </Typography>
+              </Box>
+              </Grid>
+            </Grid>
+            )}
+          </Box>
+        </Grid>
+        
+        {/* Right: Top Engagement Card */}
+        {((
+          selectedPlatform !== 'ALL'
+        ) || (
+          availablePlatforms.length === 1 &&
+          (insightsData[0].platform === 'Instagram' || insightsData[0].platform === 'TikTok')
+        )) && (
+          <Grid item xs={12} md={2.5} ml={2} alignContent={'center'} bgcolor={'#F5F5F5'} borderRadius={3}>
+            <TopEngagementCard />
+          </Grid>
+        )}
+      </Grid>
       </Box>
     );
   };
@@ -287,7 +665,7 @@ const CampaignAnalytics = ({ campaign }) => {
         label: 'Saved',
         value: summaryStats.totalSaved,
         // Only show for Instagram
-        condition: insightsData[0]?.platform === 'Instagram'
+        condition: selectedPlatform === 'Instagram' || (selectedPlatform === 'ALL' && availablePlatforms.includes('Instagram'))
       }
     ].filter(metric => metric.condition !== false);
 
@@ -698,6 +1076,9 @@ const CampaignAnalytics = ({ campaign }) => {
 
   return (
     <Box>
+      {/* Platform Toggle */}
+      {availablePlatforms.length > 1 && <PlatformToggle />}
+
       <Typography fontSize={24} fontWeight={600} fontFamily={'Aileron'} gutterBottom>
         Performance Summary
       </Typography>
@@ -713,7 +1094,6 @@ const CampaignAnalytics = ({ campaign }) => {
                 Campaign Name: {campaign?.name}<br />
                 Total Submissions: {submissions?.length || 0}<br />
                 Posting Submissions: {postingSubmissions.length}<br />
-                Platform: {platformType}<br />
                 Insights Loaded: {insightsData.length}<br />
                 Loading Progress: {loadingProgress?.loaded || 0}/{loadingProgress?.total || 0}
               </Typography>
@@ -811,22 +1191,23 @@ const CampaignAnalytics = ({ campaign }) => {
 
       {/* Core Metrics Section */}
       <CoreMetricsSection 
-        insightsData={insightsData}
+        insightsData={filteredInsightsData}
         summaryStats={summaryStats}
       />
 
       {/* Platform Overview and Additional Metrics Layout */}
-      {platformType && summaryStats && (
+      {availablePlatforms.length > 0 && summaryStats && (
         <PlatformOverviewLayout 
-          platform={platformType}
-          postCount={postingSubmissions.length}
-          insightsData={insightsData}
+          postCount={filteredSubmissions.length}
+          insightsData={filteredInsightsData}
           summaryStats={summaryStats}
+          platformCounts={platformCounts}
+          selectedPlatform={selectedPlatform}
         />
       )}
 
       <Grid container spacing={1}>
-        {postingSubmissions.map((submission) => {
+        {filteredSubmissions.map((submission) => {
           const insightData = insightsData.find(data => data.submissionId === submission.id);
           const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
           
@@ -838,6 +1219,14 @@ const CampaignAnalytics = ({ campaign }) => {
             loadingInsights={loadingInsights} 
           />;
         })}
+        
+        {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
+          <Grid item xs={12}>
+            <Alert severity="info">
+              No {selectedPlatform.toLowerCase()} submissions found for this campaign.
+            </Alert>
+          </Grid>
+        )}
         
         {postingSubmissions.length === 0 && (
           <Grid item xs={12}>

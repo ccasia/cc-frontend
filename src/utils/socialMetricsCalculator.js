@@ -17,6 +17,8 @@ export const calculateSummaryStats = (insightsData) => {
     sum + getMetricValue(item.insight, 'shares'), 0);
   const totalSaved = insightsData.reduce((sum, item) => 
     sum + getMetricValue(item.insight, 'saved'), 0);
+  const totalReach = insightsData.reduce((sum, item) => 
+    sum + getMetricValue(item.insight, 'reach'), 0);
   const totalInteractions = insightsData.reduce((sum, item) => 
     sum + getMetricValue(item.insight, 'total_interactions'), 0);
 
@@ -36,6 +38,7 @@ export const calculateSummaryStats = (insightsData) => {
     totalComments,
     totalShares,
     totalSaved,
+    totalReach,
     totalInteractions,
     avgEngagementRate: avgEngagementRate.toFixed(2),
   };
