@@ -365,8 +365,10 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
 
   const tiktokData = useSocialMediaData((state) => state.tiktok);
 
-  // Get the real data from store
-  const realTopContent = tiktokData?.creator?.tiktokUser?.sortedVideos;
+  // Get the real data from store - use tiktokData consistently
+  const dataSource = tiktokData;
+  const realTopContent = dataSource?.medias?.sortedVideos;
+  
   // Check if we have real content
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
   const isConnected = !!user?.creator?.isTiktokConnected;
@@ -569,16 +571,27 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                     { 
                       curve: "linear", 
                       data: (() => {
-                        // Calculate engagement rates based on mock data
-                        const videos = tiktok?.creator?.tiktokUser?.sortedVideos || [];
-                        if (videos.length >= 3) {
-                          return videos.slice(0, 3).map(video => {
-                            const engagement = (video.like + video.comment);
-                            const followers = tiktok?.creator?.tiktokUser?.follower_count || 89500;
-                            return parseFloat(((engagement / followers) * 100).toFixed(1));
-                          });
+                        // Use real analytics data if available
+                        const engagementRates = dataSource?.analytics?.engagementRates || [];
+                        
+                        // Calculate from recent posts if no analytics data
+                        if (engagementRates.length === 0) {
+                          const posts = dataSource?.medias?.sortedVideos || [];
+                          if (posts.length >= 3) {
+                            const calculatedRates = posts.slice(0, 3).map(post => {
+                              const engagement = (post.like_count || 0) + 
+                                              (post.comment_count || 0) + 
+                                              (post.share_count || 0);
+                              const followers = dataSource?.overview?.follower_count || 1;
+                              return parseFloat(((engagement / followers) * 100).toFixed(1));
+                            });
+                            return calculatedRates; // Already in correct order
+                          }
+                          // Default fallback
+                          return [2.1, 2.8, 3.2];
                         }
-                        return [7.1, 5.5, 8.2]; // fallback
+                        
+                        return engagementRates; // Already in ascending order from backend
                       })(),
                       color: '#1340FF',
                       valueFormatter: (value) => `${value}%`
@@ -594,7 +607,12 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                   }}
                   xAxis={[{ 
                     scaleType: 'band',
-                    data: ['Jan', 'Feb', 'Mar'],
+                    data: (() => {
+                      // Use real months if available
+                      const analyticsMonths = dataSource?.analytics?.months || [];
+                      const months = analyticsMonths.length > 0 ? analyticsMonths : ['Jan', 'Feb', 'Mar'];
+                      return months; // Already in ascending order from backend
+                    })(),
                     hideTooltip: true,
                     tickLabelStyle: { 
                       fontSize: isTablet ? 12 : 10, 
@@ -620,14 +638,18 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                   grid={{ horizontal: true, vertical: false }}
                   slotProps={{
                     legend: { hidden: true },
-                    tooltip: { trigger: 'none' },
+                    tooltip: { 
+                      trigger: 'item', // Enable tooltip on hover/click
+                      formatter: (params) => `${params.value.toFixed(2)}%` // Show precise numbers with 2 decimal places
+                    },
                     axisHighlight: { x: 'none', y: 'none' },
                     mark: {
                       style: {
                         fill: '#1340FF',
                         stroke: '#1340FF',
                         strokeWidth: 2,
-                        r: isTablet ? 5 : 4 // Larger dots for tablet
+                        r: isTablet ? 6 : 5, // Slightly larger dots for better touch interaction
+                        cursor: 'pointer' // Show pointer cursor on hover
                       }
                     }
                   }}
@@ -655,13 +677,16 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                       fill: '#1340FF !important',
                       stroke: '#1340FF !important',
                       strokeWidth: '2px !important',
-                      r: `${isTablet ? 5 : 4}px !important`
+                      r: `${isTablet ? 6 : 5}px !important`,
+                      cursor: 'pointer !important',
+                      transition: 'all 0.2s ease-in-out !important'
                     },
-                    '& .MuiMarkElement-root:hover': {
-                      fill: '#1340FF !important',
-                      stroke: '#1340FF !important',
-                      strokeWidth: '2px !important',
-                      r: `${isTablet ? 5 : 4}px !important`
+                    '& .MuiMarkElement-root:hover, & .MuiMarkElement-root:active': {
+                      fill: '#0F2FE6 !important',
+                      stroke: '#0F2FE6 !important',
+                      strokeWidth: '3px !important',
+                      r: `${isTablet ? 8 : 7}px !important`,
+                      transform: 'scale(1.1) !important'
                     },
                     '& .MuiChartsAxisHighlight-root': {
                       display: 'none !important'
@@ -671,17 +696,20 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                 {/* Data labels positioned directly above dots */}
                 <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
                   {(() => {
-                    // Calculate engagement rates based on mock data
                     const videos = tiktok?.creator?.tiktokUser?.sortedVideos || [];
                     let engagementRates;
                     if (videos.length >= 3) {
                       engagementRates = videos.slice(0, 3).map(video => {
-                        const engagement = (video.like + video.comment);
-                        const followers = tiktok?.creator?.tiktokUser?.follower_count || 89500;
+                        const engagement = (video.like_count || 0) + (video.comment_count || 0) + (video.share_count || 0);
+                        const followers = tiktok?.creator?.tiktokUser?.follower_count || 1;
                         return parseFloat(((engagement / followers) * 100).toFixed(1));
                       });
                     } else {
-                      engagementRates = [7.1, 5.5, 8.2]; // fallback
+                      // Calculate overall engagement rate if no video data
+                      const totalEngagement = tiktok?.creator?.tiktokUser?.likes_count || 0;
+                      const followers = tiktok?.creator?.tiktokUser?.follower_count || 1;
+                      const avgEngagementRate = parseFloat(((totalEngagement / (followers * 3)) * 100).toFixed(1));
+                      engagementRates = [avgEngagementRate, avgEngagementRate, avgEngagementRate];
                     }
                     return engagementRates;
                   })().map((value, index) => {
@@ -789,25 +817,32 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                    
                    const dynamicMonths = getLastThreeMonths();
                    
-                   // Calculate monthly interactions based on mock data
-                   const videos = tiktok?.creator?.tiktokUser?.sortedVideos || [];
+                   // Use real analytics data if available
                    let interactionsData;
-                   
-                   if (videos.length >= 3) {
-                     interactionsData = videos.slice(0, 3).map((video, index) => {
-                       // Use actual engagement (likes + comments) as interactions
-                       const interactions = video.like + video.comment;
-                       return {
-                         month: dynamicMonths[index],
-                         value: interactions
-                       };
-                     });
+                   if (dataSource?.analytics?.monthlyInteractions?.length > 0) {
+                     interactionsData = dataSource.analytics.monthlyInteractions; // Already in ascending order from backend
                    } else {
-                     interactionsData = [
-                       { month: dynamicMonths[0], value: 6345 },
-                       { month: dynamicMonths[1], value: 4889 },
-                       { month: dynamicMonths[2], value: 7298 }
-                     ];
+                     // Calculate from recent posts if no analytics data
+                     const posts = dataSource?.medias?.sortedVideos || [];
+                     if (posts.length >= 3) {
+                       const months = dataSource?.analytics?.months || ['Jan', 'Feb', 'Mar'];
+                       const calculatedData = posts.slice(0, 3).map((post, index) => {
+                         const interactions = (post.like_count || 0) + 
+                                           (post.comment_count || 0) + 
+                                           (post.share_count || 0);
+                         return {
+                           month: months[index],
+                           value: interactions
+                         };
+                       });
+                       interactionsData = calculatedData; // Already in correct order
+                     } else {
+                       // Default fallback
+                       interactionsData = dynamicMonths.map(month => ({
+                         month,
+                         value: 1200 + Math.floor(Math.random() * 800)
+                       }));
+                     }
                    }
                    
                    return interactionsData;
@@ -925,16 +960,27 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                    { 
                      curve: "linear", 
                      data: (() => {
-                       // Calculate engagement rates based on mock data
-                       const videos = tiktok?.creator?.tiktokUser?.sortedVideos || [];
-                       if (videos.length >= 3) {
-                         return videos.slice(0, 3).map(video => {
-                           const engagement = (video.like + video.comment);
-                           const followers = tiktok?.creator?.tiktokUser?.follower_count || 89500;
-                           return parseFloat(((engagement / followers) * 100).toFixed(1));
-                         });
+                       // Use real analytics data if available
+                       const engagementRates = dataSource?.analytics?.engagementRates || [];
+                       
+                       // Calculate from recent posts if no analytics data
+                       if (engagementRates.length === 0) {
+                         const posts = dataSource?.medias?.sortedVideos || [];
+                         if (posts.length >= 3) {
+                           const calculatedRates = posts.slice(0, 3).map(post => {
+                             const engagement = (post.like_count || 0) + 
+                                             (post.comment_count || 0) + 
+                                             (post.share_count || 0);
+                             const followers = dataSource?.overview?.follower_count || 1;
+                             return parseFloat(((engagement / followers) * 100).toFixed(1));
+                           });
+                           return calculatedRates; // Already in correct order
+                         }
+                         // Default fallback
+                         return [2.1, 2.8, 3.2];
                        }
-                       return [3.1, 5.2, 4.8]; // fallback
+                       
+                       return engagementRates; // Already in ascending order from backend
                      })(),
                      color: '#1340FF',
                      valueFormatter: (value) => `${value}%`
@@ -945,7 +991,12 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                  margin={{ left: 30, right: 15, top: 30, bottom: 60 }}
                  xAxis={[{ 
                    scaleType: 'band',
-                   data: ['Jan', 'Feb', 'Mar'],
+                   data: (() => {
+                     // Use real months if available
+                     const analyticsMonths = dataSource?.analytics?.months || [];
+                     const months = analyticsMonths.length > 0 ? analyticsMonths : ['Jan', 'Feb', 'Mar'];
+                     return months; // Already in ascending order from backend
+                   })(),
                    hideTooltip: true,
                    tickLabelStyle: { fontSize: 12, fill: 'black', fontStyle: 'italic' },
                    axisLine: false,
@@ -963,14 +1014,18 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                  grid={{ horizontal: true, vertical: false }}
                  slotProps={{
                    legend: { hidden: true },
-                   tooltip: { trigger: 'none' },
+                   tooltip: { 
+                     trigger: 'item', // Enable tooltip on hover/click
+                     formatter: (params) => `${params.value.toFixed(2)}%` // Show precise numbers with 2 decimal places
+                   },
                    axisHighlight: { x: 'none', y: 'none' },
                    mark: {
                      style: {
                        fill: '#1340FF',
                        stroke: '#1340FF',
                        strokeWidth: 2,
-                       r: 5
+                       r: 6, // Slightly larger for better interaction
+                       cursor: 'pointer'
                      }
                    }
                  }}
@@ -998,13 +1053,16 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                      fill: '#1340FF !important',
                      stroke: '#1340FF !important',
                      strokeWidth: '2px !important',
-                     r: '5px !important'
+                     r: '6px !important',
+                     cursor: 'pointer !important',
+                     transition: 'all 0.2s ease-in-out !important'
                    },
-                   '& .MuiMarkElement-root:hover': {
-                     fill: '#1340FF !important',
-                     stroke: '#1340FF !important',
-                     strokeWidth: '2px !important',
-                     r: '5px !important'
+                   '& .MuiMarkElement-root:hover, & .MuiMarkElement-root:active': {
+                     fill: '#0F2FE6 !important',
+                     stroke: '#0F2FE6 !important',
+                     strokeWidth: '3px !important',
+                     r: '8px !important',
+                     transform: 'scale(1.1) !important'
                    },
                    '& .MuiChartsAxisHighlight-root': {
                      display: 'none !important'
@@ -1126,25 +1184,37 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                  
                  const dynamicMonths = getLastThreeMonths();
                  
-                 // Calculate monthly interactions based on mock data
-                 const videos = tiktok?.creator?.tiktokUser?.sortedVideos || [];
+                 // Use real analytics data if available
+                 const monthlyInteractions = dataSource?.analytics?.monthlyInteractions || [];
                  let interactionsData;
                  
-                 if (videos.length >= 3) {
-                   interactionsData = videos.slice(0, 3).map((video, index) => {
-                     // Use actual engagement (likes + comments) as interactions
-                     const interactions = video.like + video.comment;
-                     return {
-                       month: dynamicMonths[index],
-                       value: interactions
-                     };
-                   });
+                 if (monthlyInteractions.length > 0) {
+                   interactionsData = monthlyInteractions.map(data => ({
+                     month: data.month,
+                     value: data.interactions || 0
+                   })); // Already in ascending order from backend
                  } else {
-                   interactionsData = [
-                     { month: dynamicMonths[0], value: 2840 },
-                     { month: dynamicMonths[1], value: 1950 },
-                     { month: dynamicMonths[2], value: 5120 }
-                   ];
+                   // Calculate from recent posts if no analytics data
+                   const posts = dataSource?.medias?.sortedVideos || [];
+                   if (posts.length >= 3) {
+                     const months = dataSource?.analytics?.months || ['Jan', 'Feb', 'Mar'];
+                     const calculatedData = posts.slice(0, 3).map((post, index) => {
+                       const interactions = (post.like_count || 0) + 
+                                         (post.comment_count || 0) + 
+                                         (post.share_count || 0);
+                       return {
+                         month: months[index],
+                         value: interactions
+                       };
+                     });
+                     interactionsData = calculatedData; // Already in correct order
+                   } else {
+                     // Default fallback
+                     interactionsData = dynamicMonths.map(month => ({
+                       month,
+                       value: 1200 + Math.floor(Math.random() * 800)
+                     }));
+                   }
                  }
                  
                  return interactionsData;
