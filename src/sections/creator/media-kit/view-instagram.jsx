@@ -383,8 +383,12 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
   const isMobile = forceDesktop ? false : !lgUp;
   const isTablet = !smDown && mdDown; // iPad size
 
-  // Get the real data from store
-  const realTopContent = instagramData?.medias?.sortedVideos;
+  // IMPORTANT: Always use store data for consistency across all screen sizes
+  // This ensures analytics data is available for both mobile and desktop views
+  const dataSource = instagramData || instagram || {};
+
+  // Get the real data from store (prioritize store data over props)
+  const realTopContent = dataSource?.medias?.sortedVideos;
   
   // Check if we have real content
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
@@ -580,25 +584,30 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                       curve: "linear", 
                       data: (() => {
                         // Use real analytics data if available
-                        const engagementRates = instagram?.analytics?.engagementRates || [];
+                        const engagementRates = dataSource?.analytics?.engagementRates || [];
+                        const months = dataSource?.analytics?.months || ['Jan', 'Feb', 'Mar'];
                         
-                        // Fallback calculation if no analytics data
+                        // Calculate from recent posts if no analytics data
                         if (engagementRates.length === 0) {
-                          const posts = instagram?.medias?.sortedVideos || [];
+                          const posts = dataSource?.medias?.sortedVideos || [];
                           if (posts.length >= 3) {
-                            return posts.slice(0, 3).map(post => {
-                              const engagement = (post.like_count + post.comments_count);
-                              const followers = instagram?.overview?.followers_count || 1;
+                            const calculatedRates = posts.slice(0, 3).map(post => {
+                              const engagement = (post.like_count || 0) + 
+                                               (post.comments_count || 0) + 
+                                               (post.share_count || 0) + 
+                                               (post.saved || 0);
+                              const followers = dataSource?.overview?.followers_count || 1;
                               return parseFloat(((engagement / followers) * 100).toFixed(1));
                             });
+                            return calculatedRates; // Already in correct order
                           }
-                          return [2.3, 4.1, 3.8]; // fallback
+                          return [0, 0, 0]; // Return zeros if no data available
                         }
                         
-                        return engagementRates;
+                        return engagementRates; // Already in ascending order from backend
                       })(),
                       color: '#1340FF',
-                      valueFormatter: (value) => `${value}%`
+                      valueFormatter: (value) => `${value.toFixed(2)}%` // Show precise numbers with 2 decimal places
                     }
                   ]}
                   width={isTablet ? 310 : 208} // Larger for tablet
@@ -613,8 +622,9 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                     scaleType: 'band',
                     data: (() => {
                       // Use real months if available
-                      const analyticsMonths = instagram?.analytics?.months || [];
-                      return analyticsMonths.length > 0 ? analyticsMonths : ['Jan', 'Feb', 'Mar'];
+                      const analyticsMonths = dataSource?.analytics?.months || [];
+                      const months = analyticsMonths.length > 0 ? analyticsMonths : ['Jan', 'Feb', 'Mar'];
+                      return months; // Already in ascending order from backend
                     })(),
                     hideTooltip: true,
                     tickLabelStyle: { 
@@ -641,14 +651,18 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                   grid={{ horizontal: true, vertical: false }}
                   slotProps={{
                     legend: { hidden: true },
-                    tooltip: { trigger: 'none' },
+                    tooltip: { 
+                      trigger: 'item', // Enable tooltip on hover
+                      formatter: (params) => `${params.value.toFixed(2)}%` // Show precise numbers without rounding
+                    },
                     axisHighlight: { x: 'none', y: 'none' },
                     mark: {
                       style: {
                         fill: '#1340FF',
                         stroke: '#1340FF',
                         strokeWidth: 2,
-                        r: isTablet ? 5 : 4 // Larger dots for tablet
+                        r: isTablet ? 6 : 5, // Slightly larger dots for better touch interaction
+                        cursor: 'pointer'
                       }
                     }
                   }}
@@ -676,13 +690,16 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                       fill: '#1340FF !important',
                       stroke: '#1340FF !important',
                       strokeWidth: '2px !important',
-                      r: `${isTablet ? 5 : 4}px !important`
+                      r: `${isTablet ? 6 : 5}px !important`,
+                      cursor: 'pointer !important',
+                      transition: 'all 0.2s ease-in-out !important'
                     },
-                    '& .MuiMarkElement-root:hover': {
-                      fill: '#1340FF !important',
-                      stroke: '#1340FF !important',
-                      strokeWidth: '2px !important',
-                      r: `${isTablet ? 5 : 4}px !important`
+                    '& .MuiMarkElement-root:hover, & .MuiMarkElement-root:active': {
+                      fill: '#0F2FE6 !important',
+                      stroke: '#0F2FE6 !important',
+                      strokeWidth: '3px !important',
+                      r: `${isTablet ? 8 : 7}px !important`,
+                      transform: 'scale(1.1) !important'
                     },
                     '& .MuiChartsAxisHighlight-root': {
                       display: 'none !important'
@@ -690,219 +707,226 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                   }}
                 />
                 {/* Data labels positioned directly above dots */}
+                {/* 
                 <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
                   {(() => {
                     // Use real analytics data if available
-                    const engagementRates = instagram?.analytics?.engagementRates || [];
+                    const engagementRates = dataSource?.analytics?.engagementRates || [];
                     
-                    // Fallback calculation if no analytics data
+                    // Calculate from recent posts if no analytics data
                     if (engagementRates.length === 0) {
-                      const posts = instagram?.medias?.sortedVideos || [];
+                      const posts = dataSource?.medias?.sortedVideos || [];
                       if (posts.length >= 3) {
                         return posts.slice(0, 3).map(post => {
-                          const engagement = (post.like_count + post.comments_count);
-                          const followers = instagram?.overview?.followers_count || 1;
+                          const engagement = (post.like_count || 0) + 
+                                            (post.comments_count || 0) + 
+                                            (post.share_count || 0) + 
+                                            (post.saved || 0);
+                          const followers = dataSource?.overview?.followers_count || 1;
                           return parseFloat(((engagement / followers) * 100).toFixed(1));
                         });
                       }
-                      return [2.3, 4.1, 3.8]; // fallback
+                      return [0, 0, 0]; // Return zeros if no data available
                     }
                     
-                    return engagementRates;
-                  })().map((value, index) => {
-                     // Chart plotting area calculations - responsive for mobile/tablet
-                     const plotAreaLeft = 25;
-                     const plotAreaTop = 15;
-                     const chartWidth = isTablet ? 310 : 208;
-                     const chartHeight = isTablet ? 200 : 160;
-                     const plotAreaWidth = chartWidth - 25 - 15; // chart width minus left/right margins
-                     const plotAreaHeight = chartHeight - 15 - (isTablet ? 35 : 25); // chart height minus top/bottom margins
-                     
-                     // Calculate exact x position for each data point (band scale centers)
-                     const bandWidth = plotAreaWidth / 3; // 3 data points
-                     const xPosition = plotAreaLeft + (bandWidth * 0.5) + (index * bandWidth);
-                     
-                     // Calculate exact y position based on data value (0-15 scale)
-                     const dataPointY = plotAreaTop + (plotAreaHeight - ((value / 15) * plotAreaHeight));
-                     const labelY = dataPointY - 18; // Consistent spacing
-                     
-                     return (
-                       <Typography 
-                         key={index}
-                         sx={{ 
-                           position: 'absolute', 
-                           top: labelY, 
-                           left: xPosition, 
-                           fontSize: isTablet ? 14 : 12, // Larger text for tablet
-                           color: '#000', 
-                           fontWeight: 400,
-                           fontFamily: 'Aileron, sans-serif',
-                           transform: 'translateX(-50%)',
-                           textAlign: 'center',
-                           lineHeight: 1,
-                           userSelect: 'none',
-                           whiteSpace: 'nowrap',
-                           textShadow: '0 1px 2px rgba(255,255,255,0.8)',
-                           minWidth: '24px',
-                           display: 'flex',
-                           alignItems: 'center',
-                           justifyContent: 'center'
-                         }}
-                       >
-                         {value}%
-                       </Typography>
-                     );
-                   })}
+                    return engagementRates.map((rate, index) => {
+                      // Calculate X position more precisely to match chart dots
+                      const chartWidth = isTablet ? 310 : 208;
+                      const leftMargin = 25;
+                      const rightMargin = 15;
+                      const availableWidth = chartWidth - leftMargin - rightMargin;
+                      const dotXPosition = leftMargin + (index / (engagementRates.length - 1)) * availableWidth;
+                      const xPositionPercent = (dotXPosition / chartWidth) * 100;
+                      
+                      // Calculate Y position based on the rate value and chart dimensions
+                      const minRate = Math.min(...engagementRates);
+                      const maxRate = Math.max(...engagementRates);
+                      const yAxisMax = 15; // This matches the yAxis max value
+                      const yAxisMin = 0;
+                      
+                      // Calculate the percentage position within the chart area
+                      const normalizedRate = (rate - yAxisMin) / (yAxisMax - yAxisMin);
+                      const chartHeight = isTablet ? 200 : 160; // Chart height
+                      const topMargin = 15; // Chart top margin
+                      const bottomMargin = isTablet ? 35 : 25; // Chart bottom margin
+                      const availableHeight = chartHeight - topMargin - bottomMargin;
+                      
+                      // Calculate Y position more precisely to match the actual dot position
+                      const dotYPosition = topMargin + (availableHeight * (1 - normalizedRate));
+                      const numberYPosition = dotYPosition - 20; // Position 20px above the dot
+                      
+                      return (
+                        <Typography
+                          key={index}
+                          sx={{
+                            position: 'absolute',
+                            left: `${xPositionPercent}%`,
+                            top: `${numberYPosition}px`, // Dynamic positioning based on data value
+                            transform: 'translateX(-50%)',
+                            color: 'black', // Changed back to black
+                            fontSize: isTablet ? 12 : 10,
+                            fontWeight: 500, // Less bold
+                            fontFamily: 'Aileron, sans-serif',
+                            textAlign: 'center',
+                            pointerEvents: 'none'
+                          }}
+                        >
+                          {rate.toFixed(2)}%
+                        </Typography>
+                      );
+                    });
+                  })()}
                  </Box>
+                 */}
                </Box>
              </Box>
 
-             {/* Monthly Interactions Box */}
-             <Box
-               sx={{
-                 backgroundColor: '#E7E7E7',
-                 borderRadius: 2,
-                 p: isTablet ? 3 : 2, // Larger padding for tablet
-                 minWidth: isTablet ? '350px' : '240px', // Larger for tablet
-                 maxWidth: isTablet ? '350px' : '240px', // Larger for tablet
-                 height: isTablet ? '300px' : '240px', // Larger for tablet
-                 position: 'relative',
-                 flex: '0 0 auto',
-                 scrollSnapAlign: 'center',
-               }}
-             >
-               <Typography
-                 variant="subtitle2"
-                 sx={{
-                   color: 'black',
-                   fontWeight: 600,
-                   fontSize: isTablet ? '16px' : '14px', // Larger text for tablet
-                   position: 'absolute',
-                   top: isTablet ? 16 : 12,
-                   left: isTablet ? 20 : 16,
-                 }}
-               >
-                 Monthly Interactions
-               </Typography>
-               
-               {/* Vertical Bar Chart */}
-               <Box sx={{ 
-                 position: 'absolute',
-                 bottom: isTablet ? 20 : 16,
-                 left: isTablet ? 20 : 12,
-                 right: isTablet ? 20 : 12,
-                 height: isTablet ? 200 : 160, // Increased height back for mobile
-                 display: 'flex',
-                 alignItems: 'end',
-                 justifyContent: 'center', // Center the bars with smaller gaps
-                 gap: isTablet ? 1.5 : 1, // Smaller gap between bars
-               }}>
-                 {(() => {
-                   // Get the last 3 months dynamically
-                   const getLastThreeMonths = () => {
-                     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                     const currentDate = new Date();
-                     const currentMonth = currentDate.getMonth(); // 0-11
-                     
-                     const lastThreeMonths = [];
-                     for (let i = 2; i >= 0; i--) {
-                       const monthIndex = (currentMonth - i + 12) % 12;
-                       lastThreeMonths.push(months[monthIndex]);
-                     }
-                     return lastThreeMonths;
-                   };
-                   
-                   const dynamicMonths = getLastThreeMonths();
-                   
-                   // Use real analytics data if available
-                   const monthlyInteractions = instagram?.analytics?.monthlyInteractions || [];
-                   let interactionsData;
-                   
-                   if (monthlyInteractions.length > 0) {
-                     // Use real analytics data
-                     interactionsData = monthlyInteractions.map((data) => ({
-                       month: data.month,
-                       value: data.interactions
-                     }));
-                   } else {
-                     // Fallback calculation
-                     const posts = instagram?.medias?.sortedVideos || [];
-                     if (posts.length >= 3) {
-                       interactionsData = posts.slice(0, 3).map((post, index) => {
-                         const interactions = post.like_count + post.comments_count;
-                         return {
-                           month: dynamicMonths[index],
-                           value: interactions
-                         };
-                       });
-                     } else {
-                       interactionsData = [
-                         { month: dynamicMonths[0], value: 1220 },
-                         { month: dynamicMonths[1], value: 664 },
-                         { month: dynamicMonths[2], value: 4548 }
-                       ];
-                     }
-                   }
-                   
-                   return interactionsData;
-                 })().map((data, index, array) => {
-                   // Calculate max value for scaling - highest value in the array
-                   const maxValue = Math.max(...array.map(item => item.value));
-                   const maxBarHeight = isTablet ? 140 : 110; // Increased mobile bar height while leaving space for numbers
-                   const barHeight = (data.value / maxValue) * maxBarHeight;
-                   
-                   return (
-                     <Box key={index} sx={{ 
-                       display: 'flex', 
-                       flexDirection: 'column', 
-                       alignItems: 'center',
-                       width: isTablet ? '60px' : '50px', // Fixed width instead of flex: 1
-                       gap: 0.8,
-                       height: '100%', // Use full height of container
-                       justifyContent: 'flex-end' // Align content to bottom
-                     }}>
-                       {/* Value above bar */}
-                       <Typography sx={{
-                         fontSize: isTablet ? 13 : 10, // Keep mobile text size manageable
-                         fontWeight: 400,
-                         color: 'black',
-                         fontFamily: 'Aileron, sans-serif',
-                         textAlign: 'center',
-                         lineHeight: 1,
-                         mb: 0.5 // Small margin to separate from bar
-                       }}>
-                         {data.value.toLocaleString()}
-                       </Typography>
-                       
-                       {/* Bar */}
-                       <Box sx={{
-                         width: isTablet ? '35px' : '28px', // Slimmer bars
-                         height: `${barHeight}px`,
-                         backgroundColor: '#1340FF',
-                         borderRadius: isTablet ? '17.5px' : '14px', // Adjusted border radius for slimmer bars
-                         transition: 'all 0.3s ease',
-                         minHeight: '20px' // Ensure minimum visible height
-                       }} />
-                       
-                       {/* Month label */}
-                       <Typography sx={{
-                         fontSize: isTablet ? 12 : 9, // Keep mobile text smaller
-                         fontWeight: 400,
-                         color: 'black',
-                         fontStyle: 'italic',
-                         fontFamily: 'Aileron, sans-serif',
-                         textAlign: 'center',
-                         mt: 0.5
-                       }}>
-                         {data.month}
-                       </Typography>
-                     </Box>
-                   );
-                 })}
-               </Box>
-             </Box>
-           </Box>
-         </Box>
+            {/* Monthly Interactions Box */}
+            <Box
+              sx={{
+                backgroundColor: '#E7E7E7',
+                borderRadius: 2,
+                p: isTablet ? 3 : 2, // Larger padding for tablet
+                minWidth: isTablet ? '350px' : '240px', // Larger for tablet
+                maxWidth: isTablet ? '350px' : '240px', // Larger for tablet
+                height: isTablet ? '300px' : '240px', // Larger for tablet
+                position: 'relative',
+                flex: '0 0 auto',
+                scrollSnapAlign: 'center',
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: 'black',
+                  fontWeight: 600,
+                  fontSize: isTablet ? '16px' : '14px', // Larger text for tablet
+                  position: 'absolute',
+                  top: isTablet ? 16 : 12,
+                  left: isTablet ? 20 : 16,
+                }}
+              >
+                Monthly Interactions
+              </Typography>
+              
+              {/* Vertical Bar Chart */}
+              <Box sx={{ 
+                position: 'absolute',
+                bottom: isTablet ? 20 : 16,
+                left: isTablet ? 20 : 12,
+                right: isTablet ? 20 : 12,
+                height: isTablet ? 200 : 160, // Increased height back for mobile
+                display: 'flex',
+                alignItems: 'end',
+                justifyContent: 'center', // Center the bars with smaller gaps
+                gap: isTablet ? 1.5 : 1, // Smaller gap between bars
+              }}>
+                {(() => {
+                  // Use real analytics data if available
+                  let interactionsData;
+                  if (dataSource?.analytics?.monthlyInteractions?.length > 0) {
+                    interactionsData = dataSource.analytics.monthlyInteractions; // Already in ascending order from backend
+                  } else {
+                    // Calculate from recent posts if no analytics data
+                    const posts = dataSource?.medias?.sortedVideos || [];
+                    if (posts.length >= 3) {
+                      const months = dataSource?.analytics?.months || ['Jan', 'Feb', 'Mar'];
+                      const calculatedData = posts.slice(0, 3).map((post, index) => {
+                        const interactions = (post.like_count || 0) + 
+                                          (post.comments_count || 0) + 
+                                          (post.share_count || 0) + 
+                                          (post.saved || 0);
+                        return {
+                          month: months[index],
+                          interactions: interactions
+                        };
+                      });
+                      interactionsData = calculatedData; // Already in correct order
+                    } else {
+                      // Return zeros if no data available
+                      const months = dataSource?.analytics?.months || ['Jan', 'Feb', 'Mar'];
+                      const zeroData = months.map(month => ({
+                        month,
+                        interactions: 0
+                      }));
+                      interactionsData = zeroData; // Already in correct order
+                    }
+                  }
+
+                  // Calculate max value for scaling
+                  const maxValue = Math.max(...interactionsData.map(data => data.interactions));
+                  const maxBarHeight = isTablet ? 120 : 140; // Increased mobile height from 120 to 140
+
+                  return interactionsData.map((data, index) => {
+                    // Calculate bar height for this data point
+                    const barHeight = maxValue > 0 ? (data.interactions / maxValue) * maxBarHeight : 0;
+                    
+                    return (
+                      <Box
+                        key={index}
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          height: maxBarHeight + 40, // Total container height
+                          justifyContent: 'flex-end',
+                          position: 'relative',
+                          mx: isTablet ? 1 : 0.5, // Add horizontal margin for spacing between bars
+                        }}
+                      >
+                        {/* Value display - positioned on top of individual bar */}
+                        <Typography
+                          sx={{
+                            color: 'black',
+                            fontSize: isTablet ? 12 : 10, // Reduced font size for mobile
+                            fontWeight: 500, // Less bold
+                            fontFamily: 'Aileron, sans-serif',
+                            textAlign: 'center',
+                            mb: 0.5,
+                            position: 'absolute',
+                            bottom: barHeight + 30, // Reduced from 35 to bring numbers lower
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {data.interactions}
+                        </Typography>
+
+                        {/* Bar */}
+                        <Box
+                          sx={{
+                            width: isTablet ? 32 : 28, // Increased mobile width from 24 to 28
+                            height: `${barHeight}px`,
+                            background: 'linear-gradient(180deg, #1340FF 0%, #0A2FE8 100%)',
+                            borderRadius: '12px', // Curved top and bottom
+                            mb: 1,
+                            boxShadow: '0 2px 8px rgba(19, 64, 255, 0.3)',
+                            transition: 'all 0.3s ease',
+                          }}
+                        />
+
+                        {/* Month label */}
+                        <Typography
+                          sx={{
+                            color: 'black',
+                            fontSize: isTablet ? 12 : 10,
+                            fontStyle: 'italic',
+                            fontFamily: 'Aileron, sans-serif',
+                            textAlign: 'center',
+                            mt: 0.5
+                          }}
+                        >
+                          {data.month}
+                        </Typography>
+                      </Box>
+                    );
+                  });
+                })()}
+              </Box>
+            </Box>
+          </Box>
+        </Box>
        ) : (
         // Desktop Layout
         <Box
@@ -960,25 +984,29 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                      curve: "linear", 
                      data: (() => {
                        // Use real analytics data if available
-                       const engagementRates = instagram?.analytics?.engagementRates || [];
+                       const engagementRates = dataSource?.analytics?.engagementRates || []; // Remove rounding here
                        
-                       // Fallback calculation if no analytics data
+                       // Calculate from recent posts if no analytics data
                        if (engagementRates.length === 0) {
-                         const posts = instagram?.medias?.sortedVideos || [];
+                         const posts = dataSource?.medias?.sortedVideos || [];
                          if (posts.length >= 3) {
-                           return posts.slice(0, 3).map(post => {
-                             const engagement = (post.like_count + post.comments_count);
-                             const followers = instagram?.overview?.followers_count || 1;
-                             return parseFloat(((engagement / followers) * 100).toFixed(1));
+                           const calculatedRates = posts.slice(0, 3).map(post => {
+                             const engagement = (post.like_count || 0) + 
+                                               (post.comments_count || 0) + 
+                                               (post.share_count || 0) + 
+                                               (post.saved || 0);
+                             const followers = dataSource?.overview?.followers_count || 1;
+                             return parseFloat(((engagement / followers) * 100).toFixed(2)); // Use 2 decimal places for calculated values
                            });
+                           return calculatedRates; // Already in correct order
                          }
-                         return [2.3, 4.1, 3.8]; // fallback
+                         return [0, 0, 0]; // Return zeros if no data available
                        }
                        
-                       return engagementRates;
+                       return engagementRates; // Already in ascending order from backend
                      })(),
                      color: '#1340FF',
-                     valueFormatter: (value) => `${value}%`
+                     valueFormatter: (value) => `${value.toFixed(2)}%` // Show precise numbers with 2 decimal places
                    }
                  ]}
                  width={450}
@@ -988,8 +1016,9 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                    scaleType: 'band',
                    data: (() => {
                      // Use real months if available
-                     const analyticsMonths = instagram?.analytics?.months || [];
-                     return analyticsMonths.length > 0 ? analyticsMonths : ['Jan', 'Feb', 'Mar'];
+                     const analyticsMonths = dataSource?.analytics?.months || [];
+                     const months = analyticsMonths.length > 0 ? analyticsMonths : ['Jan', 'Feb', 'Mar'];
+                     return months; // Already in ascending order from backend
                    })(),
                    hideTooltip: true,
                    tickLabelStyle: { fontSize: 12, fill: 'black', fontStyle: 'italic' },
@@ -1008,7 +1037,10 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                  grid={{ horizontal: true, vertical: false }}
                  slotProps={{
                    legend: { hidden: true },
-                   tooltip: { trigger: 'none' },
+                   tooltip: { 
+                     trigger: 'item', // Enable tooltip on hover
+                     formatter: (params) => `${params.value.toFixed(2)}%` // Show precise numbers without rounding
+                   },
                    axisHighlight: { x: 'none', y: 'none' },
                    mark: {
                      style: {
@@ -1057,68 +1089,120 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                  }}
                />
                {/* Data labels positioned directly above dots */}
+               {/*
                <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
                  {(() => {
                    // Use real analytics data if available
-                   const engagementRates = instagram?.analytics?.engagementRates || [];
+                   const engagementRates = dataSource?.analytics?.engagementRates?.map(rate => parseFloat(rate.toFixed(2))) || [];
                    
-                   // Fallback calculation if no analytics data
+                   // Calculate from recent posts if no analytics data
                    if (engagementRates.length === 0) {
-                     const posts = instagram?.medias?.sortedVideos || [];
+                     const posts = dataSource?.medias?.sortedVideos || [];
                      if (posts.length >= 3) {
-                       return posts.slice(0, 3).map(post => {
-                         const engagement = (post.like_count + post.comments_count);
-                         const followers = instagram?.overview?.followers_count || 1;
-                         return parseFloat(((engagement / followers) * 100).toFixed(1));
+                       return posts.slice(0, 3).map((post, index) => {
+                         const engagement = (post.like_count || 0) + 
+                                           (post.comments_count || 0) + 
+                                           (post.share_count || 0) + 
+                                           (post.saved || 0);
+                         const followers = dataSource?.overview?.followers_count || 1;
+                         const rate = parseFloat(((engagement / followers) * 100).toFixed(2));
+                         
+                         // Chart plotting area calculations
+                         const plotAreaLeft = 30;
+                         const plotAreaTop = 15;
+                         const chartWidth = 350;
+                         const chartHeight = 200;
+                         const plotAreaWidth = chartWidth - 30 - 15;
+                         const plotAreaHeight = chartHeight - 15 - 35;
+                         
+                         const bandWidth = plotAreaWidth / 3;
+                         const xPosition = plotAreaLeft + (bandWidth * 0.5) + (index * bandWidth);
+                         const dataPointY = plotAreaTop + (plotAreaHeight - ((rate / 15) * plotAreaHeight));
+                         const labelY = dataPointY - 18;
+                         
+                         return (
+                           <Typography
+                             key={index}
+                             sx={{
+                               position: 'absolute',
+                               top: labelY, 
+                               left: xPosition, 
+                               fontSize: 14,
+                               color: '#000', 
+                               fontWeight: 400,
+                               fontFamily: 'Aileron, sans-serif',
+                               transform: 'translateX(-50%)',
+                               textAlign: 'center',
+                               lineHeight: 1,
+                               userSelect: 'none',
+                               whiteSpace: 'nowrap',
+                               textShadow: '0 1px 2px rgba(255,255,255,0.8)',
+                               minWidth: '24px',
+                               display: 'flex',
+                               alignItems: 'center',
+                               justifyContent: 'center'
+                             }}
+                           >
+                             {rate.toFixed(2)}%
+                           </Typography>
+                         );
                        });
                      }
-                     return [2.3, 4.1, 3.8]; // fallback
+                     return []; // Return empty array if no data available
                    }
                    
-                   return engagementRates;
-                 })().map((value, index) => {
-                   // Chart plotting area calculations
-                   const plotAreaLeft = 30;
-                   const plotAreaTop = 30;
-                   const plotAreaWidth = 405; // chart width minus left/right margins
-                   const plotAreaHeight = 137; // chart height minus top/bottom margins
-                   
-                   // Calculate exact x position for each data point (band scale centers)
-                   const bandWidth = plotAreaWidth / 3; // 3 data points
-                   const xPosition = plotAreaLeft + (bandWidth * 0.5) + (index * bandWidth);
-                   
-                   // Calculate exact y position based on data value (0-15 scale)
-                   const dataPointY = plotAreaTop + (plotAreaHeight - ((value / 15) * plotAreaHeight));
-                   const labelY = dataPointY - 22; // Position label above the dot
-                   
-                   return (
-                     <Typography 
-                       key={index}
-                       sx={{ 
-                         position: 'absolute', 
-                         top: labelY, 
-                         left: xPosition, 
-                         fontSize: 14, 
-                         color: '#000', 
-                         fontWeight: 500,
-                         fontFamily: 'Aileron, sans-serif',
-                         transform: 'translateX(-50%)',
-                         textAlign: 'center',
-                         lineHeight: 1,
-                         userSelect: 'none',
-                         // Add subtle styling to make it more visible
-                         textShadow: '0 1px 2px rgba(255,255,255,0.8)'
-                       }}
-                     >
-                       {value}%
-                     </Typography>
-                   );
-                 })}
+                   return engagementRates.map((rate, index) => {
+                     // Chart plotting area calculations - more precise to match actual dots
+                     const plotAreaLeft = 30;
+                     const plotAreaTop = 15;
+                     const chartWidth = 350;
+                     const chartHeight = 200;
+                     const plotAreaWidth = chartWidth - 30 - 15;
+                     const plotAreaHeight = chartHeight - 15 - 35;
+                     
+                     // Calculate exact dot position
+                     const bandWidth = plotAreaWidth / 3;
+                     const xPosition = plotAreaLeft + (bandWidth * 0.5) + (index * bandWidth);
+                     
+                     // More precise Y calculation to match the actual line chart dot
+                     const yAxisRange = 15; // 0 to 15%
+                     const normalizedValue = rate / yAxisRange;
+                     const dataPointY = plotAreaTop + plotAreaHeight - (normalizedValue * plotAreaHeight);
+                     const labelY = dataPointY - 25; // Position 25px above the dot
+                     
+                     return (
+                       <Typography
+                         key={index}
+                         sx={{
+                           position: 'absolute',
+                           top: labelY, 
+                           left: xPosition, 
+                           fontSize: 12,
+                           color: 'black', // Changed back to black
+                           fontWeight: 500, // Less bold
+                           fontFamily: 'Aileron, sans-serif',
+                           transform: 'translateX(-50%)',
+                           textAlign: 'center',
+                           lineHeight: 1,
+                           userSelect: 'none',
+                           whiteSpace: 'nowrap',
+                           minWidth: '24px',
+                           display: 'flex',
+                           alignItems: 'center',
+                           justifyContent: 'center'
+                         }}
+                       >
+                         {rate.toFixed(2)}%
+                       </Typography>
+                     );
+                   });
+                 })()}
                </Box>
+               */}
              </Box>
            </Box>
 
-           {/* Monthly Impressions Box */}
+           {/* Monthly Interactions Box */}
            <Box
              sx={{
                backgroundColor: '#E7E7E7',
@@ -1160,86 +1244,111 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
              }}>
                {(() => {
                  // Use real analytics data if available
-                 const monthlyInteractions = instagram?.analytics?.monthlyInteractions || [];
+                 const monthlyInteractions = dataSource?.analytics?.monthlyInteractions || [];
                  let interactionsData;
                  
                  if (monthlyInteractions.length > 0) {
-                   // Use real analytics data
-                   interactionsData = monthlyInteractions.map((data) => ({
+                   interactionsData = monthlyInteractions.map(data => ({
                      month: data.month,
-                     value: data.interactions
-                   }));
+                     value: data.interactions || 0
+                   })); // Already in ascending order from backend
                  } else {
-                   // Fallback calculation
-                   const posts = instagram?.medias?.sortedVideos || [];
+                   // Calculate from recent posts if no analytics data
+                   const posts = dataSource?.medias?.sortedVideos || [];
                    if (posts.length >= 3) {
-                     interactionsData = posts.slice(0, 3).map((post, index) => {
-                       const interactions = post.like_count + post.comments_count;
+                     const months = dataSource?.analytics?.months || ['Jan', 'Feb', 'Mar'];
+                     const calculatedData = posts.slice(0, 3).map((post, index) => {
+                       const interactions = (post.like_count || 0) + 
+                                           (post.comments_count || 0) + 
+                                           (post.share_count || 0) + 
+                                           (post.saved || 0);
                        return {
-                         month: ['Jan', 'Feb', 'Mar'][index],
+                         month: months[index],
                          value: interactions
                        };
                      });
+                     interactionsData = calculatedData; // Already in correct order
                    } else {
-                     interactionsData = [
-                       { month: 'Jan', value: 1220 },
-                       { month: 'Feb', value: 664 },
-                       { month: 'Mar', value: 4548 }
-                     ];
+                     // Return zeros if no data available
+                     const months = dataSource?.analytics?.months || ['Jan', 'Feb', 'Mar'];
+                     const zeroData = months.map(month => ({
+                       month,
+                       value: 0
+                     }));
+                     interactionsData = zeroData; // Already in correct order
                    }
                  }
-                 
-                 return interactionsData;
-               })().map((data, index, array) => {
-                 // Calculate max value for scaling - highest value in the array
-                 const maxValue = Math.max(...array.map(item => item.value));
-                 const barHeight = (data.value / maxValue) * 160; // Scale to max 160px height
-                 
-                 return (
-                   <Box key={index} sx={{ 
-                     display: 'flex', 
-                     flexDirection: 'column', 
-                     alignItems: 'center',
-                     flex: 1,
-                     gap: 1
-                   }}>
-                     {/* Value above bar */}
-                     <Typography sx={{
-                       fontSize: 14,
-                       fontWeight: 400,
-                       color: 'black',
-                       fontFamily: 'Aileron, sans-serif',
-                       textAlign: 'center',
-                       lineHeight: 1
-                     }}>
-                       {data.value.toLocaleString()}
-                     </Typography>
-                     
-                     {/* Bar */}
-                     <Box sx={{
-                       width: '45px', // Slimmer bars for desktop
-                       height: `${barHeight}px`,
-                       backgroundColor: '#1340FF',
-                       borderRadius: '22.5px', // Adjusted border radius for slimmer bars
-                       transition: 'all 0.3s ease',
-                       minHeight: '25px' // Ensure minimum visible height
-                     }} />
-                     
-                     {/* Month label */}
-                     <Typography sx={{
-                       fontSize: 12,
-                       fontWeight: 400,
-                       color: 'black',
-                       fontStyle: 'italic',
-                       fontFamily: 'Aileron, sans-serif',
-                       textAlign: 'center',
-                       mt: 1
-                     }}>
-                       {data.month}
-                     </Typography>
-                   </Box>
-                 );
-               })}
+
+                 // Calculate max value for scaling
+                 const maxValue = Math.max(...interactionsData.map(data => data.value));
+                 const maxBarHeight = 160; // Reduced height to stay below title
+
+                 return interactionsData.map((data, index) => {
+                   // Calculate bar height for this data point
+                   const barHeight = maxValue > 0 ? (data.value / maxValue) * maxBarHeight : 0;
+                   
+                   return (
+                     <Box
+                       key={index}
+                       sx={{
+                         display: 'flex',
+                         flexDirection: 'column',
+                         alignItems: 'center',
+                         height: maxBarHeight + 50, // Total container height
+                         justifyContent: 'flex-end',
+                         position: 'relative',
+                         flex: 1
+                       }}
+                     >
+                       {/* Value label - positioned on top of individual bar */}
+                       <Typography
+                         sx={{
+                           color: 'black',
+                           fontSize: 12,
+                           fontWeight: 500, // Less bold
+                           fontFamily: 'Aileron, sans-serif',
+                           textAlign: 'center',
+                           mb: 0.5,
+                           position: 'absolute',
+                           bottom: barHeight + 40, // Increased from 25 to make numbers higher
+                           left: '50%',
+                           transform: 'translateX(-50%)',
+                           whiteSpace: 'nowrap'
+                         }}
+                       >
+                         {data.value}
+                       </Typography>
+
+                       {/* Bar */}
+                       <Box
+                         sx={{
+                           width: 40, // Wider bars
+                           height: `${barHeight}px`,
+                           background: 'linear-gradient(180deg, #1340FF 0%, #0A2FE8 100%)',
+                           borderRadius: '16px', // Curved top and bottom
+                           mb: 2,
+                           boxShadow: '0 4px 12px rgba(19, 64, 255, 0.3)',
+                           transition: 'all 0.3s ease',
+                         }}
+                       />
+
+                       {/* Month label */}
+                       <Typography
+                         sx={{
+                           color: 'black',
+                           fontSize: 12,
+                           fontStyle: 'italic',
+                           fontFamily: 'Aileron, sans-serif',
+                           textAlign: 'center',
+                           mt: 0.5
+                         }}
+                       >
+                         {data.month}
+                       </Typography>
+                     </Box>
+                   );
+                 });
+               })()}
              </Box>
            </Box>
         </Box>
