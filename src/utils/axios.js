@@ -106,6 +106,7 @@ export const endpoints = {
     getPartnerships: (id) => `/api/creator/getPartnerships/${id}`,
     social: {
       tiktok: (id) => `/api/social/tiktok/${id}`,
+      tiktokV2: (id) => `/api/social/v2/tiktokMediaKit/${id}`,
       instagram: (id) => `/api/social/instagram/overview/${id}`,
       instagramV2: (id) => `/api/social/v2/instagramOverview/${id}`,
       getInstagramMediaInsight: (userId, postUrl, id) => 
