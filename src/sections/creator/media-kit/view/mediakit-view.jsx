@@ -126,8 +126,12 @@ const MediaKitCreator = () => {
   }, [setTiktok]);
 
   const calculateEngagementRate = useCallback((totalLikes, followers) => {
-    if (!(totalLikes || followers)) return null;
-    return ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2);
+    const likes = parseInt(totalLikes, 10);
+    const followerCount = parseInt(followers, 10);
+
+    if (!likes || !followerCount) return null;
+
+    return ((likes / followerCount) * 100).toFixed(2);
   }, []);
 
   const socialMediaAnalytics = useMemo(() => {
