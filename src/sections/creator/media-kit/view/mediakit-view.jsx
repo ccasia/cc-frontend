@@ -129,6 +129,9 @@ const MediaKitCreator = () => {
     const likes = parseInt(totalLikes, 10);
     const followerCount = parseInt(followers, 10);
 
+    console.log(totalLikes, typeof totalLikes);
+    console.log(followers, typeof followers);
+
     if (!likes || !followerCount) return null;
 
     return ((likes / followerCount) * 100).toFixed(2);
