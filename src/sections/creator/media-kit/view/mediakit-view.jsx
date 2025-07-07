@@ -129,9 +129,6 @@ const MediaKitCreator = () => {
     const likes = parseInt(totalLikes, 10);
     const followerCount = parseInt(followers, 10);
 
-    console.log(totalLikes, typeof totalLikes);
-    console.log(followers, typeof followers);
-
     if (!likes || !followerCount) return null;
 
     return ((likes / followerCount) * 100).toFixed(2);
@@ -1439,7 +1436,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {formatNumber(socialMediaAnalytics.engagement_rate)}
+                        {socialMediaAnalytics.engagement_rate}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1557,7 +1554,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {formatNumber(socialMediaAnalytics.engagement_rate)}
+                  {socialMediaAnalytics.engagement_rate}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -2017,7 +2014,7 @@ const MediaKitCreator = () => {
                       align="left"
                       sx={{ fontSize: '3.5rem' }}
                     >
-                      {formatNumber(socialMediaAnalytics.engagement_rate)}
+                      {socialMediaAnalytics.engagement_rate}
                     </Typography>
                     <Typography
                       variant="caption"
