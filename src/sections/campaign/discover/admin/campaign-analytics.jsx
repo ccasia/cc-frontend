@@ -25,7 +25,7 @@ import {
 } from 'src/utils/socialMetricsCalculator';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import CacheMonitor from 'src/utils/cacheMonitor';
-import { PieChart, Pie, Cell, ResponsiveContainer, LabelList } from 'recharts';
+import { PieChart } from '@mui/x-charts';
 
 const CampaignAnalytics = ({ campaign }) => {
   const campaignId = campaign?.id;
@@ -198,7 +198,6 @@ const CampaignAnalytics = ({ campaign }) => {
         }, 0) / insightsData.length : 0;
       
       metrics.avgEngagement = avgEngagement;
-      metrics.creditsUsed = { used: 17, total: 30 };
       
       return metrics;
     };
@@ -375,7 +374,7 @@ const CampaignAnalytics = ({ campaign }) => {
           alignItems: 'flex-start' 
         }}
       >
-        <Typography variant="h4" fontWeight={600} fontFamily={'Aileron'} color={'#231F20'}>
+        <Typography variant="h6" fontWeight={600} fontFamily={'Aileron'} color={'#231F20'}>
           Top Engagement
         </Typography>
         
@@ -396,10 +395,10 @@ const CampaignAnalytics = ({ campaign }) => {
               {creator?.user?.name?.charAt(0) || 'U'}
             </Avatar>
             <Box>
-              <Typography variant="h6" fontWeight={600} color="#231F20" sx={{ textAlign: 'left' }}>
+              <Typography fontSize={14} fontWeight={600} color="#231F20" sx={{ textAlign: 'left' }}>
                 {creator?.user?.name || 'Unknown Creator'}
               </Typography>
-              <Typography variant="body2" color="#636366" sx={{ textAlign: 'left' }}>
+              <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
                 @{creator?.user?.name?.toLowerCase().replace(/\s+/g, '') || 'unknown'}
               </Typography>
             </Box>
@@ -426,11 +425,11 @@ const CampaignAnalytics = ({ campaign }) => {
               alt="Top performing post"
               sx={{
                 width: 290,
-                height: 170,
+                height: 180,
+                mt: 2,
                 borderRadius: 2,
                 objectFit: 'cover',
                 objectPosition: 'left top',
-                mt: 2,
                 border: '1px solid #e0e0e0'
               }}
             />
@@ -438,7 +437,7 @@ const CampaignAnalytics = ({ campaign }) => {
         </Box>
       </Box>
     );
-  };
+    };
 
     return (
       <Box sx={{ mb: 3 }}>
@@ -452,104 +451,85 @@ const CampaignAnalytics = ({ campaign }) => {
 
         {/* Left: Engagement Breakdown Chart */}
         <Grid item xs={12} md={5} mr={2} alignContent={'center'} bgcolor={'#F5F5F5'} borderRadius={3}>
-          {/* Donut Chart with Labels */}
           <Box
-            justifyItems={'center'}
-            width={'100%'}
-            height={'100%'}
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              width: '100%',
+              height: '100%',
+            }}
           >
-            <ResponsiveContainer width="100%">
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
-                    { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
-                    { name: 'Shares', value: summaryStats.totalShares, color: '#0062CD' }
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value, percent, cx, cy, midAngle, innerRadius, outerRadius }) => {
-                    const radius = innerRadius + (outerRadius - innerRadius) * 1.4;
-                    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
-                    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
-                    
-                    return (
-                      <text
-                        x={x}
-                        y={y}
-                        fill="#636366"
-                        textAnchor={x > cx ? 'start' : 'end'}
-                        dominantBaseline="central"
-                        fontSize={14}
-                        fontStyle="italic"
-                      >
-                        <tspan x={x} dy="-0.5em" fontSize={14} fontStyle="italic">
-                          {`Avg ${name}`}
-                        </tspan>
-                        <tspan x={x} dy="1.2em" fontSize={16} fontWeight="400" fill={
-                          name === 'Likes' ? '#1340FF' : 
-                          name === 'Comments' ? '#8A5AFE' : '#0062CD'
-                        }>
-                          {formatNumber(value)}
-                        </tspan>
-                      </text>
-                    );
-                  }}
-                  outerRadius={140}
-                  innerRadius={86}
-                  fill="#8884d8"
-                  dataKey="value"
-                  stroke='none'
-                >
-                  {[
-                    { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
-                    { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
-                    { name: 'Shares', value: summaryStats.totalShares, color: '#0062CD' }
-                  ].map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                
-                {/* Center text */}
-                <text
-                  x="50%"
-                  y="42%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize={25}
-                  fontWeight={600}
-                  fill="#000"
-                  fontFamily="Aileron"
-                >
-                  {formatNumber(summaryStats.totalLikes + summaryStats.totalComments + summaryStats.totalShares)}
-                </text>
-                <text
-                  x="50%"
-                  y="49%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize={25}
-                  fontWeight={600}
-                  fill="#000"
-                  fontFamily="Aileron"
-                >
-                  Average
-                </text>
-                <text
-                  x="50%"
-                  y="56%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize={25}
-                  fontWeight={600}
-                  fill="#000"
-                  fontFamily="Aileron"
-                >
-                  Interactions
-                </text>
-              </PieChart>
-            </ResponsiveContainer>
+            <PieChart
+              height={400}
+              width={300}
+              margin={{ left: 50, right: 50, top: 50, bottom: 50 }}
+              series={[
+                {
+                  data: [
+                    { id: 0, value: summaryStats.totalLikes, label: 'Likes', color: '#1340FF',  },
+                    { id: 1, value: summaryStats.totalComments, label: 'Comments', color: '#8A5AFE' },
+                    { id: 2, value: summaryStats.totalShares, label: 'Shares', color: '#68A7ED' }
+                  ],
+                  innerRadius: 60,
+                  outerRadius: 120,
+                  arcLabel: (params) => params.value,
+                  arcLabelMinAngle: 20,
+                  valueFormatter: (value) => formatNumber(value.value),
+                },
+              ]}
+              sx={{
+                '& .MuiChartsLegend-root': {
+                  display: 'none', // Hide default legend since we're creating custom one
+                },
+                '& .MuiPieArcLabel-root': {
+                  fontSize: '22px',
+                  fontWeight: '600',
+                  fill: 'white',
+                  fontFamily: 'Aileron',
+                },
+                '& .MuiPieArc-root': {
+                  stroke: 'none', // Remove white lines between segments
+                },
+              }}
+            />
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: 2,
+              mr: 3
+            }}>
+              {[
+                { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
+                { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
+                { name: 'Shares', value: summaryStats.totalShares, color: '#68A7ED' }
+              ].map((item, index) => (
+                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {/* Color indicator circle */}
+                  <Box
+                    sx={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      backgroundColor: item.color,
+                      flexShrink: 0
+                    }}
+                  />
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontSize: 16,
+                        fontWeight: 500,
+                        color: '#000',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {item.name}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
           </Box>
         </Grid>
 
@@ -583,7 +563,7 @@ const CampaignAnalytics = ({ campaign }) => {
               <Grid item xs={5}>
               <Box sx={{ textAlign: 'left' }}>
                 <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                {selectedPlatform === 'TikTok' ? 'TBD' : summaryStats.totalReach}
+                {selectedPlatform === 'TikTok' ? 'TBD' : formatNumber(summaryStats.totalReach)}
                 </Typography>
                 <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={20} color="#1340FF">
                 {selectedPlatform === 'TikTok' ? 'TBD' : 'Reach'}
@@ -799,7 +779,7 @@ const CampaignAnalytics = ({ campaign }) => {
                 <Box display="flex" alignItems={'center'} mr={'auto'} ml={2}>
                   {/* Engagement Rate */}
                   <Box>
-                    <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
+                    <Typography fontFamily={'Aileron'} fontSize={16} fontWeight={600} color={'#636366'} >
                       Engagement Rate
                     </Typography>
                     <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
@@ -812,7 +792,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
                   {/* Views */}
                   <Box sx={{ width: 80 }}>
-                    <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
+                    <Typography fontFamily={'Aileron'} fontSize={16} fontWeight={600} color={'#636366'} >
                       Views
                     </Typography>
                     <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
@@ -825,7 +805,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
                   {/* Likes */}
                   <Box>
-                    <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
+                    <Typography fontFamily={'Aileron'} fontSize={16} fontWeight={600} color={'#636366'} >
                       Likes
                     </Typography>
                     <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
@@ -838,7 +818,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
                   {/* Comments */}
                   <Box>
-                    <Typography fontFamily={'Aileron'} fontSize={20} fontWeight={600} color={'#636366'} >
+                    <Typography fontFamily={'Aileron'} fontSize={16} fontWeight={600} color={'#636366'} >
                       Comments
                     </Typography>
                     <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
@@ -1205,6 +1185,10 @@ const CampaignAnalytics = ({ campaign }) => {
           selectedPlatform={selectedPlatform}
         />
       )}
+
+      <Typography fontSize={24} fontWeight={600} fontFamily={'Aileron'} gutterBottom>
+        Creator List
+      </Typography>
 
       <Grid container spacing={1}>
         {filteredSubmissions.map((submission) => {
