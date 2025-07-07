@@ -827,7 +827,7 @@ const CampaignDetailContent = ({ campaign }) => {
           </Box>
 
           {/* Agreement Form Box */}
-          <Box sx={BoxStyle}>
+          {/* <Box sx={BoxStyle}>
             <Box className="header">
               <img
                 src="/assets/icons/overview/agreementFormIcon.svg"
@@ -869,10 +869,10 @@ const CampaignDetailContent = ({ campaign }) => {
                   )
               )}
             </Box>
-          </Box>
+          </Box> */}
 
           {/* Agreement Form Box */}
-          <Box sx={BoxStyle}>
+          {/* <Box sx={BoxStyle}>
             <Box className="header">
               <img
                 src="/assets/icons/overview/agreementFormIcon.svg"
@@ -914,10 +914,10 @@ const CampaignDetailContent = ({ campaign }) => {
                   )
               )}
             </Box>
-          </Box>
+          </Box> */}
 
           {/* Agreement Form */}
-          <Box sx={BoxStyle}>
+          {/* <Box sx={BoxStyle}>
             <Box className="header">
               <Iconify
                 icon="solar:document-bold"
@@ -960,7 +960,7 @@ const CampaignDetailContent = ({ campaign }) => {
                   )
               )}
             </Box>
-          </Box>
+          </Box> */}
 
           {/* Agreement Form */}
           <Box sx={BoxStyle}>
