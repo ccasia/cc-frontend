@@ -141,7 +141,7 @@ const MediaKitCreator = () => {
         engagement_rate: `${
           calculateEngagementRate(
             (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0),
-            instagram?.instagramUser?.followers_count
+            instagram?.instagramUser?.followers_count ?? 0
           ) || 0
         }%`,
         averageLikes: instagram?.instagramUser?.averageLikes || 0,
