@@ -637,7 +637,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                   }]}
                   yAxis={[{ 
                     min: 0,
-                    max: 15,
+                    max: 3,
                     tickNumber: 4,
                     hideTooltip: true,
                     tickLabelStyle: { 
@@ -684,7 +684,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                       display: 'none',
                     },
                     '& .MuiLineElement-root': {
-                      strokeWidth: 2,
+                      strokeWidth: 1,
                     },
                     '& .MuiMarkElement-root': {
                       fill: '#1340FF !important',
@@ -741,7 +741,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                       // Calculate Y position based on the rate value and chart dimensions
                       const minRate = Math.min(...engagementRates);
                       const maxRate = Math.max(...engagementRates);
-                      const yAxisMax = 15; // This matches the yAxis max value
+                      const yAxisMax = 5; // This matches the yAxis max value
                       const yAxisMin = 0;
                       
                       // Calculate the percentage position within the chart area
@@ -896,10 +896,10 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                         {/* Bar */}
                         <Box
                           sx={{
-                            width: isTablet ? 32 : 28, // Increased mobile width from 24 to 28
+                            width: isTablet ? 40 : 36, // Much thicker mobile bars
                             height: `${barHeight}px`,
                             background: 'linear-gradient(180deg, #1340FF 0%, #0A2FE8 100%)',
-                            borderRadius: '12px', // Curved top and bottom
+                            borderRadius: isTablet ? '20px' : '18px', // Much more curved
                             mb: 1,
                             boxShadow: '0 2px 8px rgba(19, 64, 255, 0.3)',
                             transition: 'all 0.3s ease',
@@ -1027,7 +1027,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                  }]}
                  yAxis={[{ 
                    min: 0,
-                   max: 15,
+                   max: 3,
                    tickNumber: 4,
                    hideTooltip: true,
                    tickLabelStyle: { fontSize: 13, fill: '#333', fontWeight: 500 }, // Made darker and bolder
@@ -1069,7 +1069,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                      display: 'none',
                    },
                    '& .MuiLineElement-root': {
-                     strokeWidth: 2,
+                     strokeWidth: 1,
                    },
                    '& .MuiMarkElement-root': {
                      fill: '#1340FF !important',
@@ -1165,7 +1165,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                      const xPosition = plotAreaLeft + (bandWidth * 0.5) + (index * bandWidth);
                      
                      // More precise Y calculation to match the actual line chart dot
-                     const yAxisRange = 15; // 0 to 15%
+                     const yAxisRange = 3; // 0 to 3%
                      const normalizedValue = rate / yAxisRange;
                      const dataPointY = plotAreaTop + plotAreaHeight - (normalizedValue * plotAreaHeight);
                      const labelY = dataPointY - 25; // Position 25px above the dot
@@ -1304,7 +1304,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                        <Typography
                          sx={{
                            color: 'black',
-                           fontSize: 12,
+                           fontSize: 14,
                            fontWeight: 500, // Less bold
                            fontFamily: 'Aileron, sans-serif',
                            textAlign: 'center',
@@ -1322,10 +1322,10 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                        {/* Bar */}
                        <Box
                          sx={{
-                           width: 40, // Wider bars
+                           width: 60, // Much thicker bars
                            height: `${barHeight}px`,
                            background: 'linear-gradient(180deg, #1340FF 0%, #0A2FE8 100%)',
-                           borderRadius: '16px', // Curved top and bottom
+                           borderRadius: '30px', // Much more curved
                            mb: 2,
                            boxShadow: '0 4px 12px rgba(19, 64, 255, 0.3)',
                            transition: 'all 0.3s ease',

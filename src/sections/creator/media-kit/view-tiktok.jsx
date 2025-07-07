@@ -624,7 +624,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                   }]}
                   yAxis={[{ 
                     min: 0,
-                    max: 15,
+                    max: 3,
                     tickNumber: 4,
                     hideTooltip: true,
                     tickLabelStyle: { 
@@ -671,7 +671,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                       display: 'none',
                     },
                     '& .MuiLineElement-root': {
-                      strokeWidth: 2,
+                      strokeWidth: 1,
                     },
                     '& .MuiMarkElement-root': {
                       fill: '#1340FF !important',
@@ -725,8 +725,8 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                      const bandWidth = plotAreaWidth / 3; // 3 data points
                      const xPosition = plotAreaLeft + (bandWidth * 0.5) + (index * bandWidth);
                      
-                     // Calculate exact y position based on data value (0-15 scale)
-                     const dataPointY = plotAreaTop + (plotAreaHeight - ((value / 15) * plotAreaHeight));
+                     // Calculate exact y position based on data value (0-3 scale)
+                     const dataPointY = plotAreaTop + (plotAreaHeight - ((value / 3) * plotAreaHeight));
                      const labelY = dataPointY - 18; // Consistent spacing
                      
                      return (
@@ -877,10 +877,10 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                        
                        {/* Bar */}
                        <Box sx={{
-                         width: isTablet ? '35px' : '28px', // Slimmer bars
+                         width: isTablet ? '40px' : '36px', // Much thicker mobile bars
                          height: `${barHeight}px`,
                          backgroundColor: '#1340FF',
-                         borderRadius: isTablet ? '17.5px' : '14px', // Adjusted border radius for slimmer bars
+                         borderRadius: isTablet ? '20px' : '18px', // Much more curved
                          transition: 'all 0.3s ease',
                          minHeight: '20px' // Ensure minimum visible height
                        }} />
@@ -1004,7 +1004,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                  }]}
                  yAxis={[{ 
                    min: 0,
-                   max: 15,
+                   max: 3,
                    tickNumber: 4,
                    hideTooltip: true,
                    tickLabelStyle: { fontSize: 13, fill: '#333', fontWeight: 500 }, // Made darker and bolder
@@ -1047,7 +1047,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                      display: 'none',
                    },
                    '& .MuiLineElement-root': {
-                     strokeWidth: 2,
+                     strokeWidth: 1,
                    },
                    '& .MuiMarkElement-root': {
                      fill: '#1340FF !important',
@@ -1096,8 +1096,8 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                    const bandWidth = plotAreaWidth / 3; // 3 data points
                    const xPosition = plotAreaLeft + (bandWidth * 0.5) + (index * bandWidth);
                    
-                   // Calculate exact y position based on data value (0-15 scale)
-                   const dataPointY = plotAreaTop + (plotAreaHeight - ((value / 15) * plotAreaHeight));
+                   // Calculate exact y position based on data value (0-3 scale)
+                   const dataPointY = plotAreaTop + (plotAreaHeight - ((value / 3) * plotAreaHeight));
                    const labelY = dataPointY - 22; // Position label above the dot
                    
                    return (
@@ -1233,7 +1233,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                    }}>
                      {/* Value above bar */}
                      <Typography sx={{
-                       fontSize: 14,
+                       fontSize: 16,
                        fontWeight: 400,
                        color: 'black',
                        fontFamily: 'Aileron, sans-serif',
@@ -1245,10 +1245,10 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                      
                      {/* Bar */}
                      <Box sx={{
-                       width: '45px', // Slimmer bars for desktop
+                       width: '60px', // Much thicker bars for desktop
                        height: `${barHeight}px`,
                        backgroundColor: '#1340FF',
-                       borderRadius: '22.5px', // Adjusted border radius for slimmer bars
+                       borderRadius: '30px', // Much more curved
                        transition: 'all 0.3s ease',
                        minHeight: '25px' // Ensure minimum visible height
                      }} />
