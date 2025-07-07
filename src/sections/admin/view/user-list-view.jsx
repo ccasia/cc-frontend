@@ -150,7 +150,7 @@ export default function UserListView() {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(admins);
+  const [tableData, setTableData] = useState([]);
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -190,7 +190,7 @@ export default function UserListView() {
     async (id) => {
       try {
         await axiosInstance.delete(`${endpoints.admin.delete}/${id}`);
-        const deleteRows = tableData.filter((row) => row.id !== id);
+        const deleteRows = tableData?.filter((row) => row.id !== id) || [];
         setTableData(deleteRows);
         enqueueSnackbar('Successfully deleted admin');
       } catch (error) {
@@ -201,15 +201,15 @@ export default function UserListView() {
   );
 
   const handleDeleteRows = useCallback(() => {
-    const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
+    const deleteRows = tableData?.filter((row) => !table.selected.includes(row.id)) || [];
 
     enqueueSnackbar('Delete success!');
 
     setTableData(deleteRows);
 
     table.onUpdatePageDeleteRows({
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: dataInPage?.length || 0,
+      totalRowsFiltered: dataFiltered?.length || 0,
     });
   }, [dataFiltered, dataInPage, enqueueSnackbar, table, tableData]);
 
@@ -594,7 +594,7 @@ export default function UserListView() {
                 //
                 onResetFilters={handleResetFilters}
                 //
-                results={dataFiltered.length}
+                results={dataFiltered?.length || 0}
                 sx={{ p: 2.5, pt: 0 }}
               />
             )}
@@ -607,7 +607,7 @@ export default function UserListView() {
                 onSelectAllRows={(checked) =>
                   table.onSelectAllRows(
                     checked,
-                    dataFiltered.map((row) => row.id)
+                    dataFiltered?.map((row) => row.id) || []
                   )
                 }
                 action={
@@ -631,7 +631,7 @@ export default function UserListView() {
                     onSelectAllRows={(checked) =>
                       table.onSelectAllRows(
                         checked,
-                        dataFiltered.map((row) => row.id)
+                        dataFiltered?.map((row) => row.id) || []
                       )
                     }
                   />
@@ -711,6 +711,10 @@ function applyFilter({ inputData, comparator, filters }) {
   const { name, status, role } = filters;
   console.log(inputData);
 
+  if (!inputData) {
+    return [];
+  }
+
   const stabilizedThis = inputData?.map((el, index) => [el, index]);
 
   stabilizedThis?.sort((a, b) => {
@@ -719,7 +723,7 @@ function applyFilter({ inputData, comparator, filters }) {
     return a[1] - b[1];
   });
 
-  inputData = stabilizedThis?.map((el) => el[0]);
+  inputData = stabilizedThis?.map((el) => el[0]) || [];
 
   if (name) {
     inputData = inputData.filter(
