@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 // import { keyframes } from '@emotion/react';
@@ -21,6 +21,7 @@ import { useSocialMediaData } from 'src/utils/store';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import InstagramOAuthWarning from 'src/components/instagram-oauth-warning';
 
 
 
@@ -379,6 +380,9 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
   const mdDown = useResponsive('down', 'md');
   const lgUp = useResponsive('up', 'lg');
   
+  // State for Instagram OAuth warning modal
+  const [showOAuthWarning, setShowOAuthWarning] = useState(false);
+  
   // Use carousel for mobile and tablet, desktop layout only for large screens
   const isMobile = forceDesktop ? false : !lgUp;
   const isTablet = !smDown && mdDown; // iPad size
@@ -446,6 +450,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
           <Button
             variant="contained"
             size="large"
+            onClick={() => setShowOAuthWarning(true)}
             sx={{
               borderRadius: 1.5,
               px: 3,
@@ -461,9 +466,6 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
               },
             }}
             startIcon={<Iconify icon="mingcute:link-line" width={22} />}
-            LinkComponent="a"
-            href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://app.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
-            target="_blank"
           >
             Connect Instagram
           </Button>
@@ -1352,6 +1354,16 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
              </Box>
            </Box>
         </Box>
+      )}
+      
+      {/* Instagram OAuth Warning Modal */}
+      {showOAuthWarning && (
+        <InstagramOAuthWarning
+          redirectUrl="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://app.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
+          onCancel={() => setShowOAuthWarning(false)}
+          autoRedirect={false}
+          redirectDelay={3}
+        />
       )}
     </Box>
   );
