@@ -35,7 +35,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import InvoicePDF from 'src/sections/invoice/invoice-pdf';
+import InvoicePDF from 'src/sections/invoice/test-invoice-pdf';
 
 import Submissions from '../creator-stuff/submissions';
 import TimelineCreator from '../creator-stuff/timeline/view/page';

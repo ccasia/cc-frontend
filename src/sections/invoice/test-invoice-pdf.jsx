@@ -86,6 +86,19 @@ const useStyles = () =>
 export default function InvoicePDF({ invoice, currentStatus }) {
   const styles = useStyles();
 
+  // Early return if invoice is not provided
+  if (!invoice) {
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <View style={[styles.gridContainer, styles.mb40]}>
+            <Text style={styles.h3}>Invoice not found</Text>
+          </View>
+        </Page>
+      </Document>
+    );
+  }
+
   const bankInfo = () => (
     <View style={[styles.table, styles.mb40]}>
       <View>
@@ -95,7 +108,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
           </View>
 
           <View style={styles.tableCell_2}>
-            <Text style={styles.subtitle2}>Recipent Name</Text>
+            <Text style={styles.subtitle2}>INVOICE SECTION PDF - Recipient Name</Text>
           </View>
 
           <View style={[styles.tableCell_2]}>
@@ -119,17 +132,17 @@ export default function InvoicePDF({ invoice, currentStatus }) {
           </View>
 
           <View style={styles.tableCell_2}>
-            <Text style={styles.subtitle2}>{invoice?.bankAcc.payTo}</Text>
+            <Text style={styles.subtitle2}>{invoice?.bankAcc?.payTo || ''}</Text>
           </View>
 
           <View style={[styles.tableCell_2]}>
-            <Text>{invoice?.bankAcc.bankName}</Text>
+            <Text>{invoice?.bankAcc?.bankName || ''}</Text>
           </View>
           <View style={[styles.tableCell_2]}>
-            <Text>{invoice?.bankAcc.accountNumber}</Text>
+            <Text>{invoice?.bankAcc?.accountNumber || ''}</Text>
           </View>
           <View style={[styles.tableCell_2]}>
-            <Text>{invoice?.bankAcc.accountEmail}</Text>
+            <Text>{invoice?.bankAcc?.accountEmail || ''}</Text>
           </View>
         </View>
       </View>
@@ -205,10 +218,10 @@ export default function InvoicePDF({ invoice, currentStatus }) {
               </View>
 
               <View style={[styles.tableCell_2]}>
-                <Text>{invoice?.task.title}</Text>
+                <Text>{invoice?.task?.title || ''}</Text>
               </View>
               <View style={styles.tableCell_2}>
-                <Text>{invoice?.task.description}</Text>
+                <Text>{invoice?.task?.description || ''}</Text>
               </View>
 
               <View style={[styles.tableCell_2]}>
