@@ -82,7 +82,7 @@ const useStyles = () =>
         tableRow: {
           display: 'flex',
           flexDirection: 'row',
-          justifyContent: "space-between",
+          justifyContent: 'space-between',
           gap: 10,
         },
         tableBody: {
@@ -285,7 +285,7 @@ const InvoicePDF = ({ data }) => {
                       fontSize: '10px',
                     }}
                   >
-                    {data.campaign.subscription.currency} {data.amount}
+                    {data?.campaign?.subscription?.currency} {data?.amount}
                   </Text>
                 </View>
 
