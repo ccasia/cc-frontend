@@ -80,6 +80,8 @@ export const paths = {
         billing: `${ROOTS.DASHBOARD}/user/profile/billing`,
         notifications: `${ROOTS.DASHBOARD}/user/profile/notifications`,
         preference: `${ROOTS.DASHBOARD}/user/profile/preference`,
+        // Client profile tabs
+        client: `${ROOTS.DASHBOARD}/user/profile/client`,
       },
       myTasks: `${ROOTS.DASHBOARD}/tasks`,
     },

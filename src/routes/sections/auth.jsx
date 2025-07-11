@@ -14,6 +14,7 @@ import { SplashScreen } from 'src/components/loading-screen';
 const JwtLoginPage = lazy(() => import('src/pages/auth/jwt/login'));
 // const JwtRegisterPage = lazy(() => import('src/pages/auth/jwt/register'));
 const AdminForm = lazy(() => import('src/pages/auth/jwt/adminForm'));
+const ClientSetupPassword = lazy(() => import('src/pages/auth/client-setup-password'));
 // ----------------------------------------------------------------------
 
 // CLASSIC
@@ -129,9 +130,25 @@ const authCreator = {
   ],
 };
 
+const authClient = {
+  path: 'client',
+  children: [
+    {
+      path: 'setup-password',
+      element: (
+        <GuestGuard>
+          <AuthModernLayout title="Client Setup">
+            <ClientSetupPassword />
+          </AuthModernLayout>
+        </GuestGuard>
+      ),
+    },
+  ],
+};
+
 export const authRoutes = [
   {
     path: 'auth',
-    children: [authAdmin, authCreator],
+    children: [authAdmin, authCreator, authClient],
   },
 ];

@@ -77,6 +77,7 @@ export const endpoints = {
     getCurrentUser: '/api/auth/currentUser',
     checkCreator: '/api/auth/checkCreator',
     updateCreator: '/api/auth/updateCreator',
+    updateClient: '/api/auth/updateClient',
     updateProfileCreator: '/api/auth/updateProfileCreator',
     verifyCreator: '/api/auth/verifyCreator',
     resendToken: '/api/auth/resendVerifyToken',
@@ -149,6 +150,7 @@ export const endpoints = {
     disconnectXero: '/api/admin/xero/disconnect',
   },
   company: {
+    root: '/api/company',
     create: '/api/company/createCompany',
     getAll: '/api/company/getCompanies',
     createBrand: '/api/company/createBrand',
@@ -317,5 +319,8 @@ export const endpoints = {
     validate: '/api/public/validate',
     getDetails: (id) => `/api/public/details/${id}`,
     clientFeedback: '/api/public/client-feedback',
+  },
+  client: {
+    updateClient: '/api/client/updateClient',
   },
 };

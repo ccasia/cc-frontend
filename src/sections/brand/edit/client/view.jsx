@@ -18,6 +18,8 @@ import {
   Container,
   Typography,
   DialogContent,
+  DialogTitle,
+  DialogActions,
   CircularProgress,
 } from '@mui/material';
 
@@ -85,6 +87,8 @@ const companySchema = Yup.object().shape({
 const CompanyEditView = ({ id }) => {
   const { data: company, isLoading, mutate } = useGetCompanyById(id);
   const [loading, setLoading] = useState(false);
+  const [activateDialogOpen, setActivateDialogOpen] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
   const router = useRouter();
   const dialog = useBoolean();
   const packageDialog = useBoolean();
@@ -160,6 +164,28 @@ const CompanyEditView = ({ id }) => {
     }
   });
 
+  const handleActivateClient = async () => {
+    setIsActivating(true);
+    try {
+      const response = await axiosInstance.post(`${endpoints.company.root}/activateClient/${id}`);
+      
+      if (response.status === 200) {
+        enqueueSnackbar('Client activation email sent successfully!', {
+          variant: 'success',
+        });
+        setActivateDialogOpen(false);
+        mutate(); // Refresh company data
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Error activating client';
+      enqueueSnackbar(errorMessage, {
+        variant: 'error',
+      });
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
   const onClose = useCallback(() => {
     dialog.onFalse();
   }, [dialog]);
@@ -231,12 +257,23 @@ const CompanyEditView = ({ id }) => {
           <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
 
           <Box textAlign="end" mt={2}>
+            {company?.pic[0].email && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setActivateDialogOpen(true)}
+                startIcon={<Iconify icon="mdi:account-plus" />}
+              >
+                Activate Client
+              </Button>
+            )}
             <LoadingButton
               loading={loading}
               type="submit"
               variant="contained"
               sx={{
                 width: 100,
+                ml: 1
               }}
             >
               Save
@@ -334,6 +371,34 @@ const CompanyEditView = ({ id }) => {
         onClose={packageDialog.onFalse}
         clientId={id}
       />
+
+      {/* Client Activation Dialog */}
+      <Dialog open={activateDialogOpen} onClose={() => setActivateDialogOpen(false)}>
+        <DialogTitle>Are you sure you want to activate this client?</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, mb: 2 }}>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Company Name:</strong> {company?.name}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Package:</strong> {currentPackage?.package?.name || currentPackage?.customPackage?.customName}
+            </Typography>
+            <Typography variant="body1">
+              <strong>PIC:</strong> {company?.pic[0].email}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setActivateDialogOpen(false)}>Cancel</Button>
+          <LoadingButton 
+            onClick={handleActivateClient} 
+            variant="contained" 
+            loading={isActivating}
+          >
+            Activate
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
