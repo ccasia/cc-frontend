@@ -34,19 +34,10 @@ const ClientProfile = () => {
   const [companyData, setCompanyData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const UpdateClientSchema = Yup.object().shape({
-    companyName: Yup.string().required('Company name is required'),
-    companyAddress: Yup.string().required('Company address is required'),
-    registrationNumber: Yup.string().required('Registration number is required'),
-    picName: Yup.string().required('PIC name is required'),
-    picDesignation: Yup.string().required('PIC designation is required'),
-    picMobile: Yup.string().required('PIC mobile number is required'),
-    country: Yup.string().required('Country is required'),
-  });
-
   const defaultValues = {
     companyName: '',
     companyAddress: '',
+    companyEmail: '',
     registrationNumber: '',
     picName: '',
     picDesignation: '',
@@ -56,7 +47,6 @@ const ClientProfile = () => {
   };
 
   const methods = useForm({
-    resolver: yupResolver(UpdateClientSchema),
     defaultValues,
   });
 
@@ -97,6 +87,7 @@ const ClientProfile = () => {
             reset({
               companyName: company.name || '',
               companyAddress: company.address || '',
+              companyEmail: company.email || '',
               registrationNumber: company.registration_number || '',
               picName: userData.name || '',
               picDesignation: pic.designation || '',
@@ -141,6 +132,7 @@ const ClientProfile = () => {
       const updateData = {
         companyName: data.companyName,
         companyAddress: data.companyAddress,
+        companyEmail: data.companyEmail,
         registrationNumber: data.registrationNumber,
         picName: data.picName,
         picDesignation: data.picDesignation,
@@ -168,105 +160,6 @@ const ClientProfile = () => {
     }
   });
 
-  const renderPicture = (
-    <Grid item xs={12} md={4}>
-      <Card sx={{ p: 3, textAlign: 'center' }}>
-        <Stack alignItems="center" spacing={2}>
-          <UploadPhoto onDrop={onDrop}>
-            <Avatar
-              sx={{
-                width: 120,
-                height: 120,
-                borderRadius: '12px',
-              }}
-              src={image || companyData?.logo}
-              variant="rounded"
-            />
-          </UploadPhoto>
-          <Typography variant="caption" color="text.secondary">
-            Company Logo
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
-            Allowed *.jpeg, *.jpg, *.png, *.gif max size of 3 Mb
-          </Typography>
-        </Stack>
-      </Card>
-    </Grid>
-  );
-
-  const renderForm = (
-    <Grid item xs={12} md={8}>
-      <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Card sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Company Information
-          </Typography>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <RHFTextField name="companyName" label="Company Name" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <RHFTextField name="registrationNumber" label="Registration Number" />
-            </Grid>
-            <Grid item xs={12}>
-              <RHFTextField name="companyAddress" label="Company Address" multiline rows={3} />
-            </Grid>
-          </Grid>
-
-          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
-            Person In Charge (PIC) Information
-          </Typography>
-
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <RHFTextField name="picName" label="PIC Name" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <RHFTextField name="picDesignation" label="PIC Designation" />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <RHFAutocomplete
-                name="country"
-                label="Country"
-                placeholder="Choose a country"
-                options={countries.map((option) => option.label)}
-                getOptionLabel={(option) => option}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <RHFTextField
-                name="picMobile"
-                label="PIC Mobile Number"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      +
-                      {countries
-                        .filter((elem) => elem.label === countryValue)
-                        .map((e) => e.phone)}
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-          </Grid>
-
-          <Box sx={{ textAlign: 'right', mt: 3 }}>
-            <LoadingButton
-              type="submit"
-              variant="contained"
-              loading={loading}
-              disabled={!methods.formState.isDirty && !image}
-            >
-              Save
-            </LoadingButton>
-          </Box>
-        </Card>
-      </FormProvider>
-    </Grid>
-  );
-
   if (user?.role !== 'client') {
     return (
       <Card sx={{ p: 3, textAlign: 'center' }}>
@@ -278,11 +171,143 @@ const ClientProfile = () => {
   }
 
   return (
-    <Grid container spacing={3}>
-      {renderPicture}
-      {renderForm}
-    </Grid>
+    <Box sx={{ mx: 'auto' }}>
+      {/* Company Logo Section */}
+      <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <UploadPhoto onDrop={onDrop}>
+          <Avatar
+            sx={{
+              width: 150,
+              height: 150,
+              borderRadius: '50%',
+              mx: 'auto',
+              mb: 2,
+              bgcolor: '#f5f5f5',
+            }}
+            src={image || companyData?.logo}
+          />
+        </UploadPhoto>
+        <Typography variant="h6" color="text.secondary">
+          Client Logo
+        </Typography>
+      </Box>
+
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <Grid container spacing={3}>
+          {/* First Row */}
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Company Name
+            </Typography>
+            <RHFTextField 
+              name="companyName" 
+              placeholder="Company Name"
+              size="small"
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              PIC (Person in Charge) Name
+            </Typography>
+            <RHFTextField 
+              name="picName" 
+              placeholder="Company PIC (Person in Charge) Name"
+              size="small"
+            />
+          </Grid>
+
+          {/* Second Row */}
+          <Grid item xs={6}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Company Email
+            </Typography>
+            <RHFTextField 
+              name="companyEmail" 
+              placeholder="Company Address"
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Designation
+            </Typography>
+            <RHFTextField 
+              name="picDesignation" 
+              placeholder="Designation"
+              size="small"
+            />
+          </Grid>
+
+          {/* Third Row */}
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Client Registration Number
+            </Typography>
+            <RHFTextField 
+              name="registrationNumber" 
+              placeholder="Client Registration Number"
+              size="small"
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              PIC Mobile Number
+            </Typography>
+            <RHFTextField
+              name="picMobile"
+              placeholder="PCI Mobile Number"
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    +
+                    {countries
+                      .filter((elem) => elem.label === countryValue)
+                      .map((e) => e.phone)}
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={6}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Company Address
+            </Typography>
+            <RHFTextField 
+              name="companyAddress" 
+              placeholder="Company Address"
+              size="small"
+            />
+          </Grid>
+
+          {/* Update Button */}
+          <Grid item xs={12} sx={{ textAlign: 'right', mt: 2 }}>
+            <LoadingButton
+              type="submit"
+              variant="contained"
+              loading={loading}
+              sx={{
+                background: '#1340FF',
+                fontSize: '16px',
+                fontWeight: 600,
+                borderRadius: '10px',
+                borderBottom: '3px solid #0c2aa6',
+                transition: 'none',
+                width: { xs: '100%', sm: '90px' },
+                height: '44px',
+              }}
+            >
+              Update
+            </LoadingButton>
+          </Grid>
+        </Grid>
+      </FormProvider>
+    </Box>
   );
+
 };
 
 export default ClientProfile;

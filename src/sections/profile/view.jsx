@@ -1109,7 +1109,7 @@ const Profile = () => {
         ? ClientTabs 
         : CreatorTabs}
 
-      {profileCompletion < 100 ? (
+      {profileCompletion < 100 && user?.role === 'creator' ? (
         <Stack mb={2} direction="row" alignItems="center" spacing={2}>
           <Box sx={{ position: 'relative', display: 'inline-flex' }}>
             <CircularProgress
@@ -1152,6 +1152,7 @@ const Profile = () => {
           />
         </Stack>
       ) : (
+        user?.role === 'creator' &&
         <Stack mb={2} direction="row" alignItems="center" spacing={2}>
           <Box sx={{ position: 'relative', display: 'inline-flex' }}>
             <CircularProgress
