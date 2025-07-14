@@ -7,8 +7,6 @@ import {
   Box,
   Grid,
   Card,
-  Stack,
-  Avatar,
   Typography,
   InputAdornment,
 } from '@mui/material';
@@ -20,10 +18,8 @@ import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import { RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
 import { useSnackbar } from 'src/components/snackbar';
-
-import UploadPhoto from './dropzone';
 
 // ----------------------------------------------------------------------
 
@@ -35,6 +31,7 @@ const ClientProfile = () => {
   const [loading, setLoading] = useState(false);
 
   const defaultValues = {
+    companyLogo: {},
     companyName: '',
     companyAddress: '',
     companyEmail: '',
@@ -69,8 +66,8 @@ const ClientProfile = () => {
         // If user has client data and we need to find the company
         if (userData?.client || userData?.email) {
           // Get all companies and find the one matching user email or PIC email
-          const companiesResponse = await axiosInstance.get(`${endpoints.company.getAll}`);
-          const companies = companiesResponse.data;
+          const allCompanies = await axiosInstance.get(`${endpoints.company.getAll}`);
+          const companies = allCompanies.data;
 
           // Find company where user email matches company email or PIC email
           const matchedCompany = companies.find(company => 
@@ -85,6 +82,7 @@ const ClientProfile = () => {
             
             setCompanyData(company);
             reset({
+              companyLogo: company.logo || {},
               companyName: company.name || '',
               companyAddress: company.address || '',
               companyEmail: company.email || '',
@@ -111,13 +109,16 @@ const ClientProfile = () => {
     }
   }, [user, reset, enqueueSnackbar]);
 
-  const onDrop = useCallback(
+  const handleDrop = useCallback(
     (acceptedFiles) => {
       const file = acceptedFiles[0];
+
+      const newFile = Object.assign(file, {
+        preview: URL.createObjectURL(file),
+      });
+
       if (file) {
-        const preview = URL.createObjectURL(file);
-        setImage(preview);
-        setValue('companyLogo', file);
+        setValue('companyLogo', newFile, { shouldValidate: true });
       }
     },
     [setValue]
@@ -130,6 +131,7 @@ const ClientProfile = () => {
       // Prepare form data for the new updateClient endpoint
       const formData = new FormData();
       const updateData = {
+        companyLogo: data.companyLogo,
         companyName: data.companyName,
         companyAddress: data.companyAddress,
         companyEmail: data.companyEmail,
@@ -172,28 +174,9 @@ const ClientProfile = () => {
 
   return (
     <Box sx={{ mx: 'auto' }}>
-      {/* Company Logo Section */}
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <UploadPhoto onDrop={onDrop}>
-          <Avatar
-            sx={{
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              mx: 'auto',
-              mb: 2,
-              bgcolor: '#f5f5f5',
-            }}
-            src={image || companyData?.logo}
-          />
-        </UploadPhoto>
-        <Typography variant="h6" color="text.secondary">
-          Client Logo
-        </Typography>
-      </Box>
-
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Grid container spacing={3}>
+        <RHFUploadAvatar name='companyLogo' onDrop={handleDrop} />
+        <Grid container spacing={3} mt={1}>
           {/* First Row */}
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -257,7 +240,7 @@ const ClientProfile = () => {
             </Typography>
             <RHFTextField
               name="picMobile"
-              placeholder="PCI Mobile Number"
+              placeholder="PIC Mobile Number"
               size="small"
               InputProps={{
                 startAdornment: (

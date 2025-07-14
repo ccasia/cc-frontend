@@ -18,9 +18,9 @@ import {
   Container,
   Typography,
   DialogContent,
-  DialogTitle,
   DialogActions,
   CircularProgress,
+  Divider,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -42,6 +42,7 @@ import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
 import PackageHistoryList from './pakcage-history-list';
 import CampaignClientList from './campaign-client/view/campaign-list';
+import { useAuthContext } from 'src/auth/hooks';
 
 const findLatestPackage = (packages) => {
   if (packages?.length === 0) {
@@ -85,6 +86,7 @@ const companySchema = Yup.object().shape({
 });
 
 const CompanyEditView = ({ id }) => {
+  const { user } = useAuthContext();
   const { data: company, isLoading, mutate } = useGetCompanyById(id);
   const [loading, setLoading] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
@@ -93,6 +95,8 @@ const CompanyEditView = ({ id }) => {
   const dialog = useBoolean();
   const packageDialog = useBoolean();
   const [activeTab, setActiveTab] = useState('package');
+
+  console.log('Company edit info: ', company)
 
   const campaigns = useMemo(() => {
     if (company?.type === 'agency' || company?.brand?.length) {
@@ -253,18 +257,31 @@ const CompanyEditView = ({ id }) => {
             </Label>
           )}
         </Box>
+
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
 
           <Box textAlign="end" mt={2}>
-            {company?.pic[0].email && (
+            {user?.role === 'superadmin' && company?.clients < 0 && (
               <Button
                 variant="contained"
                 color="primary"
                 onClick={() => setActivateDialogOpen(true)}
-                startIcon={<Iconify icon="mdi:account-plus" />}
+                sx={{
+                  bgcolor: '#203ff5',
+                  color: 'white',
+                  borderBottom: '3px solid #102387',
+                  borderRadius: '8px',
+                  p: '4px 20px',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    bgcolor: '#203ff5',
+                    opacity: 0.9,
+                  },
+                }}
               >
-                Activate Client
+                Activate Account
               </Button>
             )}
             <LoadingButton
@@ -374,30 +391,45 @@ const CompanyEditView = ({ id }) => {
 
       {/* Client Activation Dialog */}
       <Dialog open={activateDialogOpen} onClose={() => setActivateDialogOpen(false)}>
-        <DialogTitle>Are you sure you want to activate this client?</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2, mb: 2 }}>
-            <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Company Name:</strong> {company?.name}
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>Package:</strong> {currentPackage?.package?.name || currentPackage?.customPackage?.customName}
-            </Typography>
-            <Typography variant="body1">
-              <strong>PIC:</strong> {company?.pic[0].email}
-            </Typography>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setActivateDialogOpen(false)}>Cancel</Button>
-          <LoadingButton 
-            onClick={handleActivateClient} 
-            variant="contained" 
-            loading={isActivating}
-          >
-            Activate
-          </LoadingButton>
-        </DialogActions>
+        <Box sx={{ width: 427 }}>
+          <Typography fontSize={40} p={3} fontFamily={'Instrument Serif'}>Activate Client Account?</Typography>
+          <Divider sx={{ mx: 2 }} />
+          <DialogContent>
+            <Box sx={{ mt: 2, mb: 2 }}>
+              <Typography variant="body1">
+                <Typography variant='span' color={'#636366'}>Company Name:</Typography> {company?.name}
+              </Typography>
+              <Typography variant="body1">
+                <Typography variant='span' color={'#636366'}>Company Email:</Typography> {company?.email}
+              </Typography>
+              <Typography variant="body1">
+                <Typography variant='span' color={'#636366'}>Package:</Typography> {currentPackage?.package?.name || currentPackage?.customPackage?.customName}
+              </Typography>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              sx={{ 
+                border: '1px solid #E7E7E7', 
+                borderRadius: '8px', 
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset', 
+                px: 2
+              }}
+              onClick={() => setActivateDialogOpen(false)}>Cancel</Button>
+            <LoadingButton 
+              sx={{
+                borderRadius: '8px',
+                bgcolor: '#3A3A3C',
+                boxShadow: '0px -3px 0px 0px #00000073 inset'
+              }}
+              onClick={handleActivateClient} 
+              variant="contained" 
+              loading={isActivating}
+            >
+              Yes
+            </LoadingButton>
+          </DialogActions>
+        </Box>
       </Dialog>
     </Container>
   );
