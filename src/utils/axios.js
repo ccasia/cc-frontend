@@ -325,5 +325,7 @@ export const endpoints = {
   },
   client: {
     updateClient: '/api/client/updateClient',
+    checkCompany: '/api/client/checkCompany',
+    createCompany: '/api/client/createCompany',
   },
 };
