@@ -26,6 +26,7 @@ const NewPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic/ne
 
 const NewLoginPage = lazy(() => import('src/pages/auth-demo/new-login'));
 const NewRegisterPage = lazy(() => import('src/pages/auth-demo/new-register'));
+const ClientRegisterPage = lazy(() => import('src/pages/auth-demo/client-register'));
 const ForgotPasswordClassicPage = lazy(() => import('src/pages/auth-demo/forget-password'));
 
 const authAdmin = {
@@ -131,19 +132,44 @@ const authCreator = {
 };
 
 const authClient = {
-  path: 'client',
+  path: 'jwt',
+  element: (
+    <Suspense fallback={<SplashScreen />}>
+      <Outlet />
+    </Suspense>
+  ),
   children: [
     {
-      path: 'setup-password',
+      path: 'client',
       element: (
-        <GuestGuard>
-          <AuthModernLayout title="Client Setup">
-            <ClientSetupPassword />
-          </AuthModernLayout>
-        </GuestGuard>
+        <Suspense fallback={<SplashScreen />}>
+          <Outlet />
+        </Suspense>
       ),
-    },
-  ],
+      children: [
+        { 
+          path: 'setup-password',
+          element: (
+            <GuestGuard>
+              <AuthModernLayout title="Client Setup">
+                <ClientSetupPassword />
+              </AuthModernLayout>
+            </GuestGuard>
+          ),
+        },
+        {
+          path: 'register',
+          element: (
+            <GuestGuard>
+              <AuthModernLayout title="Cult Creative">
+                <ClientRegisterPage />
+              </AuthModernLayout>
+            </GuestGuard>
+          ),
+        },
+      ],
+    }
+  ]
 };
 
 export const authRoutes = [

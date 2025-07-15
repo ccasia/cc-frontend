@@ -70,6 +70,7 @@ export const endpoints = {
     logout: '/api/auth/logout',
     register: '/api/auth/register',
     registerCreator: '/api/auth/registerCreator',
+    registerClient: '/api/auth/registerClient',
     registerAdmin: '/api/auth/registerAdmin',
     verifyAdmin: '/api/auth/verifyAdmin',
     updateProfileAdmin: '/api/user/admin/profile',

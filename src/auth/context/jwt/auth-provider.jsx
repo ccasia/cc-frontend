@@ -173,6 +173,34 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // REGISTER CLIENT
+  const registerClient = useCallback(async (data) => {
+    try {
+      const response = await axios.post(endpoints.auth.registerClient, data);
+      
+      const { user, accessToken, refreshToken } = response.data;
+      
+      setSession(accessToken);
+      
+      dispatch({
+        type: 'REGISTER',
+        payload: {
+          user: {
+            ...user,
+            accessToken,
+          },
+        },
+      });
+      
+      return user;
+    } catch (error) {
+      console.error('Client registration error:', error);
+      console.error('Error response:', error.response?.data);
+      const message = error?.response?.data?.message || error?.message || 'Something went wrong';
+      throw new Error(message);
+    }
+  }, []);
+
   const verify = useCallback(async (token) => {
     const response = await axios.post(endpoints.auth.verifyCreator, { token });
 
@@ -222,12 +250,13 @@ export function AuthProvider({ children }) {
       //
       login,
       register,
+      registerClient,
       verify,
       logout,
       initialize,
       dispatch,
     }),
-    [login, logout, register, verify, state.user, status, permission, role, initialize]
+    [login, logout, register, registerClient, verify, state.user, status, permission, role, initialize]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;

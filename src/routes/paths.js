@@ -1,5 +1,7 @@
 // ----------------------------------------------------------------------
 
+import ClientSetupPassword from "src/pages/auth/client-setup-password";
+
 const ROOTS = {
   AUTH: '/auth',
   DASHBOARD: '/dashboard',
@@ -16,6 +18,8 @@ export const paths = {
       login: `${ROOTS.AUTH}/jwt/login`,
       adminLogin: `${ROOTS.AUTH}/jwt/admin/login`,
       register: `${ROOTS.AUTH}/jwt/register`,
+      clientRegister: `${ROOTS.AUTH}/jwt/client/register`,
+      setupPassword: `${ROOTS.AUTH}/jwt/client/setup-password`,
       forgetPassword: `${ROOTS.AUTH}/jwt/forgot-password`,
     },
     verify: `${ROOTS.AUTH}/verify`,
