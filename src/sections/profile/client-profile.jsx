@@ -1,7 +1,5 @@
-import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { useState, useCallback, useEffect } from 'react';
-import { yupResolver } from '@hookform/resolvers/yup';
 
 import {
   Box,
@@ -18,7 +16,7 @@ import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
+import { RHFAutocomplete, RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
 import { useSnackbar } from 'src/components/snackbar';
 
 // ----------------------------------------------------------------------
@@ -87,7 +85,7 @@ const ClientProfile = () => {
               companyAddress: company.address || '',
               companyEmail: company.email || '',
               registrationNumber: company.registration_number || '',
-              picName: userData.name || '',
+              picName: pic.name || '',
               picDesignation: pic.designation || '',
               picMobile: userData.phoneNumber || '',
               country: company.country || userData.country || '',
@@ -234,6 +232,32 @@ const ClientProfile = () => {
             />
           </Grid>
 
+          <Grid item xs={6}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Company Address
+            </Typography>
+            <RHFTextField 
+              name="companyAddress" 
+              placeholder="Company Address"
+              size="small"
+            />
+          </Grid>
+
+          {/* Fourth Row */}
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Country
+            </Typography>
+            <RHFAutocomplete
+              name="country"
+              type="country"
+              size='small'
+              placeholder="Code"
+              options={countries.map((option) => option.label)}
+              getOptionLabel={(option) => option}
+
+            />
+          </Grid>            
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               PIC Mobile Number
@@ -244,7 +268,7 @@ const ClientProfile = () => {
               size="small"
               InputProps={{
                 startAdornment: (
-                  <InputAdornment position="start">
+                  <InputAdornment sx={{ fontSize: 14 }} position="start">
                     +
                     {countries
                       .filter((elem) => elem.label === countryValue)
@@ -252,17 +276,6 @@ const ClientProfile = () => {
                   </InputAdornment>
                 ),
               }}
-            />
-          </Grid>
-
-          <Grid item xs={6}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Company Address
-            </Typography>
-            <RHFTextField 
-              name="companyAddress" 
-              placeholder="Company Address"
-              size="small"
             />
           </Grid>
 
