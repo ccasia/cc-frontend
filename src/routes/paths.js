@@ -1,7 +1,5 @@
 // ----------------------------------------------------------------------
 
-import ClientSetupPassword from "src/pages/auth/client-setup-password";
-
 const ROOTS = {
   AUTH: '/auth',
   DASHBOARD: '/dashboard',

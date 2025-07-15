@@ -17,17 +17,30 @@ import { useAuthContext } from 'src/auth/hooks';
 const VerifyConfirmation = () => {
   const { token } = useParams();
 
-  const { verify } = useAuthContext();
+  const { verify, verifyClient } = useAuthContext();
   const loading = useBoolean();
   const success = useBoolean();
   const router = useRouter();
   const tokenExpired = useBoolean();
+  
+  // Get user type from sessionStorage
+  const userType = sessionStorage.getItem('userType') || 'creator';
 
   // const path = paths.dashboard.overview;
 
   const checkTokenVerification = useCallback(async () => {
     try {
-      await verify(token);
+      // Use the appropriate verify function based on user type
+      if (userType === 'client') {
+        await verifyClient(token);
+      } else {
+        await verify(token);
+      }
+      
+      // Clear verification data after successful verification
+      sessionStorage.removeItem('verificationEmail');
+      sessionStorage.removeItem('userType');
+      
       router.push(paths.dashboard.overview.root);
     } catch (error) {
       tokenExpired.onTrue();
@@ -35,7 +48,7 @@ const VerifyConfirmation = () => {
         variant: 'error',
       });
     }
-  }, [token, verify, router, tokenExpired]);
+  }, [token, verify, verifyClient, router, tokenExpired, userType]);
 
   useEffect(() => {
     checkTokenVerification();
@@ -44,7 +57,13 @@ const VerifyConfirmation = () => {
   const onSubmit = async () => {
     try {
       loading.onTrue();
-      const res = await axiosInstance.post(endpoints.auth.resendVerificationLink, { token });
+      
+      // Use the appropriate resend endpoint based on user type
+      const endpoint = userType === 'client' 
+        ? endpoints.auth.resendVerificationLinkClient 
+        : endpoints.auth.resendVerificationLink;
+      
+      const res = await axiosInstance.post(endpoint, { token });
       enqueueSnackbar(res?.data?.message);
       success.onTrue();
       setTimeout(() => {

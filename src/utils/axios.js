@@ -81,6 +81,7 @@ export const endpoints = {
     updateClient: '/api/auth/updateClient',
     updateProfileCreator: '/api/auth/updateProfileCreator',
     verifyCreator: '/api/auth/verifyCreator',
+    verifyClient: '/api/auth/verifyClient',
     resendToken: '/api/auth/resendVerifyToken',
     checkTokenValidity: '/api/auth/checkTokenValidity',
     xeroCallback: `/api/auth/xeroCallback`,
@@ -89,6 +90,7 @@ export const endpoints = {
     forgetPassword: '/api/user/forget-password',
     checkToken: (token) => `/api/user/forget-password-token/${token}`,
     resendVerificationLink: `/api/auth/resendVerificationLinkCreator`,
+    resendVerificationLinkClient: `/api/auth/resendVerificationLinkClient`,
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',

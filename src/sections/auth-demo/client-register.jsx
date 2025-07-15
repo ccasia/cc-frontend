@@ -101,18 +101,21 @@ const ClientRegister = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await registerClient({
+      const result = await registerClient({
         name: data.name,
         email: data.email,
         password: data.password,
       });
 
-      enqueueSnackbar('Registration successful! Welcome to Cult Creative!', { 
+      // Store the email for the verification page
+      sessionStorage.setItem('verificationEmail', result.email);
+      sessionStorage.setItem('userType', 'client');
+
+      enqueueSnackbar('Registration successful! Please check your email to verify your account.', { 
         variant: 'success' 
       });
-      
-      // Redirect to dashboard since user is now logged in
-      router.push(paths.dashboard.root);
+
+      router.push(paths.auth.verify);
     } catch (err) {
       console.error('Registration error:', err.message);
 
