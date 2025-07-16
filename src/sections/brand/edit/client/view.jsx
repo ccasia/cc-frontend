@@ -18,7 +18,9 @@ import {
   Container,
   Typography,
   DialogContent,
+  DialogActions,
   CircularProgress,
+  Divider,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -40,6 +42,7 @@ import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
 import PackageHistoryList from './pakcage-history-list';
 import CampaignClientList from './campaign-client/view/campaign-list';
+import { useAuthContext } from 'src/auth/hooks';
 
 const findLatestPackage = (packages) => {
   if (packages?.length === 0) {
@@ -83,12 +86,17 @@ const companySchema = Yup.object().shape({
 });
 
 const CompanyEditView = ({ id }) => {
+  const { user } = useAuthContext();
   const { data: company, isLoading, mutate } = useGetCompanyById(id);
   const [loading, setLoading] = useState(false);
+  const [activateDialogOpen, setActivateDialogOpen] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
   const router = useRouter();
   const dialog = useBoolean();
   const packageDialog = useBoolean();
   const [activeTab, setActiveTab] = useState('package');
+
+  console.log('Company edit info: ', company)
 
   const campaigns = useMemo(() => {
     if (company?.type === 'agency' || company?.brand?.length) {
@@ -160,6 +168,28 @@ const CompanyEditView = ({ id }) => {
     }
   });
 
+  const handleActivateClient = async () => {
+    setIsActivating(true);
+    try {
+      const response = await axiosInstance.post(`${endpoints.company.root}/activateClient/${id}`);
+      
+      if (response.status === 200) {
+        enqueueSnackbar('Client activation email sent successfully!', {
+          variant: 'success',
+        });
+        setActivateDialogOpen(false);
+        mutate(); // Refresh company data
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Error activating client';
+      enqueueSnackbar(errorMessage, {
+        variant: 'error',
+      });
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
   const onClose = useCallback(() => {
     dialog.onFalse();
   }, [dialog]);
@@ -227,16 +257,40 @@ const CompanyEditView = ({ id }) => {
             </Label>
           )}
         </Box>
+
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
 
           <Box textAlign="end" mt={2}>
+            {user?.role === 'superadmin' && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setActivateDialogOpen(true)}
+                sx={{
+                  bgcolor: '#203ff5',
+                  color: 'white',
+                  borderBottom: '3px solid #102387',
+                  borderRadius: '8px',
+                  p: '4px 20px',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    bgcolor: '#203ff5',
+                    opacity: 0.9,
+                  },
+                }}
+              >
+                Activate Account
+              </Button>
+            )}
             <LoadingButton
               loading={loading}
               type="submit"
               variant="contained"
               sx={{
                 width: 100,
+                ml: 1
               }}
             >
               Save
@@ -337,6 +391,49 @@ const CompanyEditView = ({ id }) => {
         onClose={packageDialog.onFalse}
         clientId={id}
       />
+
+      {/* Client Activation Dialog */}
+      <Dialog open={activateDialogOpen} onClose={() => setActivateDialogOpen(false)}>
+        <Box sx={{ width: 427 }}>
+          <Typography fontSize={40} p={3} fontFamily={'Instrument Serif'}>Activate Client Account?</Typography>
+          <Divider sx={{ mx: 2 }} />
+          <DialogContent>
+            <Box sx={{ mt: 2, mb: 2 }}>
+              <Typography variant="body1">
+                <Typography variant='span' color={'#636366'}>Company Name:</Typography> {company?.name}
+              </Typography>
+              <Typography variant="body1">
+                <Typography variant='span' color={'#636366'}>Company Email:</Typography> {company?.email}
+              </Typography>
+              <Typography variant="body1">
+                <Typography variant='span' color={'#636366'}>Package:</Typography> {currentPackage?.package?.name || currentPackage?.customPackage?.customName}
+              </Typography>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              sx={{ 
+                border: '1px solid #E7E7E7', 
+                borderRadius: '8px', 
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset', 
+                px: 2
+              }}
+              onClick={() => setActivateDialogOpen(false)}>Cancel</Button>
+            <LoadingButton 
+              sx={{
+                borderRadius: '8px',
+                bgcolor: '#3A3A3C',
+                boxShadow: '0px -3px 0px 0px #00000073 inset'
+              }}
+              onClick={handleActivateClient} 
+              variant="contained" 
+              loading={isActivating}
+            >
+              Yes
+            </LoadingButton>
+          </DialogActions>
+        </Box>
+      </Dialog>
     </Container>
   );
 };

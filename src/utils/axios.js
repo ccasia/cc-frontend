@@ -70,6 +70,7 @@ export const endpoints = {
     logout: '/api/auth/logout',
     register: '/api/auth/register',
     registerCreator: '/api/auth/registerCreator',
+    registerClient: '/api/auth/registerClient',
     registerAdmin: '/api/auth/registerAdmin',
     verifyAdmin: '/api/auth/verifyAdmin',
     updateProfileAdmin: '/api/user/admin/profile',
@@ -77,8 +78,10 @@ export const endpoints = {
     getCurrentUser: '/api/auth/currentUser',
     checkCreator: '/api/auth/checkCreator',
     updateCreator: '/api/auth/updateCreator',
+    updateClient: '/api/auth/updateClient',
     updateProfileCreator: '/api/auth/updateProfileCreator',
     verifyCreator: '/api/auth/verifyCreator',
+    verifyClient: '/api/auth/verifyClient',
     resendToken: '/api/auth/resendVerifyToken',
     checkTokenValidity: '/api/auth/checkTokenValidity',
     xeroCallback: `/api/auth/xeroCallback`,
@@ -87,6 +90,7 @@ export const endpoints = {
     forgetPassword: '/api/user/forget-password',
     checkToken: (token) => `/api/user/forget-password-token/${token}`,
     resendVerificationLink: `/api/auth/resendVerificationLinkCreator`,
+    resendVerificationLinkClient: `/api/auth/resendVerificationLinkClient`,
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',
@@ -149,6 +153,7 @@ export const endpoints = {
     disconnectXero: '/api/admin/xero/disconnect',
   },
   company: {
+    root: '/api/company',
     create: '/api/company/createCompany',
     getAll: '/api/company/getCompanies',
     createBrand: '/api/company/createBrand',
@@ -318,5 +323,10 @@ export const endpoints = {
     validate: '/api/public/validate',
     getDetails: (id) => `/api/public/details/${id}`,
     clientFeedback: '/api/public/client-feedback',
+  },
+  client: {
+    updateClient: '/api/client/updateClient',
+    checkCompany: '/api/client/checkCompany',
+    createCompany: '/api/client/createCompany',
   },
 };
