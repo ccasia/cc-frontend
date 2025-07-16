@@ -680,7 +680,7 @@ export default function InvoiceListView({ campId, invoices }) {
                             />
                           </TableCell>
 
-                          <TableCell sx={{ width: 100 }}>{`${row.campaign?.subscription?.currency || ''} ${row.amount || 0}`}</TableCell>
+                          <TableCell sx={{ width: 100 }}>{`${row.campaign?.subscription?.currency || 'MYR'} ${row.amount || 0}`}</TableCell>
 
                           <TableCell sx={{ width: 100 }}>
                             <Typography
