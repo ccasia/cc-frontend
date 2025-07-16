@@ -306,7 +306,10 @@ const CompanyEditView = ({ id }) => {
                     </Button> */}
                     </Stack>
 
-                    <PackageHistoryList dataFiltered={company?.subscriptions} />
+                    <PackageHistoryList 
+                      dataFiltered={company?.subscriptions} 
+                      onRefresh={() => mutate()}
+                    />
                   </>
                 )}
               </>
