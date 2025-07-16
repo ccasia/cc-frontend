@@ -11,13 +11,14 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import MenuItem from '@mui/material/MenuItem';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import FormProvider, { RHFTextField, RHFAutocomplete, RHFSelect } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
@@ -115,7 +116,13 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
               getOptionLabel={(option) => option}
             />
 
-            <RHFTextField name="designation" label="Designation" />
+            <RHFSelect name="designation" label="Designation">
+              <MenuItem value="Finance">Finance</MenuItem>
+              <MenuItem value="CSM">CSM</MenuItem>
+              <MenuItem value="BD">BD</MenuItem>
+              <MenuItem value="Growth">Growth</MenuItem>
+              <MenuItem value="Client">Client</MenuItem>
+            </RHFSelect>
           </Box>
         </DialogContent>
 
