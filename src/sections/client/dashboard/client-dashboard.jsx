@@ -111,13 +111,6 @@ export default function ClientDashboard() {
                   <Typography variant="h6">Quick Actions</Typography>
                   <Button
                     variant="outlined"
-                    startIcon={<Iconify icon="eva:edit-outline" />}
-                    onClick={() => setOpenCompanyDialog(true)}
-                  >
-                    Edit Company
-                  </Button>
-                  <Button
-                    variant="outlined"
                     startIcon={<Iconify icon="eva:plus-outline" />}
                     disabled
                   >
@@ -152,10 +145,11 @@ export default function ClientDashboard() {
         maxWidth="sm"
         fullWidth
         disableEscapeKeyDown={!hasCompany}
+
       >
         <Box paddingY={3} bgcolor={'#F4F4F4'}>
           <Typography px={3} pb={2} fontSize={{ xs: 26, sm: 36}} fontFamily={'Instrument Serif'}>
-            {hasCompany ? 'Edit Company' : 'Complete your Client Information'}
+            Complete your Client Information
           </Typography>
           <Divider sx={{ mx: 3 }} />
           <DialogContent>
