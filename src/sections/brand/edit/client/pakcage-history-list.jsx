@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import {
   Card,
@@ -31,9 +31,10 @@ const TABLE_HEAD = [
   { id: 'remainingCredits', label: 'Available Credits', width: 88 },
   { id: 'Validity', label: 'Validity period', width: 100 },
   { id: 'status', label: 'Status ', width: 50 },
+  { id: 'actions', label: 'Actions', width: 80 },
 ];
 
-const PackageHistoryList = ({ dataFiltered }) => {
+const PackageHistoryList = ({ dataFiltered, onRefresh }) => {
   const table = useTable();
   const [filters, setFilters] = useState(defaultFilters);
   const confirm = useBoolean();
@@ -49,6 +50,12 @@ const PackageHistoryList = ({ dataFiltered }) => {
   });
 
   const notFound = (!filteredData?.length && canReset) || !filteredData?.length;
+
+  const handleEditSuccess = useCallback(() => {
+    if (onRefresh) {
+      onRefresh();
+    }
+  }, [onRefresh]);
 
   return (
     <Card>
@@ -78,6 +85,7 @@ const PackageHistoryList = ({ dataFiltered }) => {
                       row={e}
                       key={e.id}
                       selected={table.selected.includes(e.type)}
+                      onEditSuccess={handleEditSuccess}
                     />
                   ))}
                 </>
@@ -96,6 +104,7 @@ export default PackageHistoryList;
 
 PackageHistoryList.propTypes = {
   dataFiltered: PropTypes.any,
+  onRefresh: PropTypes.func,
 };
 
 function applyFilter({ inputData, comparator, filters }) {
