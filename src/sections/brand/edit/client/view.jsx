@@ -262,7 +262,7 @@ const CompanyEditView = ({ id }) => {
           <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
 
           <Box textAlign="end" mt={2}>
-            {user?.role === 'superadmin' && company?.clients < 0 && (
+            {user?.role === 'superadmin' && (
               <Button
                 variant="contained"
                 color="primary"
