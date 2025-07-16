@@ -54,12 +54,15 @@ import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
+import CampaignDetailContentClient from '../campaign-detail-content-client';
 import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 import CampaignAnalytics from '../campaign-analytics';
+import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
+import CampaignOverviewClient from '../campaign-overview-client';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -185,10 +188,30 @@ const CampaignDetailView = ({ id }) => {
     localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
+  // Define allowed tabs for client users
+  const clientAllowedTabs = ['overview', 'campaign-content', 'creator-master-list', 'deliverables', 'analytics'];
+  
+  // Check if user is client
+  const isClient = user?.role === 'Client' || user?.admin?.role?.name === 'Client';
+
+  // Check if current tab is valid for client users
+  useEffect(() => {
+    if (isClient && !clientAllowedTabs.includes(currentTab)) {
+      // If client user tries to access a restricted tab, redirect to overview
+      setCurrentTab('overview');
+      localStorage.setItem('campaigndetail', 'overview');
+    }
+  }, [currentTab, isClient]);
+
   const handleChangeTab = useCallback((event, newValue) => {
+    // For client users, only allow specific tabs
+    if (isClient && !clientAllowedTabs.includes(newValue)) {
+      return;
+    }
+    
     localStorage.setItem('campaigndetail', newValue);
     setCurrentTab(newValue);
-  }, []);
+  }, [isClient, clientAllowedTabs]);
 
   const icons = (tab) => {
     if (tab.value === 'pitch' && campaign?.pitch?.length > 0) {
@@ -237,7 +260,19 @@ const CampaignDetailView = ({ id }) => {
             width: { xs: '100%', sm: 'auto' },
           }}
         >
-          {[
+          {/* Show different tabs based on user role */}
+          {(user?.role === 'Client' || user?.admin?.role?.name === 'Client' ? 
+            // Client user tabs (no Pitches tab)
+            [
+              { label: 'Overview', value: 'overview' },
+              { label: 'Campaign Details', value: 'campaign-content' },
+              { label: 'Creator Master List', value: 'creator-master-list' },
+              { label: 'Creator Deliverables', value: 'deliverables' },
+              { label: 'Campaign Analytics', value: 'analytics' },
+            ] 
+            : 
+            // Admin/other user tabs
+            [
             { label: 'Overview', value: 'overview' },
             { label: 'Campaign Details', value: 'campaign-content' },
             // { label: 'Client Info', value: 'client' },
@@ -254,7 +289,7 @@ const CampaignDetailView = ({ id }) => {
               value: 'agreement',
             },
             {
-              label: `Creator Deliverables`,
+                label: 'Creator Deliverables',
               value: 'deliverables',
             },
             {
@@ -269,7 +304,8 @@ const CampaignDetailView = ({ id }) => {
             //   label: `Logistics (${campaign?.logistic?.length || 0})`,
             //   value: 'logistics',
             // },
-          ].map((tab) => (
+            ]
+          ).map((tab) => (
             <Button
               key={tab.value}
               disableRipple
@@ -380,12 +416,17 @@ const CampaignDetailView = ({ id }) => {
   }, [loading, copyDialog, campaignMutate, campaign]);
 
   const renderTabContent = {
-    overview: <CampaignOverview campaign={campaign} />,
-    'campaign-content': <CampaignDetailContent campaign={campaign} />,
-    creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
-    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
-    logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />,
-    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
+    overview: isClient 
+      ? <CampaignOverviewClient campaign={campaign} />
+      : <CampaignOverview campaign={campaign} />,
+    'campaign-content': isClient 
+      ? <CampaignDetailContentClient campaign={campaign} />
+      : <CampaignDetailContent campaign={campaign} />, 
+    'creator-master-list': <CampaignCreatorMasterListClient campaign={campaign} />, 
+    creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />, 
+    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />, 
+    logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />, 
+    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />, 
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
@@ -401,8 +442,8 @@ const CampaignDetailView = ({ id }) => {
         campaign={campaign}
       />
     ),
-    submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
-    deliverables: <CampaignCreatorDeliverables campaign={campaign} />,
+    submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />, 
+    deliverables: <CampaignCreatorDeliverables campaign={campaign} />, 
     analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />
   };
 
@@ -567,7 +608,13 @@ const CampaignDetailView = ({ id }) => {
         <Button
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-          onClick={() => router.push(paths.dashboard.campaign.root)}
+          onClick={() => {
+            if (isClient) {
+              router.push(paths.dashboard.client);
+            } else {
+              router.push(paths.dashboard.campaign.root);
+            }
+          }}
           sx={{
             alignSelf: 'flex-start',
             color: '#636366',
@@ -663,6 +710,9 @@ const CampaignDetailView = ({ id }) => {
             />
 
             <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+              {/* Only show action buttons for non-client users */}
+              {!isClient && (
+                <>
               <Button
                 variant="outlined"
                 size="small"
@@ -722,6 +772,8 @@ const CampaignDetailView = ({ id }) => {
               >
                 <Iconify icon="eva:more-horizontal-fill" width={24} />
               </Box>
+                </>
+              )}
 
               <Menu
                 anchorEl={menuAnchorEl}

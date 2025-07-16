@@ -187,6 +187,7 @@ export const endpoints = {
     getAllCampaigns: '/api/campaign/getAllCampaignsFinance',
     getMatchedCampaign: '/api/campaign/matchCampaignWithCreator',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
+    getClientCampaigns: '/api/campaign/getClientCampaigns',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
     getCampaignPitchById: (id) => `/api/campaign/getClientByCampID/${id}`,
     shortlistCreator: '/api/campaign/shortlistCreator',

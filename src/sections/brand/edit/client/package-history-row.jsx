@@ -1,10 +1,12 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
-import { Chip, TableRow, TableCell } from '@mui/material';
+import { Chip, TableRow, TableCell, IconButton, Tooltip } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 
 import Label from 'src/components/label';
+import PackageEditDialog from './package-edit-dialog';
 
 const dictionary = {
   ACTIVE: 'Active',
@@ -12,7 +14,9 @@ const dictionary = {
   EXPIRED: 'Expired',
 };
 
-const PackageHistoryRow = ({ row, selected }) => {
+const PackageHistoryRow = ({ row, selected, onEditSuccess }) => {
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+
   const {
     subscriptionId,
     creditsUsed,
@@ -23,6 +27,7 @@ const PackageHistoryRow = ({ row, selected }) => {
     expiredAt,
     currency,
     status,
+    id,
   } = row;
 
   const validity = useMemo(() => {
@@ -34,44 +39,76 @@ const PackageHistoryRow = ({ row, selected }) => {
     return `${remainingdays} days left`;
   }, [expiredAt]);
 
+  const handleOpenEditDialog = () => {
+    setOpenEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setOpenEditDialog(false);
+  };
+
+  const handleEditSuccess = () => {
+    if (onEditSuccess) {
+      onEditSuccess();
+    }
+    handleCloseEditDialog();
+  };
+
   return (
-    <TableRow hover selected={selected}>
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Label>{subscriptionId || 'None'}</Label>
-      </TableCell>
+    <>
+      <TableRow hover selected={selected}>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Label>{subscriptionId || 'None'}</Label>
+        </TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Label>{packageItem?.name || customPackage?.customName}</Label>
-      </TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Label>{packageItem?.name || customPackage?.customName}</Label>
+        </TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Label>
-          {currency === 'MYR'
-            ? `RM ${new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2 }).format(packagePrice)}`
-            : `$ ${new Intl.NumberFormat('en-SG', { minimumFractionDigits: 2 }).format(packagePrice)}`}
-        </Label>
-      </TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Label>
+            {currency === 'MYR'
+              ? `RM ${new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2 }).format(packagePrice)}`
+              : `$ ${new Intl.NumberFormat('en-SG', { minimumFractionDigits: 2 }).format(packagePrice)}`}
+          </Label>
+        </TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-        <Label>{creditsUsed || 'None'}</Label>
-      </TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+          <Label>{creditsUsed || 'None'}</Label>
+        </TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-        <Label> {totalCredits - creditsUsed || 'None'}</Label>
-      </TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+          <Label> {totalCredits - creditsUsed || 'None'}</Label>
+        </TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-        <Label>{validity}</Label>
-      </TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+          <Label>{validity}</Label>
+        </TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'left' }}>
-        <Chip
-          label={dictionary[status]}
-          variant="outlined"
-          color={status === 'ACTIVE' ? 'success' : 'error'}
-        />
-      </TableCell>
-    </TableRow>
+        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'left' }}>
+          <Chip
+            label={dictionary[status]}
+            variant="outlined"
+            color={status === 'ACTIVE' ? 'success' : 'error'}
+          />
+        </TableCell>
+
+        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+          <Tooltip title="Edit Package">
+            <IconButton size="small" color="primary" onClick={handleOpenEditDialog}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </TableCell>
+      </TableRow>
+
+      <PackageEditDialog 
+        open={openEditDialog} 
+        onClose={handleCloseEditDialog} 
+        packageData={row}
+        onSuccess={handleEditSuccess}
+      />
+    </>
   );
 };
 
@@ -80,4 +117,5 @@ export default PackageHistoryRow;
 PackageHistoryRow.propTypes = {
   row: PropTypes.object,
   selected: PropTypes.any,
+  onEditSuccess: PropTypes.func,
 };
