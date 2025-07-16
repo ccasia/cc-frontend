@@ -8,11 +8,17 @@ import { Box, Card, Chip, Stack, Button, Typography, ListItemText } from '@mui/m
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import Markdown from 'src/components/markdown/markdown';
+import Markdown from 'src/components/markdown';
+import { useSnackbar } from 'src/components/snackbar';
+import { useAuthContext } from 'src/auth/hooks';
 
 const CampaignPitchDetail = ({ pitch }) => {
+  const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext();
   const a = useRef(null);
   const b = useRef(null);
+  
+  const isClient = user?.role === 'Client' || user?.admin?.role?.name === 'Client';
 
   const approve = async ({ campaignId, creatorId, pitchId }) => {
     try {
@@ -278,7 +284,8 @@ const CampaignPitchDetail = ({ pitch }) => {
       {/* {renderTabs} */}
       {pitch?.content ? renderPitchContentScript : renderPitchContentVideo}
 
-      {renderButton}
+      {/* Only show action buttons for admin users */}
+      {!isClient && renderButton}
     </>
   );
 };

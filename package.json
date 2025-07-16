@@ -71,6 +71,7 @@
     "mui-one-time-password-input": "^2.0.2",
     "notistack": "^3.0.1",
     "nprogress": "^0.2.0",
+    "numeral": "^2.0.6",
     "pdf-lib": "^1.17.1",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
