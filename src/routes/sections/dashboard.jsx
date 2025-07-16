@@ -126,7 +126,7 @@ export const dashboardRoutes = [
       {
         path: 'client',
         element: (
-          <RoleBasedGuard roles={['admin', 'Client']} hasContent>
+          <RoleBasedGuard roles={['admin', 'Client', 'client']} hasContent>
             <ClientDashboard />
           </RoleBasedGuard>
         ),
@@ -355,7 +355,7 @@ export const dashboardRoutes = [
           {
             index: true,
             element: (
-              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client']}>
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
                 <ViewCampaign />
               </RoleBasedGuard>
             ),
@@ -392,7 +392,7 @@ export const dashboardRoutes = [
           {
             path: 'create',
             element: (
-              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'Client']}>
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'Client', 'client']}>
                 <CreateCampaign />
               </RoleBasedGuard>
             ),
@@ -403,7 +403,7 @@ export const dashboardRoutes = [
               {
                 index: true,
                 element: (
-                  <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client']}>
+                  <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
                     <ViewCampaign />
                   </RoleBasedGuard>
                 ),
@@ -450,7 +450,7 @@ export const dashboardRoutes = [
           {
             path: 'details/:id',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'admin', 'Client']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin', 'Client', 'client']}>
                 <CampaignDetails />
               </RoleBasedGuard>
             ),
@@ -458,7 +458,7 @@ export const dashboardRoutes = [
           {
             path: 'pitch/:id',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'Client']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'Client', 'client']}>
                 <CampaignPitchDetail />
               </RoleBasedGuard>
             ),

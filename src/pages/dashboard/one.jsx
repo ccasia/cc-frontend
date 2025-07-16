@@ -6,7 +6,6 @@ import { paths } from 'src/routes/paths';
 import { useAuthContext } from 'src/auth/hooks';
 
 import DashboardAdmin from 'src/sections/admin/dashboard';
-import ClientDashboard from 'src/sections/client/dashboard/client-dashboard';
 import Overview from 'src/sections/creator/overview/overview';
 import DashboardClient from 'src/sections/admin/dashboard-client';
 
@@ -30,8 +29,6 @@ export default function Page() {
       </Helmet>
 
       {user?.role?.includes('admin') && <DashboardAdmin />}
-
-      {user?.role === 'client' && <ClientDashboard />}
 
       {user?.role === 'creator' && <Overview />}
 
