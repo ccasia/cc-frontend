@@ -225,17 +225,18 @@ export function useNavData() {
             icon: ICONS.report,
           },
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'god'],
             title: 'Roles',
             path: paths.dashboard.roles.root,
             icon: ICONS.roles,
           },
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'god'],
             title: 'Packages',
             path: paths.dashboard.packages.root,
             icon: <Iconify icon="carbon:package" width={25} />,
           },
+
           // {
           //   title: 'Template',
           //   path: paths.dashboard.template.root,
@@ -247,6 +248,16 @@ export function useNavData() {
           //   path: paths.dashboard.user.myTasks,
           //   icon: <Iconify icon="hugeicons:task-01" width={25} />,
           // },
+        ],
+      },
+      {
+        items: [
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Invoices',
+            path: paths.dashboard.finance.invoice,
+            icon: <Iconify icon="iconamoon:invoice" width={25} />,
+          },
         ],
       },
     ],
@@ -315,11 +326,8 @@ export function useNavData() {
             path: paths.dashboard.creator.invoiceCreator,
             icon: ICONS.invoice,
           },
-          // {
-          //   title: 'Inbox',
-          //   path: paths.dashboard.creator.inbox,
-          //   icon: <Iconify icon="material-symbols:inbox" width={25} />,
-          // },
+
+          ,
         ],
       },
     ],
@@ -355,6 +363,8 @@ export function useNavData() {
     []
   );
 
+  console.log(user?.admin?.mode);
+
   // add finance naviagation
   const navigations = useMemo(
     // roles => "god" , "normal", "designation", "admin", "creator"
@@ -374,26 +384,21 @@ export function useNavData() {
       if (user?.role === 'superadmin') {
         return [
           ...adminNavigations,
-          {
-            items: [
-              {
-                title: 'Invoices',
-                path: paths.dashboard.finance.invoice,
-                icon: <Iconify icon="iconamoon:invoice" width={25} />,
-              },
-            ],
-          },
+          // {
+          //   items: [
+          //     {
+          //       title: 'Invoices',
+          //       path: paths.dashboard.finance.invoice,
+          //       icon: <Iconify icon="iconamoon:invoice" width={25} />,
+          //     },
+          //   ],
+          // },
         ];
       }
 
       return [];
     },
-    // user?.role === 'creator' || user?.role === 'finance'
-    //   ? user?.role === 'finance'
-    //     ? financeNavigations
-    //     : creatorNavigations
-    //   : adminNavigations,
-    // () => (user?.role === 'creator' ? creatorNavigations : adminNavigations),
+
     [adminNavigations, creatorNavigations, user, financeNavigations]
   );
 
