@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Grid,
@@ -8,16 +9,15 @@ import {
   Typography,
   InputAdornment,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 
-import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFAutocomplete, RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
 import { useSnackbar } from 'src/components/snackbar';
+import FormProvider from 'src/components/hook-form/form-provider';
+import { RHFTextField, RHFAutocomplete, RHFUploadAvatar } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 

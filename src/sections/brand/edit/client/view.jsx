@@ -15,12 +15,12 @@ import {
   alpha,
   Button,
   Dialog,
+  Divider,
   Container,
   Typography,
   DialogContent,
   DialogActions,
   CircularProgress,
-  Divider,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -30,6 +30,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompanyById from 'src/hooks/use-get-company-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -42,7 +44,6 @@ import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
 import PackageHistoryList from './pakcage-history-list';
 import CampaignClientList from './campaign-client/view/campaign-list';
-import { useAuthContext } from 'src/auth/hooks';
 
 const findLatestPackage = (packages) => {
   if (packages?.length === 0) {
@@ -395,18 +396,18 @@ const CompanyEditView = ({ id }) => {
       {/* Client Activation Dialog */}
       <Dialog open={activateDialogOpen} onClose={() => setActivateDialogOpen(false)}>
         <Box sx={{ width: 427 }}>
-          <Typography fontSize={40} p={3} fontFamily={'Instrument Serif'}>Activate Client Account?</Typography>
+          <Typography fontSize={40} p={3} fontFamily="Instrument Serif">Activate Client Account?</Typography>
           <Divider sx={{ mx: 2 }} />
           <DialogContent>
             <Box sx={{ mt: 2, mb: 2 }}>
               <Typography variant="body1">
-                <Typography variant='span' color={'#636366'}>Company Name:</Typography> {company?.name}
+                <Typography variant='span' color="#636366">Company Name:</Typography> {company?.name}
               </Typography>
               <Typography variant="body1">
-                <Typography variant='span' color={'#636366'}>Company Email:</Typography> {company?.pic[0]?.email}
+                <Typography variant='span' color="#636366">Company Email:</Typography> {company?.pic[0]?.email}
               </Typography>
               <Typography variant="body1">
-                <Typography variant='span' color={'#636366'}>Package:</Typography> {currentPackage?.package?.name || currentPackage?.customPackage?.customName}
+                <Typography variant='span' color="#636366">Package:</Typography> {currentPackage?.package?.name || currentPackage?.customPackage?.customName}
               </Typography>
             </Box>
           </DialogContent>

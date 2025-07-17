@@ -9,7 +9,6 @@ import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
-  Divider,
   Typography,
   IconButton,
   InputAdornment,
@@ -23,21 +22,10 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 
-const socialLogins = [
-  {
-    platform: 'google',
-    icon: 'mingcute:google-fill',
-  },
-  {
-    platform: 'facebook',
-    icon: 'ic:baseline-facebook',
-  },
-];
 
 const ClientRegister = () => {
   const password = useBoolean();
