@@ -315,7 +315,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
         }}
         onClick={handleCardClick}
       >
-        {campaign?.isKWSPCampaign && (
+        {false && (
           <Box
             mt={4}
             sx={{

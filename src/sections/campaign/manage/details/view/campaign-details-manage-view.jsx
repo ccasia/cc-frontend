@@ -294,7 +294,7 @@ const CampaignDetailManageView = ({ id }) => {
           </Stack>
         </Stack>
 
-        {campaign?.isKWSPCampaign && (
+        {false && (
           <Box
             mt={4}
             sx={{

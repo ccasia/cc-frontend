@@ -358,7 +358,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         },
       }}
     >
-      {campaign?.isKWSPCampaign && (
+      {false && (
         <Box
           mt={4}
           sx={{

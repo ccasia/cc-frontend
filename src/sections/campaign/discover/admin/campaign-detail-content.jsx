@@ -159,7 +159,7 @@ const CampaignDetailContent = ({ campaign }) => {
         <Stack spacing={-3} sx={{ flex: { xs: 1, md: 2.5 } }}>
           {/* Demographics Box */}
 
-          {campaign?.isKWSPCampaign && (
+          {false && (
             <Box
               mt={4}
               sx={{

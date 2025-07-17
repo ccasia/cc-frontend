@@ -582,7 +582,7 @@ const MobileModalView = () => {
         </Stack>
       </Stack>
 
-      {campaignData?.isKWSPCampaign && (
+      {false && (
         <Box
           mt={4}
           sx={{
