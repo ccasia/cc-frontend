@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Grid,
@@ -8,16 +9,15 @@ import {
   Typography,
   InputAdornment,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 
-import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFAutocomplete, RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
 import { useSnackbar } from 'src/components/snackbar';
+import FormProvider from 'src/components/hook-form/form-provider';
+import { RHFTextField, RHFAutocomplete, RHFUploadAvatar } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ const ClientProfile = () => {
     companyLogo: {},
     companyName: '',
     companyAddress: '',
-    companyEmail: '',
+    picEmail: '',
     registrationNumber: '',
     picName: '',
     picDesignation: '',
@@ -83,7 +83,7 @@ const ClientProfile = () => {
               companyLogo: company.logo || {},
               companyName: company.name || '',
               companyAddress: company.address || '',
-              companyEmail: company.email || '',
+              picEmail: pic.email || '',
               registrationNumber: company.registration_number || '',
               picName: pic.name || '',
               picDesignation: pic.designation || '',
@@ -132,7 +132,7 @@ const ClientProfile = () => {
         companyLogo: data.companyLogo,
         companyName: data.companyName,
         companyAddress: data.companyAddress,
-        companyEmail: data.companyEmail,
+        picEmail: data.picEmail,
         registrationNumber: data.registrationNumber,
         picName: data.picName,
         picDesignation: data.picDesignation,
@@ -201,11 +201,11 @@ const ClientProfile = () => {
           {/* Second Row */}
           <Grid item xs={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Company Email
+              PIC Email
             </Typography>
             <RHFTextField 
-              name="companyEmail" 
-              placeholder="Company Address"
+              name="picEmail" 
+              placeholder="PIC Email"
               size="small"
             />
           </Grid>
