@@ -115,7 +115,7 @@ export function useNavData() {
             title: 'Dashboard',
             path: paths.dashboard.client,
             icon: ICONS.mycampaigns,
-            roles: ['Client'], // Only for Client role
+            roles: ['Client', 'client'], // Only for Client role
           },
         ],
       },
@@ -201,7 +201,7 @@ export function useNavData() {
             roles: ['superadmin', 'CSM', 'Growth', 'BD'], // Exclude Client role
           },
           {
-            roles: ['superadmin', 'Client'],
+            roles: ['superadmin', 'Client', 'client'],
             title: 'Content Performance Report',
             path: paths.dashboard.report.root,
             icon: ICONS.report,

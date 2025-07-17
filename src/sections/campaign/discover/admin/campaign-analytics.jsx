@@ -1,32 +1,35 @@
 import React, { useMemo, useState } from 'react';
+
+import { PieChart } from '@mui/x-charts';
+import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import {
   Box,
-  Typography,
-  CircularProgress,
-  Alert,
   Grid,
-  Stack,
   Chip,
-  Avatar,
-  Tooltip,
-  IconButton,
   Link,
-  Divider,
+  Alert,
+  Stack,
+  Avatar,
   Button,
+  Tooltip,
+  Divider,
+  Typography,
+  IconButton,
+  CircularProgress,
 } from '@mui/material';
-import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
-import Iconify from 'src/components/iconify';
+
 import { useSocialInsights } from 'src/hooks/use-social-insights';
-import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
-import { 
-  calculateSummaryStats, 
-  getMetricValue, 
-  formatNumber, 
-  calculateEngagementRate 
-} from 'src/utils/socialMetricsCalculator';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
-import CacheMonitor from 'src/utils/cacheMonitor';
-import { PieChart } from '@mui/x-charts';
+
+import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
+import {
+  formatNumber,
+  getMetricValue,
+  calculateSummaryStats,
+  calculateEngagementRate,
+} from 'src/utils/socialMetricsCalculator';
+
+import Iconify from 'src/components/iconify';
 
 const CampaignAnalytics = ({ campaign }) => {
   const campaignId = campaign?.id;
@@ -36,14 +39,11 @@ const CampaignAnalytics = ({ campaign }) => {
   const itemsPerPage = 5;
 
   // Extract posting submissions with URLs directly from campaign prop
-  const postingSubmissions = useMemo(() => 
-    extractPostingSubmissions(submissions), 
-    [submissions]
-  );
+  const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
 
   // Get available platforms in the campaign
   const availablePlatforms = useMemo(() => {
-    const platforms = [...new Set(postingSubmissions.map(sub => sub.platform))];
+    const platforms = [...new Set(postingSubmissions.map((sub) => sub.platform))];
     return platforms.filter(Boolean);
   }, [postingSubmissions]);
 
@@ -52,7 +52,7 @@ const CampaignAnalytics = ({ campaign }) => {
     if (selectedPlatform === 'ALL') {
       return postingSubmissions;
     }
-    return postingSubmissions.filter(sub => sub.platform === selectedPlatform);
+    return postingSubmissions.filter((sub) => sub.platform === selectedPlatform);
   }, [postingSubmissions, selectedPlatform]);
 
   const paginationData = useMemo(() => {
@@ -60,21 +60,21 @@ const CampaignAnalytics = ({ campaign }) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const displayedSubmissions = filteredSubmissions.slice(startIndex, endIndex);
-    
+
     return {
       totalPages,
       startIndex,
       endIndex,
       displayedSubmissions,
       hasNextPage: currentPage < totalPages,
-      hasPrevPage: currentPage > 1
+      hasPrevPage: currentPage > 1,
     };
   }, [filteredSubmissions, currentPage, itemsPerPage]);
 
   // Get platform counts for beam display
   const platformCounts = useMemo(() => {
     const counts = { Instagram: 0, TikTok: 0 };
-    postingSubmissions.forEach(sub => {
+    postingSubmissions.forEach((sub) => {
       if (sub.platform === 'Instagram') counts.Instagram++;
       if (sub.platform === 'TikTok') counts.TikTok++;
     });
@@ -82,13 +82,12 @@ const CampaignAnalytics = ({ campaign }) => {
   }, [postingSubmissions]);
 
   // Fetch insights for posting submissions (always fetch all, filter for display)
-  const { 
-    data: insightsData, 
-    isLoading: loadingInsights, 
+  const {
+    data: insightsData,
+    isLoading: loadingInsights,
     failedUrls,
     error: insightsError,
     loadingProgress,
-    clearCache
   } = useSocialInsights(postingSubmissions, campaignId);
 
   // Filter insights data based on selected platform
@@ -96,24 +95,24 @@ const CampaignAnalytics = ({ campaign }) => {
     if (selectedPlatform === 'ALL') {
       return insightsData;
     }
-    return insightsData.filter(data => {
-      const submission = postingSubmissions.find(sub => sub.id === data.submissionId);
+    return insightsData.filter((data) => {
+      const submission = postingSubmissions.find((sub) => sub.id === data.submissionId);
       return submission?.platform === selectedPlatform;
     });
   }, [insightsData, selectedPlatform, postingSubmissions]);
 
   // Calculate summary statistics based on filtered data
-  const summaryStats = useMemo(() => 
-    calculateSummaryStats(filteredInsightsData), 
+  const summaryStats = useMemo(
+    () => calculateSummaryStats(filteredInsightsData),
     [filteredInsightsData]
   );
 
   const handleNextPage = () => {
-    setCurrentPage(prev => prev + 1);
+    setCurrentPage((prev) => prev + 1);
   };
 
   const handlePrevPage = () => {
-    setCurrentPage(prev => prev - 1);
+    setCurrentPage((prev) => prev - 1);
   };
 
   // Reset to page 1 when platform changes
@@ -122,8 +121,8 @@ const CampaignAnalytics = ({ campaign }) => {
     setCurrentPage(1);
   };
 
-  console.log('Summary stats: ', summaryStats)
-  console.log('Insights data: ', insightsData)
+  console.log('Summary stats: ', summaryStats);
+  console.log('Insights data: ', insightsData);
 
   // No campaign
   if (!campaign) {
@@ -147,14 +146,14 @@ const CampaignAnalytics = ({ campaign }) => {
     const platformConfig = [
       { key: 'ALL', label: 'Overview', icon: null, color: '#1340FF' },
       { key: 'Instagram', label: 'Instagram', icon: 'simple-icons:instagram', color: '#C13584' },
-      { key: 'TikTok', label: 'TikTok', icon: 'simple-icons:tiktok', color: '#000000' }
+      { key: 'TikTok', label: 'TikTok', icon: 'simple-icons:tiktok', color: '#000000' },
     ];
 
     // Filter to only show platforms that exist in the campaign
-    const availablePlatformConfig = platformConfig.filter(config => 
-      config.key === 'ALL' || availablePlatforms.includes(config.key)
+    const availablePlatformConfig = platformConfig.filter(
+      (config) => config.key === 'ALL' || availablePlatforms.includes(config.key)
     );
-    
+
     return (
       <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', gap: '10px', mb: 1 }}>
@@ -170,7 +169,10 @@ const CampaignAnalytics = ({ campaign }) => {
                 borderWidth: '2px',
                 bgcolor: 'transparent',
                 color: selectedPlatform === config.key ? config.color : '#9E9E9E',
-                border: selectedPlatform === config.key ? `2px solid ${config.color}` : '2px solid #9E9E9E',
+                border:
+                  selectedPlatform === config.key
+                    ? `2px solid ${config.color}`
+                    : '2px solid #9E9E9E',
                 fontWeight: 600,
                 fontSize: 16,
                 display: 'flex',
@@ -183,21 +185,21 @@ const CampaignAnalytics = ({ campaign }) => {
                   color: config.color,
                   // Target the icon inside the button on hover
                   '& .iconify': {
-                  color: config.color,
+                    color: config.color,
                   },
                 },
               }}
             >
               {config.icon && (
-                <Iconify 
-                  icon={config.icon} 
+                <Iconify
+                  icon={config.icon}
                   className="iconify"
                   sx={{
                     height: 20,
                     width: 20,
                     mr: config.key === 'TikTok' ? 0.5 : 1,
                     color: selectedPlatform === config.key ? config.color : '#9E9E9E',
-                  }} 
+                  }}
                 />
               )}
               {config.label}
@@ -208,551 +210,28 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   };
 
-  const PlatformOverviewLayout = ({ postCount, insightsData, summaryStats, platformCounts, selectedPlatform }) => {
-    const calculateAdditionalMetrics = () => {
-      const metrics = {};
-      
-      // Calculate metrics based on current insights data (filtered or all)
-      metrics.totalShares = insightsData.reduce((sum, item) => 
-        sum + getMetricValue(item.insight, 'shares'), 0);
-      metrics.totalReach = insightsData.reduce((sum, item) => 
-        sum + getMetricValue(item.insight, 'reach'), 0);
-      metrics.totalInteractions = insightsData.reduce((sum, item) => 
-        sum + getMetricValue(item.insight, 'total_interactions'), 0);
-      
-      // Calculate average engagement rate
-      const avgEngagement = insightsData.length > 0 ? 
-        insightsData.reduce((sum, item) => {
-          const views = getMetricValue(item.insight, 'views');
-          const likes = getMetricValue(item.insight, 'likes');
-          const comments = getMetricValue(item.insight, 'comments');
-          const engagementRate = views > 0 ? ((likes + comments) / views) * 100 : 0;
-          return sum + engagementRate;
-        }, 0) / insightsData.length : 0;
-      
-      metrics.avgEngagement = avgEngagement;
-      
-      return metrics;
-    };
-
-    const additionalMetrics = calculateAdditionalMetrics();
-
-    const PostingsCard = () => {
-      return (
-        <Box sx={{ textAlign: 'center', px: 3, py: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <Typography textAlign={'left'} variant="h4" fontWeight={600} gutterBottom fontFamily={'Aileron'} color={'#231F20'}>
-            Postings
-          </Typography>
-          
-          <Box 
-            sx={{ 
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center', 
-              my: 2
-            }}
-          >  
-            {/* Dual Platform Beam Display */}
-            <Box sx={{ display: 'flex', gap: 4, mb: 2, alignItems: 'flex-end' }}>
-              {/* Instagram Beam */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {/* Post count above beam */}
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    color: '#1340FF',
-                    fontSize: '1.25rem',
-                    fontWeight: 600,
-                    mb: 1,
-                    minHeight: '1.5rem'
-                  }}
-                >
-                  {platformCounts.Instagram > 0 ? platformCounts.Instagram : ''}
-                </Typography>
-                
-                <Box
-                  sx={{
-                    width: 54,
-                    height: (() => {
-                      const maxCount = Math.max(platformCounts.Instagram, platformCounts.TikTok);
-                      const minHeight = 30;
-                      const maxHeight = 170;
-                      if (maxCount === 0) return minHeight;
-                      return minHeight + ((platformCounts.Instagram / maxCount) * (maxHeight - minHeight));
-                    })(),
-                    backgroundColor: (() => {
-                      // Fill conditions based on selection and post count
-                      if (platformCounts.Instagram === 0) return '#F5F5F5';
-                      if (selectedPlatform === 'ALL') return '#1340FF';
-                      if (selectedPlatform === 'Instagram') return '#1340FF';
-                      return '#F5F5F5';
-                    })(),
-                    border: '1px solid #1340FF',
-                    borderRadius: 100,
-                    mb: 1,
-                    transition: 'all 0.3s ease'
-                  }}
-                />
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: '#1340FF',
-                    fontSize: 16,
-                    fontWeight: 200,
-                    fontStyle: 'italic',
-                    textAlign: 'center'
-                  }}
-                >
-                  Instagram
-                </Typography>
-              </Box>
-              
-              {/* TikTok Beam */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {/* Post count above beam */}
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    color: '#1340FF',
-                    fontSize: '1.25rem',
-                    fontWeight: 600,
-                    mb: 1,
-                    minHeight: '1.5rem'
-                  }}
-                >
-                  {platformCounts.TikTok > 0 ? platformCounts.TikTok : ''}
-                </Typography>
-                
-                <Box
-                  sx={{
-                    width: 54,
-                    height: (() => {
-                      const maxCount = Math.max(platformCounts.Instagram, platformCounts.TikTok);
-                      const minHeight = 10;
-                      const maxHeight = 170;
-                      if (maxCount === 0) return minHeight;
-                      return minHeight + ((platformCounts.TikTok / maxCount) * (maxHeight - minHeight));
-                    })(),
-                    backgroundColor: (() => {
-                      // Fill conditions based on selection and post count
-                      if (platformCounts.TikTok === 0) return '#F5F5F5';
-                      if (selectedPlatform === 'ALL') return '#1340FF';
-                      if (selectedPlatform === 'TikTok') return '#1340FF';
-                      return '#F5F5F5';
-                    })(),
-                    border: '1px solid #1340FF',
-                    borderRadius: 100,
-                    mb: 1,
-                    transition: 'all 0.3s ease'
-                  }}
-                />
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: '#1340FF',
-                    fontSize: 16,
-                    fontWeight: 200,
-                    fontStyle: 'italic',
-                    textAlign: 'center'
-                  }}
-                >
-                  TikTok
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-      )
-    }
-
-    const TopEngagementCard = () => {
-      // Find the creator with the highest engagement rate
-      const topEngagementCreator = useMemo(() => {
-      if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
-      
-      let highestEngagement = -1;
-      let topCreator = null;
-      
-      filteredInsightsData.forEach(insightData => {
-        const submission = filteredSubmissions.find(sub => sub.id === insightData.submissionId);
-        if (submission) {
-          const engagementRate = calculateEngagementRate(insightData.insight);
-          if (engagementRate > highestEngagement) {
-            highestEngagement = engagementRate;
-            topCreator = {
-              ...submission,
-              engagementRate,
-              insightData
-            };
-          }
-        }
-      });
-      
-      return topCreator;
-    }, [filteredInsightsData, filteredSubmissions]);
-
-    const { data: creator } = useGetCreatorById(topEngagementCreator?.user);
-
-    if (!topEngagementCreator) return null;
-
-    return (
-      <Box
-        borderRadius={3}
-        sx={{ 
-          height: '400px',
-          backgroundColor: '#F5F5F5',
-          p: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start' 
-        }}
-      >
-        <Typography variant="h6" fontWeight={600} fontFamily={'Aileron'} color={'#231F20'}>
-          Top Engagement
-        </Typography>
-        
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}>
-          <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF" textAlign="center">
-            {topEngagementCreator.engagementRate}%
-          </Typography>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar 
-              sx={{ 
-                width: 45, 
-                height: 45,
-                bgcolor: topEngagementCreator.platform === 'Instagram' ? '#E4405F' : '#000000',
-                mr: 2
-              }}
-            >
-              {creator?.user?.name?.charAt(0) || 'U'}
-            </Avatar>
-            <Box>
-              <Typography fontSize={14} fontWeight={600} color="#231F20" sx={{ textAlign: 'left' }}>
-                {creator?.user?.name || 'Unknown Creator'}
-              </Typography>
-              <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
-                @{creator?.user?.name?.toLowerCase().replace(/\s+/g, '') || 'unknown'}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-        
-        <Box sx={{ alignSelf: 'center' }}>
-          <Link
-            href={topEngagementCreator.insightData.postUrl}
-            target="_blank"
-            rel="noopener"
-            sx={{ 
-              display: 'block',
-              textDecoration: 'none',
-              '&:hover': {
-                opacity: 0.8,
-                transition: 'opacity 0.2s'
-              }
-            }}
-          >
-            <Box
-              component="img"
-              src={topEngagementCreator.insightData.thumbnail || topEngagementCreator.insightData.video?.media_url}
-              alt="Top performing post"
-              sx={{
-                width: 290,
-                height: 180,
-                mt: 2,
-                borderRadius: 2,
-                objectFit: 'cover',
-                objectPosition: 'left top',
-                border: '1px solid #e0e0e0'
-              }}
-            />
-          </Link>
-        </Box>
-      </Box>
-    );
-    };
-
-    return (
-      <Box sx={{ mb: 3 }}>
-      <Grid container justifyContent={'center'} height={400}>
-        {/* Left Condition: Platform Overview Card */}
-        {availablePlatforms.length > 1 && selectedPlatform === 'ALL' &&
-        <Grid item xs={12} md={2.5} alignContent={'center'} bgcolor={'#F5F5F5'} borderRadius={3} mr={2}>
-          <PostingsCard />
-        </Grid>
-        }
-
-        {/* Left: Engagement Breakdown Chart */}
-        <Grid item xs={12} md={5} mr={2} alignContent={'center'} bgcolor={'#F5F5F5'} borderRadius={3}>
-          <Box
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              width: '100%',
-              height: '100%',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Box sx={{ position: 'relative' }}>
-              <PieChart
-                height={300}
-                width={300}
-                margin={{ left: 50, right: 50, top: 50, bottom: 50 }}
-                series={[
-                  {
-                    data: [
-                      { id: 0, value: summaryStats.totalLikes, label: 'Likes', color: '#1340FF',  },
-                      { id: 1, value: summaryStats.totalComments, label: 'Comments', color: '#8A5AFE' },
-                      { id: 2, value: summaryStats.totalShares, label: 'Shares', color: '#68A7ED' }
-                    ],
-                    innerRadius: 60,
-                    outerRadius: 120,
-                    arcLabel: (params) => params.value,
-                    arcLabelMinAngle: 20,
-                    valueFormatter: (value) => formatNumber(value.value),
-                  },
-                ]}
-                sx={{
-                  '& .MuiChartsLegend-root': {
-                    display: 'none', // Hide default legend since we're creating custom one
-                  },
-                  '& .MuiPieArcLabel-root': {
-                    fontSize: '22px',
-                    fontWeight: '600',
-                    fill: 'white',
-                    fontFamily: 'Aileron',
-                  },
-                  '& .MuiPieArc-root': {
-                    stroke: 'none', // Remove white lines between segments
-                  },
-                }}
-              />
-              
-              {/* Center Text Overlay */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: '48%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  textAlign: 'center',
-                  pointerEvents: 'none', // Allow clicking through to chart
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                    color: '#000000',
-                    lineHeight: 1,
-                  }}
-                >
-                  {formatNumber(Math.round((summaryStats.totalLikes + summaryStats.totalComments + summaryStats.totalShares)))}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                    color: '#000000',
-                    fontFamily: 'Aileron',
-                    lineHeight: 1,
-                  }}
-                >
-                  Average
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                    color: '#000000',
-                    fontFamily: 'Aileron',
-                    lineHeight: 1,
-                  }}
-                >
-                  Interactions
-                </Typography>
-              </Box>
-            </Box>
-            
-            {/* Right Side: Legend with Color Indicators */}
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: 2,
-              mr: 3
-            }}>
-              {[
-                { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
-                { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
-                { name: 'Shares', value: summaryStats.totalShares, color: '#68A7ED' }
-              ].map((item, index) => (
-                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {/* Color indicator circle */}
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: '50%',
-                      backgroundColor: item.color,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Box>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        fontSize: 16,
-                        fontWeight: 500,
-                        color: '#000',
-                        lineHeight: 1.2,
-                        mr: 5
-                      }}
-                    >
-                      {item.name}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </Grid>
-
-        {/* Middle: Platform-specific metrics */}
-        <Grid item xs={12} md={4} alignContent={'center'} bgcolor={'#F5F5F5'} borderRadius={3}>
-          <Box sx={{ 
-            backgroundColor: '#F5F5F5',
-            borderRadius: 3,
-          }}>
-            {summaryStats && (
-            <Grid container sx={{ mt: { xs: 0 }}} justifyContent={'center'} columnGap={2} padding={2} mb={2}>
-              <Grid item xs={6}>
-              <Box sx={{ textAlign: 'left' }}>
-                <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                {summaryStats.totalPosts}
-                </Typography>
-                <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={18} color="#1340FF">
-                {availablePlatforms.length > 1 && (
-                  selectedPlatform === 'ALL'
-                  ? 'Total Creators'
-                  : selectedPlatform === 'Instagram'
-                    ? 'Instagram Posts'
-                    : selectedPlatform === 'TikTok'
-                    ? 'TikTok Posts'
-                    : ''
-                )}
-                {availablePlatforms.length < 2 && `${insightsData[0].platform} Posts`}
-                </Typography>
-              </Box>
-              </Grid>
-              <Grid item xs={5}>
-              <Box sx={{ textAlign: 'left' }}>
-                <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                  {selectedPlatform === 'TikTok' ? 'TBD' : formatNumber(summaryStats.totalReach)}
-                </Typography>
-                <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={18} color="#1340FF">
-                  {selectedPlatform === 'ALL' && <Typography fontSize={18} fontFamily={'Aileron'} fontWeight={600}>Reach<Typography fontFamily={'Aileron'} fontSize={12} fontWeight={600}>(Instagram only)</Typography></Typography>}
-                  {selectedPlatform === 'TikTok' && 'TBD'}
-                  {selectedPlatform === 'Instagram' && 'Reach'}
-                </Typography>
-              </Box>
-              </Grid>
-              
-              <Grid item xs={6} mt={2} mb={2}>
-              <Box sx={{ borderBottom: '2px solid #1340FF' }} />
-              </Grid>
-
-              <Grid item xs={5} mt={2} mb={2}>
-              <Box sx={{ borderBottom: '2px solid #1340FF' }} />
-              </Grid>
-              
-              <Grid item xs={6}>
-              <Box sx={{ textAlign: 'left' }}>
-                <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                {summaryStats.avgEngagementRate}%
-                </Typography>
-                <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={18} color="#1340FF">
-                Engagement Rate
-                </Typography>
-              </Box>
-              </Grid>
-              <Grid item xs={5}>
-              <Box sx={{ textAlign: 'left' }}>
-                <Typography fontFamily={'Instrument Serif'} fontWeight={400} fontSize={55} color="#1340FF">
-                {summaryStats.totalShares}
-                </Typography>
-                <Typography fontFamily={'Aileron'} fontWeight={600} fontSize={18} color="#1340FF">
-                Total Shares
-                </Typography>
-              </Box>
-              </Grid>
-            </Grid>
-            )}
-          </Box>
-        </Grid>
-        
-        {/* Right: Top Engagement Card */}
-        {((
-          selectedPlatform !== 'ALL'
-        ) || (
-          availablePlatforms.length === 1 &&
-          (insightsData[0].platform === 'Instagram' || insightsData[0].platform === 'TikTok')
-        )) && (
-          <Grid item xs={12} md={2.5} ml={2} alignContent={'center'} bgcolor={'#F5F5F5'} borderRadius={3}>
-            <TopEngagementCard />
-          </Grid>
-        )}
-      </Grid>
-      </Box>
-    );
-  };
-
-  // Add this new function before CoreMetricsSection
-  const findTopPerformerByMetric = (metricKey, insightsData, filteredSubmissions) => {
-    if (!insightsData || insightsData.length === 0) return null;
-    
-    let topPerformer = null;
-    let highestValue = 0;
-    
-    insightsData.forEach(insightData => {
-      const submission = filteredSubmissions.find(sub => sub.id === insightData.submissionId);
-      if (submission) {
-        const value = getMetricValue(insightData.insight, metricKey);
-        if (value > highestValue) {
-          highestValue = value;
-          topPerformer = {
-            submission,
-            value,
-            insightData
-          };
-        }
-      }
-    });
-    
-    return topPerformer;
-  };
-
-  const CoreMetricsSection = ({ insightsData, summaryStats }) => {
+  const CoreMetricsSection = ({ summaryStats }) => {
     if (!summaryStats) return null;
-    
+
     // Define metrics configuration
     const metricsConfig = [
       {
         key: 'views',
         label: 'Views',
         value: summaryStats.totalViews,
-        metricKey: 'views'
+        metricKey: 'views',
       },
       {
-        key: 'likes', 
+        key: 'likes',
         label: 'Likes',
         value: summaryStats.totalLikes,
-        metricKey: 'likes'
+        metricKey: 'likes',
       },
       {
         key: 'comments',
-        label: 'Comments', 
+        label: 'Comments',
         value: summaryStats.totalComments,
-        metricKey: 'comments'
+        metricKey: 'comments',
       },
       {
         key: 'saved',
@@ -760,21 +239,26 @@ const CampaignAnalytics = ({ campaign }) => {
         value: summaryStats.totalSaved,
         metricKey: 'saved',
         // Only show for Instagram
-        condition: selectedPlatform === 'Instagram' || (selectedPlatform === 'ALL' && availablePlatforms.includes('Instagram'))
-      }
-    ].filter(metric => metric.condition !== false);
+        condition:
+          selectedPlatform === 'Instagram' ||
+          (selectedPlatform === 'ALL' && availablePlatforms.includes('Instagram')),
+      },
+    ].filter((metric) => metric.condition !== false);
 
     const renderEngagementCard = ({ title, value, metricKey }) => {
       // Find top performer for this metric
-      const topPerformer = findTopPerformerByMetric(metricKey, filteredInsightsData, filteredSubmissions);
-      
+      const topPerformer = findTopPerformerByMetric(
+        metricKey,
+        filteredInsightsData,
+        filteredSubmissions
+      );
+
       // Get creator data for top performer
       const { data: topCreator } = useGetCreatorById(topPerformer?.submission?.user);
-      
+
       // Calculate percentage contribution
-      const percentage = topPerformer && value > 0 
-        ? Math.round((topPerformer.value / value) * 100)
-        : 0;
+      const percentage =
+        topPerformer && value > 0 ? Math.round((topPerformer.value / value) * 100) : 0;
 
       return (
         <Box
@@ -782,8 +266,8 @@ const CampaignAnalytics = ({ campaign }) => {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            px: { sm: 3, xs: 6 },
-            height: 116,
+            px: 2,
+            height: { xs: 100, sm: 116 },
             background: '#F5F5F5',
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: '20px',
@@ -795,7 +279,7 @@ const CampaignAnalytics = ({ campaign }) => {
               display: 'flex',
               flexDirection: 'row',
               justifyContent: 'space-between',
-              alignItems: 'flex-start'
+              alignItems: 'center',
             }}
           >
             {/* Left side - Title and top performer info */}
@@ -803,84 +287,74 @@ const CampaignAnalytics = ({ campaign }) => {
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
-                height: '79px',
+                justifyContent: 'space-around',
+                height: { xs: 70, sm: 85 },
                 minWidth: 0, // allow children to shrink
               }}
             >
               <Typography
                 sx={{
                   fontWeight: 400,
-                  fontSize: 18,
+                  fontSize: { xs: 16, sm: 18 },
                   color: '#636366',
-                  maxWidth: { xs: 120, sm: 180, md: 200 },
+                  maxWidth: { xs: 70, sm: 120, md: 200 },
                 }}
               >
                 {title}
               </Typography>
 
               {topPerformer && (
-              <Box>
-                <Typography
-                  mr={2}
-                  fontSize={14}
-                  sx={{
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: { xs: 120, sm: 180, md: 200 },
-                    display: 'block',
-                  }}
-                >
+                <Box>
                   <Typography
-                    fontSize={14}
-                    component={'span'}
-                    color={'#1340FF'}
+                    fontSize={{ xs: 12, sm: 14 }}
+                    component="span"
+                    color="#1340FF"
                     fontWeight={600}
                   >
-                    {percentage}%{' '} <Typography fontSize={14} color={'#000'} component={'span'}>from</Typography>
+                    {percentage}%{' '}
+                    <Typography fontSize={{ xs: 12, sm: 14 }} color="#000" component="span">
+                      from
+                    </Typography>
                   </Typography>
-                  <Typography 
-                    fontSize={14} 
-                    color={'#000'} 
+                  <Typography
+                    fontSize={{ xs: 12, sm: 14 }}
+                    color="#000"
                     sx={{
-                      mt: 0.5,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      maxWidth: { xs: 80, sm: 120, md: 140 }, // Adjust these values as needed
-                      display: 'block'
+                      maxWidth: { xs: 85, sm: 120, md: 140 }, // Adjust these values as needed
+                      display: 'block',
                     }}
                   >
                     {topCreator?.user?.name || 'Unknown'}
-                  </Typography>       
-                </Typography>
-              </Box>
-            )}
-        </Box>
+                  </Typography>
+                </Box>
+              )}
+            </Box>
 
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            width: 79,
-            height: 79,
-            background: '#1340FF',
-            borderRadius: '8px',
-            flexShrink: 0
-          }}
-        >
-          <Typography
-            sx={{
-          fontWeight: 400,
-          fontSize: 24,
-          color: '#FFFFFF',
-            }}
-          >
-            {typeof value === 'number' ? formatNumber(value) : value}
-          </Typography>
-        </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: { xs: 60, sm: 70, md: 79 },
+                height: { xs: 60, sm: 70, md: 79 },
+                background: '#1340FF',
+                borderRadius: '8px',
+                flexShrink: 0,
+              }}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 400,
+                  fontSize: { xs: 16, sm: 20, md: 24 },
+                  color: '#FFFFFF',
+                }}
+              >
+                {typeof value === 'number' ? formatNumber(value) : value}
+              </Typography>
+            </Box>
           </Box>
         </Box>
       );
@@ -888,13 +362,13 @@ const CampaignAnalytics = ({ campaign }) => {
 
     return (
       <Box sx={{ mb: 3 }}>
-        <Grid container spacing={2}>
+        <Grid container spacing={{ xs: 1, sm: 2 }}>
           {metricsConfig.map((metric) => (
-            <Grid item xs={3} key={metric.key}>
+            <Grid item xs={6} sm={6} md={3} key={metric.key}>
               {renderEngagementCard({
                 title: metric.label,
                 value: metric.value,
-                metricKey: metric.metricKey
+                metricKey: metric.metricKey,
               })}
             </Grid>
           ))}
@@ -903,26 +377,1059 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   };
 
+  const PlatformOverviewLayout = ({
+    insightsData,
+    summaryStats,
+    platformCounts,
+    selectedPlatform,
+  }) => {
+    const calculateAdditionalMetrics = () => {
+      const metrics = {};
+
+      // Calculate metrics based on current insights data (filtered or all)
+      metrics.totalShares = insightsData.reduce(
+        (sum, item) => sum + getMetricValue(item.insight, 'shares'),
+        0
+      );
+      metrics.totalReach = insightsData.reduce(
+        (sum, item) => sum + getMetricValue(item.insight, 'reach'),
+        0
+      );
+      metrics.totalInteractions = insightsData.reduce(
+        (sum, item) => sum + getMetricValue(item.insight, 'total_interactions'),
+        0
+      );
+
+      // Calculate average engagement rate
+      const avgEngagement =
+        insightsData.length > 0
+          ? insightsData.reduce((sum, item) => {
+              const views = getMetricValue(item.insight, 'views');
+              const likes = getMetricValue(item.insight, 'likes');
+              const comments = getMetricValue(item.insight, 'comments');
+              const engagementRate = views > 0 ? ((likes + comments) / views) * 100 : 0;
+              return sum + engagementRate;
+            }, 0) / insightsData.length
+          : 0;
+
+      metrics.avgEngagement = avgEngagement;
+
+      return metrics;
+    };
+
+    const additionalMetrics = calculateAdditionalMetrics();
+
+    const PostingsCard = () => (
+      <Box
+        sx={{
+          textAlign: 'center',
+          px: 3,
+          py: 2,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Typography
+          textAlign="left"
+          variant="h4"
+          fontWeight={600}
+          gutterBottom
+          fontFamily="Aileron"
+          color="#231F20"
+        >
+          Postings
+        </Typography>
+
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            my: 2,
+          }}
+        >
+          {/* Dual Platform Beam Display */}
+          <Box sx={{ display: 'flex', gap: 4, mb: 2, alignItems: 'flex-end' }}>
+            {/* Instagram Beam */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {/* Post count above beam */}
+              <Typography
+                variant="h6"
+                sx={{
+                  color: '#1340FF',
+                  fontSize: '1.25rem',
+                  fontWeight: 600,
+                  mb: 1,
+                  minHeight: '1.5rem',
+                }}
+              >
+                {platformCounts.Instagram > 0 ? platformCounts.Instagram : ''}
+              </Typography>
+
+              <Box
+                sx={{
+                  width: 54,
+                  height: (() => {
+                    const maxCount = Math.max(platformCounts.Instagram, platformCounts.TikTok);
+                    const minHeight = 30;
+                    const maxHeight = 170;
+                    if (maxCount === 0) return minHeight;
+                    return (
+                      minHeight + (platformCounts.Instagram / maxCount) * (maxHeight - minHeight)
+                    );
+                  })(),
+                  backgroundColor: (() => {
+                    // Fill conditions based on selection and post count
+                    if (platformCounts.Instagram === 0) return '#F5F5F5';
+                    if (selectedPlatform === 'ALL') return '#1340FF';
+                    if (selectedPlatform === 'Instagram') return '#1340FF';
+                    return '#F5F5F5';
+                  })(),
+                  border: '1px solid #1340FF',
+                  borderRadius: 100,
+                  mb: 1,
+                  transition: 'all 0.3s ease',
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: '#1340FF',
+                  fontSize: 16,
+                  fontWeight: 200,
+                  fontStyle: 'italic',
+                  textAlign: 'center',
+                }}
+              >
+                Instagram
+              </Typography>
+            </Box>
+
+            {/* TikTok Beam */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {/* Post count above beam */}
+              <Typography
+                variant="h6"
+                sx={{
+                  color: '#1340FF',
+                  fontSize: '1.25rem',
+                  fontWeight: 600,
+                  mb: 1,
+                  minHeight: '1.5rem',
+                }}
+              >
+                {platformCounts.TikTok > 0 ? platformCounts.TikTok : ''}
+              </Typography>
+
+              <Box
+                sx={{
+                  width: 54,
+                  height: (() => {
+                    const maxCount = Math.max(platformCounts.Instagram, platformCounts.TikTok);
+                    const minHeight = 10;
+                    const maxHeight = 170;
+                    if (maxCount === 0) return minHeight;
+                    return minHeight + (platformCounts.TikTok / maxCount) * (maxHeight - minHeight);
+                  })(),
+                  backgroundColor: (() => {
+                    // Fill conditions based on selection and post count
+                    if (platformCounts.TikTok === 0) return '#F5F5F5';
+                    if (selectedPlatform === 'ALL') return '#1340FF';
+                    if (selectedPlatform === 'TikTok') return '#1340FF';
+                    return '#F5F5F5';
+                  })(),
+                  border: '1px solid #1340FF',
+                  borderRadius: 100,
+                  mb: 1,
+                  transition: 'all 0.3s ease',
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: '#1340FF',
+                  fontSize: 16,
+                  fontWeight: 200,
+                  fontStyle: 'italic',
+                  textAlign: 'center',
+                }}
+              >
+                TikTok
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    );
+
+    const TopEngagementCard = () => {
+      // Find the creator with the highest engagement rate
+      const topEngagementCreator = useMemo(() => {
+        if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
+
+        let highestEngagement = -1;
+        let topCreator = null;
+
+        filteredInsightsData.forEach((insightData) => {
+          const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+          if (submission) {
+            const engagementRate = calculateEngagementRate(insightData.insight);
+            if (engagementRate > highestEngagement) {
+              highestEngagement = engagementRate;
+              topCreator = {
+                ...submission,
+                engagementRate,
+                insightData,
+              };
+            }
+          }
+        });
+
+        return topCreator;
+      }, [filteredInsightsData, filteredSubmissions]);
+
+      const { data: creator } = useGetCreatorById(topEngagementCreator?.user);
+
+      if (!topEngagementCreator) return null;
+
+      return (
+        <Box
+          borderRadius={3}
+          sx={{
+            height: '400px',
+            backgroundColor: '#F5F5F5',
+            p: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+          }}
+        >
+          <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20">
+            Top Engagement
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <Typography
+              fontFamily="Instrument Serif"
+              fontWeight={400}
+              fontSize={55}
+              color="#1340FF"
+              textAlign="center"
+            >
+              {topEngagementCreator.engagementRate}%
+            </Typography>
+
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Avatar
+                sx={{
+                  width: 45,
+                  height: 45,
+                  bgcolor: topEngagementCreator.platform === 'Instagram' ? '#E4405F' : '#000000',
+                  mr: 2,
+                }}
+              >
+                {creator?.user?.name?.charAt(0) || 'U'}
+              </Avatar>
+              <Box>
+                <Typography
+                  fontSize={14}
+                  fontWeight={600}
+                  color="#231F20"
+                  sx={{ textAlign: 'left' }}
+                >
+                  {creator?.user?.name || 'Unknown Creator'}
+                </Typography>
+                <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
+                  @{creator?.user?.name?.toLowerCase().replace(/\s+/g, '') || 'unknown'}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ alignSelf: 'center' }}>
+            <Link
+              href={topEngagementCreator.insightData.postUrl}
+              target="_blank"
+              rel="noopener"
+              sx={{
+                display: 'block',
+                textDecoration: 'none',
+                '&:hover': {
+                  opacity: 0.8,
+                  transition: 'opacity 0.2s',
+                },
+              }}
+            >
+              <Box
+                component="img"
+                src={
+                  topEngagementCreator.insightData.thumbnail ||
+                  topEngagementCreator.insightData.video?.media_url
+                }
+                alt="Top performing post"
+                sx={{
+                  width: 290,
+                  height: 180,
+                  mt: 2,
+                  borderRadius: 2,
+                  objectFit: 'cover',
+                  objectPosition: 'left top',
+                  border: '1px solid #e0e0e0',
+                }}
+              />
+            </Link>
+          </Box>
+        </Box>
+      );
+    };
+
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            overflowX: 'auto',
+            pb: 2,
+            '&::-webkit-scrollbar': {
+              height: 8,
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: '#f1f1f1',
+              borderRadius: 10,
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#c1c1c1',
+              borderRadius: 10,
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              backgroundColor: '#a8a8a8',
+            },
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              width: 'max-content',
+              minHeight: 400,
+            }}
+          >
+            {/* Mobile horizontal scroll content */}
+            {availablePlatforms.length > 1 && selectedPlatform === 'ALL' && (
+              <Box
+                sx={{
+                  minWidth: { xs: 220, sm: 250 },
+                  height: 400,
+                  bgcolor: '#F5F5F5',
+                  borderRadius: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  p: { xs: 1, sm: 0 },
+                }}
+              >
+                <PostingsCard />
+              </Box>
+            )}
+
+            {/* Pie Chart */}
+            <Box
+              sx={{
+                minWidth: { xs: 400, sm: 500 },
+                height: 400,
+                bgcolor: '#F5F5F5',
+                borderRadius: 3,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: '100%',
+                  height: '100%',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box sx={{ position: 'relative' }}>
+                  <PieChart
+                    height={300}
+                    width={300}
+                    margin={{ left: 50, right: 50, top: 50, bottom: 50 }}
+                    series={[
+                      {
+                        data: [
+                          {
+                            id: 0,
+                            value: summaryStats.totalLikes,
+                            label: 'Likes',
+                            color: '#1340FF',
+                          },
+                          {
+                            id: 1,
+                            value: summaryStats.totalComments,
+                            label: 'Comments',
+                            color: '#8A5AFE',
+                          },
+                          {
+                            id: 2,
+                            value: summaryStats.totalShares,
+                            label: 'Shares',
+                            color: '#68A7ED',
+                          },
+                        ],
+                        innerRadius: 60,
+                        outerRadius: 120,
+                        arcLabel: (params) => params.value,
+                        arcLabelMinAngle: 20,
+                        valueFormatter: (value) => formatNumber(value.value),
+                      },
+                    ]}
+                    sx={{
+                      '& .MuiChartsLegend-root': {
+                        display: 'none',
+                      },
+                      '& .MuiPieArcLabel-root': {
+                        fontWeight: '600',
+                        fill: 'white',
+                        fontFamily: 'Aileron',
+                      },
+                      '& .MuiPieArc-root': {
+                        stroke: 'none',
+                      },
+                    }}
+                  />
+
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: '48%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      textAlign: 'center',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: { xs: 32, sm: 45, md: 55 },
+                        fontWeight: 400,
+                        color: '#1340FF',
+                        fontFamily: 'Instrument Serif',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {formatNumber(
+                        Math.round(
+                          summaryStats.totalLikes +
+                            summaryStats.totalComments +
+                            summaryStats.totalShares
+                        )
+                      )}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 18,
+                        fontWeight: 600,
+                        color: '#000000',
+                        fontFamily: 'Aileron',
+                        lineHeight: 1,
+                      }}
+                    >
+                      Average
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 18,
+                        fontWeight: 600,
+                        color: '#000000',
+                        fontFamily: 'Aileron',
+                        lineHeight: 1,
+                      }}
+                    >
+                      Interactions
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    mr: 3,
+                  }}
+                >
+                  {[
+                    { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
+                    { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
+                    { name: 'Shares', value: summaryStats.totalShares, color: '#68A7ED' },
+                  ].map((item, index) => (
+                    <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          backgroundColor: item.color,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontSize: 16,
+                            fontWeight: 500,
+                            color: '#000',
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {item.name}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Summary Stats */}
+            <Box
+              sx={{
+                minWidth: { xs: 350, sm: 400 },
+                height: 400,
+                bgcolor: '#F5F5F5',
+                borderRadius: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                p: 2,
+              }}
+            >
+              {/* Top Row */}
+              <Box display="flex" flex={1} gap={2}>
+                {/* Top Left Quadrant */}
+                <Box
+                  flex={1}
+                  display="flex"
+                  flexDirection="column"
+                  sx={{ borderBottom: '2px solid #1340FF' }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: 50,
+                      fontWeight: 400,
+                      color: '#1340FF',
+                      fontFamily: 'Instrument Serif',
+                      mt: 4,
+                    }}
+                  >
+                    {summaryStats.totalPosts}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      fontFamily: 'Aileron',
+                    }}
+                  >
+                    {availablePlatforms.length > 1 &&
+                      (selectedPlatform === 'ALL'
+                        ? 'Total Creators'
+                        : selectedPlatform === 'Instagram'
+                          ? 'Instagram Posts'
+                          : selectedPlatform === 'TikTok'
+                            ? 'TikTok Posts'
+                            : '')}
+                    {availablePlatforms.length < 2 && `${insightsData[0].platform} Posts`}
+                  </Typography>
+                </Box>
+
+                {/* Top Right Quadrant */}
+                <Box
+                  flex={1}
+                  display="flex"
+                  flexDirection="column"
+                  sx={{ borderBottom: '2px solid #1340FF' }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: 50,
+                      fontWeight: 400,
+                      color: '#1340FF',
+                      fontFamily: 'Instrument Serif',
+                      mt: 4,
+                    }}
+                  >
+                    {selectedPlatform === 'TikTok' ? 'TBD' : formatNumber(summaryStats.totalReach)}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      fontFamily: 'Aileron',
+                    }}
+                  >
+                    {selectedPlatform === 'ALL' && 'Reach'}
+                    {selectedPlatform === 'TikTok' && 'TBD'}
+                    {selectedPlatform === 'Instagram' && 'Reach'}
+                  </Typography>
+                  {selectedPlatform === 'ALL' && (
+                    <Typography fontSize={12} fontWeight={600} color="#1340FF">
+                      (Instagram Only)
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Bottom Row */}
+              <Box display="flex" flex={1} gap={2} mt={2}>
+                {/* Bottom Left Quadrant */}
+                <Box flex={1} display="flex" flexDirection="column">
+                  <Typography
+                    sx={{
+                      fontSize: 50,
+                      fontWeight: 400,
+                      color: '#1340FF',
+                      fontFamily: 'Instrument Serif',
+                      mt: 3,
+                    }}
+                  >
+                    {summaryStats.avgEngagementRate}%
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      fontFamily: 'Aileron',
+                    }}
+                  >
+                    Engagement Rate
+                  </Typography>
+                </Box>
+
+                {/* Bottom Right Quadrant */}
+                <Box flex={1} display="flex" flexDirection="column">
+                  <Typography
+                    sx={{
+                      fontSize: 50,
+                      fontWeight: 400,
+                      color: '#1340FF',
+                      fontFamily: 'Instrument Serif',
+                      mt: 3,
+                    }}
+                  >
+                    {summaryStats.totalShares}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: '#1340FF',
+                      fontFamily: 'Aileron',
+                    }}
+                  >
+                    Shares
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Top Performer */}
+            {(selectedPlatform !== 'ALL' ||
+              (availablePlatforms.length === 1 &&
+                (insightsData[0].platform === 'Instagram' ||
+                  insightsData[0].platform === 'TikTok'))) && (
+              <Box
+                sx={{
+                  minWidth: { xs: 300, sm: 350 },
+                  height: 400,
+                  bgcolor: '#F5F5F5',
+                  borderRadius: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  p: { xs: 1, sm: 0 },
+                }}
+              >
+                <TopEngagementCard />
+              </Box>
+            )}
+          </Box>
+        </Box>
+
+        {/* Desktop layout */}
+        <Grid
+          container
+          justifyContent="center"
+          height={400}
+          sx={{ display: { xs: 'none', md: 'flex' } }}
+        >
+          {/* Left Condition: Platform Overview Card */}
+          {availablePlatforms.length > 1 && selectedPlatform === 'ALL' && (
+            <Grid
+              item
+              xs={12}
+              md={2.5}
+              alignContent="center"
+              bgcolor="#F5F5F5"
+              borderRadius={3}
+              mr={2}
+            >
+              <PostingsCard />
+            </Grid>
+          )}
+
+          {/* Left: Engagement Breakdown Chart */}
+          <Grid item xs={12} md={5} mr={2} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                height: '100%',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Box sx={{ position: 'relative' }}>
+                <PieChart
+                  height={300}
+                  width={300}
+                  margin={{ left: 50, right: 50, top: 50, bottom: 50 }}
+                  series={[
+                    {
+                      data: [
+                        { id: 0, value: summaryStats.totalLikes, label: 'Likes', color: '#1340FF' },
+                        {
+                          id: 1,
+                          value: summaryStats.totalComments,
+                          label: 'Comments',
+                          color: '#8A5AFE',
+                        },
+                        {
+                          id: 2,
+                          value: summaryStats.totalShares,
+                          label: 'Shares',
+                          color: '#68A7ED',
+                        },
+                      ],
+                      innerRadius: 60,
+                      outerRadius: 120,
+                      arcLabel: (params) => params.value,
+                      arcLabelMinAngle: 20,
+                      valueFormatter: (value) => formatNumber(value.value),
+                    },
+                  ]}
+                  sx={{
+                    '& .MuiChartsLegend-root': {
+                      display: 'none', // Hide default legend since we're creating custom one
+                    },
+                    '& .MuiPieArcLabel-root': {
+                      fontWeight: '600',
+                      fill: 'white',
+                      fontFamily: 'Aileron',
+                    },
+                    '& .MuiPieArc-root': {
+                      stroke: 'none', // Remove white lines between segments
+                    },
+                  }}
+                />
+
+                {/* Center Text Overlay */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '48%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    textAlign: 'center',
+                    pointerEvents: 'none', // Allow clicking through to chart
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: 18,
+                      fontWeight: 600,
+                      color: '#000000',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {formatNumber(
+                      Math.round(
+                        summaryStats.totalLikes +
+                          summaryStats.totalComments +
+                          summaryStats.totalShares
+                      )
+                    )}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 18,
+                      fontWeight: 600,
+                      color: '#000000',
+                      fontFamily: 'Aileron',
+                      lineHeight: 1,
+                    }}
+                  >
+                    Average
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 18,
+                      fontWeight: 600,
+                      color: '#000000',
+                      fontFamily: 'Aileron',
+                      lineHeight: 1,
+                    }}
+                  >
+                    Interactions
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Right Side: Legend with Color Indicators */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  mr: 3,
+                }}
+              >
+                {[
+                  { name: 'Likes', value: summaryStats.totalLikes, color: '#1340FF' },
+                  { name: 'Comments', value: summaryStats.totalComments, color: '#8A5AFE' },
+                  { name: 'Shares', value: summaryStats.totalShares, color: '#68A7ED' },
+                ].map((item, index) => (
+                  <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {/* Color indicator circle */}
+                    <Box
+                      sx={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: '50%',
+                        backgroundColor: item.color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: 16,
+                          fontWeight: 500,
+                          color: '#000',
+                          lineHeight: 1.2,
+                          mr: 5,
+                        }}
+                      >
+                        {item.name}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Grid>
+
+          {/* Middle: Platform-specific metrics */}
+          <Grid item xs={12} md={4} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
+            <Box
+              sx={{
+                backgroundColor: '#F5F5F5',
+                borderRadius: 3,
+              }}
+            >
+              {summaryStats && (
+                <Grid
+                  container
+                  sx={{ mt: { xs: 0 } }}
+                  justifyContent="center"
+                  columnGap={2}
+                  padding={2}
+                  mb={2}
+                >
+                  <Grid item xs={6}>
+                    <Box sx={{ textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontWeight={400}
+                        fontSize={55}
+                        color="#1340FF"
+                      >
+                        {summaryStats.totalPosts}
+                      </Typography>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontWeight={600}
+                        fontSize={18}
+                        color="#1340FF"
+                      >
+                        {availablePlatforms.length > 1 &&
+                          (selectedPlatform === 'ALL'
+                            ? 'Total Creators'
+                            : selectedPlatform === 'Instagram'
+                              ? 'Instagram Posts'
+                              : selectedPlatform === 'TikTok'
+                                ? 'TikTok Posts'
+                                : '')}
+                        {availablePlatforms.length < 2 && `${insightsData[0].platform} Posts`}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={5}>
+                    <Box sx={{ textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontWeight={400}
+                        fontSize={55}
+                        color="#1340FF"
+                      >
+                        {selectedPlatform === 'TikTok'
+                          ? 'TBD'
+                          : formatNumber(summaryStats.totalReach)}
+                      </Typography>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontWeight={600}
+                        fontSize={18}
+                        color="#1340FF"
+                      >
+                        {selectedPlatform === 'ALL' && (
+                          <Typography fontSize={18} fontFamily="Aileron" fontWeight={600}>
+                            Reach
+                            <Typography fontFamily="Aileron" fontSize={12} fontWeight={600}>
+                              (Instagram only)
+                            </Typography>
+                          </Typography>
+                        )}
+                        {selectedPlatform === 'TikTok' && 'TBD'}
+                        {selectedPlatform === 'Instagram' && 'Reach'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+
+                  <Grid item xs={6} mt={2} mb={2}>
+                    <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+                  </Grid>
+
+                  <Grid item xs={5} mt={2} mb={2}>
+                    <Box sx={{ borderBottom: '2px solid #1340FF' }} />
+                  </Grid>
+
+                  <Grid item xs={6}>
+                    <Box sx={{ textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontWeight={400}
+                        fontSize={55}
+                        color="#1340FF"
+                      >
+                        {summaryStats.avgEngagementRate}%
+                      </Typography>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontWeight={600}
+                        fontSize={18}
+                        color="#1340FF"
+                      >
+                        Engagement Rate
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={5}>
+                    <Box sx={{ textAlign: 'left' }}>
+                      <Typography
+                        fontFamily="Instrument Serif"
+                        fontWeight={400}
+                        fontSize={55}
+                        color="#1340FF"
+                      >
+                        {summaryStats.totalShares}
+                      </Typography>
+                      <Typography
+                        fontFamily="Aileron"
+                        fontWeight={600}
+                        fontSize={18}
+                        color="#1340FF"
+                      >
+                        Total Shares
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              )}
+            </Box>
+          </Grid>
+
+          {/* Right: Top Engagement Card */}
+          {(selectedPlatform !== 'ALL' ||
+            (availablePlatforms.length === 1 &&
+              (insightsData[0].platform === 'Instagram' ||
+                insightsData[0].platform === 'TikTok'))) && (
+            <Grid
+              item
+              xs={12}
+              md={2.5}
+              ml={2}
+              alignContent="center"
+              bgcolor="#F5F5F5"
+              borderRadius={3}
+            >
+              <TopEngagementCard />
+            </Grid>
+          )}
+        </Grid>
+      </Box>
+    );
+  };
+
+  // Add this new function before CoreMetricsSection
+  const findTopPerformerByMetric = (metricKey, insightsData, filteredSubmissions) => {
+    if (!insightsData || insightsData.length === 0) return null;
+
+    let topPerformer = null;
+    let highestValue = 0;
+
+    insightsData.forEach((insightData) => {
+      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+      if (submission) {
+        const value = getMetricValue(insightData.insight, metricKey);
+        if (value > highestValue) {
+          highestValue = value;
+          topPerformer = {
+            submission,
+            value,
+            insightData,
+          };
+        }
+      }
+    });
+
+    return topPerformer;
+  };
+
   const UserPerformanceCard = ({ engagementRate, submission, insightData, loadingInsights }) => {
     const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
-    console.log('Creator: ', creator)
-    
+    console.log('Creator: ', creator);
+
     return (
       <Grid item xs={12}>
-        <Box px={4} borderRadius={1} border={'2px solid #F5F5F5'}>
+        <Box px={4} borderRadius={1} border="2px solid #F5F5F5">
           <Box sx={{ py: 1 }}>
             {/* Desktop Layout (md+) */}
-            <Box 
-              display={{ xs: 'none', md: 'flex' }} 
-              alignItems="center"
-            >
+            <Box display={{ xs: 'none', md: 'flex' }} alignItems="center">
               {/* Left Side: Creator Info */}
               <Stack direction="row" spacing={2} alignItems="center">
-                <Avatar 
-                  sx={{ 
-                    width: 48, 
+                <Avatar
+                  sx={{
+                    width: 48,
                     height: 48,
-                    bgcolor: submission.platform === 'Instagram' ? '#E4405F' : '#000000'
+                    bgcolor: submission.platform === 'Instagram' ? '#E4405F' : '#000000',
                   }}
                 >
                   {loadingCreator ? (
@@ -932,10 +1439,16 @@ const CampaignAnalytics = ({ campaign }) => {
                   )}
                 </Avatar>
                 <Box width={230}>
-                  <Typography variant='h5' fontWeight={500}>
+                  <Typography variant="h5" fontWeight={500}>
                     {loadingCreator ? 'Loading...' : creator?.user?.name || 'Unknown Creator'}
                   </Typography>
-                  <Typography variant="body1" color="text.secondary" textOverflow={'ellipsis'} overflow={'auto'} sx={{ scrollbarWidth: 'none'}}>
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    textOverflow="ellipsis"
+                    overflow="auto"
+                    sx={{ scrollbarWidth: 'none' }}
+                  >
                     {creator?.user.creator.instagram || creator?.user.creator.tiktok || ''}
                   </Typography>
                 </Box>
@@ -943,52 +1456,78 @@ const CampaignAnalytics = ({ campaign }) => {
 
               {/* Center: Metrics Display */}
               {insightData ? (
-                <Box display="flex" alignItems={'center'} mr={'auto'} ml={2}>
+                <Box display="flex" alignItems="center" mr="auto" ml={2}>
                   {/* Engagement Rate */}
                   <Box>
-                    <Typography fontFamily={'Aileron'} fontSize={16} fontWeight={600} color={'#636366'} >
+                    <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
                       Engagement Rate
                     </Typography>
-                    <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={40}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
                       {engagementRate}%
                     </Typography>
-                  </Box> 
+                  </Box>
 
                   {/* Divider */}
-                  <Divider sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }}
+                  />
 
                   {/* Views */}
                   <Box sx={{ width: 80 }}>
-                    <Typography fontFamily={'Aileron'} fontSize={16} fontWeight={600} color={'#636366'} >
+                    <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
                       Views
                     </Typography>
-                    <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={40}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
                       {formatNumber(getMetricValue(insightData.insight, 'views'))}
                     </Typography>
                   </Box>
 
                   {/* Divider */}
-                  <Divider sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }}
+                  />
 
                   {/* Likes */}
                   <Box>
-                    <Typography fontFamily={'Aileron'} fontSize={16} fontWeight={600} color={'#636366'} >
+                    <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
                       Likes
                     </Typography>
-                    <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={40}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
                       {formatNumber(getMetricValue(insightData.insight, 'likes'))}
                     </Typography>
                   </Box>
 
                   {/* Divider */}
-                  <Divider sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }}
+                  />
 
                   {/* Comments */}
                   <Box>
-                    <Typography fontFamily={'Aileron'} fontSize={16} fontWeight={600} color={'#636366'} >
+                    <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
                       Comments
                     </Typography>
-                    <Typography fontFamily={'Instrument Serif'} fontSize={40} fontWeight={400} color={'#1340FF'}>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={40}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
                       {formatNumber(getMetricValue(insightData.insight, 'comments'))}
                     </Typography>
                   </Box>
@@ -1013,13 +1552,13 @@ const CampaignAnalytics = ({ campaign }) => {
                     href={insightData.postUrl}
                     target="_blank"
                     rel="noopener"
-                    sx={{ 
+                    sx={{
                       display: 'block',
                       textDecoration: 'none',
                       '&:hover': {
                         opacity: 0.8,
-                        transition: 'opacity 0.2s'
-                      }
+                        transition: 'opacity 0.2s',
+                      },
                     }}
                   >
                     <Box
@@ -1037,8 +1576,8 @@ const CampaignAnalytics = ({ campaign }) => {
                         '&:hover': {
                           filter: 'brightness(1)',
                           opacity: 1,
-                          transition: 'filter 0.3s ease, opacity 0.3s ease'
-                        }
+                          transition: 'filter 0.3s ease, opacity 0.3s ease',
+                        },
                       }}
                     />
                   </Link>
@@ -1046,10 +1585,10 @@ const CampaignAnalytics = ({ campaign }) => {
               ) : (
                 <Box sx={{ ml: 4 }}>
                   <Tooltip title="View Post">
-                    <IconButton 
+                    <IconButton
                       component={Link}
-                      href={submission.postUrl} 
-                      target="_blank" 
+                      href={submission.postUrl}
+                      target="_blank"
                       rel="noopener"
                       size="small"
                     >
@@ -1061,19 +1600,15 @@ const CampaignAnalytics = ({ campaign }) => {
             </Box>
 
             {/* Mobile Layout (xs) */}
-            <Box 
-              display={{ xs: 'flex', md: 'none' }} 
-              flexDirection="column"
-              sx={{ py: 2 }}
-            >
+            <Box display={{ xs: 'flex', md: 'none' }} flexDirection="column" sx={{ py: 2 }}>
               {/* Top: Creator Info */}
               <Box display="flex" alignItems="center" mb={2}>
-                <Avatar 
-                  sx={{ 
-                    width: 40, 
+                <Avatar
+                  sx={{
+                    width: 40,
                     height: 40,
                     bgcolor: submission.platform === 'Instagram' ? '#E4405F' : '#000000',
-                    mr: 2
+                    mr: 2,
                   }}
                 >
                   {loadingCreator ? (
@@ -1083,15 +1618,19 @@ const CampaignAnalytics = ({ campaign }) => {
                   )}
                 </Avatar>
                 <Box>
-                  <Typography variant='h6' fontWeight={500}>
+                  <Typography variant="h6" fontWeight={500}>
                     {loadingCreator ? 'Loading...' : creator?.user?.name || 'Unknown Creator'}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ 
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '200px'
-                  }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '200px',
+                    }}
+                  >
                     {creator?.user.email}
                   </Typography>
                 </Box>
@@ -1101,50 +1640,76 @@ const CampaignAnalytics = ({ campaign }) => {
               {insightData ? (
                 <Box display="flex" justifyContent="center" alignItems="center" mb={2}>
                   {/* Engagement Rate */}
-                  <Box sx={{ textAlign: 'center'}}>
-                    <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
                       Engagement
                     </Typography>
-                    <Typography fontFamily={'Instrument Serif'} fontSize={28} fontWeight={400} color={'#1340FF'}>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={28}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
                       {engagementRate}%
                     </Typography>
                   </Box>
 
                   {/* Divider */}
-                  <Divider sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }}
+                  />
 
                   {/* Views */}
-                  <Box sx={{ textAlign: 'center'}}>
-                    <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
                       Views
                     </Typography>
-                    <Typography fontFamily={'Instrument Serif'} fontSize={28} fontWeight={400} color={'#1340FF'}>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={28}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
                       {formatNumber(getMetricValue(insightData.insight, 'views'))}
                     </Typography>
                   </Box>
 
                   {/* Divider */}
-                  <Divider sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }}
+                  />
 
                   {/* Likes */}
-                  <Box sx={{ textAlign: 'center'}}>
-                    <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
                       Likes
                     </Typography>
-                    <Typography fontFamily={'Instrument Serif'} fontSize={28} fontWeight={400} color={'#1340FF'}>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={28}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
                       {formatNumber(getMetricValue(insightData.insight, 'likes'))}
                     </Typography>
                   </Box>
 
                   {/* Divider */}
-                  <Divider sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }} />
+                  <Divider
+                    sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }}
+                  />
 
                   {/* Comments */}
-                  <Box sx={{ textAlign: 'center'}}>
-                    <Typography fontFamily={'Aileron'} fontSize={14} fontWeight={600} color={'#636366'}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
                       Comments
                     </Typography>
-                    <Typography fontFamily={'Instrument Serif'} fontSize={28} fontWeight={400} color={'#1340FF'}>
+                    <Typography
+                      fontFamily="Instrument Serif"
+                      fontSize={28}
+                      fontWeight={400}
+                      color="#1340FF"
+                    >
                       {formatNumber(getMetricValue(insightData.insight, 'comments'))}
                     </Typography>
                   </Box>
@@ -1169,13 +1734,13 @@ const CampaignAnalytics = ({ campaign }) => {
                     href={insightData.postUrl}
                     target="_blank"
                     rel="noopener"
-                    sx={{ 
+                    sx={{
                       display: 'block',
                       textDecoration: 'none',
                       '&:hover': {
                         opacity: 0.8,
-                        transition: 'opacity 0.2s'
-                      }
+                        transition: 'opacity 0.2s',
+                      },
                     }}
                   >
                     <Box
@@ -1193,8 +1758,8 @@ const CampaignAnalytics = ({ campaign }) => {
                         '&:hover': {
                           filter: 'brightness(1)',
                           opacity: 1,
-                          transition: 'filter 0.3s ease, opacity 0.3s ease'
-                        }
+                          transition: 'filter 0.3s ease, opacity 0.3s ease',
+                        },
                       }}
                     />
                   </Link>
@@ -1202,10 +1767,10 @@ const CampaignAnalytics = ({ campaign }) => {
               ) : (
                 <Box display="flex" justifyContent="center">
                   <Tooltip title="View Post">
-                    <IconButton 
+                    <IconButton
                       component={Link}
-                      href={submission.postUrl} 
-                      target="_blank" 
+                      href={submission.postUrl}
+                      target="_blank"
                       rel="noopener"
                       size="small"
                     >
@@ -1226,12 +1791,12 @@ const CampaignAnalytics = ({ campaign }) => {
       {/* Platform Toggle */}
       {availablePlatforms.length > 1 && <PlatformToggle />}
 
-      <Typography fontSize={24} fontWeight={600} fontFamily={'Aileron'} gutterBottom>
+      <Typography fontSize={24} fontWeight={600} fontFamily="Aileron" gutterBottom>
         Performance Summary
       </Typography>
-      
+
       {/* Debug Information - only in development */}
-      {process.env.NODE_ENV === 'development' && (
+      {/* {process.env.NODE_ENV === 'development' && (
         <Alert severity="info" sx={{ mb: 2 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
             <Box>
@@ -1268,7 +1833,7 @@ const CampaignAnalytics = ({ campaign }) => {
             </Stack>
           </Stack>
         </Alert>
-      )}
+      )} */}
 
       {/* Loading state for insights */}
       {loadingInsights && (
@@ -1276,7 +1841,8 @@ const CampaignAnalytics = ({ campaign }) => {
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
             <CircularProgress size={20} />
             <Typography color="text.secondary">
-              Loading insights data... ({loadingProgress?.loaded || 0}/{loadingProgress?.total || postingSubmissions.length} completed)
+              Loading insights data... ({loadingProgress?.loaded || 0}/
+              {loadingProgress?.total || postingSubmissions.length} completed)
             </Typography>
           </Stack>
           {loadingProgress?.total > 0 && (
@@ -1286,7 +1852,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   height: 4,
                   backgroundColor: '#f0f0f0',
                   borderRadius: 2,
-                  overflow: 'hidden'
+                  overflow: 'hidden',
                 }}
               >
                 <Box
@@ -1294,12 +1860,16 @@ const CampaignAnalytics = ({ campaign }) => {
                     height: '100%',
                     backgroundColor: '#1340FF',
                     borderRadius: 2,
-                    width: `${((loadingProgress.loaded / loadingProgress.total) * 100)}%`,
-                    transition: 'width 0.3s ease'
+                    width: `${(loadingProgress.loaded / loadingProgress.total) * 100}%`,
+                    transition: 'width 0.3s ease',
                   }}
                 />
               </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mt: 0.5, display: 'block' }}
+              >
                 {Math.round((loadingProgress.loaded / loadingProgress.total) * 100)}% complete
               </Typography>
             </Box>
@@ -1324,12 +1894,7 @@ const CampaignAnalytics = ({ campaign }) => {
             <Typography key={index} variant="body2" sx={{ ml: 1 }}>
               • {failed.user?.name || 'Unknown'} ({failed.platform}): {failed.reason}
               {failed.requiresReconnection && (
-                <Chip 
-                  label="Reconnection Required" 
-                  size="small" 
-                  color="warning" 
-                  sx={{ ml: 1 }} 
-                />
+                <Chip label="Reconnection Required" size="small" color="warning" sx={{ ml: 1 }} />
               )}
             </Typography>
           ))}
@@ -1337,14 +1902,11 @@ const CampaignAnalytics = ({ campaign }) => {
       )}
 
       {/* Core Metrics Section */}
-      <CoreMetricsSection 
-        insightsData={filteredInsightsData}
-        summaryStats={summaryStats}
-      />
+      <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
 
       {/* Platform Overview and Additional Metrics Layout */}
       {availablePlatforms.length > 0 && summaryStats && (
-        <PlatformOverviewLayout 
+        <PlatformOverviewLayout
           postCount={filteredSubmissions.length}
           insightsData={filteredInsightsData}
           summaryStats={summaryStats}
@@ -1355,30 +1917,34 @@ const CampaignAnalytics = ({ campaign }) => {
 
       {/* Creator List Header with Count */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography fontSize={24} fontWeight={600} fontFamily={'Aileron'}>
+        <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
           Creator List
         </Typography>
         {filteredSubmissions.length > 0 && (
           <Typography fontSize={14} color="text.secondary">
-            Showing {paginationData.startIndex + 1}-{Math.min(paginationData.endIndex, filteredSubmissions.length)} of {filteredSubmissions.length} creators
+            Showing {paginationData.startIndex + 1}-
+            {Math.min(paginationData.endIndex, filteredSubmissions.length)} of{' '}
+            {filteredSubmissions.length} creators
           </Typography>
         )}
       </Box>
 
       <Grid container spacing={1}>
         {paginationData.displayedSubmissions.map((submission) => {
-          const insightData = insightsData.find(data => data.submissionId === submission.id);
+          const insightData = insightsData.find((data) => data.submissionId === submission.id);
           const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
-          
-          return <UserPerformanceCard 
-            key={submission.id} 
-            submission={submission} 
-            insightData={insightData} 
-            engagementRate={engagementRate} 
-            loadingInsights={loadingInsights} 
-          />;
+
+          return (
+            <UserPerformanceCard
+              key={submission.id}
+              submission={submission}
+              insightData={insightData}
+              engagementRate={engagementRate}
+              loadingInsights={loadingInsights}
+            />
+          );
         })}
-        
+
         {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
           <Grid item xs={12}>
             <Alert severity="info">
@@ -1386,11 +1952,12 @@ const CampaignAnalytics = ({ campaign }) => {
             </Alert>
           </Grid>
         )}
-        
+
         {postingSubmissions.length === 0 && (
           <Grid item xs={12}>
             <Alert severity="info">
-              No approved posting submissions with Instagram or TikTok links found for this campaign.
+              No approved posting submissions with Instagram or TikTok links found for this
+              campaign.
             </Alert>
           </Grid>
         )}
@@ -1398,14 +1965,16 @@ const CampaignAnalytics = ({ campaign }) => {
 
       {/* Pagination Controls */}
       {paginationData.totalPages > 1 && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          mt: 3,
-          pb: 2,
-          gap: 0.3
-        }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            mt: 3,
+            pb: 2,
+            gap: 0.3,
+          }}
+        >
           {/* Previous Button */}
           <Button
             onClick={handlePrevPage}
@@ -1434,7 +2003,7 @@ const CampaignAnalytics = ({ campaign }) => {
           {(() => {
             const pageButtons = [];
             const showEllipsis = paginationData.totalPages > 3;
-            
+
             if (!showEllipsis) {
               // Show all pages if 3 or fewer
               for (let i = 1; i <= paginationData.totalPages; i++) {
@@ -1493,7 +2062,11 @@ const CampaignAnalytics = ({ campaign }) => {
               }
 
               // Show current page and adjacent pages
-              for (let i = Math.max(2, currentPage - 1); i <= Math.min(paginationData.totalPages - 1, currentPage + 1); i++) {
+              for (
+                let i = Math.max(2, currentPage - 1);
+                i <= Math.min(paginationData.totalPages - 1, currentPage + 1);
+                i++
+              ) {
                 pageButtons.push(
                   <Button
                     key={i}

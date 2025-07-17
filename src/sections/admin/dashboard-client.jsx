@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   Box,
@@ -20,6 +20,10 @@ import {
   Pagination,
   Dialog,
   CircularProgress,
+  LinearProgress,
+  Divider,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
@@ -37,6 +41,9 @@ import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import CreateCampaignForm from 'src/sections/campaign/create/form';
+import { enqueueSnackbar } from 'notistack';
+import CompanyCreationForm from '../client/company-creation-form';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 const ClientDashboard = () => {
   const { user } = useAuthContext();
@@ -45,9 +52,56 @@ const ClientDashboard = () => {
   const theme = useTheme();
   const smDown = useResponsive('down', 'sm');
   const router = useRouter();
+
+  const [hasCompany, setHasCompany] = useState(null);
+  const [company, setCompany] = useState(null);
+  const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
+  const [isCheckingCompany, setIsCheckingCompany] = useState(true);
+
+  const checkClientCompany = async () => {
+    try {
+      setIsCheckingCompany(true);
+      const response = await axiosInstance.get(endpoints.client.checkCompany);
+      setHasCompany(response.data.hasCompany);
+      setCompany(response.data.company);
+      
+      if (!response.data.hasCompany) {
+        setOpenCompanyDialog(true);
+      }
+    } catch (error) {
+      console.error('Error checking client company:', error);
+      enqueueSnackbar('Error checking company status', { variant: 'error' });
+    } finally {
+      setIsCheckingCompany(false);
+    }
+  };
+
+  useEffect(() => {
+    checkClientCompany();
+  }, []);
   
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
 
+  const handleCompanyCreated = (newCompany) => {
+    setHasCompany(true);
+    setCompany(newCompany);
+    setOpenCompanyDialog(false);
+    enqueueSnackbar('Company created successfully!', { variant: 'success' });
+  };
+
+  if (isCheckingCompany) {
+    return (
+      <Container maxWidth={settings.themeStretch ? false : 'xl'}>
+        <Box sx={{ py: 5 }}>
+          <LinearProgress />
+          <Typography variant="h6" sx={{ mt: 2, textAlign: 'center' }}>
+            Loading your dashboard...
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
+  
   const handleNewCampaign = () => {
     create.onTrue();
   };
@@ -761,6 +815,36 @@ const ClientDashboard = () => {
         open={create.value}
       >
         <CreateCampaignForm onClose={create.onFalse} mutate={mutate} />
+      </Dialog>
+
+      <Dialog
+        open={openCompanyDialog}
+        onClose={() => !hasCompany ? null : setOpenCompanyDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        disableEscapeKeyDown={!hasCompany}
+
+      >
+        <Box paddingY={3} bgcolor={'#F4F4F4'}>
+          <Typography px={3} pb={2} fontSize={{ xs: 26, sm: 36}} fontFamily={'Instrument Serif'}>
+            Complete your Client Information
+          </Typography>
+          <Divider sx={{ mx: 3 }} />
+          <DialogContent>
+            <CompanyCreationForm
+              onSuccess={handleCompanyCreated}
+              existingCompany={company}
+              isEdit={hasCompany}
+            />
+          </DialogContent>
+          {hasCompany && (
+            <DialogActions>
+              <Button onClick={() => setOpenCompanyDialog(false)}>
+                Cancel
+              </Button>
+            </DialogActions>
+          )}
+        </Box>
       </Dialog>
     </Container>
   );
