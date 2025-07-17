@@ -14,7 +14,7 @@ import { countries } from 'src/assets/data';
 import FormProvider, { RHFAutocomplete, RHFTextField } from 'src/components/hook-form';
 
 const schema = Yup.object().shape({
-  companyName: Yup.string().required('Company name is required'),
+  picName: Yup.string().required('Company name is required'),
   registrationNumber: Yup.string().required('Company registration number is required'),
   companyAddress: Yup.string('Company address is required'),
   picDesignation: Yup.string().required('PIC designation is required'),
@@ -25,9 +25,9 @@ export default function CompanyCreationForm({ onSuccess, existingCompany, isEdit
   const methods = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      companyName: existingCompany?.name || '',
+      picName: existingCompany?.pic?.[0]?.name || '',
       registrationNumber: existingCompany?.registration_number || '',
-      companyEmail: existingCompany?.email || '',
+      companyAddress: existingCompany?.address || '',
       country: '',
       picDesignation: existingCompany?.pic?.[0]?.designation || '',
       picNumber: existingCompany?.pic?.[0]?.phone || '',
@@ -41,7 +41,7 @@ export default function CompanyCreationForm({ onSuccess, existingCompany, isEdit
   } = methods;
 
   const watchedValues = watch();
-  const isFormValid = watchedValues.companyName && 
+  const isFormValid = watchedValues.picName && 
                      watchedValues.registrationNumber && 
                      watchedValues.companyAddress && 
                      watchedValues.picDesignation && 
@@ -66,11 +66,11 @@ export default function CompanyCreationForm({ onSuccess, existingCompany, isEdit
       <Stack>
 
         <Typography variant="body2" color="text.primary" sx={{ mb: 1, mt: 2 }}>
-          Company Name
+          PIC Name
         </Typography>
         <RHFTextField
-          name="companyName"
-          placeholder="Company Name"
+          name="picName"
+          placeholder="PIC Name"
           required
           sx={{ bgcolor: '#fff', borderRadius: 1 }}
         />

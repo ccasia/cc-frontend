@@ -58,6 +58,10 @@ const ClientDashboard = () => {
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [isCheckingCompany, setIsCheckingCompany] = useState(true);
 
+  useEffect(() => {
+    checkClientCompany();
+  }, []);
+
   const checkClientCompany = async () => {
     try {
       setIsCheckingCompany(true);
@@ -75,10 +79,6 @@ const ClientDashboard = () => {
       setIsCheckingCompany(false);
     }
   };
-
-  useEffect(() => {
-    checkClientCompany();
-  }, []);
   
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
 
@@ -817,35 +817,37 @@ const ClientDashboard = () => {
         <CreateCampaignForm onClose={create.onFalse} mutate={mutate} />
       </Dialog>
 
-      <Dialog
-        open={openCompanyDialog}
-        onClose={() => !hasCompany ? null : setOpenCompanyDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        disableEscapeKeyDown={!hasCompany}
+      {!hasCompany ?
+        <Dialog
+          open={openCompanyDialog}
+          onClose={() => !hasCompany ? null : setOpenCompanyDialog(false)}
+          maxWidth="sm"
+          fullWidth
+          disableEscapeKeyDown={!hasCompany}
 
-      >
-        <Box paddingY={3} bgcolor={'#F4F4F4'}>
-          <Typography px={3} pb={2} fontSize={{ xs: 26, sm: 36}} fontFamily={'Instrument Serif'}>
-            Complete your Client Information
-          </Typography>
-          <Divider sx={{ mx: 3 }} />
-          <DialogContent>
-            <CompanyCreationForm
-              onSuccess={handleCompanyCreated}
-              existingCompany={company}
-              isEdit={hasCompany}
-            />
-          </DialogContent>
-          {hasCompany && (
-            <DialogActions>
-              <Button onClick={() => setOpenCompanyDialog(false)}>
-                Cancel
-              </Button>
-            </DialogActions>
-          )}
-        </Box>
-      </Dialog>
+        >
+          <Box paddingY={3} bgcolor={'#F4F4F4'}>
+            <Typography px={3} pb={2} fontSize={{ xs: 26, sm: 36}} fontFamily={'Instrument Serif'}>
+              Complete your Client Information
+            </Typography>
+            <Divider sx={{ mx: 3 }} />
+            <DialogContent>
+              <CompanyCreationForm
+                onSuccess={handleCompanyCreated}
+                existingCompany={company}
+                isEdit={hasCompany}
+              />
+            </DialogContent>
+            {hasCompany && (
+              <DialogActions>
+                <Button onClick={() => setOpenCompanyDialog(false)}>
+                  Cancel
+                </Button>
+              </DialogActions>
+            )}
+          </Box>
+        </Dialog> : null
+      }
     </Container>
   );
 };

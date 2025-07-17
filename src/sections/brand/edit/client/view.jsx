@@ -403,7 +403,7 @@ const CompanyEditView = ({ id }) => {
                 <Typography variant='span' color={'#636366'}>Company Name:</Typography> {company?.name}
               </Typography>
               <Typography variant="body1">
-                <Typography variant='span' color={'#636366'}>Company Email:</Typography> {company?.email}
+                <Typography variant='span' color={'#636366'}>Company Email:</Typography> {company?.pic[0]?.email}
               </Typography>
               <Typography variant="body1">
                 <Typography variant='span' color={'#636366'}>Package:</Typography> {currentPackage?.package?.name || currentPackage?.customPackage?.customName}
