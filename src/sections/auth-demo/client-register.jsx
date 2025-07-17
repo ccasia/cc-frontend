@@ -9,7 +9,6 @@ import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
-  Divider,
   Typography,
   IconButton,
   InputAdornment,
@@ -23,21 +22,10 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 
-const socialLogins = [
-  {
-    platform: 'google',
-    icon: 'mingcute:google-fill',
-  },
-  {
-    platform: 'facebook',
-    icon: 'ic:baseline-facebook',
-  },
-];
 
 const ClientRegister = () => {
   const password = useBoolean();
@@ -223,7 +211,7 @@ const ClientRegister = () => {
         fontWeight={500}
         sx={{ fontSize: '13px', mb: -2, textAlign: 'left' }}
       >
-        Name{' '}
+        Company Name{' '}
         <Box component="span" sx={{ color: 'error.main' }}>
           *
         </Box>
@@ -231,7 +219,7 @@ const ClientRegister = () => {
       <Box>
         <RHFTextField
           name="name"
-          placeholder="Name"
+          placeholder="Company Name"
           InputLabelProps={{ shrink: false }}
           FormHelperTextProps={{ sx: { display: 'none' } }}
           sx={{
@@ -411,12 +399,13 @@ const ClientRegister = () => {
       >
         Join Now
       </LoadingButton>
-
-      <Divider textAlign="center" sx={{ color: 'text.secondary', fontSize: 14 }}>
+      
+      {/* Social Logins */}
+      {/* <Divider textAlign="center" sx={{ color: 'text.secondary', fontSize: 14 }}>
         More login options
-      </Divider>
+      </Divider> */}
 
-      <Stack direction="row" justifyContent="center" spacing={2}>
+      {/* <Stack direction="row" justifyContent="center" spacing={2}>
         {socialLogins.map((item) => (
           <LoadingButton
             key={item.platform}
@@ -439,7 +428,7 @@ const ClientRegister = () => {
             <Iconify icon={item.icon} width={25} />
           </LoadingButton>
         ))}
-      </Stack>
+      </Stack> */}
     </Stack>
   );
 

@@ -1,49 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import { enqueueSnackbar } from 'notistack';
+import React, { useState, useEffect } from 'react';
 
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
-  Card,
   Grid,
+  Chip,
   Stack,
   Button,
   Avatar,
+  Dialog,
+  Divider,
   Container,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  IconButton,
-  Pagination,
-  Dialog,
-  CircularProgress,
-  LinearProgress,
-  Divider,
   DialogContent,
   DialogActions,
+  LinearProgress,
+  CircularProgress,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 
-import { useAuthContext } from 'src/auth/hooks';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetClientCampaigns from 'src/hooks/use-get-client-campaigns';
 
-import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
 import { fDate } from 'src/utils/format-time';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { useSettingsContext } from 'src/components/settings';
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
+import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import CreateCampaignForm from 'src/sections/campaign/create/form';
-import { enqueueSnackbar } from 'notistack';
+
 import CompanyCreationForm from '../client/company-creation-form';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
 const ClientDashboard = () => {
   const { user } = useAuthContext();
@@ -57,6 +51,10 @@ const ClientDashboard = () => {
   const [company, setCompany] = useState(null);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [isCheckingCompany, setIsCheckingCompany] = useState(true);
+
+  useEffect(() => {
+    checkClientCompany();
+  }, []);
 
   const checkClientCompany = async () => {
     try {
@@ -75,10 +73,6 @@ const ClientDashboard = () => {
       setIsCheckingCompany(false);
     }
   };
-
-  useEffect(() => {
-    checkClientCompany();
-  }, []);
   
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
 
@@ -817,35 +811,37 @@ const ClientDashboard = () => {
         <CreateCampaignForm onClose={create.onFalse} mutate={mutate} />
       </Dialog>
 
-      <Dialog
-        open={openCompanyDialog}
-        onClose={() => !hasCompany ? null : setOpenCompanyDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        disableEscapeKeyDown={!hasCompany}
+      {!hasCompany ?
+        <Dialog
+          open={openCompanyDialog}
+          onClose={() => !hasCompany ? null : setOpenCompanyDialog(false)}
+          maxWidth="sm"
+          fullWidth
+          disableEscapeKeyDown={!hasCompany}
 
-      >
-        <Box paddingY={3} bgcolor={'#F4F4F4'}>
-          <Typography px={3} pb={2} fontSize={{ xs: 26, sm: 36}} fontFamily={'Instrument Serif'}>
-            Complete your Client Information
-          </Typography>
-          <Divider sx={{ mx: 3 }} />
-          <DialogContent>
-            <CompanyCreationForm
-              onSuccess={handleCompanyCreated}
-              existingCompany={company}
-              isEdit={hasCompany}
-            />
-          </DialogContent>
-          {hasCompany && (
-            <DialogActions>
-              <Button onClick={() => setOpenCompanyDialog(false)}>
-                Cancel
-              </Button>
-            </DialogActions>
-          )}
-        </Box>
-      </Dialog>
+        >
+          <Box paddingY={3} bgcolor="#F4F4F4">
+            <Typography px={3} pb={2} fontSize={{ xs: 26, sm: 36}} fontFamily="Instrument Serif">
+              Complete your Client Information
+            </Typography>
+            <Divider sx={{ mx: 3 }} />
+            <DialogContent>
+              <CompanyCreationForm
+                onSuccess={handleCompanyCreated}
+                existingCompany={company}
+                isEdit={hasCompany}
+              />
+            </DialogContent>
+            {hasCompany && (
+              <DialogActions>
+                <Button onClick={() => setOpenCompanyDialog(false)}>
+                  Cancel
+                </Button>
+              </DialogActions>
+            )}
+          </Box>
+        </Dialog> : null
+      }
     </Container>
   );
 };
