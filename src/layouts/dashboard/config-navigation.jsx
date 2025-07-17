@@ -219,7 +219,7 @@ export function useNavData() {
             icon: ICONS.mytasks,
           },
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'god'],
             title: 'Content Performance Report',
             path: paths.dashboard.report.root,
             icon: ICONS.report,
@@ -399,16 +399,6 @@ export function useNavData() {
 
   const data = useMemo(
     () => [
-      // {
-      //   items: [
-      //     {
-      //       title: 'Overview',
-      //       path: paths.dashboard.overview.root,
-      //       icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
-      //     },
-      //   ],
-      // },
-
       ...navigations,
       {
         items: [
