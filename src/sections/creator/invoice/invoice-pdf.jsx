@@ -82,7 +82,7 @@ const useStyles = () =>
         tableRow: {
           display: 'flex',
           flexDirection: 'row',
-          justifyContent: "space-between",
+          justifyContent: 'space-between',
           gap: 10,
         },
         tableBody: {
@@ -112,6 +112,7 @@ const useStyles = () =>
 
 const InvoicePDF = ({ data }) => {
   const styles = useStyles();
+  console.log('invoice data: ', data)
 
   return (
     <Document>
@@ -144,8 +145,7 @@ const InvoicePDF = ({ data }) => {
                   <Text>Cult Creative Sdn. Bhd. (1374477-W)</Text>
                   <Text style={{ marginVertical: 4 }}>(+60)12-849 6499</Text>
                   <Text style={{ lineHeight: 1.4 }}>
-                    4-402, Level 4, The Starling Mall, Lot 4-401 &, 6, Jalan SS 21/37, Damansara
-                    Utama, 47400 Petaling Jaya, Selangor
+                    5-3A, Block A, Jaya One, No.72A, Jalan Universiti, 46200 Petaling Jaya, Selangor
                   </Text>
                 </View>
               </View>
@@ -286,7 +286,7 @@ const InvoicePDF = ({ data }) => {
                       fontSize: '10px',
                     }}
                   >
-                    RM {data.amount}
+                    {data?.campaign?.subscription?.currency || 'MYR'} {data?.amount}
                   </Text>
                 </View>
 

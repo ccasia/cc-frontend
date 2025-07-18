@@ -28,7 +28,7 @@ import InstagramOAuthWarning from 'src/components/instagram-oauth-warning';
 // Utility function to format numbers
 export const formatNumber = (num) => {
   if (!num && num !== 0) return '0';
-  
+
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -140,7 +140,9 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                   </Stack>
                   <Stack direction="row" alignItems="center" spacing={0.5}>
                     <Iconify icon="iconamoon:comment" width={20} />
-                    <Typography variant="subtitle2">{formatNumber(content?.comments_count)}</Typography>
+                    <Typography variant="subtitle2">
+                      {formatNumber(content?.comments_count)}
+                    </Typography>
                   </Stack>
                 </Stack>
               </Box>
@@ -255,6 +257,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
               height: { xs: 420, sm: 500, md: 580 }, // Larger heights for more prominent media content
               width: '100%',
               overflow: 'hidden',
+              borderRadius: 3,
               cursor: 'pointer',
               flexShrink: 0, // Prevent image from shrinking
               '&:hover .image': {
@@ -342,7 +345,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                       WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
                     };
-                  } else {
+                  } 
                     // For shorter captions, use line clamp
                     return {
               display: '-webkit-box',
@@ -350,7 +353,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
               WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                     };
-                  }
+                  
                 })(),
             }}
           >
@@ -391,9 +394,9 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
   // This ensures analytics data is available for both mobile and desktop views
   const dataSource = instagramData || instagram || {};
 
-  // Get the real data from store (prioritize store data over props)
-  const realTopContent = dataSource?.medias?.sortedVideos;
-  
+  // Get the real data from store
+  const realTopContent = instagramData?.medias?.sortedVideos;
+
   // Check if we have real content
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
   const isConnected = !!user?.creator?.isFacebookConnected;
@@ -444,7 +447,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
           </Typography>
 
           <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-          Connect your Instagram to showcase your top content and analytics.
+            Connect your Instagram to showcase your top content and analytics.
           </Typography>
 
           <Button
@@ -505,7 +508,9 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
               pt: 1,
             }}
           >
-            <TopContentGrid topContents={contentToShow} mobileCarousel />
+            {contentToShow.length > 0 && (
+              <TopContentGrid topContents={contentToShow} mobileCarousel />
+            )}
           </Box>
         </Box>
       ) : (

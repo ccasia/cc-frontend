@@ -525,23 +525,23 @@ const MediaKit = ({ id, noBigScreen }) => {
       //   let desktopButtonDisplay = null;
       //   let backButtonDisplay = null;
       //   let logoContainerOriginalMargin = null;
-      //   
+      //
       //   if (desktopShareButtonRef.current) {
       //     desktopButtonDisplay = desktopShareButtonRef.current.style.display;
       //     desktopShareButtonRef.current.style.display = 'none';
       //   }
-      //   
+      //
       //   if (backButtonRef.current) {
       //     backButtonDisplay = backButtonRef.current.style.display;
       //     backButtonRef.current.style.display = 'none';
       //   }
-      //   
+      //
       //   // Add top margin to logo container to compensate for hidden back button
       //   if (logoContainerRef.current) {
       //     logoContainerOriginalMargin = logoContainerRef.current.style.marginTop;
       //     logoContainerRef.current.style.marginTop = '32px';
       //   }
-      //   
+      //
       //   window.scrollTo(0, 0);
 
       //   // Ensure all images and iframes are loaded
@@ -567,22 +567,22 @@ const MediaKit = ({ id, noBigScreen }) => {
       //   if (desktopShareButtonRef.current) {
       //     desktopShareButtonRef.current.style.display = desktopButtonDisplay;
       //   }
-      //   
+      //
       //   if (backButtonRef.current) {
       //     backButtonRef.current.style.display = backButtonDisplay;
       //   }
-      //   
+      //
       //   // Restore logo container margin
       //   if (logoContainerRef.current) {
       //     logoContainerRef.current.style.marginTop = logoContainerOriginalMargin;
       //   }
-      //   
+      //
       //   window.scrollTo(0, scrollTop);
       // } else {
       //   const styleFixForMedia = document.createElement('style');
       //   styleFixForMedia.textContent = getScreenshotStyles();
       //   document.head.appendChild(styleFixForMedia);
-        
+
       // Use hidden desktop layout method for all PDF captures
       const styleFixForMedia = document.createElement('style');
       styleFixForMedia.textContent = getScreenshotStyles();

@@ -322,10 +322,10 @@
 
 // export default DashboardSuperadmin;
 
+import useSWR from 'swr';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { useMemo, useState, useEffect } from 'react';
-import useSWR from 'swr';
 
 import { LineChart } from '@mui/x-charts';
 import { Image, Person, Schedule, ArrowForward } from '@mui/icons-material';
