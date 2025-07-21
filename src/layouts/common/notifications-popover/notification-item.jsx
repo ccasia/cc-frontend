@@ -26,8 +26,6 @@ export default function NotificationItem({ notification, markAsRead }) {
   const handleViewClick = () => {
     const { entity, campaignId, threadId, creatorId, invoiceId } = notification.notification ?? {};
 
-    console.log('Debug notification: ', notification.notification)
-
     let link = '';
     let tabToSet = null;
 
