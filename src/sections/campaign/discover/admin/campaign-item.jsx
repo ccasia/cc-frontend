@@ -25,7 +25,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   const { user } = useAuthContext();
 
   const router = useRouter();
-  
+
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -48,13 +48,13 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     event.stopPropagation();
 
     const campaignName = campaign?.name || 'Campaign Details';
-    
+
     // Check if this campaign is already in campaignTabs
-    const tabExists = window.campaignTabs.some(tab => tab.id === campaign.id);
-    
+    const tabExists = window.campaignTabs.some((tab) => tab.id === campaign.id);
+
     if (tabExists) {
       // If tab already exists, update the name to ensure it's current
-      window.campaignTabs = window.campaignTabs.map(tab => {
+      window.campaignTabs = window.campaignTabs.map((tab) => {
         if (tab.id === campaign.id) {
           return { ...tab, name: campaignName };
         }
@@ -71,20 +71,20 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       // If tab doesn't exist yet, add it to campaignTabs
       window.campaignTabs.push({
         id: campaign.id,
-        name: campaignName
+        name: campaignName,
       });
-      
+
       // Update status tracking for tabs
       if (typeof window !== 'undefined') {
         if (!window.campaignTabsStatus) {
           window.campaignTabsStatus = {};
         }
-        
+
         window.campaignTabsStatus[campaign.id] = {
-          status: campaign.status
+          status: campaign.status,
         };
       }
-      
+
       // Save to localStorage
       try {
         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
@@ -92,10 +92,10 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         console.error('Error saving campaign tabs to localStorage:', error);
       }
     }
-    
+
     // Navigate to the campaign detail page - commented out for now in case CC wants this feature
     // router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
-    
+
     handleClose();
   };
 
@@ -105,13 +105,23 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   };
 
   const renderImages = (
-    <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
+    <Box
+      sx={{
+        position: 'relative',
+        height: 180,
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'white',
+      }}
+    >
       <Image
         alt={campaign?.name}
         src={campaign?.campaignBrief?.images[0]}
         sx={{
           height: '100%',
-          width: '100%',
+          width: 'auto',
           objectFit: 'cover',
           objectPosition: 'center',
         }}
@@ -294,7 +304,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               },
             }}
           >
-            <MenuItem 
+            <MenuItem
               onClick={handleOpenInNewTab}
               sx={{
                 borderRadius: 1,
@@ -310,7 +320,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             >
               Open in New Tab
             </MenuItem>
-            <MenuItem 
+            <MenuItem
               onClick={(event) => {
                 event.stopPropagation();
                 setCampaignLogIsOpen(true);
