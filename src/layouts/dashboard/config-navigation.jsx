@@ -109,6 +109,13 @@ export function useNavData() {
             title: 'Overview',
             path: paths.dashboard.root,
             icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+            roles: ['superadmin', 'CSM', 'Growth', 'BD'], // Exclude Client role
+          },
+          {
+            title: 'Dashboard',
+            path: paths.dashboard.client,
+            icon: ICONS.mycampaigns,
+            roles: ['Client', 'client'], // Only for Client role
           },
         ],
       },
@@ -131,16 +138,6 @@ export function useNavData() {
             path: paths.dashboard.campaign.root,
             icon: ICONS.mycampaigns,
             children: [
-              // {
-              //   roles: ['superadmin', 'CSM'],
-              //   title: 'Create',
-              //   path: paths.dashboard.campaign.create,
-              // },
-              // {
-              //   roles: ['superadmin', 'CSM'],
-              //   title: 'Edit',
-              //   path: paths.dashboard.campaign.manage,
-              // },
               {
                 // title: 'Manage Campaign',
                 title: 'Lists',
@@ -181,22 +178,6 @@ export function useNavData() {
               },
             ],
           },
-          // {
-          //   roles: ['superadmin'],
-          //   title: 'Landing pages',
-          //   path: paths.dashboard.landing.creator,
-          //   icon: <Iconify icon="fluent:people-team-28-regular" width={25} />,
-          //   children: [
-          //     {
-          //       title: 'Creator list',
-          //       path: paths.dashboard.landing.creator,
-          //     },
-          //     {
-          //       title: 'Client list',
-          //       path: paths.dashboard.landing.brand,
-          //     },
-          //   ],
-          // },
           {
             roles: ['superadmin', 'CSM', 'god'],
             title: 'Clients',
@@ -217,9 +198,10 @@ export function useNavData() {
             title: 'My Tasks',
             path: paths.dashboard.kanban,
             icon: ICONS.mytasks,
+            roles: ['superadmin', 'CSM', 'Growth', 'BD'], // Exclude Client role
           },
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'Client', 'client'],
             title: 'Content Performance Report',
             path: paths.dashboard.report.root,
             icon: ICONS.report,
@@ -236,21 +218,44 @@ export function useNavData() {
             path: paths.dashboard.packages.root,
             icon: <Iconify icon="carbon:package" width={25} />,
           },
-          // {
-          //   title: 'Template',
-          //   path: paths.dashboard.template.root,
-          //   icon: <Iconify icon="hugeicons:task-01" width={25} />,
-          // },
-          // {
-          //   roles: ['superadmin', 'CSM'],
-          //   title: 'My Tasks',
-          //   path: paths.dashboard.user.myTasks,
-          //   icon: <Iconify icon="hugeicons:task-01" width={25} />,
-          // },
+        ],
+      },
+      {
+        items: [
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
+            ),
+            path: paths.dashboard.chat.root,
+            icon: ICONS.chat,
+            msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
+          },
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Calendar
+              </span>
+            ),
+            path: paths.dashboard.calendar.root,
+            icon: ICONS.calendar,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Settings
+              </span>
+            ),
+            path: paths.dashboard.user.profile,
+            icon: ICONS.settings,
+          },
         ],
       },
     ],
-    []
+    [unreadMessageCount]
   );
 
   const creatorNavigations = useMemo(
@@ -322,94 +327,6 @@ export function useNavData() {
           // },
         ],
       },
-    ],
-    []
-  );
-
-  const financeNavigations = useMemo(
-    () => [
-      {
-        items: [
-          {
-            title: 'Overview',
-            path: paths.dashboard.finance.root,
-            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
-          },
-        ],
-      },
-      {
-        items: [
-          {
-            title: 'Campaign',
-            path: paths.dashboard.campaign.view,
-            icon: <Iconify icon="iconamoon:discover" width={25} />,
-          },
-          {
-            title: 'Invoices',
-            path: paths.dashboard.finance.invoice,
-            icon: <Iconify icon="iconamoon:invoice" width={25} />,
-          },
-        ],
-      },
-    ],
-    []
-  );
-
-  // add finance naviagation
-  const navigations = useMemo(
-    // roles => "god" , "normal", "designation", "admin", "creator"
-    // user?.role === 'creator' ? creatorNavigations : adminNavigations,
-    // eslint-disable-next-line no-nested-ternary
-    () => {
-      if (user?.role === 'creator') {
-        return creatorNavigations;
-      }
-      if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
-        return financeNavigations;
-      }
-      if (user?.admin?.role?.name === 'CSM') {
-        return adminNavigations;
-      }
-
-      if (user?.role === 'superadmin') {
-        return [
-          ...adminNavigations,
-          {
-            items: [
-              {
-                title: 'Invoices',
-                path: paths.dashboard.finance.invoice,
-                icon: <Iconify icon="iconamoon:invoice" width={25} />,
-              },
-            ],
-          },
-        ];
-      }
-
-      return [];
-    },
-    // user?.role === 'creator' || user?.role === 'finance'
-    //   ? user?.role === 'finance'
-    //     ? financeNavigations
-    //     : creatorNavigations
-    //   : adminNavigations,
-    // () => (user?.role === 'creator' ? creatorNavigations : adminNavigations),
-    [adminNavigations, creatorNavigations, user, financeNavigations]
-  );
-
-  const data = useMemo(
-    () => [
-      // {
-      //   items: [
-      //     {
-      //       title: 'Overview',
-      //       path: paths.dashboard.overview.root,
-      //       icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
-      //     },
-      //   ],
-      // },
-
-      ...navigations,
       {
         items: [
           {
@@ -445,7 +362,120 @@ export function useNavData() {
         ],
       },
     ],
-    [navigations, unreadMessageCount]
+    [unreadMessageCount]
+  );
+
+  const financeNavigations = useMemo(
+    () => [
+      {
+        items: [
+          {
+            title: 'Overview',
+            path: paths.dashboard.finance.root,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            title: 'Campaign',
+            path: paths.dashboard.campaign.view,
+            icon: <Iconify icon="iconamoon:discover" width={25} />,
+          },
+          {
+            title: 'Invoices',
+            path: paths.dashboard.finance.invoice,
+            icon: <Iconify icon="iconamoon:invoice" width={25} />,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
+            ),
+            path: paths.dashboard.chat.root,
+            icon: ICONS.chat,
+            msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
+          },
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Calendar
+              </span>
+            ),
+            path: paths.dashboard.calendar.root,
+            icon: ICONS.calendar,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Settings
+              </span>
+            ),
+            path: paths.dashboard.user.profile,
+            icon: ICONS.settings,
+          },
+        ],
+      },
+    ],
+    [unreadMessageCount]
+  );
+
+  // add finance naviagation
+  const navigations = useMemo(
+    // roles => "god" , "normal", "designation", "admin", "creator"
+    // user?.role === 'creator' ? creatorNavigations : adminNavigations,
+    // eslint-disable-next-line no-nested-ternary
+    () => {
+      if (user?.role === 'creator') {
+        return creatorNavigations;
+      }
+      if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
+        return financeNavigations;
+      }
+      if (user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Client') {
+        // Filter out menu items that don't apply to the Client role if needed
+        if (user?.admin?.role?.name === 'Client') {
+          return adminNavigations.map(section => ({
+            ...section,
+            items: section.items.filter(item => 
+              !item.roles || item.roles.includes('Client')
+            )
+          })).filter(section => section.items.length > 0);
+        }
+        return adminNavigations;
+      }
+
+      if (user?.role === 'superadmin') {
+        return [
+          ...adminNavigations,
+          {
+            items: [
+              {
+                title: 'Invoices',
+                path: paths.dashboard.finance.invoice,
+                icon: <Iconify icon="iconamoon:invoice" width={25} />,
+              },
+            ],
+          },
+        ];
+      }
+
+      return [];
+    },
+    [adminNavigations, creatorNavigations, user, financeNavigations, unreadMessageCount]
+  );
+
+  const data = useMemo(
+    () => navigations,
+    [navigations]
   );
 
   return data;

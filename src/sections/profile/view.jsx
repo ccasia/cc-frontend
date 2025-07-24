@@ -51,6 +51,8 @@ import AccountSocialLinks from '../creator/profile/social';
 import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
 
+import ClientProfile from './client-profile';
+
 // import x from '../creator/profile/notification';
 
 dayjs.extend(localizedFormat);
@@ -77,8 +79,10 @@ const Profile = () => {
     if (path.includes('/billing')) return 'Billing';
     if (path.includes('/notifications')) return 'Notifications';
     if (path.includes('/preference')) return 'preference';
+    if (path.includes('/client')) return 'client';
 
     // Default to general/account tab
+    if (user?.role === 'client') return 'client';
     return ['admin', 'superadmin'].includes(user?.role) ? 'general' : 'general';
   }, [location.pathname, user?.role]);
 
@@ -886,6 +890,165 @@ const Profile = () => {
     </Box>
   );
 
+  const ClientTabs = (
+    <Box sx={{ position: 'relative', width: '100%', mb: 3 }}>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{
+          position: 'relative',
+          width: '100%',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+          msOverflowStyle: 'none',
+          paddingRight: { xs: '40px', md: 0 },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '1px',
+            bgcolor: 'divider',
+          },
+        }}
+      >
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.client}
+          disableRipple
+          size="large"
+          sx={{
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            minWidth: 'fit-content',
+            color: currentTab === 'client' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'client' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'client' ? 1 : 0.5,
+              },
+            },
+          }}
+          startIcon={<Iconify icon="mdi:office-building" width={20} />}
+        >
+          Profile
+        </Button>
+
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.security}
+          disableRipple
+          size="large"
+          sx={{
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            ml: 2,
+            minWidth: 'fit-content',
+            color: currentTab === 'security' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'security' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'security' ? 1 : 0.5,
+              },
+            },
+          }}
+          startIcon={<Iconify icon="ic:round-vpn-key" width={20} />}
+        >
+          Security
+        </Button>
+      </Stack>
+
+      {/* Indicator for more tabs */}
+      <Box
+        sx={{
+          position: 'absolute',
+          right: { xs: '15px', sm: '20px', md: 0 },
+          top: 0,
+          height: '100%',
+          background:
+            'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,1) 100%)',
+          width: { xs: '80px', sm: '100px' },
+          pointerEvents: 'none',
+          display: { xs: 'block', md: 'none' },
+          zIndex: 1,
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            right: { xs: 5, sm: 10 },
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '50%',
+            width: 24,
+            height: 24,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Iconify icon="eva:arrow-ios-forward-fill" width={16} color="#1340ff" />
+        </Box>
+      </Box>
+    </Box>
+  );
+
   // Contents
   const adminContents = (
     <>
@@ -924,6 +1087,13 @@ const Profile = () => {
     </>
   );
 
+  const clientContents = (
+    <>
+      {currentTab === 'client' && <ClientProfile />}
+      {currentTab === 'security' && <AccountSecurity />}
+    </>
+  );
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       <Typography
@@ -937,9 +1107,13 @@ const Profile = () => {
       >
         Settings ⚙️
       </Typography>
-      {['admin', 'superadmin'].includes(user?.role) ? Admintabs : CreatorTabs}
+      {['admin', 'superadmin'].includes(user?.role) 
+        ? Admintabs 
+        : user?.role === 'client' 
+        ? ClientTabs 
+        : CreatorTabs}
 
-      {profileCompletion < 100 ? (
+      {profileCompletion < 100 && user?.role === 'creator' ? (
         <Stack mb={2} direction="row" alignItems="center" spacing={2}>
           <Box sx={{ position: 'relative', display: 'inline-flex' }}>
             <CircularProgress
@@ -982,6 +1156,7 @@ const Profile = () => {
           />
         </Stack>
       ) : (
+        user?.role === 'creator' &&
         <Stack mb={2} direction="row" alignItems="center" spacing={2}>
           <Box sx={{ position: 'relative', display: 'inline-flex' }}>
             <CircularProgress
@@ -1021,7 +1196,11 @@ const Profile = () => {
         </Stack>
       )}
 
-      {['admin', 'superadmin'].includes(user?.role) ? adminContents : creatorContents}
+      {['admin', 'superadmin'].includes(user?.role) 
+        ? adminContents 
+        : user?.role === 'client' 
+        ? clientContents 
+        : creatorContents}
 
       {/* <Toaster /> */}
     </Container>

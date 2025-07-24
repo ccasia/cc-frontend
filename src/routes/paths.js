@@ -16,6 +16,8 @@ export const paths = {
       login: `${ROOTS.AUTH}/jwt/login`,
       adminLogin: `${ROOTS.AUTH}/jwt/admin/login`,
       register: `${ROOTS.AUTH}/jwt/register`,
+      clientRegister: `${ROOTS.AUTH}/jwt/client/register`,
+      setupPassword: `${ROOTS.AUTH}/jwt/client/setup-password`,
       forgetPassword: `${ROOTS.AUTH}/jwt/forgot-password`,
     },
     verify: `${ROOTS.AUTH}/verify`,
@@ -26,6 +28,7 @@ export const paths = {
     admins: `${ROOTS.DASHBOARD}/admins`, // /dashboard/admins
     kanban: `${ROOTS.DASHBOARD}/kanban`,
     analytics: `${ROOTS.DASHBOARD}/analytics`,
+    client: `${ROOTS.DASHBOARD}/client`,
     company: {
       root: `${ROOTS.DASHBOARD}/company`,
       manage: `${ROOTS.DASHBOARD}/company/manage`,
@@ -80,6 +83,8 @@ export const paths = {
         billing: `${ROOTS.DASHBOARD}/user/profile/billing`,
         notifications: `${ROOTS.DASHBOARD}/user/profile/notifications`,
         preference: `${ROOTS.DASHBOARD}/user/profile/preference`,
+        // Client profile tabs
+        client: `${ROOTS.DASHBOARD}/user/profile/client`,
       },
       myTasks: `${ROOTS.DASHBOARD}/tasks`,
     },

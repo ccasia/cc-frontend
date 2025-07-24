@@ -173,8 +173,42 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // REGISTER CLIENT
+  const registerClient = useCallback(async (data) => {
+    try {
+      const response = await axios.post(endpoints.auth.registerClient, data);
+      
+      // Client registration now requires email verification
+      // Return email for verification flow instead of auto-login
+      return { email: response.data.email };
+    } catch (error) {
+      console.error('Client registration error:', error);
+      console.error('Error response:', error.response?.data);
+      const message = error?.response?.data?.message || error?.message || 'Something went wrong';
+      throw new Error(message);
+    }
+  }, []);
+
   const verify = useCallback(async (token) => {
     const response = await axios.post(endpoints.auth.verifyCreator, { token });
+
+    const { user, accessToken } = response.data;
+
+    setSession(accessToken);
+
+    dispatch({
+      type: 'VERIFY',
+      payload: {
+        user: {
+          ...user,
+          accessToken,
+        },
+      },
+    });
+  }, []);
+
+  const verifyClient = useCallback(async (token) => {
+    const response = await axios.post(endpoints.auth.verifyClient, { token });
 
     const { user, accessToken } = response.data;
 
@@ -222,12 +256,14 @@ export function AuthProvider({ children }) {
       //
       login,
       register,
+      registerClient,
       verify,
+      verifyClient,
       logout,
       initialize,
       dispatch,
     }),
-    [login, logout, register, verify, state.user, status, permission, role, initialize]
+    [login, logout, register, registerClient, verify, verifyClient, state.user, status, permission, role, initialize]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;

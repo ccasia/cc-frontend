@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 // import { keyframes } from '@emotion/react';
@@ -14,7 +14,9 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import { LineChart } from '@mui/x-charts/LineChart';
 
+import { useResponsive } from 'src/hooks/use-responsive';
 import axiosInstance from 'src/utils/axios';
 import { useSocialMediaData } from 'src/utils/store';
 
@@ -22,6 +24,8 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+
+
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -166,7 +170,13 @@ TopContentGrid.propTypes = {
 const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   const theme = useTheme();
   const { user } = useAuthContext();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
+  const smDown = useResponsive('down', 'sm');
+  const mdDown = useResponsive('down', 'md');
+  const lgUp = useResponsive('up', 'lg');
+  
+  // Use carousel for mobile and tablet, desktop layout only for large screens
+  const isMobile = forceDesktop ? false : !lgUp;
+  const isTablet = !smDown && mdDown; // iPad size
 
   const tiktokData = useSocialMediaData((state) => state.tiktok);
 

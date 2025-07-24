@@ -3,7 +3,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { Box, Card, Stack, Typography, CircularProgress } from '@mui/material';
+import { Box, Card, Stack, Typography, CircularProgress, useMediaQuery } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
@@ -20,6 +20,7 @@ import CampaignPosting from './submissions/campaign-posting';
 import CampaignAgreement from './submissions/campaign-agreement';
 import CampaignFirstDraft from './submissions/campaign-first-draft';
 import CampaignFinalDraft from './submissions/campaign-final-draft';
+import MobileSubmissionLayout from './mobile-submission-layout';
 
 export const defaultSubmission = [
   {
@@ -53,6 +54,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const { socket } = useSocketContext();
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
   const { data, isLoading, mutate: deliverableMutate } = useGetDeliverables(user?.id, campaign.id);
+  const isMobile = useMediaQuery('(max-width: 900px)');
 
   // Initialize viewedStages from localStorage if available
   const [viewedStages, setViewedStages] = useState(() => {
@@ -188,6 +190,28 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     );
   }
 
+  // Render mobile layout on small screens
+  if (isMobile) {
+    return (
+      <MobileSubmissionLayout
+        campaign={campaign}
+        submissions={submissions}
+        value={value}
+        getDependency={getDependency}
+        getVisibleStages={getVisibleStages}
+        getDueDate={getDueDate}
+        agreementStatus={agreementStatus}
+        openLogisticTab={openLogisticTab}
+        setCurrentTab={setCurrentTab}
+        deliverablesData={{ deliverables: data, deliverableMutate }}
+        viewedStages={viewedStages}
+        setViewedStages={setViewedStages}
+        isNewStage={isNewStage}
+      />
+    );
+  }
+
+  // Desktop layout (existing code)
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ width: '100%' }}>
       {campaign.status === 'PAUSED' ? (

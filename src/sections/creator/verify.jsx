@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router';
 
 import { Box, Stack, Button, Typography } from '@mui/material';
@@ -12,13 +12,38 @@ import { useCreator } from 'src/hooks/zustands/useCreator';
 
 
 const Verify = () => {
-  const { email } = useCreator();
+  const { email: creatorEmail } = useCreator();
   const router = useRouter();
   const loading = useBoolean();
+  
+  // Get email from sessionStorage (for clients) or useCreator (for creators)
+  const [email, setEmail] = useState('');
+  const [userType, setUserType] = useState('creator');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const storedEmail = sessionStorage.getItem('verificationEmail');
+    const storedUserType = sessionStorage.getItem('userType');
+    
+    if (storedEmail) {
+      setEmail(storedEmail);
+      setUserType(storedUserType || 'creator');
+    } else if (creatorEmail) {
+      setEmail(creatorEmail);
+      setUserType('creator');
+    }
+    
+    setIsLoading(false);
+  }, [creatorEmail]);
 
   const handleBackToLogin = () => {
     router.push(paths.auth.jwt.login);
   };
+
+  // Show loading state while checking for email
+  if (isLoading) {
+    return null; // or a loading spinner
+  }
 
   return (
     <>

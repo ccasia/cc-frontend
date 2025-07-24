@@ -20,6 +20,7 @@ const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'
 const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCards'));
 const InvoiceCreator = lazy(() => import('src/pages/dashboard/creator/invoice'));
 const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
+const ClientDashboard = lazy(() => import('src/sections/admin/dashboard-client'));
 
 // APP
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
@@ -122,6 +123,14 @@ export const dashboardRoutes = [
     ),
     children: [
       { element: <IndexPage />, index: true },
+      {
+        path: 'client',
+        element: (
+          <RoleBasedGuard roles={['admin', 'Client', 'client']} hasContent>
+            <ClientDashboard />
+          </RoleBasedGuard>
+        ),
+      },
       {
         path: 'admins',
         element: (
@@ -346,7 +355,7 @@ export const dashboardRoutes = [
           {
             index: true,
             element: (
-              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator']}>
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
                 <ViewCampaign />
               </RoleBasedGuard>
             ),
@@ -383,7 +392,7 @@ export const dashboardRoutes = [
           {
             path: 'create',
             element: (
-              <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'Client', 'client']}>
                 <CreateCampaign />
               </RoleBasedGuard>
             ),
@@ -394,7 +403,7 @@ export const dashboardRoutes = [
               {
                 index: true,
                 element: (
-                  <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator']}>
+                  <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator', 'Client', 'client']}>
                     <ViewCampaign />
                   </RoleBasedGuard>
                 ),
@@ -441,7 +450,7 @@ export const dashboardRoutes = [
           {
             path: 'details/:id',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin', 'Client', 'client']}>
                 <CampaignDetails />
               </RoleBasedGuard>
             ),
@@ -449,7 +458,7 @@ export const dashboardRoutes = [
           {
             path: 'pitch/:id',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'Client', 'client']}>
                 <CampaignPitchDetail />
               </RoleBasedGuard>
             ),

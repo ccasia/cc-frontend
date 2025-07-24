@@ -22,13 +22,15 @@ export default function AuthModernLayout({ children, image }) {
     if (route.includes('register')) {
       return '/background/signup.jpeg';
     }
+    if (route.includes('setup-password')) {
+      return '/background/signup.jpeg';
+    }
     if (route.includes('forgot-password')) {
       return '/background/resetpassword.jpeg';
     }
     if (route.includes('login')) {
       return '/background/signin.jpeg';
     }
-
     return '/background/newPass.jpg';
   }, [route]);
 

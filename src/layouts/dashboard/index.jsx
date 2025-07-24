@@ -225,7 +225,7 @@ export default function DashboardLayout({ children }) {
     </Box>
   );
 
-  const kwspButton = !hasSubmittedKWSP && (
+  const kwspButton = false && (
     <Box
       component="div"
       sx={{

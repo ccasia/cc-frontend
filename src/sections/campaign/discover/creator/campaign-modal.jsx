@@ -746,7 +746,7 @@ const CampaignModal = ({
             </Grid>
           </Grid>
 
-          {campaign?.isKWSPCampaign && (
+          {false && (
             <Box
               mt={4}
               sx={{

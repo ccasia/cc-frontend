@@ -1,10 +1,7 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
-import { Page, Document } from 'react-pdf';
 import { useNavigate } from 'react-router-dom';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
 import {
   Box,
@@ -12,27 +9,12 @@ import {
   Chip,
   List,
   Stack,
-  Table,
-  Dialog,
   Avatar,
-  Button,
   Divider,
-  TableRow,
   ListItem,
-  TableHead,
-  TableCell,
-  TableBody,
-  IconButton,
   Typography,
-  DialogTitle,
   ListItemIcon,
-  DialogContent,
-  TableContainer,
-  CircularProgress,
 } from '@mui/material';
-
-import { useBoolean } from 'src/hooks/use-boolean';
-import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -97,15 +79,10 @@ const capitalizeFirstLetter = (string) => {
   return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 };
 
-const CampaignDetailContent = ({ campaign }) => {
+const CampaignDetailContentClient = ({ campaign }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  const display = useBoolean();
-  const [numPages, setNumPages] = useState(null);
-  const isSmallScreen = useResponsive('down', 'sm');
-  const [pdfLoading, setPdfLoading] = useState(true);
-  const [pdfError, setError] = useState(null);
-
+  
   const handleChatClick = async (admin) => {
     try {
       const response = await axiosInstance.get(endpoints.threads.getAll);
@@ -135,16 +112,6 @@ const CampaignDetailContent = ({ campaign }) => {
   };
 
   const requirement = campaign?.campaignRequirement;
-
-  const onDocumentLoadSuccess = ({ numPages: num }) => {
-    setNumPages(num);
-    setPdfLoading(false);
-  };
-
-  const onDocumentLoadError = (error) => {
-    setError(error);
-    setPdfLoading(false);
-  };
 
   return (
     <Box
@@ -183,7 +150,7 @@ const CampaignDetailContent = ({ campaign }) => {
                   </Typography>
                   <Divider />
                   <Typography variant="caption" color="black" fontWeight={400}>
-                    Score an extra RM100! T&C’s apply.
+                    Score an extra RM100! T&C's apply.
                   </Typography>
                 </Stack>
               </Stack>
@@ -346,26 +313,33 @@ const CampaignDetailContent = ({ campaign }) => {
               </Typography>
             </Box>
 
-            <Stack spacing={1} sx={{ pl: 0.5 }}>
-              {campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
-                <Stack key={index} direction="row" spacing={1} alignItems="center">
-                  {item.value && (
-                    <Iconify
-                      icon="octicon:dot-fill-16"
-                      sx={{
-                        color: '#000000',
-                        width: 12,
-                        height: 12,
-                        flexShrink: 0,
-                      }}
-                    />
+                          {campaign?.campaignBrief?.campaigns_do?.length > 0 && 
+                campaign?.campaignBrief?.campaigns_do?.some(item => item.value) ? (
+                <Stack spacing={1} sx={{ pl: 0.5 }}>
+                  {campaign?.campaignBrief?.campaigns_do?.map((item, index) => 
+                    item.value ? (
+                      <Stack key={index} direction="row" spacing={1} alignItems="center">
+                        <Iconify
+                          icon="octicon:dot-fill-16"
+                          sx={{
+                            color: '#000000',
+                            width: 12,
+                            height: 12,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography variant="body2" sx={{ color: '#221f20' }}>
+                          {item.value}
+                        </Typography>
+                      </Stack>
+                    ) : null
                   )}
-                  <Typography variant={item?.value ? 'body2' : 'caption'} sx={{ color: '#221f20' }}>
-                    {item?.value || 'No campaign do.'}
-                  </Typography>
                 </Stack>
-              ))}
-            </Stack>
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  No campaign do's found.
+                </Typography>
+              )}
           </Box>
 
           {/* Don'ts Box */}
@@ -391,11 +365,12 @@ const CampaignDetailContent = ({ campaign }) => {
               </Typography>
             </Box>
 
-            {campaign?.campaignBrief?.campaigns_dont?.length > 0 ? (
+            {campaign?.campaignBrief?.campaigns_dont?.length > 0 && 
+              campaign?.campaignBrief?.campaigns_dont?.some(item => item.value) ? (
               <Stack spacing={1} sx={{ pl: 0.5 }}>
-                {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
-                  <Stack key={index} direction="row" spacing={1} alignItems="center">
-                    {item.value && (
+                {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => 
+                  item.value ? (
+                    <Stack key={index} direction="row" spacing={1} alignItems="center">
                       <Iconify
                         icon="octicon:dot-fill-16"
                         sx={{
@@ -405,138 +380,21 @@ const CampaignDetailContent = ({ campaign }) => {
                           flexShrink: 0,
                         }}
                       />
-                    )}
-                    <Typography
-                      variant={item?.value ? 'body2' : 'caption'}
-                      sx={{ color: '#221f20' }}
-                    >
-                      {item?.value || "No campaign don't"}
-                    </Typography>
-                  </Stack>
-                ))}
+                      <Typography variant="body2" sx={{ color: '#221f20' }}>
+                        {item.value}
+                      </Typography>
+                    </Stack>
+                  ) : null
+                )}
               </Stack>
             ) : (
               <Typography variant="caption" color="text.secondary">
-                No data found.
+                No campaign don'ts found.
               </Typography>
             )}
           </Box>
 
-          {/* Timeline Box */}
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <img
-                src="/assets/icons/overview/yellowCalendar.svg"
-                alt="Campaign Timeline"
-                style={{
-                  width: 20,
-                  height: 20,
-                  color: '#203ff5',
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                }}
-              >
-                CAMPAIGN TIMELINE
-              </Typography>
-            </Box>
-
-            <TableContainer
-              sx={{
-                mt: 2,
-                overflow: 'auto',
-                '&::-webkit-scrollbar': {
-                  height: '8px',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: 'rgba(0,0,0,0.1)',
-                  borderRadius: '4px',
-                },
-              }}
-            >
-              <Table sx={{ minWidth: { xs: 400, sm: 500 } }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: { xs: '40%', sm: '55%' },
-                        minWidth: '150px',
-                        borderRadius: '10px 0 0 10px',
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Timeline Name
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: { xs: '30%', sm: '20%' },
-                        minWidth: '120px',
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Start Date
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: { xs: '30%', sm: '20%' },
-                        minWidth: '120px',
-                        borderRadius: '0 10px 10px 0',
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      End Date
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <TableRow>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>Campaign Start Date</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                      {dayjs(campaign?.campaignBrief?.startDate).format('ddd, DD MMM YYYY')}
-                    </TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>-</TableCell>
-                  </TableRow>
-                  {campaign?.campaignTimeline
-                    ?.sort((a, b) => a.order - b.order)
-                    .map((timeline) => (
-                      <TableRow key={timeline?.id}>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{timeline?.name}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                          {dayjs(timeline.startDate).format('ddd, DD MMM YYYY')}
-                        </TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                          {dayjs(timeline.endDate).format('ddd, DD MMM YYYY')}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  <TableRow>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>Campaign End Date</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>-</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                      {dayjs(campaign?.campaignBrief?.endDate).format('ddd, DD MMM YYYY')}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
+          {/* Timeline Box is intentionally removed for client users */}
         </Stack>
 
         {/* Right Column */}
@@ -826,194 +684,7 @@ const CampaignDetailContent = ({ campaign }) => {
             </Stack>
           </Box>
 
-          {/* Agreement Form Box */}
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <img
-                src="/assets/icons/overview/agreementFormIcon.svg"
-                alt="Agreement Form"
-                style={{
-                  width: 20,
-                  height: 20,
-                  color: '#203ff5',
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                }}
-              >
-                DELIVERABLES
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {[
-                { label: 'UGC Videos', value: true },
-                { label: 'Raw Footage', value: campaign?.rawFootage },
-                { label: 'Photos', value: campaign?.photos },
-                { label: 'Ads', value: campaign?.ads },
-                { label: 'Cross Posting', value: campaign?.crossPosting },
-              ].map(
-                (deliverable) =>
-                  deliverable.value && (
-                    <Chip
-                      key={deliverable.label}
-                      label={deliverable.label}
-                      size="small"
-                      sx={ChipStyle}
-                    />
-                  )
-              )}
-            </Box>
-          </Box>
-
-          {/* Agreement Form Box */}
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <img
-                src="/assets/icons/overview/agreementFormIcon.svg"
-                alt="Agreement Form"
-                style={{
-                  width: 20,
-                  height: 20,
-                  color: '#203ff5',
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                }}
-              >
-                DELIVERABLES
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {[
-                { label: 'UGC Videos', value: true },
-                { label: 'Raw Footage', value: campaign?.rawFootage },
-                { label: 'Photos', value: campaign?.photos },
-                { label: 'Ads', value: campaign?.ads },
-                { label: 'Cross Posting', value: campaign?.crossPosting },
-              ].map(
-                (deliverable) =>
-                  deliverable.value && (
-                    <Chip
-                      key={deliverable.label}
-                      label={deliverable.label}
-                      size="small"
-                      sx={ChipStyle}
-                    />
-                  )
-              )}
-            </Box>
-          </Box>
-
-          {/* Agreement Form */}
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <Iconify
-                icon="solar:document-bold"
-                sx={{
-                  color: '#1340ff',
-                  width: 20,
-                  height: 20,
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#1a1a1a',
-                  fontWeight: 700,
-                  fontSize: '0.875rem',
-                  letterSpacing: '0.25px',
-                  textTransform: 'uppercase',
-                }}
-              >
-                DELIVERABLES
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {[
-                { label: 'UGC Videos', value: true },
-                { label: 'Raw Footage', value: campaign?.rawFootage },
-                { label: 'Photos', value: campaign?.photos },
-                { label: 'Ads', value: campaign?.ads },
-                { label: 'Cross Posting', value: campaign?.crossPosting },
-              ].map(
-                (deliverable) =>
-                  deliverable.value && (
-                    <Chip
-                      key={deliverable.label}
-                      label={deliverable.label}
-                      size="small"
-                      sx={ChipStyle}
-                    />
-                  )
-              )}
-            </Box>
-          </Box>
-
-          {/* Agreement Form */}
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <Iconify
-                icon="solar:document-bold"
-                sx={{
-                  color: '#1340ff',
-                  width: 20,
-                  height: 20,
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#1a1a1a',
-                  fontWeight: 700,
-                  fontSize: '0.875rem',
-                  letterSpacing: '0.25px',
-                  textTransform: 'uppercase',
-                }}
-              >
-
-                AGREEMENT FORM
-              </Typography>
-            </Box>
-
-            <Box sx={{ textAlign: 'center' }}>
-              <Button
-                onClick={display.onTrue}
-                variant="contained"
-                fullWidth
-                sx={{
-                  bgcolor: '#835cf5',
-                  color: 'white',
-                  borderBottom: '3px solid',
-                  borderBottomColor: '#483387',
-                  borderRadius: 1,
-                  py: 2.5,
-                  width: '100%',
-                  fontSize: '0.85rem',
-                  height: 32,
-                  textTransform: 'none',
-                  '&:hover': {
-                    bgcolor: '#835cf5',
-                    opacity: 0.9,
-                  },
-                }}
-              >
-                View Form
-              </Button>
-            </Box>
-          </Box>
+          {/* Agreement Form Box is intentionally removed for client users */}
 
           {/* Other Attachments Box */}
           <Box sx={BoxStyle}>
@@ -1096,93 +767,12 @@ const CampaignDetailContent = ({ campaign }) => {
           </Box>
         </Stack>
       </Stack>
-
-      <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
-        <DialogTitle>
-          <Stack direction="row" alignItems="center" gap={2}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '2rem', sm: '2.4rem' },
-                fontWeight: 550,
-              }}
-            >
-              Agreement Form
-            </Typography>
-
-            <IconButton
-              onClick={display.onFalse}
-              sx={{
-                ml: 'auto',
-                '& svg': {
-                  width: 24,
-                  height: 24,
-                  color: '#636366',
-                },
-              }}
-            >
-              <Iconify icon="hugeicons:cancel-01" width={24} />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
-
-        <DialogContent sx={{ p: 3 }}>
-          <Box
-            sx={{
-              height: 600,
-              overflow: 'auto',
-              '&::-webkit-scrollbar': {
-                width: '8px',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(0,0,0,0.1)',
-                borderRadius: '4px',
-              },
-            }}
-          >
-            {!campaign?.agreementTemplate?.url ? (
-              <Typography variant="body2" sx={{ textAlign: 'center' }}>
-                No agreement form available
-              </Typography>
-            ) : (
-              <Document
-                file={campaign?.agreementTemplate?.url}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
-                loading={
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                    <CircularProgress size={24} />
-                  </Box>
-                }
-              >
-                {pdfError ? (
-                  <Typography color="error" sx={{ textAlign: 'center', p: 2 }}>
-                    Error loading PDF: {pdfError.message}
-                  </Typography>
-                ) : (
-                  Array.from(new Array(numPages), (el, index) => (
-                    <Page
-                      key={`page_${index + 1}`}
-                      pageNumber={index + 1}
-                      renderAnnotationLayer={false}
-                      renderTextLayer={false}
-                      width={isSmallScreen ? window.innerWidth - 64 : 800}
-                      scale={1}
-                    />
-                  ))
-                )}
-              </Document>
-            )}
-          </Box>
-        </DialogContent>
-      </Dialog>
     </Box>
   );
 };
 
-CampaignDetailContent.propTypes = {
+CampaignDetailContentClient.propTypes = {
   campaign: PropTypes.object,
 };
 
-export default CampaignDetailContent;
+export default CampaignDetailContentClient; 

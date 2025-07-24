@@ -17,8 +17,17 @@ import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCampaign, setSelectedCampaign] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    const pageParam = searchParams.get('page');
+    return pageParam ? parseInt(pageParam, 10) : 1;
+  });
+
+  const [selectedCampaign, setSelectedCampaign] = useState(() => {
+    return searchParams.get('campaign') || 'all';
+  });
+
   const itemsPerPage = 7;
 
   const { data: submissionData, isLoadingSubmissions } = useGetAllSubmissions();
@@ -70,6 +79,16 @@ const CampaignPerformanceTable = () => {
     return reportList.filter((report) => report.campaignName === selectedCampaign);
   }, [reportList, selectedCampaign]);
 
+  const updateUrlParams = (page, campaign) => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set('page', page.toString());
+    if (campaign !== 'all') params.set('campaign', campaign);
+    
+    // Update URL without causing a page refresh
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    window.history.replaceState({}, '', `/dashboard/report${newUrl}`);
+  };
+
   if (isLoadingSubmissions) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
@@ -79,7 +98,7 @@ const CampaignPerformanceTable = () => {
   }
 
   const handleViewReport = (row) => {
-    // Navigate to reporting view with URL parameters
+    // Include current pagination state in the navigation
     const params = new URLSearchParams({
       url: row.content,
       submissionId: row.submissionId,
@@ -100,9 +119,12 @@ const CampaignPerformanceTable = () => {
     setCurrentPage((prev) => prev - 1);
   };
 
+  // Replace handleCampaignFilterChange:
   const handleCampaignFilterChange = (event) => {
-    setSelectedCampaign(event.target.value);
+    const newCampaign = event.target.value;
+    setSelectedCampaign(newCampaign);
     setCurrentPage(1); // Reset to first page when filter changes
+    updateUrlParams(1, newCampaign);
   };
 
   // Calculate pagination
@@ -418,7 +440,7 @@ const CampaignPerformanceTable = () => {
                     pageButtons.push(
                       <Button
                         key={i}
-                        onClick={() => setCurrentPage(i)}
+                        onClick={() => handlePageClick(i)}
                         sx={{
                           minWidth: 'auto',
                           p: 0,
@@ -442,7 +464,7 @@ const CampaignPerformanceTable = () => {
                   pageButtons.push(
                     <Button
                       key={1}
-                      onClick={() => setCurrentPage(1)}
+                      onClick={() => handlePageClick(i)}
                       sx={{
                         minWidth: 'auto',
                         p: 0,
@@ -479,7 +501,7 @@ const CampaignPerformanceTable = () => {
                     pageButtons.push(
                       <Button
                         key={i}
-                        onClick={() => setCurrentPage(i)}
+                        onClick={() => handlePageClick(i)}
                         sx={{
                           minWidth: 'auto',
                           p: 0,
@@ -511,7 +533,7 @@ const CampaignPerformanceTable = () => {
                     pageButtons.push(
                       <Button
                         key={totalPages}
-                        onClick={() => setCurrentPage(totalPages)}
+                        onClick={() => handlePageClick(i)}
                         sx={{
                           minWidth: 'auto',
                           p: 0,
