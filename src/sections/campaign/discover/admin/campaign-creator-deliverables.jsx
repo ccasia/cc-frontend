@@ -260,10 +260,27 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  // Set first creator as selected by default
+  // Set first creator as selected by default, or use target creator from localStorage
   useEffect(() => {
-    if (filteredCreators?.length && !selectedCreator) {
-      setSelectedCreator(filteredCreators[0]);
+    if (sortedCreators?.length && !selectedCreator) {
+      // Check if there's a target creator ID from notification
+      const targetCreatorId = localStorage.getItem('targetCreatorId');
+      
+      if (targetCreatorId) {
+        // Find the specific creator to select
+        const targetCreator = sortedCreators.find(creator => creator.userId === targetCreatorId);
+        if (targetCreator) {
+          setSelectedCreator(targetCreator);
+          // Clear the target creator ID after using it
+          localStorage.removeItem('targetCreatorId');
+        } else {
+          // Fallback to first creator if target not found
+          setSelectedCreator(sortedCreators[0]);
+        }
+      } else {
+        // Default behavior - select first creator
+        setSelectedCreator(sortedCreators[0]);
+      }
     }
   }, [filteredCreators, selectedCreator]);
 
