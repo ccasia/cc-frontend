@@ -105,23 +105,13 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   };
 
   const renderImages = (
-    <Box
-      sx={{
-        position: 'relative',
-        height: 180,
-        overflow: 'hidden',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'white',
-      }}
-    >
+    <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
       <Image
         alt={campaign?.name}
         src={campaign?.campaignBrief?.images[0]}
         sx={{
           height: '100%',
-          width: 'auto',
+          width: '100%',
           objectFit: 'cover',
           objectPosition: 'center',
         }}
