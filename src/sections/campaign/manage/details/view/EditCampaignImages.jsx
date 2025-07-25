@@ -509,6 +509,14 @@ const EditCampaignImages = ({ open, campaign, onClose }) => {
                 cropShape="rect"
                 objectFit="contain"
                 restrictPosition={false}
+                style={{
+                  containerStyle: {
+                    background: 'rgba(0, 0, 0, 0.5)',
+                  },
+                  cropAreaStyle: {
+                    border: '2px solid #fff',
+                  },
+                }}
               />
             )}
           </Box>
