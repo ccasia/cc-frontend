@@ -257,26 +257,73 @@ const Posting = ({ campaign, submission, creator }) => {
                           wordBreak: 'break-all',
                         }}
                       >
-                        <Typography
-                          variant="body2"
-                          component="a"
-                          href={submission?.content}
-                          target="_blank"
-                          rel="noopener"
-                          sx={{
-                            wordBreak: 'break-all',
-                            overflowWrap: 'break-word',
-                            color: 'primary.main',
-                            textDecoration: 'none',
-                            '&:hover': {
-                              textDecoration: 'underline',
-                            },
-                            maxWidth: '100%',
-                            display: 'inline-block',
-                          }}
-                        >
-                          {submission?.content}
-                        </Typography>
+                        {submission?.videos && submission.videos.length > 0 ? (
+                          <Stack spacing={1.5} sx={{ mt: 1, mb: 2 }}>
+                            {submission.videos.map((link, index) => (
+                              <Box 
+                                key={index} 
+                                sx={{
+                                  padding: '8px 12px',
+                                  backgroundColor: '#f8f9fa',
+                                  borderRadius: '8px',
+                                  border: '1px solid #e9ecef',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    backgroundColor: '#e3f2fd',
+                                    borderColor: '#2196f3',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                  }
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  component="a"
+                                  href={link}
+                                  target="_blank"
+                                  rel="noopener"
+                                  sx={{
+                                    wordBreak: 'break-all',
+                                    overflowWrap: 'break-word',
+                                    color: 'primary.main',
+                                    textDecoration: 'none',
+                                    fontWeight: 500,
+                                    fontSize: 14,
+                                    '&:hover': {
+                                      textDecoration: 'underline',
+                                      color: 'primary.dark',
+                                    },
+                                    maxWidth: '100%',
+                                    display: 'inline-block',
+                                  }}
+                                >
+                                  {link}
+                                </Typography>
+                              </Box>
+                            ))}
+                          </Stack>
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            component="a"
+                            href={submission?.content}
+                            target="_blank"
+                            rel="noopener"
+                            sx={{
+                              wordBreak: 'break-all',
+                              overflowWrap: 'break-word',
+                              color: 'primary.main',
+                              textDecoration: 'none',
+                              '&:hover': {
+                                textDecoration: 'underline',
+                              },
+                              maxWidth: '100%',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {submission?.content}
+                          </Typography>
+                        )}
                       </Box>
                     </Box>
                   </Box>
@@ -383,23 +430,66 @@ const Posting = ({ campaign, submission, creator }) => {
 
                   <Box sx={{ pl: 7 }}>
                     <Box sx={{ mt: -4.5 }}>
-                      <Typography
-                        variant="body2"
-                        component="a"
-                        href={submission?.content}
-                        target="_blank"
-                        rel="noopener"
-                        sx={{
-                          wordBreak: 'break-word',
-                          color: 'primary.main',
-                          textDecoration: 'none',
-                          '&:hover': {
-                            textDecoration: 'underline',
-                          },
-                        }}
-                      >
-                        {submission?.content}
-                      </Typography>
+                      {submission?.videos && submission.videos.length > 0 ? (
+                        <Stack spacing={1.5} sx={{ mt: 1, mb: 2 }}>
+                          {submission.videos.map((link, index) => (
+                            <Box 
+                              key={index}
+                              sx={{
+                                padding: '8px 12px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '8px',
+                                border: '1px solid #e9ecef',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  backgroundColor: '#e3f2fd',
+                                  borderColor: '#2196f3',
+                                  transform: 'translateY(-1px)',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                }
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                component="a"
+                                href={link}
+                                target="_blank"
+                                rel="noopener"
+                                sx={{
+                                  wordBreak: 'break-word',
+                                  color: 'primary.main',
+                                  textDecoration: 'none',
+                                  fontWeight: 500,
+                                  '&:hover': {
+                                    textDecoration: 'underline',
+                                    color: 'primary.dark',
+                                  },
+                                }}
+                              >
+                                {link}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          component="a"
+                          href={submission?.content}
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
+                            wordBreak: 'break-word',
+                            color: 'primary.main',
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline',
+                            },
+                          }}
+                        >
+                          {submission?.content}
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
                 </Box>
@@ -448,23 +538,67 @@ const Posting = ({ campaign, submission, creator }) => {
                 borderColor: 'divider',
               }}
             >
-              <Typography
-                variant="body2"
-                component="a"
-                href={submission?.content}
-                target="_blank"
-                rel="noopener"
-                sx={{
-                  wordBreak: 'break-word',
-                  color: 'primary.main',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                {submission?.content}
-              </Typography>
+              {submission?.videos && submission.videos.length > 0 ? (
+                <Stack spacing={1.5}>
+                  {submission.videos.map((link, index) => (
+                    <Box 
+                      key={index}
+                      sx={{
+                        padding: '10px 14px',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px solid #e9ecef',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          backgroundColor: '#e3f2fd',
+                          borderColor: '#2196f3',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        }
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        component="a"
+                        href={link}
+                        target="_blank"
+                        rel="noopener"
+                        sx={{
+                          wordBreak: 'break-word',
+                          color: 'primary.main',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                          fontSize: 14,
+                          '&:hover': {
+                            textDecoration: 'underline',
+                            color: 'primary.dark',
+                          },
+                        }}
+                      >
+                        {link}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              ) : (
+                <Typography
+                  variant="body2"
+                  component="a"
+                  href={submission?.content}
+                  target="_blank"
+                  rel="noopener"
+                  sx={{
+                    wordBreak: 'break-word',
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  {submission?.content}
+                </Typography>
+              )}
             </Box>
           </Stack>
         </DialogContent>

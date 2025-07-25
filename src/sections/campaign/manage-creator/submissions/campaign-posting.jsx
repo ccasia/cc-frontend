@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useMemo, useState, useEffect } from 'react';
@@ -109,21 +109,36 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   }, [submission?.dueDate, submission?.endDate, submission?.startDate]);
 
   const schema = yup.object().shape({
-    postingLink: yup.string().required('Posting Link is required.'),
+    postingLinks: yup.array().of(
+      yup.string().required('Link is required.')
+    ).min(1, 'At least one posting link is required.'),
   });
 
   const methods = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      postingLink: '',
+      postingLinks: [''],
     },
   });
 
-  const { handleSubmit, reset, watch } = methods;
+  const { handleSubmit, reset, watch, control } = methods;
+  
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'postingLinks',
+  });
 
   const [openPostingModal, setOpenPostingModal] = useState(false);
 
-  const postingLinkValue = watch('postingLink');
+  // Ensure at least one field exists
+  useEffect(() => {
+    if (fields.length === 0) {
+      append('');
+    }
+  }, [fields.length, append]);
+
+  const postingLinksValue = watch('postingLinks');
+  const hasValidLinks = postingLinksValue && postingLinksValue.some(link => link && link.trim() !== '');
 
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
@@ -241,7 +256,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await axiosInstance.post(endpoints.submission.creator.postSubmission, {
-        ...data,
+        postingLinks: data.postingLinks,
         submissionId: submission?.id,
       });
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -249,7 +264,19 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
       mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
-      reset();
+      // Reset form and ensure single field
+      reset({ postingLinks: [''] });
+      // Force field array to have one empty field
+      setTimeout(() => {
+        if (fields.length > 1) {
+          for (let i = fields.length - 1; i > 0; i--) {
+            remove(i);
+          }
+        }
+        if (fields.length === 0) {
+          append('');
+        }
+      }, 0);
       setSubmitStatus('success');
     } catch (error) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -272,6 +299,19 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   const handleCloseSubmitDialog = () => {
     setShowSubmitDialog(false);
     setSubmitStatus('');
+    // Reset form and ensure single field
+    reset({ postingLinks: [''] });
+    // Force field array to have one empty field
+    setTimeout(() => {
+      if (fields.length > 1) {
+        for (let i = fields.length - 1; i > 0; i--) {
+          remove(i);
+        }
+      }
+      if (fields.length === 0) {
+        append('');
+      }
+    }, 0);
   };
 
   return (
@@ -531,7 +571,22 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
               Submit Link
             </Typography>
             <IconButton
-              onClick={() => setOpenPostingModal(false)}
+              onClick={() => {
+                setOpenPostingModal(false);
+                // Reset form and ensure single field
+                reset({ postingLinks: [''] });
+                // Force field array to have one empty field
+                setTimeout(() => {
+                  if (fields.length > 1) {
+                    for (let i = fields.length - 1; i > 0; i--) {
+                      remove(i);
+                    }
+                  }
+                  if (fields.length === 0) {
+                    append('');
+                  }
+                }, 0);
+              }}
               sx={{
                 ml: 'auto',
                 '& svg': {
@@ -554,21 +609,66 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
           <FormProvider methods={methods} onSubmit={onSubmit}>
             <Stack spacing={2} alignItems="flex-start">
               <Typography variant="subtitle2" sx={{ mb: -0.5, ml: 0.25 }}>
-                Posting Link{' '}
+                Posting Links{' '}
                 <Box component="span" sx={{ color: 'error.main' }}>
                   *
                 </Box>
               </Typography>
-              <TextField
-                name="postingLink"
-                placeholder="Link"
-                fullWidth
-                variant="outlined"
-                {...methods.register('postingLink')}
-                sx={{
-                  bgcolor: '#ffffff',
-                }}
-              />
+              {fields.length > 0 ? fields.map((field, index) => (
+                <Stack key={field.id} direction="row" spacing={1} alignItems="center" width="100%">
+                  <TextField
+                    placeholder={`Add Posting Link`}
+                    fullWidth
+                    variant="outlined"
+                    {...methods.register(`postingLinks.${index}`)}
+                    sx={{
+                      bgcolor: '#ffffff',
+                    }}
+                  />
+                  {index > 0 && (
+                    <IconButton
+                      onClick={() => remove(index)}
+                      sx={{
+                        color: 'error.main',
+                        '&:hover': {
+                          bgcolor: 'error.lighter',
+                        },
+                      }}
+                    >
+                      <Iconify icon="mingcute:delete-line" width={20} />
+                    </IconButton>
+                  )}
+                </Stack>
+              )) : (
+                <Stack direction="row" spacing={1} alignItems="center" width="100%">
+                  <TextField
+                    placeholder="Link 1"
+                    fullWidth
+                    variant="outlined"
+                    {...methods.register('postingLinks.0')}
+                    sx={{
+                      bgcolor: '#ffffff',
+                    }}
+                  />
+                </Stack>
+              )}
+              {postingLinksValue && postingLinksValue.length > 0 && postingLinksValue[0] && postingLinksValue[0].trim() !== '' && (
+                <Button
+                  variant="outlined"
+                  onClick={() => append('')}
+                  startIcon={<Iconify icon="mingcute:add-line" />}
+                  sx={{
+                    borderColor: '#203ff5',
+                    color: '#203ff5',
+                    '&:hover': {
+                      borderColor: '#203ff5',
+                      bgcolor: 'rgba(32, 63, 245, 0.04)',
+                    },
+                  }}
+                >
+                  Add Another Link
+                </Button>
+              )}
               <Button
                 variant="contained"
                 size="medium"
@@ -576,10 +676,10 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                 sx={{
                   fontSize: '0.95rem',
                   fontWeight: 600,
-                  bgcolor: postingLinkValue ? '#203ff5' : '#b0b0b1 !important',
+                  bgcolor: hasValidLinks ? '#203ff5' : '#b0b0b1 !important',
                   color: '#ffffff !important',
                   borderBottom: 3.5,
-                  borderBottomColor: postingLinkValue ? '#112286' : '#9e9e9f',
+                  borderBottomColor: hasValidLinks ? '#112286' : '#9e9e9f',
                   borderRadius: 1.5,
                   px: 2.5,
                   py: 1.2,
@@ -588,11 +688,11 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   ml: 'auto',
                   alignSelf: 'flex-end',
                   '&:hover': {
-                    bgcolor: postingLinkValue ? '#203ff5' : '#b0b0b1',
-                    opacity: postingLinkValue ? 0.9 : 1,
+                    bgcolor: hasValidLinks ? '#203ff5' : '#b0b0b1',
+                    opacity: hasValidLinks ? 0.9 : 1,
                   },
                 }}
-                disabled={!postingLinkValue}
+                disabled={!hasValidLinks}
               >
                 Complete Campaign
               </Button>
