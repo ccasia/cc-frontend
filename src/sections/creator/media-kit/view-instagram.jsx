@@ -943,7 +943,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
             alignItems: 'flex-start',
           }}
         >
-                     {/* Engagement Rate Box */}
+        {/* Engagement Rate Box */}
            <Box
              sx={{
                backgroundColor: '#E7E7E7',
@@ -977,7 +977,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                  bottom: 24,
                  left: 28,
                  right: 28,
-                 top: 60,
+                 top: 90,
                }}
              >
                <LineChart

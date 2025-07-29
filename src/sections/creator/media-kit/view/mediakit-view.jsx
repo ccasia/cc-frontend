@@ -178,7 +178,7 @@ const MediaKitCreator = () => {
     return isIOS && isSafari;
   }, []);
 
-  // Helper function to ensure all images and iframes are loaded
+  // Helper function to ensure all images, iframes, and charts are loaded
   const ensureContentLoaded = useCallback(async (element) => {
     setCaptureState('rendering');
     // Ensure images are loaded
@@ -207,11 +207,89 @@ const MediaKitCreator = () => {
         })
     );
 
-    // Wait for all content to load
-    await Promise.all([...imageLoadPromises, ...iframeLoadPromises]);
+    // Wait for chart SVGs to render and apply blue styling
+    const chartSvgs = Array.from(element.querySelectorAll('svg')).filter(svg => {
+      // Exclude engagement icons and other UI icons
+      const isEngagementIcon = svg.closest('.media-kit-engagement-icons');
+      const isIconify = svg.closest('[class*="iconify"], [data-icon]');
+      return !isEngagementIcon && !isIconify;
+    });
 
-    // Additional delay to ensure all rendering is complete
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const svgLoadPromises = chartSvgs.map(svg => 
+      new Promise((resolve) => {
+        const applyChartStyling = () => {
+          
+          // Target all chart paths since MUI uses CSS styling, not attributes
+          const paths = svg.querySelectorAll('path');
+          
+          paths.forEach((path, index) => {
+            const d = path.getAttribute('d');
+            
+            if (d && d.includes('M')) {
+              // Check if this is the main chart line (has L commands for line segments)
+              if (d.includes('L')) {
+                console.log(`Styling chart line path ${index} to blue`);
+                path.style.setProperty('stroke', '#1340FF', 'important');
+                path.style.setProperty('stroke-width', '2', 'important');
+                path.style.setProperty('fill', 'none', 'important');
+                path.style.setProperty('opacity', '1', 'important');
+                path.style.setProperty('visibility', 'visible', 'important');
+              }
+              // Check if this is a data point marker (has A commands for arcs/circles)
+              else if (d.includes('A')) {
+                console.log(`Styling chart marker path ${index} to blue`);
+                path.style.setProperty('fill', '#1340FF', 'important');
+                path.style.setProperty('stroke', '#1340FF', 'important');
+                path.style.setProperty('stroke-width', '1', 'important');
+                path.style.setProperty('opacity', '1', 'important');
+                path.style.setProperty('visibility', 'visible', 'important');
+              }
+            }
+          });
+          
+          // Style only the bottom grid line (above months), hide others
+          const lines = svg.querySelectorAll('line');
+          lines.forEach((line, index) => {
+            const y1 = parseFloat(line.getAttribute('y1') || 0);
+            const y2 = parseFloat(line.getAttribute('y2') || 0);
+            
+            console.log(`Grid line ${index}: y1=${y1}, y2=${y2}`);
+            
+            // Find the line with the highest Y value (closest to bottom/months)
+            const isBottomLine = lines.length > 0 && 
+              Array.from(lines).every(otherLine => {
+                const otherY1 = parseFloat(otherLine.getAttribute('y1') || 0);
+                return otherY1 <= y1 || otherLine === line;
+              });
+            
+            if (isBottomLine) {
+              console.log(`Styling bottom grid line ${index} (above months)`);
+              line.style.setProperty('stroke', 'black', 'important');
+              line.style.setProperty('stroke-width', '1', 'important');
+              line.style.setProperty('opacity', '1', 'important');
+              line.style.setProperty('visibility', 'visible', 'important');
+            } else {
+              console.log(`Hiding grid line ${index} (not the bottom one)`);
+              line.style.setProperty('opacity', '0', 'important');
+              line.style.setProperty('visibility', 'hidden', 'important');
+            }
+          });
+        };
+
+        // Apply styling multiple times to ensure it persists
+        setTimeout(applyChartStyling, 300);
+        setTimeout(applyChartStyling, 400);
+        setTimeout(applyChartStyling, 500);
+        
+        setTimeout(resolve, 800);
+      })
+    );
+
+    // Wait for all content to load
+    await Promise.all([...imageLoadPromises, ...iframeLoadPromises, ...svgLoadPromises]);
+
+    // Additional delay to ensure all rendering is complete, especially for charts
+    await new Promise((resolve) => setTimeout(resolve, 2500));
     setCaptureState('capturing');
   }, []);
 
@@ -270,6 +348,18 @@ const MediaKitCreator = () => {
         width: 350px !important;
         min-width: 350px !important;
         max-width: 350px !important;
+      }
+      /* Target only the analytics boxes container (Engagement Rate and Monthly Interactions) */
+      .desktop-screenshot-view .desktop-screenshot-mediakit > div > div:last-child {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100% !important;
+        gap: 25px;
+        padding-left: 7px;
+      }
+      .desktop-screenshot-view .desktop-screenshot-mediakit > div > div:last-child > div {
+        width: auto !important;
+        min-width: 536px !important;
       }
       .desktop-screenshot-view .media-kit-engagement-icons {
         bottom: 20px !important;
