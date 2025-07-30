@@ -33,7 +33,7 @@ function DiscoverBrand() {
 
   const [search, setSearch] = useState('');
 
-  const filteredData = !isLoading
+  const filteredData = (!isLoading && companies) 
     ? companies.filter((company) => company.name.toLowerCase().includes(search.toLowerCase()))
     : [];
 
@@ -69,7 +69,7 @@ function DiscoverBrand() {
 
       {!isLoading && (
         <>
-          {companies.length < 1 ? (
+          {!companies || companies.length < 1 ? (
             <Box mt={2}>
               <EmptyContent
                 filled

@@ -1,6 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
@@ -16,11 +16,16 @@ import {
   Tooltip,
   InputAdornment,
   useMediaQuery,
+  LinearProgress,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
-import { useGetSubmissions } from 'src/hooks/use-get-submission';
+import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
+import socket from 'src/hooks/socket';
+import { useAuthContext } from 'src/auth/hooks';
+import { useSnackbar } from 'notistack';
+import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -29,9 +34,11 @@ import FirstDraft from './creator-stuff/submissions/firstDraft';
 import FinalDraft from './creator-stuff/submissions/finalDraft';
 import Posting from './creator-stuff/submissions/posting/posting';
 
-const CampaignCreatorDeliverables = ({ campaign }) => {
+const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   const theme = useTheme();
   const mdUp = useMediaQuery(theme.breakpoints.up('md'));
+  const { user } = useAuthContext();
+  const { enqueueSnackbar } = useSnackbar();
   
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [expandedAccordion, setExpandedAccordion] = useState(null);
@@ -40,6 +47,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   const [loadingStatuses, setLoadingStatuses] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'undecided', or 'approved'
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Get shortlisted creators from campaign
   const shortlistedCreators = useMemo(() => campaign?.shortlisted || [], [campaign?.shortlisted]);
@@ -56,12 +65,22 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     });
   }, [shortlistedCreators, sortDirection]);
 
-  // Get submissions for selected creator
+  // Get V3 submissions for selected creator
   const {
     data: submissions,
     isLoading: loadingSubmissions,
     mutate: submissionMutate,
-  } = useGetSubmissions(selectedCreator?.userId, campaign?.id);
+  } = useGetSubmissionsV3(selectedCreator?.userId, campaign?.id);
+
+  // Debug logging for submissions
+  useEffect(() => {
+    console.log('Client component - Submissions data:', {
+      selectedCreator: selectedCreator?.userId,
+      campaignId: campaign?.id,
+      submissions,
+      loadingSubmissions
+    });
+  }, [submissions, selectedCreator?.userId, campaign?.id, loadingSubmissions]);
 
   // Get deliverables for selected creator
   const {
@@ -70,20 +89,70 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     mutate: deliverableMutate,
   } = useGetDeliverables(selectedCreator?.userId, campaign?.id);
 
+  // Socket.io progress handling for V3 campaigns
+  useEffect(() => {
+    if (!socket || campaign?.origin !== 'CLIENT') return;
+
+    const handleProgress = (data) => {
+      console.log('V3 Progress received:', data);
+      
+      // Set processing to true when we receive the first progress event
+      if (!isProcessing) {
+        setIsProcessing(true);
+      }
+      
+      setUploadProgress((prev) => {
+        const exists = prev.some((item) => item.fileName === data.fileName);
+
+        if (exists) {
+          return prev.map((item) =>
+            item.fileName === data.fileName ? { ...item, ...data } : item
+          );
+        }
+        return [...prev, data];
+      });
+    };
+
+    socket.on('progress', handleProgress);
+
+    return () => {
+      socket.off('progress', handleProgress);
+    };
+  }, [socket, campaign?.origin, isProcessing]);
+
+  // Check if all uploads are complete
+  const checkProgress = useCallback(() => {
+    if (uploadProgress?.length && uploadProgress?.every((x) => x.progress === 100)) {
+      const timer = setTimeout(() => {
+        setIsProcessing(false);
+        setUploadProgress([]);
+        
+        // Refresh data
+        if (selectedCreator?.userId && campaign?.id) {
+          submissionMutate();
+          deliverableMutate();
+        }
+      }, 2000);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+    return null;
+  }, [uploadProgress, selectedCreator?.userId, campaign?.id, submissionMutate, deliverableMutate]);
+
+  useEffect(() => {
+    checkProgress();
+  }, [checkProgress]);
+
   // Find submissions by type
   const firstDraftSubmission = useMemo(
-    () => {
-      const found = submissions?.find((item) => item.submissionType.type === 'FIRST_DRAFT');
-      return found;
-    },
+    () => submissions?.find((item) => item.submissionType.type === 'FIRST_DRAFT'),
     [submissions]
   );
 
   const finalDraftSubmission = useMemo(
-    () => {
-      const found = submissions?.find((item) => item.submissionType.type === 'FINAL_DRAFT');
-      return found;
-    },
+    () => submissions?.find((item) => item.submissionType.type === 'FINAL_DRAFT'),
     [submissions]
   );
 
@@ -92,7 +161,17 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     [submissions]
   );
 
-
+  // Debug logging for posting submission
+  useEffect(() => {
+    console.log('Client component - Posting submission:', {
+      postingSubmission,
+      hasSubmissions: !!submissions,
+      submissionsCount: submissions?.length,
+      postingSubmissionStatus: postingSubmission?.status,
+      postingSubmissionDisplayStatus: postingSubmission?.displayStatus,
+      postingSubmissionContent: postingSubmission?.content
+    });
+  }, [postingSubmission, submissions]);
 
   const filteredCreators = useMemo(() => {
     let filtered = sortedCreators;
@@ -125,96 +204,69 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     });
   }, [sortedCreators, search, sortDirection, selectedFilter]);
 
-  // Fetch all creator statuses using the existing hook
+  // Fetch all creator statuses on component mount
   useEffect(() => {
     const fetchAllCreatorStatuses = async () => {
-      if (!shortlistedCreators.length || !campaign?.id) {
-        setLoadingStatuses(false);
-        return;
-      }
+      if (!campaign?.id) return;
 
       setLoadingStatuses(true);
-      const statusMap = {};
-
-      // Define status priority for determining the "latest" status
-      const statusPriority = {
-        APPROVED: 5,
-        PENDING_REVIEW: 4,
-        CHANGES_REQUIRED: 3,
-        IN_PROGRESS: 2,
-        NOT_STARTED: 1,
-      };
+      const statuses = {};
 
       try {
-        // Process creators one by one to avoid too many simultaneous requests
-        for (const creator of shortlistedCreators) {
+        // Fetch statuses for all creators in parallel
+        const statusPromises = shortlistedCreators.map(async (creator) => {
           try {
-            // Using the same API endpoint that the useGetSubmissions hook uses
-            const response = await fetch(`/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`);
+            // For client view, we'll use the V3 submissions API
+            const response = await fetch(`/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`);
+            const submissions = await response.json();
             
-            if (!response.ok) {
-              statusMap[creator.userId] = 'NOT_STARTED';
-              continue;
+            // Get the most relevant submission status for display
+            const firstDraft = submissions.find(s => s.submissionType?.type === 'FIRST_DRAFT');
+            const finalDraft = submissions.find(s => s.submissionType?.type === 'FINAL_DRAFT');
+            const posting = submissions.find(s => s.submissionType?.type === 'POSTING');
+            
+            // Debug logging
+            console.log(`Creator ${creator.userId} submissions:`, {
+              firstDraft: firstDraft?.displayStatus || firstDraft?.status,
+              finalDraft: finalDraft?.displayStatus || finalDraft?.status,
+              posting: posting?.displayStatus || posting?.status,
+              rawFirstDraft: firstDraft,
+              rawFinalDraft: finalDraft,
+              rawPosting: posting
+            });
+            
+            // Determine overall status based on V3 flow
+            let overallStatus = 'NOT_STARTED';
+            if (posting?.displayStatus === 'APPROVED') {
+              overallStatus = 'APPROVED';
+            } else if (finalDraft?.displayStatus === 'APPROVED') {
+              overallStatus = 'APPROVED';
+            } else if (firstDraft?.displayStatus === 'APPROVED') {
+              overallStatus = 'APPROVED';
+            } else if (firstDraft?.displayStatus === 'PENDING_REVIEW') {
+              overallStatus = 'PENDING_REVIEW';
+            } else if (firstDraft?.displayStatus === 'NOT_STARTED') {
+              overallStatus = 'NOT_STARTED';
             }
             
-            const data = await response.json();
-            
-            if (!data || data.length === 0) {
-              statusMap[creator.userId] = 'NOT_STARTED';
-              continue;
-            }
-            
-            // Filter out agreement submissions - only consider FIRST_DRAFT, FINAL_DRAFT, and POSTING
-            const relevantSubmissions = data.filter(
-              submission => 
-                submission.submissionType?.type === 'FIRST_DRAFT' || 
-                submission.submissionType?.type === 'FINAL_DRAFT' || 
-                submission.submissionType?.type === 'POSTING'
-            );
-            
-            if (relevantSubmissions.length === 0) {
-              statusMap[creator.userId] = 'NOT_STARTED';
-              continue;
-            }
-            
-            // Find submissions by type
-            const firstDraftSubmission = relevantSubmissions.find(
-              item => item.submissionType.type === 'FIRST_DRAFT'
-            );
-            const finalDraftSubmission = relevantSubmissions.find(
-              item => item.submissionType.type === 'FINAL_DRAFT'
-            );
-            const postingSubmission = relevantSubmissions.find(
-              item => item.submissionType.type === 'POSTING'
-            );
-            
-            // Determine the status based on the latest stage in the workflow
-            // Priority: Posting > Final Draft > First Draft
-            if (postingSubmission) {
-              statusMap[creator.userId] = postingSubmission.status;
-            } else if (finalDraftSubmission) {
-              statusMap[creator.userId] = finalDraftSubmission.status;
-            } else if (firstDraftSubmission) {
-              statusMap[creator.userId] = firstDraftSubmission.status;
-            } else {
-              statusMap[creator.userId] = 'NOT_STARTED';
-            }
+            statuses[creator.userId] = overallStatus;
           } catch (error) {
             console.error(`Error fetching status for creator ${creator.userId}:`, error);
-            statusMap[creator.userId] = 'NOT_STARTED';
+            statuses[creator.userId] = 'NOT_STARTED';
           }
-        }
-        
-        setCreatorStatuses(statusMap);
+        });
+
+        await Promise.all(statusPromises);
+        setCreatorStatuses(statuses);
       } catch (error) {
         console.error('Error fetching creator statuses:', error);
       } finally {
         setLoadingStatuses(false);
       }
     };
-    
+
     fetchAllCreatorStatuses();
-  }, [shortlistedCreators, campaign?.id]);
+  }, [campaign?.id, shortlistedCreators]);
 
   // Update creator statuses when submissions change for the selected creator
   useEffect(() => {
@@ -249,11 +301,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         // Determine the status based on the latest stage in the workflow
         // Priority: Posting > Final Draft > First Draft
         if (postingSubmission) {
-          newStatuses[selectedCreator.userId] = postingSubmission.status;
+          newStatuses[selectedCreator.userId] = postingSubmission.displayStatus || postingSubmission.status;
         } else if (finalDraftSubmission) {
-          newStatuses[selectedCreator.userId] = finalDraftSubmission.status;
+          newStatuses[selectedCreator.userId] = finalDraftSubmission.displayStatus || finalDraftSubmission.status;
         } else if (firstDraftSubmission) {
-          newStatuses[selectedCreator.userId] = firstDraftSubmission.status;
+          newStatuses[selectedCreator.userId] = firstDraftSubmission.displayStatus || firstDraftSubmission.status;
         } else {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
         }
@@ -357,9 +409,19 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   const renderAccordionStatus = (submission) => {
     if (!submission) return null;
 
-    // Replace underscores with spaces in status text (used regex)
-    const statusText = submission.status ? submission.status.replace(/_/g, ' ') : '';
-    const statusInfo = getStatusInfo(submission.status);
+    // Use displayStatus for V3 submissions, fallback to regular status
+    const status = submission.displayStatus || submission.status;
+    const statusText = status ? status.replace(/_/g, ' ') : '';
+    const statusInfo = getStatusInfo(status);
+
+    // Debug logging
+    console.log('Accordion status:', {
+      submissionId: submission.id,
+      originalStatus: submission.status,
+      displayStatus: submission.displayStatus,
+      finalStatus: status,
+      statusText
+    });
 
     return (
       <Tooltip title={statusInfo.tooltip} arrow>
@@ -386,6 +448,196 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         </Typography>
       </Tooltip>
     );
+  };
+
+  const isV3 = campaign?.origin === 'CLIENT';
+  const userRole = user?.role; // Use the actual user role from the auth context
+
+  // Handler for admin 'Send to Client'
+  const handleSendToClient = async (submissionId) => {
+    try {
+      // Assuming axiosInstance is available globally or imported elsewhere
+      // For now, using fetch for simplicity, but ideally use axiosInstance
+      const response = await fetch(`/api/submission/v3/${submissionId}/approve/admin`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ feedback: 'All sections approved by admin' }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error sending to client');
+      }
+      // This sets status to SENT_TO_CLIENT
+      submissionMutate();
+      deliverableMutate();
+      // Assuming enqueueSnackbar is available globally or imported elsewhere
+      // For now, using console.log for simplicity
+      console.log('Sent to client!');
+    } catch (error) {
+      // Assuming enqueueSnackbar is available globally or imported elsewhere
+      // For now, using console.error for simplicity
+      console.error(error?.response?.data?.message || 'Error sending to client', error);
+    }
+  };
+
+  // Client approval handler for V3
+  const handleClientApprove = async (submissionId) => {
+    try {
+      const response = await fetch(`/api/submission/v3/${submissionId}/approve/client`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          submissionId, 
+          feedback: 'Approved by client' 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error approving submission');
+      }
+      
+      submissionMutate();
+      deliverableMutate();
+      enqueueSnackbar('Submission approved successfully!', { variant: 'success' });
+    } catch (error) {
+      console.error('Error approving submission:', error);
+      enqueueSnackbar(error.message || 'Error approving submission', { variant: 'error' });
+    }
+  };
+
+  // Client rejection handler for V3
+  const handleClientReject = async (submissionId) => {
+    try {
+      const response = await fetch(`/api/submission/v3/${submissionId}/request-changes/client`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          submissionId, 
+          feedback: 'Changes requested by client',
+          reasons: ['Client feedback']
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error rejecting submission');
+      }
+      
+      submissionMutate();
+      deliverableMutate();
+      enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
+    } catch (error) {
+      console.error('Error rejecting submission:', error);
+      enqueueSnackbar(error.message || 'Error requesting changes', { variant: 'error' });
+    }
+  };
+
+  // Individual client approval handlers for media items
+  const handleClientApproveVideo = async (mediaId) => {
+    try {
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve/client', {
+        mediaId,
+        mediaType: 'video',
+        feedback: 'Approved by client'
+      });
+      enqueueSnackbar('Video approved successfully!', { variant: 'success' });
+      submissionMutate();
+      deliverableMutate();
+    } catch (error) {
+      console.error('Error approving video:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving video', { variant: 'error' });
+    }
+  };
+
+  const handleClientApprovePhoto = async (mediaId) => {
+    try {
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve/client', {
+        mediaId,
+        mediaType: 'photo',
+        feedback: 'Approved by client'
+      });
+      enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
+      submissionMutate();
+      deliverableMutate();
+    } catch (error) {
+      console.error('Error approving photo:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving photo', { variant: 'error' });
+    }
+  };
+
+  const handleClientApproveRawFootage = async (mediaId) => {
+    try {
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve/client', {
+        mediaId,
+        mediaType: 'rawFootage',
+        feedback: 'Approved by client'
+      });
+      enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
+      submissionMutate();
+      deliverableMutate();
+    } catch (error) {
+      console.error('Error approving raw footage:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving raw footage', { variant: 'error' });
+    }
+  };
+
+  const handleClientRejectVideo = async (mediaId) => {
+    try {
+      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
+        mediaId,
+        mediaType: 'video',
+        feedback: 'Changes requested by client',
+        reasons: ['Client feedback']
+      });
+      enqueueSnackbar('Changes requested for video!', { variant: 'warning' });
+      submissionMutate();
+      deliverableMutate();
+    } catch (error) {
+      console.error('Error rejecting video:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { variant: 'error' });
+    }
+  };
+
+  const handleClientRejectPhoto = async (mediaId) => {
+    try {
+      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
+        mediaId,
+        mediaType: 'photo',
+        feedback: 'Changes requested by client',
+        reasons: ['Client feedback']
+      });
+      enqueueSnackbar('Changes requested for photo!', { variant: 'warning' });
+      submissionMutate();
+      deliverableMutate();
+    } catch (error) {
+      console.error('Error rejecting photo:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { variant: 'error' });
+    }
+  };
+
+  const handleClientRejectRawFootage = async (mediaId) => {
+    try {
+      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
+        mediaId,
+        mediaType: 'rawFootage',
+        feedback: 'Changes requested by client',
+        reasons: ['Client feedback']
+      });
+      enqueueSnackbar('Changes requested for raw footage!', { variant: 'warning' });
+      submissionMutate();
+      deliverableMutate();
+    } catch (error) {
+      console.error('Error rejecting raw footage:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { variant: 'error' });
+    }
   };
 
   return (
@@ -506,8 +758,107 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         >
           Alphabetical
         </Button>
-
       </Box>
+
+      {/* Progress Display for V3 Uploads */}
+      {campaign?.origin === 'CLIENT' && isProcessing && uploadProgress.length > 0 && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ mb: 2, color: '#221f20', fontWeight: 600 }}>
+            Processing Uploads...
+          </Typography>
+          <Stack spacing={2}>
+            {uploadProgress.map((currentFile) => (
+              <Box
+                sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, border: '1px solid #e7e7e7' }}
+                key={currentFile.fileName}
+              >
+                <Stack spacing={2}>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    {currentFile?.type?.startsWith('video') ? (
+                      <Box
+                        sx={{
+                          width: 120,
+                          height: 68,
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          position: 'relative',
+                          bgcolor: 'background.paper',
+                          boxShadow: (theme) => theme.customShadows.z8,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: 'background.neutral',
+                          }}
+                        >
+                          <Iconify
+                            icon="solar:video-library-bold"
+                            width={24}
+                            sx={{ color: 'text.secondary' }}
+                          />
+                        </Box>
+                      </Box>
+                    ) : (
+                      <Box
+                        component="img"
+                        src="/assets/icons/files/ic_img.svg"
+                        sx={{ width: 40, height: 40 }}
+                      />
+                    )}
+
+                    <Stack spacing={1} flexGrow={1}>
+                      <Typography variant="subtitle2" noWrap>
+                        {currentFile?.fileName || 'Processing file...'}
+                      </Typography>
+                      <Stack spacing={1}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={currentFile?.progress || 0}
+                          sx={{
+                            height: 6,
+                            borderRadius: 1,
+                            bgcolor: 'background.paper',
+                            '& .MuiLinearProgress-bar': {
+                              borderRadius: 1,
+                              bgcolor: currentFile?.progress === 100 ? 'success.main' : 'primary.main',
+                            },
+                          }}
+                        />
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {currentFile?.progress === 100 ? (
+                              <Box
+                                component="span"
+                                sx={{ color: 'success.main', fontWeight: 600 }}
+                              >
+                                Processing Complete
+                              </Box>
+                            ) : (
+                              `Processing... ${currentFile?.progress || 0}%`
+                            )}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {currentFile?.name || 'Processing'}
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                    </Stack>
+                  </Stack>
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+      )}
 
       {/* Content Row */}
       <Stack
@@ -734,16 +1085,36 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                     }}
                   >
                     {firstDraftSubmission ? (
-                      <FirstDraft
-                        submission={firstDraftSubmission}
-                        campaign={campaign}
-                        creator={selectedCreator}
-                        deliverablesData={{
-                          deliverables: deliverablesData,
-                          deliverableMutate,
-                          submissionMutate,
-                        }}
-                      />
+                      <>
+                        {isV3 && userRole === 'admin' && firstDraftSubmission?.displayStatus === 'PENDING_REVIEW' && (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            sx={{ mb: 2 }}
+                            onClick={() => handleSendToClient(firstDraftSubmission.id)}
+                          >
+                            Send to Client
+                          </Button>
+                        )}
+                        <FirstDraft
+                          submission={firstDraftSubmission}
+                          campaign={campaign}
+                          creator={selectedCreator}
+                          deliverablesData={{
+                            deliverables: deliverablesData,
+                            deliverableMutate,
+                            submissionMutate,
+                          }}
+                          isV3={true}
+                          // Individual client approval handlers
+                          handleClientApproveVideo={handleClientApproveVideo}
+                          handleClientApprovePhoto={handleClientApprovePhoto}
+                          handleClientApproveRawFootage={handleClientApproveRawFootage}
+                          handleClientRejectVideo={handleClientRejectVideo}
+                          handleClientRejectPhoto={handleClientRejectPhoto}
+                          handleClientRejectRawFootage={handleClientRejectRawFootage}
+                        />
+                      </>
                     ) : (
                       <Box sx={{ p: 3 }}>
                         <EmptyContent title="No first draft submission found" />
@@ -837,17 +1208,37 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                     }}
                   >
                     {finalDraftSubmission ? (
-                      <FinalDraft
-                        submission={finalDraftSubmission}
-                        campaign={campaign}
-                        creator={selectedCreator}
-                        firstDraftSubmission={firstDraftSubmission}
-                        deliverablesData={{
-                          deliverables: deliverablesData,
-                          deliverableMutate,
-                          submissionMutate,
-                        }}
-                      />
+                      <>
+                        {isV3 && userRole === 'admin' && finalDraftSubmission?.displayStatus === 'PENDING_REVIEW' && (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            sx={{ mb: 2 }}
+                            onClick={() => handleSendToClient(finalDraftSubmission.id)}
+                          >
+                            Send to Client
+                          </Button>
+                        )}
+                        <FinalDraft
+                          submission={finalDraftSubmission}
+                          campaign={campaign}
+                          creator={selectedCreator}
+                          firstDraftSubmission={firstDraftSubmission}
+                          deliverablesData={{
+                            deliverables: deliverablesData,
+                            deliverableMutate,
+                            submissionMutate,
+                          }}
+                          isV3={true}
+                          // Individual client approval handlers
+                          handleClientApproveVideo={handleClientApproveVideo}
+                          handleClientApprovePhoto={handleClientApprovePhoto}
+                          handleClientApproveRawFootage={handleClientApproveRawFootage}
+                          handleClientRejectVideo={handleClientRejectVideo}
+                          handleClientRejectPhoto={handleClientRejectPhoto}
+                          handleClientRejectRawFootage={handleClientRejectRawFootage}
+                        />
+                      </>
                     ) : (
                       <Box sx={{ p: 3 }}>
                         <EmptyContent title="No final draft submission found" />
@@ -941,12 +1332,31 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                     }}
                   >
                     {postingSubmission ? (
-                      <Posting
-                        submission={postingSubmission}
-                        campaign={campaign}
-                        creator={selectedCreator}
-                        isV3={campaign?.origin === 'CLIENT'}
-                      />
+                      <>
+                        {isV3 && userRole === 'admin' && postingSubmission?.displayStatus === 'PENDING_REVIEW' && (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            sx={{ mb: 2 }}
+                            onClick={() => handleSendToClient(postingSubmission.id)}
+                          >
+                            Send to Client
+                          </Button>
+                        )}
+                        <Posting
+                          submission={postingSubmission}
+                          campaign={campaign}
+                          creator={selectedCreator}
+                          isV3={true}
+                          // Individual client approval handlers
+                          handleClientApproveVideo={handleClientApproveVideo}
+                          handleClientApprovePhoto={handleClientApprovePhoto}
+                          handleClientApproveRawFootage={handleClientApproveRawFootage}
+                          handleClientRejectVideo={handleClientRejectVideo}
+                          handleClientRejectPhoto={handleClientRejectPhoto}
+                          handleClientRejectRawFootage={handleClientRejectRawFootage}
+                        />
+                      </>
                     ) : (
                       <Box sx={{ p: 3 }}>
                         <EmptyContent title="No posting submission found" />
@@ -963,8 +1373,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   );
 };
 
-export default CampaignCreatorDeliverables;
-
-CampaignCreatorDeliverables.propTypes = {
+CampaignCreatorDeliverablesClient.propTypes = {
   campaign: PropTypes.object,
 };
+
+export default CampaignCreatorDeliverablesClient; 

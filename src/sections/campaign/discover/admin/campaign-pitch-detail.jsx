@@ -18,7 +18,7 @@ const CampaignPitchDetail = ({ pitch }) => {
   const a = useRef(null);
   const b = useRef(null);
   
-  const isClient = user?.role === 'Client' || user?.admin?.role?.name === 'Client';
+  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'client';
 
   const approve = async ({ campaignId, creatorId, pitchId }) => {
     try {

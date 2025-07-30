@@ -1,0 +1,258 @@
+import useSWR from 'swr';
+import React, { memo, useEffect } from 'react';
+import { useFormContext } from 'react-hook-form';
+import { DatePicker } from '@mui/x-date-pickers';
+import { Box, Stack, MenuItem, FormLabel, Typography, TextField, Grid } from '@mui/material';
+import dayjs from 'dayjs';
+
+import socket from 'src/hooks/socket';
+import { fetcher, endpoints } from 'src/utils/axios';
+import { interestsLists } from 'src/contants/interestLists';
+
+import Label from 'src/components/label';
+import { RHFTextField } from 'src/components/hook-form';
+import CustomRHFSelect from './custom-rhf-select';
+
+// Form field component with consistent styling
+const FormField = ({ label, children, required = true }) => (
+  <Stack spacing={0.5}>
+    <FormLabel
+      required={required}
+      sx={{
+        fontWeight: 700,
+        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+        fontSize: '0.875rem', // Smaller font size for labels
+        mb: 0.5,
+      }}
+    >
+      {label}
+    </FormLabel>
+    {children}
+  </Stack>
+);
+
+const ClientCampaignGeneralInfo = () => {
+  const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
+  const { setValue, watch } = useFormContext();
+
+  // For date handling
+  const startDate = watch('campaignStartDate');
+  const endDate = watch('campaignEndDate');
+  const credits = watch('campaignCredits');
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('campaign', () => {
+        mutate();
+      });
+    }
+
+    return () => socket.off('campaign');
+  }, [mutate]);
+
+  useEffect(() => {
+    setValue('campaignId', `C${data + 1 < 10 ? `0${data + 1}` : data + 1}`);
+    
+    // Initialize multi-select fields with empty arrays if they're undefined
+    if (!watch('campaignObjectives')) {
+      setValue('campaignObjectives', []);
+    }
+    if (!watch('campaignIndustries')) {
+      setValue('campaignIndustries', []);
+    }
+  }, [setValue, data, watch]);
+
+  // Auto-set end date 14 days after start date
+  useEffect(() => {
+    if (startDate) {
+      // Ensure startDate is a valid dayjs object
+      const start = dayjs(startDate);
+      if (start.isValid()) {
+        // Calculate end date as 14 days after start date
+        const newEndDate = start.add(14, 'day');
+        setValue('campaignEndDate', newEndDate.toDate());
+      }
+    }
+  }, [startDate, setValue]);
+
+  return (
+    <>
+      {/* Container to limit width */}
+      <Box sx={{ maxWidth: '650px', mx: 'auto' }}>
+        <Stack alignItems="self-end" spacing={0.5} mb={2}>
+          <Typography variant="subtitle2">Campaign ID</Typography>
+          {!isLoading && <Label color="info">C0{data + 1}</Label>}
+        </Stack>
+        {/* Campaign Title - Full width */}
+        <FormField label="Campaign Title">
+          <RHFTextField 
+            name="campaignTitle" 
+            placeholder="Enter campaign title" 
+            size="small"
+            sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+          />
+        </FormField>
+
+        {/* Date Range - Two columns */}
+        <Box sx={{ mt: 2 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <FormField label="Campaign Start Date">
+                <DatePicker
+                  value={startDate}
+                  onChange={(newValue) => {
+                    setValue('campaignStartDate', newValue, { shouldValidate: true });
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      placeholder: "Select start date",
+                      error: false,
+                      size: "small",
+                      sx: { '& .MuiOutlinedInput-root': { height: '40px' } }
+                    }
+                  }}
+                />
+              </FormField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormField label="Campaign End Date">
+                <DatePicker
+                  value={endDate}
+                  onChange={(newValue) => {
+                    setValue('campaignEndDate', newValue, { shouldValidate: true });
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      placeholder: "Select end date",
+                      error: false,
+                      size: "small",
+                      sx: { '& .MuiOutlinedInput-root': { height: '40px' } }
+                    }
+                  }}
+                />
+              </FormField>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Credits - Two columns */}
+        <Box sx={{ mt: 2 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <FormField label="Available Credits">
+                <TextField
+                  fullWidth
+                  disabled
+                  size="small"
+                  value="100" // This should be replaced with actual available credits
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                />
+              </FormField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormField label="Number Of Credits">
+                <RHFTextField
+                  name="campaignCredits"
+                  placeholder="Enter number of credits"
+                  type="number"
+                  size="small"
+                  InputProps={{
+                    inputProps: { min: 1 }
+                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                />
+              </FormField>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Campaign Info - Full width */}
+        <Box sx={{ mt: 2 }}>
+          <FormField label="Campaign Info">
+            <RHFTextField
+              name="campaignDescription"
+              placeholder="Explain more about the campaign..."
+              multiline
+              rows={3}
+              size="small"
+              sx={{ '& .MuiOutlinedInput-root': { padding: '8px' } }}
+            />
+          </FormField>
+        </Box>
+
+        {/* Brand Tone - Full width */}
+        <Box sx={{ mt: 2 }}>
+          <FormField label="Brand Tone">
+            <RHFTextField 
+              name="brandTone" 
+              placeholder="Describe the brand tone" 
+              multiline 
+              rows={2}
+              size="small"
+              sx={{ '& .MuiOutlinedInput-root': { padding: '8px' } }}
+            />
+          </FormField>
+        </Box>
+
+        {/* Product/Service Name - Full width */}
+        <Box sx={{ mt: 2 }}>
+          <FormField label="Product/Service Name">
+            <RHFTextField 
+              name="productName" 
+              placeholder="Enter product or service name"
+              size="small"
+              sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+            />
+          </FormField>
+        </Box>
+
+        {/* Campaign Objectives - Full width */}
+        <Box sx={{ mt: 2 }}>
+          <FormField label="Campaign Objectives">
+            <CustomRHFSelect 
+              name="campaignObjectives"
+              size="small"
+              sx={{ 
+                '& .MuiOutlinedInput-root': { minHeight: '40px' }
+              }}
+            >
+              <MenuItem value="New Product Launch">New Product Launch</MenuItem>
+              <MenuItem value="New Service Launch">New Service Launch</MenuItem>
+              <MenuItem value="Increase Brand Awareness">Increase Brand Awareness</MenuItem>
+              <MenuItem value="Drive Product Awareness">Drive Product Awareness</MenuItem>
+              <MenuItem value="Drive Service Awareness">Drive Service Awareness</MenuItem>
+              <MenuItem value="Increase Purchase Intent">Increase Purchase Intent</MenuItem>
+              <MenuItem value="Increase Reach of Audience">Increase Reach of Audience</MenuItem>
+            </CustomRHFSelect>
+          </FormField>
+        </Box>
+
+        {/* Industries - Full width */}
+        <Box sx={{ mt: 2 }}>
+          <FormField label="Industries">
+            <CustomRHFSelect 
+              name="campaignIndustries"
+              size="small"
+              sx={{ 
+                '& .MuiOutlinedInput-root': { minHeight: '40px' }
+              }}
+            >
+              {interestsLists.map((item, index) => (
+                <MenuItem key={index} value={item}>
+                  {item}
+                </MenuItem>
+              ))}
+            </CustomRHFSelect>
+          </FormField>
+        </Box>
+      </Box>
+    </>
+  );
+};
+
+export default memo(ClientCampaignGeneralInfo); 

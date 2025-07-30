@@ -23,6 +23,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
@@ -49,10 +50,66 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
   const mediaKit = useBoolean();
   const theme = useTheme();
 
+  // Fetch V3 pitches for client-created campaigns
+  const { pitches: v3Pitches, isLoading: v3PitchesLoading, isError: v3PitchesError } = useGetV3Pitches(
+    campaign?.origin === 'CLIENT' ? campaign?.id : null
+  );
+
+  // Debug log for V3 pitches
+  if (campaign?.origin === 'CLIENT') {
+    // eslint-disable-next-line no-console
+    console.log('V3 pitches for client:', v3Pitches);
+    // eslint-disable-next-line no-console
+    console.log('Campaign ID:', campaign?.id);
+    // eslint-disable-next-line no-console
+    console.log('Campaign origin:', campaign?.origin);
+    // eslint-disable-next-line no-console
+    console.log('V3 pitches loading:', v3PitchesLoading);
+    // eslint-disable-next-line no-console
+    console.log('V3 pitches error:', v3PitchesError);
+  }
+
   // Create a list of creators from the shortlisted array and pitches
   const creators = useMemo(() => {
     if (!campaign) return [];
     
+    // For client-created campaigns, use V3 pitches
+    if (campaign.origin === 'CLIENT' && v3Pitches) {
+      // eslint-disable-next-line no-console
+      console.log('Processing V3 pitches:', v3Pitches);
+      
+      return v3Pitches
+        .map((pitch) => {
+          // eslint-disable-next-line no-console
+          console.log('Processing pitch:', pitch);
+          
+          return {
+            id: pitch.userId || pitch.id,
+            user: {
+              id: pitch.userId || pitch.user?.id,
+              name: pitch.user?.name,
+              username: pitch.user?.instagramUser?.username,
+              photoURL: pitch.user?.photoURL,
+              status: pitch.user?.status || 'active',
+              creator: pitch.user?.creator,
+              engagementRate: pitch.user?.instagramUser?.engagement_rate,
+              followerCount: pitch.user?.instagramUser?.followers_count,
+            },
+            status: pitch.displayStatus || pitch.status || 'undecided',
+            displayStatus: pitch.displayStatus || pitch.status || 'undecided',
+            createdAt: pitch.createdAt || new Date().toISOString(),
+            type: pitch.type || 'text',
+            content: pitch.content || pitch.user?.creator?.about || 'No content available',
+            isShortlisted: false,
+            pitchId: pitch.id,
+            isV3: true,
+          };
+        })
+        // FIX: Only require user to exist, not user.creator
+        .filter((creator) => !!creator.user && !!creator.user.id);
+    }
+    
+    // For admin-created campaigns, use V2 approach
     // Get creators from shortlisted
     const shortlistedCreators = campaign.shortlisted 
       ? campaign.shortlisted
@@ -73,6 +130,7 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
           type: 'text',
           content: item.user?.creator?.about || 'No content available',
           isShortlisted: true,
+          isV3: false,
         }))
         .filter((creator) => creator.user && creator.user.creator)
       : [];
@@ -102,17 +160,40 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
           content: pitch.content || pitch.user?.creator?.about || 'No content available',
           isShortlisted: false,
           pitchId: pitch.id,
+          isV3: false,
         }))
         .filter((creator) => creator.user && creator.user.creator)
       : [];
     
     // Combine both lists
     return [...shortlistedCreators, ...pitchCreators];
-  }, [campaign]);
+  }, [campaign, v3Pitches]);
+
+  // Debug logs for creators
+  if (campaign?.origin === 'CLIENT') {
+    // eslint-disable-next-line no-console
+    console.log('Creators array:', creators);
+    // eslint-disable-next-line no-console
+    console.log('Creators length:', creators.length);
+    if (creators.length > 0) {
+      // eslint-disable-next-line no-console
+      console.log('First creator:', creators[0]);
+    }
+  }
 
   const activeCount = creators.length || 0;
-  const pendingCount = creators.filter(creator => !creator.isShortlisted && creator.status === 'undecided').length || 0;
-  const approvedPitchCount = creators.filter(creator => !creator.isShortlisted && creator.status === 'approved').length || 0;
+  const pendingCount = creators.filter(creator => {
+    if (creator.isV3) {
+      return (creator.displayStatus || creator.status) === 'PENDING_REVIEW';
+    }
+    return !creator.isShortlisted && creator.status === 'undecided';
+  }).length || 0;
+  const approvedPitchCount = creators.filter(creator => {
+    if (creator.isV3) {
+      return (creator.displayStatus || creator.status) === 'APPROVED';
+    }
+    return !creator.isShortlisted && creator.status === 'approved';
+  }).length || 0;
   const shortlistedCount = creators.filter(creator => creator.isShortlisted).length || 0;
 
   // Handle toggling sort direction
@@ -125,9 +206,19 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
 
     // Apply status filter
     if (selectedFilter === 'pending') {
-      filtered = filtered.filter((creator) => !creator.isShortlisted && creator.status === 'undecided');
+      filtered = filtered.filter((creator) => {
+        if (creator.isV3) {
+          return (creator.displayStatus || creator.status) === 'PENDING_REVIEW';
+        }
+        return !creator.isShortlisted && creator.status === 'undecided';
+      });
     } else if (selectedFilter === 'approved_pitch') {
-      filtered = filtered.filter((creator) => !creator.isShortlisted && creator.status === 'approved');
+      filtered = filtered.filter((creator) => {
+        if (creator.isV3) {
+          return (creator.displayStatus || creator.status) === 'APPROVED';
+        }
+        return !creator.isShortlisted && creator.status === 'approved';
+      });
     } else if (selectedFilter === 'shortlisted') {
       filtered = filtered.filter((creator) => creator.isShortlisted);
     }
@@ -152,6 +243,18 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
       return nameB.localeCompare(nameA);
     });
   }, [creators, search, sortDirection, selectedFilter]);
+
+  // Debug logs for filtered creators
+  if (campaign?.origin === 'CLIENT') {
+    // eslint-disable-next-line no-console
+    console.log('Filtered creators:', filteredCreators);
+    // eslint-disable-next-line no-console
+    console.log('Filtered creators length:', filteredCreators.length);
+    // eslint-disable-next-line no-console
+    console.log('Selected filter:', selectedFilter);
+    // eslint-disable-next-line no-console
+    console.log('Search term:', search);
+  }
 
   const matchCampaignPercentage = (pitch) => {
     if (!pitch) return null;
@@ -241,6 +344,17 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
   };
 
   const mdUp = useResponsive('up', 'md');
+
+  // Show loading state for V3 pitches
+  if (campaign?.origin === 'CLIENT' && v3PitchesLoading) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="body1" color="text.secondary">
+          Loading pitches...
+        </Typography>
+      </Box>
+    );
+  }
 
   return creators.length > 0 ? (
     <>
@@ -632,6 +746,18 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                               color: '#1ABF66',
                               borderColor: '#1ABF66',
                             }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW' && {
+                              color: '#FF9A02',
+                              borderColor: '#FF9A02',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'APPROVED' && {
+                              color: '#8A5AFE',
+                              borderColor: '#8A5AFE',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'REJECTED' && {
+                              color: '#FF4842',
+                              borderColor: '#FF4842',
+                            }),
                             ...(!pitch.isShortlisted && pitch.status === 'undecided' && {
                               color: '#FF9A02',
                               borderColor: '#FF9A02',
@@ -648,6 +774,8 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                         >
                           {pitch.isShortlisted 
                             ? 'APPROVED' 
+                            : pitch.isV3
+                              ? (pitch.displayStatus || pitch.status).toUpperCase()
                             : pitch.status === 'undecided' 
                               ? 'PENDING REVIEW' 
                               : pitch.status === 'approved'
