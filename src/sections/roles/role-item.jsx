@@ -38,7 +38,7 @@ const RoleItem = ({ role, key, onView }) => {
                 key={admin?.user?.id}
                 alt={admin?.user?.name}
                 src={admin?.user?.photoUrl}
-                sx={{ width: 25, height: 25 }}
+                // sx={{ width: 25, height: 25 }}
               />
             ))}
           </AvatarGroup>

@@ -84,10 +84,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
 
   const campaignSchema = Yup.object().shape({
-    campaignIndustries: Yup.array().min(1, 'At least one industry is required').required('Campaign Industry is required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required')
+      .required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string().required('Campaign title is required'),
-    campaignObjectives: Yup.array().min(1, 'At least one objective is required').required('Campaign objectives is required'),
+    campaignObjectives: Yup.array()
+      .min(1, 'At least one objective is required')
+      .required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
     audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
     audienceGender: Yup.array()
@@ -130,10 +134,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    campaignIndustries: Yup.array().min(1, 'At least one industry is required').required('Campaign industry is required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required')
+      .required('Campaign industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string().required('Campaign title is required'),
-    campaignObjectives: Yup.array().min(1, 'At least one objective is required').required('Campaign objectives is required'),
+    campaignObjectives: Yup.array()
+      .min(1, 'At least one objective is required')
+      .required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
     productName: Yup.string(),
   });
@@ -354,13 +362,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const onSubmit = handleSubmit(async (data, stage) => {
     try {
       setIsLoading(true);
-      
+
       // Debug: Log user info to check role
       console.log('Current user info:', user);
       console.log('User role:', user?.role);
-      
+
       const formData = new FormData();
-      
+
       // Create client campaign data object with all necessary fields
       const clientCampaignData = {
         campaignTitle: data.campaignTitle || '',
@@ -374,28 +382,38 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         campaignObjectives: Array.isArray(data.campaignObjectives) ? data.campaignObjectives : [],
         audienceGender: Array.isArray(data.audienceGender) ? data.audienceGender : [],
         audienceAge: Array.isArray(data.audienceAge) ? data.audienceAge : [],
-        audienceLocation: Array.isArray(data.audienceLocation) 
-          ? data.audienceLocation.filter(item => item !== 'Others') 
+        audienceLocation: Array.isArray(data.audienceLocation)
+          ? data.audienceLocation.filter((item) => item !== 'Others')
           : [],
         audienceLanguage: Array.isArray(data.audienceLanguage) ? data.audienceLanguage : [],
-        audienceCreatorPersona: Array.isArray(data.audienceCreatorPersona) ? data.audienceCreatorPersona : [],
+        audienceCreatorPersona: Array.isArray(data.audienceCreatorPersona)
+          ? data.audienceCreatorPersona
+          : [],
         audienceUserPersona: data.audienceUserPersona || '',
-        socialMediaPlatform: Array.isArray(data.socialMediaPlatform) ? data.socialMediaPlatform : [],
+        socialMediaPlatform: Array.isArray(data.socialMediaPlatform)
+          ? data.socialMediaPlatform
+          : [],
         videoAngle: Array.isArray(data.videoAngle) ? data.videoAngle : [],
         campaignDo: Array.isArray(data.campaignDo)
-          ? data.campaignDo.filter(Boolean).map(item => typeof item === 'object' ? (item.value || '') : item).filter(Boolean)
+          ? data.campaignDo
+              .filter(Boolean)
+              .map((item) => (typeof item === 'object' ? item.value || '' : item))
+              .filter(Boolean)
           : [],
         campaignDont: Array.isArray(data.campaignDont)
-          ? data.campaignDont.filter(Boolean).map(item => typeof item === 'object' ? (item.value || '') : item).filter(Boolean)
+          ? data.campaignDont
+              .filter(Boolean)
+              .map((item) => (typeof item === 'object' ? item.value || '' : item))
+              .filter(Boolean)
           : [],
       };
-      
+
       console.log('Client campaign data:', clientCampaignData);
-      
+
       // Convert to JSON string and append to FormData
       const jsonString = JSON.stringify(clientCampaignData);
       formData.append('data', jsonString);
-      
+
       // Append images if available
       if (data.campaignImages && Array.isArray(data.campaignImages)) {
         for (let i = 0; i < data.campaignImages.length; i++) {
@@ -404,17 +422,20 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           }
         }
       }
-      
+
       // Use the client-specific endpoint
       const endpoint = endpoints.client.createCampaign;
       console.log('Using endpoint:', endpoint);
-      
+
       const res = await axiosInstance.post(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      
+
       setIsLoading(false);
-      enqueueSnackbar('Campaign submitted successfully! CSM will review and activate your campaign.', { variant: 'success' });
+      enqueueSnackbar(
+        'Campaign submitted successfully! CSM will review and activate your campaign.',
+        { variant: 'success' }
+      );
       reset();
       mutate();
       setStatus('');
@@ -424,17 +445,18 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       onClose();
     } catch (error) {
       console.error('API Error:', error);
-      
+
       // Extract detailed error information
       let errorMessage = 'Error creating campaign. Contact our admin';
-      
+
       if (error.response) {
         console.error('Error response status:', error.response.status);
         console.error('Error response headers:', error.response.headers);
         console.error('Error response data:', error.response.data);
-        
-        errorMessage = error.response.data?.message || 
-                      `Error ${error.response.status}: ${error.response.statusText}`;
+
+        errorMessage =
+          error.response.data?.message ||
+          `Error ${error.response.status}: ${error.response.statusText}`;
       } else if (error.request) {
         console.error('Error request:', error.request);
         errorMessage = 'No response received from server';
@@ -442,7 +464,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         console.error('Error message:', error.message);
         errorMessage = error.message || errorMessage;
       }
-      
+
       enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       setIsLoading(false);
@@ -455,10 +477,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   };
 
   // Add function to handle final submission
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleFinalSubmit = async () => {
     try {
       setIsLoading(true);
-      
+
       // Try to create client record and associate with company first
       try {
         console.log('Creating client record with company if needed...');
@@ -468,15 +491,15 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         console.error('Error setting up client account:', setupError);
         // Continue anyway, as the main submission might still work
       }
-      
+
       // Get form values
       const formValues = methods.getValues();
       console.log('Form values before submission:', formValues);
-      
+
       // Use the existing onSubmit logic for actual submission
       await onSubmit(formValues);
       setOpenConfirmModal(false);
-      
+
       // Reset form or redirect as needed
       // setActiveStep(0);
     } catch (error) {
@@ -486,26 +509,26 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       setIsLoading(false);
     }
   };
-  
+
   // Set up event listeners for custom events - MOVED AFTER handleFinalSubmit
   useEffect(() => {
     const handleConfirm = () => {
       handleFinalSubmit();
     };
-    
+
     const handleCancel = () => {
       setOpenConfirmModal(false);
     };
-    
+
     window.addEventListener('confirmCampaign', handleConfirm);
     window.addEventListener('cancelCampaign', handleCancel);
-    
+
     // Clean up event listeners when component unmounts
     return () => {
       window.removeEventListener('confirmCampaign', handleConfirm);
       window.removeEventListener('cancelCampaign', handleCancel);
     };
-  }, [handleFinalSubmit, setOpenConfirmModal]);  // Include dependencies
+  }, [handleFinalSubmit, setOpenConfirmModal]); // Include dependencies
 
   // Modify the step content function to handle client flow
   const getStepContent = (step) => {
@@ -570,7 +593,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               color="inherit"
               disabled={activeStep === 0}
               onClick={handleBack}
-              sx={{ 
+              sx={{
                 mr: 1,
                 bgcolor: 'white',
                 border: '1px solid #E7E7E7',
@@ -590,8 +613,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
             {activeStep === steps.length - 1 ? (
               <Stack direction="row" spacing={2}>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   onClick={handleConfirmCampaign}
                   sx={{
                     bgcolor: '#1340FF',
@@ -726,8 +749,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               <Button
                 variant="outlined"
                 fullWidth
-                sx={{ 
-                  fontWeight: 600, 
+                sx={{
+                  fontWeight: 600,
                   py: 1,
                   bgcolor: 'white',
                   border: '1px solid #E7E7E7',
@@ -765,7 +788,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             <CampaignUploadPhotos isPreview />
           </DialogContent>
         </Dialog>
-
       </FormProvider>
 
       <PackageCreateDialog
@@ -791,4 +813,4 @@ export default ClientCampaignCreateForm;
 ClientCampaignCreateForm.propTypes = {
   onClose: PropTypes.func,
   mutate: PropTypes.func,
-}; 
+};
