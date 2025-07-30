@@ -48,6 +48,32 @@ export default function UserCard({
     [user]
   );
 
+  // Check if this is a V3 pitch that needs agreement setup
+  const shouldShowCompleteAgreement = useMemo(() => {
+    // For V2 campaigns (admin-created), use the existing isSent logic
+    if (campaign?.origin !== 'CLIENT') {
+      return !isSent;
+    }
+    
+    // For V3 campaigns (client-created), check if there's an APPROVED pitch
+    if (campaign?.pitch && Array.isArray(campaign.pitch)) {
+      const creatorPitch = campaign.pitch.find(p => p.userId === creator?.id);
+      return creatorPitch?.status === 'APPROVED';
+    }
+    
+    return false;
+  }, [campaign, creator, isSent]);
+
+  // For V3 campaigns, we also need to check if the creator is shortlisted
+  const isShortlistedForV3 = useMemo(() => {
+    if (campaign?.origin !== 'CLIENT') {
+      return true; // For V2, assume they're shortlisted if they appear here
+    }
+    
+    // For V3, check if there's a ShortListedCreator record
+    return campaign?.shortlisted?.some(s => s.userId === creator?.id);
+  }, [campaign, creator]);
+
   const handleCardClick = () => {
     if (isSent) {
       router.push(paths.dashboard.campaign.manageCreator(campaignId, creator?.id));
@@ -340,11 +366,11 @@ export default function UserCard({
               e.stopPropagation();
               handleCardClick();
             }}
-            disabled={!isSent && isDisabled}
+            disabled={shouldShowCompleteAgreement && isDisabled}
             sx={{
               mx: 'auto',
               width: '100%',
-              display: isSent || !isDisabled ? 'block' : 'none', // Hide when isSent=false and isDisabled=true
+              display: (isSent || shouldShowCompleteAgreement) && isShortlistedForV3 ? 'block' : 'none', // Show for isSent=true OR shouldShowCompleteAgreement=true, AND if shortlisted
               bgcolor: isSent ? '#3a3a3c' : '#ffffff',
               border: isSent ? 'none' : '1px solid #e7e7e7',
               borderBottom: isSent ? '3px solid #202021' : '3px solid #e7e7e7',

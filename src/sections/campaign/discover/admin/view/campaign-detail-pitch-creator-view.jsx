@@ -20,7 +20,7 @@ const CampaignDetailsPitchCreator = ({ id }) => {
   const { user } = useAuthContext();
   const { data } = useGetPitchDetail(id);
   
-  const isClient = user?.role === 'Client' || user?.admin?.role?.name === 'Client';
+  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'client';
 
   const handleBack = () => {
     if (isClient) {

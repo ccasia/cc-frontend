@@ -36,7 +36,7 @@ const schema = yup.object().shape({
   ),
 });
 
-const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose, creditsLeft }) => {
+const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose, creditsLeft, campaign }) => {
   const shortlistedCreators = useShortlistedCreators((state) => state.shortlistedCreators);
   const resetState = useShortlistedCreators((state) => state.reset);
 
@@ -65,7 +65,8 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
   const onSubmit = handleSubmit(async ({ shortlistedCreators: data }) => {
     const totalCredits = data.reduce((acc, sum) => acc + sum.credits, 0);
 
-    if (totalCredits > credits) {
+    // Only check credit limits for admin-created campaigns
+    if (campaign?.origin !== 'CLIENT' && totalCredits > credits) {
       enqueueSnackbar('Error - Credits exceeded', {
         variant: 'error',
       });
@@ -73,7 +74,18 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
     }
 
     try {
-      await axiosInstance.post('/api/campaign/v2/shortlistCreator', {
+      // Debug logging
+      console.log('Campaign data:', campaign);
+      console.log('Campaign origin:', campaign?.origin);
+      
+      // Use different endpoint based on campaign origin
+      const endpoint = campaign?.origin === 'CLIENT' 
+        ? '/api/campaign/v2/shortlistCreator/client'
+        : '/api/campaign/v2/shortlistCreator';
+        
+      console.log('Using endpoint:', endpoint);
+        
+      await axiosInstance.post(endpoint, {
         creators: data,
         campaignId,
       });
@@ -223,4 +235,5 @@ AssignUGCVideoModal.propTypes = {
   campaignId: PropTypes.string,
   modalClose: PropTypes.func,
   creditsLeft: PropTypes.number,
+  campaign: PropTypes.object,
 };

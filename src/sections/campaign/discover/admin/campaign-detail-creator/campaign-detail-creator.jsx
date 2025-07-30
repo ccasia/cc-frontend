@@ -188,6 +188,34 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   });
 
   const handleEditAgreement = (creator) => {
+    // For V3 campaigns (client-created), we need to create a new agreement
+    if (campaign?.origin === 'CLIENT') {
+      // Check if there's an APPROVED pitch for this creator
+      const creatorPitch = campaign?.pitch?.find(p => p.userId === creator.userId);
+      
+      if (creatorPitch?.status === 'APPROVED') {
+        // Create a new agreement object for V3
+        const newAgreement = {
+          userId: creator.userId,
+          campaignId: campaign.id,
+          user: creator.user,
+          shortlistedCreator: {
+            amount: null,
+            currency: 'SGD'
+          },
+          isNew: true // Flag to indicate this is a new agreement for V3
+        };
+        
+        setSelectedAgreement(newAgreement);
+        editDialog.onTrue();
+        return;
+      } else {
+        enqueueSnackbar('Pitch must be approved before setting agreement', { variant: 'info' });
+        return;
+      }
+    }
+
+    // For V2 campaigns (admin-created), use existing logic
     const agreement = agreements.find((a) => a.userId === creator.userId);
 
     if (!loadingAgreements && (!agreement || agreement.isSent)) {
@@ -725,6 +753,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         campaignId={campaign.id}
         modalClose={modal.onFalse}
         creditsLeft={ugcLeft}
+        campaign={campaign}
       />
 
       <CampaignAgreementEdit

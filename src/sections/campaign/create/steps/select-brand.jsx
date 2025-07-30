@@ -331,6 +331,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
                       >
                         Available Credits
                       </FormLabel>
+                   
                       <Tooltip title="Available Credits = Total Credits - Allocation Credits">
                         <Iconify
                           icon="material-symbols:info-outline-rounded"

@@ -23,6 +23,7 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
+  Alert,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -67,9 +68,31 @@ const LoadingDots = () => {
 };
 
 const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }) => {
+  console.log('=== CAMPAIGN POSTING COMPONENT STARTED ===');
+  console.log('Props received:', { campaign, submission, getDependency, fullSubmission });
+  
+  // Simple test to see if component is working
+  if (!submission) {
+    console.log('No submission provided');
+    return <div>No submission data</div>;
+  }
+  
   const dependency = getDependency(submission?.id);
   const dialog = useBoolean();
   const { user, dispatch } = useAuthContext();
+
+  console.log('CampaignPosting received:', {
+    submission,
+    submissionStatus: submission?.status,
+    submissionId: submission?.id
+  });
+
+  console.log('Checking submission status conditions:', {
+    isInProgress: submission?.status === 'IN_PROGRESS',
+    isPendingReview: submission?.status === 'PENDING_REVIEW',
+    isApproved: submission?.status === 'APPROVED',
+    isRejected: submission?.status === 'REJECTED'
+  });
 
   const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
 
@@ -82,6 +105,13 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     const firstDraftSubmission = fullSubmission?.find(
       (item) => item?.id === finalDraftSubmission?.dependentOn[0]?.dependentSubmissionId
     );
+
+    console.log('previewSubmission calculation:', {
+      dependency,
+      finalDraftSubmission,
+      firstDraftSubmission,
+      fullSubmission: fullSubmission?.map(s => ({ id: s.id, type: s.submissionType?.type, status: s.status }))
+    });
 
     if (firstDraftSubmission?.status === 'APPROVED') {
       return firstDraftSubmission;
@@ -128,6 +158,12 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     name: 'postingLinks',
   });
 
+  console.log('Form methods initialized:', {
+    handleSubmit: !!handleSubmit,
+    reset: !!reset,
+    watch: !!watch
+  });
+
   const [openPostingModal, setOpenPostingModal] = useState(false);
 
   // Ensure at least one field exists
@@ -139,6 +175,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
   const postingLinksValue = watch('postingLinks');
   const hasValidLinks = postingLinksValue && postingLinksValue.some(link => link && link.trim() !== '');
+
+  console.log('Posting link value:', postingLinkValue);
 
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
@@ -176,6 +214,25 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   //     </Typography>
   //   </Alert>
   // );
+
+  const renderPostingTimeline = (
+    <Alert severity="success">
+      {console.log('Alert component being rendered')}
+      <Typography variant="subtitle1">Draft Approved! Next Step: Post Your Deliverable</Typography>
+      <Typography variant="subtitle2">
+        {submission?.startDate === submission?.endDate ? (
+          `You can now post your content on ${dayjs(submission?.startDate).format('D MMMM, YYYY')}`
+        ) : (
+          `You can now post your content between ${dayjs(submission?.startDate).format('D MMMM, YYYY')} and ${dayjs(submission?.endDate).format('D MMMM, YYYY')}`
+        )}
+      </Typography>
+      {console.log('renderPostingTimeline dates:', {
+        startDate: submission?.startDate,
+        endDate: submission?.endDate,
+        dueDate: submission?.dueDate
+      })}
+    </Alert>
+  );
 
   const renderRejectMessage = (
     <Box mt={2}>
@@ -316,8 +373,12 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
   return (
     <>
-      {previewSubmission?.status === 'APPROVED' && (
-        <Box p={1.5} sx={{ pb: 0 }}>
+      {console.log('previewSubmission status check:', {
+        previewSubmission,
+        previewSubmissionStatus: previewSubmission?.status,
+        condition: previewSubmission?.status === 'APPROVED'
+      })}
+      <Box p={1.5} sx={{ pb: 0 }}>
           <Box
             sx={{
               display: 'flex',
@@ -409,39 +470,44 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
           )}
 
           {submission?.status === 'IN_PROGRESS' && (
-            <Stack spacing={1}>
-              {/* {renderPostingTimeline} */}
-              <Box
-                sx={{
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  mb: 2,
-                  mt: 24,
-                  mx: -1.5,
-                }}
-              />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                  variant="contained"
-                  onClick={() => setOpenPostingModal(true)}
+            <>
+              {console.log('Rendering IN_PROGRESS content for posting')}
+              {console.log('renderPostingTimeline component:', renderPostingTimeline)}
+              <Stack spacing={1}>
+                {console.log('Stack component being rendered')}
+                {renderPostingTimeline}
+                <Box
                   sx={{
-                    bgcolor: '#203ff5',
-                    color: 'white',
-                    borderBottom: 3.5,
-                    borderBottomColor: '#112286',
-                    borderRadius: 1.5,
-                    px: 2.5,
-                    py: 1.2,
-                    '&:hover': {
-                      bgcolor: '#203ff5',
-                      opacity: 0.9,
-                    },
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    mb: 2,
+                    mt: 24,
+                    mx: -1.5,
                   }}
-                >
-                  Submit Link
-                </Button>
-              </Box>
-            </Stack>
+                />
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    onClick={() => setOpenPostingModal(true)}
+                    sx={{
+                      bgcolor: '#203ff5',
+                      color: 'white',
+                      borderBottom: 3.5,
+                      borderBottomColor: '#112286',
+                      borderRadius: 1.5,
+                      px: 2.5,
+                      py: 1.2,
+                      '&:hover': {
+                        bgcolor: '#203ff5',
+                        opacity: 0.9,
+                      },
+                    }}
+                  >
+                    Submit Link
+                  </Button>
+                </Box>
+              </Stack>
+            </>
           )}
 
           {submission?.status === 'APPROVED' && (
@@ -542,7 +608,6 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
             </>
           )}
         </Box>
-      )}
 
       <Dialog
         open={openPostingModal}

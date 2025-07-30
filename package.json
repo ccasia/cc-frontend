@@ -97,6 +97,7 @@
     "react-signature-canvas": "^1.0.6",
     "react-spinners": "^0.13.8",
     "react-to-print": "^3.0.2",
+    "react-use": "^17.6.0",
     "react-window": "^1.8.11",
     "recharts": "^2.12.7",
     "rehype-highlight": "^7.0.0",

@@ -1,11 +1,12 @@
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import axios from 'axios';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import { Box, Card, Chip, Menu, Avatar, MenuItem, Typography, IconButton } from '@mui/material';
+import { Box, Card, Chip, Menu, Avatar, MenuItem, Typography, IconButton, Button } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -15,21 +16,24 @@ import { formatText } from 'src/utils/format-test';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
+import { useSnackbar } from 'src/components/snackbar';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
+import ActivateCampaignDialog from './activate-campaign-dialog';
 
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
   const theme = useTheme();
   const { user } = useAuthContext();
-
+  const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
   
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
+  const [activateDialogOpen, setActivateDialogOpen] = useState(false);
 
   // Handle menu open
   const handleClick = (event) => {
@@ -104,6 +108,17 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     setCampaignLogIsOpen(false);
   };
 
+  const handleOpenActivateDialog = (event) => {
+    event.stopPropagation();
+    setActivateDialogOpen(true);
+  };
+
+  const handleCloseActivateDialog = () => {
+    setActivateDialogOpen(false);
+  };
+
+  const isPendingReview = campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED';
+
   const renderImages = (
     <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
       <Image
@@ -132,7 +147,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                 />
               ) : null
             }
-            label={formatText(campaign?.status)}
+            label={formatText(
+              campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED' 
+                ? 'PENDING' 
+                : campaign?.status
+            )}
             sx={{
               backgroundColor: theme.palette.common.white,
               color: '#48484a',
@@ -358,6 +377,22 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         },
       }}
     >
+      {isPendingReview && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+            bgcolor: 'rgba(19, 64, 255, 0.1)',
+            p: 1,
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+        </Box>
+      )}
       {false && (
         <Box
           mt={4}
@@ -391,6 +426,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
       <Box onClick={(e) => e.stopPropagation()}>
         <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
+        <ActivateCampaignDialog 
+          open={activateDialogOpen} 
+          onClose={handleCloseActivateDialog} 
+          campaignId={campaign?.id}
+        />
       </Box>
     </Card>
   );

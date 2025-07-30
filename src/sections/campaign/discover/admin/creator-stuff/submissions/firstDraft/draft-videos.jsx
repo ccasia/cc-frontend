@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -29,6 +30,7 @@ import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook
 
 import { options_changes } from './constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
+import axiosInstance from 'src/utils/axios';
 
 const VideoCard = ({ 
   videoItem, 
@@ -42,6 +44,14 @@ const VideoCard = ({
   // V2 individual handlers
   onIndividualApprove,
   onIndividualRequestChange,
+  isV3,
+  userRole,
+  handleSendToClient,
+  // V3 client handlers
+  handleClientApprove,
+  handleClientReject,
+  // V3 deliverables for status checking
+  deliverables,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -85,9 +95,16 @@ const VideoCard = ({
 
   // Use local status if available, otherwise use prop status
   const currentStatus = localStatus || videoItem.status;
-  const isVideoApproved = currentStatus === 'APPROVED';
+  const isVideoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
+  const isVideoApprovedByClient = currentStatus === 'APPROVED';
   const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED';
-  const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isVideoApproved && !hasRevisionRequested;
+  
+  // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
+  const isPendingReview = userRole === 'client' ? 
+    // For clients: show approval buttons when media is SENT_TO_CLIENT or submission is PENDING_REVIEW
+    (currentStatus === 'SENT_TO_CLIENT' || (submission?.status === 'PENDING_REVIEW' && !isVideoApprovedByClient && !hasRevisionRequested)) :
+    // For non-clients: show approval buttons when submission is PENDING_REVIEW and media not approved
+    (submission?.status === 'PENDING_REVIEW' && !isVideoApprovedByAdmin && !hasRevisionRequested);
 
   // Helper function to get the caption from various possible locations
   const getVideoCaption = () => {
@@ -122,7 +139,9 @@ const VideoCard = ({
 
   // Helper function to determine border color
   const getBorderColor = () => {
-    if (isVideoApproved) return '#1ABF66';
+    // For client role, SENT_TO_CLIENT status should not show green outline
+    if (userRole === 'client' && isVideoApprovedByClient) return '#1ABF66';
+    if (userRole !== 'client' && isVideoApprovedByAdmin) return '#1ABF66';
     if (hasRevisionRequested) return '#D4321C';
     return 'divider';
   };
@@ -205,7 +224,8 @@ const VideoCard = ({
 
   const renderFormContent = () => {
     if (!isPendingReview) {
-      if (isVideoApproved) {
+      // For client role, SENT_TO_CLIENT status should show approval buttons, not APPROVED status
+      if (isVideoApprovedByAdmin && userRole !== 'client') {
         return (
           <Box
             sx={{
@@ -309,63 +329,187 @@ const VideoCard = ({
 
             <Stack spacing={1.5} sx={{ mt: 2 }}>
               <Stack direction="row" spacing={1.5}>
-                <Button
-                  onClick={() => {
-                    setCardType('request');
-                  }}
-                  size="small"
-                  variant="contained"
-                  disabled={isProcessing}
-                  sx={{
-                    bgcolor: '#FFFFFF',
-                    border: 1.5,
-                    borderRadius: 1.15,
-                    borderColor: '#e7e7e7',
-                    borderBottom: 3,
-                    borderBottomColor: '#e7e7e7',
-                    color: '#D4321C',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      borderColor: '#D4321C',
-                    },
-                    textTransform: 'none',
-                    py: 1.2,
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    height: '40px',
-                    flex: 2,
-                  }}
-                >
-                  Request a Change
-                </Button>
+                {/* Hide this button for clients to prevent duplicates */}
+                {userRole !== 'client' && (
+                  <Button
+                    onClick={() => {
+                      setCardType('request');
+                    }}
+                    size="small"
+                    variant="contained"
+                    disabled={isProcessing}
+                    sx={{
+                      bgcolor: '#FFFFFF',
+                      border: 1.5,
+                      borderRadius: 1.15,
+                      borderColor: '#e7e7e7',
+                      borderBottom: 3,
+                      borderBottomColor: '#e7e7e7',
+                      color: '#D4321C',
+                      '&:hover': {
+                        bgcolor: '#f5f5f5',
+                        borderColor: '#D4321C',
+                      },
+                      textTransform: 'none',
+                      py: 1.2,
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      height: '40px',
+                      flex: 2,
+                    }}
+                  >
+                    Request a Change
+                  </Button>
+                )}
 
-                <LoadingButton
-                  onClick={handleApproveClick}
-                  variant="contained"
-                  size="small"
-                  loading={isSubmitting || isProcessing}
-                  sx={{
-                    bgcolor: '#FFFFFF',
-                    color: '#1ABF66',
-                    border: '1.5px solid',
-                    borderColor: '#e7e7e7',
-                    borderBottom: 3,
-                    borderBottomColor: '#e7e7e7',
-                    borderRadius: 1.15,
-                    py: 1.2,
-                    fontWeight: 600,
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      borderColor: '#1ABF66',
-                    },
-                    fontSize: '0.9rem',
-                    height: '40px',
-                    textTransform: 'none',
-                    flex: 1,
-                  }}
-                >
-                  Approve
-                </LoadingButton>
+                {isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW' ? (
+                  <>
+                    {/* Check if all media items are approved */}
+                    {(() => {
+                      const allVideosApproved = deliverables?.videos?.length > 0 &&
+                        deliverables.videos.every(v => v.status === 'SENT_TO_CLIENT');
+                      const allPhotosApproved = deliverables?.photos?.length > 0 &&
+                        deliverables.photos.every(p => p.status === 'SENT_TO_CLIENT');
+                      const allRawFootagesApproved = deliverables?.rawFootages?.length > 0 &&
+                        deliverables.rawFootages.every(r => r.status === 'SENT_TO_CLIENT');
+                      
+                      const allApproved = allVideosApproved && allPhotosApproved && allRawFootagesApproved;
+                      
+                      return allApproved ? (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => {
+                            console.log('[Send to Client Button Click] submission:', submission);
+                            if (!submission || !submission.id) {
+                              console.error('[Send to Client Button] submission or submission.id is missing!', submission);
+                              enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
+                              return;
+                            }
+                            handleSendToClient(submission.id);
+                          }}
+                          disabled={isSubmitting || isProcessing}
+                          sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
+                        >
+                          Send to Client
+                        </Button>
+                      ) : (
+                        <LoadingButton
+                          onClick={handleApproveClick}
+                          variant="contained"
+                          size="small"
+                          loading={isSubmitting || isProcessing}
+                          sx={{
+                            bgcolor: '#FFFFFF',
+                            color: '#1ABF66',
+                            border: '1.5px solid',
+                            borderColor: '#e7e7e7',
+                            borderBottom: 3,
+                            borderBottomColor: '#e7e7e7',
+                            borderRadius: 1.15,
+                            py: 1.2,
+                            fontWeight: 600,
+                            '&:hover': {
+                              bgcolor: '#f5f5f5',
+                              borderColor: '#1ABF66',
+                            },
+                            fontSize: '0.9rem',
+                            height: '40px',
+                            textTransform: 'none',
+                            flex: 1,
+                          }}
+                        >
+                          Approve
+                        </LoadingButton>
+                      );
+                    })()}
+                  </>
+                ) : isV3 && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'SENT_TO_CLIENT') ? (
+                  <Stack direction="row" spacing={1.5}>
+                    <Button
+                      onClick={() => handleClientReject && handleClientReject(videoItem.id)}
+                      size="small"
+                      variant="contained"
+                      disabled={isSubmitting || isProcessing}
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        border: 1.5,
+                        borderRadius: 1.15,
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        color: '#D4321C',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#D4321C',
+                        },
+                        textTransform: 'none',
+                        py: 1.2,
+                        fontSize: '0.9rem',
+                        height: '40px',
+                        flex: 1,
+                      }}
+                    >
+                      Request a change
+                    </Button>
+                    <LoadingButton
+                      onClick={() => handleClientApprove && handleClientApprove(videoItem.id)}
+                      variant="contained"
+                      size="small"
+                      loading={isSubmitting || isProcessing}
+                      disabled={isVideoApprovedByClient}
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        color: '#1ABF66',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1.15,
+                        py: 1.2,
+                        fontWeight: 600,
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#1ABF66',
+                        },
+                        fontSize: '0.9rem',
+                        height: '40px',
+                        textTransform: 'none',
+                        flex: 1,
+                      }}
+                    >
+                      {isVideoApprovedByClient ? 'Approved' : 'Approve'}
+                    </LoadingButton>
+                  </Stack>
+                ) : (
+                  <LoadingButton
+                    onClick={handleApproveClick}
+                    variant="contained"
+                    size="small"
+                    loading={isSubmitting || isProcessing}
+                    sx={{
+                      bgcolor: '#FFFFFF',
+                      color: '#1ABF66',
+                      border: '1.5px solid',
+                      borderColor: '#e7e7e7',
+                      borderBottom: 3,
+                      borderBottomColor: '#e7e7e7',
+                      borderRadius: 1.15,
+                      py: 1.2,
+                      fontWeight: 600,
+                      '&:hover': {
+                        bgcolor: '#f5f5f5',
+                        borderColor: '#1ABF66',
+                      },
+                      fontSize: '0.9rem',
+                      height: '40px',
+                      textTransform: 'none',
+                      flex: 1,
+                    }}
+                  >
+                    Approve
+                  </LoadingButton>
+                )}
               </Stack>
             </Stack>
           </Stack>
@@ -537,7 +681,7 @@ const VideoCard = ({
             </Box>
           )}
 
-          {isVideoApproved && (
+          {isVideoApprovedByAdmin && (
             <Box
               sx={{
                 position: 'absolute',
@@ -690,6 +834,14 @@ VideoCard.propTypes = {
   // V2 props
   onIndividualApprove: PropTypes.func,
   onIndividualRequestChange: PropTypes.func,
+  isV3: PropTypes.bool,
+  userRole: PropTypes.string,
+  handleSendToClient: PropTypes.func,
+  // V3 client handlers
+  handleClientApprove: PropTypes.func,
+  handleClientReject: PropTypes.func,
+  // V3 deliverables for status checking
+  deliverables: PropTypes.object,
 };
 
 const DraftVideos = ({
@@ -702,6 +854,13 @@ const DraftVideos = ({
   // V2 individual handlers
   onIndividualApprove,
   onIndividualRequestChange,
+  // Individual client approval handlers
+  handleClientApproveVideo,
+  handleClientApprovePhoto,
+  handleClientApproveRawFootage,
+  handleClientRejectVideo,
+  handleClientRejectPhoto,
+  handleClientRejectRawFootage,
 }) => {
   const [selectedVideosForChange, setSelectedVideosForChange] = useState([]);
   const approve = useBoolean();
@@ -752,6 +911,27 @@ const DraftVideos = ({
     }
   };
 
+  const handleSendToClient = async (submissionId) => {
+    if (!submissionId) {
+      console.error('[handleSendToClient] No submissionId provided!');
+      enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
+      return;
+    }
+    try {
+      console.log('[handleSendToClient] PATCH /api/submission/v3/' + submissionId + '/approve/admin');
+      const response = await axiosInstance.patch(
+        `/api/submission/v3/${submissionId}/approve/admin`,
+        { submissionId, feedback: 'All sections approved by admin' }
+      );
+      console.log('[handleSendToClient] Success:', response);
+      enqueueSnackbar('Sent to client!', { variant: 'success' });
+      // Optionally refresh data/UI here
+    } catch (error) {
+      console.error('[handleSendToClient] Error:', error, error?.response);
+      enqueueSnackbar(error?.response?.data?.message || 'Error sending to client', { variant: 'error' });
+    }
+  };
+
   // Check if all videos are already approved
   const allVideosApproved = deliverables?.videos?.length > 0 && 
     deliverables.videos.every(v => v.status === 'APPROVED');
@@ -760,6 +940,74 @@ const DraftVideos = ({
   const hasVideos = deliverables?.videos?.length > 0;
   const shouldUseHorizontalScroll = hasVideos && deliverables.videos.length > 1;
   const shouldUseGrid = hasVideos && deliverables.videos.length === 1;
+
+  // In DraftVideos (parent), define isV3 and userRole
+  const isV3 = campaign?.origin === 'CLIENT';
+  const { user } = useAuthContext();
+  const userRole = user?.role || 'admin'; // Use actual user role from auth context
+
+  const handleIndividualVideoApprove = async (videoId, feedback) => {
+    let response;
+    try {
+      if (isV3) {
+        response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+          mediaId: videoId,
+          mediaType: 'video',
+          feedback: feedback || 'Approved by admin'
+        });
+        
+        // Check if all media items are now approved
+        if (response.data.allApproved) {
+          enqueueSnackbar('All media approved! Submission sent to client.', { variant: 'success' });
+        } else {
+          enqueueSnackbar('Video approved successfully!', { variant: 'success' });
+        }
+      } else {
+        response = await onIndividualApprove(videoId, feedback);
+        enqueueSnackbar('Video approved successfully!', { variant: 'success' });
+      }
+      
+      if (onSubmit) onSubmit();
+    } catch (error) {
+      console.error('Error approving video:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving video', { variant: 'error' });
+    }
+  };
+
+  const handleIndividualVideoRequestChange = async (videoId, feedback, reasons) => {
+    let response;
+    try {
+      if (isV3) {
+        response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+          mediaId: videoId,
+          mediaType: 'video',
+          feedback: feedback || 'Changes requested by admin',
+          reasons: reasons || ['Admin feedback']
+        });
+      } else {
+        response = await onIndividualRequestChange(videoId, feedback);
+      }
+      enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
+      if (onSubmit) onSubmit();
+    } catch (error) {
+      console.error('Error requesting changes for video:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { variant: 'error' });
+    }
+  };
+
+  // Client approval handler for individual media - use parent's handler with SWR
+  const handleClientApprove = async (mediaId) => {
+    if (handleClientApproveVideo) {
+      await handleClientApproveVideo(mediaId);
+    }
+  };
+
+  // Client rejection handler for individual media - use parent's handler with SWR
+  const handleClientReject = async (mediaId) => {
+    if (handleClientRejectVideo) {
+      await handleClientRejectVideo(mediaId);
+    }
+  };
 
   return (
     <>
@@ -814,6 +1062,14 @@ const DraftVideos = ({
                 // V2 individual handlers
                 onIndividualApprove={onIndividualApprove}
                 onIndividualRequestChange={onIndividualRequestChange}
+                isV3={isV3}
+                userRole={userRole}
+                handleSendToClient={handleSendToClient}
+                // V3 client handlers
+                handleClientApprove={handleClientApprove}
+                handleClientReject={handleClientReject}
+                // V3 deliverables for status checking
+                deliverables={deliverables}
               />
             </Box>
           ))}
@@ -841,6 +1097,14 @@ const DraftVideos = ({
                 // V2 individual handlers
                 onIndividualApprove={onIndividualApprove}
                 onIndividualRequestChange={onIndividualRequestChange}
+                isV3={isV3}
+                userRole={userRole}
+                handleSendToClient={handleSendToClient}
+                // V3 client handlers
+                handleClientApprove={handleClientApprove}
+                handleClientReject={handleClientReject}
+                // V3 deliverables for status checking
+                deliverables={deliverables}
               />
             </Grid>
           ))}
@@ -961,6 +1225,13 @@ DraftVideos.propTypes = {
   // V2 props
   onIndividualApprove: PropTypes.func,
   onIndividualRequestChange: PropTypes.func,
+  // Individual client approval handlers
+  handleClientApproveVideo: PropTypes.func,
+  handleClientApprovePhoto: PropTypes.func,
+  handleClientApproveRawFootage: PropTypes.func,
+  handleClientRejectVideo: PropTypes.func,
+  handleClientRejectPhoto: PropTypes.func,
+  handleClientRejectRawFootage: PropTypes.func,
 };
 
 export default DraftVideos; 

@@ -74,16 +74,33 @@ const CampaignView = () => {
     [user]
   );
 
+  // Check if user is superadmin
+  const isSuperAdmin = useMemo(
+    () => user?.admin?.mode === 'god' || user?.admin?.mode === 'advanced',
+    [user]
+  );
+
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
-    if (pageIndex === 0)
-      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${filter.toUpperCase()}&limit=${10}`;
+    if (pageIndex === 0) {
+      let status = filter.toUpperCase();
+      if (filter === 'pending') {
+        // For pending tab, we need to search for both statuses
+        status = 'SCHEDULED,PENDING_CSM_REVIEW';
+      }
+      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}`;
+    }
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+    let status = filter.toUpperCase();
+    if (filter === 'pending') {
+      // For pending tab, we need to search for both statuses
+      status = 'SCHEDULED,PENDING_CSM_REVIEW';
+    }
+    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
   const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher);
@@ -115,15 +132,40 @@ const CampaignView = () => {
     () => campaigns?.filter((campaign) => campaign?.status === 'PAUSED') || [],
     [campaigns]
   );
+  const pendingCampaigns = useMemo(
+    () => campaigns?.filter((campaign) => 
+      campaign?.status === 'PENDING_CSM_REVIEW' || 
+      campaign?.status === 'SCHEDULED'
+    ) || [],
+    [campaigns]
+  );
 
   const activeCount = activeCampaigns.length;
   const completedCount = completedCampaigns.length;
   const pausedCount = pausedCampaigns.length;
+  const pendingCount = pendingCampaigns.length;
 
   const dataFiltered = useMemo(
     () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
     [data]
   );
+
+  // Add console logging to debug pending campaigns
+  useEffect(() => {
+    if (filter === 'pending') {
+      console.log('Pending filter active');
+      console.log('Pending campaigns in memory:', pendingCampaigns);
+      console.log('Data from API:', data);
+      console.log('Filtered data:', dataFiltered);
+    }
+  }, [filter, pendingCampaigns, data, dataFiltered]);
+
+  // Reset filter if non-superadmin tries to access pending tab
+  useEffect(() => {
+    if (filter === 'pending' && !isSuperAdmin) {
+      setFilter('active');
+    }
+  }, [filter, isSuperAdmin]);
 
   const handleScroll = useCallback(() => {
     const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
@@ -185,6 +227,7 @@ const CampaignView = () => {
             spacing={0.5}
             sx={{
               width: { xs: '100%', sm: 'auto' },
+              flexWrap: 'wrap',
             }}
           >
             <Button
@@ -233,6 +276,56 @@ const CampaignView = () => {
             >
               Active ({activeCount})
             </Button>
+            {/* Only show Pending tab for superadmins */}
+            {isSuperAdmin && (
+              <Button
+                disableRipple
+                size="large"
+                onClick={() => setFilter('pending')}
+                sx={{
+                  px: 1,
+                  py: 0.5,
+                  pb: 1,
+                  ml: 2,
+                  minWidth: 'fit-content',
+                  color: filter === 'pending' ? theme.palette.common : '#8e8e93',
+                  position: 'relative',
+                  fontSize: '1.05rem',
+                  fontWeight: 650,
+                  transition: 'transform 0.1s ease-in-out',
+                  '&:focus': {
+                    outline: 'none',
+                    bgcolor: 'transparent',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.95)',
+                    bgcolor: 'transparent',
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '2px',
+                    width: filter === 'pending' ? '100%' : '0%',
+                    bgcolor: '#1340ff',
+                    transition: 'all 0.3s ease-in-out',
+                    transform: 'scaleX(1)',
+                    transformOrigin: 'left',
+                  },
+                  '&:hover': {
+                    bgcolor: 'transparent',
+                    '&::after': {
+                      width: '100%',
+                      opacity: filter === 'pending' ? 1 : 0.5,
+                    },
+                  },
+                }}
+              >
+                Pending ({pendingCount})
+              </Button>
+            )}
             <Button
               disableRipple
               size="large"
@@ -491,7 +584,17 @@ const CampaignView = () => {
           </Box>
         ) : (
           <EmptyContent
-            title={`No ${filter === 'active' ? 'active' : 'completed'} campaigns available`}
+            title={`No ${
+              filter === 'active'
+                ? 'active'
+                : filter === 'completed'
+                ? 'completed'
+                : filter === 'pending'
+                ? 'pending'
+                : filter === 'paused'
+                ? 'paused'
+                : filter
+            } campaigns available`}
           />
         ))}
       {/* <CampaignFilter
