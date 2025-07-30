@@ -28,7 +28,21 @@ import FeedbackDisplay from './finalDraft/feedback-display';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
-const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraftSubmission }) => {
+const FinalDraft = ({ 
+  campaign, 
+  submission, 
+  creator, 
+  deliverablesData, 
+  firstDraftSubmission, 
+  isV3 = false,
+  // Individual client approval handlers
+  handleClientApproveVideo,
+  handleClientApprovePhoto,
+  handleClientApproveRawFootage,
+  handleClientRejectVideo,
+  handleClientRejectPhoto,
+  handleClientRejectRawFootage,
+}) => {
   const { deliverables, deliverableMutate, submissionMutate } = deliverablesData;
   const { user } = useAuthContext();
 
@@ -73,7 +87,14 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
 
       if (allSectionsApproved && submission.status === 'PENDING_REVIEW') {
-        // Update submission to approved
+        // Use V3 endpoint for client-created campaigns, legacy endpoint for admin-created campaigns
+        if (isV3) {
+          // V3 endpoint - admin approves and sends to client
+          await axiosInstance.patch(`/api/submission/v3/${submission.id}/approve/admin`, {
+            feedback: 'All sections have been approved'
+          });
+        } else {
+          // Legacy endpoint - direct approval
         await axiosInstance.patch(`/api/submission/status`, {
         submissionId: submission.id,
           status: 'APPROVED',
@@ -97,6 +118,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
             sectionOnly: true
           });
+          }
         }
 
         // Refresh the data
@@ -446,6 +468,15 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
     deliverables.photos.some(photo => photo.status === 'REVISION_REQUESTED');
 
   const getTabBorderColor = (tabType) => {
+    const status = submission.displayStatus || submission.status;
+    const userRole = user?.admin?.role?.name;
+
+    if (isV3 && userRole === 'admin') {
+      if (status === 'PENDING_REVIEW') return '#FFC702'; // Yellow for pending review
+      if (status === 'SENT_TO_CLIENT') return '#8a5afe'; // Purple for sent to client
+      if (status === 'CLIENT_CHANGES_REQUESTED') return '#D4321C'; // Red for client changes requested
+    }
+
     if (submission?.status === 'PENDING_REVIEW') return '#FFC702';
     
     switch (tabType) {
@@ -485,6 +516,13 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
             // V2 individual handlers
             onIndividualApprove={handleIndividualVideoApprove}
             onIndividualRequestChange={handleIndividualVideoRequestChange}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
           />
         );
       case 'rawFootages':
@@ -499,6 +537,13 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
             // V2 individual handlers
             onIndividualApprove={handleIndividualRawFootageApprove}
             onIndividualRequestChange={handleIndividualRawFootageRequestChange}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
           />
         );
       case 'photos':
@@ -513,6 +558,13 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
             // V2 individual handlers
             onIndividualApprove={handleIndividualPhotoApprove}
             onIndividualRequestChange={handleIndividualPhotoRequestChange}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
           />
         );
       default:
@@ -838,6 +890,14 @@ FinalDraft.propTypes = {
   creator: PropTypes.object.isRequired,
   deliverablesData: PropTypes.object.isRequired,
   firstDraftSubmission: PropTypes.object,
+  isV3: PropTypes.bool,
+  // Individual client approval handlers
+  handleClientApproveVideo: PropTypes.func,
+  handleClientApprovePhoto: PropTypes.func,
+  handleClientApproveRawFootage: PropTypes.func,
+  handleClientRejectVideo: PropTypes.func,
+  handleClientRejectPhoto: PropTypes.func,
+  handleClientRejectRawFootage: PropTypes.func,
 };
 
 export default FinalDraft;

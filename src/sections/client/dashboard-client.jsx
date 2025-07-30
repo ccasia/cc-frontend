@@ -17,6 +17,7 @@ import {
   DialogActions,
   LinearProgress,
   CircularProgress,
+  Tooltip,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -35,9 +36,8 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import CreateCampaignForm from 'src/sections/campaign/create/form';
-
-import CompanyCreationForm from '../client/company-creation-form';
+import ClientCampaignCreateForm from './campaign-create/campaign-create-form';
+import CompanyCreationForm from './company-creation-form';
 
 const ClientDashboard = () => {
   const { user } = useAuthContext();
@@ -68,7 +68,8 @@ const ClientDashboard = () => {
       }
     } catch (error) {
       console.error('Error checking client company:', error);
-      enqueueSnackbar('Error checking company status', { variant: 'error' });
+      // Silently handle the error without showing a snackbar
+      // This prevents the "Error checking company status" message
     } finally {
       setIsCheckingCompany(false);
     }
@@ -103,6 +104,35 @@ const ClientDashboard = () => {
   const handleViewCampaign = (id) => {
     router.push(paths.dashboard.campaign.details(id));
   };
+  
+  const handleRefreshCampaigns = () => {
+    mutate(); // Refresh campaigns data
+    enqueueSnackbar('Refreshing campaigns...', { variant: 'info' });
+  };
+  
+  const handleCheckCampaignAdmin = async () => {
+    try {
+      const response = await axiosInstance.get('/api/campaign/checkCampaignAdmin');
+      enqueueSnackbar(`Found ${response.data.length} campaign associations`, { variant: 'success' });
+      console.log('Campaign admin entries:', response.data);
+    } catch (error) {
+      console.error('Error checking campaign admin:', error);
+      enqueueSnackbar('Error checking campaign associations', { variant: 'error' });
+    }
+  };
+  
+  const handleAddToAllCampaigns = async () => {
+    try {
+      const response = await axiosInstance.post('/api/campaign/addClientToCampaignAdmin');
+      enqueueSnackbar(`Processed ${response.data.results.length} campaigns`, { variant: 'success' });
+      console.log('Add to campaigns result:', response.data);
+      // Refresh campaigns data after adding
+      mutate();
+    } catch (error) {
+      console.error('Error adding to campaigns:', error);
+      enqueueSnackbar('Error adding to campaigns', { variant: 'error' });
+    }
+  };
 
   const renderHeader = (
     <Box sx={{ 
@@ -136,27 +166,6 @@ const ClientDashboard = () => {
         </Typography>
       </Box>
       <Stack direction="row" spacing={1.5}>
-        <Box
-          sx={{
-            display: { xs: 'none', sm: 'flex' },
-            alignItems: 'center',
-            justifyContent: 'center',
-            px: 1.5,
-            py: 1.5,
-            borderRadius: 1,
-            bgcolor: '#FFF',
-            border: '1px solid #EBEBEB',
-            borderBottom: '3px solid #E7E7E7',
-            cursor: 'pointer',
-            height: '42px',
-            width: '42px',
-            '&:hover': {
-              bgcolor: '#F5F5F5',
-            },
-          }}
-        >
-          <Iconify icon="eva:menu-outline" width={20} color="#636366" />
-        </Box>
         <Box
           sx={{
             display: { xs: 'none', sm: 'flex' },
@@ -614,6 +623,50 @@ const ClientDashboard = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 14%' }, pr: 1 }}>
+                  {(campaign.status === 'PENDING_CSM_REVIEW' || campaign.status === 'SCHEDULED') ? (
+                    <Tooltip title="Waiting for admin approval">
+                      <Chip
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <span>PENDING</span>
+                            <Box
+                              sx={{
+                                ml: 0.5,
+                                width: 14,
+                                height: 14,
+                                borderRadius: '50%',
+                                border: '1px solid #FFC702',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#FFC702',
+                                fontSize: '9px',
+                                fontWeight: 'bold',
+                                lineHeight: 1,
+                              }}
+                            >
+                              i
+                            </Box>
+                          </Box>
+                        }
+                        size="small"
+                        sx={{ 
+                          borderRadius: '4px',
+                          border: '1px solid #FFC702',
+                          boxShadow: '0px -3px 0px 0px #FFC702 inset',
+                          backgroundColor: '#FFFFFF',
+                          color: '#FFC702',
+                          fontWeight: 600,
+                          fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                          height: { xs: 24, sm: 26 },
+                          minWidth: { xs: 60, sm: 70 },
+                          '&:hover': {
+                            backgroundColor: '#F8F9FA',
+                          },
+                        }}
+                      />
+                    </Tooltip>
+                  ) : (
                   <Chip
                     label={campaign.status}
                     size="small"
@@ -646,14 +699,25 @@ const ClientDashboard = () => {
                         border: '1px solid #f44336',
                         boxShadow: '0px -3px 0px 0px #f44336 inset',
                       }),
-                      ...(campaign.status === 'SCHEDULED' && {
-                        color: '#8e8e93',
-                      }),
                       '&:hover': {
                         backgroundColor: '#F8F9FA',
                       },
                     }}
-                  />
+                      icon={campaign.status === 'ACTIVE' ? (
+                        <Box
+                          component="span"
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            bgcolor: '#1abf66',
+                            display: 'inline-block',
+                            ml: '8px',
+                          }}
+                        />
+                      ) : null}
+                    />
+                  )}
                 </Box>
                 <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 20%' }, textAlign: 'right' }}>
                   <Button
@@ -808,7 +872,7 @@ const ClientDashboard = () => {
         scroll="paper"
         open={create.value}
       >
-        <CreateCampaignForm onClose={create.onFalse} mutate={mutate} />
+        <ClientCampaignCreateForm onClose={create.onFalse} mutate={mutate} />
       </Dialog>
 
       {!hasCompany ?

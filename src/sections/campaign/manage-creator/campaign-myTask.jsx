@@ -3,7 +3,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { Box, Card, Stack, Typography, CircularProgress, useMediaQuery } from '@mui/material';
+import { Box, Card, Stack, Typography, CircularProgress, useMediaQuery, Button } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
@@ -108,6 +108,22 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     };
   }, [campaign, submissionMutate, socket]);
 
+  // Auto-select posting stage when it becomes available
+  useEffect(() => {
+    const firstDraftSubmission = value('FIRST_DRAFT');
+    const postingSubmission = value('POSTING');
+    
+    // If First Draft is approved and posting is available, select posting stage
+    if (
+      (firstDraftSubmission?.status === 'APPROVED' || firstDraftSubmission?.status === 'CLIENT_APPROVED') &&
+      postingSubmission?.status === 'IN_PROGRESS' &&
+      selectedStage !== 'POSTING'
+    ) {
+      console.log('Auto-selecting POSTING stage');
+      setSelectedStage('POSTING');
+    }
+  }, [value, selectedStage]);
+
   const getVisibleStages = useCallback(() => {
     let stages = [];
     const agreementSubmission = value('AGREEMENT_FORM');
@@ -131,7 +147,9 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     // Show Posting if either First Draft or Final Draft is approved
     if (
       firstDraftSubmission?.status === 'APPROVED' ||
-      finalDraftSubmission?.status === 'APPROVED'
+      firstDraftSubmission?.status === 'CLIENT_APPROVED' ||
+      finalDraftSubmission?.status === 'APPROVED' ||
+      finalDraftSubmission?.status === 'CLIENT_APPROVED'
     ) {
       stages.unshift({ ...defaultSubmission[3] });
     }
@@ -148,6 +166,10 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   }, [value]);
 
   const handleStageClick = (stageType) => {
+    console.log('Stage clicked:', stageType);
+    console.log('Current selectedStage:', selectedStage);
+    console.log('Stage value:', value(stageType));
+    console.log('Stage status:', value(stageType)?.status);
     setSelectedStage(stageType);
     if (!viewedStages.includes(stageType)) {
       const newViewedStages = [...viewedStages, stageType];
@@ -165,6 +187,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     return (
       !viewedStages.includes(stageType) &&
       stageValue?.status !== 'APPROVED' &&
+      stageValue?.status !== 'CLIENT_APPROVED' &&
       !(stageType === 'FIRST_DRAFT' && stageValue?.status === 'CHANGES_REQUIRED')
     );
   };
@@ -275,6 +298,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                         justifyContent: 'center',
                         bgcolor:
                           value(item.type)?.status === 'APPROVED' ||
+                          value(item.type)?.status === 'CLIENT_APPROVED' ||
                           (item.type === 'FIRST_DRAFT' &&
                             value(item.type)?.status === 'CHANGES_REQUIRED')
                             ? '#5abc6f'
@@ -282,6 +306,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                       }}
                     >
                       {value(item.type)?.status === 'APPROVED' ||
+                      value(item.type)?.status === 'CLIENT_APPROVED' ||
                       (item.type === 'FIRST_DRAFT' &&
                         value(item.type)?.status === 'CHANGES_REQUIRED') ? (
                         <Iconify
@@ -318,6 +343,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                           color: '#636366',
                           display: 'block',
                           ...((value(item.type)?.status === 'APPROVED' ||
+                            value(item.type)?.status === 'CLIENT_APPROVED' ||
                             (item.type === 'FIRST_DRAFT' &&
                               value(item.type)?.status === 'CHANGES_REQUIRED')) && {
                             textDecoration: 'line-through',
@@ -420,13 +446,20 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                 />
               )}
               {selectedStage === 'POSTING' && (
-                <CampaignPosting
-                  campaign={campaign}
-                  timeline={timeline}
-                  submission={value('POSTING')}
-                  fullSubmission={submissions}
-                  getDependency={getDependency}
-                />
+                <>
+                  {console.log('Rendering POSTING component with:', {
+                    submission: value('POSTING'),
+                    selectedStage,
+                    campaign
+                  })}
+                  <CampaignPosting
+                    campaign={campaign}
+                    timeline={timeline}
+                    submission={value('POSTING')}
+                    fullSubmission={submissions}
+                    getDependency={getDependency}
+                  />
+                </>
               )}
             </Box>
           </Card>

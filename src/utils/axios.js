@@ -191,6 +191,7 @@ export const endpoints = {
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
     getCampaignPitchById: (id) => `/api/campaign/getClientByCampID/${id}`,
     shortlistCreator: '/api/campaign/shortlistCreator',
+    activateClientCampaign: (id) => `/api/campaign/activateClientCampaign/${id}`,
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
@@ -207,6 +208,15 @@ export const endpoints = {
       detail: (id) => `/api/campaign/pitch/${id}`,
       changeStatus: '/api/campaign/changePitchStatus',
       getCampaign: `/api/campaign/getCampaignPitch`,
+      // V3 endpoints for client-created campaigns
+      v3: {
+        approve: (pitchId) => `/api/pitch/v3/${pitchId}/approve`,
+        reject: (pitchId) => `/api/pitch/v3/${pitchId}/reject`,
+        approveClient: (pitchId) => `/api/pitch/v3/${pitchId}/approve/client`,
+        rejectClient: (pitchId) => `/api/pitch/v3/${pitchId}/reject/client`,
+        agreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
+        submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
+      },
     },
     draft: {
       getAllDraftInfo: (id) => `/api/draft/getAllDraftInfo/${id}`,
@@ -256,6 +266,25 @@ export const endpoints = {
   submission: {
     root: '/api/submission/',
     all: '/api/submission/getAllsubmission',
+    // V3 endpoints for client-created campaigns
+    v3: {
+      getAll: '/api/submission/v3',
+      getById: (submissionId) => `/api/submission/v3/${submissionId}`,
+      submitDraft: '/api/submission/v3/submit-draft',
+      approveByAdmin: (submissionId) => `/api/submission/v3/${submissionId}/approve/admin`,
+      requestChangesByAdmin: (submissionId) => `/api/submission/v3/${submissionId}/request-changes/admin`,
+      approveByClient: (submissionId) => `/api/submission/v3/${submissionId}/approve/client`,
+      requestChangesByClient: (submissionId) => `/api/submission/v3/${submissionId}/request-changes/client`,
+      forwardFeedback: (submissionId) => `/api/submission/v3/${submissionId}/forward-feedback`,
+      // V3 posting endpoints
+      posting: {
+        approveByAdmin: '/api/submission/v3/posting/approve',
+        requestChangesByAdmin: '/api/submission/v3/posting/request-changes',
+        approveByClient: '/api/submission/v3/posting/approve/client',
+        requestChangesByClient: '/api/submission/v3/posting/request-changes/client',
+        forwardFeedback: '/api/submission/v3/posting/forward-feedback',
+      },
+    },
     creator: {
       agreement: '/api/submission/submitAgreement',
       draftSubmission: '/api/submission/draftSubmission',
@@ -328,5 +357,6 @@ export const endpoints = {
     updateClient: '/api/client/updateClient',
     checkCompany: '/api/client/checkCompany',
     createCompany: '/api/client/createCompany',
+    createCampaign: '/api/client/createClientCampaign',
   },
 };

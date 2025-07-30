@@ -54,6 +54,8 @@ export const paths = {
       // pitch: (id) => `${ROOTS.DASHBOARD}/campaign/pitch/${id}`,
       pitch: (campaignId, pitchId) =>
         `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/pitch/${pitchId}`,
+      v3Pitches: (campaignId) =>
+        `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/v3-pitches`,
       creator: {
         manage: `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`,
         detail: (id) => `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${id}`,

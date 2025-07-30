@@ -31,10 +31,36 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-const Posting = ({ campaign, submission, creator }) => {
+const Posting = ({ 
+  campaign, 
+  submission, 
+  creator, 
+  isV3 = false,
+  // Individual client approval handlers (for consistency, but posting doesn't have individual media)
+  handleClientApproveVideo,
+  handleClientApprovePhoto,
+  handleClientApproveRawFootage,
+  handleClientRejectVideo,
+  handleClientRejectPhoto,
+  handleClientRejectRawFootage,
+}) => {
   const dialogApprove = useBoolean();
   const dialogReject = useBoolean();
   const { user } = useAuthContext();
+  
+  // Debug logging for Posting component (after user is defined)
+  useEffect(() => {
+    console.log('Posting component received props:', {
+      submission,
+      submissionStatus: submission?.status,
+      submissionDisplayStatus: submission?.displayStatus,
+      submissionContent: submission?.content,
+      isV3,
+      userRole: user?.role,
+      campaignOrigin: campaign?.origin
+    });
+  }, [submission, isV3, user, campaign]);
+  
   const [feedback, setFeedback] = useState('');
   const loading = useBoolean();
   const postingDate = useBoolean();
@@ -45,23 +71,62 @@ const Posting = ({ campaign, submission, creator }) => {
 
   const [dateError, setDateError] = useState({ dueDate: null });
 
+  // Get user role for V3 workflow
+  const userRole = user?.role || 'admin';
+
   const onSubmit = async (type) => {
     let res;
     try {
       loading.onTrue();
       if (type === 'APPROVED') {
+        if (isV3) {
+          if (userRole === 'client') {
+            // V3 client approval endpoint
+            res = await axiosInstance.patch(endpoints.submission.v3.posting.approveByClient, {
+              submissionId: submission.id,
+              feedback: 'Posting approved by client'
+            });
+          } else {
+            // V3 admin approval endpoint - sends to client
+            res = await axiosInstance.patch(endpoints.submission.v3.posting.approveByAdmin, {
+              submissionId: submission.id,
+              feedback: 'Posting approved by admin'
+            });
+          }
+        } else {
+          // Legacy endpoint - direct approval
         res = await axiosInstance.patch(endpoints.submission.admin.posting, {
           submissionId: submission?.id,
           status: 'APPROVED',
         });
+        }
         dialogApprove.onFalse();
       } else {
+        if (isV3) {
+          if (userRole === 'client') {
+            // V3 client rejection endpoint
+            res = await axiosInstance.patch(endpoints.submission.v3.posting.requestChangesByClient, {
+              submissionId: submission.id,
+              feedback,
+              reasons: []
+            });
+          } else {
+            // V3 admin rejection endpoint
+            res = await axiosInstance.patch(endpoints.submission.v3.posting.requestChangesByAdmin, {
+              submissionId: submission.id,
+              feedback,
+              reasons: []
+            });
+          }
+        } else {
+          // Legacy endpoint - direct rejection
         res = await axiosInstance.patch(endpoints.submission.admin.posting, {
           submissionId: submission?.id,
           status: 'REJECTED',
           feedback,
           feedbackId: submission?.feedback?.id,
         });
+        }
         dialogReject.onFalse();
       }
       mutate(
@@ -196,7 +261,7 @@ const Posting = ({ campaign, submission, creator }) => {
           {submission?.status === 'REJECTED' && (
             <EmptyContent title="Waiting for another submission." />
           )}
-          {submission?.status === 'PENDING_REVIEW' && (
+          {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && (
             <>
               <Box
                 component={Paper}
@@ -330,12 +395,90 @@ const Posting = ({ campaign, submission, creator }) => {
                 </Box>
               </Box>
               <Stack my={2} textAlign="end" direction="row" spacing={1.5} justifyContent="end">
+                {/* Debug the button condition */}
+                {console.log('Posting component - About to check button condition:', {
+                  isV3,
+                  userRole,
+                  displayStatus: submission?.displayStatus,
+                  condition: isV3 && userRole === 'client' && submission?.displayStatus === 'PENDING_REVIEW'
+                })}
+                
+                {/* V3: Show different buttons based on user role and submission status */}
+                {isV3 && userRole === 'client' && submission?.displayStatus === 'PENDING_REVIEW' ? (
+                  // Client buttons for V3
+                  <>
+                    {console.log('Posting component - Client buttons should show:', {
+                      isV3,
+                      userRole,
+                      displayStatus: submission?.displayStatus,
+                      condition: isV3 && userRole === 'client' && submission?.displayStatus === 'PENDING_REVIEW'
+                    })}
+                    <Button
+                      onClick={dialogReject.onTrue}
+                      disabled={isDisabled}
+                      size="small"
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        border: 1.5,
+                        borderRadius: 1.15,
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        color: '#D4321C',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#D4321C',
+                        },
+                        textTransform: 'none',
+                        px: 2.5,
+                        py: 1.2,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        minWidth: '80px',
+                        height: '45px',
+                      }}
+                    >
+                      Request a change
+                    </Button>
+                    <LoadingButton
+                      size="small"
+                      onClick={dialogApprove.onTrue}
+                      disabled={isDisabled}
+                      variant="contained"
+                      loading={loading.value}
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        color: '#1ABF66',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1.15,
+                        px: 2.5,
+                        py: 1.2,
+                        fontWeight: 600,
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#1ABF66',
+                        },
+                        fontSize: '1rem',
+                        minWidth: '80px',
+                        height: '45px',
+                        textTransform: 'none',
+                      }}
+                    >
+                      Approve
+                    </LoadingButton>
+                  </>
+                ) : (
+                  // Admin buttons (V2 style or V3 admin)
+                  <>
                 <Button
                   onClick={dialogReject.onTrue}
                   disabled={isDisabled}
                   size="small"
                   variant="contained"
-                  // startIcon={<Iconify icon="solar:close-circle-bold" />}
                   sx={{
                     bgcolor: '#FFFFFF',
                     border: 1.5,
@@ -364,7 +507,6 @@ const Posting = ({ campaign, submission, creator }) => {
                   onClick={dialogApprove.onTrue}
                   disabled={isDisabled}
                   variant="contained"
-                  // startIcon={<Iconify icon="solar:check-circle-bold" />}
                   loading={loading.value}
                   sx={{
                     bgcolor: '#FFFFFF',
@@ -389,6 +531,8 @@ const Posting = ({ campaign, submission, creator }) => {
                 >
                   Approve
                 </LoadingButton>
+                  </>
+                )}
               </Stack>
             </>
           )}
@@ -814,7 +958,15 @@ const Posting = ({ campaign, submission, creator }) => {
 export default Posting;
 
 Posting.propTypes = {
-  campaign: PropTypes.object,
-  submission: PropTypes.object,
-  creator: PropTypes.object,
+  campaign: PropTypes.object.isRequired,
+  submission: PropTypes.object.isRequired,
+  creator: PropTypes.object.isRequired,
+  isV3: PropTypes.bool,
+  // Individual client approval handlers
+  handleClientApproveVideo: PropTypes.func,
+  handleClientApprovePhoto: PropTypes.func,
+  handleClientApproveRawFootage: PropTypes.func,
+  handleClientRejectVideo: PropTypes.func,
+  handleClientRejectPhoto: PropTypes.func,
+  handleClientRejectRawFootage: PropTypes.func,
 };

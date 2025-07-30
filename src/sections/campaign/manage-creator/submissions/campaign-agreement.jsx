@@ -25,6 +25,8 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -106,6 +108,20 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     console.error('Error loading PDF:', error);
   };
 
+  // V3: Fetch agreements for this campaign and find the one for this user
+  const { data: agreements } = useGetAgreements(campaign?.id);
+  const myAgreement = agreements?.find(a => a.userId === user?.id);
+
+  // Use V3 agreementUrl if present, else fallback to admin logic
+  const agreementUrl = myAgreement?.agreementUrl || campaign?.agreement?.agreementUrl;
+
+  // Debug logging
+  console.log('[CreatorAgreement Debug] campaignId:', campaign?.id);
+  console.log('[CreatorAgreement Debug] userId:', user?.id);
+  console.log('[CreatorAgreement Debug] agreements:', agreements);
+  console.log('[CreatorAgreement Debug] myAgreement:', myAgreement);
+  console.log('[CreatorAgreement Debug] agreementUrl:', agreementUrl);
+
   const agreement = campaign?.campaignTimeline?.find((elem) => elem?.name === 'Agreement');
 
   const methods = useForm({
@@ -151,6 +167,30 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     setShowSubmitDialog(true);
     setSubmitStatus('submitting');
 
+    // V3: Client-created campaign agreement submission
+    if (campaign.origin === 'CLIENT' && myV3Pitch?.id) {
+      try {
+        setLoading(true);
+        await axiosInstance.patch(endpoints.campaign.pitch.v3.submitAgreement(myV3Pitch.id));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        enqueueSnackbar('Agreement submitted successfully!');
+        setSubmitStatus('success');
+      } catch (error) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        if (error?.message === 'Forbidden') {
+          dispatch({ type: 'LOGOUT' });
+          enqueueSnackbar('Your session is expired. Please re-login', { variant: 'error' });
+          return;
+        }
+        enqueueSnackbar('Submission of agreement failed', { variant: 'error' });
+        setSubmitStatus('error');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // V2: Admin-created campaign (existing logic)
     const formData = new FormData();
     formData.append('agreementForm', data.agreementForm);
     formData.append(
@@ -278,9 +318,12 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     }
   };
 
+  const { pitches: v3Pitches } = useGetV3Pitches(campaign?.id);
+  const myV3Pitch = v3Pitches.find(p => p.userId === user?.id);
+
   return (
     <Box p={1.5} sx={{ pb: 0 }}>
-      {!agreementStatus ? (
+      {(!agreementStatus && !agreementUrl) ? (
         <Box
           display="flex"
           flexDirection="column"
@@ -315,6 +358,153 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         </Box>
       ) : (
         <>
+          {/* If there is a valid agreementUrl but no submission, show a minimal download UI */}
+          {agreementUrl && !submission && (
+            <Stack gap={2}>
+              {/* Header with title and date, matching admin UI */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                  mt: { xs: 0, sm: -2 },
+                  ml: { xs: 0, sm: -1.2 },
+                  textAlign: { xs: 'center', sm: 'left' },
+                }}
+              >
+                <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
+                  Agreement Submission ✍
+                </Typography>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Due: {dayjs().format('MMM DD, YYYY')}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  mb: 3,
+                  mx: -1.5,
+                }}
+              />
+              <Box>
+                <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                  Before starting the campaign, you must sign the standard agreement submission procedure!
+                </Typography>
+                <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                  Download the agreement PDF from the link below, and then upload it back here to proceed to the next step.
+                </Typography>
+
+                <Button
+                  variant="contained"
+                  startIcon={<Iconify icon="material-symbols:download" width={20} />}
+                  onClick={() => handleDownload(agreementUrl)}
+                  sx={{
+                    bgcolor: 'white',
+                    border: 1,
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderBottomColor: '#e7e7e7',
+                    color: '#203ff5',
+                    ml: -1,
+                    '&:hover': {
+                      bgcolor: 'white',
+                      borderColor: '#e7e7e7',
+                    },
+                    '& .MuiButton-startIcon': {
+                      color: '#203ff5',
+                    },
+                  }}
+                >
+                  Download Agreement
+                </Button>
+
+                {/* Full-width Scrollable PDF Preview */}
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '600px',
+                    mt: 1,
+                    ml: -1,
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    overflow: 'auto',
+                    bgcolor: 'background.neutral',
+                    '& .react-pdf__Document': {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    },
+                  }}
+                >
+                  <Document
+                    file={agreementUrl}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={onDocumentLoadError}
+                  >
+                    {Array.from(new Array(numPages), (el, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          p: 2,
+                          width: '100%',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          '&:not(:last-child)': {
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                          },
+                        }}
+                      >
+                        <Page
+                          key={`page-${index + 1}`}
+                          pageNumber={index + 1}
+                          scale={isSmallScreen ? 0.7 : 1}
+                          renderAnnotationLayer={false}
+                          renderTextLayer={false}
+                        />
+                      </Box>
+                    ))}
+                  </Document>
+                </Box>
+              </Box>
+
+              <Box
+                sx={{
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  mb: -2,
+                  mx: -1.5,
+                }}
+              />
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={() => setOpenUploadModal(true)}
+                  startIcon={<Iconify icon="material-symbols:add" width={24} />}
+                  sx={{
+                    bgcolor: '#203ff5',
+                    color: 'white',
+                    borderBottom: 3.5,
+                    borderBottomColor: '#112286',
+                    borderRadius: 1.5,
+                    px: 2.5,
+                    py: 1.2,
+                    '&:hover': {
+                      bgcolor: '#203ff5',
+                      opacity: 0.9,
+                    },
+                  }}
+                >
+                  Upload
+                </Button>
+              </Box>
+            </Stack>
+          )}
           <Box
             sx={{
               display: 'flex',
@@ -400,7 +590,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 <Button
                   variant="contained"
                   startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                  onClick={() => handleDownload(campaign?.agreement?.agreementUrl)}
+                  onClick={() => handleDownload(agreementUrl)}
                   sx={{
                     bgcolor: 'white',
                     border: 1,
@@ -441,7 +631,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   }}
                 >
                   <Document
-                    file={campaign?.agreement?.agreementUrl}
+                    file={agreementUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
                   >
@@ -650,7 +840,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 <Button
                   variant="contained"
                   startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                  onClick={() => handleDownload(campaign?.agreement?.agreementUrl)}
+                  onClick={() => handleDownload(agreementUrl)}
                   sx={{
                     bgcolor: 'white',
                     border: 1,
@@ -689,7 +879,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   }}
                 >
                   <Document
-                    file={campaign?.agreement?.agreementUrl}
+                    file={agreementUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
                   >

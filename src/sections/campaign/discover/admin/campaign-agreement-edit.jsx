@@ -165,6 +165,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         user: agreement?.user,
         campaignId: agreement?.campaignId,
         id: agreement?.id,
+        isNew: agreement?.isNew || false, // Flag for V3 agreement creation
       };
 
       console.log('Sending data to backend:', requestData);
@@ -176,7 +177,13 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         },
       });
 
-      await handleSendAgreement();
+      // Use the returned agreement id for the sendAgreement call
+      const agreementIdToSend = res?.data?.agreement?.id || agreement?.id;
+      const sendAgreementPayload = {
+        ...agreement,
+        id: agreementIdToSend,
+      };
+      await axiosInstance.patch(endpoints.campaign.sendAgreement, sendAgreementPayload);
 
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
 

@@ -58,11 +58,14 @@ import CampaignDetailContentClient from '../campaign-detail-content-client';
 import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
+import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 import CampaignAnalytics from '../campaign-analytics';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignOverviewClient from '../campaign-overview-client';
+import ActivateCampaignDialog from '../activate-campaign-dialog';
+import CampaignV3PitchesWrapper from '../v3-pitches/campaign-v3-pitches-wrapper';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -94,7 +97,6 @@ const CampaignDetailView = ({ id }) => {
   const [password, setPassword] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const { user } = useAuthContext();
-  const [openDialog, setOpenDialog] = useState(false);
   const [pages, setPages] = useState(0);
   const lgUp = useResponsive('up', 'lg');
   const templateModal = useBoolean();
@@ -102,6 +104,7 @@ const CampaignDetailView = ({ id }) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const menuOpen = Boolean(menuAnchorEl);
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
+  const [activateDialogOpen, setActivateDialogOpen] = useState(false);
 
   const open = Boolean(anchorEl);
 
@@ -142,15 +145,7 @@ const CampaignDetailView = ({ id }) => {
   //   }
   // }, [id, campaign]);
 
-  useEffect(() => {
-    if (!campaignLoading && campaign) {
-      if (!campaign?.agreementTemplate) {
-        setOpenDialog(true);
-      } else {
-        setOpenDialog(false);
-      }
-    }
-  }, [campaign, campaignLoading]);
+  
 
   const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
 
@@ -192,7 +187,7 @@ const CampaignDetailView = ({ id }) => {
   const clientAllowedTabs = ['overview', 'campaign-content', 'creator-master-list', 'deliverables', 'analytics'];
   
   // Check if user is client
-  const isClient = user?.role === 'Client' || user?.admin?.role?.name === 'Client';
+  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'client';
 
   // Check if current tab is valid for client users
   useEffect(() => {
@@ -261,7 +256,7 @@ const CampaignDetailView = ({ id }) => {
           }}
         >
           {/* Show different tabs based on user role */}
-          {(user?.role === 'Client' || user?.admin?.role?.name === 'Client' ? 
+          {(user?.role === 'client' || user?.admin?.role?.name === 'client' ? 
             // Client user tabs (no Pitches tab)
             [
               { label: 'Overview', value: 'overview' },
@@ -430,7 +425,9 @@ const CampaignDetailView = ({ id }) => {
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
-    pitch: (
+    pitch: campaign?.origin === 'CLIENT' ? (
+      <CampaignV3PitchesWrapper campaign={campaign} />
+    ) : (
       <CampaignDetailPitch
         pitches={campaign?.pitch}
         timeline={campaign?.campaignTimeline?.find((elem) => elem.name === 'Open For Pitch')}
@@ -443,7 +440,11 @@ const CampaignDetailView = ({ id }) => {
       />
     ),
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />, 
-    deliverables: <CampaignCreatorDeliverables campaign={campaign} />, 
+    deliverables: isClient ? (
+      <CampaignCreatorDeliverablesClient campaign={campaign} />
+    ) : (
+      <CampaignCreatorDeliverables campaign={campaign} />
+    ), 
     analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />
   };
 
@@ -526,64 +527,6 @@ const CampaignDetailView = ({ id }) => {
     </Dialog>
   );
 
-  const agreementDialogContainer = (
-    <Dialog
-      maxWidth="sm"
-      fullWidth
-      sx={{
-        '& .MuiDialog-paper': {
-          p: 2,
-        },
-      }}
-      open={openDialog}
-    >
-      <Alert variant="outlined" severity="warning">
-        Agreement missing
-      </Alert>
-      <Box
-        sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: 'repeat(2,1fr)' } }}
-        gap={2}
-        mt={2}
-        minHeight={200}
-      >
-        <Button
-          sx={{
-            border: 1,
-            borderColor: '#EBEBEB',
-            borderRadius: 2,
-            p: 2,
-            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-          }}
-          onClick={pdfModal.onTrue}
-        >
-          <Stack alignItems="center" spacing={1}>
-            <Avatar sx={{ bgcolor: deepOrange[500] }}>
-              <Iconify icon="mingcute:file-new-fill" width={20} />
-            </Avatar>
-            Create new template
-          </Stack>
-        </Button>
-        <Button
-          sx={{
-            border: 1,
-            borderColor: '#EBEBEB',
-            borderRadius: 2,
-            p: 2,
-            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-          }}
-          onClick={templateModal.onTrue}
-        >
-          <Stack alignItems="center" spacing={1}>
-            <Avatar sx={{ bgcolor: pink[500] }}>
-              <Iconify icon="ooui:reference-existing-ltr" width={20} />
-            </Avatar>
-            Link to an existing template
-          </Stack>
-        </Button>
-      </Box>
-    </Dialog>
-  );
-
   const handleMenuOpen = (event) => {
     setMenuAnchorEl(event.currentTarget);
   };
@@ -595,6 +538,11 @@ const CampaignDetailView = ({ id }) => {
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
+  );
+
+  const isPendingCampaign = useMemo(
+    () => campaign?.status === 'SCHEDULED' || campaign?.status === 'PENDING_CSM_REVIEW',
+    [campaign]
   );
 
   return (
@@ -713,6 +661,32 @@ const CampaignDetailView = ({ id }) => {
               {/* Only show action buttons for non-client users */}
               {!isClient && (
                 <>
+                  {isPendingCampaign ? (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
+                      onClick={() => setActivateDialogOpen(true)}
+                      disabled={isDisabled}
+                      sx={{
+                        height: 42,
+                        borderRadius: 1,
+                        color: 'white',
+                        backgroundColor: '#1340ff',
+                        border: '1px solid #1340ff',
+                        borderBottom: '4px solid #0e2fd6',
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                        px: 2,
+                        whiteSpace: 'nowrap',
+                        '&:hover': {
+                          backgroundColor: '#0e2fd6',
+                        },
+                      }}
+                    >
+                      Activate Campaign
+                    </Button>
+                  ) : (
               <Button
                 variant="outlined"
                 size="small"
@@ -746,6 +720,7 @@ const CampaignDetailView = ({ id }) => {
               >
                 Edit Details
               </Button>
+                  )}
 
               <Box
                 onClick={handleMenuOpen}
@@ -852,8 +827,6 @@ const CampaignDetailView = ({ id }) => {
 
       {copyDialogContainer}
 
-      {!isDisabled && agreementDialogContainer}
-
       <PDFEditorModal
         open={pdfModal.value}
         onClose={pdfModal.onFalse}
@@ -872,6 +845,12 @@ const CampaignDetailView = ({ id }) => {
         open={campaignLogIsOpen}
         campaign={campaign}
         onClose={() => setCampaignLogIsOpen(false)}
+      />
+
+      <ActivateCampaignDialog 
+        open={activateDialogOpen} 
+        onClose={() => setActivateDialogOpen(false)} 
+        campaignId={id}
       />
 
       <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>

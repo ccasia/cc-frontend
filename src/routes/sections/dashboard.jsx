@@ -20,7 +20,8 @@ const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'
 const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCards'));
 const InvoiceCreator = lazy(() => import('src/pages/dashboard/creator/invoice'));
 const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
-const ClientDashboard = lazy(() => import('src/sections/admin/dashboard-client'));
+// Import the client dashboard directly without lazy loading to avoid issues
+import ClientDashboard from '../../sections/client/dashboard-client';
 
 // APP
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
@@ -126,7 +127,7 @@ export const dashboardRoutes = [
       {
         path: 'client',
         element: (
-          <RoleBasedGuard roles={['admin', 'Client', 'client']} hasContent>
+          <RoleBasedGuard roles={['admin', 'client']} hasContent>
             <ClientDashboard />
           </RoleBasedGuard>
         ),

@@ -109,13 +109,13 @@ export function useNavData() {
             title: 'Overview',
             path: paths.dashboard.root,
             icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
-            roles: ['superadmin', 'CSM', 'Growth', 'BD'], // Exclude Client role
+            roles: ['superadmin', 'CSM', 'Growth', 'BD'], 
           },
           {
             title: 'Dashboard',
             path: paths.dashboard.client,
             icon: ICONS.mycampaigns,
-            roles: ['Client', 'client'], // Only for Client role
+            roles: ['Client', 'client'], 
           },
         ],
       },

@@ -134,11 +134,41 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const handleApprove = async () => {
     try {
       setIsSubmitting(true);
-      const response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
+      
+      // Debug log to see what pitch object we're working with
+      console.log('Pitch object in handleApprove:', pitch);
+      console.log('Pitch ID:', pitch.id);
+      console.log('Pitch userId:', pitch.userId);
+      console.log('Pitch pitchId:', pitch.pitchId);
+      console.log('Campaign origin:', campaign?.origin);
+      console.log('User role:', user?.role);
+      
+      let response;
+      
+      // Check if this is a V3 pitch (client-created campaign)
+      if (campaign?.origin === 'CLIENT') {
+        // Use V3 endpoint for client-created campaigns
+        const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
+        console.log('Using V3 endpoint with pitch ID:', v3PitchId);
+        
+        // Check user role to call the correct endpoint
+        if (user?.role === 'client') {
+          // Client approves pitch
+          console.log('Client approving pitch with ID:', v3PitchId);
+          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.approveClient(v3PitchId));
+        } else {
+          // Admin approves pitch
+          console.log('Admin approving pitch with ID:', v3PitchId);
+          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.approve(v3PitchId));
+        }
+      } else {
+        // Use V2 endpoint for admin-created campaigns
+        response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
         pitchId: pitch.id,
         status: 'approved',
         totalUGCVideos,
       });
+      }
 
       const updatedPitch = { ...pitch, status: 'approved' };
       setCurrentPitch(updatedPitch);
@@ -161,10 +191,33 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const handleDecline = async () => {
     try {
       setIsSubmitting(true);
-      const response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
+      
+      let response;
+      
+      // Check if this is a V3 pitch (client-created campaign)
+      if (campaign?.origin === 'CLIENT') {
+        // Use V3 endpoint for client-created campaigns
+        const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
+        
+        // Check user role to call the correct endpoint
+        if (user?.role === 'client') {
+          // Client rejects pitch
+          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.rejectClient(v3PitchId), {
+            rejectionReason: 'Rejected by client'
+          });
+        } else {
+          // Admin rejects pitch
+          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.reject(v3PitchId), {
+            rejectionReason: 'Rejected by admin'
+          });
+        }
+      } else {
+        // Use V2 endpoint for admin-created campaigns
+        response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
         pitchId: pitch.id,
         status: 'rejected',
       });
+      }
 
       const updatedPitch = { ...pitch, status: 'rejected' };
       setCurrentPitch(updatedPitch);
