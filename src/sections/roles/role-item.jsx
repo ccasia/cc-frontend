@@ -11,6 +11,7 @@ import {
   Typography,
   IconButton,
   AvatarGroup,
+  Badge,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
@@ -21,10 +22,13 @@ const RoleItem = ({ role, key, onView }) => {
   const popover = usePopover();
   return (
     <TableRow key={role.id}>
-      <TableCell>
+      {/* <TableCell>
         <Chip label={role.id} size="small" color="info" />
+      </TableCell> */}
+
+      <TableCell>
+        <Chip label={role?.name} size="small" sx={{ borderRadius: 0.5 }} />
       </TableCell>
-      <TableCell>{role.name}</TableCell>
       <TableCell>{dayjs(role.createdAt).format('LL')}</TableCell>
       <TableCell>
         {role.admin.length ? (

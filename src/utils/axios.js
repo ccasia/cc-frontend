@@ -113,10 +113,10 @@ export const endpoints = {
       tiktokV2: (id) => `/api/social/v2/tiktokMediaKit/${id}`,
       instagram: (id) => `/api/social/instagram/overview/${id}`,
       instagramV2: (id) => `/api/social/v2/instagramOverview/${id}`,
-      getInstagramMediaInsight: (userId, postUrl, id) => 
+      getInstagramMediaInsight: (userId, postUrl, id) =>
         `/api/social/v2/mediaInsight/${userId}?url=${postUrl}&campaignId=${id}`,
-      getTikTokMediaInsight: (userId, postUrl, id) => 
-      `/api/social/v2/tiktokMediaInsight/${userId}?url=${postUrl}&campaignId=${id}`,
+      getTikTokMediaInsight: (userId, postUrl, id) =>
+        `/api/social/v2/tiktokMediaInsight/${userId}?url=${postUrl}&campaignId=${id}`,
     },
     updatePreference: (id) => `/api/creator/updatePreference/${id}`,
     exportCreators: '/api/creator/exportCreators',
@@ -272,9 +272,11 @@ export const endpoints = {
       getById: (submissionId) => `/api/submission/v3/${submissionId}`,
       submitDraft: '/api/submission/v3/submit-draft',
       approveByAdmin: (submissionId) => `/api/submission/v3/${submissionId}/approve/admin`,
-      requestChangesByAdmin: (submissionId) => `/api/submission/v3/${submissionId}/request-changes/admin`,
+      requestChangesByAdmin: (submissionId) =>
+        `/api/submission/v3/${submissionId}/request-changes/admin`,
       approveByClient: (submissionId) => `/api/submission/v3/${submissionId}/approve/client`,
-      requestChangesByClient: (submissionId) => `/api/submission/v3/${submissionId}/request-changes/client`,
+      requestChangesByClient: (submissionId) =>
+        `/api/submission/v3/${submissionId}/request-changes/client`,
       forwardFeedback: (submissionId) => `/api/submission/v3/${submissionId}/forward-feedback`,
       // V3 posting endpoints
       posting: {
@@ -297,8 +299,8 @@ export const endpoints = {
       v2: {
         photos: '/api/submission/v2/managePhotos',
         videos: '/api/submission/v2/manageDraftVideos',
-        rawFootages: '/api/submission/v2/manageRawFootages'
-      }
+        rawFootages: '/api/submission/v2/manageRawFootages',
+      },
     },
   },
   notification: {
@@ -311,6 +313,7 @@ export const endpoints = {
     root: '/api/role',
     get: (id) => `/api/role/${id}`,
     update: (id) => `/api/role/${id}`,
+    create: '/api/role',
   },
   package: {
     create: '/api/package/',

@@ -29,10 +29,10 @@ const RoleLists = ({ roles }) => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Date Created</TableCell>
-              <TableCell>Assign</TableCell>
+              {/* <TableCell size="small">ID</TableCell> */}
+              <TableCell size="small">Name</TableCell>
+              <TableCell size="small">Date Created</TableCell>
+              <TableCell size="small">Assign</TableCell>
               <TableCell />
             </TableRow>
           </TableHead>
