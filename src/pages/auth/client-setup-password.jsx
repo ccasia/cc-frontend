@@ -1,22 +1,15 @@
 import * as Yup from 'yup';
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { 
-  Typography, 
-  Box,
-  Alert,
-  InputAdornment,
-  IconButton,
-  Stack,
-  Link,
-} from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { useBoolean } from 'src/hooks/use-boolean';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import { Box, Link, Alert, Stack, Typography, IconButton, InputAdornment } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 export default function ClientSetupPassword() {
   const password = useBoolean();
@@ -26,9 +19,27 @@ export default function ClientSetupPassword() {
   const [error, setError] = useState('');
   const [tokenValid, setTokenValid] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
-  
+
   const navigate = useNavigate();
   const token = new URLSearchParams(window.location.search).get('token');
+
+  const verifyToken = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/auth/verify-client-invite?token=${token}`);
+      if (response.ok) {
+        const data = await response.json();
+        setEmail(data?.user?.email);
+        setName(data?.user?.name);
+        setTokenValid(true);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Invalid or expired invitation link');
+      }
+    } catch (err) {
+      console.log(err);
+      setError('Error verifying invitation');
+    }
+  }, [token]);
 
   useEffect(() => {
     if (token) {
@@ -36,24 +47,7 @@ export default function ClientSetupPassword() {
     } else {
       setError('No invitation token provided');
     }
-  }, [token]);
-
-  const verifyToken = async () => {
-    try {
-      const response = await fetch(`/api/auth/verify-client-invite?token=${token}`);
-      if (response.ok) {
-        const data = await response.json();
-        setEmail(data.user.email);
-        setName(data.user.name);
-        setTokenValid(true);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Invalid or expired invitation link');
-      }
-    } catch (error) {
-      setError('Error verifying invitation');
-    }
-  };
+  }, [token, verifyToken]);
 
   const PasswordSchema = Yup.object().shape({
     password: Yup.string()
@@ -96,17 +90,17 @@ export default function ClientSetupPassword() {
         body: JSON.stringify({
           token,
           password: data.password,
-          confirmPassword: data.confirmPassword
+          confirmPassword: data.confirmPassword,
         }),
       });
 
       if (response.ok) {
         navigate('/dashboard');
       } else {
-        const error = await response.json();
-        setError(error.message || 'Error setting up password');
+        const err = await response.json();
+        setError(err.message || 'Error setting up password');
       }
-    } catch (error) {
+    } catch (err) {
       setError('Network error occurred');
     }
   });
@@ -312,7 +306,9 @@ export default function ClientSetupPassword() {
                   <Box
                     component="img"
                     src={`/assets/icons/components/${
-                      confirmPassword.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'
+                      confirmPassword.value
+                        ? 'ic_open_passwordeye.svg'
+                        : 'ic_closed_passwordeye.svg'
                     }`}
                     sx={{ width: 24, height: 24 }}
                   />
@@ -354,7 +350,7 @@ export default function ClientSetupPassword() {
           borderBottom: isValid ? '3px solid #0c2aa6' : '3px solid #91a2e5',
           transition: 'none',
         }}
-      > 
+      >
         Create Account
       </LoadingButton>
     </Stack>
@@ -366,14 +362,16 @@ export default function ClientSetupPassword() {
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Box sx={{
-        p: 3,
-        bgcolor: '#F4F4F4',
-        borderRadius: 2,
-        width: { xs: '100%', sm: 470 },
-        maxWidth: { xs: '100%', sm: 470 },
-        mx: 'auto',
-      }}>
+      <Box
+        sx={{
+          p: 3,
+          bgcolor: '#F4F4F4',
+          borderRadius: 2,
+          width: { xs: '100%', sm: 470 },
+          maxWidth: { xs: '100%', sm: 470 },
+          mx: 'auto',
+        }}
+      >
         <Typography
           sx={{
             fontFamily: (theme) => theme.typography.fontSecondaryFamily,

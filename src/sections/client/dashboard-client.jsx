@@ -62,7 +62,7 @@ const ClientDashboard = () => {
       const response = await axiosInstance.get(endpoints.client.checkCompany);
       setHasCompany(response.data.hasCompany);
       setCompany(response.data.company);
-      
+
       if (!response.data.hasCompany) {
         setOpenCompanyDialog(true);
       }
@@ -74,7 +74,7 @@ const ClientDashboard = () => {
       setIsCheckingCompany(false);
     }
   };
-  
+
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
 
   const handleCompanyCreated = (newCompany) => {
@@ -96,35 +96,39 @@ const ClientDashboard = () => {
       </Container>
     );
   }
-  
+
   const handleNewCampaign = () => {
     create.onTrue();
   };
-  
+
   const handleViewCampaign = (id) => {
     router.push(paths.dashboard.campaign.details(id));
   };
-  
+
   const handleRefreshCampaigns = () => {
     mutate(); // Refresh campaigns data
     enqueueSnackbar('Refreshing campaigns...', { variant: 'info' });
   };
-  
+
   const handleCheckCampaignAdmin = async () => {
     try {
       const response = await axiosInstance.get('/api/campaign/checkCampaignAdmin');
-      enqueueSnackbar(`Found ${response.data.length} campaign associations`, { variant: 'success' });
+      enqueueSnackbar(`Found ${response.data.length} campaign associations`, {
+        variant: 'success',
+      });
       console.log('Campaign admin entries:', response.data);
     } catch (error) {
       console.error('Error checking campaign admin:', error);
       enqueueSnackbar('Error checking campaign associations', { variant: 'error' });
     }
   };
-  
+
   const handleAddToAllCampaigns = async () => {
     try {
       const response = await axiosInstance.post('/api/campaign/addClientToCampaignAdmin');
-      enqueueSnackbar(`Processed ${response.data.results.length} campaigns`, { variant: 'success' });
+      enqueueSnackbar(`Processed ${response.data.results.length} campaigns`, {
+        variant: 'success',
+      });
       console.log('Add to campaigns result:', response.data);
       // Refresh campaigns data after adding
       mutate();
@@ -135,31 +139,33 @@ const ClientDashboard = () => {
   };
 
   const renderHeader = (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: { xs: 'column', sm: 'row' },
-      justifyContent: 'space-between', 
-      alignItems: { xs: 'flex-start', sm: 'center' }, 
-      mb: { xs: 3, sm: 2 },
-      gap: { xs: 2, sm: 0 }
-    }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        mb: { xs: 3, sm: 2 },
+        gap: { xs: 2, sm: 0 },
+      }}
+    >
       <Box>
-        <Typography 
-          variant="h3" 
-          sx={{ 
-            fontWeight: 400, 
+        <Typography
+          variant="h3"
+          sx={{
+            fontWeight: 400,
             mb: 0.5,
             fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-            fontSize: { xs: '1.75rem', sm: '2rem' }
+            fontSize: { xs: '1.75rem', sm: '2rem' },
           }}
         >
           Welcome, {user?.name || 'Client'}! 👋
         </Typography>
-        <Typography 
-          variant="body1" 
+        <Typography
+          variant="body1"
           color="text.secondary"
           sx={{
-            fontSize: { xs: '0.9rem', sm: '1rem' }
+            fontSize: { xs: '0.9rem', sm: '1rem' },
           }}
         >
           Keep up the good work! Here's what is relevant to you right now.
@@ -206,7 +212,11 @@ const ClientDashboard = () => {
             },
           }}
         >
-          <Typography variant="body1" color="white" sx={{ fontWeight: 700, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+          <Typography
+            variant="body1"
+            color="white"
+            sx={{ fontWeight: 700, fontSize: { xs: '0.9rem', sm: '1rem' } }}
+          >
             New Campaign
           </Typography>
         </Box>
@@ -218,16 +228,12 @@ const ClientDashboard = () => {
     <Grid container spacing={1} sx={{ mb: 4 }}>
       <Grid item xs={12} md={4}>
         <Box sx={{ pl: 0, pr: { xs: 0, md: 2 } }}>
-          <Typography 
-            variant="h4" 
-            gutterBottom
-            sx={{ fontFamily: 'Aileron, sans-serif' }}
-          >
+          <Typography variant="h4" gutterBottom sx={{ fontFamily: 'Aileron, sans-serif' }}>
             Tasks To Do
           </Typography>
           <Stack direction={{ xs: 'row', sm: 'row' }} spacing={{ xs: 1.5, sm: 2 }} sx={{ mt: 2 }}>
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 bgcolor: '#F5F5F5',
                 borderRadius: 2,
                 p: { xs: 1.5, sm: 2 },
@@ -236,20 +242,22 @@ const ClientDashboard = () => {
                 justifyContent: 'space-between',
                 flex: 1,
                 minWidth: { xs: 'auto', sm: 180 },
-                boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
               }}
             >
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  lineHeight: 1.2, 
-                  fontWeight: 500, 
-                  whiteSpace: 'nowrap', 
+              <Typography
+                variant="body1"
+                sx={{
+                  lineHeight: 1.2,
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
                   color: '#2C2C2C',
-                  fontSize: { xs: '0.8rem', sm: '0.9rem' }
+                  fontSize: { xs: '0.8rem', sm: '0.9rem' },
                 }}
               >
-                Creators to<br />Approve
+                Creators to
+                <br />
+                Approve
               </Typography>
               <Box
                 sx={{
@@ -263,14 +271,14 @@ const ClientDashboard = () => {
                   color: 'white',
                   fontSize: { xs: 20, sm: 24 },
                   fontWeight: 600,
-                  ml: { xs: 1, sm: 2 }
+                  ml: { xs: 1, sm: 2 },
                 }}
               >
                 0
               </Box>
             </Box>
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 bgcolor: '#F5F5F5',
                 borderRadius: 2,
                 p: { xs: 1.5, sm: 2 },
@@ -279,20 +287,22 @@ const ClientDashboard = () => {
                 justifyContent: 'space-between',
                 flex: 1,
                 minWidth: { xs: 'auto', sm: 180 },
-                boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
               }}
             >
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  lineHeight: 1.2, 
-                  fontWeight: 500, 
-                  whiteSpace: 'nowrap', 
+              <Typography
+                variant="body1"
+                sx={{
+                  lineHeight: 1.2,
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
                   color: '#2C2C2C',
-                  fontSize: { xs: '0.8rem', sm: '0.9rem' }
+                  fontSize: { xs: '0.8rem', sm: '0.9rem' },
                 }}
               >
-                Drafts to<br />Approve
+                Drafts to
+                <br />
+                Approve
               </Typography>
               <Box
                 sx={{
@@ -306,7 +316,7 @@ const ClientDashboard = () => {
                   color: 'white',
                   fontSize: { xs: 20, sm: 24 },
                   fontWeight: 600,
-                  ml: { xs: 1, sm: 2 }
+                  ml: { xs: 1, sm: 2 },
                 }}
               >
                 0
@@ -315,47 +325,45 @@ const ClientDashboard = () => {
           </Stack>
         </Box>
       </Grid>
-      
+
       <Grid item xs={12} md={8}>
         <Box sx={{ pl: { xs: 0, md: 14 }, pr: 0 }}>
-          <Typography 
-            variant="h4" 
-            gutterBottom
-            sx={{ fontFamily: 'Aileron, sans-serif' }}
-          >
+          <Typography variant="h4" gutterBottom sx={{ fontFamily: 'Aileron, sans-serif' }}>
             Credit Tracking
           </Typography>
           <Grid container spacing={{ xs: 2, md: 0 }} sx={{ mt: 0, alignItems: 'flex-end' }}>
             <Grid item xs={6} sm={6} md={2.5}>
-              <Box sx={{ 
-                textAlign: 'left', 
-                borderRight: { xs: 'none', md: '1px solid #231F20' },
-                borderBottom: { xs: 'none', md: 'none' },
-                pr: { xs: 0, md: 2 },
-                pb: { xs: 1, md: 0 },
-                pl: 0,
-                mb: { xs: 0, md: 0 }
-              }}>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+              <Box
+                sx={{
+                  textAlign: 'left',
+                  borderRight: { xs: 'none', md: '1px solid #231F20' },
+                  borderBottom: { xs: 'none', md: 'none' },
+                  pr: { xs: 0, md: 2 },
+                  pb: { xs: 1, md: 0 },
+                  pl: 0,
+                  mb: { xs: 0, md: 0 },
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
                     fontFamily: 'Aileron, sans-serif',
                     color: '#636366',
                     whiteSpace: 'nowrap',
                     mb: 0,
-                    fontSize: { xs: '0.9rem', md: '1rem' }
+                    fontSize: { xs: '0.9rem', md: '1rem' },
                   }}
                 >
                   Total Credits
                 </Typography>
-                <Typography 
-                  variant="h2" 
-                  color="#3366FF" 
+                <Typography
+                  variant="h2"
+                  color="#3366FF"
                   fontWeight={600}
-                  sx={{ 
-                    fontFamily: (theme) => theme.typography.fontSecondaryFamily, 
+                  sx={{
+                    fontFamily: (theme) => theme.typography.fontSecondaryFamily,
                     textAlign: 'left',
-                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
+                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
                   }}
                 >
                   0
@@ -363,33 +371,35 @@ const ClientDashboard = () => {
               </Box>
             </Grid>
             <Grid item xs={6} sm={6} md={2.5}>
-              <Box sx={{ 
-                borderRight: { xs: 'none', md: '1px solid #231F20' },
-                borderBottom: { xs: 'none', md: 'none' },
-                px: { xs: 0, md: 1 },
-                pb: { xs: 1, md: 0 },
-                pl: { xs: 0, md: 5 },
-                mb: { xs: 0, md: 0 }
-              }}>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+              <Box
+                sx={{
+                  borderRight: { xs: 'none', md: '1px solid #231F20' },
+                  borderBottom: { xs: 'none', md: 'none' },
+                  px: { xs: 0, md: 1 },
+                  pb: { xs: 1, md: 0 },
+                  pl: { xs: 0, md: 5 },
+                  mb: { xs: 0, md: 0 },
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
                     fontFamily: 'Aileron, sans-serif',
                     color: '#636366',
                     whiteSpace: 'nowrap',
                     mb: 0,
-                    fontSize: { xs: '0.9rem', md: '1rem' }
+                    fontSize: { xs: '0.9rem', md: '1rem' },
                   }}
                 >
                   Used
                 </Typography>
-                <Typography 
-                  variant="h2" 
-                  color="#3366FF" 
+                <Typography
+                  variant="h2"
+                  color="#3366FF"
                   fontWeight={600}
-                  sx={{ 
+                  sx={{
                     fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
+                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
                   }}
                 >
                   0
@@ -397,33 +407,35 @@ const ClientDashboard = () => {
               </Box>
             </Grid>
             <Grid item xs={6} sm={6} md={2.5}>
-              <Box sx={{ 
-                borderRight: { xs: 'none', md: '1px solid #231F20' },
-                borderBottom: { xs: 'none', md: 'none' },
-                px: { xs: 0, md: 1 },
-                pb: { xs: 1, md: 0 },
-                pl: { xs: 0, md: 2 },
-                mb: { xs: 0, md: 0 }
-              }}>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+              <Box
+                sx={{
+                  borderRight: { xs: 'none', md: '1px solid #231F20' },
+                  borderBottom: { xs: 'none', md: 'none' },
+                  px: { xs: 0, md: 1 },
+                  pb: { xs: 1, md: 0 },
+                  pl: { xs: 0, md: 2 },
+                  mb: { xs: 0, md: 0 },
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
                     fontFamily: 'Aileron, sans-serif',
                     color: '#636366',
                     whiteSpace: 'nowrap',
                     mb: 0,
-                    fontSize: { xs: '0.9rem', md: '1rem' }
+                    fontSize: { xs: '0.9rem', md: '1rem' },
                   }}
                 >
                   Remaining
                 </Typography>
-                <Typography 
-                  variant="h2" 
-                  color="#3366FF" 
+                <Typography
+                  variant="h2"
+                  color="#3366FF"
                   fontWeight={600}
-                  sx={{ 
+                  sx={{
                     fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
+                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
                   }}
                 >
                   0
@@ -431,30 +443,32 @@ const ClientDashboard = () => {
               </Box>
             </Grid>
             <Grid item xs={6} sm={6} md={4.5}>
-              <Box sx={{ 
-                px: { xs: 0, md: 1 }, 
-                pl: { xs: 0, md: 3 },
-                pb: { xs: 0, md: 0 }
-              }}>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+              <Box
+                sx={{
+                  px: { xs: 0, md: 1 },
+                  pl: { xs: 0, md: 3 },
+                  pb: { xs: 0, md: 0 },
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
                     fontFamily: 'Aileron, sans-serif',
                     color: '#636366',
                     whiteSpace: 'nowrap',
                     mb: 0,
-                    fontSize: { xs: '0.9rem', md: '1rem' }
+                    fontSize: { xs: '0.9rem', md: '1rem' },
                   }}
                 >
                   Credits Validity
                 </Typography>
-                <Typography 
-                  variant="h2" 
-                  color="#3366FF" 
+                <Typography
+                  variant="h2"
+                  color="#3366FF"
                   fontWeight={600}
-                  sx={{ 
+                  sx={{
                     fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
+                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
                   }}
                 >
                   0 Days
@@ -494,7 +508,9 @@ const ClientDashboard = () => {
               Campaign Name
             </Typography>
           </Box>
-          <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 18%' }, display: { xs: 'none', sm: 'block' } }}>
+          <Box
+            sx={{ flex: { xs: '1 1 25%', md: '0 0 18%' }, display: { xs: 'none', sm: 'block' } }}
+          >
             <Typography
               sx={{
                 fontWeight: 600,
@@ -505,7 +521,9 @@ const ClientDashboard = () => {
               Start Date
             </Typography>
           </Box>
-          <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 18%' }, display: { xs: 'none', sm: 'block' } }}>
+          <Box
+            sx={{ flex: { xs: '1 1 25%', md: '0 0 18%' }, display: { xs: 'none', sm: 'block' } }}
+          >
             <Typography
               sx={{
                 fontWeight: 600,
@@ -542,8 +560,8 @@ const ClientDashboard = () => {
         {/* Empty state for campaigns */}
         {!isLoading && (!campaigns || campaigns.length === 0) && (
           <Box sx={{ py: 8, textAlign: 'center' }}>
-            <EmptyContent 
-              title="No campaigns yet" 
+            <EmptyContent
+              title="No campaigns yet"
               description="Create your first campaign by clicking the 'New Campaign' button"
               sx={{ py: 5 }}
             />
@@ -567,13 +585,15 @@ const ClientDashboard = () => {
                   },
                 }}
               >
-                <Box sx={{ 
-                  flex: { xs: '1 1 50%', md: '0 0 30%' }, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 1.5,
-                  pr: 1
-                }}>
+                <Box
+                  sx={{
+                    flex: { xs: '1 1 50%', md: '0 0 30%' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    pr: 1,
+                  }}
+                >
                   <Avatar
                     src={campaign.brand?.logo || ''}
                     sx={{
@@ -600,7 +620,13 @@ const ClientDashboard = () => {
                     {campaign.name}
                   </Typography>
                 </Box>
-                <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 18%' }, pr: 1, display: { xs: 'none', sm: 'block' } }}>
+                <Box
+                  sx={{
+                    flex: { xs: '1 1 25%', md: '0 0 18%' },
+                    pr: 1,
+                    display: { xs: 'none', sm: 'block' },
+                  }}
+                >
                   <Typography
                     sx={{
                       fontWeight: 400,
@@ -608,10 +634,18 @@ const ClientDashboard = () => {
                       color: '#333',
                     }}
                   >
-                    {campaign.campaignBrief?.startDate ? fDate(campaign.campaignBrief.startDate) : 'N/A'}
+                    {campaign.campaignBrief?.startDate
+                      ? fDate(campaign.campaignBrief.startDate)
+                      : 'N/A'}
                   </Typography>
                 </Box>
-                <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 18%' }, pr: 1, display: { xs: 'none', sm: 'block' } }}>
+                <Box
+                  sx={{
+                    flex: { xs: '1 1 25%', md: '0 0 18%' },
+                    pr: 1,
+                    display: { xs: 'none', sm: 'block' },
+                  }}
+                >
                   <Typography
                     sx={{
                       fontWeight: 400,
@@ -619,11 +653,13 @@ const ClientDashboard = () => {
                       color: '#333',
                     }}
                   >
-                    {campaign.campaignBrief?.endDate ? fDate(campaign.campaignBrief.endDate) : 'N/A'}
+                    {campaign.campaignBrief?.endDate
+                      ? fDate(campaign.campaignBrief.endDate)
+                      : 'N/A'}
                   </Typography>
                 </Box>
                 <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 14%' }, pr: 1 }}>
-                  {(campaign.status === 'PENDING_CSM_REVIEW' || campaign.status === 'SCHEDULED') ? (
+                  {campaign.status === 'PENDING_CSM_REVIEW' || campaign.status === 'SCHEDULED' ? (
                     <Tooltip title="Waiting for admin approval">
                       <Chip
                         label={
@@ -650,7 +686,7 @@ const ClientDashboard = () => {
                           </Box>
                         }
                         size="small"
-                        sx={{ 
+                        sx={{
                           borderRadius: '4px',
                           border: '1px solid #FFC702',
                           boxShadow: '0px -3px 0px 0px #FFC702 inset',
@@ -667,55 +703,57 @@ const ClientDashboard = () => {
                       />
                     </Tooltip>
                   ) : (
-                  <Chip
-                    label={campaign.status}
-                    size="small"
-                    sx={{ 
-                      borderRadius: '4px',
-                      border: '1px solid #E7E7E7',
-                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                      backgroundColor: '#FFFFFF',
-                      fontWeight: 600,
-                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                      height: { xs: 24, sm: 26 },
-                      minWidth: { xs: 60, sm: 70 },
-                      ...(campaign.status === 'ACTIVE' && {
-                        color: '#1abf66',
-                        border: '1px solid #1abf66',
-                        boxShadow: '0px -3px 0px 0px #1abf66 inset',
-                      }),
-                      ...(campaign.status === 'DRAFT' && {
-                        color: '#ff9800',
-                        border: '1px solid #ff9800',
-                        boxShadow: '0px -3px 0px 0px #ff9800 inset',
-                      }),
-                      ...(campaign.status === 'COMPLETED' && {
-                        color: '#3366FF',
-                        border: '1px solid #3366FF',
-                        boxShadow: '0px -3px 0px 0px #3366FF inset',
-                      }),
-                      ...(campaign.status === 'PAUSED' && {
-                        color: '#f44336',
-                        border: '1px solid #f44336',
-                        boxShadow: '0px -3px 0px 0px #f44336 inset',
-                      }),
-                      '&:hover': {
-                        backgroundColor: '#F8F9FA',
-                      },
-                    }}
-                      icon={campaign.status === 'ACTIVE' ? (
-                        <Box
-                          component="span"
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            bgcolor: '#1abf66',
-                            display: 'inline-block',
-                            ml: '8px',
-                          }}
-                        />
-                      ) : null}
+                    <Chip
+                      label={campaign.status}
+                      size="small"
+                      sx={{
+                        borderRadius: '4px',
+                        border: '1px solid #E7E7E7',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        backgroundColor: '#FFFFFF',
+                        fontWeight: 600,
+                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                        height: { xs: 24, sm: 26 },
+                        minWidth: { xs: 60, sm: 70 },
+                        ...(campaign.status === 'ACTIVE' && {
+                          color: '#1abf66',
+                          border: '1px solid #1abf66',
+                          boxShadow: '0px -3px 0px 0px #1abf66 inset',
+                        }),
+                        ...(campaign.status === 'DRAFT' && {
+                          color: '#ff9800',
+                          border: '1px solid #ff9800',
+                          boxShadow: '0px -3px 0px 0px #ff9800 inset',
+                        }),
+                        ...(campaign.status === 'COMPLETED' && {
+                          color: '#3366FF',
+                          border: '1px solid #3366FF',
+                          boxShadow: '0px -3px 0px 0px #3366FF inset',
+                        }),
+                        ...(campaign.status === 'PAUSED' && {
+                          color: '#f44336',
+                          border: '1px solid #f44336',
+                          boxShadow: '0px -3px 0px 0px #f44336 inset',
+                        }),
+                        '&:hover': {
+                          backgroundColor: '#F8F9FA',
+                        },
+                      }}
+                      icon={
+                        campaign.status === 'ACTIVE' ? (
+                          <Box
+                            component="span"
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              bgcolor: '#1abf66',
+                              display: 'inline-block',
+                              ml: '8px',
+                            }}
+                          />
+                        ) : null
+                      }
                     />
                   )}
                 </Box>
@@ -743,7 +781,7 @@ const ClientDashboard = () => {
                       '&:active': {
                         boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
                         transform: 'translateY(1px)',
-                      }
+                      },
                     }}
                   >
                     View Campaign
@@ -782,8 +820,8 @@ const ClientDashboard = () => {
     <Stack spacing={-3}>
       <Box sx={{ ...BoxStyle, mt: 1 }}>
         <Box className="header">
-          <Iconify 
-            icon="eva:file-text-outline" 
+          <Iconify
+            icon="eva:file-text-outline"
             sx={{
               color: '#203ff5',
               width: 20,
@@ -810,8 +848,8 @@ const ClientDashboard = () => {
 
       <Box sx={BoxStyle}>
         <Box className="header">
-          <Iconify 
-            icon="eva:file-text-outline" 
+          <Iconify
+            icon="eva:file-text-outline"
             sx={{
               color: '#203ff5',
               width: 20,
@@ -842,7 +880,7 @@ const ClientDashboard = () => {
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       {renderHeader}
       {renderTasksAndCredits}
-      
+
       <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
           {renderCampaignTable}
@@ -875,17 +913,16 @@ const ClientDashboard = () => {
         <ClientCampaignCreateForm onClose={create.onFalse} mutate={mutate} />
       </Dialog>
 
-      {!hasCompany ?
+      {!hasCompany ? (
         <Dialog
           open={openCompanyDialog}
-          onClose={() => !hasCompany ? null : setOpenCompanyDialog(false)}
+          onClose={() => (!hasCompany ? null : setOpenCompanyDialog(false))}
           maxWidth="sm"
           fullWidth
           disableEscapeKeyDown={!hasCompany}
-
         >
           <Box paddingY={3} bgcolor="#F4F4F4">
-            <Typography px={3} pb={2} fontSize={{ xs: 26, sm: 36}} fontFamily="Instrument Serif">
+            <Typography px={3} pb={2} fontSize={{ xs: 26, sm: 36 }} fontFamily="Instrument Serif">
               Complete your Client Information
             </Typography>
             <Divider sx={{ mx: 3 }} />
@@ -898,16 +935,14 @@ const ClientDashboard = () => {
             </DialogContent>
             {hasCompany && (
               <DialogActions>
-                <Button onClick={() => setOpenCompanyDialog(false)}>
-                  Cancel
-                </Button>
+                <Button onClick={() => setOpenCompanyDialog(false)}>Cancel</Button>
               </DialogActions>
             )}
           </Box>
-        </Dialog> : null
-      }
+        </Dialog>
+      ) : null}
     </Container>
   );
 };
 
-export default ClientDashboard; 
+export default ClientDashboard;

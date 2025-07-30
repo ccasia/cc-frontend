@@ -40,7 +40,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const { user } = useAuthContext();
   const [totalUGCVideos, setTotalUGCVideos] = useState(null);
-  const { mutate } = useGetCampaignById(campaign.id);
+  const { mutate } = useGetCampaignById(campaign?.id);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -134,7 +134,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const handleApprove = async () => {
     try {
       setIsSubmitting(true);
-      
+
       // Debug log to see what pitch object we're working with
       console.log('Pitch object in handleApprove:', pitch);
       console.log('Pitch ID:', pitch.id);
@@ -142,20 +142,22 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       console.log('Pitch pitchId:', pitch.pitchId);
       console.log('Campaign origin:', campaign?.origin);
       console.log('User role:', user?.role);
-      
+
       let response;
-      
+
       // Check if this is a V3 pitch (client-created campaign)
       if (campaign?.origin === 'CLIENT') {
         // Use V3 endpoint for client-created campaigns
         const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
         console.log('Using V3 endpoint with pitch ID:', v3PitchId);
-        
+
         // Check user role to call the correct endpoint
         if (user?.role === 'client') {
           // Client approves pitch
           console.log('Client approving pitch with ID:', v3PitchId);
-          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.approveClient(v3PitchId));
+          response = await axiosInstance.patch(
+            endpoints.campaign.pitch.v3.approveClient(v3PitchId)
+          );
         } else {
           // Admin approves pitch
           console.log('Admin approving pitch with ID:', v3PitchId);
@@ -164,10 +166,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       } else {
         // Use V2 endpoint for admin-created campaigns
         response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
-        pitchId: pitch.id,
-        status: 'approved',
-        totalUGCVideos,
-      });
+          pitchId: pitch.id,
+          status: 'approved',
+          totalUGCVideos,
+        });
       }
 
       const updatedPitch = { ...pitch, status: 'approved' };
@@ -191,32 +193,35 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const handleDecline = async () => {
     try {
       setIsSubmitting(true);
-      
+
       let response;
-      
+
       // Check if this is a V3 pitch (client-created campaign)
       if (campaign?.origin === 'CLIENT') {
         // Use V3 endpoint for client-created campaigns
         const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
-        
+
         // Check user role to call the correct endpoint
         if (user?.role === 'client') {
           // Client rejects pitch
-          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.rejectClient(v3PitchId), {
-            rejectionReason: 'Rejected by client'
-          });
+          response = await axiosInstance.patch(
+            endpoints.campaign.pitch.v3.rejectClient(v3PitchId),
+            {
+              rejectionReason: 'Rejected by client',
+            }
+          );
         } else {
           // Admin rejects pitch
           response = await axiosInstance.patch(endpoints.campaign.pitch.v3.reject(v3PitchId), {
-            rejectionReason: 'Rejected by admin'
+            rejectionReason: 'Rejected by admin',
           });
         }
       } else {
         // Use V2 endpoint for admin-created campaigns
         response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
-        pitchId: pitch.id,
-        status: 'rejected',
-      });
+          pitchId: pitch.id,
+          status: 'rejected',
+        });
       }
 
       const updatedPitch = { ...pitch, status: 'rejected' };
@@ -248,7 +253,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
 
   const handleShortlistedProfileClick = (e) => {
     e.stopPropagation();
-    navigate(`/dashboard/campaign/discover/detail/${campaign.id}/creator/${currentPitch?.user?.id}`);
+    navigate(
+      `/dashboard/campaign/discover/detail/${campaign.id}/creator/${currentPitch?.user?.id}`
+    );
   };
 
   return (
@@ -302,7 +309,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 direction={{ xs: 'column', sm: 'row' }}
                 alignItems={{ xs: 'flex-start', sm: 'center' }}
                 spacing={2}
-                sx={{ pr: { xs: 0, sm: 8 } }} 
+                sx={{ pr: { xs: 0, sm: 8 } }}
               >
                 {/* Creator Info */}
                 <Avatar
@@ -316,10 +323,14 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   }}
                 />
                 <Stack spacing={0.5}>
-                  <Typography sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20' }}>
+                  <Typography
+                    sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20' }}
+                  >
                     {currentPitch?.user?.name}
                   </Typography>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}>
+                  <Typography
+                    sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}
+                  >
                     {currentPitch?.user?.email}
                   </Typography>
 
@@ -407,14 +418,16 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Stack>
 
               {/* Social Media Icons - Desktop */}
-              <Box sx={{ 
-                display: { xs: 'none', sm: 'block' },
-                position: 'absolute',
-                right: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 9,
-              }}>
+              <Box
+                sx={{
+                  display: { xs: 'none', sm: 'block' },
+                  position: 'absolute',
+                  right: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 9,
+                }}
+              >
                 <Stack direction="row" spacing={1}>
                   {currentPitch?.user?.creator?.instagram && (
                     <Tooltip title="Instagram Profile">
@@ -552,14 +565,23 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 >
                   <Stack direction="row" spacing={0} width="100%" justifyContent="flex-end">
                     {/* First stat */}
-                    <Box sx={{ flex: 0, display: 'flex', justifyContent: 'flex-end', minWidth: '80px' }}>
+                    <Box
+                      sx={{
+                        flex: 0,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        minWidth: '80px',
+                      }}
+                    >
                       <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
                         <Box
                           component="img"
                           src="/assets/icons/overview/purpleGroup.svg"
                           sx={{ width: 20, height: 20 }}
                         />
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>N/A</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                          N/A
+                        </Typography>
                         <Typography
                           variant="caption"
                           color="#8e8e93"
@@ -569,26 +591,35 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             overflow: 'visible',
                             width: '100%',
                             fontSize: '12px',
-                            textAlign: 'right'
+                            textAlign: 'right',
                           }}
                         >
                           Followers
                         </Typography>
                       </Stack>
                     </Box>
-                    
+
                     {/* Divider */}
                     <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
-                    
+
                     {/* Second stat */}
-                    <Box sx={{ flex: 0, display: 'flex', justifyContent: 'flex-end', minWidth: '120px' }}>
+                    <Box
+                      sx={{
+                        flex: 0,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        minWidth: '120px',
+                      }}
+                    >
                       <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
                         <Box
                           component="img"
                           src="/assets/icons/overview/greenChart.svg"
                           sx={{ width: 20, height: 20 }}
                         />
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>N/A</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                          N/A
+                        </Typography>
                         <Typography
                           variant="caption"
                           color="#8e8e93"
@@ -598,26 +629,35 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             overflow: 'visible',
                             width: '100%',
                             fontSize: '12px',
-                            textAlign: 'right'
+                            textAlign: 'right',
                           }}
                         >
                           Engagement Rate
                         </Typography>
                       </Stack>
                     </Box>
-                    
+
                     {/* Divider */}
                     <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
-                    
+
                     {/* Third stat */}
-                    <Box sx={{ flex: 0, display: 'flex', justifyContent: 'flex-end', minWidth: '105px' }}>
+                    <Box
+                      sx={{
+                        flex: 0,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        minWidth: '105px',
+                      }}
+                    >
                       <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
                         <Box
                           component="img"
                           src="/assets/icons/overview/bubbleHeart.svg"
                           sx={{ width: 20, height: 20 }}
                         />
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>N/A</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                          N/A
+                        </Typography>
                         <Typography
                           variant="caption"
                           color="#8e8e93"
@@ -627,7 +667,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             overflow: 'visible',
                             width: '100%',
                             fontSize: '12px',
-                            textAlign: 'right'
+                            textAlign: 'right',
                           }}
                         >
                           Average Likes
@@ -640,7 +680,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             </Grid>
 
             <Divider />
-
           </Stack>
         </Box>
 
@@ -681,9 +720,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     ) : (
                       <Box
                         component="img"
-                          src="/assets/icons/components/ic_letterpitch.svg"
-                          sx={{ width: 64, height: 64 }}
-                        />
+                        src="/assets/icons/components/ic_letterpitch.svg"
+                        sx={{ width: 64, height: 64 }}
+                      />
                     )}
                     <Stack>
                       <Typography variant="h6">

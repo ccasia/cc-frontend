@@ -147,7 +147,7 @@ const authClient = {
         </Suspense>
       ),
       children: [
-        { 
+        {
           path: 'setup-password',
           element: (
             <GuestGuard>
@@ -168,8 +168,8 @@ const authClient = {
           ),
         },
       ],
-    }
-  ]
+    },
+  ],
 };
 
 export const authRoutes = [

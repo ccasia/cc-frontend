@@ -109,13 +109,13 @@ export function useNavData() {
             title: 'Overview',
             path: paths.dashboard.root,
             icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
-            roles: ['superadmin', 'CSM', 'Growth', 'BD'], 
+            roles: ['superadmin', 'CSM', 'Growth', 'BD'],
           },
           {
             title: 'Dashboard',
             path: paths.dashboard.client,
             icon: ICONS.mycampaigns,
-            roles: ['Client', 'client'], 
+            roles: ['Client', 'client'],
           },
         ],
       },
@@ -437,20 +437,31 @@ export function useNavData() {
       if (user?.role === 'creator') {
         return creatorNavigations;
       }
+
       if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
         return financeNavigations;
       }
-      if (user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Client') {
+
+      if (user?.admin?.role?.name === 'CSM') {
         // Filter out menu items that don't apply to the Client role if needed
-        if (user?.admin?.role?.name === 'Client') {
-          return adminNavigations.map(section => ({
-            ...section,
-            items: section.items.filter(item => 
-              !item.roles || item.roles.includes('Client')
-            )
-          })).filter(section => section.items.length > 0);
-        }
+        // if (user?.admin?.role?.name === 'Client') {
+        //   return adminNavigations
+        //     .map((section) => ({
+        //       ...section,
+        //       items: section.items.filter((item) => !item.roles || item.roles.includes('Client')),
+        //     }))
+        //     .filter((section) => section.items.length > 0);
+        // }
         return adminNavigations;
+      }
+
+      if (user?.role?.toLowerCase() === 'client') {
+        return adminNavigations
+          .map((section) => ({
+            ...section,
+            items: section.items.filter((item) => !item.roles || item.roles.includes('Client')),
+          }))
+          .filter((section) => section.items.length > 0);
       }
 
       if (user?.role === 'superadmin') {
@@ -473,10 +484,7 @@ export function useNavData() {
     [adminNavigations, creatorNavigations, user, financeNavigations, unreadMessageCount]
   );
 
-  const data = useMemo(
-    () => navigations,
-    [navigations]
-  );
+  const data = useMemo(() => navigations, [navigations]);
 
   return data;
 }

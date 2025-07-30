@@ -361,5 +361,6 @@ export const endpoints = {
     checkCompany: '/api/client/checkCompany',
     createCompany: '/api/client/createCompany',
     createCampaign: '/api/client/createClientCampaign',
+    invite: '/api/client/invite',
   },
 };

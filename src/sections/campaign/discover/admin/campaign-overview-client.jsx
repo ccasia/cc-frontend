@@ -2,17 +2,7 @@ import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 
-import {
-  Box,
-  Grid,
-  Stack,
-  Avatar,
-  Button,
-  Typography,
-  Link,
-  Chip,
-  Zoom,
-} from '@mui/material';
+import { Box, Grid, Stack, Avatar, Button, Typography, Link, Chip, Zoom } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -81,7 +71,7 @@ const CampaignOverviewClient = ({ campaign }) => {
     comments: {
       change: -2.1,
       increase: false,
-    }
+    },
   };
 
   return (
@@ -90,26 +80,26 @@ const CampaignOverviewClient = ({ campaign }) => {
       <Grid container spacing={1} sx={{ mb: { xs: 2, sm: 1 } }}>
         <Grid item xs={12}>
           <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
-            <Typography 
-              variant="h5" 
-              sx={{ 
+            <Typography
+              variant="h5"
+              sx={{
                 fontFamily: 'Aileron, sans-serif',
                 color: '#000000',
                 fontWeight: 600,
                 mb: 0.5,
-                fontSize: { xs: '1.1rem', sm: '1.25rem' }
+                fontSize: { xs: '1.1rem', sm: '1.25rem' },
               }}
             >
               Campaign Objective
             </Typography>
-            <Typography 
-              variant="h3" 
-              sx={{ 
+            <Typography
+              variant="h3"
+              sx={{
                 fontFamily: 'Instrument Serif, serif',
                 color: '#1340FF',
                 fontWeight: 500,
                 mb: 1,
-                fontSize: { xs: '1.5rem', sm: '2rem' }
+                fontSize: { xs: '1.5rem', sm: '2rem' },
               }}
             >
               Increase Brand Awareness
@@ -121,8 +111,8 @@ const CampaignOverviewClient = ({ campaign }) => {
       {/* Analytics Section */}
       <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 3 } }}>
         <Grid item xs={12} md={3}>
-          <Box 
-            sx={{ 
+          <Box
+            sx={{
               bgcolor: '#1340FF',
               borderRadius: 2,
               p: { xs: 1.5, sm: 1.8 },
@@ -130,37 +120,37 @@ const CampaignOverviewClient = ({ campaign }) => {
               flexDirection: 'column',
               justifyContent: 'space-between',
               boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)',
-              height: { xs: 'auto', sm: 'calc(130px + 1rem)' }, 
-              minHeight: { xs: '120px', sm: 'auto' }
+              height: { xs: 'auto', sm: 'calc(130px + 1rem)' },
+              minHeight: { xs: '120px', sm: 'auto' },
             }}
           >
             <Box>
-              <Typography 
-                variant="h4" 
-                sx={{ 
+              <Typography
+                variant="h4"
+                sx={{
                   fontFamily: 'Aileron, sans-serif',
                   color: '#FFFFFF',
                   fontWeight: 600,
                   mb: 0.2,
-                  fontSize: { xs: '0.95rem', sm: '1.05rem' }
+                  fontSize: { xs: '0.95rem', sm: '1.05rem' },
                 }}
               >
                 Check out your campaign analytics!
               </Typography>
-              <Typography 
-                variant="body1" 
-                sx={{ 
+              <Typography
+                variant="body1"
+                sx={{
                   fontFamily: 'Aileron, sans-serif',
                   color: '#FFFFFF',
                   opacity: 0.9,
                   fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                  lineHeight: 1.3
+                  lineHeight: 1.3,
                 }}
               >
                 View real time insights and see how your campaign is performing
               </Typography>
             </Box>
-            
+
             <Button
               variant="contained"
               onClick={() => navigate(paths.dashboard.campaign.analytics(campaign?.id))}
@@ -184,34 +174,34 @@ const CampaignOverviewClient = ({ campaign }) => {
             </Button>
           </Box>
         </Grid>
-        
+
         <Grid item xs={12} md={9}>
           <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
-            <Typography 
-              variant="h4" 
-              sx={{ 
+            <Typography
+              variant="h4"
+              sx={{
                 fontFamily: 'Aileron, sans-serif',
                 color: '#000000',
                 fontWeight: 600,
                 mb: 0.8,
-                fontSize: { xs: '1.1rem', sm: '1.25rem' }
+                fontSize: { xs: '1.1rem', sm: '1.25rem' },
               }}
             >
               Performance Summary
             </Typography>
-            
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
+
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
               spacing={{ xs: 2, sm: 2.5 }}
-              sx={{ 
-                height: { sm: '100%' }, 
-                display: 'flex', 
+              sx={{
+                height: { sm: '100%' },
+                display: 'flex',
                 alignItems: 'flex-end',
-                mt: 0.8
+                mt: 0.8,
               }}
             >
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   bgcolor: '#F5F5F5',
                   borderRadius: 2,
                   p: { xs: 2, sm: 1.5 },
@@ -221,34 +211,51 @@ const CampaignOverviewClient = ({ campaign }) => {
                   flex: 1,
                   minWidth: { xs: '100%', sm: 180 },
                   height: { xs: 'auto', sm: 100 },
-                  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)'
+                  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
                 }}
               >
                 <Stack spacing={0.5}>
-                  <Typography variant="body1" sx={{ lineHeight: 1.2, fontWeight: 500, whiteSpace: 'nowrap', color: '#636366', fontFamily: 'Aileron, sans-serif' }}>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      lineHeight: 1.2,
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      color: '#636366',
+                      fontFamily: 'Aileron, sans-serif',
+                    }}
+                  >
                     Views
                   </Typography>
                   <Stack direction="column" spacing={0.2} alignItems="flex-start">
                     <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <Iconify 
-                        icon={metrics.views.increase ? "eva:arrow-up-fill" : "eva:arrow-down-fill"} 
-                        sx={{ 
+                      <Iconify
+                        icon={metrics.views.increase ? 'eva:arrow-up-fill' : 'eva:arrow-down-fill'}
+                        sx={{
                           color: metrics.views.increase ? '#4CAF50' : '#F44336',
                           width: 16,
-                          height: 16
-                        }} 
+                          height: 16,
+                        }}
                       />
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
+                      <Typography
+                        variant="body2"
+                        sx={{
                           color: metrics.views.increase ? '#4CAF50' : '#F44336',
-                          fontWeight: 600
+                          fontWeight: 600,
                         }}
                       >
                         {metrics.views.change}%
                       </Typography>
                     </Stack>
-                    <Typography variant="caption" sx={{ color: '#636366', pl: 0.3, fontSize: '0.75rem', fontFamily: 'Aileron, sans-serif' }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: '#636366',
+                        pl: 0.3,
+                        fontSize: '0.75rem',
+                        fontFamily: 'Aileron, sans-serif',
+                      }}
+                    >
                       from campaign average
                     </Typography>
                   </Stack>
@@ -271,8 +278,8 @@ const CampaignOverviewClient = ({ campaign }) => {
                 </Box>
               </Box>
 
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   bgcolor: '#F5F5F5',
                   borderRadius: 2,
                   p: { xs: 2, sm: 1.5 },
@@ -282,34 +289,51 @@ const CampaignOverviewClient = ({ campaign }) => {
                   flex: 1,
                   minWidth: { xs: '100%', sm: 180 },
                   height: { xs: 'auto', sm: 100 },
-                  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)'
+                  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
                 }}
               >
                 <Stack spacing={0.5}>
-                  <Typography variant="body1" sx={{ lineHeight: 1.2, fontWeight: 500, whiteSpace: 'nowrap', color: '#636366', fontFamily: 'Aileron, sans-serif' }}>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      lineHeight: 1.2,
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      color: '#636366',
+                      fontFamily: 'Aileron, sans-serif',
+                    }}
+                  >
                     Likes
                   </Typography>
                   <Stack direction="column" spacing={0.2} alignItems="flex-start">
                     <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <Iconify 
-                        icon={metrics.likes.increase ? "eva:arrow-up-fill" : "eva:arrow-down-fill"} 
-                        sx={{ 
+                      <Iconify
+                        icon={metrics.likes.increase ? 'eva:arrow-up-fill' : 'eva:arrow-down-fill'}
+                        sx={{
                           color: metrics.likes.increase ? '#4CAF50' : '#F44336',
                           width: 16,
-                          height: 16
-                        }} 
+                          height: 16,
+                        }}
                       />
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
+                      <Typography
+                        variant="body2"
+                        sx={{
                           color: metrics.likes.increase ? '#4CAF50' : '#F44336',
-                          fontWeight: 600
+                          fontWeight: 600,
                         }}
                       >
                         {metrics.likes.change}%
                       </Typography>
                     </Stack>
-                    <Typography variant="caption" sx={{ color: '#636366', pl: 0.3, fontSize: '0.75rem', fontFamily: 'Aileron, sans-serif' }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: '#636366',
+                        pl: 0.3,
+                        fontSize: '0.75rem',
+                        fontFamily: 'Aileron, sans-serif',
+                      }}
+                    >
                       from campaign average
                     </Typography>
                   </Stack>
@@ -332,8 +356,8 @@ const CampaignOverviewClient = ({ campaign }) => {
                 </Box>
               </Box>
 
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   bgcolor: '#F5F5F5',
                   borderRadius: 2,
                   p: { xs: 2, sm: 1.5 },
@@ -343,34 +367,53 @@ const CampaignOverviewClient = ({ campaign }) => {
                   flex: 1,
                   minWidth: { xs: '100%', sm: 180 },
                   height: { xs: 'auto', sm: 100 },
-                  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)'
+                  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
                 }}
               >
                 <Stack spacing={0.5}>
-                  <Typography variant="body1" sx={{ lineHeight: 1.2, fontWeight: 500, whiteSpace: 'nowrap', color: '#636366', fontFamily: 'Aileron, sans-serif' }}>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      lineHeight: 1.2,
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      color: '#636366',
+                      fontFamily: 'Aileron, sans-serif',
+                    }}
+                  >
                     Comments
                   </Typography>
                   <Stack direction="column" spacing={0.2} alignItems="flex-start">
                     <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <Iconify 
-                        icon={metrics.comments.increase ? "eva:arrow-up-fill" : "eva:arrow-down-fill"} 
-                        sx={{ 
+                      <Iconify
+                        icon={
+                          metrics.comments.increase ? 'eva:arrow-up-fill' : 'eva:arrow-down-fill'
+                        }
+                        sx={{
                           color: metrics.comments.increase ? '#4CAF50' : '#F44336',
                           width: 16,
-                          height: 16
-                        }} 
+                          height: 16,
+                        }}
                       />
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
+                      <Typography
+                        variant="body2"
+                        sx={{
                           color: metrics.comments.increase ? '#4CAF50' : '#F44336',
-                          fontWeight: 600
+                          fontWeight: 600,
                         }}
                       >
                         {metrics.comments.change}%
                       </Typography>
                     </Stack>
-                    <Typography variant="caption" sx={{ color: '#636366', pl: 0.3, fontSize: '0.75rem', fontFamily: 'Aileron, sans-serif' }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: '#636366',
+                        pl: 0.3,
+                        fontSize: '0.75rem',
+                        fontFamily: 'Aileron, sans-serif',
+                      }}
+                    >
                       from campaign average
                     </Typography>
                   </Stack>
@@ -402,10 +445,12 @@ const CampaignOverviewClient = ({ campaign }) => {
         {/* Left Column: Creator Pitches */}
         <Grid item xs={12} md={6}>
           <Zoom in>
-            <Box sx={{
-              ...BoxStyle,
-              minHeight: approvedPitches.length === 0 ? 'auto' : 'auto',
-            }}>
+            <Box
+              sx={{
+                ...BoxStyle,
+                minHeight: approvedPitches.length === 0 ? 'auto' : 'auto',
+              }}
+            >
               <Box className="header" sx={{ px: { xs: 1, sm: 1.8 } }}>
                 <Iconify
                   icon="solar:user-hand-up-bold"
@@ -438,7 +483,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                   </Typography>
                 </Stack>
               </Box>
-              
+
               {approvedPitches.length === 0 ? (
                 <Typography
                   variant="caption"
@@ -447,10 +492,12 @@ const CampaignOverviewClient = ({ campaign }) => {
                   No approved pitches yet
                 </Typography>
               ) : (
-                <Scrollbar sx={{ 
-                  maxHeight: approvedPitches.length > 5 ? { xs: 300, sm: 400 } : 'auto',
-                  minHeight: approvedPitches.length === 1 ? 'auto' : 'auto',
-                }}>
+                <Scrollbar
+                  sx={{
+                    maxHeight: approvedPitches.length > 5 ? { xs: 300, sm: 400 } : 'auto',
+                    minHeight: approvedPitches.length === 1 ? 'auto' : 'auto',
+                  }}
+                >
                   <Stack spacing={[1]}>
                     {approvedPitches.map((pitch, index) => (
                       <Stack
@@ -462,9 +509,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                           pt: 1.5,
                           pb: index !== approvedPitches.length - 1 ? 1.5 : 0.5,
                           borderBottom:
-                            index !== approvedPitches.length - 1
-                              ? '1px solid #e7e7e7'
-                              : 'none',
+                            index !== approvedPitches.length - 1 ? '1px solid #e7e7e7' : 'none',
                         }}
                       >
                         <Avatar
@@ -480,9 +525,9 @@ const CampaignOverviewClient = ({ campaign }) => {
                           {pitch.user?.name?.charAt(0).toUpperCase()}
                         </Avatar>
                         <Stack sx={{ flex: 1 }}>
-                          <Typography 
-                            variant="subtitle3" 
-                            sx={{ 
+                          <Typography
+                            variant="subtitle3"
+                            sx={{
                               fontWeight: 500,
                               fontSize: { xs: '0.875rem', sm: '1rem' },
                               overflow: 'hidden',
@@ -533,10 +578,12 @@ const CampaignOverviewClient = ({ campaign }) => {
         {/* Right Column: Shortlisted Creators */}
         <Grid item xs={12} md={6}>
           <Zoom in>
-            <Box sx={{
-              ...BoxStyle,
-              minHeight: shortlistedCreators.length === 0 ? 'auto' : 'auto',
-            }}>
+            <Box
+              sx={{
+                ...BoxStyle,
+                minHeight: shortlistedCreators.length === 0 ? 'auto' : 'auto',
+              }}
+            >
               <Box className="header" sx={{ px: { xs: 1, sm: 1.8 } }}>
                 <Iconify
                   icon="solar:users-group-rounded-bold"
@@ -569,7 +616,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                   </Typography>
                 </Stack>
               </Box>
-              
+
               {shortlistedCreators.length === 0 ? (
                 <Typography
                   variant="caption"
@@ -578,10 +625,12 @@ const CampaignOverviewClient = ({ campaign }) => {
                   No shortlisted creators yet
                 </Typography>
               ) : (
-                <Scrollbar sx={{ 
-                  maxHeight: shortlistedCreators.length > 5 ? { xs: 300, sm: 400 } : 'auto',
-                  minHeight: shortlistedCreators.length === 1 ? 'auto' : 'auto',
-                }}>
+                <Scrollbar
+                  sx={{
+                    maxHeight: shortlistedCreators.length > 5 ? { xs: 300, sm: 400 } : 'auto',
+                    minHeight: shortlistedCreators.length === 1 ? 'auto' : 'auto',
+                  }}
+                >
                   <Stack spacing={[1]}>
                     {shortlistedCreators.map((item, index) => (
                       <Stack
@@ -593,9 +642,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                           pt: 1.5,
                           pb: index !== shortlistedCreators.length - 1 ? 1.5 : 0.5,
                           borderBottom:
-                            index !== shortlistedCreators.length - 1
-                              ? '1px solid #e7e7e7'
-                              : 'none',
+                            index !== shortlistedCreators.length - 1 ? '1px solid #e7e7e7' : 'none',
                         }}
                       >
                         <Avatar
@@ -611,9 +658,9 @@ const CampaignOverviewClient = ({ campaign }) => {
                           {item.user?.name?.charAt(0).toUpperCase()}
                         </Avatar>
                         <Stack sx={{ flex: 1 }}>
-                          <Typography 
-                            variant="subtitle3" 
-                            sx={{ 
+                          <Typography
+                            variant="subtitle3"
+                            sx={{
                               fontWeight: 500,
                               fontSize: { xs: '0.875rem', sm: '1rem' },
                               overflow: 'hidden',
@@ -630,7 +677,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                         <Button
                           size="small"
                           variant="outlined"
-                        //   onClick={() => handleViewProfile(item.userId)}
+                          //   onClick={() => handleViewProfile(item.userId)}
                           sx={{
                             textTransform: 'none',
                             minHeight: { xs: 34, sm: 38 },
@@ -660,11 +707,13 @@ const CampaignOverviewClient = ({ campaign }) => {
 
           {/* Reference Links */}
           <Zoom in>
-            <Box sx={{ 
-              ...BoxStyle, 
-              mt: 3,
-              minHeight: referenceLinks.length === 0 ? 'auto' : 'auto',
-            }}>
+            <Box
+              sx={{
+                ...BoxStyle,
+                mt: 3,
+                minHeight: referenceLinks.length === 0 ? 'auto' : 'auto',
+              }}
+            >
               <Box className="header">
                 <Iconify
                   icon="solar:link-circle-bold"
@@ -685,7 +734,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                   REFERENCE LINKS
                 </Typography>
               </Box>
-              
+
               {referenceLinks.length === 0 ? (
                 <Typography
                   variant="caption"
@@ -696,17 +745,18 @@ const CampaignOverviewClient = ({ campaign }) => {
               ) : (
                 <Stack spacing={1}>
                   {referenceLinks.map((link, index) => (
-                    <Link 
-                      key={index} 
-                      href={link} 
-                      target="_blank" 
+                    <Link
+                      key={index}
+                      href={link}
+                      target="_blank"
                       rel="noopener"
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
                         color: '#203ff5',
                         py: 0.5,
-                        borderBottom: index < referenceLinks.length - 1 ? '1px solid #e7e7e7' : 'none',
+                        borderBottom:
+                          index < referenceLinks.length - 1 ? '1px solid #e7e7e7' : 'none',
                         '&:hover': { textDecoration: 'underline' },
                       }}
                     >
@@ -721,11 +771,13 @@ const CampaignOverviewClient = ({ campaign }) => {
 
           {/* Other Attachments */}
           <Zoom in>
-            <Box sx={{ 
-              ...BoxStyle, 
-              mt: 3,
-              minHeight: otherAttachments.length === 0 ? 'auto' : 'auto',
-            }}>
+            <Box
+              sx={{
+                ...BoxStyle,
+                mt: 3,
+                minHeight: otherAttachments.length === 0 ? 'auto' : 'auto',
+              }}
+            >
               <Box className="header">
                 <Iconify
                   icon="solar:file-bold"
@@ -746,7 +798,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                   OTHER ATTACHMENTS
                 </Typography>
               </Box>
-              
+
               {otherAttachments.length === 0 ? (
                 <Typography
                   variant="caption"
@@ -761,20 +813,21 @@ const CampaignOverviewClient = ({ campaign }) => {
                       key={index}
                       sx={{
                         py: 0.5,
-                        borderBottom: index < otherAttachments.length - 1 ? '1px solid #e7e7e7' : 'none',
+                        borderBottom:
+                          index < otherAttachments.length - 1 ? '1px solid #e7e7e7' : 'none',
                       }}
                     >
                       <Chip
                         label={attachment.split('/').pop()}
                         onClick={() => window.open(attachment, '_blank')}
                         icon={<Iconify icon="eva:file-text-fill" />}
-                        sx={{ 
+                        sx={{
                           maxWidth: '100%',
-                          '& .MuiChip-label': { 
+                          '& .MuiChip-label': {
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                          }
+                          },
                         }}
                       />
                     </Box>
@@ -791,10 +844,12 @@ const CampaignOverviewClient = ({ campaign }) => {
         {/* Left Column: References */}
         <Grid item xs={12} md={6}>
           <Zoom in>
-            <Box sx={{
-              ...BoxStyle,
-              minHeight: referenceLinks.length === 0 ? 'auto' : 'auto',
-            }}>
+            <Box
+              sx={{
+                ...BoxStyle,
+                minHeight: referenceLinks.length === 0 ? 'auto' : 'auto',
+              }}
+            >
               <Box className="header">
                 <Iconify
                   icon="eva:link-2-fill"
@@ -817,7 +872,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                   </Typography>
                 </Stack>
               </Box>
-              
+
               {referenceLinks.length === 0 ? (
                 <Typography
                   variant="caption"
@@ -837,14 +892,14 @@ const CampaignOverviewClient = ({ campaign }) => {
                           bgcolor: 'background.neutral',
                         }}
                       >
-                        <Link 
-                          href={link} 
-                          target="_blank" 
-                          rel="noopener" 
-                          sx={{ 
+                        <Link
+                          href={link}
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
                             color: 'primary.main',
                             fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                            wordBreak: 'break-all'
+                            wordBreak: 'break-all',
                           }}
                         >
                           {link}
@@ -873,4 +928,4 @@ CampaignOverviewClient.propTypes = {
   campaign: PropTypes.object,
 };
 
-export default CampaignOverviewClient; 
+export default CampaignOverviewClient;
