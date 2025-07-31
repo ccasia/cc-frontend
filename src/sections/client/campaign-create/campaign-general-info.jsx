@@ -11,6 +11,7 @@ import { interestsLists } from 'src/contants/interestLists';
 
 import Label from 'src/components/label';
 import { RHFTextField } from 'src/components/hook-form';
+import useGetClientCredits from 'src/hooks/use-get-client-credits';
 import CustomRHFSelect from './custom-rhf-select';
 
 // Form field component with consistent styling
@@ -34,6 +35,7 @@ const FormField = ({ label, children, required = true }) => (
 const ClientCampaignGeneralInfo = () => {
   const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
   const { setValue, watch } = useFormContext();
+  const { availableCredits, isLoading: isLoadingCredits } = useGetClientCredits();
 
   // For date handling
   const startDate = watch('campaignStartDate');
@@ -146,7 +148,7 @@ const ClientCampaignGeneralInfo = () => {
                   fullWidth
                   disabled
                   size="small"
-                  value="100" // This should be replaced with actual available credits
+                  value={isLoadingCredits ? 'Loading...' : availableCredits.toString()}
                   InputProps={{
                     readOnly: true,
                   }}
@@ -162,7 +164,10 @@ const ClientCampaignGeneralInfo = () => {
                   type="number"
                   size="small"
                   InputProps={{
-                    inputProps: { min: 1 }
+                    inputProps: { 
+                      min: 1,
+                      max: availableCredits || 999999
+                    }
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
                 />
