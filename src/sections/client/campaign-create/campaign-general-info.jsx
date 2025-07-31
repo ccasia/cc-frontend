@@ -54,7 +54,7 @@ const ClientCampaignGeneralInfo = () => {
 
   useEffect(() => {
     setValue('campaignId', `C${data + 1 < 10 ? `0${data + 1}` : data + 1}`);
-    
+
     // Initialize multi-select fields with empty arrays if they're undefined
     if (!watch('campaignObjectives')) {
       setValue('campaignObjectives', []);
@@ -87,9 +87,9 @@ const ClientCampaignGeneralInfo = () => {
         </Stack>
         {/* Campaign Title - Full width */}
         <FormField label="Campaign Title">
-          <RHFTextField 
-            name="campaignTitle" 
-            placeholder="Enter campaign title" 
+          <RHFTextField
+            name="campaignTitle"
+            placeholder="Enter campaign title"
             size="small"
             sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
           />
@@ -108,11 +108,11 @@ const ClientCampaignGeneralInfo = () => {
                   slotProps={{
                     textField: {
                       fullWidth: true,
-                      placeholder: "Select start date",
+                      placeholder: 'Select start date',
                       error: false,
-                      size: "small",
-                      sx: { '& .MuiOutlinedInput-root': { height: '40px' } }
-                    }
+                      size: 'small',
+                      sx: { '& .MuiOutlinedInput-root': { height: '40px' } },
+                    },
                   }}
                 />
               </FormField>
@@ -127,11 +127,11 @@ const ClientCampaignGeneralInfo = () => {
                   slotProps={{
                     textField: {
                       fullWidth: true,
-                      placeholder: "Select end date",
+                      placeholder: 'Select end date',
                       error: false,
-                      size: "small",
-                      sx: { '& .MuiOutlinedInput-root': { height: '40px' } }
-                    }
+                      size: 'small',
+                      sx: { '& .MuiOutlinedInput-root': { height: '40px' } },
+                    },
                   }}
                 />
               </FormField>
@@ -164,10 +164,10 @@ const ClientCampaignGeneralInfo = () => {
                   type="number"
                   size="small"
                   InputProps={{
-                    inputProps: { 
+                    inputProps: {
                       min: 1,
-                      max: availableCredits || 999999
-                    }
+                      max: availableCredits || 999999,
+                    },
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
                 />
@@ -193,10 +193,10 @@ const ClientCampaignGeneralInfo = () => {
         {/* Brand Tone - Full width */}
         <Box sx={{ mt: 2 }}>
           <FormField label="Brand Tone">
-            <RHFTextField 
-              name="brandTone" 
-              placeholder="Describe the brand tone" 
-              multiline 
+            <RHFTextField
+              name="brandTone"
+              placeholder="Describe the brand tone"
+              multiline
               rows={2}
               size="small"
               sx={{ '& .MuiOutlinedInput-root': { padding: '8px' } }}
@@ -207,8 +207,8 @@ const ClientCampaignGeneralInfo = () => {
         {/* Product/Service Name - Full width */}
         <Box sx={{ mt: 2 }}>
           <FormField label="Product/Service Name">
-            <RHFTextField 
-              name="productName" 
+            <RHFTextField
+              name="productName"
               placeholder="Enter product or service name"
               size="small"
               sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
@@ -219,11 +219,11 @@ const ClientCampaignGeneralInfo = () => {
         {/* Campaign Objectives - Full width */}
         <Box sx={{ mt: 2 }}>
           <FormField label="Campaign Objectives">
-            <CustomRHFSelect 
+            <CustomRHFSelect
               name="campaignObjectives"
               size="small"
-              sx={{ 
-                '& .MuiOutlinedInput-root': { minHeight: '40px' }
+              sx={{
+                '& .MuiOutlinedInput-root': { minHeight: '40px' },
               }}
             >
               <MenuItem value="New Product Launch">New Product Launch</MenuItem>
@@ -240,11 +240,11 @@ const ClientCampaignGeneralInfo = () => {
         {/* Industries - Full width */}
         <Box sx={{ mt: 2 }}>
           <FormField label="Industries">
-            <CustomRHFSelect 
+            <CustomRHFSelect
               name="campaignIndustries"
               size="small"
-              sx={{ 
-                '& .MuiOutlinedInput-root': { minHeight: '40px' }
+              sx={{
+                '& .MuiOutlinedInput-root': { minHeight: '40px' },
               }}
             >
               {interestsLists.map((item, index) => (
@@ -260,4 +260,4 @@ const ClientCampaignGeneralInfo = () => {
   );
 };
 
-export default memo(ClientCampaignGeneralInfo); 
+export default memo(ClientCampaignGeneralInfo);
