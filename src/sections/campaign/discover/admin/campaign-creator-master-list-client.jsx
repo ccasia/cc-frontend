@@ -41,6 +41,46 @@ const TABLE_HEAD = [
   { id: 'actions', label: 'Actions', width: 80 },
 ];
 
+// Helper function to get normalized status for filtering
+const getNormalizedStatus = (pitch) => {
+  if (pitch.isShortlisted) return 'APPROVED';
+  
+  const status = pitch.isV3 
+    ? (pitch.displayStatus || pitch.status)
+    : pitch.status;
+    
+  // Normalize legacy statuses to new format
+  if (status === 'undecided') return 'PENDING_REVIEW';
+  if (status === 'approved') return 'APPROVED';
+  if (status === 'rejected') return 'REJECTED';
+  
+  return status;
+};
+
+// Status mapping function for consistent colors and labels
+const getStatusDisplay = (pitch) => {
+  const status = getNormalizedStatus(pitch);
+
+  const statusMap = {
+    'PENDING_REVIEW': { color: '#FF9A02', label: 'PENDING REVIEW' },
+    'APPROVED': { color: '#1ABF66', label: 'APPROVED' },
+    'REJECTED': { color: '#FF4842', label: 'REJECTED' },
+    'AGREEMENT_SUBMITTED': { color: '#1ABF66', label: 'AGREEMENT SUBMITTED' },
+    'AGREEMENT_PENDING': { color: '#1340FF', label: 'AGREEMENT PENDING' },
+    'SENT_TO_CLIENT': { color: '#FF9A02', label: 'SENT TO CLIENT' },
+    'pending': { color: '#FF9A02', label: 'PENDING' },
+    'filtered': { color: '#FF4842', label: 'FILTERED' },
+    'draft': { color: '#637381', label: 'DRAFT' }
+  };
+
+  // Special case for pitch approved vs regular approved
+  if (status === 'APPROVED' && !pitch.isShortlisted && !pitch.isV3) {
+    return { color: '#1ABF66', label: 'PITCH APPROVED' };
+  }
+
+  return statusMap[status] || { color: '#637381', label: status?.toUpperCase() || 'UNKNOWN' };
+};
+
 const CampaignCreatorMasterListClient = ({ campaign }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -182,18 +222,12 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
   }
 
   const activeCount = creators.length || 0;
-  const pendingCount = creators.filter(creator => {
-    if (creator.isV3) {
-      return (creator.displayStatus || creator.status) === 'PENDING_REVIEW';
-    }
-    return !creator.isShortlisted && creator.status === 'undecided';
-  }).length || 0;
-  const approvedPitchCount = creators.filter(creator => {
-    if (creator.isV3) {
-      return (creator.displayStatus || creator.status) === 'APPROVED';
-    }
-    return !creator.isShortlisted && creator.status === 'approved';
-  }).length || 0;
+  const pendingCount = creators.filter(creator => 
+    getNormalizedStatus(creator) === 'PENDING_REVIEW'
+  ).length || 0;
+  const approvedPitchCount = creators.filter(creator => 
+    getNormalizedStatus(creator) === 'APPROVED' && !creator.isShortlisted
+  ).length || 0;
   const shortlistedCount = creators.filter(creator => creator.isShortlisted).length || 0;
 
   // Handle toggling sort direction
@@ -206,19 +240,13 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
 
     // Apply status filter
     if (selectedFilter === 'pending') {
-      filtered = filtered.filter((creator) => {
-        if (creator.isV3) {
-          return (creator.displayStatus || creator.status) === 'PENDING_REVIEW';
-        }
-        return !creator.isShortlisted && creator.status === 'undecided';
-      });
+      filtered = filtered.filter((creator) => 
+        getNormalizedStatus(creator) === 'PENDING_REVIEW'
+      );
     } else if (selectedFilter === 'approved_pitch') {
-      filtered = filtered.filter((creator) => {
-        if (creator.isV3) {
-          return (creator.displayStatus || creator.status) === 'APPROVED';
-        }
-        return !creator.isShortlisted && creator.status === 'approved';
-      });
+      filtered = filtered.filter((creator) => 
+        getNormalizedStatus(creator) === 'APPROVED' && !creator.isShortlisted
+      );
     } else if (selectedFilter === 'shortlisted') {
       filtered = filtered.filter((creator) => creator.isShortlisted);
     }
@@ -728,60 +756,31 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                           : '-'}
                       </TableCell>
                       <TableCell>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            textTransform: 'uppercase',
-                            fontWeight: 700,
-                            display: 'inline-block',
-                            px: 1.5,
-                            py: 0.5,
-                            fontSize: '0.75rem',
-                            border: '1px solid',
-                            borderBottom: '3px solid',
-                            borderRadius: 0.8,
-                            bgcolor: 'white',
-                            whiteSpace: 'nowrap',
-                            ...(pitch.isShortlisted && {
-                              color: '#1ABF66',
-                              borderColor: '#1ABF66',
-                            }),
-                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW' && {
-                              color: '#FF9A02',
-                              borderColor: '#FF9A02',
-                            }),
-                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'APPROVED' && {
-                              color: '#8A5AFE',
-                              borderColor: '#8A5AFE',
-                            }),
-                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'REJECTED' && {
-                              color: '#FF4842',
-                              borderColor: '#FF4842',
-                            }),
-                            ...(!pitch.isShortlisted && pitch.status === 'undecided' && {
-                              color: '#FF9A02',
-                              borderColor: '#FF9A02',
-                            }),
-                            ...(!pitch.isShortlisted && pitch.status === 'approved' && {
-                              color: '#8A5AFE',
-                              borderColor: '#8A5AFE',
-                            }),
-                            ...(!pitch.isShortlisted && pitch.status === 'rejected' && {
-                              color: '#FF4842',
-                              borderColor: '#FF4842',
-                            }),
-                          }}
-                        >
-                          {pitch.isShortlisted 
-                            ? 'APPROVED' 
-                            : pitch.isV3
-                              ? (pitch.displayStatus || pitch.status).toUpperCase()
-                            : pitch.status === 'undecided' 
-                              ? 'PENDING REVIEW' 
-                              : pitch.status === 'approved'
-                                ? 'PITCH APPROVED'
-                                : pitch.status.toUpperCase()}
-                        </Typography>
+                        {(() => {
+                          const statusDisplay = getStatusDisplay(pitch);
+                          return (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                textTransform: 'uppercase',
+                                fontWeight: 700,
+                                display: 'inline-block',
+                                px: 1.5,
+                                py: 0.5,
+                                fontSize: '0.75rem',
+                                border: '1px solid',
+                                borderBottom: '3px solid',
+                                borderRadius: 0.8,
+                                bgcolor: 'white',
+                                whiteSpace: 'nowrap',
+                                color: statusDisplay.color,
+                                borderColor: statusDisplay.color,
+                              }}
+                            >
+                              {statusDisplay.label}
+                            </Typography>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <Button
