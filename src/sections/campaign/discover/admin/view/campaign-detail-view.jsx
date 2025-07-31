@@ -187,7 +187,7 @@ const CampaignDetailView = ({ id }) => {
   const clientAllowedTabs = ['overview', 'campaign-content', 'creator-master-list', 'deliverables', 'analytics'];
   
   // Check if user is client
-  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'client';
+  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
   // Check if current tab is valid for client users
   useEffect(() => {
@@ -272,7 +272,7 @@ const CampaignDetailView = ({ id }) => {
             { label: 'Campaign Details', value: 'campaign-content' },
             // { label: 'Client Info', value: 'client' },
             {
-              label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
+              label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided' || p.status === 'PENDING_REVIEW').length || 0})`,
               value: 'pitch',
             },
             {
