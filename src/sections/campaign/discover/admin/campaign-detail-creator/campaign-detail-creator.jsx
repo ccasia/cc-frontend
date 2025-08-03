@@ -18,7 +18,6 @@ import {
   Checkbox,
   TextField,
   IconButton,
-  Typography,
   DialogTitle,
   ListItemText,
   Autocomplete,
