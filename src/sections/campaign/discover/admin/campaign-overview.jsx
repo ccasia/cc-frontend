@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import toast from 'react-hot-toast';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 import React, { useMemo, useState, useEffect } from 'react';
@@ -24,6 +25,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -33,8 +35,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 
 import PitchModal from './pitch-modal';
-import toast from 'react-hot-toast';
-import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 const BoxStyle = {
   border: '1px solid #e0e0e0',
@@ -114,11 +114,17 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   const [localCampaign, setLocalCampaign] = useState(campaign);
   const client = campaign?.company || campaign?.brand?.company;
   const [isEditingCredit, setIsEditingCredit] = useState(false);
-  const [currentCredit, setCurrentCredit] = useState(1);
+
+  const [currentCredit, setCurrentCredit] = useState(null);
+  const [errorCredit, setErrorCredit] = useState(null);
+
   const [animation, setCreditAnimation] = useState(undefined);
   const [error, setError] = useState();
   const approveCreditModal = useBoolean();
   const { mutate } = useGetCampaignById(campaign.id);
+
+  // const creditAssignModal = useBoolean();
+  // const [campaigns, setCampaigns] = useState(null);
 
   const latestPackageItem = useMemo(() => {
     if (client && client?.subscriptions?.length) {
@@ -200,10 +206,10 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   };
 
   const handleCreditChangesConfirmation = () => {
-    if (currentCredit < campaign?.campaignCredits) {
-      setError('Cannot be less than current credits');
-      return;
-    }
+    // if (currentCredit < campaign?.campaignCredits) {
+    //   setError('Cannot be less than current credits');
+    //   return;
+    // }
 
     approveCreditModal.onTrue();
   };
@@ -277,17 +283,22 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   };
 
   useEffect(() => {
-    let val = currentCredit;
+    let val = currentCredit || 0;
+    const utilizedCredits = campaign?.creditsUtilized;
 
     // Remove leading zeros (e.g., "012" -> "12")
     if (val.length > 1 && val.startsWith('0')) {
       val = val.replace(/^0+/, '');
     }
 
-    console.log(val);
+    if (val && val < utilizedCredits) {
+      setErrorCredit('Value cannot be less than the utilized credits.');
+    } else {
+      setErrorCredit(null);
+    }
 
     setCurrentCredit(Number(val));
-  }, [currentCredit]);
+  }, [currentCredit, campaign]);
 
   return (
     <Grid container spacing={{ xs: 1, sm: 2 }}>
@@ -445,14 +456,16 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                       >
                         CREDITS TRACKING
                       </Typography>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        color="primary"
-                        onClick={handleEditCredit}
-                      >
-                        Add more credits
-                      </Button>
+                      {campaign?.campaignCredits && latestPackageItem && !isEditingCredit && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          // color="primary"
+                          onClick={handleEditCredit}
+                        >
+                          Edit Credits
+                        </Button>
+                      )}
                     </Stack>
                   </Box>
 
@@ -498,8 +511,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                                 width: 100,
                                 animation: `${animation} 0.5s ease-in-out`,
                               }}
-                              error={!!error}
-                              helperText={error}
+                              error={!!error || !!errorCredit}
+                              helperText={error || errorCredit}
                             />
 
                             <Stack direction="row" alignItems="center" spacing={1}>
@@ -517,6 +530,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                                 onClick={() => {
                                   handleCreditChangesConfirmation();
                                 }}
+                                disabled={!!error || !!errorCredit}
                               >
                                 <Iconify icon="charm:tick" />
                               </IconButton>
@@ -877,16 +891,39 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={approveCreditModal.value} onClose={approveCreditModal.onFalse}>
-        <DialogTitle>Credit Changes Confirmation</DialogTitle>
+      <Dialog
+        open={approveCreditModal.value}
+        onClose={approveCreditModal.onFalse}
+        PaperProps={{
+          sx: {
+            borderRadius: 1,
+          },
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle variant="subtitle1">Confirm Credit Change</DialogTitle>
         <DialogContent>
-          Credit change from {campaign?.campaignCredits} to {currentCredit}
+          <Typography variant="body1" color="text.secondary">
+            You’re about to update the credit allocation from {campaign?.campaignCredits} to{' '}
+            {currentCredit}. Do you want to proceed?
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={approveCreditModal.onFalse} variant="outlined" size="small">
+          <Button
+            onClick={approveCreditModal.onFalse}
+            variant="outlined"
+            size="small"
+            sx={{ borderRadius: 0.5 }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleCreditApproval} variant="contained" size="small">
+          <Button
+            onClick={handleCreditApproval}
+            variant="contained"
+            size="small"
+            sx={{ borderRadius: 0.5 }}
+          >
             Confirm
           </Button>
         </DialogActions>
