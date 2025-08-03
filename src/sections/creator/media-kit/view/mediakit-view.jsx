@@ -104,6 +104,7 @@ const MediaKitCreator = () => {
       const res = await axiosInstance.get(endpoints.creators.social.instagramV2(user?.id));
       setInstagram(res.data);
     } catch (error) {
+      console.error('Error fetching Instagram data:', error);
       return;
     } finally {
       instaLoading.onFalse();
@@ -114,7 +115,7 @@ const MediaKitCreator = () => {
   const getTiktok = useCallback(async () => {
     try {
       isLoading.onTrue();
-      const res = await axiosInstance.get(endpoints.creators.social.tiktok(user?.id));
+      const res = await axiosInstance.get(endpoints.creators.social.tiktokV2(user?.id));
       setTiktok(res.data);
     } catch (error) {
       return;
@@ -152,10 +153,13 @@ const MediaKitCreator = () => {
 
     if (currentTab === 'tiktok') {
       return {
-        followers: tiktok?.creator?.tiktokUser?.follower_count || 0,
-        engagement_rate: tiktok?.creator?.tiktokUser?.follower_count || 0,
-        averageLikes: tiktok?.creator?.tiktokUser?.likes_count || 0,
-        averageComments: tiktok?.creator?.tiktokUser?.averageComments || 0,
+        followers: tiktok?.overview?.follower_count || 0,
+        engagement_rate: calculateEngagementRate(
+          (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0),
+          tiktok?.overview?.follower_count
+        ) || 0,
+        averageLikes: tiktok?.medias?.averageLikes || 0,
+        averageComments: tiktok?.medias?.averageComments || 0,
       };
     }
 
@@ -165,10 +169,6 @@ const MediaKitCreator = () => {
       averageLikes: 0,
     };
   }, [currentTab, tiktok, instagram, calculateEngagementRate]);
-
-  // const handleClose = () => {
-  //   setOpenSetting(!openSetting);
-  // };
 
   // Helper function to detect iOS Safari specifically (not other browsers on iOS)
   const isIOSSafari = useCallback(() => {
@@ -2050,6 +2050,7 @@ const MediaKitCreator = () => {
             currentTab={currentTab}
             className="desktop-screenshot-mediakit"
             forceDesktop
+            // data={{ instagram, tiktok }}
             sx={{
               '& > div > div': {
                 flexDirection: 'row !important',
