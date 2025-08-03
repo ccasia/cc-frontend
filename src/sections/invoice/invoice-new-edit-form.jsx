@@ -585,7 +585,7 @@ import { useSnackbar } from 'src/components/snackbar';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
-import InvoicePDF from '../creator/invoice/invoice-pdf';
+import InvoicePDF from './invoice-pdf';
 import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
 import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
@@ -873,7 +873,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
   const handleDownload = async () => {
     try {
-      const blob = await pdf(<InvoicePDF data={invoice} />).toBlob();
+      const blob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
       link.download = `${invoice?.invoiceNumber}.pdf`;

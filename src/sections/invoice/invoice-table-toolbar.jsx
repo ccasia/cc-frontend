@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 
+import { Box } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import { Box, Button, Typography } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import { useResponsive } from 'src/hooks/use-responsive';

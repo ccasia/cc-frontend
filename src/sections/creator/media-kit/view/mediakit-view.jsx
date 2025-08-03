@@ -43,7 +43,6 @@ const MediaKitCreator = () => {
   const setInstagram = useSocialMediaData((state) => state.setInstagram);
   const tiktok = useSocialMediaData((state) => state.tiktok);
   const instagram = useSocialMediaData((state) => state.instagram);
-  
 
   const isLoading = useBoolean();
   const instaLoading = useBoolean();
@@ -128,23 +127,27 @@ const MediaKitCreator = () => {
   }, [setTiktok]);
 
   const calculateEngagementRate = useCallback((totalLikes, followers) => {
-    if (!(totalLikes || followers)) return null;
-    return ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2);
+    const likes = parseInt(totalLikes, 10);
+    const followerCount = parseInt(followers, 10);
+
+    if (!likes || !followerCount) return null;
+
+    return ((likes / followerCount) * 100).toFixed(2);
   }, []);
-  
+
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
-        followers: instagram?.overview?.followers_count || 0,
+        followers: instagram?.instagramUser?.followers_count || 0,
         engagement_rate: `${
           calculateEngagementRate(
             (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0),
-            instagram?.overview?.followers_count
+            instagram?.instagramUser?.followers_count ?? 0
           ) || 0
-        }`,
-        averageLikes: instagram?.medias?.averageLikes || 0,
-        averageComments: instagram?.medias?.averageComments || 0,
+        }%`,
+        averageLikes: instagram?.instagramUser?.averageLikes || 0,
         username: instagram?.instagramUser?.username,
+        averageComments: instagram?.instagramUser?.averageComments || 0,
       };
     }
 
@@ -171,10 +174,10 @@ const MediaKitCreator = () => {
   const isIOSSafari = useCallback(() => {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-    
+
     // Check if it's specifically Safari on iOS (not Chrome, Firefox, etc.)
     const isSafari = /Safari/.test(userAgent) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(userAgent);
-    
+
     return isIOS && isSafari;
   }, []);
 
@@ -500,7 +503,7 @@ const MediaKitCreator = () => {
           severity: 'success',
         });
         setCaptureState('complete');
-        
+
         // Reset loading state after a short delay
         setTimeout(() => {
           setCaptureLoading(false);
@@ -514,7 +517,7 @@ const MediaKitCreator = () => {
           message: 'Failed to capture screenshot',
           severity: 'error',
         });
-        
+
         // Reset loading state on error
         setCaptureLoading(false);
         setCaptureState('idle');
@@ -537,7 +540,7 @@ const MediaKitCreator = () => {
       open: false,
       imageUrl: '',
     });
-    
+
     // Reset loading state when closing image preview
     setCaptureLoading(false);
     setCaptureState('idle');
@@ -657,10 +660,10 @@ const MediaKitCreator = () => {
       if (isIOSSafari()) {
         // For iOS Safari, prepare PDF and show instructions
         setCaptureState('complete');
-        
+
         const pdfBlob = pdf.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
-        
+
         // Set PDF ready state to show instructions
         setTimeout(() => {
           setPdfReadyState({ ready: true, pdfUrl });
@@ -668,13 +671,13 @@ const MediaKitCreator = () => {
       } else {
         // For other browsers, use normal download
         pdf.save(fileName);
-        
+
         setSnackbar({
           open: true,
           message: 'PDF saved successfully!',
           severity: 'success',
         });
-        
+
         setCaptureState('complete');
         setTimeout(() => {
           setCaptureLoading(false);
@@ -787,7 +790,12 @@ const MediaKitCreator = () => {
         const file = new File([blob], fileName, { type: 'application/pdf' });
 
         // Check if iOS Safari and Web Share API is supported
-        if (isIOSSafari() && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        if (
+          isIOSSafari() &&
+          navigator.share &&
+          navigator.canShare &&
+          navigator.canShare({ files: [file] })
+        ) {
           // For iOS Safari, only use Web Share API - don't fallback to blob download
           try {
             await navigator.share({
@@ -795,7 +803,7 @@ const MediaKitCreator = () => {
               title: `${user?.creator?.mediaKit?.displayName || user?.name} - Media Kit`,
               text: 'Check out my media kit!',
             });
-            
+
             setSnackbar({
               open: true,
               message: 'PDF shared successfully!',
@@ -808,7 +816,7 @@ const MediaKitCreator = () => {
               console.log('User cancelled share dialog');
               return;
             }
-            
+
             console.error('Error sharing PDF:', shareError);
             setSnackbar({
               open: true,
@@ -820,7 +828,7 @@ const MediaKitCreator = () => {
         } else {
           // Direct download for non-iOS Safari browsers
           window.location.href = pdfReadyState.pdfUrl;
-          
+
           setSnackbar({
             open: true,
             message: 'PDF downloaded successfully!',
@@ -835,7 +843,7 @@ const MediaKitCreator = () => {
           severity: 'error',
         });
       }
-      
+
       // Clean up - only for non-iOS Safari browsers
       if (!isIOSSafari()) {
         setTimeout(() => {
@@ -1147,63 +1155,63 @@ const MediaKitCreator = () => {
                 {user?.creator?.mediaKit?.displayName ?? user?.name}
               </Typography>
             </Stack>
-            <Stack 
-              direction="row" 
-              alignItems="center" 
+            <Stack
+              direction="row"
+              alignItems="center"
               spacing={0.5}
-              sx={{ 
+              sx={{
                 flexWrap: 'wrap',
                 maxWidth: '100%',
-                overflow: 'hidden'
+                overflow: 'hidden',
               }}
             >
-              <Typography 
-                fontSize={{ xs: 12, sm: 14, md: 16 }} 
+              <Typography
+                fontSize={{ xs: 12, sm: 14, md: 16 }}
                 color="#231F20"
-                sx={{ 
+                sx={{
                   whiteSpace: 'nowrap',
-                  minWidth: 'fit-content'
+                  minWidth: 'fit-content',
                 }}
               >
                 {user?.creator?.pronounce}
               </Typography>
-              <Iconify 
-                icon="mdi:dot" 
-                color="#231F20" 
-                sx={{ 
-                  fontSize: { xs: 12, sm: 14, md: 16 },
-                  minWidth: 'fit-content',
-                  flexShrink: 0
-                }} 
-              />
-                             <Typography 
-                 fontSize={{ xs: 12, sm: 14, md: 16 }} 
-                 color="#231F20"
-                 sx={{ 
-                   whiteSpace: 'nowrap',
-                   minWidth: 'fit-content'
-                 }}
-               >
-                 {user?.city ? `${user?.city}, ${user?.country}` : user?.country}
-               </Typography>
-              <Iconify 
-                icon="mdi:dot" 
-                color="#231F20" 
-                sx={{ 
-                  fontSize: { xs: 12, sm: 14, md: 16 },
-                  minWidth: 'fit-content',
-                  flexShrink: 0
-                }} 
-              />
-              <Typography 
-                fontSize={{ xs: 12, sm: 14, md: 16 }} 
+              <Iconify
+                icon="mdi:dot"
                 color="#231F20"
-                sx={{ 
+                sx={{
+                  fontSize: { xs: 12, sm: 14, md: 16 },
+                  minWidth: 'fit-content',
+                  flexShrink: 0,
+                }}
+              />
+              <Typography
+                fontSize={{ xs: 12, sm: 14, md: 16 }}
+                color="#231F20"
+                sx={{
+                  whiteSpace: 'nowrap',
+                  minWidth: 'fit-content',
+                }}
+              >
+                {user?.city ? `${user?.city}, ${user?.country}` : user?.country}
+              </Typography>
+              <Iconify
+                icon="mdi:dot"
+                color="#231F20"
+                sx={{
+                  fontSize: { xs: 12, sm: 14, md: 16 },
+                  minWidth: 'fit-content',
+                  flexShrink: 0,
+                }}
+              />
+              <Typography
+                fontSize={{ xs: 12, sm: 14, md: 16 }}
+                color="#231F20"
+                sx={{
                   whiteSpace: 'nowrap',
                   minWidth: 'fit-content',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  maxWidth: { xs: '120px', sm: '200px', md: 'none' }
+                  maxWidth: { xs: '120px', sm: '200px', md: 'none' },
                 }}
               >
                 {user?.email}
@@ -1273,15 +1281,13 @@ const MediaKitCreator = () => {
               ml: { xs: 0, md: 18, lg: -2, xl: -4 },
             }}
           >
-
-
             {/* Total Audience Section */}
-            <Stack alignItems="flex-start" sx={{ pl: { xs: 0, sm: 0 } }}>
+            <Stack alignItems="flex-start" sx={{ pl: { xs: 1, sm: 0 } }}>
               <Typography
                 variant="h2"
                 color="#231F20"
                 fontFamily="Aileron, sans-serif"
-                fontWeight={900}
+                fontWeight={600}
                 component={m.div}
                 initial={{ scale: 0.5 }}
                 animate={{ scale: 1 }}
@@ -1294,8 +1300,9 @@ const MediaKitCreator = () => {
                 align="left"
                 sx={{ fontSize: { xs: '3rem', md: '4rem' } }}
               >
-                  {formatTotalAudience(socialMediaAnalytics.followers)}
-                </Typography>
+                {formatTotalAudience(socialMediaAnalytics.followers)}
+              </Typography>
+
               <Box
                 component="span"
                 sx={{
@@ -1303,7 +1310,7 @@ const MediaKitCreator = () => {
                   fontSize: { xs: '2rem', md: '3rem' },
                   fontFamily: 'Aileron, sans-serif',
                   fontWeight: 300,
-                  // letterSpacing: '0.05em',
+                  letterSpacing: '0.05em',
                   textAlign: 'left',
                   display: 'block',
                 }}
@@ -1519,7 +1526,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {formatNumber(socialMediaAnalytics.engagement_rate)}
+                        {socialMediaAnalytics.engagement_rate}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1620,7 +1627,9 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '0.75rem', sm: '1rem' } }}
                 >
-                  Avg<br />Comments
+                  Avg
+                  <br />
+                  Comments
                 </Typography>
               </Stack>
 
@@ -1635,7 +1644,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {formatNumber(socialMediaAnalytics.engagement_rate)}
+                  {socialMediaAnalytics.engagement_rate}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1655,9 +1664,8 @@ const MediaKitCreator = () => {
         {/* <Divider sx={{ my: 3 }} /> */}
         {/* Bottom View */}
 
-        <Typography fontWeight={700} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1} mt={3}>
-          Top Content{' '}
-          {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
+        <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1}>
+          Top Content {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`}
         </Typography>
 
         {/* {smDown && (
@@ -1783,63 +1791,63 @@ const MediaKitCreator = () => {
                 {user?.creator?.mediaKit?.displayName ?? user?.name}
               </Typography>
             </Stack>
-            <Stack 
-              direction="row" 
-              alignItems="center" 
+            <Stack
+              direction="row"
+              alignItems="center"
               spacing={0.5}
-              sx={{ 
+              sx={{
                 flexWrap: 'wrap',
                 maxWidth: '100%',
-                overflow: 'hidden'
+                overflow: 'hidden',
               }}
             >
-              <Typography 
+              <Typography
                 fontSize={16}
                 color="#231F20"
-                sx={{ 
+                sx={{
                   whiteSpace: 'nowrap',
-                  minWidth: 'fit-content'
+                  minWidth: 'fit-content',
                 }}
               >
                 {user?.creator?.pronounce}
               </Typography>
-              <Iconify 
-                icon="mdi:dot" 
-                color="#231F20" 
-                sx={{ 
+              <Iconify
+                icon="mdi:dot"
+                color="#231F20"
+                sx={{
                   fontSize: 16,
                   minWidth: 'fit-content',
-                  flexShrink: 0
-                }} 
+                  flexShrink: 0,
+                }}
               />
-                             <Typography 
-                 fontSize={16}
-                 color="#231F20"
-                 sx={{ 
-                   whiteSpace: 'nowrap',
-                   minWidth: 'fit-content'
-                 }}
-               >
-                 {user?.city ? `${user?.city}, ${user?.country}` : user?.country}
-               </Typography>
-              <Iconify 
-                icon="mdi:dot" 
-                color="#231F20" 
-                sx={{ 
-                  fontSize: 16,
-                  minWidth: 'fit-content',
-                  flexShrink: 0
-                }} 
-              />
-              <Typography 
+              <Typography
                 fontSize={16}
                 color="#231F20"
-                sx={{ 
+                sx={{
+                  whiteSpace: 'nowrap',
+                  minWidth: 'fit-content',
+                }}
+              >
+                {user?.city ? `${user?.city}, ${user?.country}` : user?.country}
+              </Typography>
+              <Iconify
+                icon="mdi:dot"
+                color="#231F20"
+                sx={{
+                  fontSize: 16,
+                  minWidth: 'fit-content',
+                  flexShrink: 0,
+                }}
+              />
+              <Typography
+                fontSize={16}
+                color="#231F20"
+                sx={{
                   whiteSpace: 'nowrap',
                   minWidth: 'fit-content',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  maxWidth: '300px'
+                  maxWidth: '300px',
                 }}
               >
                 {user?.email}
@@ -1899,7 +1907,9 @@ const MediaKitCreator = () => {
           </Stack>
 
           {/* Social Media Stats - with reduced width */}
-          <Stack flex="0.8" alignItems="flex-start" spacing={2}> {/* Reduced spacing */}
+          <Stack flex="0.8" alignItems="flex-start" spacing={2}>
+            {' '}
+            {/* Reduced spacing */}
             {/* Total Audience Section */}
             <Stack alignItems="flex-start">
               <Typography
@@ -1929,7 +1939,6 @@ const MediaKitCreator = () => {
                 Total Audience
               </Box>
             </Stack>
-
             <Stack direction="row" alignItems="center" spacing={1} my={2} color="text.secondary">
               <Button
                 variant="outlined"
@@ -1974,7 +1983,6 @@ const MediaKitCreator = () => {
                 TikTok
               </Button>
             </Stack>
-
             <Stack width="100%">
               <Stack
                 direction="row"
@@ -2096,7 +2104,7 @@ const MediaKitCreator = () => {
                       align="left"
                       sx={{ fontSize: '3.5rem' }}
                     >
-                      {formatNumber(socialMediaAnalytics.engagement_rate)}
+                      {socialMediaAnalytics.engagement_rate}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -2160,7 +2168,6 @@ const MediaKitCreator = () => {
               if (currentTab === 'tiktok') return { tiktok };
               return null;
             })()}
-
           />
         </Box>
       </Container>
@@ -2312,7 +2319,10 @@ const MediaKitCreator = () => {
                 position: 'relative',
                 zIndex: 2,
                 filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-                animation: (captureLoading || pdfReadyState.ready) ? 'popIn 0.6s 0.2s ease-out forwards' : 'none',
+                animation:
+                  captureLoading || pdfReadyState.ready
+                    ? 'popIn 0.6s 0.2s ease-out forwards'
+                    : 'none',
                 opacity: 0,
                 '@keyframes popIn': {
                   '0%': { opacity: 0, transform: 'scale(0.8)' },
@@ -2333,7 +2343,10 @@ const MediaKitCreator = () => {
               fontFamily: 'Aileron, sans-serif',
               textAlign: 'center',
               letterSpacing: '0.01em',
-              animation: (captureLoading || pdfReadyState.ready) ? 'slideUp 0.5s 0.3s ease-out forwards' : 'none',
+              animation:
+                captureLoading || pdfReadyState.ready
+                  ? 'slideUp 0.5s 0.3s ease-out forwards'
+                  : 'none',
               opacity: 0,
               transform: 'translateY(10px)',
               '@keyframes slideUp': {
@@ -2347,80 +2360,98 @@ const MediaKitCreator = () => {
           {/* Open PDF and Save text for PDF ready state */}
           {pdfReadyState.ready && (
             <Typography
-                sx={{
-                  mt: 1,
-                  fontWeight: 500,
-                  fontSize: 14,
-                  color: '#666',
-                  fontFamily: 'Aileron, sans-serif',
-                  textAlign: 'center',
-                  animation: 'fadeInUp 0.5s 0.4s ease-out forwards',
-                  opacity: 0,
-                  transform: 'translateY(8px)',
-                  '@keyframes fadeInUp': {
-                    to: { opacity: 1, transform: 'translateY(0)' },
-                  },
-                }}
-              >
-                Tap button to open Share menu
-              </Typography>
-          )}
-          
-          {/* iOS Safari Instructions - Show during rendering/capturing states for PDF only */}
-          {isIOSSafari() && captureType === 'pdf' && (captureState === 'rendering' || captureState === 'capturing' || captureState === 'processing') && (
-            <Box
               sx={{
-                mt: 2,
-                p: 2,
-                backgroundColor: 'rgba(19, 64, 255, 0.05)',
-                border: '1px solid rgba(19, 64, 255, 0.15)',
-                borderRadius: 2,
-                maxWidth: '280px',
-                animation: captureLoading ? 'slideInUp 0.5s 0.6s ease-out forwards' : 'none',
+                mt: 1,
+                fontWeight: 500,
+                fontSize: 14,
+                color: '#666',
+                fontFamily: 'Aileron, sans-serif',
+                textAlign: 'center',
+                animation: 'fadeInUp 0.5s 0.4s ease-out forwards',
                 opacity: 0,
-                transform: 'translateY(15px)',
-                '@keyframes slideInUp': {
+                transform: 'translateY(8px)',
+                '@keyframes fadeInUp': {
                   to: { opacity: 1, transform: 'translateY(0)' },
                 },
               }}
             >
-              <Typography
-                sx={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: '#1340FF',
-                  fontFamily: 'Aileron, sans-serif',
-                  textAlign: 'center',
-                  mb: 1,
-                }}
-              >
-                📱 Almost ready! Next step:
-              </Typography>
+              Tap button to open Share menu
+            </Typography>
+          )}
+
+          {/* iOS Safari Instructions - Show during rendering/capturing states for PDF only */}
+          {isIOSSafari() &&
+            captureType === 'pdf' &&
+            (captureState === 'rendering' ||
+              captureState === 'capturing' ||
+              captureState === 'processing') && (
               <Box
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 0.5,
-                  fontSize: 12,
-                  color: '#333',
-                  fontFamily: 'Aileron, sans-serif',
-                  textAlign: 'center',
-                  lineHeight: 1.4,
+                  mt: 2,
+                  p: 2,
+                  backgroundColor: 'rgba(19, 64, 255, 0.05)',
+                  border: '1px solid rgba(19, 64, 255, 0.15)',
+                  borderRadius: 2,
+                  maxWidth: '280px',
+                  animation: captureLoading ? 'slideInUp 0.5s 0.6s ease-out forwards' : 'none',
+                  opacity: 0,
+                  transform: 'translateY(15px)',
+                  '@keyframes slideInUp': {
+                    to: { opacity: 1, transform: 'translateY(0)' },
+                  },
                 }}
               >
-                <span>Download PDF</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ margin: '0 2px' }}>
-                  <path d="M0 0h24v24H0V0z" fill="none"/>
-                  <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/>
-                </svg>
-                <span>→ Save to Files</span>
-                <svg width="14" height="14" viewBox="0 0 1024 1024" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '2px' }}>
-                  <path d="M960 238c0-26.6-18.8-46-45.6-46H397.8c-5.6 0-8.6-1.2-12.2-4.8l-45-45-0.4-0.4c-9.8-9.2-17.8-13.8-34.6-13.8H113.4C85.8 128 64 148.6 64 174v147.4c0 3.2 3.4 3 6 1.4s10-2.8 14-2.8h856c4 0 11.4 1.2 14 2.8 2.6 1.6 6 1.8 6-1.4V238zM64 832.8c0 35 28.4 63.2 63.2 63.2H896c35.2 0 64-28.8 64-64V408c0-17.6-14.4-32-32-32H96c-17.6 0-32 14.4-32 32v424.8z"/>
-                </svg>
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#1340FF',
+                    fontFamily: 'Aileron, sans-serif',
+                    textAlign: 'center',
+                    mb: 1,
+                  }}
+                >
+                  📱 Almost ready! Next step:
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    fontSize: 12,
+                    color: '#333',
+                    fontFamily: 'Aileron, sans-serif',
+                    textAlign: 'center',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  <span>Download PDF</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="#666"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ margin: '0 2px' }}
+                  >
+                    <path d="M0 0h24v24H0V0z" fill="none" />
+                    <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z" />
+                  </svg>
+                  <span>→ Save to Files</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 1024 1024"
+                    fill="#666"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ marginLeft: '2px' }}
+                  >
+                    <path d="M960 238c0-26.6-18.8-46-45.6-46H397.8c-5.6 0-8.6-1.2-12.2-4.8l-45-45-0.4-0.4c-9.8-9.2-17.8-13.8-34.6-13.8H113.4C85.8 128 64 148.6 64 174v147.4c0 3.2 3.4 3 6 1.4s10-2.8 14-2.8h856c4 0 11.4 1.2 14 2.8 2.6 1.6 6 1.8 6-1.4V238zM64 832.8c0 35 28.4 63.2 63.2 63.2H896c35.2 0 64-28.8 64-64V408c0-17.6-14.4-32-32-32H96c-17.6 0-32 14.4-32 32v424.8z" />
+                  </svg>
+                </Box>
               </Box>
-            </Box>
-          )}
+            )}
 
           {/* iOS Safari Open PDF Button - Show when PDF is ready */}
           {pdfReadyState.ready && (
@@ -2473,13 +2504,27 @@ const MediaKitCreator = () => {
                   }}
                 >
                   <span> Download PDF </span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ margin: '0 2px' }}>
-                    <path d="M0 0h24v24H0V0z" fill="none"/>
-                    <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="#666"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ margin: '0 2px' }}
+                  >
+                    <path d="M0 0h24v24H0V0z" fill="none" />
+                    <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z" />
                   </svg>
                   <span>→ Save to Files</span>
-                  <svg width="14" height="14" viewBox="0 0 1024 1024" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '2px' }}>
-                    <path d="M960 238c0-26.6-18.8-46-45.6-46H397.8c-5.6 0-8.6-1.2-12.2-4.8l-45-45-0.4-0.4c-9.8-9.2-17.8-13.8-34.6-13.8H113.4C85.8 128 64 148.6 64 174v147.4c0 3.2 3.4 3 6 1.4s10-2.8 14-2.8h856c4 0 11.4 1.2 14 2.8 2.6 1.6 6 1.8 6-1.4V238zM64 832.8c0 35 28.4 63.2 63.2 63.2H896c35.2 0 64-28.8 64-64V408c0-17.6-14.4-32-32-32H96c-17.6 0-32 14.4-32 32v424.8z"/>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 1024 1024"
+                    fill="#666"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ marginLeft: '2px' }}
+                  >
+                    <path d="M960 238c0-26.6-18.8-46-45.6-46H397.8c-5.6 0-8.6-1.2-12.2-4.8l-45-45-0.4-0.4c-9.8-9.2-17.8-13.8-34.6-13.8H113.4C85.8 128 64 148.6 64 174v147.4c0 3.2 3.4 3 6 1.4s10-2.8 14-2.8h856c4 0 11.4 1.2 14 2.8 2.6 1.6 6 1.8 6-1.4V238zM64 832.8c0 35 28.4 63.2 63.2 63.2H896c35.2 0 64-28.8 64-64V408c0-17.6-14.4-32-32-32H96c-17.6 0-32 14.4-32 32v424.8z" />
                   </svg>
                 </Box>
               </Box>
@@ -2508,28 +2553,32 @@ const MediaKitCreator = () => {
               </Button>
             </Box>
           )}
-          
+
           {/* Default subtitle for non-iOS PDF or any image downloads */}
-          {(!isIOSSafari() || captureType === 'image' || (captureState === 'preparing' || captureState === 'processing')) && !pdfReadyState.ready && (
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'rgba(0, 0, 0, 0.6)',
-                fontFamily: 'Aileron, sans-serif',
-                textAlign: 'center',
-                maxWidth: '240px',
-                fontSize: 13,
-                lineHeight: 1.4,
-                animation: captureLoading ? 'fadeIn 0.5s 0.4s ease-out forwards' : 'none',
-                opacity: 0,
-                '@keyframes fadeIn': {
-                  to: { opacity: 1 },
-                },
-              }}
-            >
-              Please wait while we prepare your Media Kit
-            </Typography>
-          )}
+          {(!isIOSSafari() ||
+            captureType === 'image' ||
+            captureState === 'preparing' ||
+            captureState === 'processing') &&
+            !pdfReadyState.ready && (
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'rgba(0, 0, 0, 0.6)',
+                  fontFamily: 'Aileron, sans-serif',
+                  textAlign: 'center',
+                  maxWidth: '240px',
+                  fontSize: 13,
+                  lineHeight: 1.4,
+                  animation: captureLoading ? 'fadeIn 0.5s 0.4s ease-out forwards' : 'none',
+                  opacity: 0,
+                  '@keyframes fadeIn': {
+                    to: { opacity: 1 },
+                  },
+                }}
+              >
+                Please wait while we prepare your Media Kit
+              </Typography>
+            )}
         </Box>
       </Backdrop>
 

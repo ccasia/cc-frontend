@@ -34,7 +34,6 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -903,6 +902,24 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
+  const renderCampaignCredits = (
+    <Box component={Card} p={2}>
+      <Typography variant="h5">Campaign Credits</Typography>
+      {isEditable && (
+        <EditButton
+          tooltip="Edit Campaign Reference"
+          onClick={() =>
+            setOpen((prev) => ({
+              ...prev,
+              campaignReferences: true,
+            }))
+          }
+          disabled={isDisabled}
+        />
+      )}
+    </Box>
+  );
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -984,7 +1001,7 @@ const CampaignDetailManageView = ({ id }) => {
             <Grid item xs={12} md={8}>
               <Stack spacing={2}>
                 {renderCampaignInformation}
-
+                {/* {renderCampaignCredits} */}
                 {campaign?.brand ? renderBrand : renderCompany}
                 {campaign?.campaignBrief?.campaign_do &&
                   campaign?.campaignBrief?.campaign_dont &&
