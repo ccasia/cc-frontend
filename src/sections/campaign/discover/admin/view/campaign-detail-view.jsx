@@ -180,8 +180,6 @@ const CampaignDetailView = ({ id }) => {
     localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
-  // Define allowed tabs for client users
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const clientAllowedTabs = [
     'overview',
     'campaign-content',
@@ -191,7 +189,7 @@ const CampaignDetailView = ({ id }) => {
   ];
 
   // Check if user is client
-  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'client';
+  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
   // Check if current tab is valid for client users
   useEffect(() => {

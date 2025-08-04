@@ -26,6 +26,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetClientCampaigns from 'src/hooks/use-get-client-campaigns';
+import useGetClientCredits from 'src/hooks/use-get-client-credits';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -76,6 +77,27 @@ const ClientDashboard = () => {
   };
   
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
+  const { 
+    totalCredits, 
+    usedCredits, 
+    remainingCredits, 
+    subscription, 
+    isLoading: creditsLoading 
+  } = useGetClientCredits();
+
+  // Calculate remaining days based on expiry date
+  const calculateRemainingDays = () => {
+    if (!subscription?.expiredAt) return 0;
+    
+    const expiryDate = new Date(subscription.expiredAt);
+    const currentDate = new Date();
+    const timeDiff = expiryDate.getTime() - currentDate.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    return daysDiff > 0 ? daysDiff : 0;
+  };
+
+  const remainingDays = calculateRemainingDays();
 
   const handleCompanyCreated = (newCompany) => {
     setHasCompany(true);
@@ -358,7 +380,7 @@ const ClientDashboard = () => {
                     fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
                   }}
                 >
-                  0
+                  {creditsLoading ? '...' : (totalCredits || 0)}
                 </Typography>
               </Box>
             </Grid>
@@ -392,7 +414,7 @@ const ClientDashboard = () => {
                     fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
                   }}
                 >
-                  0
+                  {creditsLoading ? '...' : (usedCredits || 0)}
                 </Typography>
               </Box>
             </Grid>
@@ -426,7 +448,7 @@ const ClientDashboard = () => {
                     fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
                   }}
                 >
-                  0
+                  {creditsLoading ? '...' : (remainingCredits || 0)}
                 </Typography>
               </Box>
             </Grid>
@@ -457,7 +479,7 @@ const ClientDashboard = () => {
                     fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
                   }}
                 >
-                  0 Days
+                  {creditsLoading ? '...' : `${remainingDays} Day${remainingDays !== 1 ? 's' : ''}`}
                 </Typography>
               </Box>
             </Grid>
