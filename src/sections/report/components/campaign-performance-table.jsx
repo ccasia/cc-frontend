@@ -1,19 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router';
+import React, { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
+import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import {
+  Box,
   Avatar,
   Button,
-  Typography,
-  Box,
-  CircularProgress,
-  MenuItem,
   Select,
+  MenuItem,
+  Typography,
   FormControl,
+  CircularProgress,
 } from '@mui/material';
-import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
+
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
-import { useGetAllCreators } from 'src/api/creator';
-import { useNavigate } from 'react-router';
-import { useSearchParams } from 'react-router-dom';
+
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
@@ -24,43 +26,31 @@ const CampaignPerformanceTable = () => {
     return pageParam ? parseInt(pageParam, 10) : 1;
   });
 
-  const [selectedCampaign, setSelectedCampaign] = useState(() => {
-    return searchParams.get('campaign') || 'all';
-  });
+  const [selectedCampaign, setSelectedCampaign] = useState(() => searchParams.get('campaign') || 'all');
 
   const itemsPerPage = 7;
 
-  const { data: submissionData, isLoading: isLoadingSubmissions } = useGetAllSubmissions();
-  const { data: creatorData } = useGetAllCreators();
-  
-  const reportList = useMemo(() => {
-    if (!submissionData?.submissions || !creatorData) return [];
+  const { data: submissionData, isLoadingSubmissions } = useGetAllSubmissions();
 
-    const urlValidators = {
-      instagram: {
-        regex: /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i,
-      },
-      tiktok: {
-        regex: /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/(?:video|photo)\/\d+/i,
-      }
-    };
+  const reportList = React.useMemo(() => {
+    if (!submissionData) return [];
 
-    return submissionData.submissions
-      .filter(submission => {
-        if (!submission.content || !submission.user?.id) return false;
+    return submissionData?.submissions
+      ?.filter((submission) => {
+        if (!submission.content) return false;
 
-        // Find the creator connection data using the user's creator data
-        const creator = creatorData.find(c => c.id === submission.user.id);
-        if (!creator?.creator) return false;
+        // More specific regex patterns for actual post links
 
-        // Check for valid URLs and matching platform connections
-        const hasInstagramContent = urlValidators.instagram.regex.test(submission.content);
-        const hasTiktokContent = urlValidators.tiktok.regex.test(submission.content);
+        const instagramPostRegex =
+          /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
+        const tiktokPostRegex =
+          /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
 
-        return (hasInstagramContent && creator.creator.isFacebookConnected) ||
-              (hasTiktokContent && creator.creator.isTiktokConnected);
+        return (
+          instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content)
+        );
       })
-      .map(submission => ({
+      .map((submission) => ({
         id: submission.id,
         creatorName: submission.user?.name || 'N/A',
         creatorEmail: submission.user?.email || 'N/A',
@@ -69,25 +59,24 @@ const CampaignPerformanceTable = () => {
         content: submission.content,
         submissionId: submission.id,
         campaignId: submission.campaignId,
-        userId: submission.user?.id
+        userId: submission.user?.id,
       }))
       .sort((a, b) => {
         const campaignCompare = a.campaignName.localeCompare(b.campaignName);
         return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
       });
-
-  }, [submissionData, creatorData]);
+  }, [submissionData]);
 
   // Get unique campaigns for filter dropdown
   const uniqueCampaigns = useMemo(() => {
-    const campaigns = [...new Set(reportList.map(item => item.campaignName))];
-    return campaigns.filter(name => name !== 'N/A').sort();
+    const campaigns = [...new Set(reportList.map((item) => item.campaignName))];
+    return campaigns.filter((name) => name !== 'N/A').sort();
   }, [reportList]);
 
   // Filter reports based on selected campaign
   const filteredReports = useMemo(() => {
     if (selectedCampaign === 'all') return reportList;
-    return reportList.filter(report => report.campaignName === selectedCampaign);
+    return reportList.filter((report) => report.campaignName === selectedCampaign);
   }, [reportList, selectedCampaign]);
 
   const updateUrlParams = (page, campaign) => {
@@ -121,7 +110,7 @@ const CampaignPerformanceTable = () => {
       returnPage: currentPage.toString(),
       returnCampaign: selectedCampaign
     });
-    
+
     navigate(`/dashboard/report/view?${params.toString()}`);
   };
 
@@ -169,7 +158,7 @@ const CampaignPerformanceTable = () => {
           fontSize: { xs: 18, md: 24 },
           fontWeight: 600,
           color: '#333',
-          mb: 2
+          mb: 2,
         }}
       >
         Your Campaigns
@@ -179,7 +168,6 @@ const CampaignPerformanceTable = () => {
       <Box sx={{ mb: 2 }}>
         <FormControl sx={{ width: 400 }}>
           <Select
-            
             value={selectedCampaign}
             onChange={handleCampaignFilterChange}
             displayEmpty
@@ -213,7 +201,7 @@ const CampaignPerformanceTable = () => {
                 color: '#231F20',
                 height: 20,
                 width: 20,
-              }
+              },
             }}
           >
             <MenuItem value="all" sx={{ fontSize: '14px', fontWeight: 400 }}>
@@ -284,7 +272,7 @@ const CampaignPerformanceTable = () => {
                   color: '#666',
                 }}
               >
-                Creator's Email
+                Creator&apos;s Email
               </Typography>
             </Box>
             <Box sx={{ flex: '0 0 25%' }}>
@@ -319,14 +307,15 @@ const CampaignPerformanceTable = () => {
                   },
                 }}
               >
-                <Box sx={{ 
-                  flex: '0 0 25%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  maxWidth: 300,
-                  gap: 2,
-                  pr: 2
-                }}>
+                <Box
+                  sx={{
+                    flex: '0 0 20%',
+                    minWidth: 200,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
                   <Avatar
                     src={row.creatorAvatar}
                     sx={{
@@ -406,7 +395,7 @@ const CampaignPerformanceTable = () => {
                       '&:active': {
                         boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
                         transform: 'translateY(1px)',
-                      }
+                      },
                     }}
                   >
                     View Performance Report
@@ -418,14 +407,16 @@ const CampaignPerformanceTable = () => {
 
           {/* Pagination Controls - Clean minimal design */}
           {totalPages > 1 && (
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              mt: 3,
-              pb: 2,
-              gap: 0.3
-            }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                mt: 3,
+                pb: 2,
+                gap: 0.3,
+              }}
+            >
               {/* Previous Button */}
               <Button
                 onClick={handlePrevPage}
@@ -454,9 +445,10 @@ const CampaignPerformanceTable = () => {
               {(() => {
                 const pageButtons = [];
                 const showEllipsis = totalPages > 3;
-                
+
                 if (!showEllipsis) {
                   // Show all pages if 3 or fewer
+                  // eslint-disable-next-line no-plusplus
                   for (let i = 1; i <= totalPages; i++) {
                     pageButtons.push(
                       <Button
@@ -513,7 +505,12 @@ const CampaignPerformanceTable = () => {
                   }
 
                   // Show current page and adjacent pages
-                  for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                  for (
+                    let i = Math.max(2, currentPage - 1);
+                    i <= Math.min(totalPages - 1, currentPage + 1);
+                    // eslint-disable-next-line no-plusplus
+                    i++
+                  ) {
                     pageButtons.push(
                       <Button
                         key={i}
@@ -618,7 +615,9 @@ const CampaignPerformanceTable = () => {
                   mb: 1,
                 }}
               >
-                {selectedCampaign === 'all' ? 'No campaigns found' : `No results for "${selectedCampaign}"`}
+                {selectedCampaign === 'all'
+                  ? 'No campaigns found'
+                  : `No results for "${selectedCampaign}"`}
               </Typography>
               <Typography
                 sx={{
@@ -626,10 +625,9 @@ const CampaignPerformanceTable = () => {
                   color: '#999',
                 }}
               >
-                {selectedCampaign === 'all' 
+                {selectedCampaign === 'all'
                   ? 'Campaigns with completed submissions from creators with connected social accounts will appear here'
-                  : 'Try selecting a different campaign or check "All Campaigns"'
-                }
+                  : 'Try selecting a different campaign or check "All Campaigns"'}
               </Typography>
             </Box>
           )}

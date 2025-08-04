@@ -505,7 +505,15 @@ const CampaignAgreements = ({ campaign }) => {
 
   const handleSendAgreement = async (item) => {
     try {
-      const res = await axiosInstance.patch(endpoints.campaign.sendAgreement, item);
+      // Use different endpoints based on whether it's a resend or initial send
+      const endpoint = item.isSent ? endpoints.campaign.resendAgreement : endpoints.campaign.sendAgreement;
+      
+      // For resend, use different payload format
+      const payload = item.isSent 
+        ? { userId: item.userId, campaignId: item.campaignId }
+        : item;
+      
+      const res = await axiosInstance.patch(endpoint, payload);
       mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
       enqueueSnackbar(res?.data?.message);
     } catch (error) {

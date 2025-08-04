@@ -99,11 +99,38 @@ export const addUserToThread = async (threadId, userId) => {
 };
 
 // Send a message in a thread
-export const sendMessageInThread = async (threadId, content) => {
-  const response = await axios.post(endpoints.threads.sendMessage, { threadId, content });
+export const sendMessageInThread = async (threadId, messageData) => {
+  // Handle both old format (string content) and new format (object with content and attachments)
+  const isLegacyFormat = typeof messageData === 'string';
+  const content = isLegacyFormat ? messageData : messageData.content;
+  const attachments = isLegacyFormat ? [] : (messageData.attachments || []);
 
-  mutate(endpoints.threads.getMessage(threadId));
-  return response.data;
+  // If there are attachments, use FormData
+  if (attachments.length > 0) {
+    const formData = new FormData();
+    formData.append('threadId', threadId);
+    formData.append('content', content);
+    
+    // Append each file
+    attachments.forEach((attachment, index) => {
+      formData.append('attachments', attachment.file);
+    });
+
+    const response = await axios.post(endpoints.threads.sendMessage, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    mutate(endpoints.threads.getMessage(threadId));
+    return response.data;
+  } 
+    // For text-only messages, use the original format
+    const response = await axios.post(endpoints.threads.sendMessage, { threadId, content });
+
+    mutate(endpoints.threads.getMessage(threadId));
+    return response.data;
+  
 };
 
 // Function to get unread message count

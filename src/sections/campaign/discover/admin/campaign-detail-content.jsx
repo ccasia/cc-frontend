@@ -846,6 +846,144 @@ const CampaignDetailContent = ({ campaign }) => {
                   fontSize: '0.8rem',
                 }}
               >
+                DELIVERABLES
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {[
+                { label: 'UGC Videos', value: true },
+                { label: 'Raw Footage', value: campaign?.rawFootage },
+                { label: 'Photos', value: campaign?.photos },
+                { label: 'Ads', value: campaign?.ads },
+                { label: 'Cross Posting', value: campaign?.crossPosting },
+              ].map(
+                (deliverable) =>
+                  deliverable.value && (
+                    <Chip
+                      key={deliverable.label}
+                      label={deliverable.label}
+                      size="small"
+                      sx={ChipStyle}
+                    />
+                  )
+              )}
+            </Box>
+          </Box>
+
+          {/* Agreement Form Box */}
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <img
+                src="/assets/icons/overview/agreementFormIcon.svg"
+                alt="Agreement Form"
+                style={{
+                  width: 20,
+                  height: 20,
+                  color: '#203ff5',
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}
+              >
+                DELIVERABLES
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {[
+                { label: 'UGC Videos', value: true },
+                { label: 'Raw Footage', value: campaign?.rawFootage },
+                { label: 'Photos', value: campaign?.photos },
+                { label: 'Ads', value: campaign?.ads },
+                { label: 'Cross Posting', value: campaign?.crossPosting },
+              ].map(
+                (deliverable) =>
+                  deliverable.value && (
+                    <Chip
+                      key={deliverable.label}
+                      label={deliverable.label}
+                      size="small"
+                      sx={ChipStyle}
+                    />
+                  )
+              )}
+            </Box>
+          </Box>
+
+          {/* Agreement Form */}
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="solar:document-bold"
+                sx={{
+                  color: '#1340ff',
+                  width: 20,
+                  height: 20,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#1a1a1a',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  letterSpacing: '0.25px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                DELIVERABLES
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {[
+                { label: 'UGC Videos', value: true },
+                { label: 'Raw Footage', value: campaign?.rawFootage },
+                { label: 'Photos', value: campaign?.photos },
+                { label: 'Ads', value: campaign?.ads },
+                { label: 'Cross Posting', value: campaign?.crossPosting },
+              ].map(
+                (deliverable) =>
+                  deliverable.value && (
+                    <Chip
+                      key={deliverable.label}
+                      label={deliverable.label}
+                      size="small"
+                      sx={ChipStyle}
+                    />
+                  )
+              )}
+            </Box>
+          </Box>
+
+          {/* Agreement Form */}
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="solar:document-bold"
+                sx={{
+                  color: '#1340ff',
+                  width: 20,
+                  height: 20,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#1a1a1a',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  letterSpacing: '0.25px',
+                  textTransform: 'uppercase',
+                }}
+              >
+
                 AGREEMENT FORM
               </Typography>
             </Box>

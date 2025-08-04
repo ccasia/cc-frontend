@@ -23,7 +23,7 @@ export default function AccountSocialLinks() {
 
   const tikTokLoading = useBoolean();
   const facebookLoading = useBoolean();
-  
+
   // State for Instagram OAuth warning modal
   const [showOAuthWarning, setShowOAuthWarning] = useState(false);
 
@@ -358,7 +358,7 @@ export default function AccountSocialLinks() {
           </Stack>
         </Box>
       </Stack>
-      
+
       {/* Instagram OAuth Warning Modal */}
       {showOAuthWarning && (
         <InstagramOAuthWarning

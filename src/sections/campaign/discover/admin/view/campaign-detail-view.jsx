@@ -7,16 +7,14 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { pink, deepOrange } from '@mui/material/colors';
+import { deepOrange } from '@mui/material/colors';
 import {
   Box,
   Menu,
   Stack,
-  Alert,
   Radio,
   Button,
   Dialog,
-  Avatar,
   MenuItem,
   Container,
   Typography,
@@ -47,25 +45,26 @@ import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
+import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignLogistics from '../campaign-logistics';
+import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
-import CampaignDetailContentClient from '../campaign-detail-content-client';
-import { CampaignLog } from '../../../manage/list/CampaignLog';
-import CampaignDraftSubmissions from '../campaign-draft-submission';
-import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
-import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
-import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
-import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
-import CampaignAnalytics from '../campaign-analytics';
-import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
+// import { CampaignLog } from '../../../manage/list/CampaignLog';
+import CampaignDraftSubmissions from '../campaign-draft-submission';
+import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
+import CampaignDetailContentClient from '../campaign-detail-content-client';
+import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignV3PitchesWrapper from '../v3-pitches/campaign-v3-pitches-wrapper';
+import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
+import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
+import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -181,7 +180,6 @@ const CampaignDetailView = ({ id }) => {
     localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
-  // Define allowed tabs for client users
   const clientAllowedTabs = [
     'overview',
     'campaign-content',
@@ -200,7 +198,7 @@ const CampaignDetailView = ({ id }) => {
       setCurrentTab('overview');
       localStorage.setItem('campaigndetail', 'overview');
     }
-  }, [currentTab, isClient]);
+  }, [currentTab, isClient, clientAllowedTabs]);
 
   const handleChangeTab = useCallback(
     (event, newValue) => {
@@ -278,7 +276,7 @@ const CampaignDetailView = ({ id }) => {
                 { label: 'Campaign Details', value: 'campaign-content' },
                 // { label: 'Client Info', value: 'client' },
                 {
-                  label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided' || p.status === 'PENDING_REVIEW').length || 0})`,
+                  label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
                   value: 'pitch',
                 },
                 {
