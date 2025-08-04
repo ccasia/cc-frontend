@@ -175,8 +175,6 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   const postingLinksValue = watch('postingLinks');
   const hasValidLinks = postingLinksValue && postingLinksValue.some(link => link && link.trim() !== '');
 
-  console.log('Posting link value:', postingLinkValue);
-
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
 
