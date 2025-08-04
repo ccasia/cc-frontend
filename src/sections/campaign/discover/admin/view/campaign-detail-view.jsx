@@ -7,16 +7,14 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { pink, deepOrange } from '@mui/material/colors';
+import { deepOrange } from '@mui/material/colors';
 import {
   Box,
   Menu,
   Stack,
-  Alert,
   Radio,
   Button,
   Dialog,
-  Avatar,
   MenuItem,
   Container,
   Typography,
@@ -47,25 +45,26 @@ import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
+import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignLogistics from '../campaign-logistics';
+import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
-import CampaignDetailContentClient from '../campaign-detail-content-client';
-import { CampaignLog } from '../../../manage/list/CampaignLog';
-import CampaignDraftSubmissions from '../campaign-draft-submission';
-import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
-import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
-import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
-import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
-import CampaignAnalytics from '../campaign-analytics';
-import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
+// import { CampaignLog } from '../../../manage/list/CampaignLog';
+import CampaignDraftSubmissions from '../campaign-draft-submission';
+import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
+import CampaignDetailContentClient from '../campaign-detail-content-client';
+import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignV3PitchesWrapper from '../v3-pitches/campaign-v3-pitches-wrapper';
+import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
+import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
+import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -145,8 +144,6 @@ const CampaignDetailView = ({ id }) => {
   //   }
   // }, [id, campaign]);
 
-  
-
   const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
 
   const generateNewAgreement = useCallback(async (template) => {
@@ -183,11 +180,16 @@ const CampaignDetailView = ({ id }) => {
     localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
-  // Define allowed tabs for client users
-  const clientAllowedTabs = ['overview', 'campaign-content', 'creator-master-list', 'deliverables', 'analytics'];
-  
+  const clientAllowedTabs = [
+    'overview',
+    'campaign-content',
+    'creator-master-list',
+    'deliverables',
+    'analytics',
+  ];
+
   // Check if user is client
-  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'client';
+  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
   // Check if current tab is valid for client users
   useEffect(() => {
@@ -196,17 +198,20 @@ const CampaignDetailView = ({ id }) => {
       setCurrentTab('overview');
       localStorage.setItem('campaigndetail', 'overview');
     }
-  }, [currentTab, isClient]);
+  }, [currentTab, isClient, clientAllowedTabs]);
 
-  const handleChangeTab = useCallback((event, newValue) => {
-    // For client users, only allow specific tabs
-    if (isClient && !clientAllowedTabs.includes(newValue)) {
-      return;
-    }
-    
-    localStorage.setItem('campaigndetail', newValue);
-    setCurrentTab(newValue);
-  }, [isClient, clientAllowedTabs]);
+  const handleChangeTab = useCallback(
+    (event, newValue) => {
+      // For client users, only allow specific tabs
+      if (isClient && !clientAllowedTabs.includes(newValue)) {
+        return;
+      }
+
+      localStorage.setItem('campaigndetail', newValue);
+      setCurrentTab(newValue);
+    },
+    [isClient, clientAllowedTabs]
+  );
 
   const icons = (tab) => {
     if (tab.value === 'pitch' && campaign?.pitch?.length > 0) {
@@ -256,50 +261,49 @@ const CampaignDetailView = ({ id }) => {
           }}
         >
           {/* Show different tabs based on user role */}
-          {(user?.role === 'client' || user?.admin?.role?.name === 'client' ? 
-            // Client user tabs (no Pitches tab)
-            [
-              { label: 'Overview', value: 'overview' },
-              { label: 'Campaign Details', value: 'campaign-content' },
-              { label: 'Creator Master List', value: 'creator-master-list' },
-              { label: 'Creator Deliverables', value: 'deliverables' },
-              { label: 'Campaign Analytics', value: 'analytics' },
-            ] 
-            : 
-            // Admin/other user tabs
-            [
-            { label: 'Overview', value: 'overview' },
-            { label: 'Campaign Details', value: 'campaign-content' },
-            // { label: 'Client Info', value: 'client' },
-            {
-              label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
-              value: 'pitch',
-            },
-            {
-              label: `Shortlisted Creators (${campaign?.shortlisted?.length || 0})`,
-              value: 'creator',
-            },
-            {
-              label: `Agreements (${campaign?.creatorAgreement?.length || 0})`,
-              value: 'agreement',
-            },
-            {
-                label: 'Creator Deliverables',
-              value: 'deliverables',
-            },
-            {
-              label: 'Campaign Analytics',
-              value: 'analytics'
-            },
-            {
-              label: `Invoices (${campaignInvoices?.length || 0})`,
-              value: 'invoices',
-            },
-            // {
-            //   label: `Logistics (${campaign?.logistic?.length || 0})`,
-            //   value: 'logistics',
-            // },
-            ]
+          {(user?.role === 'client' || user?.admin?.role?.name === 'client'
+            ? // Client user tabs (no Pitches tab)
+              [
+                { label: 'Overview', value: 'overview' },
+                { label: 'Campaign Details', value: 'campaign-content' },
+                { label: 'Creator Master List', value: 'creator-master-list' },
+                { label: 'Creator Deliverables', value: 'deliverables' },
+                { label: 'Campaign Analytics', value: 'analytics' },
+              ]
+            : // Admin/other user tabs
+              [
+                { label: 'Overview', value: 'overview' },
+                { label: 'Campaign Details', value: 'campaign-content' },
+                // { label: 'Client Info', value: 'client' },
+                {
+                  label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
+                  value: 'pitch',
+                },
+                {
+                  label: `Shortlisted Creators (${campaign?.shortlisted?.length || 0})`,
+                  value: 'creator',
+                },
+                {
+                  label: `Agreements (${campaign?.creatorAgreement?.length || 0})`,
+                  value: 'agreement',
+                },
+                {
+                  label: 'Creator Deliverables',
+                  value: 'deliverables',
+                },
+                {
+                  label: 'Campaign Analytics',
+                  value: 'analytics',
+                },
+                {
+                  label: `Invoices (${campaignInvoices?.length || 0})`,
+                  value: 'invoices',
+                },
+                // {
+                //   label: `Logistics (${campaign?.logistic?.length || 0})`,
+                //   value: 'logistics',
+                // },
+              ]
           ).map((tab) => (
             <Button
               key={tab.value}
@@ -411,41 +415,46 @@ const CampaignDetailView = ({ id }) => {
   }, [loading, copyDialog, campaignMutate, campaign]);
 
   const renderTabContent = {
-    overview: isClient 
-      ? <CampaignOverviewClient campaign={campaign} />
-      : <CampaignOverview campaign={campaign} />,
-    'campaign-content': isClient 
-      ? <CampaignDetailContentClient campaign={campaign} />
-      : <CampaignDetailContent campaign={campaign} />, 
-    'creator-master-list': <CampaignCreatorMasterListClient campaign={campaign} />, 
-    creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />, 
-    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />, 
-    logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />, 
-    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />, 
+    overview: isClient ? (
+      <CampaignOverviewClient campaign={campaign} />
+    ) : (
+      <CampaignOverview campaign={campaign} />
+    ),
+    'campaign-content': isClient ? (
+      <CampaignDetailContentClient campaign={campaign} />
+    ) : (
+      <CampaignDetailContent campaign={campaign} />
+    ),
+    'creator-master-list': <CampaignCreatorMasterListClient campaign={campaign} />,
+    creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
+    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
+    logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />,
+    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
-    pitch: campaign?.origin === 'CLIENT' ? (
-      <CampaignV3PitchesWrapper campaign={campaign} />
-    ) : (
-      <CampaignDetailPitch
-        pitches={campaign?.pitch}
-        timeline={campaign?.campaignTimeline?.find((elem) => elem.name === 'Open For Pitch')}
-        timelines={campaign?.campaignTimeline?.filter(
-          (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
-        )}
-        shortlisted={campaign?.shortlisted}
-        campaignMutate={campaignMutate}
-        campaign={campaign}
-      />
-    ),
-    submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />, 
+    pitch:
+      campaign?.origin === 'CLIENT' ? (
+        <CampaignV3PitchesWrapper campaign={campaign} />
+      ) : (
+        <CampaignDetailPitch
+          pitches={campaign?.pitch}
+          timeline={campaign?.campaignTimeline?.find((elem) => elem.name === 'Open For Pitch')}
+          timelines={campaign?.campaignTimeline?.filter(
+            (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
+          )}
+          shortlisted={campaign?.shortlisted}
+          campaignMutate={campaignMutate}
+          campaign={campaign}
+        />
+      ),
+    submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
     deliverables: isClient ? (
       <CampaignCreatorDeliverablesClient campaign={campaign} />
     ) : (
       <CampaignCreatorDeliverables campaign={campaign} />
-    ), 
-    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />
+    ),
+    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />,
   };
 
   const formatDate = (dateString) => {
@@ -687,66 +696,68 @@ const CampaignDetailView = ({ id }) => {
                       Activate Campaign
                     </Button>
                   ) : (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={
-                  <img
-                    src="/assets/icons/overview/editButton.svg"
-                    alt="edit"
-                    style={{
-                      width: 20,
-                      height: 20,
-                      opacity: isDisabled ? 0.3 : 1,
-                    }}
-                  />
-                }
-                onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
-                disabled={isDisabled}
-                sx={{
-                  height: 42,
-                  borderRadius: 1,
-                  color: '#221f20',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid #e7e7e7',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  px: 2,
-                  whiteSpace: 'nowrap',
-                  '&:hover': {
-                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                  },
-                }}
-              >
-                Edit Details
-              </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={
+                        <img
+                          src="/assets/icons/overview/editButton.svg"
+                          alt="edit"
+                          style={{
+                            width: 20,
+                            height: 20,
+                            opacity: isDisabled ? 0.3 : 1,
+                          }}
+                        />
+                      }
+                      onClick={() =>
+                        router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))
+                      }
+                      disabled={isDisabled}
+                      sx={{
+                        height: 42,
+                        borderRadius: 1,
+                        color: '#221f20',
+                        border: '1px solid #e7e7e7',
+                        borderBottom: '4px solid #e7e7e7',
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                        px: 2,
+                        whiteSpace: 'nowrap',
+                        '&:hover': {
+                          backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                        },
+                      }}
+                    >
+                      Edit Details
+                    </Button>
                   )}
 
-              <Box
-                onClick={handleMenuOpen}
-                component="button"
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: 42,
-                  width: 42,
-                  borderRadius: 1,
-                  color: '#221f20',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid #e7e7e7',
-                  padding: 0,
-                  backgroundColor: 'transparent',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                    border: '1px solid #231F20',
-                    borderBottom: '4px solid #231F20',
-                  },
-                }}
-              >
-                <Iconify icon="eva:more-horizontal-fill" width={24} />
-              </Box>
+                  <Box
+                    onClick={handleMenuOpen}
+                    component="button"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: 42,
+                      width: 42,
+                      borderRadius: 1,
+                      color: '#221f20',
+                      border: '1px solid #e7e7e7',
+                      borderBottom: '4px solid #e7e7e7',
+                      padding: 0,
+                      backgroundColor: 'transparent',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                        border: '1px solid #231F20',
+                        borderBottom: '4px solid #231F20',
+                      },
+                    }}
+                  >
+                    <Iconify icon="eva:more-horizontal-fill" width={24} />
+                  </Box>
                 </>
               )}
 
@@ -847,9 +858,9 @@ const CampaignDetailView = ({ id }) => {
         onClose={() => setCampaignLogIsOpen(false)}
       />
 
-      <ActivateCampaignDialog 
-        open={activateDialogOpen} 
-        onClose={() => setActivateDialogOpen(false)} 
+      <ActivateCampaignDialog
+        open={activateDialogOpen}
+        onClose={() => setActivateDialogOpen(false)}
         campaignId={id}
       />
 

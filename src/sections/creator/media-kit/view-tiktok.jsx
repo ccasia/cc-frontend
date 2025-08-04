@@ -4,6 +4,16 @@ import PropTypes from 'prop-types';
 // import { keyframes } from '@emotion/react';
 import { enqueueSnackbar } from 'notistack';
 
+import {
+  Box,
+  Grid,
+  Stack,
+  alpha,
+  Button,
+  useTheme,
+  Typography,
+  useMediaQuery,
+} from '@mui/material';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { Box, Stack, alpha, Button, useTheme, Typography, useMediaQuery } from '@mui/material';
 
@@ -14,10 +24,11 @@ import { useSocialMediaData } from 'src/utils/store';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
-export const formatNumber = (num) => {
+const formatNumber = (num) => {
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -38,12 +49,11 @@ export const formatNumber = (num) => {
 const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  // const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
-  const topThreeContents = topContents.slice(0, 3);
+  const topFiveContents = topContents?.slice(0, 5);
 
   // Only use real data
-  const displayContents = topThreeContents;
+  const displayContents = topFiveContents;
 
   // Carousel layout for mobile
   if (isMobile) {
@@ -67,121 +77,114 @@ const TopContentGrid = ({ topContents }) => {
           pt: 1,
         }}
       >
-        {displayContents.length > 0 &&
-          displayContents.map((content, index) => (
+        {displayContents.length > 0 && displayContents.map((content, index) => (
+          <Box
+            key={index}
+            sx={{
+              minWidth: 200, // Copy Instagram card sizing
+              maxWidth: 240, // Copy Instagram card sizing
+              flex: '0 0 auto',
+              scrollSnapAlign: 'center',
+              borderRadius: 0,
+              overflow: 'hidden',
+              boxShadow: 'none', // Remove visible box shadow
+              bgcolor: 'transparent', // Make background transparent
+              display: 'flex',
+              flexDirection: 'column',
+              mx: 0,
+              height: 'auto', // Copy Instagram card styling
+              minHeight: 520, // Copy Instagram minimum height
+            }}
+          >
             <Box
-              key={index}
               sx={{
-                minWidth: 200, // Copy Instagram card sizing
-                maxWidth: 240, // Copy Instagram card sizing
-                flex: '0 0 auto',
-                scrollSnapAlign: 'center',
-                borderRadius: 0,
+                position: 'relative',
+                height: 420, // Copy Instagram image height for consistency
+                width: '100%',
                 overflow: 'hidden',
-                boxShadow: 'none', // Remove visible box shadow
-                bgcolor: 'transparent', // Make background transparent
-                display: 'flex',
-                flexDirection: 'column',
-                mx: 0,
-                height: 'auto', // Copy Instagram card styling
-                minHeight: 520, // Copy Instagram minimum height
+                borderRadius: 0,
               }}
             >
+              <iframe
+                src={content?.embed_link}
+                title={`TikTok video ${index + 1}`}
+                style={{ 
+                  height: '100%', 
+                  width: '100%', 
+                  border: 'none',
+                  borderRadius: '0px',
+                }}
+                allowFullScreen
+              />
               <Box
                 sx={{
-                  position: 'relative',
-                  height: 420, // Copy Instagram image height for consistency
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
                   width: '100%',
-                  overflow: 'hidden',
-                  borderRadius: 0,
+                  color: 'white',
+                  p: 2,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
                 }}
+                className="media-kit-engagement-icons"
               >
-                <iframe
-                  src={content?.embed_link}
-                  title={`TikTok video ${index + 1}`}
-                  style={{
-                    height: '100%',
-                    width: '100%',
-                    border: 'none',
-                    borderRadius: '0px',
-                  }}
-                  allowFullScreen
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    width: '100%',
-                    color: 'white',
-                    p: 2,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
-                  }}
-                  className="media-kit-engagement-icons"
-                >
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <Iconify icon="material-symbols:favorite-outline" width={20} />
-                      <Typography variant="subtitle2">
-                        {formatNumber(content?.like_count)}
-                      </Typography>
-                    </Stack>
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <Iconify icon="iconamoon:comment" width={20} />
-                      <Typography variant="subtitle2">
-                        {formatNumber(content?.comment_count)}
-                      </Typography>
-                    </Stack>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="material-symbols:favorite-outline" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
                   </Stack>
-                </Box>
-              </Box>
-              <Box
-                sx={{
-                  flex: 1, // Copy Instagram caption wrapper styling
-                  display: 'flex',
-                  flexDirection: 'column',
-                  pt: 1.5, // Copy Instagram padding
-                  px: 0.5, // Copy Instagram padding
-                  pb: 0.5, // Copy Instagram padding
-                  minHeight: 0, // Copy Instagram styling
-                  maxHeight: 120, // Copy Instagram caption height limit
-                  border: 'none', // Copy Instagram styling
-                  boxShadow: 'none', // Copy Instagram styling
-                  bgcolor: 'transparent', // Copy Instagram styling
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontSize: '0.8rem', // Copy Instagram font size
-                    color: 'text.primary',
-                    fontWeight: 500, // Copy Instagram font weight
-                    lineHeight: 1.4, // Copy Instagram line height
-                    wordBreak: 'break-word', // Copy Instagram word break
-                    overflowWrap: 'break-word', // Copy Instagram overflow wrap
-                    hyphens: 'auto', // Copy Instagram hyphens
-                    flex: 1, // Copy Instagram flex styling
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    ...((content.video_description?.length || 0) > 120
-                      ? {
-                          // Copy Instagram long caption handling
-                          maxHeight: 'none', // Remove height restriction
-                        }
-                      : {
-                          // Copy Instagram short caption handling
-                          display: '-webkit-box',
-                          WebkitLineClamp: 5, // Copy Instagram line clamp
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }),
-                  }}
-                >
-                  {content.video_description || 'No description available'}
-                </Typography>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="iconamoon:comment" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
+                  </Stack>
+                </Stack>
               </Box>
             </Box>
-          ))}
+            <Box
+              sx={{
+                flex: 1, // Copy Instagram caption wrapper styling
+                display: 'flex',
+                flexDirection: 'column',
+                pt: 1.5, // Copy Instagram padding
+                px: 0.5, // Copy Instagram padding
+                pb: 0.5, // Copy Instagram padding
+                minHeight: 0, // Copy Instagram styling
+                maxHeight: 120, // Copy Instagram caption height limit
+                border: 'none', // Copy Instagram styling
+                boxShadow: 'none', // Copy Instagram styling
+                bgcolor: 'transparent', // Copy Instagram styling
+              }}
+            >
+            <Typography
+              variant="body2"
+              sx={{
+                  fontSize: '0.8rem', // Copy Instagram font size
+                  color: 'text.primary',
+                  fontWeight: 500, // Copy Instagram font weight
+                  lineHeight: 1.4, // Copy Instagram line height
+                  wordBreak: 'break-word', // Copy Instagram word break
+                  overflowWrap: 'break-word', // Copy Instagram overflow wrap
+                  hyphens: 'auto', // Copy Instagram hyphens
+                  flex: 1, // Copy Instagram flex styling
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  ...((content.video_description?.length || 0) > 120 ? {
+                    // Copy Instagram long caption handling
+                    maxHeight: 'none', // Remove height restriction
+                  } : {
+                    // Copy Instagram short caption handling
+                display: '-webkit-box',
+                    WebkitLineClamp: 5, // Copy Instagram line clamp
+                WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }),
+              }}
+            >
+              {content.video_description || 'No description available'}
+            </Typography>
+            </Box>
+          </Box>
+        ))}
       </Box>
     );
   }
@@ -197,7 +200,7 @@ const TopContentGrid = ({ topContents }) => {
         gap: { xs: 2, md: 4 },
         justifyContent: { xs: 'center', sm: 'flex-start' },
         alignItems: { xs: 'center', sm: 'flex-start' },
-        overflow: 'auto',
+        overflow: 'auto'
       }}
       component={m.div}
       variants={{
@@ -212,126 +215,125 @@ const TopContentGrid = ({ topContents }) => {
       animate="show"
       initial="hidden"
     >
-      {displayContents.length > 0 &&
-        displayContents.map((content, index) => (
+      {displayContents.length > 0 && displayContents.map((content, index) => (
+        <Box
+          key={index}
+          component={m.div}
+          variants={{
+            hidden: { opacity: 0, y: 50 },
+            show: { opacity: 1, y: 0 },
+          }}
+          sx={{
+            width: { xs: '100%', sm: '30%', md: 350 },
+            minWidth: { xs: '280px', sm: '250px', md: '320px' },
+            maxWidth: { xs: '100%', sm: '350px' },
+          }}
+        >
           <Box
-            key={index}
-            component={m.div}
-            variants={{
-              hidden: { opacity: 0, y: 50 },
-              show: { opacity: 1, y: 0 },
-            }}
             sx={{
-              width: { xs: '100%', sm: '30%', md: 350 },
-              minWidth: { xs: '280px', sm: '250px', md: '320px' },
-              maxWidth: { xs: '100%', sm: '350px' },
+              position: 'relative',
+              height: { xs: 480, sm: 550, md: 650 },
+              width: '100%',
+              overflow: 'hidden',
+              borderRadius: 0,
+              cursor: 'pointer',
             }}
           >
+            <iframe
+              src={content?.embed_link}
+              title={`TikTok video ${index + 1}`}
+              style={{ 
+                height: '100%', 
+                width: '100%', 
+                border: 'none',
+                borderRadius: '0px',
+              }}
+              allowFullScreen
+            />
+
             <Box
               sx={{
-                position: 'relative',
-                height: { xs: 480, sm: 550, md: 650 },
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
                 width: '100%',
-                overflow: 'hidden',
-                borderRadius: 0,
-                cursor: 'pointer',
+                color: 'white',
+                p: isMobile ? 2 : 1.5,
+                px: 2,
+                mb: 1,
+                borderRadius: '0 0 0px 0px',
+                pointerEvents: 'none', // Allow clicks to pass through to iframe
+                background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
               }}
+              className="media-kit-engagement-icons"
             >
-              <iframe
-                src={content?.embed_link}
-                title={`TikTok video ${index + 1}`}
-                style={{
-                  height: '100%',
-                  width: '100%',
-                  border: 'none',
-                  borderRadius: '0px',
-                }}
-                allowFullScreen
-              />
-
-              <Box
-                sx={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  width: '100%',
-                  color: 'white',
-                  p: isMobile ? 2 : 1.5,
-                  px: 2,
-                  mb: 1,
-                  borderRadius: '0 0 0px 0px',
-                  pointerEvents: 'none', // Allow clicks to pass through to iframe
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
-                }}
-                className="media-kit-engagement-icons"
-              >
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Iconify icon="material-symbols:favorite-outline" width={20} />
-                    <Typography variant="subtitle2">{formatNumber(content?.like_count)}</Typography>
-                  </Stack>
-
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Iconify icon="iconamoon:comment" width={20} />
-                    <Typography variant="subtitle2">
-                      {formatNumber(content?.comment_count)}
-                    </Typography>
-                  </Stack>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify icon="material-symbols:favorite-outline" width={20} />
+                  <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
                 </Stack>
-              </Box>
-            </Box>
 
-            <Box
-              sx={{
-                mt: 1,
-                maxHeight: isMobile ? 120 : 50, // Much shorter caption area for desktop - more rectangular
-                overflow: 'hidden',
-                border: 'none', // Remove any borders
-                boxShadow: 'none', // Remove any shadows
-                bgcolor: 'transparent', // Make background transparent
-              }}
-            >
-              <Typography
-                variant="body2"
-                className="media-kit-caption"
-                sx={{
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  color: 'text.primary',
-                  width: '100%',
-                  maxWidth: '100%',
-                  lineHeight: 1.4,
-                  wordBreak: 'break-word',
-                  overflowWrap: 'break-word',
-                  hyphens: 'auto',
-                  ...(() => {
-                    const length = content?.video_description?.length || 0;
-                    const isLongCaption = length > 120;
-
-                    if (isLongCaption) {
-                      // For longer captions, limit lines for desktop
-                      return {
-                        display: '-webkit-box',
-                        WebkitLineClamp: isMobile ? 4 : 2, // Even fewer lines for desktop
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      };
-                    } 
-                      // For shorter captions, use line clamp
-                      return {
-                        display: '-webkit-box',
-                        WebkitLineClamp: isMobile ? 3 : 2, // Fewer lines for desktop
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      };
-                    
-                  })(),
-                }}
-              >
-                {content?.video_description}
-              </Typography>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify icon="iconamoon:comment" width={20} />
+                  <Typography variant="subtitle2">
+                    {formatNumber(content?.comment)}
+                  </Typography>
+                </Stack>
+              </Stack>
             </Box>
           </Box>
-        ))}
+          
+          <Box
+            sx={{
+              mt: 1,
+              maxHeight: isMobile ? 120 : 50, // Much shorter caption area for desktop - more rectangular
+              overflow: 'hidden',
+              border: 'none', // Remove any borders
+              boxShadow: 'none', // Remove any shadows
+              bgcolor: 'transparent', // Make background transparent
+            }}
+          >
+          <Typography
+            variant="body2"
+            className="media-kit-caption"
+            sx={{
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              color: 'text.primary',
+              width: '100%',
+              maxWidth: '100%',
+                lineHeight: 1.4,
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                hyphens: 'auto',
+                ...(() => {
+                  const length = content?.video_description?.length || 0;
+                  const isLongCaption = length > 120;
+                  
+                  if (isLongCaption) {
+                    // For longer captions, limit lines for desktop
+                    return {
+                      display: '-webkit-box',
+                      WebkitLineClamp: isMobile ? 4 : 2, // Even fewer lines for desktop
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    };
+                  } else {
+                    // For shorter captions, use line clamp
+                    return {
+                      display: '-webkit-box',
+                      WebkitLineClamp: isMobile ? 3 : 2, // Fewer lines for desktop
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    };
+                  }
+                })(),
+              }}
+            >
+              {content?.video_description}
+          </Typography>
+          </Box>
+        </Box>
+      ))}
     </Box>
   );
 };
@@ -339,16 +341,9 @@ const TopContentGrid = ({ topContents }) => {
 TopContentGrid.propTypes = {
   topContents: PropTypes.arrayOf(
     PropTypes.shape({
-      embed_link: PropTypes.string,
-      video_description: PropTypes.string,
-      like: PropTypes.number,
-      comment: PropTypes.number,
+      image_url: PropTypes.string.isRequired,
     })
-  ),
-};
-
-TopContentGrid.defaultProps = {
-  topContents: [],
+  ).isRequired,
 };
 
 const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
@@ -389,22 +384,16 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   if (!isConnected) {
     // Show connect TikTok prompt
     return (
-      <Box
-        component={m.div}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
+      <Label
+        color="info"
         sx={{
-          height: { xs: 450, sm: 500, md: 550 },
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          width: '100%',
-          borderRadius: 2,
-          mb: 4,
-          bgcolor: alpha(theme.palette.background.neutral, 0.4),
-          border: `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
-          boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
+          height: 250,
+          textAlign: 'center',
+          borderStyle: 'dashed',
+          borderColor: theme.palette.divider,
+          borderWidth: 1.5,
+          bgcolor: alpha(theme.palette.warning.main, 0.16),
+          width: 1,
         }}
       >
         <Stack spacing={3} alignItems="center" sx={{ maxWidth: 320, textAlign: 'center', p: 3 }}>
@@ -428,74 +417,32 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
           </Typography>
 
           <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-            Connect your TikTok account to showcase your top content and analytics in your media
-            kit.
+            Connect your TikTok account to showcase your top content and analytics in your media kit.
           </Typography>
 
           <Button
-            variant="contained"
-            size="large"
-            sx={{
-              borderRadius: 1.5,
-              px: 3,
-              py: 1.5,
-              mt: 2,
-              backgroundColor: '#000000',
-              color: '#FFFFFF',
-              fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              '&:hover': {
-                backgroundColor: '#222222',
-                boxShadow: '0 6px 15px rgba(0,0,0,0.2)',
-              },
-            }}
-            startIcon={<Iconify icon="mingcute:link-line" width={22} />}
+            variant="outlined"
+            size="medium"
+            sx={{ borderRadius: 0.5 }}
+            startIcon={<Iconify icon="logos:tiktok-icon" width={18} />}
             onClick={connectTiktok}
           >
             Connect TikTok
           </Button>
         </Stack>
-      </Box>
+      </Label>
     );
   }
 
   // Carousel for mobile, grid for desktop
   return (
-    <Box>
-      {isMobile ? (
-        <Box
-          sx={{
-            position: 'relative',
-            width: '100%',
-            px: 0,
-            overflow: 'hidden',
-          }}
-        >
-          <Box
-            id="tiktok-mobile-connected"
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              flexWrap: 'nowrap',
-              width: '100%',
-              gap: 2, // Match Instagram wrapper container gap
-              justifyContent: 'flex-start',
-              alignItems: 'stretch',
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              scrollbarWidth: 'none',
-              '&::-webkit-scrollbar': { height: 0, display: 'none' },
-              pb: 2,
-              scrollSnapType: 'x mandatory',
-              px: 0,
-              pt: 1,
-            }}
-          >
-            <TopContentGrid topContents={contentToShow} mobileCarousel />
-          </Box>
-        </Box>
+    <Box width={1}>
+      {tiktokData?.videos?.data?.videos.length ? (
+        <TopContentGrid topContents={tiktokData?.videos?.data?.videos} />
       ) : (
-        <TopContentGrid topContents={contentToShow} />
+        <Typography variant="subtitle1" color="text.secondary" textAlign="center">
+          No top content data available
+        </Typography>
       )}
 
       {/* Analytics Boxes */}
@@ -964,229 +911,214 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
             alignItems: 'flex-start',
           }}
         >
-          {/* Engagement Rate Box */}
-          <Box
-            sx={{
-              backgroundColor: '#E7E7E7',
-              borderRadius: 3,
-              p: 3,
-              flex: 1,
-              width: 'auto',
-              minWidth: '400px',
-              minHeight: '311px',
-              height: '311px',
-              position: 'relative',
-            }}
-          >
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: 'black',
-                fontWeight: 600,
-                fontSize: '18px',
-                position: 'absolute',
-                top: 24,
-                left: 28,
-                zIndex: 2,
-              }}
-            >
-              Engagement Rate
-            </Typography>
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: 24,
-                left: 28,
-                right: 28,
-                top: 60,
-              }}
-            >
-              <LineChart
-                series={[
-                  {
-                    curve: 'linear',
-                    data: (() => {
-                      // Use real analytics data if available
-                      const engagementRates = dataSource?.analytics?.engagementRates || [];
-
-                      // Calculate from recent posts if no analytics data
-                      if (engagementRates.length === 0) {
-                        const posts = dataSource?.medias?.sortedVideos || [];
-                        if (posts.length >= 3) {
-                          const calculatedRates = posts.slice(0, 3).map((post) => {
-                            const engagement =
-                              (post.like_count || 0) +
-                              (post.comment_count || 0) +
-                              (post.share_count || 0);
-                            const followers = dataSource?.overview?.follower_count || 1;
-                            return parseFloat(((engagement / followers) * 100).toFixed(1));
-                          });
-                          return calculatedRates; // Already in correct order
-                        }
-                        // Default fallback
-                        return [2.1, 2.8, 3.2];
-                      }
-
-                      return engagementRates; // Already in ascending order from backend
-                    })(),
-                    color: '#1340FF',
-                    valueFormatter: (value) => `${value}%`,
-                  },
-                ]}
-                width={450}
-                height={227}
-                margin={{ left: 30, right: 15, top: 30, bottom: 60 }}
-                xAxis={[
-                  {
-                    scaleType: 'band',
-                    data: (() => {
-                      // Use real months if available
-                      const analyticsMonths = dataSource?.analytics?.months || [];
-                      const months =
-                        analyticsMonths.length > 0 ? analyticsMonths : ['Jan', 'Feb', 'Mar'];
-                      return months; // Already in ascending order from backend
-                    })(),
-                    hideTooltip: true,
-                    tickLabelStyle: { fontSize: 12, fill: 'black', fontStyle: 'italic' },
-                    axisLine: false,
-                    tickLine: false,
-                  },
-                ]}
-                yAxis={[
-                  {
-                    min: 0,
-                    max: 3,
-                    tickNumber: 4,
-                    hideTooltip: true,
-                    tickLabelStyle: { fontSize: 13, fill: '#333', fontWeight: 500 }, // Made darker and bolder
-                    axisLine: false,
-                    tickLine: false,
-                  },
-                ]}
-                grid={{ horizontal: true, vertical: false }}
-                slotProps={{
-                  legend: { hidden: true },
-                  tooltip: {
-                    trigger: 'item', // Enable tooltip on hover/click
-                    formatter: (params) => `${params.value.toFixed(2)}%`, // Show precise numbers with 2 decimal places
-                  },
-                  axisHighlight: { x: 'none', y: 'none' },
-                  mark: {
-                    style: {
-                      fill: '#1340FF',
-                      stroke: '#1340FF',
-                      strokeWidth: 2,
-                      r: 6, // Slightly larger for better interaction
-                      cursor: 'pointer',
-                    },
-                  },
-                }}
-                sx={{
-                  '& .MuiChartsAxis-line': {
-                    display: 'none',
-                  },
-                  '& .MuiChartsAxis-tick': {
-                    display: 'none',
-                  },
-                  '& .MuiChartsGrid-line': {
-                    stroke: 'black',
-                    strokeWidth: 1,
-                  },
-                  '& .MuiChartsGrid-root .MuiChartsGrid-line': {
-                    strokeDasharray: 'none',
-                  },
-                  '& .MuiChartsGrid-root .MuiChartsGrid-line:not(:first-child)': {
-                    display: 'none',
-                  },
-                  '& .MuiLineElement-root': {
-                    strokeWidth: 1,
-                  },
-                  '& .MuiMarkElement-root': {
-                    fill: '#1340FF !important',
-                    stroke: '#1340FF !important',
-                    strokeWidth: '2px !important',
-                    r: '6px !important',
-                    cursor: 'pointer !important',
-                    transition: 'all 0.2s ease-in-out !important',
-                  },
-                  '& .MuiMarkElement-root:hover, & .MuiMarkElement-root:active': {
-                    fill: '#0F2FE6 !important',
-                    stroke: '#0F2FE6 !important',
-                    strokeWidth: '3px !important',
-                    r: '8px !important',
-                    transform: 'scale(1.1) !important',
-                  },
-                  '& .MuiChartsAxisHighlight-root': {
-                    display: 'none !important',
-                  },
-                }}
-              />
-              {/* Data labels positioned directly above dots */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  pointerEvents: 'none',
-                }}
-              >
-                {(() => {
-                  // Calculate engagement rates based on mock data
-                  const videos = tiktok?.creator?.tiktokUser?.sortedVideos || [];
-                  let engagementRates;
-                  if (videos.length >= 3) {
-                    engagementRates = videos.slice(0, 3).map((video) => {
-                      const engagement = video.like_count + video.comment_count;
-                      const followers = tiktok?.creator?.tiktokUser?.follower_count || 89500;
-                      return parseFloat(((engagement / followers) * 100).toFixed(1));
-                    });
-                  } else {
-                    engagementRates = [3.1, 5.2, 4.8]; // fallback
-                  }
-                  return engagementRates;
-                })().map((value, index) => {
-                  // Chart plotting area calculations
-                  const plotAreaLeft = 30;
-                  const plotAreaTop = 30;
-                  const plotAreaWidth = 405; // chart width minus left/right margins
-                  const plotAreaHeight = 137; // chart height minus top/bottom margins
-
-                  // Calculate exact x position for each data point (band scale centers)
-                  const bandWidth = plotAreaWidth / 3; // 3 data points
-                  const xPosition = plotAreaLeft + bandWidth * 0.5 + index * bandWidth;
-
-                  // Calculate exact y position based on data value (0-3 scale)
-                  const dataPointY = plotAreaTop + (plotAreaHeight - (value / 3) * plotAreaHeight);
-                  const labelY = dataPointY - 22; // Position label above the dot
-
-                  return (
-                    <Typography
-                      key={index}
-                      sx={{
-                        position: 'absolute',
-                        top: labelY,
-                        left: xPosition,
-                        fontSize: 14,
-                        color: '#000',
-                        fontWeight: 500,
-                        fontFamily: 'Aileron, sans-serif',
-                        transform: 'translateX(-50%)',
-                        textAlign: 'center',
-                        lineHeight: 1,
-                        userSelect: 'none',
-                        // Add subtle styling to make it more visible
-                        textShadow: '0 1px 2px rgba(255,255,255,0.8)',
-                      }}
-                    >
-                      {value}%
-                    </Typography>
-                  );
-                })}
-              </Box>
-            </Box>
-          </Box>
+                     {/* Engagement Rate Box */}
+           <Box
+             sx={{
+               backgroundColor: '#E7E7E7',
+               borderRadius: 3,
+               p: 3,
+               flex: 1,
+               width: 'auto',
+               minWidth: '400px',
+               minHeight: '311px',
+               height: '311px',
+               position: 'relative',
+             }}
+           >
+             <Typography
+               variant="subtitle2"
+               sx={{
+                 color: 'black',
+                 fontWeight: 600,
+                 fontSize: '18px',
+                 position: 'absolute',
+                 top: 24,
+                 left: 28,
+                 zIndex: 2,
+               }}
+             >
+               Engagement Rate
+             </Typography>
+             <Box
+               sx={{
+                 position: 'absolute',
+                 bottom: 24,
+                 left: 28,
+                 right: 28,
+                 top: 60,
+               }}
+             >
+               <LineChart
+                 series={[
+                   { 
+                     curve: "linear", 
+                     data: (() => {
+                       // Use real analytics data if available
+                       const engagementRates = dataSource?.analytics?.engagementRates || [];
+                       
+                       // Calculate from recent posts if no analytics data
+                       if (engagementRates.length === 0) {
+                         const posts = dataSource?.medias?.sortedVideos || [];
+                         if (posts.length >= 3) {
+                           const calculatedRates = posts.slice(0, 3).map(post => {
+                             const engagement = (post.like_count || 0) + 
+                                             (post.comment_count || 0) + 
+                                             (post.share_count || 0);
+                             const followers = dataSource?.overview?.follower_count || 1;
+                             return parseFloat(((engagement / followers) * 100).toFixed(1));
+                           });
+                           return calculatedRates; // Already in correct order
+                         }
+                         // Default fallback
+                         return [2.1, 2.8, 3.2];
+                       }
+                       
+                       return engagementRates; // Already in ascending order from backend
+                     })(),
+                     color: '#1340FF',
+                     valueFormatter: (value) => `${value}%`
+                   }
+                 ]}
+                 width={450}
+                 height={227}
+                 margin={{ left: 30, right: 15, top: 30, bottom: 60 }}
+                 xAxis={[{ 
+                   scaleType: 'band',
+                   data: (() => {
+                     // Use real months if available
+                     const analyticsMonths = dataSource?.analytics?.months || [];
+                     const months = analyticsMonths.length > 0 ? analyticsMonths : ['Jan', 'Feb', 'Mar'];
+                     return months; // Already in ascending order from backend
+                   })(),
+                   hideTooltip: true,
+                   tickLabelStyle: { fontSize: 12, fill: 'black', fontStyle: 'italic' },
+                   axisLine: false,
+                   tickLine: false
+                 }]}
+                 yAxis={[{ 
+                   min: 0,
+                   max: 3,
+                   tickNumber: 4,
+                   hideTooltip: true,
+                   tickLabelStyle: { fontSize: 13, fill: '#333', fontWeight: 500 }, // Made darker and bolder
+                   axisLine: false,
+                   tickLine: false
+                 }]}
+                 grid={{ horizontal: true, vertical: false }}
+                 slotProps={{
+                   legend: { hidden: true },
+                   tooltip: { 
+                     trigger: 'item', // Enable tooltip on hover/click
+                     formatter: (params) => `${params.value.toFixed(2)}%` // Show precise numbers with 2 decimal places
+                   },
+                   axisHighlight: { x: 'none', y: 'none' },
+                   mark: {
+                     style: {
+                       fill: '#1340FF',
+                       stroke: '#1340FF',
+                       strokeWidth: 2,
+                       r: 6, // Slightly larger for better interaction
+                       cursor: 'pointer'
+                     }
+                   }
+                 }}
+                 sx={{
+                   '& .MuiChartsAxis-line': {
+                     display: 'none',
+                   },
+                   '& .MuiChartsAxis-tick': {
+                     display: 'none',
+                   },
+                   '& .MuiChartsGrid-line': {
+                     stroke: 'black',
+                     strokeWidth: 1,
+                   },
+                   '& .MuiChartsGrid-root .MuiChartsGrid-line': {
+                     strokeDasharray: 'none',
+                   },
+                   '& .MuiChartsGrid-root .MuiChartsGrid-line:not(:first-child)': {
+                     display: 'none',
+                   },
+                   '& .MuiLineElement-root': {
+                     strokeWidth: 1,
+                   },
+                   '& .MuiMarkElement-root': {
+                     fill: '#1340FF !important',
+                     stroke: '#1340FF !important',
+                     strokeWidth: '2px !important',
+                     r: '6px !important',
+                     cursor: 'pointer !important',
+                     transition: 'all 0.2s ease-in-out !important'
+                   },
+                   '& .MuiMarkElement-root:hover, & .MuiMarkElement-root:active': {
+                     fill: '#0F2FE6 !important',
+                     stroke: '#0F2FE6 !important',
+                     strokeWidth: '3px !important',
+                     r: '8px !important',
+                     transform: 'scale(1.1) !important'
+                   },
+                   '& .MuiChartsAxisHighlight-root': {
+                     display: 'none !important'
+                   }
+                 }}
+               />
+               {/* Data labels positioned directly above dots */}
+               <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                 {(() => {
+                   // Calculate engagement rates based on mock data
+                   const videos = tiktok?.creator?.tiktokUser?.sortedVideos || [];
+                   let engagementRates;
+                   if (videos.length >= 3) {
+                     engagementRates = videos.slice(0, 3).map(video => {
+                       const engagement = (video.like + video.comment);
+                       const followers = tiktok?.creator?.tiktokUser?.follower_count || 89500;
+                       return parseFloat(((engagement / followers) * 100).toFixed(1));
+                     });
+                   } else {
+                     engagementRates = [3.1, 5.2, 4.8]; // fallback
+                   }
+                   return engagementRates;
+                 })().map((value, index) => {
+                   // Chart plotting area calculations
+                   const plotAreaLeft = 30;
+                   const plotAreaTop = 30;
+                   const plotAreaWidth = 405; // chart width minus left/right margins
+                   const plotAreaHeight = 137; // chart height minus top/bottom margins
+                   
+                   // Calculate exact x position for each data point (band scale centers)
+                   const bandWidth = plotAreaWidth / 3; // 3 data points
+                   const xPosition = plotAreaLeft + (bandWidth * 0.5) + (index * bandWidth);
+                   
+                   // Calculate exact y position based on data value (0-3 scale)
+                   const dataPointY = plotAreaTop + (plotAreaHeight - ((value / 3) * plotAreaHeight));
+                   const labelY = dataPointY - 22; // Position label above the dot
+                   
+                   return (
+                     <Typography 
+                       key={index}
+                       sx={{ 
+                         position: 'absolute', 
+                         top: labelY, 
+                         left: xPosition, 
+                         fontSize: 14, 
+                         color: '#000', 
+                         fontWeight: 500,
+                         fontFamily: 'Aileron, sans-serif',
+                         transform: 'translateX(-50%)',
+                         textAlign: 'center',
+                         lineHeight: 1,
+                         userSelect: 'none',
+                         // Add subtle styling to make it more visible
+                         textShadow: '0 1px 2px rgba(255,255,255,0.8)'
+                       }}
+                     >
+                       {value}%
+                     </Typography>
+                   );
+                 })}
+               </Box>
+             </Box>
+           </Box>
 
           {/* Monthly Interactions Box */}
           <Box

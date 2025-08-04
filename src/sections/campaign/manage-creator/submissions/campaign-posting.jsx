@@ -122,19 +122,18 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   // Helper function to get the due date with fallback
   const getDueDate = useMemo(() => {
     // Try multiple date fields in order of preference
-    const dateOptions = [
-      submission?.dueDate,
-      submission?.endDate,
-      submission?.startDate
-    ].filter(Boolean);
+    const dateOptions = [submission?.dueDate, submission?.endDate, submission?.startDate].filter(
+      Boolean
+    );
 
     // Return the first valid date, or null if none are valid
+    // eslint-disable-next-line no-restricted-syntax
     for (const date of dateOptions) {
       if (date && dayjs(date).isValid()) {
         return dayjs(date);
       }
     }
-    
+
     return null;
   }, [submission?.dueDate, submission?.endDate, submission?.startDate]);
 
@@ -175,8 +174,6 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
   const postingLinksValue = watch('postingLinks');
   const hasValidLinks = postingLinksValue && postingLinksValue.some(link => link && link.trim() !== '');
-
-  console.log('Posting link value:', postingLinkValue);
 
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
@@ -412,9 +409,13 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
             {submission?.status !== 'PENDING_REVIEW' && submission?.status !== 'APPROVED' && (
               <Box>
                 <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                  Let&apos;s wrap up this campaign by submitting your posting link on your socials! 🥳
+                  Let&apos;s wrap up this campaign by submitting your posting link on your socials!
+                  🥳
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#221f20', mb: 2, ml: -1, fontWeight: 600 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#221f20', mb: 2, ml: -1, fontWeight: 600 }}
+                >
                   {' '}
                   <Box
                     component="span"

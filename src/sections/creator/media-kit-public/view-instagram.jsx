@@ -209,6 +209,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
               height: { xs: 400, sm: 450, md: 550 },
               width: '100%',
               overflow: 'hidden',
+              borderRadius: 3,
               cursor: 'pointer',
               '&:hover .image': {
                 scale: 1.05,
