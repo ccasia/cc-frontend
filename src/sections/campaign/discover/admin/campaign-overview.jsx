@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import toast from 'react-hot-toast';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 import React, { useMemo, useState, useEffect } from 'react';
@@ -14,13 +15,17 @@ import {
   Avatar,
   Button,
   Divider,
+  TextField,
+  keyframes,
   Typography,
+  IconButton,
   DialogTitle,
   DialogContent,
   DialogActions,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -88,6 +93,16 @@ const findLatestPackage = (packages) => {
   return latestPackage;
 };
 
+const campaignCreditAnimation = keyframes`
+  from { width: 0 }
+  to { width: 80 }
+`;
+
+const closecampaignCreditAnimation = keyframes`
+  from { width: 80 }
+  to { width: 0 }
+`;
+
 const CampaignOverview = ({ campaign, onUpdate }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
@@ -98,6 +113,18 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   const dialog = useBoolean();
   const [localCampaign, setLocalCampaign] = useState(campaign);
   const client = campaign?.company || campaign?.brand?.company;
+  const [isEditingCredit, setIsEditingCredit] = useState(false);
+
+  const [currentCredit, setCurrentCredit] = useState(null);
+  const [errorCredit, setErrorCredit] = useState(null);
+
+  const [animation, setCreditAnimation] = useState(undefined);
+  const [error, setError] = useState();
+  const approveCreditModal = useBoolean();
+  const { mutate } = useGetCampaignById(campaign.id);
+
+  // const creditAssignModal = useBoolean();
+  // const [campaigns, setCampaigns] = useState(null);
 
   const latestPackageItem = useMemo(() => {
     if (client && client?.subscriptions?.length) {
@@ -147,9 +174,9 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
         });
         navigate(`/dashboard/chat/thread/${newThreadResponse.data.id}`);
       }
-    } catch (error) {
-      console.log(error);
-      console.error('Error creating or finding chat thread:', error);
+    } catch (err) {
+      console.log(err);
+      console.error('Error creating or finding chat thread:', err);
     }
   };
 
@@ -166,16 +193,52 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
       if (onUpdate) {
         onUpdate();
       }
-    } catch (error) {
-      console.error('Error declining pitch:', error);
+    } catch (err) {
+      console.error('Error declining pitch:', err);
       enqueueSnackbar('error', { variant: 'error' });
     }
   };
 
-  // const handleDeclineClick = (pitch) => {
-  //   setSelectedPitch(pitch);
-  //   dialog.onTrue();
-  // };
+  const handleEditCredit = () => {
+    setCurrentCredit(campaign?.campaignCredits);
+    setCreditAnimation(campaignCreditAnimation);
+    setIsEditingCredit(true);
+  };
+
+  const handleCreditChangesConfirmation = () => {
+    // if (currentCredit < campaign?.campaignCredits) {
+    //   setError('Cannot be less than current credits');
+    //   return;
+    // }
+
+    approveCreditModal.onTrue();
+  };
+
+  const handleCancelCreditChanges = async () => {
+    setError();
+    setCurrentCredit(0);
+    setCreditAnimation(closecampaignCreditAnimation);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    setIsEditingCredit(false);
+  };
+
+  const handleCreditApproval = async () => {
+    try {
+      const res = await axiosInstance.patch('/api/campaign/changeCredits', {
+        campaignId: campaign.id,
+        newCredit: currentCredit - campaign.campaignCredits,
+      });
+
+      toast.success(res.data.message);
+
+      approveCreditModal.onFalse();
+      setIsEditingCredit(false);
+      setCurrentCredit(0);
+      mutate();
+    } catch (err) {
+      toast.error('Error', err);
+    }
+  };
 
   const handleConfirmDecline = async () => {
     if (selectedPitch) {
@@ -219,6 +282,24 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
     navigate(`/dashboard/creator/profile/${creator.userId}`);
   };
 
+  useEffect(() => {
+    let val = currentCredit || 0;
+    const utilizedCredits = campaign?.creditsUtilized;
+
+    // Remove leading zeros (e.g., "012" -> "12")
+    if (val.length > 1 && val.startsWith('0')) {
+      val = val.replace(/^0+/, '');
+    }
+
+    if (val && val < utilizedCredits) {
+      setErrorCredit('Value cannot be less than the utilized credits.');
+    } else {
+      setErrorCredit(null);
+    }
+
+    setCurrentCredit(Number(val));
+  }, [currentCredit, campaign]);
+
   return (
     <Grid container spacing={{ xs: 1, sm: 2 }}>
       <Grid item xs={12} sm={6} md={3}>
@@ -252,7 +333,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Box>
         </Zoom>
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={3}>
         <Zoom in>
           <Box component={Card} p={3} flexGrow={1} sx={cardStyle}>
@@ -356,7 +437,13 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         color: '#203ff5',
                       }}
                     />
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      spacing={1}
+                      sx={{ flex: 1 }}
+                    >
                       <Typography
                         variant="body2"
                         sx={{
@@ -367,6 +454,16 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                       >
                         CREDITS TRACKING
                       </Typography>
+                      {campaign?.campaignCredits && latestPackageItem && !isEditingCredit && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          // color="primary"
+                          onClick={handleEditCredit}
+                        >
+                          Edit Credits
+                        </Button>
+                      )}
                     </Stack>
                   </Box>
 
@@ -374,25 +471,101 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                     {campaign?.campaignCredits && latestPackageItem ? (
                       <Stack spacing={1.5} color="text.secondary">
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography sx={{ mt: 1, fontSize: '16px', fontWeight: 600, color: '#636366' }}>Campaign Credits</Typography>
-                          <Typography sx={{ mt: 1, fontSize: '16px', fontWeight: 600, color: '#636366' }}>
-                            {campaign?.campaignCredits || 0} UGC Credits
+                          <Typography
+                            sx={{ mt: 1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                          >
+                            Campaign Credits
+                          </Typography>
+
+                          {/* <Collapse in={isEditingCredit}> */}
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            sx={{ display: isEditingCredit ? 'flex' : 'none' }}
+                          >
+                            <TextField
+                              size="small"
+                              value={currentCredit === 0 ? '' : currentCredit}
+                              type="number"
+                              inputProps={{ min: 1 }}
+                              onChange={(e) => {
+                                setCurrentCredit(Number(e.target.value));
+                              }}
+                              onKeyDown={(e) => {
+                                // Block keys that can cause invalid numbers
+                                if (['e', 'E', '+', '-'].includes(e.key)) {
+                                  e.preventDefault();
+                                }
+
+                                // Prevent starting with '0'
+                                const { value } = e.currentTarget;
+
+                                if (e.key === '0' && value === '') {
+                                  e.preventDefault();
+                                }
+                              }}
+                              sx={{
+                                width: 100,
+                                animation: `${animation} 0.5s ease-in-out`,
+                              }}
+                              error={!!error || !!errorCredit}
+                              helperText={error || errorCredit}
+                            />
+
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={handleCancelCreditChanges}
+                              >
+                                <Iconify icon="charm:cross" />
+                              </IconButton>
+
+                              <IconButton
+                                size="small"
+                                color="success"
+                                onClick={() => {
+                                  handleCreditChangesConfirmation();
+                                }}
+                                disabled={!!error || !!errorCredit}
+                              >
+                                <Iconify icon="charm:tick" />
+                              </IconButton>
+                            </Stack>
+                          </Stack>
+                          {/* </Collapse> */}
+
+                          <Typography
+                            sx={{ mt: 1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                            style={{ display: isEditingCredit ? 'none' : 'block' }} // hide when editing
+                            onClick={() => setIsEditingCredit(true)} // optional: allow click to edit
+                          >
+                            {campaign?.campaignCredits ?? 0} UGC Credits
                           </Typography>
                         </Stack>
                         <Divider />
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>Credits Utilized</Typography>
+                          <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
+                            Credits Utilized
+                          </Typography>
                           <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
                             {campaign?.creditsUtilized || 0} UGC Credits
                           </Typography>
                         </Stack>
                         <Divider />
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography sx={{ mb: -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}>Credits Pending</Typography>
-                          <Typography sx={{ mb: -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}>
+                          <Typography
+                            sx={{ mb: -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                          >
+                            Credits Pending
+                          </Typography>
+                          <Typography
+                            sx={{ mb: -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                          >
                             {campaign?.creditsPending ?? 0} UGC Credits
                           </Typography>
-                        </Stack>  
+                        </Stack>
                       </Stack>
                     ) : (
                       <Typography
@@ -439,8 +612,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         }}
                       >
                         (
-                        {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')?.length ||
-                          0}
+                        {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')
+                          ?.length || 0}
                         )
                       </Typography>
                     </Stack>
@@ -460,12 +633,14 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                               pt: 2,
                               pb:
                                 index !==
-                                localCampaign.pitch.filter((p) => p.status === 'undecided').length - 1
+                                localCampaign.pitch.filter((p) => p.status === 'undecided').length -
+                                  1
                                   ? 2
                                   : 1,
                               borderBottom:
                                 index !==
-                                localCampaign.pitch.filter((p) => p.status === 'undecided').length - 1
+                                localCampaign.pitch.filter((p) => p.status === 'undecided').length -
+                                  1
                                   ? '1px solid #e7e7e7'
                                   : 'none',
                             }}
@@ -565,7 +740,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                             key={deliverable.label}
                             label={deliverable.label}
                             size="small"
-                            sx={{   
+                            sx={{
                               bgcolor: '#F5F5F5',
                               borderRadius: 1,
                               color: '#231F20',
@@ -580,7 +755,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                                 justifyContent: 'center',
                                 marginTop: '-3px',
                               },
-                              '&:hover': { bgcolor: '#F5F5F5' },}}
+                              '&:hover': { bgcolor: '#F5F5F5' },
+                            }}
                           />
                         )
                     )}
@@ -709,6 +885,44 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Button>
           <Button onClick={handleConfirmDecline} variant="contained" color="error">
             Decline
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={approveCreditModal.value}
+        onClose={approveCreditModal.onFalse}
+        PaperProps={{
+          sx: {
+            borderRadius: 1,
+          },
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle variant="subtitle1">Confirm Credit Change</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" color="text.secondary">
+            You’re about to update the credit allocation from {campaign?.campaignCredits} to{' '}
+            {currentCredit}. Do you want to proceed?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={approveCreditModal.onFalse}
+            variant="outlined"
+            size="small"
+            sx={{ borderRadius: 0.5 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreditApproval}
+            variant="contained"
+            size="small"
+            sx={{ borderRadius: 0.5 }}
+          >
+            Confirm
           </Button>
         </DialogActions>
       </Dialog>
