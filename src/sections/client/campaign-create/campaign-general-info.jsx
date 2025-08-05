@@ -80,7 +80,7 @@ const ClientCampaignGeneralInfo = () => {
   return (
     <>
       {/* Container to limit width */}
-      <Box sx={{ maxWidth: '650px', mx: 'auto' }}>
+      <Box sx={{ maxWidth: '650px', mx: 'auto', mb: 10 }}>
         <Stack alignItems="self-end" spacing={0.5} mb={2}>
           <Typography variant="subtitle2">Campaign ID</Typography>
           {!isLoading && <Label color="info">C0{data + 1}</Label>}

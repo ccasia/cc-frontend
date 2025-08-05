@@ -1,6 +1,17 @@
 import React, { memo, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Box, Stack, Grid, MenuItem, FormLabel, IconButton, TextField, Chip, Typography, Button } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Grid,
+  MenuItem,
+  FormLabel,
+  IconButton,
+  TextField,
+  Chip,
+  Typography,
+  Button,
+} from '@mui/material';
 
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import CustomRHFMultiSelect from './custom-rhf-multi-select';
@@ -95,7 +106,10 @@ const VIDEO_ANGLE_OPTIONS = [
   { value: 'Testimonial', label: 'Testimonial' },
   { value: 'Story Telling', label: 'Story Telling' },
   { value: 'Organic (soft sell)', label: 'Organic (soft sell)' },
-  { value: 'Point Of View (experience with product/service)', label: 'Point Of View (experience with product/service)' },
+  {
+    value: 'Point Of View (experience with product/service)',
+    label: 'Point Of View (experience with product/service)',
+  },
   { value: 'Walkthrough', label: 'Walkthrough' },
   { value: 'Problem vs Solution', label: 'Problem vs Solution' },
   { value: 'Trends', label: 'Trends' },
@@ -104,7 +118,7 @@ const VIDEO_ANGLE_OPTIONS = [
 
 const CampaignTargetAudience = () => {
   const { control, setValue, watch } = useFormContext();
-  
+
   const audienceLocation = watch('audienceLocation') || [];
   const showOthersLocation = audienceLocation.includes('Others');
 
@@ -117,9 +131,9 @@ const CampaignTargetAudience = () => {
     const newItems = [...doItems];
     newItems[index].value = value;
     setDoItems(newItems);
-    
+
     // Update the form values
-    const formattedItems = newItems.map(item => ({ value: item.value }));
+    const formattedItems = newItems.map((item) => ({ value: item.value }));
     setValue('campaignDo', formattedItems);
   };
 
@@ -128,85 +142,85 @@ const CampaignTargetAudience = () => {
     const newItems = [...dontItems];
     newItems[index].value = value;
     setDontItems(newItems);
-    
+
     // Update the form values
-    const formattedItems = newItems.map(item => ({ value: item.value }));
+    const formattedItems = newItems.map((item) => ({ value: item.value }));
     setValue('campaignDont', formattedItems);
   };
 
   // Add a new Do item
   const handleAddDo = () => {
-    const newId = doItems.length > 0 ? Math.max(...doItems.map(item => item.id)) + 1 : 1;
+    const newId = doItems.length > 0 ? Math.max(...doItems.map((item) => item.id)) + 1 : 1;
     const newItems = [...doItems, { id: newId, value: '' }];
     setDoItems(newItems);
-    
+
     // Update the form values
-    const formattedItems = newItems.map(item => ({ value: item.value }));
+    const formattedItems = newItems.map((item) => ({ value: item.value }));
     setValue('campaignDo', formattedItems);
   };
 
   // Add a new Don't item
   const handleAddDont = () => {
-    const newId = dontItems.length > 0 ? Math.max(...dontItems.map(item => item.id)) + 1 : 1;
+    const newId = dontItems.length > 0 ? Math.max(...dontItems.map((item) => item.id)) + 1 : 1;
     const newItems = [...dontItems, { id: newId, value: '' }];
     setDontItems(newItems);
-    
+
     // Update the form values
-    const formattedItems = newItems.map(item => ({ value: item.value }));
+    const formattedItems = newItems.map((item) => ({ value: item.value }));
     setValue('campaignDont', formattedItems);
   };
 
   // Remove a Do item
   const handleRemoveDo = (id) => {
-    const newItems = doItems.filter(item => item.id !== id);
+    const newItems = doItems.filter((item) => item.id !== id);
     setDoItems(newItems);
-    
+
     // Update the form values
-    const formattedItems = newItems.map(item => ({ value: item.value }));
+    const formattedItems = newItems.map((item) => ({ value: item.value }));
     setValue('campaignDo', formattedItems);
   };
 
   // Remove a Don't item
   const handleRemoveDont = (id) => {
-    const newItems = dontItems.filter(item => item.id !== id);
+    const newItems = dontItems.filter((item) => item.id !== id);
     setDontItems(newItems);
-    
+
     // Update the form values
-    const formattedItems = newItems.map(item => ({ value: item.value }));
+    const formattedItems = newItems.map((item) => ({ value: item.value }));
     setValue('campaignDont', formattedItems);
   };
 
   return (
-    <Box sx={{ maxWidth: '650px', mx: 'auto' }}>
+    <Box sx={{ maxWidth: '650px', mx: 'auto', mb: 10 }}>
       {/* First row - Gender and User Persona */}
       <Grid container spacing={2} alignItems="stretch">
         {/* Left column - Audience Gender and City/Area */}
         <Grid item xs={12} sm={6}>
           <Stack spacing={2.5}>
             <FormField label="Audience Gender">
-                          <CustomRHFMultiSelect
-              name="audienceGender"
-              placeholder="Select gender"
-              options={GENDER_OPTIONS}
-              size="small"
-              sx={{ 
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
-              }}
-            />
+              <CustomRHFMultiSelect
+                name="audienceGender"
+                placeholder="Select gender"
+                options={GENDER_OPTIONS}
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                }}
+              />
             </FormField>
-            
+
             <FormField label="Audience City/Area">
-                          <CustomRHFMultiSelect
-              name="audienceLocation"
-              placeholder="Select locations"
-              options={LOCATION_OPTIONS}
-              size="small"
-              sx={{ 
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
-              }}
-            />
+              <CustomRHFMultiSelect
+                name="audienceLocation"
+                placeholder="Select locations"
+                options={LOCATION_OPTIONS}
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                }}
+              />
             </FormField>
-            
+
             {showOthersLocation && (
               <Box sx={{ mt: -1 }}>
                 <RHFTextField
@@ -219,7 +233,7 @@ const CampaignTargetAudience = () => {
             )}
           </Stack>
         </Grid>
-        
+
         {/* Right column - User Persona */}
         <Grid item xs={12} sm={6}>
           <FormField label="User Persona">
@@ -229,7 +243,7 @@ const CampaignTargetAudience = () => {
               size="small"
               multiline
               rows={5}
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': { padding: '8px' },
                 height: '100%',
               }}
@@ -247,7 +261,7 @@ const CampaignTargetAudience = () => {
               placeholder="Select creator personas"
               options={CREATOR_PERSONA_OPTIONS}
               size="small"
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': { minHeight: '40px' },
               }}
             />
@@ -260,7 +274,7 @@ const CampaignTargetAudience = () => {
               placeholder="Select platforms"
               options={SOCIAL_MEDIA_OPTIONS}
               size="small"
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': { minHeight: '40px' },
               }}
             />
@@ -277,7 +291,7 @@ const CampaignTargetAudience = () => {
               placeholder="Select age ranges"
               options={AGE_OPTIONS}
               size="small"
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': { minHeight: '40px' },
               }}
             />
@@ -290,7 +304,7 @@ const CampaignTargetAudience = () => {
               placeholder="Select video angles"
               options={VIDEO_ANGLE_OPTIONS}
               size="small"
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': { minHeight: '40px' },
               }}
             />
@@ -306,7 +320,7 @@ const CampaignTargetAudience = () => {
             placeholder="Select languages"
             options={LANGUAGE_OPTIONS}
             size="small"
-            sx={{ 
+            sx={{
               '& .MuiOutlinedInput-root': { minHeight: '40px' },
             }}
           />
@@ -316,11 +330,11 @@ const CampaignTargetAudience = () => {
       {/* Do's and Don'ts Section Header */}
       <Box sx={{ mt: 5, mb: 2, textAlign: 'center' }}>
         <Stack direction="row" justifyContent="center" alignItems="baseline" spacing={1}>
-          <Typography 
-            sx={{ 
-              fontWeight: 400, 
+          <Typography
+            sx={{
+              fontWeight: 400,
               fontSize: 35,
-              fontFamily: (theme) => theme.typography.fontSecondaryFamily
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
             }}
           >
             Do's and Don'ts
@@ -335,27 +349,29 @@ const CampaignTargetAudience = () => {
       <Grid container spacing={2}>
         {/* Do's */}
         <Grid item xs={12} sm={6}>
-          <Box sx={{ 
-            border: '1px solid #e0e0e0', 
-            borderRadius: 1, 
-            p: 1.5,
-            height: '100%'
-          }}>
+          <Box
+            sx={{
+              border: '1px solid #e0e0e0',
+              borderRadius: 1,
+              p: 1.5,
+              height: '100%',
+            }}
+          >
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                border: '2px solid #4CAF50',
-                borderRadius: 0,
-                width: 20,
-                height: 20
-              }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid #4CAF50',
+                  borderRadius: 0,
+                  width: 20,
+                  height: 20,
+                }}
+              >
                 <Iconify icon="mdi:check" color="#4CAF50" width={12} height={12} />
               </Box>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>
-                CAMPAIGN DO'S!
-              </Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>CAMPAIGN DO'S!</Typography>
             </Stack>
 
             {doItems.map((item, index) => (
@@ -368,15 +384,12 @@ const CampaignTargetAudience = () => {
                   onChange={(e) => handleDoChange(index, e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
                 />
-                <IconButton 
-                  onClick={() => handleRemoveDo(item.id)}
-                  sx={{ p: 0.5 }}
-                >
+                <IconButton onClick={() => handleRemoveDo(item.id)} sx={{ p: 0.5 }}>
                   <Iconify icon="eva:trash-2-fill" />
                 </IconButton>
               </Stack>
             ))}
-            
+
             <Box
               sx={{
                 mt: doItems.length > 0 ? 1 : 0,
@@ -418,25 +431,29 @@ const CampaignTargetAudience = () => {
             </Box>
           </Box>
         </Grid>
-        
+
         {/* Don'ts */}
         <Grid item xs={12} sm={6}>
-          <Box sx={{ 
-            border: '1px solid #e0e0e0', 
-            borderRadius: 1, 
-            p: 1.5,
-            height: '100%'
-          }}>
+          <Box
+            sx={{
+              border: '1px solid #e0e0e0',
+              borderRadius: 1,
+              p: 1.5,
+              height: '100%',
+            }}
+          >
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                border: '2px solid #F44336',
-                borderRadius: 0,
-                width: 20,
-                height: 20
-              }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid #F44336',
+                  borderRadius: 0,
+                  width: 20,
+                  height: 20,
+                }}
+              >
                 <Iconify icon="mdi:close" color="#F44336" width={12} height={12} />
               </Box>
               <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>
@@ -454,15 +471,12 @@ const CampaignTargetAudience = () => {
                   onChange={(e) => handleDontChange(index, e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
                 />
-                <IconButton 
-                  onClick={() => handleRemoveDont(item.id)}
-                  sx={{ p: 0.5 }}
-                >
+                <IconButton onClick={() => handleRemoveDont(item.id)} sx={{ p: 0.5 }}>
                   <Iconify icon="eva:trash-2-fill" />
                 </IconButton>
               </Stack>
             ))}
-            
+
             <Box
               sx={{
                 mt: dontItems.length > 0 ? 1 : 0,
@@ -509,4 +523,4 @@ const CampaignTargetAudience = () => {
   );
 };
 
-export default memo(CampaignTargetAudience); 
+export default memo(CampaignTargetAudience);
