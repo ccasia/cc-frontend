@@ -443,7 +443,7 @@ export const dashboardRoutes = [
           {
             path: 'settings',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'CSL']}>
                 <CampaignSetting />
               </RoleBasedGuard>
             ),
@@ -503,7 +503,7 @@ export const dashboardRoutes = [
       {
         path: 'analytics',
         element: (
-          <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+          <RoleBasedGuard hasContent roles={['superadmin', 'god', 'advanced']}>
             <AnalyticsView />
           </RoleBasedGuard>
         ),

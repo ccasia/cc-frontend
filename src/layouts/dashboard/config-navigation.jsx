@@ -109,7 +109,7 @@ export function useNavData() {
             title: 'Overview',
             path: paths.dashboard.root,
             icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
-            roles: ['superadmin', 'CSM', 'Growth', 'BD'],
+            roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
           },
           {
             title: 'Dashboard',
@@ -122,7 +122,7 @@ export function useNavData() {
       {
         items: [
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'CSL'],
             title: 'Analytics',
             path: paths.dashboard.analytics,
             icon: <Iconify icon="icon-park-outline:chart-histogram" width={25} />,
@@ -133,7 +133,7 @@ export function useNavData() {
         // subheader: 'Management',
         items: [
           {
-            roles: ['superadmin', 'CSM', 'Growth', 'BD'],
+            roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
             title: 'Campaigns',
             path: paths.dashboard.campaign.root,
             icon: ICONS.mycampaigns,
@@ -144,7 +144,7 @@ export function useNavData() {
                 path: paths.dashboard.campaign.view,
               },
               {
-                roles: ['superadmin'],
+                roles: ['superadmin', 'CSL'],
                 title: 'Settings',
                 path: paths.dashboard.campaign.settings,
               },
@@ -179,7 +179,7 @@ export function useNavData() {
             ],
           },
           {
-            roles: ['superadmin', 'CSM', 'god'],
+            roles: ['superadmin', 'CSM', 'god', 'CSL'],
             title: 'Clients',
             path: paths.dashboard.company.root,
             icon: ICONS.clients,
@@ -367,6 +367,9 @@ export function useNavData() {
     []
   );
 
+  // CS Lead navigations - adminNavigations without calendar and chats
+  const csLeadNavigations = useMemo(() => adminNavigations, [adminNavigations]);
+
   // // add finance naviagation
   const navigations = useMemo(
     // roles => "god" , "normal", "designation", "admin", "creator"
@@ -381,6 +384,9 @@ export function useNavData() {
       }
       if (user?.admin?.role?.name === 'CSM') {
         return adminNavigations;
+      }
+      if (user?.admin?.role?.name === 'CSL') {
+        return csLeadNavigations;
       }
 
       if (user?.role === 'superadmin') {
@@ -401,34 +407,39 @@ export function useNavData() {
       return [];
     },
 
-    [adminNavigations, creatorNavigations, user, financeNavigations]
+    [adminNavigations, creatorNavigations, user, financeNavigations, csLeadNavigations]
   );
 
   const data = useMemo(
-    () => [
-      ...navigations,
-      {
-        items: [
-          {
-            title: (
-              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
-            ),
-            path: paths.dashboard.chat.root,
-            icon: ICONS.chat,
-            msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
-          },
-          {
-            title: (
-              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-                Calendar
-              </span>
-            ),
-            path: paths.dashboard.calendar.root,
-            icon: ICONS.calendar,
-          },
-        ],
-      },
-      {
+    () => {
+      const baseData = [...navigations];
+      
+      // CS Lead should not have access to calendar and chats
+      if (user?.admin?.role?.name !== 'CSL') {
+        baseData.push({
+          items: [
+            {
+              title: (
+                <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
+              ),
+              path: paths.dashboard.chat.root,
+              icon: ICONS.chat,
+              msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
+            },
+            {
+              title: (
+                <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                  Calendar
+                </span>
+              ),
+              path: paths.dashboard.calendar.root,
+              icon: ICONS.calendar,
+            },
+          ],
+        });
+      }
+      
+      baseData.push({
         items: [
           {
             title: (
@@ -440,9 +451,11 @@ export function useNavData() {
             icon: ICONS.settings,
           },
         ],
-      },
-    ],
-    [unreadMessageCount]
+      });
+      
+      return baseData;
+    },
+    [navigations, unreadMessageCount, user?.admin?.role?.name]
   );
 
   // const financeNavigations = useMemo(
