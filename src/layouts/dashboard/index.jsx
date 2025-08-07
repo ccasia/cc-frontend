@@ -34,8 +34,9 @@ import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form'
 
 import Main from './main';
 import Header from './header';
-import NavMini from './nav-mini';
-import NavVertical from './nav-vertical';
+// import NavMini from './nav-mini';
+// import NavVertical from './nav-vertical';
+import Nav from './nav-unified';
 
 // ----------------------------------------------------------------------
 
@@ -126,11 +127,13 @@ export default function DashboardLayout({ children }) {
 
   const nav = useBoolean();
 
-  const isMini = settings.themeLayout === 'mini';
+  // const isMini = settings.themeLayout === 'mini';
 
-  const renderNavMini = <NavMini />;
+  // const renderNavMini = <NavMini />;
 
-  const renderNavVertical = <NavVertical openNav={nav.value} onCloseNav={nav.onFalse} />;
+  // const renderNavVertical = <NavVertical openNav={nav.value} onCloseNav={nav.onFalse} />;
+
+  const renderNav = <Nav openNav={nav.value} onCloseNav={nav.onFalse} />;
 
   const onDrop = useCallback(
     (e) => {
@@ -369,14 +372,14 @@ export default function DashboardLayout({ children }) {
               No registration needed. Just drop your details below!
             </Typography>
           </DialogTitle>
-          <IconButton 
+          <IconButton
             onClick={kwspFormDialog.onFalse}
-            sx={{ 
+            sx={{
               '@media (max-width: 600px)': {
                 mt: 2,
                 mr: 0,
-                ml: -3
-              }
+                ml: -3,
+              },
             }}
           >
             <Iconify icon="charm:cross" width={20} />
@@ -385,11 +388,7 @@ export default function DashboardLayout({ children }) {
         <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
           <Stack spacing={{ xs: 2, sm: 3 }}>
             <FormField label="Full Name">
-              <RHFTextField
-                name="fullName"
-                placeholder="Enter your full name"
-                size="small"
-              />
+              <RHFTextField name="fullName" placeholder="Enter your full name" size="small" />
             </FormField>
 
             <FormField label="NRIC/Passport Number">
@@ -407,7 +406,8 @@ export default function DashboardLayout({ children }) {
                 mt: 2,
               }}
             >
-              By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan initiative. You will be notified via email once the funds have been transferred!
+              By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan
+              initiative. You will be notified via email once the funds have been transferred!
             </Typography>
           </Stack>
         </DialogContent>
@@ -417,13 +417,15 @@ export default function DashboardLayout({ children }) {
             type="submit"
             loading={isKwspSubmitting}
             sx={{
-              background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+              background:
+                'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
               boxShadow: '0px -3px 0px 0px rgba(68, 68, 77, 0.45) inset',
               '&:hover': {
                 background: '#1340FF',
               },
               '&.Mui-disabled': {
-                background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+                background:
+                  'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
                 color: 'rgba(255, 255, 255, 0.5)',
               },
             }}
@@ -435,8 +437,8 @@ export default function DashboardLayout({ children }) {
     </Dialog>
   );
 
-  if (isMini) {
-    return (
+  return (
+    <>
       <Box
         sx={{
           minHeight: 1,
@@ -445,77 +447,75 @@ export default function DashboardLayout({ children }) {
           pr: lgUp && 2,
         }}
       >
-        {lgUp ? renderNavMini : renderNavVertical}
-
+        {renderNav}
         <Box
           sx={{
-            // position: 'relative',
-            ...(lgUp && {
-              width: 1,
-              height: '95vh',
-              borderRadius: 2,
-              my: 'auto',
-              overflow: 'hidden',
-              position: 'relative',
-              bgcolor: (theme) => theme.palette.background.paper,
-            }),
+            width: lgUp ? 1 : '97vw',
+            mx: 'auto',
+            height: '97vh',
+            borderRadius: 2,
+            my: 'auto',
+            overflow: 'hidden',
+            position: 'relative',
+            bgcolor: (theme) => theme.palette.background.paper,
           }}
         >
           <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
           <Main>{children}</Main>
+
           {feedbackButton}
           {kwspButton}
           {feedbackForm}
           {kwspForm}
         </Box>
       </Box>
-    );
-  }
-
-  return (
-    <Box
-      sx={{
-        minHeight: 1,
-        display: 'flex',
-        flexDirection: { xs: 'column', lg: 'row' },
-        pr: lgUp && 2,
-      }}
-    >
-      {renderNavVertical}
-
-      <Box
-        sx={{
-          // ...(lgUp && {
-          //   width: lgUp ? 1 : '90vw',
-          //   height: '95vh',
-          //   borderRadius: 2,
-          //   my: 'auto',
-          //   overflow: 'hidden',
-          //   position: 'relative',
-          //   bgcolor: (theme) => theme.palette.background.paper,
-          // }),
-          width: lgUp ? 1 : '97vw',
-          mx: 'auto',
-          height: '97vh',
-          borderRadius: 2,
-          my: 'auto',
-          overflow: 'hidden',
-          position: 'relative',
-          bgcolor: (theme) => theme.palette.background.paper,
-        }}
-      >
-        <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
-
-        <Main>{children}</Main>
-
-        {feedbackButton}
-        {kwspButton}
-        {feedbackForm}
-        {kwspForm}
-      </Box>
-    </Box>
+    </>
   );
+
+  // return (
+  //   <Box
+  //     sx={{
+  //       minHeight: 1,
+  //       display: 'flex',
+  //       flexDirection: { xs: 'column', lg: 'row' },
+  //       pr: lgUp && 2,
+  //     }}
+  //   >
+  //     {renderNavVertical}
+
+  //     <Box
+  //       sx={{
+  //         // ...(lgUp && {
+  //         //   width: lgUp ? 1 : '90vw',
+  //         //   height: '95vh',
+  //         //   borderRadius: 2,
+  //         //   my: 'auto',
+  //         //   overflow: 'hidden',
+  //         //   position: 'relative',
+  //         //   bgcolor: (theme) => theme.palette.background.paper,
+  //         // }),
+  //         width: lgUp ? 1 : '97vw',
+  //         mx: 'auto',
+  //         height: '97vh',
+  //         borderRadius: 2,
+  //         my: 'auto',
+  //         overflow: 'hidden',
+  //         position: 'relative',
+  //         bgcolor: (theme) => theme.palette.background.paper,
+  //       }}
+  //     >
+  //       <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
+
+  //       <Main>{children}</Main>
+
+  //       {feedbackButton}
+  //       {kwspButton}
+  //       {feedbackForm}
+  //       {kwspForm}
+  //     </Box>
+  //   </Box>
+  // );
 }
 
 DashboardLayout.propTypes = {
