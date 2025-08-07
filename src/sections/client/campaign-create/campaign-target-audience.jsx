@@ -13,9 +13,11 @@ import {
   Button,
 } from '@mui/material';
 
-import { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 import CustomRHFMultiSelect from './custom-rhf-multi-select';
 import Iconify from 'src/components/iconify';
+
+import { langList } from 'src/contants/language';
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -51,17 +53,18 @@ const AGE_OPTIONS = [
   { value: '65+', label: '65+' },
 ];
 
-const LANGUAGE_OPTIONS = [
-  { value: 'English', label: 'English' },
-  { value: 'Spanish', label: 'Spanish' },
-  { value: 'French', label: 'French' },
-  { value: 'German', label: 'German' },
-  { value: 'Chinese', label: 'Chinese' },
-  { value: 'Japanese', label: 'Japanese' },
-  { value: 'Korean', label: 'Korean' },
-  { value: 'Arabic', label: 'Arabic' },
-  { value: 'Hindi', label: 'Hindi' },
-];
+// // used langList from constants
+// const LANGUAGE_OPTIONS = [
+//   { value: 'English', label: 'English' },
+//   { value: 'Spanish', label: 'Spanish' },
+//   { value: 'French', label: 'French' },
+//   { value: 'German', label: 'German' },
+//   { value: 'Chinese', label: 'Chinese' },
+//   { value: 'Japanese', label: 'Japanese' },
+//   { value: 'Korean', label: 'Korean' },
+//   { value: 'Arabic', label: 'Arabic' },
+//   { value: 'Hindi', label: 'Hindi' },
+// ];
 
 const LOCATION_OPTIONS = [
   { value: 'United States', label: 'United States' },
@@ -198,26 +201,30 @@ const CampaignTargetAudience = () => {
         <Grid item xs={12} sm={6}>
           <Stack spacing={2.5}>
             <FormField label="Audience Gender">
-              <CustomRHFMultiSelect
+              <RHFMultiSelect
                 name="audienceGender"
                 placeholder="Select gender"
                 options={GENDER_OPTIONS}
                 size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': { minHeight: '40px' },
-                }}
+                chip
+                checkbox
+                // sx={{
+                //   '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                // }}
               />
             </FormField>
 
             <FormField label="Audience City/Area">
-              <CustomRHFMultiSelect
+              <RHFMultiSelect
                 name="audienceLocation"
                 placeholder="Select locations"
                 options={LOCATION_OPTIONS}
                 size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': { minHeight: '40px' },
-                }}
+                chip
+                checkbox
+                // sx={{
+                //   '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                // }}
               />
             </FormField>
 
@@ -256,27 +263,31 @@ const CampaignTargetAudience = () => {
       <Grid container spacing={2} sx={{ mt: 1 }}>
         <Grid item xs={12} sm={6}>
           <FormField label="Audience Creator Persona">
-            <CustomRHFMultiSelect
+            <RHFMultiSelect
               name="audienceCreatorPersona"
               placeholder="Select creator personas"
               options={CREATOR_PERSONA_OPTIONS}
               size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
-              }}
+              chip
+              checkbox
+              // sx={{
+              //   '& .MuiOutlinedInput-root': { minHeight: '40px' },
+              // }}
             />
           </FormField>
         </Grid>
         <Grid item xs={12} sm={6}>
           <FormField label="Social Media Platform">
-            <CustomRHFMultiSelect
+            <RHFMultiSelect
               name="socialMediaPlatform"
               placeholder="Select platforms"
               options={SOCIAL_MEDIA_OPTIONS}
               size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
-              }}
+              chip
+              checkbox
+              // sx={{
+              //   '& .MuiOutlinedInput-root': { minHeight: '40px' },
+              // }}
             />
           </FormField>
         </Grid>
@@ -286,27 +297,31 @@ const CampaignTargetAudience = () => {
       <Grid container spacing={2} sx={{ mt: 1 }}>
         <Grid item xs={12} sm={6}>
           <FormField label="Audience Age">
-            <CustomRHFMultiSelect
+            <RHFMultiSelect
               name="audienceAge"
               placeholder="Select age ranges"
               options={AGE_OPTIONS}
               size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
-              }}
+              chip
+              checkbox
+              // sx={{
+              //   '& .MuiOutlinedInput-root': { minHeight: '40px' },
+              // }}
             />
           </FormField>
         </Grid>
         <Grid item xs={12} sm={6}>
           <FormField label="Video Angle">
-            <CustomRHFMultiSelect
+            <RHFMultiSelect
               name="videoAngle"
               placeholder="Select video angles"
               options={VIDEO_ANGLE_OPTIONS}
               size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
-              }}
+              chip
+              checkbox
+              // sx={{
+              //   '& .MuiOutlinedInput-root': { minHeight: '40px' },
+              // }}
             />
           </FormField>
         </Grid>
@@ -315,14 +330,19 @@ const CampaignTargetAudience = () => {
       {/* Fifth row - Language */}
       <Box sx={{ mt: 2 }}>
         <FormField label="Audience Language">
-          <CustomRHFMultiSelect
+          <RHFMultiSelect
             name="audienceLanguage"
             placeholder="Select languages"
-            options={LANGUAGE_OPTIONS}
+            options={langList.map((item) => ({
+              value: item,
+              label: item,
+            }))}
             size="small"
-            sx={{
-              '& .MuiOutlinedInput-root': { minHeight: '40px' },
-            }}
+            chip
+            checkbox
+            // sx={{
+            //   '& .MuiOutlinedInput-root': { minHeight: '40px' },
+            // }}
           />
         </FormField>
       </Box>
