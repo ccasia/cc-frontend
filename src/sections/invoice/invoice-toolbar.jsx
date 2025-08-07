@@ -19,7 +19,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 
-import InvoicePDF from './invoice-pdf';
+import InvoicePDF from './test-invoice-pdf';
 
 // ----------------------------------------------------------------------
 
