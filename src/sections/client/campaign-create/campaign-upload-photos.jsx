@@ -1,7 +1,20 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Box, Grid, Stack, Dialog, Typography, IconButton, Button, Chip, Divider, Paper, DialogContent, Avatar } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Stack,
+  Dialog,
+  Typography,
+  IconButton,
+  Button,
+  Chip,
+  Divider,
+  Paper,
+  DialogContent,
+  Avatar,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import dayjs from 'dayjs';
 
@@ -136,13 +149,15 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
         </Box>
 
         {/* Campaign info */}
-        <Box sx={{ 
-          px: 3, 
-          pb: 3, 
-          mt: 4,
-          maxWidth: '100%',
-          mx: 'auto'
-        }}>
+        <Box
+          sx={{
+            px: 3,
+            pb: 3,
+            mt: 4,
+            maxWidth: '100%',
+            mx: 'auto',
+          }}
+        >
           <Grid container rowGap={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
             <Grid item xs={12} sm={6}>
               <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
@@ -172,17 +187,17 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                 </Typography>
               </Stack>
             </Grid>
-            
+
             {/* Cancel and Confirm buttons */}
             <Grid item xs={12} sm={6}>
-              <Stack 
-                direction="row" 
-                spacing={2} 
+              <Stack
+                direction="row"
+                spacing={2}
                 justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
                 sx={{ mt: { xs: 2, sm: 0 } }}
               >
-                <Button 
-                  variant="outlined" 
+                <Button
+                  variant="outlined"
                   onClick={() => window.dispatchEvent(new CustomEvent('cancelCampaign'))}
                   sx={{
                     bgcolor: 'white',
@@ -198,8 +213,8 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                 >
                   Cancel
                 </Button>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   onClick={() => window.dispatchEvent(new CustomEvent('confirmCampaign'))}
                   sx={{
                     bgcolor: '#3A3A3C',
@@ -218,7 +233,7 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
 
           {/* Add Divider here */}
           <Divider sx={{ my: 2, mb: 3 }} />
-          
+
           {/* Campaign details grid */}
           <Grid container spacing={2}>
             {/* Left column */}
@@ -257,7 +272,9 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                         {(campaignIndustries || []).map((industry, index) => (
                           <Chip
                             key={index}
-                            label={typeof industry === 'string' ? industry.replace(/"/g, '') : industry}
+                            label={
+                              typeof industry === 'string' ? industry.replace(/"/g, '') : industry
+                            }
                             size="small"
                             sx={{
                               bgcolor: '#FFF',
@@ -384,7 +401,9 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                                   maxWidth: '100%',
                                 }}
                               >
-                                {typeof objective === 'string' ? objective.replace(/"/g, '') : objective}
+                                {typeof objective === 'string'
+                                  ? objective.replace(/"/g, '')
+                                  : objective}
                               </Typography>
                             </Stack>
                           ))}
@@ -426,32 +445,38 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                             </Stack>
                           </Box>
                           <Stack spacing={1} sx={{ pl: 0.5 }}>
-                            {campaignDo.map((item, index) => (
-                              item.value && (
-                                <Stack key={index} direction="row" spacing={1} alignItems="center">
-                                  <Iconify
-                                    icon="octicon:dot-fill-16"
-                                    sx={{
-                                      color: '#000000',
-                                      width: 12,
-                                      height: 12,
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      wordWrap: 'break-word',
-                                      overflowWrap: 'break-word',
-                                      whiteSpace: 'pre-wrap',
-                                      maxWidth: '100%',
-                                    }}
+                            {campaignDo.map(
+                              (item, index) =>
+                                item.value && (
+                                  <Stack
+                                    key={index}
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
                                   >
-                                    {item.value}
-                                  </Typography>
-                                </Stack>
-                              )
-                            ))}
+                                    <Iconify
+                                      icon="octicon:dot-fill-16"
+                                      sx={{
+                                        color: '#000000',
+                                        width: 12,
+                                        height: 12,
+                                        flexShrink: 0,
+                                      }}
+                                    />
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        wordWrap: 'break-word',
+                                        overflowWrap: 'break-word',
+                                        whiteSpace: 'pre-wrap',
+                                        maxWidth: '100%',
+                                      }}
+                                    >
+                                      {item.value}
+                                    </Typography>
+                                  </Stack>
+                                )
+                            )}
                           </Stack>
                         </Box>
                       )}
@@ -491,32 +516,38 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                             </Stack>
                           </Box>
                           <Stack spacing={1} sx={{ pl: 0.5 }}>
-                            {campaignDont.map((item, index) => (
-                              item.value && (
-                                <Stack key={index} direction="row" spacing={1} alignItems="center">
-                                  <Iconify
-                                    icon="octicon:dot-fill-16"
-                                    sx={{
-                                      color: '#000000',
-                                      width: 12,
-                                      height: 12,
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      wordWrap: 'break-word',
-                                      overflowWrap: 'break-word',
-                                      whiteSpace: 'pre-wrap',
-                                      maxWidth: '100%',
-                                    }}
+                            {campaignDont.map(
+                              (item, index) =>
+                                item.value && (
+                                  <Stack
+                                    key={index}
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
                                   >
-                                    {item.value}
-                                  </Typography>
-                                </Stack>
-                              )
-                            ))}
+                                    <Iconify
+                                      icon="octicon:dot-fill-16"
+                                      sx={{
+                                        color: '#000000',
+                                        width: 12,
+                                        height: 12,
+                                        flexShrink: 0,
+                                      }}
+                                    />
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        wordWrap: 'break-word',
+                                        overflowWrap: 'break-word',
+                                        whiteSpace: 'pre-wrap',
+                                        maxWidth: '100%',
+                                      }}
+                                    >
+                                      {item.value}
+                                    </Typography>
+                                  </Stack>
+                                )
+                            )}
                           </Stack>
                         </Box>
                       )}
@@ -858,7 +889,7 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
               preview: URL.createObjectURL(file),
             })
           );
-          
+
           const currentFiles = watch('campaignImages') || [];
           setValue('campaignImages', [...currentFiles, ...newFiles]);
         }}
@@ -873,9 +904,9 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
       />
 
       {campaignImages && campaignImages.length > 0 && (
-        <>          
+        <>
           <Box
-            onClick={handleOpenPreview}
+            // onClick={handleOpenPreview}
             sx={{
               mt: 4,
               overflow: 'hidden',
@@ -890,10 +921,10 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
               height: 345,
               width: { xs: '100%', sm: '345px', md: '345px' },
               mx: 'auto',
-              '&:hover': {
-                borderColor: '#1340ff',
-                transform: 'translateY(-2px)',
-              },
+              // '&:hover': {
+              //   borderColor: '#1340ff',
+              //   transform: 'translateY(-2px)',
+              // },
             }}
           >
             {/* Campaign Preview Label */}
@@ -908,7 +939,12 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                 }}
               >
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Iconify icon="mdi:eye-outline" width={16} height={16} sx={{ color: '#8E8E93' }} />
+                  <Iconify
+                    icon="mdi:eye-outline"
+                    width={16}
+                    height={16}
+                    sx={{ color: '#8E8E93' }}
+                  />
                   <Typography
                     variant="body2"
                     sx={{
@@ -1006,18 +1042,18 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
               </Stack>
             </Box>
           </Box>
-          
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              mt: 1, 
-              mb: 3, 
+
+          <Typography
+            variant="body2"
+            sx={{
+              mt: 1,
+              mb: 3,
               color: 'text.secondary',
               fontStyle: 'italic',
-              textAlign: 'center'
+              textAlign: 'center',
             }}
           >
-            Click on the preview to see how your campaign will look
+            Click on Confirm Campaign to preview your campaign
           </Typography>
         </>
       )}
@@ -1191,18 +1227,18 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                   </Typography>
                 </Stack>
               </Grid>
-              
+
               {/* Add Cancel and Confirm buttons here */}
               {isPreview && (
                 <Grid item xs={12} sm={6}>
-                  <Stack 
-                    direction="row" 
-                    spacing={2} 
+                  <Stack
+                    direction="row"
+                    spacing={2}
                     justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
                     sx={{ mt: { xs: 2, sm: 0 } }}
                   >
-                    <Button 
-                      variant="outlined" 
+                    <Button
+                      variant="outlined"
                       onClick={() => window.dispatchEvent(new CustomEvent('cancelCampaign'))}
                       sx={{
                         bgcolor: 'white',
@@ -1218,8 +1254,8 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      variant="contained" 
+                    <Button
+                      variant="contained"
                       onClick={() => window.dispatchEvent(new CustomEvent('confirmCampaign'))}
                       sx={{
                         bgcolor: '#3A3A3C',
@@ -1239,7 +1275,7 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
 
             {/* Add Divider here */}
             <Divider sx={{ my: 2, mb: 3 }} />
-            
+
             {/* Campaign details grid */}
             <Grid container spacing={2}>
               {/* Left column */}
@@ -1278,7 +1314,9 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                           {(campaignIndustries || []).map((industry, index) => (
                             <Chip
                               key={index}
-                              label={typeof industry === 'string' ? industry.replace(/"/g, '') : industry}
+                              label={
+                                typeof industry === 'string' ? industry.replace(/"/g, '') : industry
+                              }
                               size="small"
                               sx={{
                                 bgcolor: '#FFF',
@@ -1405,7 +1443,9 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                                     maxWidth: '100%',
                                   }}
                                 >
-                                  {typeof objective === 'string' ? objective.replace(/"/g, '') : objective}
+                                  {typeof objective === 'string'
+                                    ? objective.replace(/"/g, '')
+                                    : objective}
                                 </Typography>
                               </Stack>
                             ))}
@@ -1447,32 +1487,38 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                               </Stack>
                             </Box>
                             <Stack spacing={1} sx={{ pl: 0.5 }}>
-                              {campaignDo.map((item, index) => (
-                                item.value && (
-                                  <Stack key={index} direction="row" spacing={1} alignItems="center">
-                                    <Iconify
-                                      icon="octicon:dot-fill-16"
-                                      sx={{
-                                        color: '#000000',
-                                        width: 12,
-                                        height: 12,
-                                        flexShrink: 0,
-                                      }}
-                                    />
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        wordWrap: 'break-word',
-                                        overflowWrap: 'break-word',
-                                        whiteSpace: 'pre-wrap',
-                                        maxWidth: '100%',
-                                      }}
+                              {campaignDo.map(
+                                (item, index) =>
+                                  item.value && (
+                                    <Stack
+                                      key={index}
+                                      direction="row"
+                                      spacing={1}
+                                      alignItems="center"
                                     >
-                                      {item.value}
-                                    </Typography>
-                                  </Stack>
-                                )
-                              ))}
+                                      <Iconify
+                                        icon="octicon:dot-fill-16"
+                                        sx={{
+                                          color: '#000000',
+                                          width: 12,
+                                          height: 12,
+                                          flexShrink: 0,
+                                        }}
+                                      />
+                                      <Typography
+                                        variant="body2"
+                                        sx={{
+                                          wordWrap: 'break-word',
+                                          overflowWrap: 'break-word',
+                                          whiteSpace: 'pre-wrap',
+                                          maxWidth: '100%',
+                                        }}
+                                      >
+                                        {item.value}
+                                      </Typography>
+                                    </Stack>
+                                  )
+                              )}
                             </Stack>
                           </Box>
                         )}
@@ -1512,32 +1558,38 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                               </Stack>
                             </Box>
                             <Stack spacing={1} sx={{ pl: 0.5 }}>
-                              {campaignDont.map((item, index) => (
-                                item.value && (
-                                  <Stack key={index} direction="row" spacing={1} alignItems="center">
-                                    <Iconify
-                                      icon="octicon:dot-fill-16"
-                                      sx={{
-                                        color: '#000000',
-                                        width: 12,
-                                        height: 12,
-                                        flexShrink: 0,
-                                      }}
-                                    />
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        wordWrap: 'break-word',
-                                        overflowWrap: 'break-word',
-                                        whiteSpace: 'pre-wrap',
-                                        maxWidth: '100%',
-                                      }}
+                              {campaignDont.map(
+                                (item, index) =>
+                                  item.value && (
+                                    <Stack
+                                      key={index}
+                                      direction="row"
+                                      spacing={1}
+                                      alignItems="center"
                                     >
-                                      {item.value}
-                                    </Typography>
-                                  </Stack>
-                                )
-                              ))}
+                                      <Iconify
+                                        icon="octicon:dot-fill-16"
+                                        sx={{
+                                          color: '#000000',
+                                          width: 12,
+                                          height: 12,
+                                          flexShrink: 0,
+                                        }}
+                                      />
+                                      <Typography
+                                        variant="body2"
+                                        sx={{
+                                          wordWrap: 'break-word',
+                                          overflowWrap: 'break-word',
+                                          whiteSpace: 'pre-wrap',
+                                          maxWidth: '100%',
+                                        }}
+                                      >
+                                        {item.value}
+                                      </Typography>
+                                    </Stack>
+                                  )
+                              )}
                             </Stack>
                           </Box>
                         )}
@@ -1857,4 +1909,4 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
       </Dialog>
     </Box>
   );
-} 
+}
