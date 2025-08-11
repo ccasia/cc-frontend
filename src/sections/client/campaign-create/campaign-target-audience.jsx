@@ -19,7 +19,6 @@ import Iconify from 'src/components/iconify';
 import { interestsLists } from 'src/contants/interestLists';
 import { langList } from 'src/contants/language';
 
-import { langList } from 'src/contants/language';
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
