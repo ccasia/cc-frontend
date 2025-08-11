@@ -2,22 +2,22 @@
 import PropTypes from 'prop-types';
 import { useMemo, useState, useEffect } from 'react';
 
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Stack,
   Avatar,
-  TextField,
   Button,
+  Tooltip,
+  TextField,
   Accordion,
   Typography,
+  useMediaQuery,
+  InputAdornment,
   AccordionSummary,
   AccordionDetails,
   CircularProgress,
-  Tooltip,
-  InputAdornment,
-  useMediaQuery,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
@@ -384,7 +384,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     if (!submission) return null;
 
     // Use displayStatus for V3 submissions, fallback to regular status
-    let status = submission.displayStatus || submission.status;
+    const status = submission.displayStatus || submission.status;
     let statusText = status ? status.replace(/_/g, ' ') : '';
     
     // Handle SENT_TO_ADMIN status display for admin users

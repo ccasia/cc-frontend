@@ -22,16 +22,17 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFMultiSelect } from 'src/components/hook-form';
-import { options_changes } from '../firstDraft/constants';
+import { RHFTextField , RHFMultiSelect } from 'src/components/hook-form';
 
+import { options_changes } from '../firstDraft/constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
-import axiosInstance from 'src/utils/axios';
 
 const PhotoCard = ({ 
   photoItem, 
@@ -802,7 +803,7 @@ const Photos = ({
       return;
     }
     try {
-      console.log('[handleSendToClient] PATCH /api/submission/v3/' + submissionId + '/approve/admin');
+      console.log(`[handleSendToClient] PATCH /api/submission/v3/${  submissionId  }/approve/admin`);
       const response = await axiosInstance.patch(
         `/api/submission/v3/${submissionId}/approve/admin`,
         { submissionId, feedback: 'All sections approved by admin' }

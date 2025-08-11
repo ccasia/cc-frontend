@@ -1,40 +1,42 @@
-import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
-import { pdf } from '@react-pdf/renderer';
-import { Page, Document } from 'react-pdf';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import { pdf } from '@react-pdf/renderer';
+import { Page, Document } from 'react-pdf';
+import { useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
-  Dialog,
-  Button,
-  IconButton,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Typography,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
   Chip,
-  OutlinedInput,
   Stack,
   Paper,
   Radio,
+  Dialog,
+  Button,
+  Select,
   Avatar,
+  MenuItem,
+  IconButton,
+  Typography,
+  InputLabel,
+  DialogTitle,
+  FormControl,
+  DialogContent,
+  DialogActions,
+  OutlinedInput,
+  FormHelperText,
+  CircularProgress,
 } from '@mui/material';
 
-import { useSnackbar } from 'src/components/snackbar';
-import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import Iconify from 'src/components/iconify';
+import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
+
+import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
+
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
 // ----------------------------------------------------------------------

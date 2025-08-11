@@ -1,6 +1,5 @@
 /* eslint-disable no-nested-ternary */
 import useSWRInfinite from 'swr/infinite';
-import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
@@ -10,7 +9,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
+import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';

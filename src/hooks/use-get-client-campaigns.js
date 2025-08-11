@@ -1,5 +1,6 @@
 import useSWR from 'swr';
 import { useMemo, useEffect } from 'react';
+
 import { fetcher, endpoints } from 'src/utils/axios';
 
 // Custom hook to get campaigns for a client user

@@ -16,21 +16,22 @@ import {
   Stack,
   Button,
   Avatar,
-  Tooltip,
   Typography,
   CardContent,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import Iconify from 'src/components/iconify';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
-import FormProvider from 'src/components/hook-form/form-provider';
-
-import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
+
+import Iconify from 'src/components/iconify';
+import FormProvider from 'src/components/hook-form/form-provider';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+
 import { options_changes } from '../firstDraft/constants';
+import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 
 const RawFootageCard = ({ 
   rawFootageItem, 
@@ -951,7 +952,7 @@ const RawFootages = ({
   const handleSendToClient = async (submissionId) => {
     try {
       const response = await axiosInstance.post('/api/submission/v3/draft/send-to-client', {
-        submissionId: submissionId,
+        submissionId,
       });
 
       if (response.status === 200) {

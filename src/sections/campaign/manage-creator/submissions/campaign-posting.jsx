@@ -2,9 +2,9 @@ import dayjs from 'dayjs';
 import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { useForm, useFieldArray } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, useFieldArray } from 'react-hook-form';
 import React, { useMemo, useState, useEffect } from 'react';
 
 import {
@@ -12,6 +12,7 @@ import {
   List,
   Chip,
   Stack,
+  Alert,
   Dialog,
   Button,
   Avatar,
@@ -23,7 +24,6 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
-  Alert,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -683,7 +683,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
               {fields.length > 0 ? fields.map((field, index) => (
                 <Stack key={field.id} direction="row" spacing={1} alignItems="center" width="100%">
                   <TextField
-                    placeholder={`Add Posting Link`}
+                    placeholder="Add Posting Link"
                     fullWidth
                     variant="outlined"
                     {...methods.register(`postingLinks.${index}`)}

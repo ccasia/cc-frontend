@@ -25,8 +25,8 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 

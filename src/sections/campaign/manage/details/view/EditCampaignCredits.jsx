@@ -1,9 +1,7 @@
 import React from 'react'
 
-const EditCampaignCredits = () => {
-  return (
+const EditCampaignCredits = () => (
     <div>EditCampaignCredits</div>
   )
-}
 
 export default EditCampaignCredits

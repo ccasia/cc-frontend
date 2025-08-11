@@ -1,6 +1,7 @@
 /* eslint-disable no-unsafe-optional-chaining */
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
 import React, { useState, useEffect } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
@@ -21,12 +22,11 @@ import {
   DialogActions,
 } from '@mui/material';
 
-import { useSnackbar } from 'notistack';
+import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import Label from 'src/components/label';
-import axiosInstance from 'src/utils/axios';
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();

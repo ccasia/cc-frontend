@@ -20,17 +20,14 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-// V2 Components
-import Photos from './finalDraft/photos';
-import RawFootages from './finalDraft/raw-footage';
-import DraftVideos from './finalDraft/draft-videos';
-
 // V3 Components
 import PhotosV3 from './v3/photos';
-import DraftVideosV3 from './v3/draft-videos';
+// V2 Components
+import Photos from './finalDraft/photos';
 import RawFootagesV3 from './v3/raw-footage';
-
-import FeedbackDisplay from './finalDraft/feedback-display';
+import DraftVideosV3 from './v3/draft-videos';
+import RawFootages from './finalDraft/raw-footage';
+import DraftVideos from './finalDraft/draft-videos';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
@@ -374,7 +371,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'photo',
           feedback: feedback || 'Photo approved by admin'
         });
@@ -413,7 +410,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'photo',
           feedback: feedback || 'Changes requested for photo',
           reasons: reasons || []
@@ -453,7 +450,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'video',
           feedback: feedback || 'Video approved by admin'
         });
@@ -492,7 +489,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'video',
           feedback: feedback || 'Changes requested for video',
           reasons: reasons || []
@@ -532,7 +529,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'rawFootage',
           feedback: feedback || 'Raw footage approved by admin'
         });
@@ -571,7 +568,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'rawFootage',
           feedback: feedback || 'Changes requested for raw footage',
           reasons: reasons || []
@@ -915,7 +912,7 @@ const FinalDraft = ({
         });
         
         return true;
-      } else {
+      } 
         // V2 endpoint for admin-created campaigns
         await axiosInstance.patch('/api/submission/manageVideos', {
           submissionId: submission.id,
@@ -938,7 +935,7 @@ const FinalDraft = ({
         );
         
         return true;
-      }
+      
     } catch (error) {
       console.error('Error submitting draft video review:', error);
       
@@ -978,7 +975,7 @@ const FinalDraft = ({
         });
         
         return true;
-      } else {
+      } 
         // V2 endpoint for admin-created campaigns
         await axiosInstance.patch('/api/submission/manageRawFootages', {
           submissionId: submission.id,
@@ -1000,7 +997,7 @@ const FinalDraft = ({
         );
         
         return true;
-      }
+      
     } catch (error) {
       console.error('Error submitting raw footage review:', error);
       
@@ -1040,7 +1037,7 @@ const FinalDraft = ({
         });
         
         return true;
-      } else {
+      } 
         // V2 endpoint for admin-created campaigns
         await axiosInstance.patch('/api/submission/managePhotos', {
           submissionId: submission.id,
@@ -1060,7 +1057,7 @@ const FinalDraft = ({
         );
 
         return true;
-      }
+      
     } catch (error) {
       console.error('Error submitting photo review:', error);
       

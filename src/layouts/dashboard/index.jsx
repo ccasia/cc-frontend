@@ -438,8 +438,7 @@ export default function DashboardLayout({ children }) {
   );
 
   return (
-    <>
-      <Box
+    <Box
         sx={{
           minHeight: 1,
           display: 'flex',
@@ -470,7 +469,6 @@ export default function DashboardLayout({ children }) {
           {kwspForm}
         </Box>
       </Box>
-    </>
   );
 
   // return (

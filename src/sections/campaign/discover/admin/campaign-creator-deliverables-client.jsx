@@ -1,31 +1,33 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Stack,
   Avatar,
-  TextField,
   Button,
+  Tooltip,
+  TextField,
   Accordion,
   Typography,
+  useMediaQuery,
+  InputAdornment,
+  LinearProgress,
   AccordionSummary,
   AccordionDetails,
   CircularProgress,
-  Tooltip,
-  InputAdornment,
-  useMediaQuery,
-  LinearProgress,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 
-import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
-import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 import socket from 'src/hooks/socket';
-import { useAuthContext } from 'src/auth/hooks';
-import { useSnackbar } from 'notistack';
+import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
+import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -432,7 +434,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         status: s.status,
         displayStatus: s.displayStatus
       })),
-      userRole: userRole,
+      userRole,
       isV3: campaign?.origin === 'CLIENT'
     });
     
@@ -466,7 +468,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
     if (!submission) return null;
 
     // Use displayStatus for V3 submissions, fallback to regular status
-    let status = submission.displayStatus || submission.status;
+    const status = submission.displayStatus || submission.status;
     let statusText = status ? status.replace(/_/g, ' ') : '';
     
     // Handle SENT_TO_ADMIN status display for admin and client users
@@ -489,7 +491,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
       finalStatus: status,
       statusText,
       submissionType: submission.submissionType?.type,
-      userRole: userRole,
+      userRole,
       isV3: campaign?.origin === 'CLIENT',
       campaignOrigin: campaign?.origin
     });
@@ -1339,7 +1341,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             deliverableMutate,
                             submissionMutate,
                           }}
-                          isV3={true}
+                          isV3
                           // Individual client approval handlers
                           handleClientApproveVideo={handleClientApproveVideo}
                           handleClientApprovePhoto={handleClientApprovePhoto}
@@ -1545,7 +1547,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             deliverableMutate,
                             submissionMutate,
                           }}
-                          isV3={true}
+                          isV3
                           // Individual client approval handlers
                           handleClientApproveVideo={handleClientApproveVideo}
                           handleClientApprovePhoto={handleClientApprovePhoto}
@@ -1745,7 +1747,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                           submission={postingSubmission}
                           campaign={campaign}
                           creator={selectedCreator}
-                          isV3={true}
+                          isV3
                           // Individual client approval handlers
                           handleClientApproveVideo={handleClientApproveVideo}
                           handleClientApprovePhoto={handleClientApprovePhoto}
