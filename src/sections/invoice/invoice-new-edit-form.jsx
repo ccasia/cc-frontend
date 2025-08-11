@@ -47,6 +47,7 @@ import InvoicePDF from './invoice-pdf';
 import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
 import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 // ----------------------------------------------------------------------
 
@@ -140,6 +141,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const { user } = useAuthContext();
   const dialog = useBoolean();
   const xeroLoading = useBoolean();
+  const smDown = useResponsive('down', 'sm');
 
   const creatorAgreement = useMemo(
     () => invoice?.user?.creatorAgreement?.find((i) => i.campaignId === invoice.campaignId),
@@ -433,105 +435,107 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
             <InvoiceNewEditDetails />
 
-            {getTenant && (
-              <Card
-                sx={{
-                  p: 2,
-                  borderRadius: 1 / 2,
-                  bgcolor: (theme) => alpha(theme.palette.secondary.light, 0.2),
-                  color: (theme) => theme.palette.secondary.dark,
-                  display: 'inline-flex',
-                  position: 'relative',
-                  maxWidth: 200,
-                }}
-              >
-                <Iconify
-                  icon="material-symbols:info-outline"
-                  sx={{ position: 'absolute', top: 18, left: 10 }}
-                />
-                <Stack spacing={1} marginLeft={2}>
-                  <ListItemText
-                    primary="Organization"
-                    secondary={getTenant?.tenantName
-                      ?.toLowerCase()
-                      .split(' ')
-                      .map((i) => `${i[0]?.toUpperCase()}${i.slice(1)}`)
-                      .join(' ')}
-                    secondaryTypographyProps={{ color: (theme) => theme.palette.secondary.dark }}
-                  />
-                  <ListItemText
-                    primary="Currency"
-                    secondary={getTenant?.orgData?.baseCurrency}
-                    secondaryTypographyProps={{ color: (theme) => theme.palette.secondary.dark }}
-                  />
-                </Stack>
-              </Card>
-            )}
-
-            <Stack
-              justifyContent="flex-end"
-              direction={{ sm: 'column', md: 'row' }}
-              gap={2}
-              sx={{ mt: 3 }}
-              alignItems="end"
-            >
-              {values?.status === 'rejected' && (
-                <>
-                  {invoice?.creator?.user?.paymentForm?.status === 'rejected' ? (
-                    <Box width={1} alignSelf="center" ml={2}>
-                      <Typography variant="subtitle1">
-                        Reason: {invoice?.creator?.user?.paymentForm?.reason}
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <>
-                      {values?.reason !== 'Others' ? (
-                        <RHFSelect
-                          fullWidth
-                          name="reason"
-                          label="Reason for Rejection"
-                          InputLabelProps={{ shrink: true }}
-                          PaperPropsSx={{ textTransform: 'capitalize' }}
-                        >
-                          {reasons.map((option, index) => (
-                            <MenuItem key={index} value={option}>
-                              {option}
-                            </MenuItem>
-                          ))}
-                        </RHFSelect>
-                      ) : (
-                        <Stack direction="row" width={1} spacing={1} alignItems="center">
-                          <Tooltip title="Back">
-                            <IconButton onClick={() => setValue('reason', '')}>
-                              <Iconify icon="majesticons:arrow-left" width={18} />
-                            </IconButton>
-                          </Tooltip>
-                          <RHFTextField
-                            name="otherReason"
-                            placeholder="Others - Reason for Rejection"
-                          />
-                        </Stack>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
-
-              {invoice?.status !== 'paid' && (
-                <LoadingButton
-                  size="large"
-                  variant="outlined"
-                  loading={loadingSend.value && isSubmitting}
-                  onClick={handleCreateAndSend}
+            <Stack direction={{ sm: 'row' }} spacing={2} justifyContent="flex-end">
+              {getTenant && (
+                <Card
                   sx={{
-                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                    width: 180,
+                    p: 2,
+                    borderRadius: 1 / 2,
+                    bgcolor: (theme) => alpha(theme.palette.secondary.light, 0.2),
+                    color: (theme) => theme.palette.secondary.dark,
+                    display: 'inline-flex',
+                    position: 'relative',
+                    maxWidth: !smDown ? 200 : 1,
                   }}
-                  disabled={!isValid}
                 >
-                  {invoice ? 'Update' : 'Create'} & Send
-                </LoadingButton>
+                  <Iconify
+                    icon="material-symbols:info-outline"
+                    sx={{ position: 'absolute', top: 18, left: 10 }}
+                  />
+                  <Stack spacing={1} marginLeft={2}>
+                    <ListItemText
+                      primary="Organization"
+                      secondary={getTenant?.tenantName
+                        ?.toLowerCase()
+                        .split(' ')
+                        .map((i) => `${i[0]?.toUpperCase()}${i.slice(1)}`)
+                        .join(' ')}
+                      secondaryTypographyProps={{ color: (theme) => theme.palette.secondary.dark }}
+                    />
+                    <ListItemText
+                      primary="Currency"
+                      secondary={getTenant?.orgData?.baseCurrency}
+                      secondaryTypographyProps={{ color: (theme) => theme.palette.secondary.dark }}
+                    />
+                  </Stack>
+                </Card>
               )}
+
+              <Stack
+                justifyContent="flex-end"
+                direction={{ sm: 'column', md: 'row' }}
+                gap={2}
+                sx={{ mt: 3 }}
+                alignItems="end"
+              >
+                {values?.status === 'rejected' && (
+                  <>
+                    {invoice?.creator?.user?.paymentForm?.status === 'rejected' ? (
+                      <Box width={1} alignSelf="center" ml={2}>
+                        <Typography variant="subtitle1">
+                          Reason: {invoice?.creator?.user?.paymentForm?.reason}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <>
+                        {values?.reason !== 'Others' ? (
+                          <RHFSelect
+                            fullWidth
+                            name="reason"
+                            label="Reason for Rejection"
+                            InputLabelProps={{ shrink: true }}
+                            PaperPropsSx={{ textTransform: 'capitalize' }}
+                          >
+                            {reasons.map((option, index) => (
+                              <MenuItem key={index} value={option}>
+                                {option}
+                              </MenuItem>
+                            ))}
+                          </RHFSelect>
+                        ) : (
+                          <Stack direction="row" width={1} spacing={1} alignItems="center">
+                            <Tooltip title="Back">
+                              <IconButton onClick={() => setValue('reason', '')}>
+                                <Iconify icon="majesticons:arrow-left" width={18} />
+                              </IconButton>
+                            </Tooltip>
+                            <RHFTextField
+                              name="otherReason"
+                              placeholder="Others - Reason for Rejection"
+                            />
+                          </Stack>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+
+                {invoice?.status !== 'paid' && (
+                  <LoadingButton
+                    size="large"
+                    variant="outlined"
+                    loading={loadingSend.value && isSubmitting}
+                    onClick={handleCreateAndSend}
+                    sx={{
+                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      width: 180,
+                    }}
+                    disabled={!isValid}
+                  >
+                    {invoice ? 'Update' : 'Create'} & Send
+                  </LoadingButton>
+                )}
+              </Stack>
             </Stack>
           </Card>
         </FormProvider>
