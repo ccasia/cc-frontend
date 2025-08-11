@@ -57,19 +57,25 @@ const CampaignListView = () => {
   const { data, error, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
 
   const router = useRouter();
-  const [campaigns, setCampaigns] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // Remove unused state variables that were used by the removed useEffect
+  // const [campaigns, setCampaigns] = useState([]);
+  // const [loading, setLoading] = useState(false);
+
+  const filteredData = useMemo(
+    () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
+    [data]
+  );
 
   const filtered = useMemo(
     () => ({
-      all: campaigns?.length,
-      active: campaigns?.filter((item) => item.status === 'ACTIVE').length,
-      draft: campaigns?.filter((item) => item.status === 'DRAFT').length,
-      completed: campaigns?.filter((item) => item.status === 'COMPLETED').length,
-      paused: campaigns?.filter((item) => item.status === 'PAUSED').length,
-      scheduled: campaigns?.filter((item) => item.status === 'SCHEDULED').length,
+      all: filteredData?.length || 0,
+      active: filteredData?.filter((item) => item.status === 'ACTIVE').length || 0,
+      draft: filteredData?.filter((item) => item.status === 'DRAFT').length || 0,
+      completed: filteredData?.filter((item) => item.status === 'COMPLETED').length || 0,
+      paused: filteredData?.filter((item) => item.status === 'PAUSED').length || 0,
+      scheduled: filteredData?.filter((item) => item.status === 'SCHEDULED').length || 0,
     }),
-    [campaigns]
+    [filteredData]
   );
 
   const onView = useCallback(
@@ -90,33 +96,30 @@ const CampaignListView = () => {
     console.log('Delete', id);
   }, []);
 
-  useEffect(() => {
-    const getAllCampaigns = async () => {
-      setLoading(true);
-      try {
-        const res = await axiosInstance.get(endpoints.campaign.getCampaignsByAdminId);
-        setCampaigns(res?.data);
-        setLoading(false);
-      } catch (err) {
-        enqueueSnackbar(err?.message, {
-          variant: 'error',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    getAllCampaigns();
-  }, []);
+  // Remove the conflicting useEffect that makes a separate API call
+  // This was interfering with the useSWRInfinite pagination and ordering
+  // useEffect(() => {
+  //   const getAllCampaigns = async () => {
+  //     setLoading(true);
+  //     try {
+  //       const res = await axiosInstance.get(endpoints.campaign.getCampaignsByAdminId);
+  //       setCampaigns(res?.data);
+  //       setLoading(false);
+  //     } catch (err) {
+  //       enqueueSnackbar(err?.message, {
+  //         variant: 'error',
+  //       });
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   getAllCampaigns();
+  // }, []);
 
   // const filteredData = useMemo(
   //   () => !isLoading && (!filter ? data : data.filter((elem) => elem?.status === filter)),
   //   [isLoading, filter, data]
   // );
-
-  const filteredData = useMemo(
-    () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
-    [data]
-  );
 
   const handleScroll = useCallback(() => {
     const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
@@ -163,7 +166,7 @@ const CampaignListView = () => {
       />
 
       <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <CampaignSearch campaigns={campaigns} />
+        <CampaignSearch campaigns={filteredData} />
       </Stack>
 
       <Box display="flex" gap={1} mt={2} flexWrap="wrap">

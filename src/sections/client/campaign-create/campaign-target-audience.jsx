@@ -5,6 +5,8 @@ import { Box, Stack, Grid, MenuItem, FormLabel, IconButton, TextField, Chip, Typ
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import CustomRHFMultiSelect from './custom-rhf-multi-select';
 import Iconify from 'src/components/iconify';
+import { interestsLists } from 'src/contants/interestLists';
+import { langList } from 'src/contants/language';
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -25,68 +27,40 @@ const FormField = ({ label, children, required = true }) => (
 );
 
 const GENDER_OPTIONS = [
-  { value: 'Male', label: 'Male' },
-  { value: 'Female', label: 'Female' },
-  { value: 'Other', label: 'Other' },
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
+  { value: 'nonbinary', label: 'Non-Binary' },
 ];
 
 const AGE_OPTIONS = [
-  { value: '13-17', label: '13-17' },
-  { value: '18-24', label: '18-24' },
-  { value: '25-34', label: '25-34' },
-  { value: '35-44', label: '35-44' },
-  { value: '45-54', label: '45-54' },
-  { value: '55-64', label: '55-64' },
-  { value: '65+', label: '65+' },
+  { value: '18-25', label: '18-25' },
+  { value: '26-34', label: '26-34' },
+  { value: '35-40', label: '35-40' },
+  { value: '>40', label: '>40' },
 ];
 
-const LANGUAGE_OPTIONS = [
-  { value: 'English', label: 'English' },
-  { value: 'Spanish', label: 'Spanish' },
-  { value: 'French', label: 'French' },
-  { value: 'German', label: 'German' },
-  { value: 'Chinese', label: 'Chinese' },
-  { value: 'Japanese', label: 'Japanese' },
-  { value: 'Korean', label: 'Korean' },
-  { value: 'Arabic', label: 'Arabic' },
-  { value: 'Hindi', label: 'Hindi' },
-];
+const LANGUAGE_OPTIONS = langList.sort().map((lang) => ({
+  value: lang,
+  label: lang,
+}));
 
 const LOCATION_OPTIONS = [
-  { value: 'United States', label: 'United States' },
-  { value: 'United Kingdom', label: 'United Kingdom' },
-  { value: 'Canada', label: 'Canada' },
-  { value: 'Australia', label: 'Australia' },
-  { value: 'Germany', label: 'Germany' },
-  { value: 'France', label: 'France' },
-  { value: 'Japan', label: 'Japan' },
-  { value: 'China', label: 'China' },
-  { value: 'India', label: 'India' },
-  { value: 'Brazil', label: 'Brazil' },
+  { value: 'KlangValley', label: 'Klang Valley' },
+  { value: 'Selangor', label: 'Selangor' },
+  { value: 'KualaLumpur', label: 'Kuala Lumpur' },
+  { value: 'MainCities', label: 'Main cities in Malaysia' },
+  { value: 'EastMalaysia', label: 'East Malaysia' },
   { value: 'Others', label: 'Others' },
 ];
 
-const CREATOR_PERSONA_OPTIONS = [
-  { value: 'Lifestyle', label: 'Lifestyle' },
-  { value: 'Beauty', label: 'Beauty' },
-  { value: 'Fashion', label: 'Fashion' },
-  { value: 'Travel', label: 'Travel' },
-  { value: 'Food', label: 'Food' },
-  { value: 'Fitness', label: 'Fitness' },
-  { value: 'Technology', label: 'Technology' },
-  { value: 'Gaming', label: 'Gaming' },
-  { value: 'Entertainment', label: 'Entertainment' },
-  { value: 'Education', label: 'Education' },
-];
+const CREATOR_PERSONA_OPTIONS = interestsLists.map((item) => ({
+  value: item.toLowerCase(),
+  label: item,
+}));
 
 const SOCIAL_MEDIA_OPTIONS = [
-  { value: 'Instagram', label: 'Instagram' },
-  { value: 'TikTok', label: 'TikTok' },
-  { value: 'YouTube', label: 'YouTube' },
-  { value: 'Facebook', label: 'Facebook' },
-  { value: 'Twitter', label: 'Twitter' },
-  { value: 'LinkedIn', label: 'LinkedIn' },
-  { value: 'Pinterest', label: 'Pinterest' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'tiktok', label: 'TikTok' },
 ];
 
 const VIDEO_ANGLE_OPTIONS = [
@@ -183,10 +157,10 @@ const CampaignTargetAudience = () => {
         {/* Left column - Audience Gender and City/Area */}
         <Grid item xs={12} sm={6}>
           <Stack spacing={2.5}>
-            <FormField label="Audience Gender">
+            <FormField label="Gender">
                           <CustomRHFMultiSelect
               name="audienceGender"
-              placeholder="Select gender"
+              placeholder="Select Gender"
               options={GENDER_OPTIONS}
               size="small"
               sx={{ 
@@ -195,10 +169,10 @@ const CampaignTargetAudience = () => {
             />
             </FormField>
             
-            <FormField label="Audience City/Area">
+            <FormField label="City/Area">
                           <CustomRHFMultiSelect
               name="audienceLocation"
-              placeholder="Select locations"
+              placeholder="Select city"
               options={LOCATION_OPTIONS}
               size="small"
               sx={{ 
@@ -225,7 +199,7 @@ const CampaignTargetAudience = () => {
           <FormField label="User Persona">
             <RHFTextField
               name="audienceUserPersona"
-              placeholder="Describe user persona"
+              placeholder=" let us know who you want your campaign to reach!"
               size="small"
               multiline
               rows={5}
@@ -241,10 +215,10 @@ const CampaignTargetAudience = () => {
       {/* Third row - Creator Persona and Social Media Platform */}
       <Grid container spacing={2} sx={{ mt: 1 }}>
         <Grid item xs={12} sm={6}>
-          <FormField label="Audience Creator Persona">
+          <FormField label="Interests">
             <CustomRHFMultiSelect
               name="audienceCreatorPersona"
-              placeholder="Select creator personas"
+              placeholder="Select creator persona"
               options={CREATOR_PERSONA_OPTIONS}
               size="small"
               sx={{ 
@@ -257,7 +231,7 @@ const CampaignTargetAudience = () => {
           <FormField label="Social Media Platform">
             <CustomRHFMultiSelect
               name="socialMediaPlatform"
-              placeholder="Select platforms"
+              placeholder="Select Platform"
               options={SOCIAL_MEDIA_OPTIONS}
               size="small"
               sx={{ 
@@ -271,10 +245,10 @@ const CampaignTargetAudience = () => {
       {/* Fourth row - Age and Video Angle */}
       <Grid container spacing={2} sx={{ mt: 1 }}>
         <Grid item xs={12} sm={6}>
-          <FormField label="Audience Age">
+          <FormField label="Age">
             <CustomRHFMultiSelect
               name="audienceAge"
-              placeholder="Select age ranges"
+              placeholder="Select Age"
               options={AGE_OPTIONS}
               size="small"
               sx={{ 
@@ -287,7 +261,7 @@ const CampaignTargetAudience = () => {
           <FormField label="Video Angle">
             <CustomRHFMultiSelect
               name="videoAngle"
-              placeholder="Select video angles"
+              placeholder="Select Angle"
               options={VIDEO_ANGLE_OPTIONS}
               size="small"
               sx={{ 
@@ -300,10 +274,10 @@ const CampaignTargetAudience = () => {
 
       {/* Fifth row - Language */}
       <Box sx={{ mt: 2 }}>
-        <FormField label="Audience Language">
+        <FormField label="Language">
           <CustomRHFMultiSelect
             name="audienceLanguage"
-            placeholder="Select languages"
+                          placeholder="Select Language"
             options={LANGUAGE_OPTIONS}
             size="small"
             sx={{ 

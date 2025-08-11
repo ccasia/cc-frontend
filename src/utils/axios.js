@@ -91,6 +91,7 @@ export const endpoints = {
     checkToken: (token) => `/api/user/forget-password-token/${token}`,
     resendVerificationLink: `/api/auth/resendVerificationLinkCreator`,
     resendVerificationLinkClient: `/api/auth/resendVerificationLinkClient`,
+    inviteClient: '/api/auth/invite-client',
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',
@@ -215,6 +216,7 @@ export const endpoints = {
         approveClient: (pitchId) => `/api/pitch/v3/${pitchId}/approve/client`,
         rejectClient: (pitchId) => `/api/pitch/v3/${pitchId}/reject/client`,
         agreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
+        setAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
         submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
       },
     },
@@ -277,6 +279,7 @@ export const endpoints = {
       approveByClient: (submissionId) => `/api/submission/v3/${submissionId}/approve/client`,
       requestChangesByClient: (submissionId) => `/api/submission/v3/${submissionId}/request-changes/client`,
       forwardFeedback: (submissionId) => `/api/submission/v3/${submissionId}/forward-feedback`,
+      reviewAndForwardFeedback: '/api/submission/v3/draft/review-feedback',
       // V3 posting endpoints
       posting: {
         approveByAdmin: '/api/submission/v3/posting/approve',

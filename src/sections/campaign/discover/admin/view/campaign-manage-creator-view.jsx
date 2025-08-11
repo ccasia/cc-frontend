@@ -655,7 +655,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                               fontWeight: 600,
                             }}
                           >
-                            {status === 'NOT_STARTED' ? 'NOT STARTED' : status.replace(/_/g, ' ')}
+                            {status === 'NOT_STARTED' ? 'NOT STARTED' : 
+                             status === 'SENT_TO_ADMIN' ? 'CLIENT FEEDBACK' : 
+                             status.replace(/_/g, ' ')}
                           </Typography>
                         </Box>
                       </Box>

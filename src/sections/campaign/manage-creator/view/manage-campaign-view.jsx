@@ -53,24 +53,50 @@ const ManageCampaignView = () => {
   const filteredData = useMemo(() => {
     let filteredCampaigns = campaigns;
 
-    // Apply sorting
+    console.log('My Campaigns - Raw campaigns:', campaigns?.map(c => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin })));
+
+    // Apply sorting - default to newest first
     if (sortBy === 'Most matched') {
       filteredCampaigns = orderBy(filteredCampaigns, ['percentageMatch'], ['desc']);
     } else if (sortBy === 'Most recent') {
+      filteredCampaigns = orderBy(filteredCampaigns, ['createdAt'], ['desc']);
+    } else {
+      // Default sorting: newest first
       filteredCampaigns = orderBy(filteredCampaigns, ['createdAt'], ['desc']);
     }
 
     return {
       active:
         filteredCampaigns?.filter(
-          (campaign) =>
-            campaign.shortlisted &&
-            campaign.status === 'ACTIVE' &&
-            !campaign.shortlisted?.isCampaignDone
+          (campaign) => {
+            // Campaigns that are shortlisted and active
+            if (campaign.shortlisted && campaign.status === 'ACTIVE' && !campaign.shortlisted?.isCampaignDone) {
+              return true;
+            }
+            // Campaigns with approved pitches (V3: APPROVED, V2: approved) - these go to active tab
+            if (campaign?.pitch?.status === 'APPROVED' || campaign?.pitch?.status === 'approved') {
+              return true;
+            }
+            return false;
+          }
         ) || [],
       pending:
         filteredCampaigns?.filter(
-          (campaign) => !campaign.shortlisted && campaign?.pitch?.status === 'undecided'
+          (campaign) => {
+            // For V3 campaigns: PENDING_REVIEW and SENT_TO_CLIENT should be in pending
+            if (campaign?.pitch?.status === 'PENDING_REVIEW' || campaign?.pitch?.status === 'SENT_TO_CLIENT') {
+              return true;
+            }
+            // For V2 campaigns: undecided status should be in pending
+            if (campaign?.pitch?.status === 'undecided') {
+              return true;
+            }
+            // Campaigns that are not shortlisted and don't have approved pitches
+            if (!campaign.shortlisted && campaign?.pitch?.status !== 'APPROVED' && campaign?.pitch?.status !== 'approved') {
+              return true;
+            }
+            return false;
+          }
         ) || [],
       completed:
         filteredCampaigns?.filter((campaign) => campaign?.shortlisted?.isCampaignDone) || [],

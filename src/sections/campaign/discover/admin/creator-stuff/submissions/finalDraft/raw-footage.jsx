@@ -24,21 +24,23 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Iconify from 'src/components/iconify';
-import { RHFTextField } from 'src/components/hook-form';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 import axiosInstance from 'src/utils/axios';
+import { useAuthContext } from 'src/auth/hooks';
+import { options_changes } from '../firstDraft/constants';
 
-const VideoCard = ({ 
+const RawFootageCard = ({ 
   rawFootageItem, 
   index, 
   submission, 
-  onVideoClick, 
+  onRawFootageClick, 
   handleApprove, 
   handleRequestChange,
-  selectedVideosForChange,
-  handleVideoSelection,
+  selectedRawFootagesForChange,
+  handleRawFootageSelection,
   // V2 individual handlers
   onIndividualApprove,
   onIndividualRequestChange,
@@ -46,10 +48,13 @@ const VideoCard = ({
   userRole,
   handleSendToClient,
   // V3 client handlers
-  handleClientApproveRawFootage,
-  handleClientRejectRawFootage,
+  handleClientApprove,
+  handleClientReject,
   // V3 deliverables for status checking
   deliverables,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback,
+  handleAdminSendToCreator,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -89,7 +94,7 @@ const VideoCard = ({
   const currentStatus = localStatus || rawFootageItem.status;
   const isRawFootageApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isRawFootageApprovedByClient = currentStatus === 'APPROVED';
-  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED';
+  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
   
   // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
   const isPendingReview = userRole === 'client' ? 
@@ -100,19 +105,34 @@ const VideoCard = ({
 
   // Get feedback for this specific raw footage
   const getRawFootageFeedback = () => {
-    // Check for individual feedback first
+    // Check for individual feedback first (from deliverables API)
     if (rawFootageItem.individualFeedback && rawFootageItem.individualFeedback.length > 0) {
       return rawFootageItem.individualFeedback;
     }
     
-    // Fallback to submission-level feedback
+    // Get all feedback from submission (from deliverables API)
     const allFeedbacks = [
+      ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
       ...(submission?.feedback || [])
     ];
 
-    return allFeedbacks
+    // Filter feedback for this specific raw footage
+    const rawFootageSpecificFeedback = allFeedbacks
       .filter(feedback => feedback.rawFootageToUpdate?.includes(rawFootageItem.id))
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+
+    // Also include client feedback for this submission (when raw footage status is CLIENT_FEEDBACK)
+    const clientFeedback = allFeedbacks
+      .filter(feedback => {
+        const isClient = feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client';
+        const isFeedback = feedback.type === 'REASON' || feedback.type === 'COMMENT';
+        const isClientFeedbackStatus = rawFootageItem.status === 'CLIENT_FEEDBACK';
+        
+        return isClient && isFeedback && isClientFeedbackStatus;
+      })
+      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+
+    return [...rawFootageSpecificFeedback, ...clientFeedback];
   };
 
   const rawFootageFeedback = getRawFootageFeedback();
@@ -128,18 +148,10 @@ const VideoCard = ({
 
   // V2 Individual handlers
   const handleIndividualApproveClick = async () => {
-    if (!onIndividualApprove) return;
-    
-    setIsProcessing(true);
-    try {
-      const values = formMethods.getValues();
-      await onIndividualApprove(rawFootageItem.id, values.feedback);
-      // Optimistically update local status
-      setLocalStatus('SENT_TO_CLIENT');
-    } catch (error) {
-      console.error('Error approving raw footage:', error);
-    } finally {
-      setIsProcessing(false);
+    if (isV3) {
+      await handleApprove(rawFootageItem.id, formMethods.getValues());
+    } else if (onIndividualApprove) {
+      await onIndividualApprove(rawFootageItem.id, formMethods.getValues().feedback);
     }
   };
 
@@ -167,8 +179,8 @@ const VideoCard = ({
       try {
         const values = formMethods.getValues();
         await handleApprove(rawFootageItem.id, values);
-        // Optimistically update local status for fallback handler
-        setLocalStatus('SENT_TO_CLIENT');
+        // Optimistically update local status for fallback handler - admin sends to client, client approves
+        setLocalStatus(userRole === 'client' ? 'APPROVED' : 'SENT_TO_CLIENT');
       } catch (error) {
         console.error('Error in fallback approve handler:', error);
       }
@@ -194,17 +206,17 @@ const VideoCard = ({
     if (!isPendingReview) {
       // For client role, SENT_TO_CLIENT status should show approval buttons, not APPROVED status
       if (isRawFootageApprovedByAdmin && userRole !== 'client') {
-        return (
+    return (
           <Box
-            sx={{
-              display: 'flex',
+      sx={{
+        display: 'flex',
               justifyContent: 'center',
-              alignItems: 'center',
+                alignItems: 'center',
               p: 2,
             }}
           >
-            <Box
-              sx={{
+        <Box
+          sx={{
                 bgcolor: '#FFFFFF',
                 color: '#1ABF66',
                 border: '1.5px solid',
@@ -217,15 +229,15 @@ const VideoCard = ({
                 fontWeight: 600,
                 fontSize: '0.8rem',
                 height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
                 textTransform: 'none',
               }}
             >
-              APPROVED
-            </Box>
+              SENT TO CLIENT
           </Box>
+        </Box>
         );
       }
       if (hasRevisionRequested) {
@@ -322,28 +334,52 @@ const VideoCard = ({
 
                 {isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW' ? (
                   <>
+                    {/* Check if all media items are approved */}
+                    {(() => {
+                      const allVideosApproved = deliverables?.videos?.length > 0 &&
+                        deliverables.videos.every(v => v.status === 'SENT_TO_CLIENT');
+                      const allPhotosApproved = deliverables?.photos?.length > 0 &&
+                        deliverables.photos.every(p => p.status === 'SENT_TO_CLIENT');
+                      const allRawFootagesApproved = deliverables?.rawFootages?.length > 0 &&
+                        deliverables.rawFootages.every(r => r.status === 'SENT_TO_CLIENT');
+                      
+                      const allApproved = allVideosApproved && allPhotosApproved && allRawFootagesApproved;
+                      
+                      return allApproved ? (
                     <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => {
-                        console.log('[Send to Client Button Click] submission:', submission);
-                        if (!submission || !submission.id) {
-                          console.error('[Send to Client Button] submission or submission.id is missing!', submission);
-                          enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
-                          return;
-                        }
-                        handleSendToClient(submission.id);
-                      }}
-                      disabled={isSubmitting || isProcessing}
-                      sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
-                    >
-                      Send to Client
-                    </Button>
+                          variant="contained"
+                          color="primary"
+                          onClick={() => {
+                            console.log('[Send to Client Button Click] submission:', submission);
+                            if (!submission || !submission.id) {
+                              console.error('[Send to Client Button] submission or submission.id is missing!', submission);
+                              enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
+                              return;
+                            }
+                            handleSendToClient(submission.id);
+                          }}
+                          disabled={isSubmitting || isProcessing}
+                          sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
+                        >
+                          Send to Client
+                        </Button>
+                      ) : (
+                        <LoadingButton
+                          onClick={handleApproveClick}
+                          variant="contained"
+                          size="small"
+                          loading={isSubmitting || isProcessing}
+                          sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
+                        >
+                          Approve
+                        </LoadingButton>
+                      );
+                    })()}
                   </>
                 ) : isV3 && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'SENT_TO_CLIENT') ? (
                   <Stack direction="row" spacing={1.5}>
                     <Button
-                      onClick={() => handleClientRejectRawFootage && handleClientRejectRawFootage(rawFootageItem.id)}
+                      onClick={() => handleClientReject && handleClientReject(rawFootageItem.id)}
                       size="small"
                       variant="contained"
                       disabled={isSubmitting || isProcessing}
@@ -369,7 +405,7 @@ const VideoCard = ({
                       Request a change
                     </Button>
                     <LoadingButton
-                      onClick={() => handleClientApproveRawFootage && handleClientApproveRawFootage(rawFootageItem.id)}
+                      onClick={() => handleClientApprove && handleClientApprove(rawFootageItem.id)}
                       variant="contained"
                       size="small"
                       loading={isSubmitting || isProcessing}
@@ -398,30 +434,12 @@ const VideoCard = ({
                     </LoadingButton>
                   </Stack>
                 ) : (
-                  <LoadingButton
+                    <LoadingButton
                     onClick={handleApproveClick}
-                    variant="contained"
-                    size="small"
-                    loading={isSubmitting || isProcessing}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      color: '#1ABF66',
-                      border: '1.5px solid',
-                      borderColor: '#e7e7e7',
-                      borderBottom: 3,
-                      borderBottomColor: '#e7e7e7',
-                      borderRadius: 1.15,
-                      py: 1.2,
-                      fontWeight: 600,
-                      '&:hover': {
-                        bgcolor: '#f5f5f5',
-                        borderColor: '#1ABF66',
-                      },
-                      fontSize: '0.9rem',
-                      height: '40px',
-                      textTransform: 'none',
-                      flex: 1,
-                    }}
+                      variant="contained"
+                      size="small"
+                      loading={isSubmitting || isProcessing}
+                    sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
                   >
                     Approve
                   </LoadingButton>
@@ -452,60 +470,60 @@ const VideoCard = ({
                   size="small"
                   variant="contained"
                   disabled={isProcessing}
-                  sx={{
-                    bgcolor: '#FFFFFF',
+                      sx={{
+                        bgcolor: '#FFFFFF',
                     border: 1.5,
                     borderRadius: 1.15,
-                    borderColor: '#e7e7e7',
-                    borderBottom: 3,
-                    borderBottomColor: '#e7e7e7',
-                    color: '#1ABF66',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      borderColor: '#1ABF66',
-                    },
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                    color: '#231F20',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                      borderColor: '#231F20',
+                        },
                     textTransform: 'none',
                     py: 1.2,
-                    fontSize: '0.9rem',
+                        fontSize: '0.9rem',
                     fontWeight: 600,
-                    height: '40px',
-                    flex: 1,
-                  }}
-                >
-                  Approve
+                        height: '40px',
+                        flex: 1,
+                      }}
+                    >
+                  Back
                 </Button>
 
-                <LoadingButton
+                    <LoadingButton
                   onClick={handleRequestClick}
-                  variant="contained"
-                  size="small"
-                  loading={isSubmitting || isProcessing}
-                  sx={{
-                    bgcolor: '#FFFFFF',
-                    color: '#D4321C',
-                    border: '1.5px solid',
-                    borderColor: '#e7e7e7',
-                    borderBottom: 3,
-                    borderBottomColor: '#e7e7e7',
-                    borderRadius: 1.15,
-                    py: 1.2,
-                    fontWeight: 600,
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      borderColor: '#D4321C',
-                    },
-                    fontSize: '0.9rem',
-                    height: '40px',
-                    textTransform: 'none',
+                      variant="contained"
+                      size="small"
+                      loading={isSubmitting || isProcessing}
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        color: '#1ABF66',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1.15,
+                        py: 1.2,
+                        fontWeight: 600,
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#1ABF66',
+                        },
+                        fontSize: '0.9rem',
+                        height: '40px',
+                        textTransform: 'none',
                     flex: 2,
-                  }}
-                >
-                  Request Changes
-                </LoadingButton>
+                      }}
+                    >
+                  Submit Feedback
+                    </LoadingButton>
+                  </Stack>
               </Stack>
             </Stack>
-          </Stack>
-        )}
+          )}
       </FormProvider>
     );
   };
@@ -579,9 +597,11 @@ const VideoCard = ({
                 zIndex: 1,
               }}
             >
-              <Tooltip title="Changes required">
-                <Iconify icon="si:warning-fill" width={20} color="warning.main" />
-              </Tooltip>
+              <Iconify
+                icon="si:warning-fill"
+                width={20}
+                color="warning.main"
+              />
             </Box>
           )}
 
@@ -594,9 +614,11 @@ const VideoCard = ({
                 zIndex: 1,
               }}
             >
-              <Tooltip title="Approved">
-                <Iconify icon="lets-icons:check-fill" width={20} color="success.main" />
-              </Tooltip>
+              <Iconify
+                icon="lets-icons:check-fill"
+                width={20}
+                color="success.main"
+              />
             </Box>
           )}
 
@@ -612,7 +634,7 @@ const VideoCard = ({
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            onClick={() => onVideoClick(index)}
+            onClick={() => onRawFootageClick(index)}
           >
             <Iconify
               icon="mdi:play"
@@ -642,7 +664,7 @@ const VideoCard = ({
             {rawFootageFeedback.map((feedback, feedbackIndex) => (
               <Box
                 key={feedbackIndex}
-                sx={{
+            sx={{
                   p: 1.5,
                   borderRadius: 1,
                   bgcolor: '#FFFFFF',
@@ -675,19 +697,120 @@ const VideoCard = ({
                   )}
                 </Stack>
                 
-                <Typography variant="body2" sx={{ color: '#000000' }}>
-                  {feedback.content || feedback.rawFootageContent}
+                <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
+                  {feedback.content}
                 </Typography>
+
+                {feedback.reasons && feedback.reasons.length > 0 && (
+                  <Box>
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                      {feedback.reasons.map((reason, reasonIndex) => (
+                        <Box
+                          key={reasonIndex}
+              sx={{
+                bgcolor: '#FFFFFF',
+                            color: '#666666',
+                border: '1.5px solid',
+                            borderColor: '#e0e0e0',
+                borderBottom: 3,
+                            borderBottomColor: '#e0e0e0',
+                borderRadius: 1,
+                            py: 0.4,
+                            px: 1,
+                fontWeight: 600,
+                            fontSize: '0.7rem',
+                            height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+              }}
+            >
+                          {reason}
+            </Box>
+                      ))}
+                    </Stack>
+        </Box>
+      )}
+
+                {/* Admin buttons for client feedback */}
+                {isV3 && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (
+                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        if (handleAdminEditFeedback) {
+                          handleAdminEditFeedback(rawFootageItem.id, feedback.id, feedback.content);
+                        }
+                      }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#000000',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          color: '#000000',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        },
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        if (handleAdminSendToCreator) {
+                          handleAdminSendToCreator(rawFootageItem.id, feedback.id);
+                        }
+                      }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        bgcolor: '#ffffff',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#1ABF66',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f0f9f0',
+                          color: '#1ABF66',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                        },
+                      }}
+                    >
+                      Send to Creator
+                    </Button>
+                  </Stack>
+                )}
               </Box>
             ))}
-          </Stack>
+              </Stack>
         </Box>
       )}
     </Card>
   );
 };
 
-VideoCard.propTypes = {
+RawFootageCard.propTypes = {
   rawFootageItem: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     url: PropTypes.string.isRequired,
@@ -697,11 +820,11 @@ VideoCard.propTypes = {
   }).isRequired,
   index: PropTypes.number.isRequired,
   submission: PropTypes.object,
-  onVideoClick: PropTypes.func.isRequired,
+  onRawFootageClick: PropTypes.func.isRequired,
   handleApprove: PropTypes.func.isRequired,
   handleRequestChange: PropTypes.func.isRequired,
-  selectedVideosForChange: PropTypes.array.isRequired,
-  handleVideoSelection: PropTypes.func.isRequired,
+  selectedRawFootagesForChange: PropTypes.array.isRequired,
+  handleRawFootageSelection: PropTypes.func.isRequired,
   // V2 individual handlers
   onIndividualApprove: PropTypes.func,
   onIndividualRequestChange: PropTypes.func,
@@ -709,10 +832,13 @@ VideoCard.propTypes = {
   userRole: PropTypes.string,
   handleSendToClient: PropTypes.func,
   // V3 client handlers
-  handleClientApproveRawFootage: PropTypes.func,
-  handleClientRejectRawFootage: PropTypes.func,
+  handleClientApprove: PropTypes.func,
+  handleClientReject: PropTypes.func,
   // V3 deliverables for status checking
   deliverables: PropTypes.object,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback: PropTypes.func,
+  handleAdminSendToCreator: PropTypes.func,
 };
 
 const RawFootages = ({
@@ -733,12 +859,23 @@ const RawFootages = ({
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
 }) => {
-  const [selectedVideosForChange, setSelectedVideosForChange] = useState([]);
+  const [selectedRawFootagesForChange, setSelectedRawFootagesForChange] = useState([]);
+  const [sentSubmissions, setSentSubmissions] = useState(new Set());
+  const [isSending, setIsSending] = useState(false);
   const approve = useBoolean();
   const request = useBoolean();
 
-  const handleVideoSelection = (id) => {
-    setSelectedVideosForChange((prev) => {
+  // Add state for client request modal
+  const [clientRequestModalOpen, setClientRequestModalOpen] = useState(false);
+  const [clientRequestRawFootageId, setClientRequestRawFootageId] = useState(null);
+
+  // Add form for client request modal
+  const clientRequestForm = useForm({
+    defaultValues: { feedback: '', reasons: [] },
+  });
+
+  const handleRawFootageSelection = (id) => {
+    setSelectedRawFootagesForChange((prev) => {
       if (prev.includes(id)) {
         return prev.filter((videoId) => videoId !== id);
       }
@@ -748,90 +885,216 @@ const RawFootages = ({
 
   const handleApprove = async (videoId, formValues) => {
     try {
+      console.log('[RAW FOOTAGE] handleApprove called with:', { videoId, formValues });
+      console.log('[RAW FOOTAGE] Campaign origin:', campaign?.origin);
+      console.log('[RAW FOOTAGE] Is V3 campaign:', campaign?.origin === 'CLIENT');
+      
       const payload = {
-        type: 'approve',
-        footageFeedback: formValues.feedback,
-        selectedRawFootages: [videoId],
+        mediaId: videoId,
+        mediaType: 'rawFootage',
+        feedback: formValues.feedback || ''
       };
+      
+      console.log('[RAW FOOTAGE] Sending API request to /api/submission/v3/media/approve with payload:', payload);
+      
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', payload);
 
-      await onSubmit(payload);
+      console.log('[RAW FOOTAGE] API response:', response);
+      console.log('[RAW FOOTAGE] Response status:', response.status);
+      console.log('[RAW FOOTAGE] Response data:', response.data);
+
+      if (response.status === 200) {
+        enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
+        // Refresh data
+        if (deliverables?.deliverableMutate) {
+          console.log('[RAW FOOTAGE] Refreshing deliverables data...');
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          console.log('[RAW FOOTAGE] Refreshing submission data...');
+          await deliverables.submissionMutate();
+        }
+      }
     } catch (error) {
-      console.error('Error submitting raw footage review:', error);
-      enqueueSnackbar(error?.message || 'Error submitting review', {
-        variant: 'error',
-      });
+      console.error('[RAW FOOTAGE] Error approving raw footage:', error);
+      console.error('[RAW FOOTAGE] Error response:', error?.response);
+      console.error('[RAW FOOTAGE] Error message:', error?.message);
+      enqueueSnackbar('Failed to approve raw footage', { variant: 'error' });
     }
   };
 
   const handleRequestChange = async (videoId, formValues) => {
     try {
-      const payload = {
-        type: 'request',
-        footageFeedback: formValues.feedback,
-        selectedRawFootages: [videoId],
-      };
-
-      await onSubmit(payload);
-    } catch (error) {
-      console.error('Error submitting raw footage review:', error);
-      enqueueSnackbar(error?.message || 'Error submitting review', {
-        variant: 'error',
+      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+        mediaId: videoId,
+        mediaType: 'rawFootage',
+        feedback: formValues.feedback || '',
+        reasons: formValues.reasons || []
       });
+
+      if (response.status === 200) {
+        enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
+        // Refresh data
+        if (deliverables?.deliverableMutate) {
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+      }
+    } catch (error) {
+      console.error('Error requesting changes:', error);
+      enqueueSnackbar('Failed to request changes', { variant: 'error' });
     }
   };
 
   const handleSendToClient = async (submissionId) => {
-    if (!submissionId) {
-      console.error('[handleSendToClient] No submissionId provided!');
-      enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
-      return;
-    }
     try {
-      console.log('[handleSendToClient] PATCH /api/submission/v3/' + submissionId + '/approve/admin');
-      const response = await axiosInstance.patch(
-        `/api/submission/v3/${submissionId}/approve/admin`,
-        { submissionId, feedback: 'All sections approved by admin' }
-      );
-      console.log('[handleSendToClient] Success:', response);
-      enqueueSnackbar('Sent to client!', { variant: 'success' });
-      // Optionally refresh data/UI here
+      const response = await axiosInstance.post('/api/submission/v3/draft/send-to-client', {
+        submissionId: submissionId,
+      });
+
+      if (response.status === 200) {
+        enqueueSnackbar('Draft sent to client successfully!', { variant: 'success' });
+        // Refresh data
+        if (deliverables?.deliverableMutate) {
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+      }
     } catch (error) {
-      console.error('[handleSendToClient] Error:', error, error?.response);
-      enqueueSnackbar(error?.response?.data?.message || 'Error sending to client', { variant: 'error' });
+      console.error('Error sending to client:', error);
+      enqueueSnackbar('Failed to send to client', { variant: 'error' });
     }
   };
 
-  // Client approval handler for individual media - use parent's handler with SWR
-  const handleClientApprove = async (mediaId) => {
-    if (handleClientApproveRawFootage) {
-      await handleClientApproveRawFootage(mediaId);
-    }
+  // Use the prop function instead of local implementation
+  const handleClientApprove = handleClientApproveRawFootage;
+
+  // Use the prop function instead of local implementation
+  const handleClientReject = handleClientRejectRawFootage;
+
+  const handleOpenClientRequestModal = (rawFootageId) => {
+    setClientRequestRawFootageId(rawFootageId);
+    setClientRequestModalOpen(true);
+  };
+  const handleCloseClientRequestModal = () => {
+    setClientRequestModalOpen(false);
+    setClientRequestRawFootageId(null);
+    clientRequestForm.reset();
   };
 
-  // Client rejection handler for individual media - use parent's handler with SWR
-  const handleClientReject = async (mediaId) => {
-    if (handleClientRejectRawFootage) {
-      await handleClientRejectRawFootage(mediaId);
+  const handleClientRequestSubmit = async (data) => {
+    if (!clientRequestRawFootageId) return;
+    try {
+      await axiosInstance.patch(`/api/submission/v3/${submission.id}/request-changes/client`, {
+        feedback: data.feedback,
+        reasons: data.reasons,
+        mediaId: clientRequestRawFootageId,
+        mediaType: 'rawFootage',
+      });
+      enqueueSnackbar('Change request submitted!', { variant: 'warning' });
+      handleCloseClientRequestModal();
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+    } catch (error) {
+      enqueueSnackbar('Failed to request changes', { variant: 'error' });
     }
   };
 
   // Check if all raw footages are already approved
   const allRawFootagesApproved = deliverables?.rawFootages?.length > 0 && 
-    deliverables.rawFootages.every(r => r.status === 'APPROVED');
+    deliverables.rawFootages.every(f => f.status === 'APPROVED');
 
   // Determine layout type
   const hasRawFootages = deliverables?.rawFootages?.length > 0;
   const shouldUseHorizontalScroll = hasRawFootages && deliverables.rawFootages.length > 1;
   const shouldUseGrid = hasRawFootages && deliverables.rawFootages.length === 1;
 
+  // In RawFootages (parent), define isV3 and userRole
   const isV3 = campaign?.origin === 'CLIENT';
-  const userRole = 'admin'; // Replace with real user role logic if available
+  const { user } = useAuthContext();
+  const userRole = user?.role || 'admin'; // Use actual user role from auth context
+
+  // Admin feedback handlers
+  const handleAdminEditFeedback = async (mediaId, feedbackId, adminFeedback) => {
+    try {
+      // For now, just store the edited feedback locally
+      console.log('Admin editing feedback:', { mediaId, feedbackId, adminFeedback });
+      enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
+    } catch (error) {
+      console.error('Error updating feedback:', error);
+      enqueueSnackbar('Failed to update feedback', { variant: 'error' });
+    }
+  };
+
+  const handleAdminSendToCreator = async (mediaId, feedbackId) => {
+    // Check if this submission has already been sent
+    if (sentSubmissions.has(mediaId)) {
+      enqueueSnackbar('This submission has already been sent to creator', { variant: 'warning' });
+      return;
+    }
+
+    // Check if we're currently sending
+    if (isSending) {
+      enqueueSnackbar('Please wait, sending in progress...', { variant: 'info' });
+      return;
+    }
+
+    setIsSending(true);
+    
+    try {
+      // Mark this submission as sent immediately to prevent double-clicks
+      setSentSubmissions(prev => new Set([...prev, mediaId]));
+
+      // Call the API to review and forward client feedback
+      const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', {
+        submissionId: submission.id,
+        adminFeedback: 'Feedback reviewed and forwarded to creator'
+      });
+
+      if (response.status === 200) {
+        enqueueSnackbar(`Feedback for raw footage sent to creator successfully!`, { variant: 'success' });
+        
+        // Check if all raw footage have been sent
+        const allRawFootage = deliverables.rawFootages || [];
+        const allRawFootageSent = allRawFootage.every(rawFootage => sentSubmissions.has(rawFootage.id));
+        
+        if (allRawFootageSent) {
+          enqueueSnackbar('All raw footage have been sent to creator!', { variant: 'success' });
+          
+          // Refresh data after all are sent
+          if (deliverables?.deliverableMutate) {
+            await deliverables.deliverableMutate();
+          }
+          if (deliverables?.submissionMutate) {
+            await deliverables.submissionMutate();
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error sending feedback to creator:', error);
+      
+      // Remove from sent submissions if it failed
+      setSentSubmissions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(mediaId);
+        return newSet;
+      });
+      
+      enqueueSnackbar('Failed to send feedback to creator', { variant: 'error' });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <>
-      {/* Raw Footages Horizontal Scroll */}
+      {/* Raw Footage Horizontal Scroll */}
       {!hasRawFootages && (
-        <Typography>No raw footages uploaded yet.</Typography>
+        <Typography>No raw footage uploaded yet.</Typography>
       )}
 
       {shouldUseHorizontalScroll && (
@@ -859,73 +1122,135 @@ const RawFootages = ({
             },
           }}
         >
-          {deliverables.rawFootages.map((video, index) => (
-            <Box
-              key={video.id || index}
-              sx={{
-                width: { xs: '280px', sm: '300px', md: '300px' },
-                minWidth: { xs: '280px', sm: '300px', md: '300px' },
-                flexShrink: 0,
-              }}
-            >
-              <VideoCard 
-                rawFootageItem={video} 
-                index={index}
-                submission={submission}
-                onVideoClick={onVideoClick}
-                handleApprove={handleApprove}
-                handleRequestChange={handleRequestChange}
-                selectedVideosForChange={selectedVideosForChange}
-                handleVideoSelection={handleVideoSelection}
-                // V2 individual handlers
-                onIndividualApprove={onIndividualApprove}
-                onIndividualRequestChange={onIndividualRequestChange}
-                isV3={isV3}
-                userRole={userRole}
-                handleSendToClient={handleSendToClient}
-                // V3 client handlers
-                handleClientApproveRawFootage={handleClientApproveRawFootage}
-                handleClientRejectRawFootage={handleClientRejectRawFootage}
-                // V3 deliverables for status checking
-                deliverables={deliverables}
-              />
-            </Box>
-          ))}
+          {deliverables.rawFootages.map((footage, index) => {
+            const isRawFootageApprovedByAdmin = footage.status === 'SENT_TO_CLIENT';
+            const isRawFootageApprovedByClient = footage.status === 'APPROVED';
+            const hasRevisionRequested = footage.status === 'REVISION_REQUESTED';
+            const isPendingReview = submission?.status === 'PENDING_REVIEW' && 
+              (userRole === 'client' ? 
+                (!isRawFootageApprovedByClient && !hasRevisionRequested) : 
+                (!isRawFootageApprovedByAdmin && !hasRevisionRequested)
+              );
+
+            // Get feedback for this specific raw footage
+            const getRawFootageFeedback = () => {
+              // Check for individual feedback first
+              if (footage.individualFeedback && footage.individualFeedback.length > 0) {
+                return footage.individualFeedback;
+              }
+              
+              // Fallback to submission-level feedback
+              const allFeedbacks = [
+                ...(submission?.feedback || [])
+              ];
+
+              return allFeedbacks
+                .filter(feedback => feedback.rawFootageToUpdate?.includes(footage.id))
+                .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+            };
+
+            const rawFootageFeedback = getRawFootageFeedback();
+
+            return (
+              <Box
+                key={footage.id || index}
+                sx={{
+                  width: { xs: '240px', sm: '260px', md: '280px' },
+                  minWidth: { xs: '240px', sm: '260px', md: '280px' },
+                  flexShrink: 0,
+                }}
+              >
+                <RawFootageCard 
+                  rawFootageItem={footage} 
+                  index={index}
+                  submission={submission}
+                  onRawFootageClick={onVideoClick}
+                  handleApprove={handleApprove}
+                  handleRequestChange={handleRequestChange}
+                  selectedRawFootagesForChange={selectedRawFootagesForChange}
+                  handleRawFootageSelection={handleRawFootageSelection}
+                  // V2 individual handlers
+                  onIndividualApprove={onIndividualApprove}
+                  onIndividualRequestChange={onIndividualRequestChange}
+                  isV3={isV3}
+                  userRole={userRole}
+                  handleSendToClient={handleSendToClient}
+                  handleClientApprove={handleClientApproveRawFootage}
+                  handleClientReject={handleClientRejectRawFootage}
+                  deliverables={deliverables}
+                  // V3 admin feedback handlers
+                  handleAdminEditFeedback={handleAdminEditFeedback}
+                  handleAdminSendToCreator={handleAdminSendToCreator}
+                />
+              </Box>
+            );
+          })}
         </Box>
       )}
 
       {shouldUseGrid && (
         <Grid container spacing={2}>
-          {deliverables.rawFootages.map((video, index) => (
-            <Grid 
-              item 
-              xs={12} 
-              md={7} 
-              key={video.id || index}
-            >
-              <VideoCard 
-                rawFootageItem={video} 
-                index={index}
-                submission={submission}
-                onVideoClick={onVideoClick}
-                handleApprove={handleApprove}
-                handleRequestChange={handleRequestChange}
-                selectedVideosForChange={selectedVideosForChange}
-                handleVideoSelection={handleVideoSelection}
-                // V2 individual handlers
-                onIndividualApprove={onIndividualApprove}
-                onIndividualRequestChange={onIndividualRequestChange}
-                isV3={isV3}
-                userRole={userRole}
-                handleSendToClient={handleSendToClient}
-                // V3 client handlers
-                handleClientApproveRawFootage={handleClientApproveRawFootage}
-                handleClientRejectRawFootage={handleClientRejectRawFootage}
-                // V3 deliverables for status checking
-                deliverables={deliverables}
-              />
-            </Grid>
-          ))}
+          {deliverables.rawFootages.map((footage, index) => {
+            const isRawFootageApprovedByAdmin = footage.status === 'SENT_TO_CLIENT';
+            const isRawFootageApprovedByClient = footage.status === 'APPROVED';
+            const hasRevisionRequested = footage.status === 'REVISION_REQUESTED';
+            const isPendingReview = submission?.status === 'PENDING_REVIEW' && 
+              (userRole === 'client' ? 
+                (!isRawFootageApprovedByClient && !hasRevisionRequested) : 
+                (!isRawFootageApprovedByAdmin && !hasRevisionRequested)
+              );
+
+            // Get feedback for this specific raw footage
+            const getRawFootageFeedback = () => {
+              // Check for individual feedback first
+              if (footage.individualFeedback && footage.individualFeedback.length > 0) {
+                return footage.individualFeedback;
+              }
+              
+              // Fallback to submission-level feedback
+              const allFeedbacks = [
+                ...(submission?.feedback || [])
+              ];
+
+              return allFeedbacks
+                .filter(feedback => feedback.rawFootageToUpdate?.includes(footage.id))
+                .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+            };
+
+            const rawFootageFeedback = getRawFootageFeedback();
+
+            return (
+              <Grid 
+                item 
+                xs={12} 
+                md={8} 
+                key={footage.id || index}
+              >
+                <RawFootageCard 
+                  rawFootageItem={footage} 
+                  index={index}
+                  submission={submission}
+                  onRawFootageClick={onVideoClick}
+                  handleApprove={handleApprove}
+                  handleRequestChange={handleRequestChange}
+                  selectedRawFootagesForChange={selectedRawFootagesForChange}
+                  handleRawFootageSelection={handleRawFootageSelection}
+                  // V2 individual handlers
+                  onIndividualApprove={onIndividualApprove}
+                  onIndividualRequestChange={onIndividualRequestChange}
+                  isV3={isV3}
+                  userRole={userRole}
+                  handleSendToClient={handleSendToClient}
+                  handleClientApprove={handleClientApproveRawFootage}
+                  handleClientReject={handleClientRejectRawFootage}
+                  deliverables={deliverables}
+                  // V3 admin feedback handlers
+                  handleAdminEditFeedback={handleAdminEditFeedback}
+                  handleAdminSendToCreator={handleAdminSendToCreator}
+                />
+              </Grid>
+            );
+          })}
         </Grid>
       )}
 
@@ -958,7 +1283,7 @@ const RawFootages = ({
                 width: 32,
                 height: 32,
                 borderRadius: 1,
-                bgcolor: '#e8ecfc',
+                bgcolor: '#e8f4fd',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -967,9 +1292,8 @@ const RawFootages = ({
               <Iconify
                 icon="logos:google-drive"
                 sx={{
-                  width: 16,
-                  height: 16,
-                  color: '#1340ff',
+                  width: 20,
+                  height: 20,
                 }}
               />
             </Box>
@@ -990,14 +1314,17 @@ const RawFootages = ({
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                color: '#1340ff',
+                gap: 0.75,
+                color: '#1844fc',
                 textDecoration: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                transition: 'color 0.2s ease-in-out',
                 '&:hover': {
-                  color: '#1340ff',
+                  color: 'primary.dark',
                   textDecoration: 'underline',
-                  opacity: 0.8,
                 },
                 wordBreak: 'break-all',
               }}
@@ -1005,10 +1332,9 @@ const RawFootages = ({
               <Iconify
                 icon="eva:external-link-fill"
                 sx={{
-                  mr: 0.5,
                   width: 16,
                   height: 16,
-                  color: '#1340ff',
+                  flexShrink: 0,
                 }}
               />
               {submission.rawFootagesDriveLink}
@@ -1034,7 +1360,7 @@ const RawFootages = ({
         >
           <Iconify icon="solar:check-circle-bold" color="success.main" />
           <Typography color="success.darker">
-            All raw footages have been approved
+            All raw footage has been approved
           </Typography>
         </Box>
       )}
@@ -1059,6 +1385,35 @@ const RawFootages = ({
         isDisabled={false}
         selectedItemsCount={1}
       />
+
+      {clientRequestModalOpen && (
+        <FormProvider methods={clientRequestForm}>
+          <ConfirmationRequestModal
+            open={clientRequestModalOpen}
+            onClose={handleCloseClientRequestModal}
+            sectionType="rawFootage"
+            onConfirm={clientRequestForm.handleSubmit(handleClientRequestSubmit)}
+            isDisabled={false}
+            selectedItemsCount={1}
+          >
+            <RHFMultiSelect
+              name="reasons"
+              checkbox
+              chip
+              options={options_changes.map((item) => ({ value: item, label: item }))}
+              label="Reasons"
+              size="small"
+            />
+            <RHFTextField
+              name="feedback"
+              multiline
+              minRows={5}
+              placeholder="Provide feedback for the raw footage."
+              size="small"
+            />
+          </ConfirmationRequestModal>
+        </FormProvider>
+      )}
     </>
   );
 };

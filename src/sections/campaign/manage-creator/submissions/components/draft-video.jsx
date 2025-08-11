@@ -102,7 +102,6 @@ const UploadDraftVideoModal = ({
         setIsProcessing(false);
         reset();
         setUploadProgress([]);
-        onClose();
         
         // Refresh data
         mutate(endpoints.kanban.root);
@@ -117,7 +116,7 @@ const UploadDraftVideoModal = ({
       };
     }
     return null;
-  }, [uploadProgress, reset, campaign?.id, onClose, deliverableMutate]);
+  }, [uploadProgress, reset, campaign?.id, deliverableMutate]);
 
   useEffect(() => {
     checkProgress();
@@ -172,10 +171,12 @@ const UploadDraftVideoModal = ({
       });
 
       enqueueSnackbar('Draft videos are processing');
-      // Don't close modal yet - let progress UI handle it
+      // Close modal immediately so creator can see progress on main page
+      onClose();
     } catch (error) {
       console.error('Upload error:', error);
-      enqueueSnackbar('Failed to upload draft videos', { variant: 'error' });
+      const errorMessage = error.response?.data?.message || 'Failed to upload draft videos';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
       setIsProcessing(false);
     } finally {
       setIsSubmitting(false);

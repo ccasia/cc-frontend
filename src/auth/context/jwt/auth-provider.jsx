@@ -229,6 +229,9 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     await axios.post(endpoints.auth.logout);
     setSession(null);
+    // Clear profile completion flags on logout
+    localStorage.removeItem('profileCompleted');
+    sessionStorage.removeItem('profileModalShown');
     dispatch({
       type: 'LOGOUT',
     });
