@@ -115,6 +115,76 @@ const FirstDraft = ({
     }
   };
 
+  // Client-side mutation handler for immediate UI updates
+  const onClientActionCompleted = async () => {
+    try {
+      // Ensure both mutations are called for immediate UI updates
+      if (deliverableMutate) {
+        await deliverableMutate();
+      }
+      if (submissionMutate) {
+        await submissionMutate();
+      }
+    } catch (error) {
+      console.error('Error updating after client action:', error);
+    }
+  };
+
+  // Enhanced client approval handlers that call mutations
+  const handleClientApproveVideoWithMutation = async (mediaId) => {
+    try {
+      await handleClientApproveVideo(mediaId);
+      await onClientActionCompleted();
+    } catch (error) {
+      console.error('Error in client approve video with mutation:', error);
+    }
+  };
+
+  const handleClientApprovePhotoWithMutation = async (mediaId) => {
+    try {
+      await handleClientApprovePhoto(mediaId);
+      await onClientActionCompleted();
+    } catch (error) {
+      console.error('Error in client approve photo with mutation:', error);
+    }
+  };
+
+  const handleClientApproveRawFootageWithMutation = async (mediaId) => {
+    try {
+      await handleClientApproveRawFootage(mediaId);
+      await onClientActionCompleted();
+    } catch (error) {
+      console.error('Error in client approve raw footage with mutation:', error);
+    }
+  };
+
+  const handleClientRejectVideoWithMutation = async (mediaId, feedback, reasons) => {
+    try {
+      await handleClientRejectVideo(mediaId, feedback, reasons);
+      await onClientActionCompleted();
+    } catch (error) {
+      console.error('Error in client reject video with mutation:', error);
+    }
+  };
+
+  const handleClientRejectPhotoWithMutation = async (mediaId, feedback, reasons) => {
+    try {
+      await handleClientRejectPhoto(mediaId, feedback, reasons);
+      await onClientActionCompleted();
+    } catch (error) {
+      console.error('Error in client reject photo with mutation:', error);
+    }
+  };
+
+  const handleClientRejectRawFootageWithMutation = async (mediaId, feedback, reasons) => {
+    try {
+      await handleClientRejectRawFootage(mediaId, feedback, reasons);
+      await onClientActionCompleted();
+    } catch (error) {
+      console.error('Error in client reject raw footage with mutation:', error);
+    }
+  };
+
   // Check if all sections are approved and activate posting if needed
   const checkAndActivatePosting = async (selectedDueDate) => {
     try {
@@ -239,7 +309,7 @@ const FirstDraft = ({
     let response;
     try {
       const isV3 = campaign?.origin === 'CLIENT';
-      console.log('handleIndividualPhotoRequestChange - isV3:', isV3, 'campaign.origin:', campaign?.origin, 'mediaId:', mediaId);
+      console.log('handleIndividualPhotoRequestChange - isV3:', isV3, 'campaign.origin:', campaign?.origin, 'mediaId:', mediaId, 'current submission status:', submission?.status);
       if (isV3) {
         console.log(`V3 Individual Photo Request Changes - Using V3 endpoint for media ${mediaId}`);
         response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
@@ -249,6 +319,7 @@ const FirstDraft = ({
           reasons: reasons || []
         });
         console.log(`V3 Individual Photo Request Changes - Response:`, response.data);
+        console.log(`V3 Individual Photo Request Changes - Submission status should be updated to CHANGES_REQUIRED`);
       } else {
         console.log(`V2 Individual Photo Request Changes - Using V2 endpoint for media ${mediaId}`);
         response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
@@ -262,6 +333,7 @@ const FirstDraft = ({
       }
 
       await onIndividualMediaUpdated();
+      console.log('handleIndividualPhotoRequestChange - after onIndividualMediaUpdated, submission status should be CHANGES_REQUIRED');
       enqueueSnackbar('Changes requested for photo', { variant: 'warning' });
       return response.data;
     } catch (error) {
@@ -314,7 +386,7 @@ const FirstDraft = ({
     let response;
     try {
       const isV3 = campaign?.origin === 'CLIENT';
-      console.log('handleIndividualVideoRequestChange - isV3:', isV3, 'campaign.origin:', campaign?.origin, 'mediaId:', mediaId);
+      console.log('handleIndividualVideoRequestChange - isV3:', isV3, 'campaign.origin:', campaign?.origin, 'mediaId:', mediaId, 'current submission status:', submission?.status);
       if (isV3) {
         console.log('Requesting media change:', { mediaId, mediaType: 'video', feedback, reasons });
         response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
@@ -324,6 +396,7 @@ const FirstDraft = ({
           reasons: reasons || []
         });
         console.log(`V3 Individual Video Request Changes - Response:`, response.data);
+        console.log(`V3 Individual Video Request Changes - Submission status should be updated to CHANGES_REQUIRED`);
       } else {
         console.log(`V2 Individual Video Request Changes - Using V2 endpoint for media ${mediaId}`);
         response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
@@ -337,6 +410,7 @@ const FirstDraft = ({
       }
 
       await onIndividualMediaUpdated();
+      console.log('handleIndividualVideoRequestChange - after onIndividualMediaUpdated, submission status should be CHANGES_REQUIRED');
       enqueueSnackbar('Changes requested for video', { variant: 'warning' });
       return response.data;
     } catch (error) {
@@ -389,7 +463,7 @@ const FirstDraft = ({
     let response;
     try {
       const isV3 = campaign?.origin === 'CLIENT';
-      console.log('handleIndividualRawFootageRequestChange - isV3:', isV3, 'campaign.origin:', campaign?.origin, 'mediaId:', mediaId);
+      console.log('handleIndividualRawFootageRequestChange - isV3:', isV3, 'campaign.origin:', campaign?.origin, 'mediaId:', mediaId, 'current submission status:', submission?.status);
       if (isV3) {
         console.log(`V3 Individual Raw Footage Request Changes - Using V3 endpoint for media ${mediaId}`);
         response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
@@ -399,6 +473,7 @@ const FirstDraft = ({
           reasons: reasons || []
         });
         console.log(`V3 Individual Raw Footage Request Changes - Response:`, response.data);
+        console.log(`V3 Individual Raw Footage Request Changes - Submission status should be updated to CHANGES_REQUIRED`);
       } else {
         console.log(`V2 Individual Raw Footage Request Changes - Using V2 endpoint for media ${mediaId}`);
         response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
@@ -412,6 +487,7 @@ const FirstDraft = ({
       }
 
       await onIndividualMediaUpdated();
+      console.log('handleIndividualRawFootageRequestChange - after onIndividualMediaUpdated, submission status should be CHANGES_REQUIRED');
       enqueueSnackbar('Changes requested for raw footage', { variant: 'warning' });
       return response.data;
     } catch (error) {
@@ -547,12 +623,12 @@ const FirstDraft = ({
             onIndividualApprove={handleIndividualVideoApprove}
             onIndividualRequestChange={handleIndividualVideoRequestChange}
             // Individual client approval handlers
-            handleClientApproveVideo={handleClientApproveVideo}
-            handleClientApprovePhoto={handleClientApprovePhoto}
-            handleClientApproveRawFootage={handleClientApproveRawFootage}
-            handleClientRejectVideo={handleClientRejectVideo}
-            handleClientRejectPhoto={handleClientRejectPhoto}
-            handleClientRejectRawFootage={handleClientRejectRawFootage}
+            handleClientApproveVideo={handleClientApproveVideoWithMutation}
+            handleClientApprovePhoto={handleClientApprovePhotoWithMutation}
+            handleClientApproveRawFootage={handleClientApproveRawFootageWithMutation}
+            handleClientRejectVideo={handleClientRejectVideoWithMutation}
+            handleClientRejectPhoto={handleClientRejectPhotoWithMutation}
+            handleClientRejectRawFootage={handleClientRejectRawFootageWithMutation}
           />
         );
       case 'rawFootages':

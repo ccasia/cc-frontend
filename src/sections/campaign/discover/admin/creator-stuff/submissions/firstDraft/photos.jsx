@@ -905,7 +905,7 @@ const Photos = ({
         feedback: formValues.feedback || '',
       };
 
-      const response = await axiosInstance.post('/api/submission/v3/draft/approve', payload);
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', { mediaId: photoId, mediaType: 'photo', feedback: formValues.feedback || 'Approved by admin' });
 
       if (response.status === 200) {
         enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
@@ -1165,8 +1165,8 @@ const Photos = ({
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers
-                handleClientApprove={handleClientApprove}
-                handleClientReject={handleClientReject}
+                handleClientApprove={handleClientApprovePhoto}
+                handleClientReject={handleClientRejectPhoto}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
                 // V3 admin feedback handlers
@@ -1203,8 +1203,8 @@ const Photos = ({
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers
-                handleClientApprove={handleClientApprove}
-                handleClientReject={handleClientReject}
+                handleClientApprove={handleClientApprovePhoto}
+                handleClientReject={handleClientRejectPhoto}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
                 // V3 admin feedback handlers

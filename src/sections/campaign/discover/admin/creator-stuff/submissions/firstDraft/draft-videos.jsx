@@ -988,7 +988,7 @@ const DraftVideos = ({
         feedback: formValues.feedback || '',
       };
 
-      const response = await axiosInstance.post('/api/submission/v3/draft/approve', payload);
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', { mediaId: videoId, mediaType: 'video', feedback: formValues.feedback || 'Approved by admin' });
 
       if (response.status === 200) {
         enqueueSnackbar('Video approved successfully!', { variant: 'success' });
@@ -1299,8 +1299,8 @@ const DraftVideos = ({
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers
-                handleClientApprove={handleClientApprove}
-                handleClientReject={handleClientReject}
+                handleClientApprove={handleClientApproveVideo}
+                handleClientReject={handleClientRejectVideo}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
                 // V3 admin feedback handlers
@@ -1337,8 +1337,8 @@ const DraftVideos = ({
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers
-                handleClientApprove={handleClientApprove}
-                handleClientReject={handleClientReject}
+                handleClientApprove={handleClientApproveVideo}
+                handleClientReject={handleClientRejectVideo}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
                 // V3 admin feedback handlers
