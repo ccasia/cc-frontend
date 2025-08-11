@@ -1,3 +1,4 @@
+import useSWR from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
@@ -21,6 +22,9 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
@@ -29,8 +33,6 @@ import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook
 
 import { options_changes } from './constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
-import axiosInstance from 'src/utils/axios';
-import useSWR from 'swr';
 
 const VideoCard = ({ 
   videoItem, 
@@ -988,7 +990,7 @@ const DraftVideos = ({
         feedback: formValues.feedback || '',
       };
 
-      const response = await axiosInstance.post('/api/submission/v3/draft/approve', payload);
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', { mediaId: videoId, mediaType: 'video', feedback: formValues.feedback || 'Approved by admin' });
 
       if (response.status === 200) {
         enqueueSnackbar('Video approved successfully!', { variant: 'success' });
@@ -1036,7 +1038,7 @@ const DraftVideos = ({
   const handleSendToClient = async (submissionId) => {
     try {
       const response = await axiosInstance.post('/api/submission/v3/draft/send-to-client', {
-        submissionId: submissionId,
+        submissionId,
       });
 
       if (response.status === 200) {
@@ -1299,8 +1301,8 @@ const DraftVideos = ({
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers
-                handleClientApprove={handleClientApprove}
-                handleClientReject={handleClientReject}
+                handleClientApprove={handleClientApproveVideo}
+                handleClientReject={handleClientRejectVideo}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
                 // V3 admin feedback handlers
@@ -1337,8 +1339,8 @@ const DraftVideos = ({
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers
-                handleClientApprove={handleClientApprove}
-                handleClientReject={handleClientReject}
+                handleClientApprove={handleClientApproveVideo}
+                handleClientReject={handleClientRejectVideo}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
                 // V3 admin feedback handlers

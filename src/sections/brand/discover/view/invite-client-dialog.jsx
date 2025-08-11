@@ -1,25 +1,25 @@
-import PropTypes from 'prop-types';
+import * as Yup from 'yup';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as Yup from 'yup';
 
 import {
+  Stack,
   Dialog,
+  Button,
+  TextField,
+  Typography,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  TextField,
-  Stack,
-  Alert,
   CircularProgress,
-  Typography,
 } from '@mui/material';
 
-import { useSnackbar } from 'src/components/snackbar';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
 
 // Validation schema
 const InviteClientSchema = Yup.object().shape({
@@ -58,7 +58,7 @@ export default function InviteClientDialog({ open, onClose, onSuccess }) {
         website: '',
       });
 
-      const company = companyResponse.data.company;
+      const {company} = companyResponse.data;
       
       // Then, invite the client using the company ID
       const response = await axiosInstance.post(endpoints.auth.inviteClient, {

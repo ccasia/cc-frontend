@@ -32,6 +32,7 @@ function CampaignPage() {
       const searchParams = new URLSearchParams(location.search);
 
       const code = searchParams.get('code'); // Get the authorization code
+
       if (code) {
         try {
           // Call the backend to exchange the authorization code for the access token
@@ -57,6 +58,27 @@ function CampaignPage() {
     }
   }, [user, dialog]);
 
+  if (invoicesLoading) {
+    return (
+      <Box
+        sx={{
+          position: 'relative',
+          top: 200,
+          textAlign: 'center',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -73,26 +95,7 @@ function CampaignPage() {
         }}
       />
 
-      {!invoicesLoading && invoices?.length ? (
-        <InvoiceLists invoices={invoices} />
-      ) : (
-        <Box
-          sx={{
-            position: 'relative',
-            top: 200,
-            textAlign: 'center',
-          }}
-        >
-          <CircularProgress
-            thickness={7}
-            size={25}
-            sx={{
-              color: (theme) => theme.palette.common.black,
-              strokeLinecap: 'round',
-            }}
-          />
-        </Box>
-      )}
+      <InvoiceLists invoices={invoices} />
     </Container>
   );
 }

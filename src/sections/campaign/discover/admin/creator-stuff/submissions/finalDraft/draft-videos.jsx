@@ -21,6 +21,9 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
@@ -29,7 +32,6 @@ import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook
 
 import { options_changes } from './constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
-import axiosInstance from 'src/utils/axios';
 
 const VideoCard = ({ 
   videoItem, 
@@ -843,6 +845,9 @@ const DraftVideos = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // SWR mutation functions
+  deliverableMutate,
+  submissionMutate,
 }) => {
   const [selectedVideosForChange, setSelectedVideosForChange] = useState([]);
   const approve = useBoolean();
@@ -869,12 +874,12 @@ const DraftVideos = ({
         
         if (response.status === 200) {
           enqueueSnackbar('Video approved and sent to client!', { variant: 'success' });
-          // Refresh data
-          if (deliverables?.deliverableMutate) {
-            await deliverables.deliverableMutate();
+          // Refresh data using SWR mutations
+          if (deliverableMutate) {
+            await deliverableMutate();
           }
-          if (deliverables?.submissionMutate) {
-            await deliverables.submissionMutate();
+          if (submissionMutate) {
+            await submissionMutate();
           }
         }
       } else {
@@ -909,12 +914,12 @@ const DraftVideos = ({
         
         if (response.status === 200) {
           enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
-          // Refresh data
-          if (deliverables?.deliverableMutate) {
-            await deliverables.deliverableMutate();
+          // Refresh data using SWR mutations
+          if (deliverableMutate) {
+            await deliverableMutate();
           }
-          if (deliverables?.submissionMutate) {
-            await deliverables.submissionMutate();
+          if (submissionMutate) {
+            await submissionMutate();
           }
         }
       } else {
@@ -943,14 +948,20 @@ const DraftVideos = ({
       return;
     }
     try {
-      console.log('[handleSendToClient] PATCH /api/submission/v3/' + submissionId + '/approve/admin');
+      console.log(`[handleSendToClient] PATCH /api/submission/v3/${  submissionId  }/approve/admin`);
       const response = await axiosInstance.patch(
         `/api/submission/v3/${submissionId}/approve/admin`,
         { submissionId, feedback: 'All sections approved by admin' }
       );
       console.log('[handleSendToClient] Success:', response);
       enqueueSnackbar('Sent to client!', { variant: 'success' });
-      // Optionally refresh data/UI here
+      // Refresh data using SWR mutations
+      if (deliverableMutate) {
+        await deliverableMutate();
+      }
+      if (submissionMutate) {
+        await submissionMutate();
+      }
     } catch (error) {
       console.error('[handleSendToClient] Error:', error, error?.response);
       enqueueSnackbar(error?.response?.data?.message || 'Error sending to client', { variant: 'error' });

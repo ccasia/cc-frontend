@@ -21,15 +21,16 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-import { options_changes } from './constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
-import axiosInstance from 'src/utils/axios';
 
 const RawFootageCard = ({ 
   rawFootageItem, 
@@ -887,7 +888,7 @@ const RawFootages = ({
         feedback: formValues.feedback || '',
       };
 
-      const response = await axiosInstance.post('/api/submission/v3/draft/approve', payload);
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', { mediaId: videoId, mediaType: 'rawFootage', feedback: formValues.feedback || 'Approved by admin' });
 
       if (response.status === 200) {
         enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
@@ -935,7 +936,7 @@ const RawFootages = ({
   const handleSendToClient = async (submissionId) => {
     try {
       const response = await axiosInstance.post('/api/submission/v3/draft/send-to-client', {
-        submissionId: submissionId,
+        submissionId,
       });
 
       if (response.status === 200) {

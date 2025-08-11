@@ -22,16 +22,17 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFMultiSelect } from 'src/components/hook-form';
-import { options_changes } from '../firstDraft/constants';
+import { RHFTextField , RHFMultiSelect } from 'src/components/hook-form';
 
+import { options_changes } from '../firstDraft/constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
-import axiosInstance from 'src/utils/axios';
 
 const PhotoCard = ({ 
   photoItem, 
@@ -732,6 +733,9 @@ const Photos = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // SWR mutation functions
+  deliverableMutate,
+  submissionMutate,
 }) => {
   const [selectedPhotosForChange, setSelectedPhotosForChange] = useState([]);
   const approve = useBoolean();
@@ -756,12 +760,12 @@ const Photos = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
+        // Refresh data using SWR mutations
+        if (deliverableMutate) {
+          await deliverableMutate();
         }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
+        if (submissionMutate) {
+          await submissionMutate();
         }
       }
     } catch (error) {
@@ -781,12 +785,12 @@ const Photos = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
+        // Refresh data using SWR mutations
+        if (deliverableMutate) {
+          await deliverableMutate();
         }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
+        if (submissionMutate) {
+          await submissionMutate();
         }
       }
     } catch (error) {
@@ -802,14 +806,20 @@ const Photos = ({
       return;
     }
     try {
-      console.log('[handleSendToClient] PATCH /api/submission/v3/' + submissionId + '/approve/admin');
+      console.log(`[handleSendToClient] PATCH /api/submission/v3/${  submissionId  }/approve/admin`);
       const response = await axiosInstance.patch(
         `/api/submission/v3/${submissionId}/approve/admin`,
         { submissionId, feedback: 'All sections approved by admin' }
       );
       console.log('[handleSendToClient] Success:', response);
       enqueueSnackbar('Sent to client!', { variant: 'success' });
-      // Optionally refresh data/UI here
+      // Refresh data using SWR mutations
+      if (deliverableMutate) {
+        await deliverableMutate();
+      }
+      if (submissionMutate) {
+        await submissionMutate();
+      }
     } catch (error) {
       console.error('[handleSendToClient] Error:', error, error?.response);
       enqueueSnackbar(error?.response?.data?.message || 'Error sending to client', { variant: 'error' });

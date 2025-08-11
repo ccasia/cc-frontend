@@ -3,7 +3,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { Box, Card, Stack, Typography, CircularProgress, useMediaQuery, Button } from '@mui/material';
+import { Box, Card, Stack, Typography, useMediaQuery, CircularProgress } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
@@ -17,10 +17,10 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import CampaignPosting from './submissions/campaign-posting';
+import MobileSubmissionLayout from './mobile-submission-layout';
 import CampaignAgreement from './submissions/campaign-agreement';
 import CampaignFirstDraft from './submissions/campaign-first-draft';
 import CampaignFinalDraft from './submissions/campaign-final-draft';
-import MobileSubmissionLayout from './mobile-submission-layout';
 
 /**
  * Campaign My Tasks Component
@@ -157,6 +157,16 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       console.log('Auto-selecting POSTING stage');
       setSelectedStage('POSTING');
     }
+    
+    // Auto-select Final Draft if First Draft has changes required
+    if (
+      firstDraftSubmission?.status === 'CHANGES_REQUIRED' &&
+      finalDraftSubmission?.status === 'IN_PROGRESS' &&
+      selectedStage !== 'FINAL_DRAFT'
+    ) {
+      console.log('Auto-selecting FINAL_DRAFT stage (changes required from First Draft)');
+      setSelectedStage('FINAL_DRAFT');
+    }
   }, [value, selectedStage]);
 
   const getVisibleStages = useCallback(() => {
@@ -172,7 +182,9 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       firstDraftStatus: firstDraftSubmission?.status,
       finalDraftStatus: finalDraftSubmission?.status,
       postingStatus: postingSubmission?.status,
-      hasFinalDraft: !!finalDraftSubmission
+      hasFinalDraft: !!finalDraftSubmission,
+      firstDraftId: firstDraftSubmission?.id,
+      finalDraftId: finalDraftSubmission?.id,
     });
 
     // Always show Agreement stage (will be last and always Stage 01)
@@ -186,19 +198,15 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     }
 
     // Show Final Draft ONLY if First Draft is in CHANGES_REQUIRED status (V3)
-    // Don't show Final Draft if First Draft is approved without changes requested
-    if (firstDraftSubmission?.status === 'CHANGES_REQUIRED' && !addedStages.has('FINAL_DRAFT')) {
-      stages.unshift({ ...defaultSubmission[2] });
-      addedStages.add('FINAL_DRAFT');
-    }
-
-    // Show Final Draft if it's in progress, pending review, or has changes required (V3)
+    // OR if Final Draft already exists and is active
     if (
-      finalDraftSubmission && 
-      (finalDraftSubmission?.status === 'IN_PROGRESS' || 
-       finalDraftSubmission?.status === 'CHANGES_REQUIRED' ||
-       finalDraftSubmission?.status === 'PENDING_REVIEW' ||
-       finalDraftSubmission?.status === 'SENT_TO_CLIENT') &&
+      (firstDraftSubmission?.status === 'CHANGES_REQUIRED' || 
+       (finalDraftSubmission && 
+        (finalDraftSubmission?.status === 'IN_PROGRESS' || 
+         finalDraftSubmission?.status === 'CHANGES_REQUIRED' ||
+         finalDraftSubmission?.status === 'PENDING_REVIEW' ||
+         finalDraftSubmission?.status === 'SENT_TO_CLIENT' ||
+         finalDraftSubmission?.status === 'CLIENT_APPROVED'))) &&
       !addedStages.has('FINAL_DRAFT')
     ) {
       stages.unshift({ ...defaultSubmission[2] });
@@ -210,6 +218,16 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     if (
       ((firstDraftSubmission?.status === 'CLIENT_APPROVED' && !finalDraftSubmission) ||
        (finalDraftSubmission?.status === 'CLIENT_APPROVED')) &&
+      !addedStages.has('POSTING')
+    ) {
+      stages.unshift({ ...defaultSubmission[3] });
+      addedStages.add('POSTING');
+    }
+
+    // Show Posting if First Draft is approved without changes (skip Final Draft)
+    if (
+      firstDraftSubmission?.status === 'CLIENT_APPROVED' &&
+      (!finalDraftSubmission || finalDraftSubmission?.status === 'NOT_STARTED') &&
       !addedStages.has('POSTING')
     ) {
       stages.unshift({ ...defaultSubmission[3] });

@@ -1,3 +1,4 @@
+import useSWR from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
@@ -22,6 +23,9 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
@@ -29,8 +33,6 @@ import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
-import axiosInstance from 'src/utils/axios';
-import useSWR from 'swr';
 
 const PhotoCard = ({ 
   photoItem, 
@@ -905,7 +907,7 @@ const Photos = ({
         feedback: formValues.feedback || '',
       };
 
-      const response = await axiosInstance.post('/api/submission/v3/draft/approve', payload);
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', { mediaId: photoId, mediaType: 'photo', feedback: formValues.feedback || 'Approved by admin' });
 
       if (response.status === 200) {
         enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
@@ -953,7 +955,7 @@ const Photos = ({
   const handleSendToClient = async (submissionId) => {
     try {
       const response = await axiosInstance.post('/api/submission/v3/draft/send-to-client', {
-        submissionId: submissionId,
+        submissionId,
       });
 
       if (response.status === 200) {
@@ -1165,8 +1167,8 @@ const Photos = ({
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers
-                handleClientApprove={handleClientApprove}
-                handleClientReject={handleClientReject}
+                handleClientApprove={handleClientApprovePhoto}
+                handleClientReject={handleClientRejectPhoto}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
                 // V3 admin feedback handlers
@@ -1203,8 +1205,8 @@ const Photos = ({
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers
-                handleClientApprove={handleClientApprove}
-                handleClientReject={handleClientReject}
+                handleClientApprove={handleClientApprovePhoto}
+                handleClientReject={handleClientRejectPhoto}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
                 // V3 admin feedback handlers

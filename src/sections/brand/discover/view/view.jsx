@@ -8,14 +8,13 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import useGetCompany from 'src/hooks/use-get-company';
-import { mutate } from 'swr';
 
 import withPermission from 'src/auth/guard/withPermissions';
 
+import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import EmptyContent from 'src/components/empty-content/empty-content';
-import Iconify from 'src/components/iconify';
 
 import BrandLists from '../brand-lists';
 import InviteClientDialog from './invite-client-dialog';

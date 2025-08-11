@@ -16,7 +16,6 @@ import {
 
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
-
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

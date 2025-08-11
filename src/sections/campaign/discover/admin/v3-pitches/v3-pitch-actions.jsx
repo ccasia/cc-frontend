@@ -1,12 +1,11 @@
-import PropTypes from 'prop-types';
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import {
   Button,
 } from '@mui/material';
 
-const V3PitchActions = ({ pitch, onViewPitch }) => {
-  return (
+const V3PitchActions = ({ pitch, onViewPitch }) => (
     <Button
       variant="outlined"
       size="small"
@@ -37,7 +36,6 @@ const V3PitchActions = ({ pitch, onViewPitch }) => {
       View Pitch
     </Button>
   );
-};
 
 export default V3PitchActions;
 

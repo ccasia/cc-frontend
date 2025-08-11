@@ -20,17 +20,14 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-// V2 Components
-import Photos from './finalDraft/photos';
-import RawFootages from './finalDraft/raw-footage';
-import DraftVideos from './finalDraft/draft-videos';
-
 // V3 Components
 import PhotosV3 from './v3/photos';
-import DraftVideosV3 from './v3/draft-videos';
+// V2 Components
+import Photos from './finalDraft/photos';
 import RawFootagesV3 from './v3/raw-footage';
-
-import FeedbackDisplay from './finalDraft/feedback-display';
+import DraftVideosV3 from './v3/draft-videos';
+import RawFootages from './finalDraft/raw-footage';
+import DraftVideos from './finalDraft/draft-videos';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
@@ -49,6 +46,36 @@ const FinalDraft = ({
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
 }) => {
+  // Create wrapper functions that call SWR mutations after client actions
+  const handleClientApproveVideoWithMutation = async (...args) => {
+    await handleClientApproveVideo(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientApprovePhotoWithMutation = async (...args) => {
+    await handleClientApprovePhoto(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientApproveRawFootageWithMutation = async (...args) => {
+    await handleClientApproveRawFootage(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientRejectVideoWithMutation = async (...args) => {
+    await handleClientRejectVideo(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientRejectPhotoWithMutation = async (...args) => {
+    await handleClientRejectPhoto(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientRejectRawFootageWithMutation = async (...args) => {
+    await handleClientRejectRawFootage(...args);
+    await onClientActionCompleted();
+  };
   const { deliverables, deliverableMutate, submissionMutate } = deliverablesData;
   const { user } = useAuthContext();
 
@@ -195,6 +222,18 @@ const FinalDraft = ({
       ].filter(Boolean));
     } catch (error) {
       console.error('Error updating individual media:', error);
+    }
+  };
+
+  // Client action completion callback for SWR mutations
+  const onClientActionCompleted = async () => {
+    try {
+      await Promise.all([
+        deliverableMutate(),
+        submissionMutate && submissionMutate()
+      ].filter(Boolean));
+    } catch (error) {
+      console.error('Error updating after client action:', error);
     }
   };
 
@@ -374,7 +413,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'photo',
           feedback: feedback || 'Photo approved by admin'
         });
@@ -384,6 +423,9 @@ const FinalDraft = ({
           // Refresh data using SWR
           await deliverableMutate();
           await submissionMutate();
+          
+          // Check if all sections are approved and update submission status
+          await checkSubmissionReadiness();
         }
       } else {
         // V2 flow: Use V2 endpoint
@@ -413,7 +455,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'photo',
           feedback: feedback || 'Changes requested for photo',
           reasons: reasons || []
@@ -424,6 +466,9 @@ const FinalDraft = ({
           // Refresh data using SWR
           await deliverableMutate();
           await submissionMutate();
+          
+          // Check if submission status needs to be updated
+          await checkSubmissionReadiness();
         }
       } else {
         // V2 flow: Use V2 endpoint
@@ -453,7 +498,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'video',
           feedback: feedback || 'Video approved by admin'
         });
@@ -463,6 +508,9 @@ const FinalDraft = ({
           // Refresh data using SWR
           await deliverableMutate();
           await submissionMutate();
+          
+          // Check if all sections are approved and update submission status
+          await checkSubmissionReadiness();
         }
       } else {
         // V2 flow: Use V2 endpoint
@@ -492,7 +540,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'video',
           feedback: feedback || 'Changes requested for video',
           reasons: reasons || []
@@ -503,6 +551,9 @@ const FinalDraft = ({
           // Refresh data using SWR
           await deliverableMutate();
           await submissionMutate();
+          
+          // Check if submission status needs to be updated
+          await checkSubmissionReadiness();
         }
       } else {
         // V2 flow: Use V2 endpoint
@@ -532,7 +583,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'rawFootage',
           feedback: feedback || 'Raw footage approved by admin'
         });
@@ -542,6 +593,9 @@ const FinalDraft = ({
           // Refresh data using SWR
           await deliverableMutate();
           await submissionMutate();
+          
+          // Check if all sections are approved and update submission status
+          await checkSubmissionReadiness();
         }
       } else {
         // V2 flow: Use V2 endpoint
@@ -571,7 +625,7 @@ const FinalDraft = ({
       if (isV3) {
         // V3 flow: Use V3 endpoint
         const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-          mediaId: mediaId,
+          mediaId,
           mediaType: 'rawFootage',
           feedback: feedback || 'Changes requested for raw footage',
           reasons: reasons || []
@@ -581,6 +635,9 @@ const FinalDraft = ({
           enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
           await deliverableMutate();
           await submissionMutate();
+          
+          // Check if submission status needs to be updated
+          await checkSubmissionReadiness();
         }
       } else {
         const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
@@ -601,6 +658,39 @@ const FinalDraft = ({
         variant: 'error' 
       });
       throw error;
+    }
+  };
+
+  // Admin feedback handlers for V3
+  const handleAdminEditFeedback = async (mediaId, feedbackId, adminFeedback) => {
+    try {
+      console.log(`Admin editing feedback for media ${mediaId}, feedback ${feedbackId}: ${adminFeedback}`);
+      
+      // TODO: Implement backend endpoint for editing admin feedback
+      // For now, just log the action
+      enqueueSnackbar('Feedback editing not yet implemented', { variant: 'info' });
+      
+      return true;
+    } catch (error) {
+      console.error('Error editing admin feedback:', error);
+      enqueueSnackbar('Failed to edit feedback', { variant: 'error' });
+      return false;
+    }
+  };
+
+  const handleAdminSendToCreator = async (mediaId, feedbackId) => {
+    try {
+      console.log(`Admin sending feedback ${feedbackId} to creator for media ${mediaId}`);
+      
+      // TODO: Implement backend endpoint for sending feedback to creator
+      // For now, just log the action
+      enqueueSnackbar('Send to creator not yet implemented', { variant: 'info' });
+      
+      return true;
+    } catch (error) {
+      console.error('Error sending feedback to creator:', error);
+      enqueueSnackbar('Failed to send to creator', { variant: 'error' });
+      return false;
     }
   };
 
@@ -782,6 +872,15 @@ const FinalDraft = ({
       submission,
       deliverables: filteredDeliverables,
       isDisabled,
+      // Add mutation functions for SWR updates
+      deliverableMutate,
+      submissionMutate,
+    };
+
+    // SWR mutation functions for V3 components
+    const swrProps = {
+      deliverableMutate,
+      submissionMutate,
     };
 
     switch (selectedTab) {
@@ -789,15 +888,22 @@ const FinalDraft = ({
         return isV3 ? (
           <DraftVideosV3
             {...commonProps}
+            {...swrProps}
             onVideoClick={handleDraftVideoClick}
             onSubmit={onSubmitDraftVideo}
-            // Individual client approval handlers
-            handleClientApproveVideo={handleClientApproveVideo}
-            handleClientApprovePhoto={handleClientApprovePhoto}
-            handleClientApproveRawFootage={handleClientApproveRawFootage}
-            handleClientRejectVideo={handleClientRejectVideo}
-            handleClientRejectPhoto={handleClientRejectPhoto}
-            handleClientRejectRawFootage={handleClientRejectRawFootage}
+            // Individual admin approval handlers
+            onIndividualApprove={handleIndividualVideoApprove}
+            onIndividualRequestChange={handleIndividualVideoRequestChange}
+            // Individual client approval handlers (with SWR mutations)
+            handleClientApproveVideo={handleClientApproveVideoWithMutation}
+            handleClientApprovePhoto={handleClientApprovePhotoWithMutation}
+            handleClientApproveRawFootage={handleClientApproveRawFootageWithMutation}
+            handleClientRejectVideo={handleClientRejectVideoWithMutation}
+            handleClientRejectPhoto={handleClientRejectPhotoWithMutation}
+            handleClientRejectRawFootage={handleClientRejectRawFootageWithMutation}
+            // Admin feedback handlers
+            handleAdminEditFeedback={handleAdminEditFeedback}
+            handleAdminSendToCreator={handleAdminSendToCreator}
           />
         ) : (
           <DraftVideos
@@ -820,15 +926,22 @@ const FinalDraft = ({
         return isV3 ? (
           <RawFootagesV3
             {...commonProps}
+            {...swrProps}
             onRawFootageClick={handleVideoClick}
             onSubmit={onSubmitRawFootage}
-            // Individual client approval handlers
-            handleClientApproveVideo={handleClientApproveVideo}
-            handleClientApprovePhoto={handleClientApprovePhoto}
-            handleClientApproveRawFootage={handleClientApproveRawFootage}
-            handleClientRejectVideo={handleClientRejectVideo}
-            handleClientRejectPhoto={handleClientRejectPhoto}
-            handleClientRejectRawFootage={handleClientRejectRawFootage}
+            // Individual admin approval handlers
+            onIndividualApprove={handleIndividualRawFootageApprove}
+            onIndividualRequestChange={handleIndividualRawFootageRequestChange}
+            // Individual client approval handlers (with SWR mutations)
+            handleClientApproveVideo={handleClientApproveVideoWithMutation}
+            handleClientApprovePhoto={handleClientApprovePhotoWithMutation}
+            handleClientApproveRawFootage={handleClientApproveRawFootageWithMutation}
+            handleClientRejectVideo={handleClientRejectVideoWithMutation}
+            handleClientRejectPhoto={handleClientRejectPhotoWithMutation}
+            handleClientRejectRawFootage={handleClientRejectRawFootageWithMutation}
+            // Admin feedback handlers
+            handleAdminEditFeedback={handleAdminEditFeedback}
+            handleAdminSendToCreator={handleAdminSendToCreator}
           />
         ) : (
           <RawFootages
@@ -851,15 +964,22 @@ const FinalDraft = ({
         return isV3 ? (
           <PhotosV3
             {...commonProps}
+            {...swrProps}
             onImageClick={handleImageClick}
             onSubmit={onSubmitPhotos}
-            // Individual client approval handlers
-            handleClientApproveVideo={handleClientApproveVideo}
-            handleClientApprovePhoto={handleClientApprovePhoto}
-            handleClientApproveRawFootage={handleClientApproveRawFootage}
-            handleClientRejectVideo={handleClientRejectVideo}
-            handleClientRejectPhoto={handleClientRejectPhoto}
-            handleClientRejectRawFootage={handleClientRejectRawFootage}
+            // Individual admin approval handlers
+            onIndividualApprove={handleIndividualPhotoApprove}
+            onIndividualRequestChange={handleIndividualPhotoRequestChange}
+            // Individual client approval handlers (with SWR mutations)
+            handleClientApproveVideo={handleClientApproveVideoWithMutation}
+            handleClientApprovePhoto={handleClientApprovePhotoWithMutation}
+            handleClientApproveRawFootage={handleClientApproveRawFootageWithMutation}
+            handleClientRejectVideo={handleClientRejectVideoWithMutation}
+            handleClientRejectPhoto={handleClientRejectPhotoWithMutation}
+            handleClientRejectRawFootage={handleClientRejectRawFootageWithMutation}
+            // Admin feedback handlers
+            handleAdminEditFeedback={handleAdminEditFeedback}
+            handleAdminSendToCreator={handleAdminSendToCreator}
           />
         ) : (
           <Photos
@@ -915,7 +1035,7 @@ const FinalDraft = ({
         });
         
         return true;
-      } else {
+      } 
         // V2 endpoint for admin-created campaigns
         await axiosInstance.patch('/api/submission/manageVideos', {
           submissionId: submission.id,
@@ -938,7 +1058,7 @@ const FinalDraft = ({
         );
         
         return true;
-      }
+      
     } catch (error) {
       console.error('Error submitting draft video review:', error);
       
@@ -978,7 +1098,7 @@ const FinalDraft = ({
         });
         
         return true;
-      } else {
+      } 
         // V2 endpoint for admin-created campaigns
         await axiosInstance.patch('/api/submission/manageRawFootages', {
           submissionId: submission.id,
@@ -1000,7 +1120,7 @@ const FinalDraft = ({
         );
         
         return true;
-      }
+      
     } catch (error) {
       console.error('Error submitting raw footage review:', error);
       
@@ -1040,7 +1160,7 @@ const FinalDraft = ({
         });
         
         return true;
-      } else {
+      } 
         // V2 endpoint for admin-created campaigns
         await axiosInstance.patch('/api/submission/managePhotos', {
           submissionId: submission.id,
@@ -1060,7 +1180,7 @@ const FinalDraft = ({
         );
 
         return true;
-      }
+      
     } catch (error) {
       console.error('Error submitting photo review:', error);
       

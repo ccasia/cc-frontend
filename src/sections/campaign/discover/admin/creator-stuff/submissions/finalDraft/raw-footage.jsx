@@ -16,21 +16,22 @@ import {
   Stack,
   Button,
   Avatar,
-  Tooltip,
   Typography,
   CardContent,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import Iconify from 'src/components/iconify';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
-import FormProvider from 'src/components/hook-form/form-provider';
-
-import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
+
+import Iconify from 'src/components/iconify';
+import FormProvider from 'src/components/hook-form/form-provider';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+
 import { options_changes } from '../firstDraft/constants';
+import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 
 const RawFootageCard = ({ 
   rawFootageItem, 
@@ -858,6 +859,9 @@ const RawFootages = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // SWR mutation functions
+  deliverableMutate,
+  submissionMutate,
 }) => {
   const [selectedRawFootagesForChange, setSelectedRawFootagesForChange] = useState([]);
   const [sentSubmissions, setSentSubmissions] = useState(new Set());
@@ -905,14 +909,14 @@ const RawFootages = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
+        // Refresh data using SWR mutations
+        if (deliverableMutate) {
           console.log('[RAW FOOTAGE] Refreshing deliverables data...');
-          await deliverables.deliverableMutate();
+          await deliverableMutate();
         }
-        if (deliverables?.submissionMutate) {
+        if (submissionMutate) {
           console.log('[RAW FOOTAGE] Refreshing submission data...');
-          await deliverables.submissionMutate();
+          await submissionMutate();
         }
       }
     } catch (error) {
@@ -934,12 +938,12 @@ const RawFootages = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
+        // Refresh data using SWR mutations
+        if (deliverableMutate) {
+          await deliverableMutate();
         }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
+        if (submissionMutate) {
+          await submissionMutate();
         }
       }
     } catch (error) {
@@ -951,17 +955,17 @@ const RawFootages = ({
   const handleSendToClient = async (submissionId) => {
     try {
       const response = await axiosInstance.post('/api/submission/v3/draft/send-to-client', {
-        submissionId: submissionId,
+        submissionId,
       });
 
       if (response.status === 200) {
         enqueueSnackbar('Draft sent to client successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
+        // Refresh data using SWR mutations
+        if (deliverableMutate) {
+          await deliverableMutate();
         }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
+        if (submissionMutate) {
+          await submissionMutate();
         }
       }
     } catch (error) {

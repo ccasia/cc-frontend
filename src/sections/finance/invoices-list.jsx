@@ -125,15 +125,6 @@ const InvoiceLists = ({ invoices }) => {
     editDialog.onFalse();
   }, [editDialog]);
 
-  // const handleActivateXero = async () => {
-  //   try {
-  //     const response = await axiosInstance.get(endpoints.invoice.xero, { withCredentials: true });
-  //     window.location.href = response.data.url;
-  //   } catch (error) {
-  //     console.error('Error connecting to Xero:', error);
-  //   }
-  // };
-
   return (
     <Box>
       <Card>
@@ -235,6 +226,8 @@ const InvoiceLists = ({ invoices }) => {
                   height={denseHeight}
                   emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
                 />
+
+                <TableNoData notFound={notFound} />
               </TableBody>
             </Table>
           </Scrollbar>
@@ -250,8 +243,6 @@ const InvoiceLists = ({ invoices }) => {
           dense={table.dense}
           onChangeDense={table.onChangeDense}
         />
-
-        <TableNoData notFound={notFound} />
       </Card>
 
       <Dialog

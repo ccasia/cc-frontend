@@ -431,10 +431,10 @@ const CampaignDetailManageView = ({ id }) => {
   const renderDosAndDonts = (
     <>
       <Box component={Card} p={2}>
-        <Typography variant="h5">Dos & Don&apos;ts</Typography>
+        <Typography variant="h5">Campaign Dos & Don&apos;ts</Typography>
         {isEditable && (
           <EditButton
-            tooltip="Edit Dos and Don'ts"
+            tooltip="Edit Dos and Dont's"
             disabled={isDisabled}
             onClick={() =>
               setOpen((prev) => ({
@@ -469,7 +469,7 @@ const CampaignDetailManageView = ({ id }) => {
           </List>
         </Stack>
         <Stack mt={2}>
-          <Typography variant="subtitle1">Don&apos;ts</Typography>
+          <Typography variant="subtitle1">Dont&apos;s</Typography>
           <List>
             {campaign?.campaignBrief?.campaigns_dont.map((elem, index) => (
               <ListItem key={index}>
@@ -1003,6 +1003,7 @@ const CampaignDetailManageView = ({ id }) => {
                 {renderCampaignInformation}
                 {/* {renderCampaignCredits} */}
                 {campaign?.brand ? renderBrand : renderCompany}
+                {renderDosAndDonts}
                 {campaign?.campaignBrief?.campaign_do &&
                   campaign?.campaignBrief?.campaign_dont &&
                   renderDosAndDonts}

@@ -1,23 +1,23 @@
 import React, { memo, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+
 import {
   Box,
-  Stack,
   Grid,
-  MenuItem,
+  Stack,
   FormLabel,
-  IconButton,
   TextField,
-  Chip,
+  IconButton,
   Typography,
-  Button,
 } from '@mui/material';
 
-import { RHFSelect, RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
-import CustomRHFMultiSelect from './custom-rhf-multi-select';
-import Iconify from 'src/components/iconify';
-import { interestsLists } from 'src/contants/interestLists';
 import { langList } from 'src/contants/language';
+import { interestsLists } from 'src/contants/interestLists';
+
+import Iconify from 'src/components/iconify';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+
+import CustomRHFMultiSelect from './custom-rhf-multi-select';
 
 
 // Form field component with consistent styling

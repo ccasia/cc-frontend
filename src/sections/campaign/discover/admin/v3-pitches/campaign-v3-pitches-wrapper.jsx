@@ -1,10 +1,10 @@
-import PropTypes from 'prop-types';
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import {
   Box,
-  CircularProgress,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';

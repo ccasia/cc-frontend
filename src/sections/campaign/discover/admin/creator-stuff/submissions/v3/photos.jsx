@@ -1,3 +1,5 @@
+import useSWR from 'swr';
+import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
@@ -5,35 +7,30 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import dayjs from 'dayjs';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Grid,
-  Link,
   Card,
+  Chip,
   Stack,
   Button,
+  Avatar,
   Tooltip,
   Typography,
   CardContent,
-  IconButton,
-  Avatar,
-  Chip,
 } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
+import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFMultiSelect } from 'src/components/hook-form';
-import { options_changes } from '../firstDraft/constants';
+import { RHFTextField , RHFMultiSelect } from 'src/components/hook-form';
 
-import { ConfirmationApproveModal, ConfirmationRequestModal } from '../finalDraft/confirmation-modals';
-import axiosInstance from 'src/utils/axios';
-import useSWR from 'swr';
+import { options_changes } from '../firstDraft/constants';
+import { ConfirmationRequestModal } from '../finalDraft/confirmation-modals';
 
 const PhotoCard = ({ 
   photoItem, 
@@ -97,19 +94,34 @@ const PhotoCard = ({
 
   // Get feedback for this specific photo
   const getPhotoFeedback = () => {
-    // Check for individual feedback first
+    // Check for individual feedback first (from deliverables API)
     if (photoItem.individualFeedback && photoItem.individualFeedback.length > 0) {
       return photoItem.individualFeedback;
     }
     
-    // Fallback to submission-level feedback
+    // Get all feedback from submission (from deliverables API)
     const allFeedbacks = [
+      ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
       ...(submission?.feedback || [])
     ];
 
-    return allFeedbacks
+    // Filter feedback for this specific photo
+    const photoSpecificFeedback = allFeedbacks
       .filter(feedback => feedback.photosToUpdate?.includes(photoItem.id))
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+
+    // Also include client feedback for this submission (when photo status is CLIENT_FEEDBACK)
+    const clientFeedback = allFeedbacks
+      .filter(feedback => {
+        const isClient = feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client';
+        const isFeedback = feedback.type === 'REASON' || feedback.type === 'COMMENT';
+        const isClientFeedbackStatus = photoItem.status === 'CLIENT_FEEDBACK';
+        
+        return isClient && isFeedback && isClientFeedbackStatus;
+      })
+      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+
+    return [...photoSpecificFeedback, ...clientFeedback];
   };
 
   const photoFeedback = getPhotoFeedback();
@@ -570,6 +582,71 @@ const PhotoCard = ({
       {/* Form Section */}
       <CardContent sx={{ pt: 0 }}>
         {renderFormContent()}
+        
+        {/* Individual Media Action Buttons for Admin */}
+        {userRole === 'admin' && submission?.status === 'PENDING_REVIEW' && (
+          <Box sx={{ mt: 2 }}>
+            <Stack direction="row" spacing={1.5}>
+              <Button
+                onClick={() => {
+                  setCardType('request');
+                }}
+                size="small"
+                variant="contained"
+                disabled={isProcessing}
+                sx={{
+                  bgcolor: '#FFFFFF',
+                  border: 1.5,
+                  borderRadius: 1.15,
+                  borderColor: '#e7e7e7',
+                  borderBottom: 3,
+                  borderBottomColor: '#e7e7e7',
+                  color: '#D4321C',
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    borderColor: '#D4321C',
+                  },
+                  textTransform: 'none',
+                  py: 1.2,
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  height: '40px',
+                  flex: 1,
+                }}
+              >
+                Request a Change
+              </Button>
+              
+              <LoadingButton
+                onClick={handleApproveClick}
+                variant="contained"
+                size="small"
+                loading={isSubmitting || isProcessing}
+                sx={{
+                  bgcolor: '#FFFFFF',
+                  color: '#1ABF66',
+                  border: '1.5px solid',
+                  borderColor: '#e7e7e7',
+                  borderBottom: 3,
+                  borderBottomColor: '#e7e7e7',
+                  borderRadius: 1.15,
+                  py: 1.2,
+                  fontWeight: 600,
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    borderColor: '#1ABF66',
+                  },
+                  fontSize: '0.9rem',
+                  height: '40px',
+                  textTransform: 'none',
+                  flex: 1,
+                }}
+              >
+                Approve
+              </LoadingButton>
+            </Stack>
+          </Box>
+        )}
       </CardContent>
 
       {/* Feedback History */}
@@ -647,6 +724,76 @@ const PhotoCard = ({
                     </Stack>
                   </Box>
                 )}
+
+                {/* Admin buttons for client feedback */}
+                {userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (
+                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        const adminFeedback = prompt('Edit client feedback (optional):');
+                        if (adminFeedback !== null && handleAdminEditFeedback) {
+                          handleAdminEditFeedback(photoItem.id, feedback.id, adminFeedback);
+                        }
+                      }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#000000',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          color: '#000000',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        },
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        if (handleAdminSendToCreator) {
+                          handleAdminSendToCreator(photoItem.id, feedback.id);
+                        }
+                      }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        bgcolor: '#ffffff',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#1ABF66',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f0f9f0',
+                          color: '#1ABF66',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                        },
+                      }}
+                    >
+                      Send to Creator
+                    </Button>
+                  </Stack>
+                )}
               </Box>
             ))}
           </Stack>
@@ -663,6 +810,12 @@ const PhotosV3 = ({
   onImageClick,
   onSubmit,
   isDisabled,
+  // SWR mutation functions
+  deliverableMutate,
+  submissionMutate,
+  // Individual admin approval handlers
+  onIndividualApprove,
+  onIndividualRequestChange,
   // Individual client approval handlers
   handleClientApproveVideo,
   handleClientApprovePhoto,
@@ -670,6 +823,9 @@ const PhotosV3 = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // Admin feedback handlers
+  handleAdminEditFeedback,
+  handleAdminSendToCreator,
 }) => {
   const { user } = useAuthContext();
   const userRole = user?.role;
@@ -708,21 +864,21 @@ const PhotosV3 = ({
 
   const handleApprove = async (photoId, formValues) => {
     try {
-      const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-        mediaId: photoId,
-        mediaType: 'photo',
-        feedback: formValues.feedback || ''
-      });
+      // Use the passed handler if available, otherwise use internal implementation
+      if (onIndividualApprove) {
+        await onIndividualApprove(photoId, formValues.feedback);
+      } else {
+        const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+          mediaId: photoId,
+          mediaType: 'photo',
+          feedback: formValues.feedback || ''
+        });
 
-      enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
-      
-      // Revalidate data
-      await mutateSubmission();
-      if (deliverables?.mutate) {
-        await deliverables.mutate();
-      }
-      if (submission?.mutate) {
-        await submission.mutate();
+        enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
+        
+        // Revalidate data using passed SWR functions
+        if (deliverableMutate) await deliverableMutate();
+        if (submissionMutate) await submissionMutate();
       }
     } catch (error) {
       console.error('Error approving photo:', error);
@@ -732,22 +888,22 @@ const PhotosV3 = ({
 
   const handleRequestChange = async (photoId, formValues) => {
     try {
-      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-        mediaId: photoId,
-        mediaType: 'photo',
-        feedback: formValues.feedback || '',
-        reasons: formValues.reasons || []
-      });
+      // Use the passed handler if available, otherwise use internal implementation
+      if (onIndividualRequestChange) {
+        await onIndividualRequestChange(photoId, formValues.feedback, formValues.reasons);
+      } else {
+        const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+          mediaId: photoId,
+          mediaType: 'photo',
+          feedback: formValues.feedback || '',
+          reasons: formValues.reasons || []
+        });
 
-      enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
-      
-      // Revalidate data
-      await mutateSubmission();
-      if (deliverables?.mutate) {
-        await deliverables.mutate();
-      }
-      if (submission?.mutate) {
-        await submission.mutate();
+        enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
+        
+        // Revalidate data using passed SWR functions
+        if (deliverableMutate) await deliverableMutate();
+        if (submissionMutate) await submissionMutate();
       }
     } catch (error) {
       console.error('Error requesting changes:', error);

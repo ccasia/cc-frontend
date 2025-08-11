@@ -27,6 +27,7 @@ export default function NotificationItem({ notification, markAsRead }) {
     const { entity, campaignId, threadId, creatorId, invoiceId } = notification.notification ?? {};
 
     let link = '';
+    let tabToSet = null;
 
     // the cases are entity
     switch (entity) {
@@ -42,19 +43,22 @@ export default function NotificationItem({ notification, markAsRead }) {
 
       case 'Agreement':
         link = user.role.includes('admin')
-          ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
+          ? `/dashboard/campaign/discover/detail/${campaignId}`
           : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        tabToSet = user.role.includes('admin') ? 'agreement' : null;
         break;
 
       case 'Draft':
         link = user.role.includes('admin')
-          ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
+          ? `/dashboard/campaign/discover/detail/${campaignId}`
           : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        tabToSet = user.role.includes('admin') ? 'deliverables' : null;
         break;
       case 'Post':
         link = user.role.includes('admin')
-          ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
+          ? `/dashboard/campaign/discover/detail/${campaignId}`
           : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        tabToSet = user.role.includes('admin') ? 'deliverables' : null;
         break;
 
       case 'Chat':
@@ -90,6 +94,16 @@ export default function NotificationItem({ notification, markAsRead }) {
 
     if (notification.read === false) {
       markAsRead(notification.id);
+    }
+
+    // Set the appropriate tab for admin notifications
+    if (tabToSet) {
+      localStorage.setItem('campaigndetail', tabToSet);
+      
+      // For deliverables tab, also store the creator ID to pre-select them
+      if (tabToSet === 'deliverables' && creatorId) {
+        localStorage.setItem('targetCreatorId', creatorId);
+      }
     }
 
     if (link) {
