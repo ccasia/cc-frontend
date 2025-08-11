@@ -30,6 +30,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 import useGetInvoiceById from 'src/hooks/use-get-invoice';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -47,7 +48,6 @@ import InvoicePDF from './invoice-pdf';
 import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
 import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
-import { useResponsive } from 'src/hooks/use-responsive';
 
 // ----------------------------------------------------------------------
 
