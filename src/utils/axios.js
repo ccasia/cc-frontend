@@ -113,10 +113,10 @@ export const endpoints = {
       tiktokV2: (id) => `/api/social/v2/tiktokMediaKit/${id}`,
       instagram: (id) => `/api/social/instagram/overview/${id}`,
       instagramV2: (id) => `/api/social/v2/instagramOverview/${id}`,
-      getInstagramMediaInsight: (userId, postUrl, id) => 
+      getInstagramMediaInsight: (userId, postUrl, id) =>
         `/api/social/v2/mediaInsight/${userId}?url=${postUrl}&campaignId=${id}`,
-      getTikTokMediaInsight: (userId, postUrl, id) => 
-      `/api/social/v2/tiktokMediaInsight/${userId}?url=${postUrl}&campaignId=${id}`,
+      getTikTokMediaInsight: (userId, postUrl, id) =>
+        `/api/social/v2/tiktokMediaInsight/${userId}?url=${postUrl}&campaignId=${id}`,
     },
     updatePreference: (id) => `/api/creator/updatePreference/${id}`,
     exportCreators: '/api/creator/exportCreators',
@@ -269,8 +269,8 @@ export const endpoints = {
       v2: {
         photos: '/api/submission/v2/managePhotos',
         videos: '/api/submission/v2/manageDraftVideos',
-        rawFootages: '/api/submission/v2/manageRawFootages'
-      }
+        rawFootages: '/api/submission/v2/manageRawFootages',
+      },
     },
   },
   notification: {
@@ -304,7 +304,7 @@ export const endpoints = {
     updateInvoiceStatus: '/api/invoice/updateStatus',
     getInvoicesByCreator: '/api/invoice/creator',
     ConnectToXero: '/api/invoice/ConnectXero',
-    xero: '/api/invoice/zeroConnect',
+    xero: '/api/invoice/xeroConnect',
     xeroCallback: `/api/invoice/xeroCallback`,
     xeroGetContacts: '/api/invoice/getXeroContacts',
     xeroCheckRefreshToken: '/api/invoice/checkRefreshToken',
