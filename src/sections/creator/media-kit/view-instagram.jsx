@@ -347,15 +347,14 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                     };
-                  } 
-                    // For shorter captions, use line clamp
-                    return {
-                      display: '-webkit-box',
-                      WebkitLineClamp: isMobile ? 3 : 2, // Fewer lines for desktop
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    };
-                  
+                  }
+                  // For shorter captions, use line clamp
+                  return {
+                    display: '-webkit-box',
+                    WebkitLineClamp: isMobile ? 3 : 2, // Fewer lines for desktop
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  };
                 })(),
               }}
             >

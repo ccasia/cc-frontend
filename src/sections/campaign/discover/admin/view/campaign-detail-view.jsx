@@ -79,6 +79,14 @@ if (typeof window !== 'undefined') {
   }
 }
 
+const clientAllowedTabs = [
+  'overview',
+  'campaign-content',
+  'creator-master-list',
+  'deliverables',
+  'analytics',
+];
+
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
@@ -180,14 +188,6 @@ const CampaignDetailView = ({ id }) => {
     localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
-  const clientAllowedTabs = [
-    'overview',
-    'campaign-content',
-    'creator-master-list',
-    'deliverables',
-    'analytics',
-  ];
-
   // Check if user is client
   const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
@@ -198,7 +198,7 @@ const CampaignDetailView = ({ id }) => {
       setCurrentTab('overview');
       localStorage.setItem('campaigndetail', 'overview');
     }
-  }, [currentTab, isClient, clientAllowedTabs]);
+  }, [currentTab, isClient]);
 
   const handleChangeTab = useCallback(
     (event, newValue) => {
@@ -210,7 +210,7 @@ const CampaignDetailView = ({ id }) => {
       localStorage.setItem('campaigndetail', newValue);
       setCurrentTab(newValue);
     },
-    [isClient, clientAllowedTabs]
+    [isClient]
   );
 
   const icons = (tab) => {
