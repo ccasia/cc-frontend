@@ -6,10 +6,12 @@ import Chip from '@mui/material/Chip';
 import Select from '@mui/material/Select';
 import Checkbox from '@mui/material/Checkbox';
 import MenuItem from '@mui/material/MenuItem';
+import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
+import { Clear as ClearIcon } from '@mui/icons-material';
 
 // ----------------------------------------------------------------------
 
@@ -84,6 +86,7 @@ export function RHFMultiSelect({
   checkbox,
   placeholder,
   helperText,
+  showClearAll = true,
   ...other
 }) {
   const { control } = useFormContext();
@@ -119,6 +122,34 @@ export function RHFMultiSelect({
     return selectedItems.map((item) => item.label).join(', ');
   };
 
+  const renderClearAllButton = (selectedIds, onChange) => {
+    if (!showClearAll || !selectedIds?.length) return null;
+
+    const handleClearAll = () => {
+      onChange([]);
+    };
+
+    return (
+      <IconButton
+        size="small"
+        onClick={handleClearAll}
+        sx={{
+          position: 'absolute',
+          right: 32, // Position it to the left of the dropdown arrow
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 1,
+          '&:hover': {
+            backgroundColor: 'action.hover',
+          },
+        }}
+        aria-label="Clear all selections"
+      >
+        <ClearIcon fontSize="small" />
+      </IconButton>
+    );
+  };
+
   return (
     <Controller
       name={name}
@@ -150,6 +181,8 @@ export function RHFMultiSelect({
             })}
           </Select>
 
+          {renderClearAllButton(field.value, field.onChange)}
+
           {(!!error || helperText) && (
             <FormHelperText error={!!error}>{error ? error?.message : helperText}</FormHelperText>
           )}
@@ -167,4 +200,5 @@ RHFMultiSelect.propTypes = {
   name: PropTypes.string,
   options: PropTypes.array,
   placeholder: PropTypes.string,
+  showClearAll: PropTypes.bool,
 };

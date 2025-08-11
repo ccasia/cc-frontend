@@ -12,7 +12,17 @@ import NavList from './nav-list';
 
 function NavSectionMini({ data, slotProps, ...other }) {
   return (
-    <Stack component="nav" id="nav-section-mini" spacing={`${slotProps?.gap || 4}px`} {...other}>
+    <Stack
+      component="nav"
+      id="nav-section-mini"
+      spacing={`${slotProps?.gap || 4}px`}
+      sx={{
+        width: '100%',
+        alignItems: 'center',
+        ...other.sx,
+      }}
+      {...other}
+    >
       {/* <Stack component="nav" id="nav-section-vertical" {...other}> */}
       <Divider
         sx={{

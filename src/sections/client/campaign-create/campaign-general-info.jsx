@@ -8,11 +8,14 @@ import dayjs from 'dayjs';
 import socket from 'src/hooks/socket';
 import { fetcher, endpoints } from 'src/utils/axios';
 import { interestsLists } from 'src/contants/interestLists';
+import { objectivesLists } from 'src/contants/objectives';
 
 import Label from 'src/components/label';
 import { RHFTextField } from 'src/components/hook-form';
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
-import CustomRHFSelect from './custom-rhf-select';
+// import CustomRHFSelect from './custom-rhf-select'; // Will reuse RHFMultiSelect hook instead
+// import CustomRHFMultiSelect from './custom-rhf-multi-select'; // Will reuse RHFMultiSelect hook instead
+import { RHFMultiSelect, RHFSelect } from 'src/components/hook-form';
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -80,7 +83,7 @@ const ClientCampaignGeneralInfo = () => {
   return (
     <>
       {/* Container to limit width */}
-      <Box sx={{ maxWidth: '650px', mx: 'auto' }}>
+      <Box sx={{ maxWidth: '650px', mx: 'auto', mb: 10 }}>
         <Stack alignItems="self-end" spacing={0.5} mb={2}>
           <Typography variant="subtitle2">Campaign ID</Typography>
           {!isLoading && <Label color="info">C0{data + 1}</Label>}
@@ -219,40 +222,54 @@ const ClientCampaignGeneralInfo = () => {
         {/* Campaign Objectives - Full width */}
         <Box sx={{ mt: 2 }}>
           <FormField label="Campaign Objectives">
-            <CustomRHFSelect
+            <RHFMultiSelect
               name="campaignObjectives"
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
-              }}
-            >
-              <MenuItem value="New Product Launch">New Product Launch</MenuItem>
-              <MenuItem value="New Service Launch">New Service Launch</MenuItem>
-              <MenuItem value="Increase Brand Awareness">Increase Brand Awareness</MenuItem>
-              <MenuItem value="Drive Product Awareness">Drive Product Awareness</MenuItem>
-              <MenuItem value="Drive Service Awareness">Drive Service Awareness</MenuItem>
-              <MenuItem value="Increase Purchase Intent">Increase Purchase Intent</MenuItem>
-              <MenuItem value="Increase Reach of Audience">Increase Reach of Audience</MenuItem>
-            </CustomRHFSelect>
+              placeholder="Select Campaign Objectives"
+              options={objectivesLists.map((item) => ({
+                value: item,
+                label: item,
+              }))}
+              chip
+              checkbox
+              // size="small"
+              // sx={{
+              //   '& .MuiOutlinedInput-root': { minHeight: '40px' },
+              // }}
+            />
           </FormField>
         </Box>
 
         {/* Industries - Full width */}
-        <Box sx={{ mt: 2 }}>
+        {/* <Box sx={{ mt: 2 }}>
           <FormField label="Industries">
-            <CustomRHFSelect
+            <CustomRHFMultiSelect
               name="campaignIndustries"
+              options={industriesOptions}
+              chip={true}
+              checkbox={false}
+              chipColor="#8E8E93"
               size="small"
               sx={{
                 '& .MuiOutlinedInput-root': { minHeight: '40px' },
               }}
-            >
-              {interestsLists.map((item, index) => (
+            /> */}
+        {/* {interestsLists.map((item, index) => (
                 <MenuItem key={index} value={item}>
                   {item}
                 </MenuItem>
               ))}
-            </CustomRHFSelect>
+            </CustomRHFMultiSelect> */}
+        {/* </FormField>
+        </Box> */}
+        <Box sx={{ mt: 2 }}>
+          <FormField label="Industries">
+            <RHFMultiSelect
+              name="campaignIndustries"
+              placeholder="Select Industries"
+              chip
+              checkbox
+              options={interestsLists.map((item) => ({ value: item, label: item }))}
+            />
           </FormField>
         </Box>
       </Box>
