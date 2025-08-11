@@ -13,6 +13,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useGetCreatorInvoice } from 'src/api/invoices';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import Iconify from 'src/components/iconify';
 
@@ -30,7 +31,36 @@ const InvoiceDetail = ({ invoiceId }) => {
   const [pdfBlob, setPdfBlob] = useState(null);
   const componentRef = useRef();
 
-  const { data, isLoading, error } = useGetCreatorInvoice({ invoiceId });
+  const { data: invoiceData, isLoading, error } = useGetCreatorInvoice({ invoiceId });
+  const { data: agreementData } = useGetAgreements(invoiceData?.campaign?.id);
+
+  // Enhance invoice data with creator agreement currency
+  const data = React.useMemo(() => {
+    if (!invoiceData || !agreementData || !Array.isArray(agreementData)) return invoiceData;
+
+    const creatorAgreement = agreementData.find(
+      (agreement) =>
+        agreement?.user?.id === invoiceData?.invoiceFrom?.id ||
+        agreement?.userId === invoiceData?.invoiceFrom?.id
+    );
+
+    const creatorCurrency =
+      creatorAgreement?.user?.shortlisted?.[0]?.currency ||
+      creatorAgreement?.currency ||
+      invoiceData?.campaign?.subscription?.currency ||
+      'MYR';
+
+    return {
+      ...invoiceData,
+      creatorCurrency,
+      campaign: {
+        ...invoiceData.campaign,
+        subscription: {
+          ...invoiceData.campaign?.subscription,
+        },
+      },
+    };
+  }, [invoiceData, agreementData]);
 
   useEffect(() => {
     if (!isLoading && !data) {

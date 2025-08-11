@@ -112,7 +112,6 @@ const useStyles = () =>
 
 const InvoicePDF = ({ data }) => {
   const styles = useStyles();
-  console.log('invoice data: ', data)
 
   return (
     <Document>
@@ -286,7 +285,7 @@ const InvoicePDF = ({ data }) => {
                       fontSize: '10px',
                     }}
                   >
-                    {data?.campaign?.subscription?.currency || 'MYR'} {data?.amount}
+                    {data?.creatorCurrency || 'MYR'} {data?.amount}
                   </Text>
                 </View>
 

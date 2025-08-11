@@ -50,6 +50,7 @@ import {
 } from 'src/components/table';
 
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 // ----------------------------------------------------------------------
 
@@ -78,6 +79,8 @@ export default function InvoiceListView({ campId, invoices }) {
   const settings = useSettingsContext();
 
   const { user } = useAuthContext();
+
+  const { data, isLoading, error } = useGetAgreements(campId);
 
   const router = useRouter();
 
@@ -254,6 +257,24 @@ export default function InvoiceListView({ campId, invoices }) {
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
+  );
+
+  console.log('creatorAgreement Data: ', data);
+
+  const getCreatorAgreementCurrency = useCallback(
+    (row) => {
+      if (!data || !Array.isArray(data)) return 'MYR';
+
+      const creatorAgreement = data.find(
+        (agreement) =>
+          agreement?.user?.id === row?.invoiceFrom?.id || agreement?.userId === row?.invoiceFrom?.id
+      );
+
+      return (
+        creatorAgreement?.user?.shortlisted?.[0]?.currency || creatorAgreement?.currency || 'MYR'
+      );
+    },
+    [data]
   );
 
   const handleToggleSort = () => {
@@ -680,7 +701,9 @@ export default function InvoiceListView({ campId, invoices }) {
                             />
                           </TableCell>
 
-                          <TableCell sx={{ width: 100 }}>{`${row.campaign?.subscription?.currency || 'MYR'} ${row.amount || 0}`}</TableCell>
+                          <TableCell
+                            sx={{ width: 100 }}
+                          >{`${getCreatorAgreementCurrency(row)} ${row.amount || 0}`}</TableCell>
 
                           <TableCell sx={{ width: 100 }}>
                             <Typography
