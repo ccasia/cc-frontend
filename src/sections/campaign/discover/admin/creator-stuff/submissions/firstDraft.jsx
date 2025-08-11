@@ -125,8 +125,9 @@ const FirstDraft = ({
       await deliverableMutate();
 
       // Fetch fresh deliverables data directly from API
+      if (!creator?.user?.id || !campaign?.id) return; // guard
       const freshDeliverablesResponse = await axiosInstance.get(
-        `/api/submission/deliverables/${creator?.user?.id}/${campaign?.id}`
+        `/api/submission/deliverables/${creator.user.id}/${campaign.id}`
       );
       const currentDeliverables = freshDeliverablesResponse.data;
 
@@ -315,7 +316,7 @@ const FirstDraft = ({
       const isV3 = campaign?.origin === 'CLIENT';
       console.log('handleIndividualVideoRequestChange - isV3:', isV3, 'campaign.origin:', campaign?.origin, 'mediaId:', mediaId);
       if (isV3) {
-        console.log(`V3 Individual Video Request Changes - Using V3 endpoint for media ${mediaId}`);
+        console.log('Requesting media change:', { mediaId, mediaType: 'video', feedback, reasons });
         response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
           mediaId,
           mediaType: 'video',
@@ -512,7 +513,8 @@ const FirstDraft = ({
     if (isV3 && userRole === 'admin') {
       if (status === 'PENDING_REVIEW') return '#FFC702'; // Yellow for pending review
       if (status === 'SENT_TO_CLIENT') return '#8a5afe'; // Purple for sent to client
-      if (status === 'CLIENT_CHANGES_REQUESTED') return '#D4321C'; // Red for client changes requested
+      if (status === 'SENT_TO_ADMIN') return '#D4321C'; // Red for client feedback sent to admin
+      if (status === 'SENT_TO_ADMIN') return '#D4321C'; // Red for client feedback sent to admin
     }
 
     switch (tabType) {

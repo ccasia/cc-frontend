@@ -39,6 +39,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import ClientCampaignCreateForm from './campaign-create/campaign-create-form';
 import CompanyCreationForm from './company-creation-form';
+import ClientProfileCompletionModal from '../auth/client-profile-completion-modal';
 
 const ClientDashboard = () => {
   const { user } = useAuthContext();
@@ -52,10 +53,40 @@ const ClientDashboard = () => {
   const [company, setCompany] = useState(null);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [isCheckingCompany, setIsCheckingCompany] = useState(true);
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
 
   useEffect(() => {
     checkClientCompany();
+    checkProfileCompletion();
   }, []);
+
+  const checkProfileCompletion = async () => {
+    try {
+      // Simple check: if profile is already completed, don't show modal
+      const hasCompletedProfile = localStorage.getItem('profileCompleted');
+      if (hasCompletedProfile === 'true') {
+        console.log('Profile already completed, not showing modal');
+        return;
+      }
+
+      // Check if we've already shown the modal this session
+      const hasShownModal = sessionStorage.getItem('profileModalShown');
+      if (hasShownModal === 'true') {
+        console.log('Modal already shown this session');
+        return;
+      }
+
+      // Show modal only once per session
+      console.log('Showing profile completion modal');
+      sessionStorage.setItem('profileModalShown', 'true');
+      setTimeout(() => {
+        setShowProfileCompletion(true);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error checking profile completion:', error);
+    }
+  };
 
   const checkClientCompany = async () => {
     try {
@@ -725,19 +756,7 @@ const ClientDashboard = () => {
                         backgroundColor: '#F8F9FA',
                       },
                     }}
-                      icon={campaign.status === 'ACTIVE' ? (
-                        <Box
-                          component="span"
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            bgcolor: '#1abf66',
-                            display: 'inline-block',
-                            ml: '8px',
-                          }}
-                        />
-                      ) : null}
+
                     />
                   )}
                 </Box>
@@ -928,6 +947,28 @@ const ClientDashboard = () => {
           </Box>
         </Dialog> : null
       }
+
+      {/* Profile Completion Modal */}
+      <ClientProfileCompletionModal
+        open={showProfileCompletion}
+        onClose={() => setShowProfileCompletion(false)}
+        onSuccess={() => {
+          console.log('Modal success callback triggered');
+          setShowProfileCompletion(false);
+          // Clear session storage since profile is now completed
+          sessionStorage.removeItem('profileModalShown');
+          console.log('Session storage cleared');
+          // Refresh company data
+          checkClientCompany();
+          // Don't call checkProfileCompletion here as it might show modal again
+          // Instead, just verify the completion was saved
+          setTimeout(() => {
+            const isCompleted = localStorage.getItem('profileCompleted');
+            console.log('Verification - Profile completed:', isCompleted);
+          }, 1000);
+        }}
+        userEmail={user?.email}
+      />
     </Container>
   );
 };

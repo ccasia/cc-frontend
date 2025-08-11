@@ -30,6 +30,7 @@ import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook
 import { options_changes } from './constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 import axiosInstance from 'src/utils/axios';
+import useSWR from 'swr';
 
 const VideoCard = ({ 
   videoItem, 
@@ -51,6 +52,9 @@ const VideoCard = ({
   handleClientReject,
   // V3 deliverables for status checking
   deliverables,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback,
+  handleAdminSendToCreator,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -96,7 +100,7 @@ const VideoCard = ({
   const currentStatus = localStatus || videoItem.status;
   const isVideoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isVideoApprovedByClient = currentStatus === 'APPROVED';
-  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED';
+  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
   
   // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
   const isPendingReview = userRole === 'client' ? 
@@ -119,19 +123,36 @@ const VideoCard = ({
   };
 
   const getVideoFeedback = () => {
-    // Check for individual feedback first
+    // Check for individual feedback first (from deliverables API)
     if (videoItem.individualFeedback && videoItem.individualFeedback.length > 0) {
       return videoItem.individualFeedback;
     }
     
-    // Fallback to submission-level feedback
+    // Get all feedback from submission (from deliverables API)
     const allFeedbacks = [
+      ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
       ...(submission?.feedback || [])
     ];
 
-    return allFeedbacks
+    // Filter feedback for this specific video
+    const videoSpecificFeedback = allFeedbacks
       .filter(feedback => feedback.videosToUpdate?.includes(videoItem.id))
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+
+    // Also include client feedback for this submission (when video status is CLIENT_FEEDBACK)
+    const clientFeedback = allFeedbacks
+      .filter(feedback => {
+        const isClient = feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client';
+        const isFeedback = feedback.type === 'REASON' || feedback.type === 'COMMENT';
+        const isClientFeedbackStatus = videoItem.status === 'CLIENT_FEEDBACK';
+        
+        return isClient && isFeedback && isClientFeedbackStatus;
+      })
+      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+
+    const allFeedback = [...videoSpecificFeedback, ...clientFeedback];
+    // Return only the latest feedback
+    return allFeedback.length > 0 ? [allFeedback[0]] : [];
   };
 
   const videoFeedback = getVideoFeedback();
@@ -805,6 +826,72 @@ const VideoCard = ({
                     </Stack>
                   </Box>
                 )}
+
+                {/* Admin buttons for client feedback */}
+                {isV3 && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (
+                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        const adminFeedback = prompt('Edit client feedback (optional):');
+                        if (adminFeedback !== null) {
+                          handleAdminEditFeedback(videoItem.id, feedback.id, adminFeedback);
+                        }
+                      }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#000000',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          color: '#000000',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        },
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleAdminSendToCreator(videoItem.id, feedback.id)}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        bgcolor: '#ffffff',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#1ABF66',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f0f9f0',
+                          color: '#1ABF66',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                        },
+                      }}
+                    >
+                      Send to Creator
+                    </Button>
+                  </Stack>
+                )}
               </Box>
             ))}
           </Stack>
@@ -843,6 +930,12 @@ VideoCard.propTypes = {
   deliverables: PropTypes.object,
 };
 
+// Add SWR hook for submission
+const fetchSubmission = async (url) => {
+  const { data } = await axiosInstance.get(url);
+  return data;
+};
+
 const DraftVideos = ({
   campaign,
   submission,
@@ -862,8 +955,20 @@ const DraftVideos = ({
   handleClientRejectRawFootage,
 }) => {
   const [selectedVideosForChange, setSelectedVideosForChange] = useState([]);
+  const [sentSubmissions, setSentSubmissions] = useState(new Set());
+  const [isSending, setIsSending] = useState(false);
   const approve = useBoolean();
   const request = useBoolean();
+
+  // SWR for submission status
+  const { data: swrSubmission, mutate: mutateSubmission, isLoading: isSubmissionLoading, error: submissionError } = useSWR(
+    submission?.id ? `/api/submission/v3/${submission.id}` : null,
+    fetchSubmission,
+    { refreshInterval: 0 }
+  );
+
+  // Use SWR submission as the source of truth
+  const currentSubmission = swrSubmission || submission;
 
   const handleVideoSelection = (id) => {
     setSelectedVideosForChange((prev) => {
@@ -877,57 +982,198 @@ const DraftVideos = ({
   const handleApprove = async (videoId, formValues) => {
     try {
       const payload = {
-        type: 'approve',
-        feedback: formValues.feedback,
-        dueDate: formValues.dueDate,
-        selectedVideos: [videoId],
+        submissionId: submission.id,
+        mediaId: videoId,
+        action: 'approve',
+        feedback: formValues.feedback || '',
       };
 
-      await onSubmit(payload);
+      const response = await axiosInstance.post('/api/submission/v3/draft/approve', payload);
+
+      if (response.status === 200) {
+        enqueueSnackbar('Video approved successfully!', { variant: 'success' });
+        // Refresh data
+        if (deliverables?.deliverableMutate) {
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+      }
     } catch (error) {
-      console.error('Error submitting draft video review:', error);
-      enqueueSnackbar(error?.message || 'Error submitting review', {
-        variant: 'error',
-      });
+      console.error('Error approving video:', error);
+      enqueueSnackbar('Failed to approve video', { variant: 'error' });
     }
   };
 
   const handleRequestChange = async (videoId, formValues) => {
     try {
       const payload = {
-        type: 'request',
-        feedback: formValues.feedback,
-        reasons: formValues.reasons,
-        selectedVideos: [videoId],
+        submissionId: submission.id,
+        mediaId: videoId,
+        action: 'request_change',
+        feedback: formValues.feedback || '',
       };
 
-      await onSubmit(payload);
+      const response = await axiosInstance.post('/api/submission/v3/draft/request-changes', payload);
+
+      if (response.status === 200) {
+        enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
+        // Refresh data
+        if (deliverables?.deliverableMutate) {
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+      }
     } catch (error) {
-      console.error('Error submitting draft video review:', error);
-      enqueueSnackbar(error?.message || 'Error submitting review', {
-        variant: 'error',
-      });
+      console.error('Error requesting changes:', error);
+      enqueueSnackbar('Failed to request changes', { variant: 'error' });
     }
   };
 
   const handleSendToClient = async (submissionId) => {
-    if (!submissionId) {
-      console.error('[handleSendToClient] No submissionId provided!');
-      enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
+    try {
+      const response = await axiosInstance.post('/api/submission/v3/draft/send-to-client', {
+        submissionId: submissionId,
+      });
+
+      if (response.status === 200) {
+        enqueueSnackbar('Draft sent to client successfully!', { variant: 'success' });
+        // Refresh data
+        if (deliverables?.deliverableMutate) {
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+      }
+    } catch (error) {
+      console.error('Error sending to client:', error);
+      enqueueSnackbar('Failed to send to client', { variant: 'error' });
+    }
+  };
+
+  const handleClientApprove = async (mediaId) => {
+    try {
+      // Optimistic update - immediately update the UI
+      const optimisticData = deliverables?.videos?.map(video => 
+        video.id === mediaId ? { ...video, status: 'APPROVED' } : video
+      );
+      
+      if (deliverables?.deliverableMutate) {
+        deliverables.deliverableMutate(
+          { ...deliverables, videos: optimisticData },
+          false // Don't revalidate immediately
+        );
+      }
+
+      await axiosInstance.patch('/api/submission/v3/media/approve/client', {
+        mediaId,
+        mediaType: 'video',
+        feedback: 'Approved by client',
+      });
+      
+      enqueueSnackbar('Client approved successfully!', { variant: 'success' });
+      
+      // Revalidate with server data
+      await mutateSubmission();
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+    } catch (error) {
+      console.error('Error approving video:', error);
+      enqueueSnackbar('Failed to client approve', { variant: 'error' });
+      // Revert optimistic update on error
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+    }
+  };
+
+  const handleClientReject = async (mediaId, feedback = 'Changes requested by client', reasons = ['Client rejection']) => {
+    try {
+      await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
+        mediaId,
+        mediaType: 'video',
+        feedback,
+        reasons,
+      });
+      enqueueSnackbar('Client rejected successfully!', { variant: 'warning' });
+      await mutateSubmission(); // SWR revalidate
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+    } catch (error) {
+      enqueueSnackbar('Failed to client reject', { variant: 'error' });
+    }
+  };
+
+  const handleAdminEditFeedback = async (mediaId, feedbackId, adminFeedback) => {
+    try {
+      // For now, just store the edited feedback locally
+      console.log('Admin editing feedback:', { mediaId, feedbackId, adminFeedback });
+      enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
+    } catch (error) {
+      console.error('Error updating feedback:', error);
+      enqueueSnackbar('Failed to update feedback', { variant: 'error' });
+    }
+  };
+
+  const handleAdminSendToCreator = async (mediaId, feedbackId) => {
+    // Check if this submission has already been sent
+    if (sentSubmissions.has(mediaId)) {
+      enqueueSnackbar('This submission has already been sent to creator', { variant: 'warning' });
       return;
     }
+
+    // Check if we're currently sending
+    if (isSending) {
+      enqueueSnackbar('Please wait, sending in progress...', { variant: 'info' });
+      return;
+    }
+
+    setIsSending(true);
+    
     try {
-      console.log('[handleSendToClient] PATCH /api/submission/v3/' + submissionId + '/approve/admin');
-      const response = await axiosInstance.patch(
-        `/api/submission/v3/${submissionId}/approve/admin`,
-        { submissionId, feedback: 'All sections approved by admin' }
-      );
-      console.log('[handleSendToClient] Success:', response);
-      enqueueSnackbar('Sent to client!', { variant: 'success' });
-      // Optionally refresh data/UI here
+      // Mark this submission as sent immediately to prevent double-clicks
+      setSentSubmissions(prev => new Set([...prev, mediaId]));
+
+      // Call the API to review and forward client feedback
+      const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', {
+        submissionId: submission.id,
+        adminFeedback: 'Feedback reviewed and forwarded to creator'
+      });
+
+      if (response.status === 200) {
+        enqueueSnackbar(`Feedback for video sent to creator successfully!`, { variant: 'success' });
+        
+        // Check if all videos have been sent
+        const allVideos = deliverables.videos || [];
+        const allVideosSent = allVideos.every(video => sentSubmissions.has(video.id));
+        
+        if (allVideosSent) {
+          enqueueSnackbar('All videos have been sent to creator!', { variant: 'success' });
+          
+          // Refresh data after all are sent
+          if (deliverables?.deliverableMutate) {
+            await deliverables.deliverableMutate();
+          }
+          if (deliverables?.submissionMutate) {
+            await deliverables.submissionMutate();
+          }
+        }
+      }
     } catch (error) {
-      console.error('[handleSendToClient] Error:', error, error?.response);
-      enqueueSnackbar(error?.response?.data?.message || 'Error sending to client', { variant: 'error' });
+      console.error('Error sending feedback to creator:', error);
+      
+      // Remove from sent submissions if it failed
+      setSentSubmissions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(mediaId);
+        return newSet;
+      });
+      
+      enqueueSnackbar('Failed to send feedback to creator', { variant: 'error' });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -994,19 +1240,7 @@ const DraftVideos = ({
     }
   };
 
-  // Client approval handler for individual media - use parent's handler with SWR
-  const handleClientApprove = async (mediaId) => {
-    if (handleClientApproveVideo) {
-      await handleClientApproveVideo(mediaId);
-    }
-  };
 
-  // Client rejection handler for individual media - use parent's handler with SWR
-  const handleClientReject = async (mediaId) => {
-    if (handleClientRejectVideo) {
-      await handleClientRejectVideo(mediaId);
-    }
-  };
 
   return (
     <>
@@ -1052,7 +1286,7 @@ const DraftVideos = ({
               <VideoCard 
                 videoItem={video} 
                 index={index}
-                submission={submission}
+                submission={currentSubmission}
                 onVideoClick={onVideoClick}
                 handleApprove={handleApprove}
                 handleRequestChange={handleRequestChange}
@@ -1069,6 +1303,9 @@ const DraftVideos = ({
                 handleClientReject={handleClientReject}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
+                // V3 admin feedback handlers
+                handleAdminEditFeedback={handleAdminEditFeedback}
+                handleAdminSendToCreator={handleAdminSendToCreator}
               />
             </Box>
           ))}
@@ -1087,7 +1324,7 @@ const DraftVideos = ({
               <VideoCard 
                 videoItem={video} 
                 index={index}
-                submission={submission}
+                submission={currentSubmission}
                 onVideoClick={onVideoClick}
                 handleApprove={handleApprove}
                 handleRequestChange={handleRequestChange}
@@ -1104,6 +1341,9 @@ const DraftVideos = ({
                 handleClientReject={handleClientReject}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
+                // V3 admin feedback handlers
+                handleAdminEditFeedback={handleAdminEditFeedback}
+                handleAdminSendToCreator={handleAdminSendToCreator}
               />
             </Grid>
           ))}

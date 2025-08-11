@@ -96,7 +96,7 @@ const VideoCard = ({
   const currentStatus = localStatus || videoItem.status;
   const isVideoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isVideoApprovedByClient = currentStatus === 'APPROVED';
-  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED';
+  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
   
   // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
   const isPendingReview = userRole === 'client' ? 
@@ -134,46 +134,22 @@ const VideoCard = ({
 
   // V2 Individual handlers
   const handleIndividualApproveClick = async () => {
-    if (!onIndividualApprove) return;
-    
-    setIsProcessing(true);
-    try {
-      const values = formMethods.getValues();
-      await onIndividualApprove(videoItem.id, values.feedback, values.dueDate);
-      // Optimistically update local status
-      setLocalStatus('APPROVED');
-    } catch (error) {
-      console.error('Error approving video:', error);
-    } finally {
-      setIsProcessing(false);
+    if (isV3) {
+      await handleApprove(videoItem.id, formMethods.getValues());
+    } else if (onIndividualApprove) {
+      await onIndividualApprove(videoItem.id, formMethods.getValues().feedback, formMethods.getValues().dueDate);
     }
   };
 
   const handleIndividualRequestClick = async () => {
-    if (!onIndividualRequestChange) return;
-    
-    setIsProcessing(true);
-    try {
-      // Validate the form first
-      const isValid = await formMethods.trigger();
-      if (!isValid) {
-        setIsProcessing(false);
-        return;
-      }
-      
+    if (isV3) {
+      await handleRequestChange(videoItem.id, formMethods.getValues());
+    } else if (onIndividualRequestChange) {
       const values = formMethods.getValues();
-      // Clean the reasons array to remove any null/undefined values
       const cleanReasons = Array.isArray(values.reasons) 
         ? values.reasons.filter(reason => reason !== null && reason !== undefined && reason !== '')
         : [];
-      
       await onIndividualRequestChange(videoItem.id, values.feedback, cleanReasons);
-      // Optimistically update local status
-      setLocalStatus('CHANGES_REQUIRED');
-    } catch (error) {
-      console.error('Error requesting video changes:', error);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -185,8 +161,8 @@ const VideoCard = ({
       try {
         const values = formMethods.getValues();
         await handleApprove(videoItem.id, values);
-        // Optimistically update local status for fallback handler
-        setLocalStatus('APPROVED');
+        // Optimistically update local status for fallback handler - admin sends to client, client approves
+        setLocalStatus(userRole === 'client' ? 'APPROVED' : 'SENT_TO_CLIENT');
       } catch (error) {
         console.error('Error in fallback approve handler:', error);
       }
@@ -210,6 +186,42 @@ const VideoCard = ({
 
   const renderFormContent = () => {
     if (!isPendingReview) {
+      // For client role, SENT_TO_CLIENT status should show approval buttons, not APPROVED status
+      if (isVideoApprovedByAdmin && userRole !== 'client') {
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              p: 2,
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: '#FFFFFF',
+                color: '#1ABF66',
+                border: '1.5px solid',
+                borderColor: '#1ABF66',
+                borderBottom: 3,
+                borderBottomColor: '#1ABF66',
+                borderRadius: 1,
+                py: 0.8,
+                px: 1.5,
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+              }}
+            >
+              SENT TO CLIENT
+            </Box>
+          </Box>
+        );
+      }
       if (isVideoApprovedByClient) {
         return (
           <Box
@@ -316,61 +328,88 @@ const VideoCard = ({
               <Stack direction="row" spacing={1.5}>
                 {/* Hide this button for clients to prevent duplicates */}
                 {userRole !== 'client' && (
-                  <Button
-                    onClick={() => {
-                      setCardType('request');
-                    }}
-                    size="small"
-                    variant="contained"
-                    disabled={isProcessing}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      border: 1.5,
-                      borderRadius: 1.15,
-                      borderColor: '#e7e7e7',
-                      borderBottom: 3,
-                      borderBottomColor: '#e7e7e7',
-                      color: '#D4321C',
-                      '&:hover': {
-                        bgcolor: '#f5f5f5',
-                        borderColor: '#D4321C',
-                      },
-                      textTransform: 'none',
-                      py: 1.2,
-                      fontSize: '0.9rem',
-                      fontWeight: 600,
-                      height: '40px',
-                      flex: 2,
-                    }}
-                  >
-                    Request a Change
-                  </Button>
+                <Button
+                  onClick={() => {
+                    setCardType('request');
+                  }}
+                  size="small"
+                  variant="contained"
+                  disabled={isProcessing}
+                  sx={{
+                    bgcolor: '#FFFFFF',
+                    border: 1.5,
+                    borderRadius: 1.15,
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderBottomColor: '#e7e7e7',
+                    color: '#D4321C',
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#D4321C',
+                    },
+                    textTransform: 'none',
+                    py: 1.2,
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    height: '40px',
+                    flex: 2,
+                  }}
+                >
+                  Request a Change
+                </Button>
                 )}
 
                 {isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW' ? (
-                  <>
+                  <Stack direction="row" spacing={2}>
                     <Button
                       variant="contained"
-                      color="primary"
-                      onClick={() => {
-                        console.log('[Send to Client Button Click] submission:', submission);
-                        if (!submission || !submission.id) {
-                          console.error('[Send to Client Button] submission or submission.id is missing!', submission);
-                          enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
-                          return;
-                        }
-                        handleSendToClient(submission.id);
-                      }}
+                      size="small"
+                      onClick={handleApproveClick}
                       disabled={isSubmitting || isProcessing}
-                      sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        color: '#1ABF66',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1.15,
+                        py: 1.2,
+                        fontWeight: 600,
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#1ABF66',
+                        },
+                        fontSize: '0.9rem',
+                        height: '40px',
+                        textTransform: 'none',
+                      }}
                     >
-                      Send to Client
+                      Approve
                     </Button>
-                  </>
+                  </Stack>
+                ) : isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_ADMIN' ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => {
+                      console.log('[Send to Client Button Click] submission:', submission);
+                      if (!submission || !submission.id) {
+                        console.error('[Send to Client Button] submission or submission.id is missing!', submission);
+                        enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
+                        return;
+                      }
+                      handleSendToClient(submission.id);
+                    }}
+                    disabled={isSubmitting || isProcessing}
+                    sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
+                  >
+                    Send to Client
+                  </Button>
                 ) : isV3 && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'SENT_TO_CLIENT') ? (
                   <Stack direction="row" spacing={1.5}>
                     <Button
-                      onClick={() => handleClientReject && handleClientReject(videoItem.id)}
+                      onClick={() => handleOpenClientRequestModal(videoItem.id)}
                       size="small"
                       variant="contained"
                       disabled={isSubmitting || isProcessing}
@@ -425,33 +464,33 @@ const VideoCard = ({
                     </LoadingButton>
                   </Stack>
                 ) : (
-                  <LoadingButton
-                    onClick={handleApproveClick}
-                    variant="contained"
-                    size="small"
-                    loading={isSubmitting || isProcessing}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      color: '#1ABF66',
-                      border: '1.5px solid',
-                      borderColor: '#e7e7e7',
-                      borderBottom: 3,
-                      borderBottomColor: '#e7e7e7',
-                      borderRadius: 1.15,
-                      py: 1.2,
-                      fontWeight: 600,
-                      '&:hover': {
-                        bgcolor: '#f5f5f5',
-                        borderColor: '#1ABF66',
-                      },
-                      fontSize: '0.9rem',
-                      height: '40px',
-                      textTransform: 'none',
-                      flex: 1,
-                    }}
-                  >
-                    Approve
-                  </LoadingButton>
+                <LoadingButton
+                  onClick={handleApproveClick}
+                  variant="contained"
+                  size="small"
+                  loading={isSubmitting || isProcessing}
+                  sx={{
+                    bgcolor: '#FFFFFF',
+                    color: '#1ABF66',
+                    border: '1.5px solid',
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderBottomColor: '#e7e7e7',
+                    borderRadius: 1.15,
+                    py: 1.2,
+                    fontWeight: 600,
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#1ABF66',
+                    },
+                    fontSize: '0.9rem',
+                    height: '40px',
+                    textTransform: 'none',
+                    flex: 1,
+                  }}
+                >
+                  Approve
+                </LoadingButton>
                 )}
               </Stack>
             </Stack>
@@ -820,14 +859,35 @@ const DraftVideos = ({
 
   const handleApprove = async (videoId, formValues) => {
     try {
+      if (isV3) {
+        // V3 flow: Admin approves individual media and sends to client
+        const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+          mediaId: videoId,
+          mediaType: 'video',
+          feedback: formValues?.feedback || 'Video approved by admin'
+        });
+        
+        if (response.status === 200) {
+          enqueueSnackbar('Video approved and sent to client!', { variant: 'success' });
+          // Refresh data
+          if (deliverables?.deliverableMutate) {
+            await deliverables.deliverableMutate();
+          }
+          if (deliverables?.submissionMutate) {
+            await deliverables.submissionMutate();
+          }
+        }
+      } else {
+        // V2 flow: Direct approval
       const payload = {
         type: 'approve',
-        feedback: formValues.feedback,
-        dueDate: dayjs(formValues.dueDate).format('YYYY-MM-DD'),
+          feedback: formValues?.feedback || 'Video approved',
+          dueDate: formValues?.dueDate ? dayjs(formValues.dueDate).format('YYYY-MM-DD') : null,
         selectedVideos: [videoId],
       };
 
       await onSubmit(payload);
+      }
     } catch (error) {
       console.error('Error submitting video review:', error);
       enqueueSnackbar(error?.message || 'Error submitting review', {
@@ -838,14 +898,36 @@ const DraftVideos = ({
 
   const handleRequestChange = async (videoId, formValues) => {
     try {
+      if (isV3) {
+        // V3 flow: Admin requests changes for individual media
+        const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+          mediaId: videoId,
+          mediaType: 'video',
+          feedback: formValues?.feedback || 'Changes requested for video',
+          reasons: formValues?.reasons || []
+        });
+        
+        if (response.status === 200) {
+          enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
+          // Refresh data
+          if (deliverables?.deliverableMutate) {
+            await deliverables.deliverableMutate();
+          }
+          if (deliverables?.submissionMutate) {
+            await deliverables.submissionMutate();
+          }
+        }
+      } else {
+        // V2 flow: Direct request changes
       const payload = {
         type: 'request',
-        feedback: formValues.feedback,
-        reasons: formValues.reasons,
+          feedback: formValues?.feedback || 'Changes requested for video',
+          reasons: formValues?.reasons || [],
         selectedVideos: [videoId],
       };
 
       await onSubmit(payload);
+      }
     } catch (error) {
       console.error('Error submitting video review:', error);
       enqueueSnackbar(error?.message || 'Error submitting review', {
@@ -890,16 +972,46 @@ const DraftVideos = ({
   const userRole = user?.role || 'admin'; // Use actual user role from auth context
 
   // Client approval handler for individual media - use parent's handler with SWR
-  const handleClientApprove = async (mediaId) => {
-    if (handleClientApproveVideo) {
-      await handleClientApproveVideo(mediaId);
-    }
+  // Use the prop function instead of local implementation
+  const handleClientApprove = handleClientApproveVideo;
+
+  // Use the prop function instead of local implementation
+  const handleClientReject = handleClientRejectVideo;
+
+  // Add state for client request modal
+  const [clientRequestModalOpen, setClientRequestModalOpen] = useState(false);
+  const [clientRequestVideoId, setClientRequestVideoId] = useState(null);
+
+  // Add form for client request modal
+  const clientRequestForm = useForm({
+    defaultValues: { feedback: '', reasons: [] },
+  });
+
+  const handleOpenClientRequestModal = (videoId) => {
+    setClientRequestVideoId(videoId);
+    setClientRequestModalOpen(true);
+  };
+  const handleCloseClientRequestModal = () => {
+    setClientRequestModalOpen(false);
+    setClientRequestVideoId(null);
+    clientRequestForm.reset();
   };
 
-  // Client rejection handler for individual media - use parent's handler with SWR
-  const handleClientReject = async (mediaId) => {
-    if (handleClientRejectVideo) {
-      await handleClientRejectVideo(mediaId);
+  const handleClientRequestSubmit = async (data) => {
+    if (!clientRequestVideoId) return;
+    try {
+      await axiosInstance.patch(`/api/submission/v3/${submission.id}/request-changes/client`, {
+        feedback: data.feedback,
+        reasons: data.reasons,
+        mediaId: clientRequestVideoId,
+        mediaType: 'video',
+      });
+      enqueueSnackbar('Change request submitted!', { variant: 'warning' });
+      handleCloseClientRequestModal();
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+    } catch (error) {
+      enqueueSnackbar('Failed to request changes', { variant: 'error' });
     }
   };
 
@@ -1105,6 +1217,35 @@ const DraftVideos = ({
         isDisabled={false}
         selectedItemsCount={1}
       />
+
+      {clientRequestModalOpen && (
+        <FormProvider methods={clientRequestForm}>
+          <ConfirmationRequestModal
+            open={clientRequestModalOpen}
+            onClose={handleCloseClientRequestModal}
+            sectionType="video"
+            onConfirm={clientRequestForm.handleSubmit(handleClientRequestSubmit)}
+            isDisabled={false}
+            selectedItemsCount={1}
+          >
+            <RHFMultiSelect
+              name="reasons"
+              checkbox
+              chip
+              options={options_changes.map((item) => ({ value: item, label: item }))}
+              label="Reasons"
+              size="small"
+            />
+            <RHFTextField
+              name="feedback"
+              multiline
+              minRows={5}
+              placeholder="Provide feedback for the video."
+              size="small"
+            />
+          </ConfirmationRequestModal>
+        </FormProvider>
+      )}
     </>
   );
 };

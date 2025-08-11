@@ -26,27 +26,43 @@ const StatusBanner = ({
       console.log('Force approving submission from banner');
       const dueDate = draftVideoMethods?.getValues('dueDate') || dayjs().add(7, 'day').format('YYYY-MM-DD');
       
-      // Step 1: Update submission to APPROVED
-      const updatePayload = {
-        submissionId: submission.id,
-        status: 'APPROVED',
-        feedback: 'All sections have been approved.',
-        dueDate
-      };
+      // Check if this is a V3 campaign (client-created)
+      const isV3 = campaign?.origin === 'CLIENT';
       
-      await axiosInstance.patch(`/api/submission/status`, updatePayload);
+      if (isV3) {
+        // V3 flow: Admin sends to client (use V3 API)
+        await axiosInstance.patch(`/api/submission/v3/${submission.id}/approve/admin`, {
+          submissionId: submission.id,
+          feedback: 'All sections have been approved by admin'
+        });
+      } else {
+        // V2 flow: Direct approval (use V2 API)
+        const updatePayload = {
+          submissionId: submission.id,
+          status: 'APPROVED',
+          feedback: 'All sections have been approved.',
+          dueDate
+        };
+        
+        await axiosInstance.patch(`/api/submission/status`, updatePayload);
+      }
       
-      // Step 2: Update posting status to allow creator to submit links
-      await updatePostingStatus(dueDate);
+      // Step 2: Update posting status (only for V2 campaigns)
+      if (!isV3) {
+        await updatePostingStatus(dueDate);
+      }
       
       // Step 3: Refresh data
       if (onStatusUpdate) {
         await onStatusUpdate();
       }
       
-      enqueueSnackbar('Submission approved! Creator can now submit posting links.', { 
-        variant: 'success' 
-      });
+      enqueueSnackbar(
+        isV3 
+          ? 'Submission sent to client for review!' 
+          : 'Submission approved! Creator can now submit posting links.', 
+        { variant: 'success' }
+      );
     } catch (error) {
       console.error('Error force approving submission:', error);
       enqueueSnackbar('Error approving submission', { variant: 'error' });
@@ -256,7 +272,7 @@ const StatusBanner = ({
               mt: { xs: 1, sm: 0 },
             }}
           >
-            Force Approve Now
+            {campaign?.origin === 'CLIENT' ? 'Send to Client' : 'Force Approve Now'}
           </LoadingButton>
         )}
       </Box>

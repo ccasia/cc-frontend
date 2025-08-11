@@ -115,7 +115,7 @@ export function useNavData() {
             title: 'Dashboard',
             path: paths.dashboard.client,
             icon: ICONS.mycampaigns,
-            roles: ['Client', 'client'],
+            roles: ['client'],
           },
         ],
       },
@@ -201,7 +201,7 @@ export function useNavData() {
             roles: ['superadmin', 'CSM', 'Growth', 'BD'], // Exclude Client role
           },
           {
-            roles: ['superadmin', 'Client', 'client'],
+            roles: ['superadmin', 'client'],
             title: 'Content Performance Report',
             path: paths.dashboard.report.root,
             icon: ICONS.report,
@@ -379,6 +379,9 @@ export function useNavData() {
       if (user?.role === 'creator') {
         return creatorNavigations;
       }
+      if (user?.role === 'client') {
+        return adminNavigations;
+      }
       if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
         return financeNavigations;
       }
@@ -455,7 +458,7 @@ export function useNavData() {
       
       return baseData;
     },
-    [navigations, unreadMessageCount, user?.admin?.role?.name]
+    [navigations, unreadMessageCount, user?.admin?.role?.name, user?.role]
   );
 
   // const financeNavigations = useMemo(

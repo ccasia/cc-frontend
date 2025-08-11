@@ -336,6 +336,21 @@ const CampaignFirstDraft = ({
     return options;
   };
 
+  if (submission?.feedback && submission.feedback.length > 0) {
+    console.log('Creator First Draft - Feedback data:', {
+      submissionId: submission.id,
+      status: submission.status,
+      feedbackCount: submission.feedback.length,
+      feedback: submission.feedback.map(f => ({
+        id: f.id,
+        type: f.type,
+        content: f.content,
+        adminName: f.admin?.name,
+        adminRole: f.admin?.role
+      }))
+    });
+  }
+
   return (
     previousSubmission?.status === 'APPROVED' && (
       <Box p={1.5} sx={{ pb: 0 }}>
@@ -370,7 +385,7 @@ const CampaignFirstDraft = ({
 
         {logistics?.every((logistic) => logistic?.status === 'Product_has_been_received') ? (
           <Box>
-            {submission?.status === 'PENDING_REVIEW' && (
+            {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && (
               <Stack justifyContent="center" alignItems="center" spacing={2}>
                 <Box
                   sx={{
@@ -405,7 +420,9 @@ const CampaignFirstDraft = ({
                       mt: -1,
                     }}
                   >
-                    Your first draft is being reviewed.
+                    {submission?.status === 'SENT_TO_CLIENT' 
+                      ? 'Your first draft has been sent to the client for review.' 
+                      : 'Your first draft is being reviewed.'}
                   </Typography>
                 </Stack>
                 <Button
@@ -431,7 +448,8 @@ const CampaignFirstDraft = ({
               </Stack>
             )}
 
-            {submission?.status === 'IN_PROGRESS' && (
+            {(submission?.status === 'IN_PROGRESS' || submission?.status === 'CHANGES_REQUIRED' || 
+          (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
               <>
                 {uploadProgress.length ? (
                   <Stack spacing={1}>
@@ -541,12 +559,24 @@ const CampaignFirstDraft = ({
                 ) : (
                   <Stack gap={2}>
                     <Box>
-                      <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                        It&apos;s time to submit your first draft for this campaign!
-                      </Typography>
-                      <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                        Do ensure to read through the brief, and the do&apos;s and dont&apos;s for
-                        the creatives over at the{' '}
+                                        <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                    {submission?.status === 'CHANGES_REQUIRED'
+                      ? 'Please review the feedback below and resubmit your first draft with the requested changes.'
+                      : submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                      ? 'Please review the feedback below and submit your first draft with the requested changes.'
+                      : 'It\'s time to submit your first draft for this campaign!'
+                    }
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                    {submission?.status === 'CHANGES_REQUIRED'
+                      ? 'Make sure to address all the feedback points mentioned in the review.'
+                      : submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                      ? 'Make sure to address all the feedback points mentioned in the review.'
+                      : 'Do ensure to read through the brief, and the do\'s and dont\'s for the creatives over at the'
+                    }
+                    {(submission?.status !== 'CHANGES_REQUIRED' && submission?.status !== 'NOT_STARTED') && (
+                      <>
+                        {' '}
                         <Box
                           component="span"
                           onClick={() => setCurrentTab('info')}
@@ -562,7 +592,9 @@ const CampaignFirstDraft = ({
                           Campaign Details
                         </Box>{' '}
                         page.
-                      </Typography>
+                      </>
+                    )}
+                  </Typography>
 
                       {/* {totalUGCVideos && (
                         <ListItemText
@@ -623,12 +655,14 @@ const CampaignFirstDraft = ({
                             flexDirection: 'column',
                             opacity:
                               submission?.video?.length > 0 ||
-                              submission?.status === 'PENDING_REVIEW'
+                              (submission?.status === 'PENDING_REVIEW' && 
+                               !(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0))
                                 ? 0.5
                                 : 1,
                             cursor:
                               submission?.video?.length > 0 ||
-                              submission?.status === 'PENDING_REVIEW'
+                              (submission?.status === 'PENDING_REVIEW' && 
+                               !(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0))
                                 ? 'not-allowed'
                                 : 'pointer',
                             '&:hover': {
@@ -647,7 +681,8 @@ const CampaignFirstDraft = ({
                           onClick={() => {
                             if (
                               !submission?.video?.length &&
-                              submission?.status !== 'PENDING_REVIEW'
+                              (submission?.status !== 'PENDING_REVIEW' || 
+                               (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0))
                             ) {
                               setDraftVideoModalOpen(true);
                             }
@@ -758,12 +793,14 @@ const CampaignFirstDraft = ({
                               flexDirection: 'column',
                               opacity:
                                 submission?.rawFootages?.length > 0 ||
-                                submission?.status === 'PENDING_REVIEW'
+                                (submission?.status === 'PENDING_REVIEW' && 
+                                 !(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0))
                                   ? 0.5
                                   : 1,
                               cursor:
                                 submission?.rawFootages?.length > 0 ||
-                                submission?.status === 'PENDING_REVIEW'
+                                (submission?.status === 'PENDING_REVIEW' && 
+                                 !(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0))
                                   ? 'not-allowed'
                                   : 'pointer',
                               '&:hover': {
@@ -782,7 +819,8 @@ const CampaignFirstDraft = ({
                             onClick={() => {
                               if (
                                 !submission?.rawFootages?.length &&
-                                submission?.status !== 'PENDING_REVIEW'
+                                (submission?.status !== 'PENDING_REVIEW' || 
+                                 (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0))
                               ) {
                                 setRawFootageModalOpen(true);
                               }
@@ -894,12 +932,14 @@ const CampaignFirstDraft = ({
                               flexDirection: 'column',
                               opacity:
                                 submission?.photos?.length > 0 ||
-                                submission?.status === 'PENDING_REVIEW'
+                                (submission?.status === 'PENDING_REVIEW' && 
+                                 !(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0))
                                   ? 0.5
                                   : 1,
                               cursor:
                                 submission?.photos?.length > 0 ||
-                                submission?.status === 'PENDING_REVIEW'
+                                (submission?.status === 'PENDING_REVIEW' && 
+                                 !(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0))
                                   ? 'not-allowed'
                                   : 'pointer',
                               '&:hover': {
@@ -918,7 +958,8 @@ const CampaignFirstDraft = ({
                             onClick={() => {
                               if (
                                 !submission?.photos?.length &&
-                                submission?.status !== 'PENDING_REVIEW'
+                                (submission?.status !== 'PENDING_REVIEW' || 
+                                 (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0))
                               ) {
                                 setPhotosModalOpen(true);
                               }
@@ -1083,20 +1124,35 @@ const CampaignFirstDraft = ({
                 </Stack>
 
                 {/* Detailed Feedback Display - Show specific content that needs changes */}
-                {submission?.feedback && submission.feedback.length > 0 && (
+                {((submission?.feedback && submission.feedback.length > 0) || 
+                  (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                       Content Requiring Changes
                     </Typography>
-
-                    {submission.feedback
-                      .filter(
-                        (feedback) =>
-                          feedback.type === 'REQUEST' &&
-                          (feedback.videosToUpdate?.length > 0 ||
-                            feedback.photosToUpdate?.length > 0 ||
-                            feedback.rawFootageToUpdate?.length > 0)
-                      )
+                    
+                    {(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0 
+                      ? feedbacksTesting 
+                      : submission.feedback.filter(feedback => {
+                          const hasMediaUpdates = feedback.videosToUpdate?.length > 0 || 
+                            feedback.photosToUpdate?.length > 0 || 
+                            feedback.rawFootageToUpdate?.length > 0;
+                          const hasContent = feedback.content;
+                          const isValidType = feedback.type === 'REQUEST' || feedback.type === 'REASON' || feedback.type === 'COMMENT';
+                          
+                          // Debug logging
+                          console.log('Creator First Draft - Filtering feedback:', {
+                            feedbackId: feedback.id,
+                            type: feedback.type,
+                            hasMediaUpdates,
+                            hasContent,
+                            isValidType,
+                            willShow: isValidType && (hasMediaUpdates || hasContent)
+                          });
+                          
+                          return isValidType && (hasMediaUpdates || hasContent);
+                        })
+                    )
                       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                       .map((feedback, feedbackIndex) => (
                         <Box
@@ -1110,20 +1166,29 @@ const CampaignFirstDraft = ({
                         >
                           <Box sx={{ mb: 2 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                              {feedback.admin?.name || 'Admin'}
+                              {submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                                ? feedback.adminName || 'Admin'
+                                : feedback.admin?.name || 'Admin'
+                              }
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {feedback.admin?.role || 'Admin'} •{' '}
-                              {dayjs(feedback.createdAt).format('MMM DD, YYYY')}
+                              {submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                                ? `${feedback.role || 'Admin'} • ${dayjs(feedback.createdAt).format('MMM DD, YYYY')}`
+                                : `${feedback.admin?.role || 'Admin'} • ${dayjs(feedback.createdAt).format('MMM DD, YYYY')}`
+                              }
                             </Typography>
                           </Box>
 
-                          {feedback.content && (
+                          {(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                            ? feedback.content
+                            : feedback.content) && (
                             <Box sx={{ mb: 2 }}>
                               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
                                 Feedback:
                               </Typography>
-                              {feedback.content.split('\n').map((line, i) => (
+                              {(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                                ? feedback.content
+                                : feedback.content).split('\n').map((line, i) => (
                                 <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
                                   {line}
                                 </Typography>
@@ -1131,13 +1196,19 @@ const CampaignFirstDraft = ({
                             </Box>
                           )}
 
-                          {feedback.reasons && feedback.reasons.length > 0 && (
+                          {(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                            ? feedback.reasons
+                            : feedback.reasons) && (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                              ? feedback.reasons.length > 0
+                              : feedback.reasons.length > 0) && (
                             <Box sx={{ mb: 2 }}>
                               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
                                 Reasons for changes:
                               </Typography>
                               <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                                {feedback.reasons.map((reason, idx) => (
+                                {(submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                                  ? feedback.reasons
+                                  : feedback.reasons).map((reason, idx) => (
                                   <Chip
                                     key={idx}
                                     label={reason}
@@ -1343,7 +1414,7 @@ const CampaignFirstDraft = ({
               </Box>
             )}
 
-            {submission?.status === 'APPROVED' && (
+            {(submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED') && (
               <Stack justifyContent="center" alignItems="center" spacing={2}>
                 <Box
                   sx={{
@@ -1369,7 +1440,7 @@ const CampaignFirstDraft = ({
                       fontWeight: 550,
                     }}
                   >
-                    Approved!
+                    {submission?.status === 'CLIENT_APPROVED' ? 'Submission Approved!' : 'Approved!'}
                   </Typography>
                   <Typography
                     variant="body1"
@@ -1378,7 +1449,9 @@ const CampaignFirstDraft = ({
                       mt: -1,
                     }}
                   >
-                    Your First Draft has been approved.
+                    {submission?.status === 'CLIENT_APPROVED' 
+                      ? 'Your First Draft has been approved by the client!' 
+                      : 'Your First Draft has been approved.'}
                   </Typography>
                 </Stack>
 

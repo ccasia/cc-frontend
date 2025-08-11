@@ -80,7 +80,7 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
       
       // Use different endpoint based on campaign origin
       const endpoint = campaign?.origin === 'CLIENT' 
-        ? '/api/campaign/v2/shortlistCreator/client'
+        ? '/api/campaign/v3/shortlistCreator'
         : '/api/campaign/v2/shortlistCreator';
         
       console.log('Using endpoint:', endpoint);

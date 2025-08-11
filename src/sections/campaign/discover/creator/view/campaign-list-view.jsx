@@ -242,6 +242,8 @@ export default function CampaignListView() {
 
   const filteredData = useMemo(() => {
     const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
+    
+    console.log('Campaign discover - Raw campaigns:', campaigns?.map(c => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin })));
 
     return applyFilter({
       inputData: campaigns?.filter((campaign) => campaign?.status === 'ACTIVE'),
@@ -924,9 +926,10 @@ const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
 
   if (sortBy === 'Most matched') {
     inputData = orderBy(inputData, ['percentageMatch'], ['desc']);
-  }
-
-  if (sortBy === 'Most recent') {
+  } else if (sortBy === 'Most recent') {
+    inputData = orderBy(inputData, ['createdAt'], ['desc']);
+  } else {
+    // Default sorting: newest first
     inputData = orderBy(inputData, ['createdAt'], ['desc']);
   }
 

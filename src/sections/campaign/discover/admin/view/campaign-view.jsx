@@ -146,7 +146,7 @@ const CampaignView = () => {
   const pendingCount = pendingCampaigns.length;
 
   const dataFiltered = useMemo(
-    () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
+    () => (data ? data?.flatMap((item) => item?.data?.campaigns).reverse() : []),
     [data]
   );
 

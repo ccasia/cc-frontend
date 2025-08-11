@@ -134,19 +134,16 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const handleApprove = async () => {
     try {
       setIsSubmitting(true);
-      
-      // Debug log to see what pitch object we're working with
-      console.log('Pitch object in handleApprove:', pitch);
-      console.log('Pitch ID:', pitch.id);
-      console.log('Pitch userId:', pitch.userId);
-      console.log('Pitch pitchId:', pitch.pitchId);
-      console.log('Campaign origin:', campaign?.origin);
-      console.log('User role:', user?.role);
-      
+
       let response;
       
       // Check if this is a V3 pitch (client-created campaign)
       if (campaign?.origin === 'CLIENT') {
+        // Debug: Check what endpoints are available
+        console.log('Available endpoints:', endpoints);
+        console.log('Pitch endpoints:', endpoints?.pitch);
+        console.log('Campaign endpoints:', endpoints?.campaign);
+        
         // Use V3 endpoint for client-created campaigns
         const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
         console.log('Using V3 endpoint with pitch ID:', v3PitchId);
@@ -506,7 +503,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             <Grid container spacing={2} sx={{ pb: 2 }}>
               {/* Languages Section */}
               {currentPitch?.user?.creator?.languages?.length > 0 && (
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={0.1}>
                   <Box>
                     <Typography variant="subtitle2" color="#8E8E93" sx={{ mb: 1 }}>
                       Languages
@@ -547,15 +544,16 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               )}
 
               {/* Stats Section  */}
-              <Grid item xs={12} md={8}>
+              <Grid item xs={12} md={11.9}>
                 <Box
                   sx={{
                     display: 'flex',
                     justifyContent: 'flex-end',
                     minWidth: 0,
                     ml: 'auto',
-                    width: { xs: '100%', md: '90%' },
+                    width: '100%',
                     mb: -1.5,
+                    pr: 0,
                   }}
                 >
                   <Stack direction="row" spacing={0} width="100%" justifyContent="flex-end">

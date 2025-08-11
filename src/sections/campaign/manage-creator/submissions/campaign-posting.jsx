@@ -310,7 +310,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await axiosInstance.post(endpoints.submission.creator.postSubmission, {
-        postingLinks: data.postingLinks,
+        postingLinks: [data.postingLink], // Transform single link to array
         submissionId: submission?.id,
       });
       await new Promise((resolve) => setTimeout(resolve, 1500));

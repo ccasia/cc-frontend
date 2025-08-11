@@ -20,9 +20,17 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import EmptyContent from 'src/components/empty-content/empty-content';
 
+// V2 Components
 import Photos from './finalDraft/photos';
 import RawFootages from './finalDraft/raw-footage';
 import DraftVideos from './finalDraft/draft-videos';
+
+// V3 Components
+import PhotosV3 from './v3/photos';
+import DraftVideosV3 from './v3/draft-videos';
+import RawFootagesV3 from './v3/raw-footage';
+
+import FeedbackDisplay from './finalDraft/feedback-display';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
@@ -71,60 +79,98 @@ const FinalDraft = ({
 
   const checkSubmissionReadiness = async () => {
     try {
-      // Check if all sections are approved for final draft
-      const videosApproved = deliverables?.videos?.every(
-        (video) => video.status === 'APPROVED'
-      );
-      const rawFootagesApproved = deliverables?.rawFootages?.every(
-        (footage) => footage.status === 'APPROVED'
-      );
-      const photosApproved = deliverables?.photos?.every(
-        (photo) => photo.status === 'APPROVED'
-      );
+      if (isV3) {
+        // V3 Flow: Check for V3-specific statuses and client feedback
+        const videosApproved = deliverables?.videos?.every(
+          (video) => video.status === 'APPROVED'
+        );
+        const rawFootagesApproved = deliverables?.rawFootages?.every(
+          (footage) => footage.status === 'APPROVED'
+        );
+        const photosApproved = deliverables?.photos?.every(
+          (photo) => photo.status === 'APPROVED'
+        );
 
-      const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
+        // Check if any section has client feedback (changes requested)
+        const hasVideosClientFeedback = deliverables?.videos?.some(video => 
+          video.status === 'CLIENT_FEEDBACK' || video.status === 'REVISION_REQUESTED'
+        );
+        const hasRawFootagesClientFeedback = deliverables?.rawFootages?.some(footage => 
+          footage.status === 'CLIENT_FEEDBACK' || footage.status === 'REVISION_REQUESTED'
+        );
+        const hasPhotosClientFeedback = deliverables?.photos?.some(photo => 
+          photo.status === 'CLIENT_FEEDBACK' || photo.status === 'REVISION_REQUESTED'
+        );
 
-      if (allSectionsApproved && submission.status === 'PENDING_REVIEW') {
-        // Use V3 endpoint for client-created campaigns, legacy endpoint for admin-created campaigns
-        if (isV3) {
+        // Don't proceed if any section has client feedback
+        if (hasVideosClientFeedback || hasRawFootagesClientFeedback || hasPhotosClientFeedback) {
+          console.log('❌ Cannot approve submission: Some sections have client feedback');
+          return;
+        }
+
+        const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
+
+        if (allSectionsApproved && submission.status === 'PENDING_REVIEW') {
           // V3 endpoint - admin approves and sends to client
           await axiosInstance.patch(`/api/submission/v3/${submission.id}/approve/admin`, {
             feedback: 'All sections have been approved'
           });
-        } else {
-          // Legacy endpoint - direct approval
-        await axiosInstance.patch(`/api/submission/status`, {
-        submissionId: submission.id,
-          status: 'APPROVED',
-          feedback: 'All sections have been approved',
-          dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
-        });
 
-        // Update posting status to allow creator to submit links
-        const allSubmissionsRes = await axiosInstance.get(
-          `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
-        );
-        
-        const postingSubmission = allSubmissionsRes.data.find(
-          sub => sub.submissionType?.type === 'POSTING'
-        );
-        
-        if (postingSubmission) {
-          await axiosInstance.patch(`/api/submission/status`, {
-            submissionId: postingSubmission.id,
-            status: 'IN_PROGRESS',
-          dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
-            sectionOnly: true
+          // Refresh the data
+          await deliverableMutate();
+          
+          enqueueSnackbar('Final draft approved and sent to client for review!', { 
+            variant: 'success' 
           });
-          }
         }
+      } else {
+        // V2 Flow: Original logic for backward compatibility
+        const videosApproved = deliverables?.videos?.every(
+          (video) => video.status === 'APPROVED'
+        );
+        const rawFootagesApproved = deliverables?.rawFootages?.every(
+          (footage) => footage.status === 'APPROVED'
+        );
+        const photosApproved = deliverables?.photos?.every(
+          (photo) => photo.status === 'APPROVED'
+        );
 
-        // Refresh the data
-        await deliverableMutate();
-        
-        enqueueSnackbar('Final draft approved! Creator can now submit posting links.', { 
-          variant: 'success' 
-        });
+        const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
+
+        if (allSectionsApproved && submission.status === 'PENDING_REVIEW') {
+          // Legacy endpoint - direct approval
+          await axiosInstance.patch(`/api/submission/status`, {
+            submissionId: submission.id,
+            status: 'APPROVED',
+            feedback: 'All sections have been approved',
+            dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
+          });
+
+          // Update posting status to allow creator to submit links
+          const allSubmissionsRes = await axiosInstance.get(
+            `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+          );
+          
+          const postingSubmission = allSubmissionsRes.data.find(
+            sub => sub.submissionType?.type === 'POSTING'
+          );
+          
+          if (postingSubmission) {
+            await axiosInstance.patch(`/api/submission/status`, {
+              submissionId: postingSubmission.id,
+              status: 'IN_PROGRESS',
+              dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
+              sectionOnly: true
+            });
+          }
+
+          // Refresh the data
+          await deliverableMutate();
+          
+          enqueueSnackbar('Final draft approved! Creator can now submit posting links.', { 
+            variant: 'success' 
+          });
+        }
       }
     } catch (error) {
       console.error('Error checking submission readiness:', error);
@@ -155,6 +201,8 @@ const FinalDraft = ({
   // Check if all sections are approved and activate posting if needed
   const checkAndActivatePosting = async (selectedDueDate) => {
     try {
+      console.log('🔍 checkAndActivatePosting called with isV3:', isV3);
+      
       // Wait a moment for the data to be refreshed
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -167,55 +215,152 @@ const FinalDraft = ({
       );
       const currentDeliverables = freshDeliverablesResponse.data;
       
-      // Check if all sections are approved
-      const videosApproved = !currentDeliverables?.videos?.length || 
-        currentDeliverables.videos.every(video => video.status === 'APPROVED');
-      const rawFootagesApproved = !currentDeliverables?.rawFootages?.length || 
-        currentDeliverables.rawFootages.every(footage => footage.status === 'APPROVED');
-      const photosApproved = !currentDeliverables?.photos?.length || 
-        currentDeliverables.photos.every(photo => photo.status === 'APPROVED');
-
-      const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
-
-      if (allSectionsApproved && submission.submissionType?.type === 'FINAL_DRAFT') {
-        // Use the selected due date if provided, otherwise default to 3 days from today
-        const dueDate = selectedDueDate 
-          ? new Date(selectedDueDate).toISOString()
-          : (() => {
-              const threeDaysFromToday = new Date();
-              threeDaysFromToday.setDate(threeDaysFromToday.getDate() + 3);
-              threeDaysFromToday.setHours(23, 59, 59, 999);
-              return threeDaysFromToday.toISOString();
-            })();
+      // Early check for V3: If any deliverables have client feedback, don't proceed
+      if (isV3) {
+        const hasAnyClientFeedback = 
+          currentDeliverables?.videos?.some(v => v.status === 'CLIENT_FEEDBACK' || v.status === 'REVISION_REQUESTED') ||
+          currentDeliverables?.photos?.some(p => p.status === 'CLIENT_FEEDBACK' || p.status === 'REVISION_REQUESTED') ||
+          currentDeliverables?.rawFootages?.some(r => r.status === 'CLIENT_FEEDBACK' || r.status === 'REVISION_REQUESTED');
         
-        // Update submission to APPROVED using the correct endpoint
-        const response = await axiosInstance.patch('/api/submission/status', {
-          submissionId: submission.id,
-          status: 'APPROVED',
-          updatePosting: true, // This flag tells the backend to activate posting
-          dueDate,
+        if (hasAnyClientFeedback) {
+          console.log('❌ V3: Early exit - Client feedback detected, cannot activate posting');
+          return;
+        }
+      }
+      
+      if (isV3) {
+        // V3 Flow: Check for V3-specific statuses
+        const videosApproved = !currentDeliverables?.videos?.length || 
+          currentDeliverables.videos.every(video => video.status === 'APPROVED');
+        const rawFootagesApproved = !currentDeliverables?.rawFootages?.length || 
+          currentDeliverables.rawFootages.every(footage => footage.status === 'APPROVED');
+        const photosApproved = !currentDeliverables?.photos?.length || 
+          currentDeliverables.photos.every(photo => photo.status === 'APPROVED');
+
+        // Check if any section has client feedback (changes requested)
+        const hasVideosClientFeedback = currentDeliverables?.videos?.some(video => 
+          video.status === 'CLIENT_FEEDBACK' || video.status === 'REVISION_REQUESTED'
+        );
+        const hasRawFootagesClientFeedback = currentDeliverables?.rawFootages?.some(footage => 
+          footage.status === 'CLIENT_FEEDBACK' || footage.status === 'REVISION_REQUESTED'
+        );
+        const hasPhotosClientFeedback = currentDeliverables?.photos?.some(photo => 
+          photo.status === 'CLIENT_FEEDBACK' || photo.status === 'REVISION_REQUESTED'
+        );
+
+        console.log('🔍 V3 Posting Check:', {
+          videosApproved,
+          rawFootagesApproved,
+          photosApproved,
+          hasVideosClientFeedback,
+          hasRawFootagesClientFeedback,
+          hasPhotosClientFeedback,
+          videos: currentDeliverables?.videos?.map(v => ({ id: v.id, status: v.status })),
+          photos: currentDeliverables?.photos?.map(p => ({ id: p.id, status: p.status })),
+          rawFootages: currentDeliverables?.rawFootages?.map(r => ({ id: r.id, status: r.status }))
         });
 
-        // Wait for backend to complete all updates
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Don't proceed if any section has client feedback
+        if (hasVideosClientFeedback || hasRawFootagesClientFeedback || hasPhotosClientFeedback) {
+          console.log('❌ Cannot activate posting: Some sections have client feedback');
+          return;
+        }
 
-        // Refresh data multiple times to ensure consistency
-        await Promise.all([
-          deliverableMutate(),
-          submissionMutate && submissionMutate()
-        ].filter(Boolean));
+        const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
+        console.log('🔍 V3 All Sections Approved Check:', { allSectionsApproved, submissionType: submission.submissionType?.type });
 
-        // Additional refresh after a short delay to catch any delayed updates
-        setTimeout(async () => {
+        if (allSectionsApproved && submission.submissionType?.type === 'FINAL_DRAFT') {
+          // Use the selected due date if provided, otherwise default to 3 days from today
+          const dueDate = selectedDueDate 
+            ? new Date(selectedDueDate).toISOString()
+            : (() => {
+                const threeDaysFromToday = new Date();
+                threeDaysFromToday.setDate(threeDaysFromToday.getDate() + 3);
+                threeDaysFromToday.setHours(23, 59, 59, 999);
+                return threeDaysFromToday.toISOString();
+              })();
+          
+          // Update submission to APPROVED using the correct endpoint
+          const response = await axiosInstance.patch('/api/submission/status', {
+            submissionId: submission.id,
+            status: 'APPROVED',
+            updatePosting: true, // This flag tells the backend to activate posting
+            dueDate,
+          });
+
+          // Wait for backend to complete all updates
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+          // Refresh data multiple times to ensure consistency
           await Promise.all([
             deliverableMutate(),
             submissionMutate && submissionMutate()
           ].filter(Boolean));
-        }, 1000);
 
-        enqueueSnackbar('All sections approved!', { 
-          variant: 'success' 
-        });
+          // Additional refresh after a short delay to catch any delayed updates
+          setTimeout(async () => {
+            await Promise.all([
+              deliverableMutate(),
+              submissionMutate && submissionMutate()
+            ].filter(Boolean));
+          }, 1000);
+
+          enqueueSnackbar('All sections approved!', { 
+            variant: 'success' 
+          });
+          console.log('🎉 V3: Posting activation completed successfully!');
+        }
+      } else {
+        // V2 Flow: Original logic for backward compatibility
+        const videosApproved = !currentDeliverables?.videos?.length || 
+          currentDeliverables.videos.every(video => video.status === 'APPROVED');
+        const rawFootagesApproved = !currentDeliverables?.rawFootages?.length || 
+          currentDeliverables.rawFootages.every(footage => footage.status === 'APPROVED');
+        const photosApproved = !currentDeliverables?.photos?.length || 
+          currentDeliverables.photos.every(photo => photo.status === 'APPROVED');
+
+        const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
+
+        if (allSectionsApproved && submission.submissionType?.type === 'FINAL_DRAFT') {
+          // Use the selected due date if provided, otherwise default to 3 days from today
+          const dueDate = selectedDueDate 
+            ? new Date(selectedDueDate).toISOString()
+            : (() => {
+                const threeDaysFromToday = new Date();
+                threeDaysFromToday.setDate(threeDaysFromToday.getDate() + 3);
+                threeDaysFromToday.setHours(23, 59, 59, 999);
+                return threeDaysFromToday.toISOString();
+              })();
+          
+          // Update submission to APPROVED using the correct endpoint
+          const response = await axiosInstance.patch('/api/submission/status', {
+            submissionId: submission.id,
+            status: 'APPROVED',
+            updatePosting: true, // This flag tells the backend to activate posting
+            dueDate,
+          });
+
+          // Wait for backend to complete all updates
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+          // Refresh data multiple times to ensure consistency
+          await Promise.all([
+            deliverableMutate(),
+            submissionMutate && submissionMutate()
+          ].filter(Boolean));
+
+          // Additional refresh after a short delay to catch any delayed updates
+          setTimeout(async () => {
+            await Promise.all([
+              deliverableMutate(),
+              submissionMutate && submissionMutate()
+            ].filter(Boolean));
+          }, 1000);
+
+          enqueueSnackbar('All sections approved!', { 
+            variant: 'success' 
+          });
+        }
       }
     } catch (error) {
       console.error('❌ Error checking and activating posting:', error);
@@ -226,17 +371,34 @@ const FinalDraft = ({
   // V2 Individual Media Management Functions
   const handleIndividualPhotoApprove = async (mediaId, feedback) => {
     try {
-      const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
-        mediaId,
-        status: 'APPROVED',
-        feedback,
-        preventStatusChange: true,
-      });
+      if (isV3) {
+        // V3 flow: Use V3 endpoint
+        const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+          mediaId: mediaId,
+          mediaType: 'photo',
+          feedback: feedback || 'Photo approved by admin'
+        });
 
-      await onIndividualMediaUpdated();
-      await checkAndActivatePosting(null);
-      enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
-      return response.data;
+        if (response.status === 200) {
+          enqueueSnackbar('Photo approved and sent to client!', { variant: 'success' });
+          // Refresh data using SWR
+          await deliverableMutate();
+          await submissionMutate();
+        }
+      } else {
+        // V2 flow: Use V2 endpoint
+        const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
+          mediaId,
+          status: 'APPROVED',
+          feedback,
+          preventStatusChange: true,
+        });
+
+        await onIndividualMediaUpdated();
+        await checkAndActivatePosting(null);
+        enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
+        return response.data;
+      }
     } catch (error) {
       console.error('Error approving photo:', error);
       enqueueSnackbar(error?.response?.data?.message || 'Error approving photo', { 
@@ -248,17 +410,35 @@ const FinalDraft = ({
 
   const handleIndividualPhotoRequestChange = async (mediaId, feedback, reasons) => {
     try {
-      const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
-        mediaId,
-        status: 'CHANGES_REQUIRED',
-        feedback,
-        reasons: reasons || [],
-        preventStatusChange: true,
-      });
+      if (isV3) {
+        // V3 flow: Use V3 endpoint
+        const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+          mediaId: mediaId,
+          mediaType: 'photo',
+          feedback: feedback || 'Changes requested for photo',
+          reasons: reasons || []
+        });
 
-      await onIndividualMediaUpdated();
-      enqueueSnackbar('Changes requested for photo', { variant: 'warning' });
-      return response.data;
+        if (response.status === 200) {
+          enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
+          // Refresh data using SWR
+          await deliverableMutate();
+          await submissionMutate();
+        }
+      } else {
+        // V2 flow: Use V2 endpoint
+        const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
+          mediaId,
+          status: 'CHANGES_REQUIRED',
+          feedback,
+          reasons: reasons || [],
+          preventStatusChange: true,
+        });
+
+        await onIndividualMediaUpdated();
+        enqueueSnackbar('Changes requested for photo', { variant: 'warning' });
+        return response.data;
+      }
     } catch (error) {
       console.error('Error requesting photo changes:', error);
       enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
@@ -270,17 +450,34 @@ const FinalDraft = ({
 
   const handleIndividualVideoApprove = async (mediaId, feedback, dueDate) => {
     try {
-      const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
-        mediaId,
-        status: 'APPROVED',
-        feedback,
-        preventStatusChange: true,
-      });
+      if (isV3) {
+        // V3 flow: Use V3 endpoint
+        const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+          mediaId: mediaId,
+          mediaType: 'video',
+          feedback: feedback || 'Video approved by admin'
+        });
 
-      await onIndividualMediaUpdated();
-      await checkAndActivatePosting(dueDate);
-      enqueueSnackbar('Video approved successfully!', { variant: 'success' });
-      return response.data;
+        if (response.status === 200) {
+          enqueueSnackbar('Video approved and sent to client!', { variant: 'success' });
+          // Refresh data using SWR
+          await deliverableMutate();
+          await submissionMutate();
+        }
+      } else {
+        // V2 flow: Use V2 endpoint
+        const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
+          mediaId,
+          status: 'APPROVED',
+          feedback,
+          preventStatusChange: true,
+        });
+
+        await onIndividualMediaUpdated();
+        await checkAndActivatePosting(dueDate);
+        enqueueSnackbar('Video approved successfully!', { variant: 'success' });
+        return response.data;
+      }
     } catch (error) {
       console.error('Error approving video:', error);
       enqueueSnackbar(error?.response?.data?.message || 'Error approving video', { 
@@ -292,17 +489,35 @@ const FinalDraft = ({
 
   const handleIndividualVideoRequestChange = async (mediaId, feedback, reasons) => {
     try {
-      const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
-        mediaId,
-        status: 'CHANGES_REQUIRED',
-        feedback,
-        reasons: reasons || [],
-        preventStatusChange: true,
-      });
+      if (isV3) {
+        // V3 flow: Use V3 endpoint
+        const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+          mediaId: mediaId,
+          mediaType: 'video',
+          feedback: feedback || 'Changes requested for video',
+          reasons: reasons || []
+        });
 
-      await onIndividualMediaUpdated();
-      enqueueSnackbar('Changes requested for video', { variant: 'warning' });
-      return response.data;
+        if (response.status === 200) {
+          enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
+          // Refresh data using SWR
+          await deliverableMutate();
+          await submissionMutate();
+        }
+      } else {
+        // V2 flow: Use V2 endpoint
+        const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
+          mediaId,
+          status: 'CHANGES_REQUIRED',
+          feedback,
+          reasons: reasons || [],
+          preventStatusChange: true,
+        });
+
+        await onIndividualMediaUpdated();
+        enqueueSnackbar('Changes requested for video', { variant: 'warning' });
+        return response.data;
+      }
     } catch (error) {
       console.error('Error requesting video changes:', error);
       enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
@@ -314,17 +529,34 @@ const FinalDraft = ({
 
   const handleIndividualRawFootageApprove = async (mediaId, feedback) => {
     try {
-      const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
-        mediaId,
-        status: 'APPROVED',
-        feedback,
-        preventStatusChange: true,
-      });
+      if (isV3) {
+        // V3 flow: Use V3 endpoint
+        const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+          mediaId: mediaId,
+          mediaType: 'rawFootage',
+          feedback: feedback || 'Raw footage approved by admin'
+        });
 
-      await onIndividualMediaUpdated();
-      await checkAndActivatePosting(null);
-      enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
-      return response.data;
+        if (response.status === 200) {
+          enqueueSnackbar('Raw footage approved and sent to client!', { variant: 'success' });
+          // Refresh data using SWR
+          await deliverableMutate();
+          await submissionMutate();
+        }
+      } else {
+        // V2 flow: Use V2 endpoint
+        const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
+          mediaId,
+          status: 'APPROVED',
+          feedback,
+          preventStatusChange: true,
+        });
+
+        await onIndividualMediaUpdated();
+        await checkAndActivatePosting(null);
+        enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
+        return response.data;
+      }
     } catch (error) {
       console.error('Error approving raw footage:', error);
       enqueueSnackbar(error?.response?.data?.message || 'Error approving raw footage', { 
@@ -336,17 +568,33 @@ const FinalDraft = ({
 
   const handleIndividualRawFootageRequestChange = async (mediaId, feedback, reasons) => {
     try {
-      const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
-        mediaId,
-        status: 'CHANGES_REQUIRED',
-        feedback,
-        reasons: reasons || [],
-        preventStatusChange: true,
-      });
+      if (isV3) {
+        // V3 flow: Use V3 endpoint
+        const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+          mediaId: mediaId,
+          mediaType: 'rawFootage',
+          feedback: feedback || 'Changes requested for raw footage',
+          reasons: reasons || []
+        });
 
-      await onIndividualMediaUpdated();
-      enqueueSnackbar('Changes requested for raw footage', { variant: 'warning' });
-      return response.data;
+        if (response.status === 200) {
+          enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
+          await deliverableMutate();
+          await submissionMutate();
+        }
+      } else {
+        const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
+          mediaId,
+          status: 'CHANGES_REQUIRED',
+          feedback,
+          reasons: reasons || [],
+          preventStatusChange: true,
+        });
+
+        await onIndividualMediaUpdated();
+        enqueueSnackbar('Changes requested for raw footage', { variant: 'warning' });
+        return response.data;
+      }
     } catch (error) {
       console.error('Error requesting raw footage changes:', error);
       enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
@@ -453,17 +701,44 @@ const FinalDraft = ({
     deliverables.photos.every(photo => photo.status === 'APPROVED');
 
   // Helper functions to check if any item has changes required
-  const hasVideosChangesRequired = () => 
-    deliverables?.videos?.length > 0 && 
-    deliverables.videos.some(video => video.status === 'REVISION_REQUESTED');
+  const hasVideosChangesRequired = () => {
+    if (isV3) {
+      return deliverables?.videos?.length > 0 && 
+        deliverables.videos.some(video => 
+          video.status === 'CLIENT_FEEDBACK' || 
+          video.status === 'REVISION_REQUESTED' ||
+          video.status === 'CHANGES_REQUIRED'
+        );
+    }
+    return deliverables?.videos?.length > 0 && 
+      deliverables.videos.some(video => video.status === 'REVISION_REQUESTED');
+  };
 
-  const hasRawFootagesChangesRequired = () => 
-    deliverables?.rawFootages?.length > 0 && 
-    deliverables.rawFootages.some(footage => footage.status === 'REVISION_REQUESTED');
+  const hasRawFootagesChangesRequired = () => {
+    if (isV3) {
+      return deliverables?.rawFootages?.length > 0 && 
+        deliverables.rawFootages.some(footage => 
+          footage.status === 'CLIENT_FEEDBACK' || 
+          footage.status === 'REVISION_REQUESTED' ||
+          footage.status === 'CHANGES_REQUIRED'
+        );
+    }
+    return deliverables?.rawFootages?.length > 0 && 
+      deliverables.rawFootages.some(footage => footage.status === 'REVISION_REQUESTED');
+  };
 
-  const hasPhotosChangesRequired = () => 
-    deliverables?.photos?.length > 0 && 
-    deliverables.photos.some(photo => photo.status === 'REVISION_REQUESTED');
+  const hasPhotosChangesRequired = () => {
+    if (isV3) {
+      return deliverables?.photos?.length > 0 && 
+        deliverables.photos.some(photo => 
+          photo.status === 'CLIENT_FEEDBACK' || 
+          photo.status === 'REVISION_REQUESTED' ||
+          photo.status === 'CHANGES_REQUIRED'
+        );
+    }
+    return deliverables?.photos?.length > 0 && 
+      deliverables.photos.some(photo => photo.status === 'REVISION_REQUESTED');
+  };
 
   const getTabBorderColor = (tabType) => {
     const status = submission.displayStatus || submission.status;
@@ -472,7 +747,7 @@ const FinalDraft = ({
     if (isV3 && userRole === 'admin') {
       if (status === 'PENDING_REVIEW') return '#FFC702'; // Yellow for pending review
       if (status === 'SENT_TO_CLIENT') return '#8a5afe'; // Purple for sent to client
-      if (status === 'CLIENT_CHANGES_REQUESTED') return '#D4321C'; // Red for client changes requested
+      if (status === 'SENT_TO_ADMIN') return '#D4321C'; // Red for client feedback sent to admin
     }
 
     if (submission?.status === 'PENDING_REVIEW') return '#FFC702';
@@ -501,16 +776,34 @@ const FinalDraft = ({
       photos: deliverables?.photos || [],
     };
 
+    // Common props for both V2 and V3 components
+    const commonProps = {
+      campaign,
+      submission,
+      deliverables: filteredDeliverables,
+      isDisabled,
+    };
+
     switch (selectedTab) {
       case 'videos':
-      return (
-          <DraftVideos
-            campaign={campaign}
-            submission={submission}
-            deliverables={filteredDeliverables}
+        return isV3 ? (
+          <DraftVideosV3
+            {...commonProps}
             onVideoClick={handleDraftVideoClick}
             onSubmit={onSubmitDraftVideo}
-            isDisabled={isDisabled}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
+          />
+        ) : (
+          <DraftVideos
+            {...commonProps}
+            onVideoClick={handleDraftVideoClick}
+            onSubmit={onSubmitDraftVideo}
             // V2 individual handlers
             onIndividualApprove={handleIndividualVideoApprove}
             onIndividualRequestChange={handleIndividualVideoRequestChange}
@@ -524,14 +817,24 @@ const FinalDraft = ({
           />
         );
       case 'rawFootages':
-      return (
+        return isV3 ? (
+          <RawFootagesV3
+            {...commonProps}
+            onRawFootageClick={handleVideoClick}
+            onSubmit={onSubmitRawFootage}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
+          />
+        ) : (
           <RawFootages
-            campaign={campaign}
-            submission={submission}
-            deliverables={filteredDeliverables}
+            {...commonProps}
             onVideoClick={handleVideoClick}
             onSubmit={onSubmitRawFootage}
-            isDisabled={isDisabled}
             // V2 individual handlers
             onIndividualApprove={handleIndividualRawFootageApprove}
             onIndividualRequestChange={handleIndividualRawFootageRequestChange}
@@ -545,14 +848,24 @@ const FinalDraft = ({
           />
         );
       case 'photos':
-        return (
-          <Photos
-            campaign={campaign}
-            submission={submission}
-            deliverables={filteredDeliverables}
+        return isV3 ? (
+          <PhotosV3
+            {...commonProps}
             onImageClick={handleImageClick}
             onSubmit={onSubmitPhotos}
-            isDisabled={isDisabled}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
+          />
+        ) : (
+          <Photos
+            {...commonProps}
+            onImageClick={handleImageClick}
+            onSubmit={onSubmitPhotos}
             // V2 individual handlers
             onIndividualApprove={handleIndividualPhotoApprove}
             onIndividualRequestChange={handleIndividualPhotoRequestChange}
@@ -584,32 +897,62 @@ const FinalDraft = ({
   // Draft Video submission handler
   const onSubmitDraftVideo = async (payload) => {
     try {
-      await axiosInstance.patch('/api/submission/manageVideos', {
-          submissionId: submission.id,
-        videos: payload.videos || deliverables?.videos?.map(video => video.id) || [],
-        type: payload.type,
-        feedback: payload.feedback,
-        reasons: payload.reasons || [],
-        dueDate: payload.type === 'approve' ? payload.dueDate : null,
-        sectionOnly: true,
-        submissionType: 'FINAL_DRAFT'
-      });
+      if (isV3) {
+        // V3 endpoint for client-created campaigns
+        await axiosInstance.post('/api/submission/v3/submit-draft', {
+          data: JSON.stringify({
+            submissionId: submission.id,
+            caption: payload.caption || '',
+            photosDriveLink: payload.photosDriveLink || null,
+            rawFootagesDriveLink: payload.rawFootagesDriveLink || null,
+          })
+        });
 
-      await onSectionUpdated();
-      
-      enqueueSnackbar(
-        payload.type === 'approve' 
-          ? 'Draft videos approved successfully!' 
-          : 'Changes requested for draft videos.',
-        { variant: payload.type === 'approve' ? 'success' : 'warning' }
-      );
+        await onSectionUpdated();
+        
+        enqueueSnackbar('Draft submitted successfully for review!', {
+          variant: 'success',
+        });
         
         return true;
+      } else {
+        // V2 endpoint for admin-created campaigns
+        await axiosInstance.patch('/api/submission/manageVideos', {
+          submissionId: submission.id,
+          videos: payload.videos || deliverables?.videos?.map(video => video.id) || [],
+          type: payload.type,
+          feedback: payload.feedback,
+          reasons: payload.reasons || [],
+          dueDate: payload.type === 'approve' ? payload.dueDate : null,
+          sectionOnly: true,
+          submissionType: 'FINAL_DRAFT'
+        });
+
+        await onSectionUpdated();
+        
+        enqueueSnackbar(
+          payload.type === 'approve' 
+            ? 'Draft videos approved successfully!' 
+            : 'Changes requested for draft videos.',
+          { variant: payload.type === 'approve' ? 'success' : 'warning' }
+        );
+        
+        return true;
+      }
     } catch (error) {
       console.error('Error submitting draft video review:', error);
-      enqueueSnackbar(error?.response?.data?.message || error?.message || 'Error submitting review', {
-        variant: 'error',
-      });
+      
+      // Handle the specific 400 error for missing deliverables in V3
+      if (isV3 && error?.response?.status === 400) {
+        enqueueSnackbar(error?.response?.data?.message || 'Please upload at least one deliverable before submitting for review.', {
+          variant: 'warning',
+        });
+      } else {
+        enqueueSnackbar(error?.response?.data?.message || error?.message || 'Error submitting review', {
+          variant: 'error',
+        });
+      }
+      
       return false;
     }
   };
@@ -617,31 +960,61 @@ const FinalDraft = ({
   // Raw Footage submission handler
   const onSubmitRawFootage = async (payload) => {
     try {
-      await axiosInstance.patch('/api/submission/manageRawFootages', {
-        submissionId: submission.id,
-        rawFootages: payload.rawFootages || deliverables?.rawFootages?.map(footage => footage.id) || [],
-        type: payload.type,
-        rawFootageContent: payload.footageFeedback || '',
-        sectionOnly: true,
-        status: payload.type === 'request' ? 'CHANGES_REQUIRED' : 'APPROVED',
-        dueDate: payload.type === 'request' ? dayjs().add(7, 'day').format('YYYY-MM-DD') : null
-      });
+      if (isV3) {
+        // V3 endpoint for client-created campaigns
+        await axiosInstance.post('/api/submission/v3/submit-draft', {
+          data: JSON.stringify({
+            submissionId: submission.id,
+            caption: payload.caption || '',
+            photosDriveLink: payload.photosDriveLink || null,
+            rawFootagesDriveLink: payload.rawFootagesDriveLink || null,
+          })
+        });
 
-      await onSectionUpdated();
-      
-      enqueueSnackbar(
-        payload.type === 'approve'
-          ? 'Raw footages approved successfully!'
-          : 'Changes requested for raw footages.',
-        { variant: payload.type === 'approve' ? 'success' : 'warning' }
-      );
+        await onSectionUpdated();
+        
+        enqueueSnackbar('Draft submitted successfully for review!', {
+          variant: 'success',
+        });
         
         return true;
+      } else {
+        // V2 endpoint for admin-created campaigns
+        await axiosInstance.patch('/api/submission/manageRawFootages', {
+          submissionId: submission.id,
+          rawFootages: payload.rawFootages || deliverables?.rawFootages?.map(footage => footage.id) || [],
+          type: payload.type,
+          rawFootageContent: payload.footageFeedback || '',
+          sectionOnly: true,
+          status: payload.type === 'request' ? 'CHANGES_REQUIRED' : 'APPROVED',
+          dueDate: payload.type === 'request' ? dayjs().add(7, 'day').format('YYYY-MM-DD') : null
+        });
+
+        await onSectionUpdated();
+        
+        enqueueSnackbar(
+          payload.type === 'approve'
+            ? 'Raw footages approved successfully!'
+            : 'Changes requested for raw footages.',
+          { variant: payload.type === 'approve' ? 'success' : 'warning' }
+        );
+        
+        return true;
+      }
     } catch (error) {
       console.error('Error submitting raw footage review:', error);
-      enqueueSnackbar(error?.message || 'Error submitting review', {
-        variant: 'error',
-      });
+      
+      // Handle the specific 400 error for missing deliverables in V3
+      if (isV3 && error?.response?.status === 400) {
+        enqueueSnackbar(error?.response?.data?.message || 'Please upload at least one deliverable before submitting for review.', {
+          variant: 'warning',
+        });
+      } else {
+        enqueueSnackbar(error?.message || 'Error submitting review', {
+          variant: 'error',
+        });
+      }
+      
       return false;
     }
   };
@@ -649,29 +1022,59 @@ const FinalDraft = ({
   // Photos submission handler
   const onSubmitPhotos = async (payload) => {
     try {
-      await axiosInstance.patch('/api/submission/managePhotos', {
-        submissionId: submission.id,
-        photos: payload.photos || deliverables?.photos?.map(photo => photo.id) || [],
-        type: payload.type,
-        photoFeedback: payload.photoFeedback || '',
-        sectionOnly: true
-      });
+      if (isV3) {
+        // V3 endpoint for client-created campaigns
+        await axiosInstance.post('/api/submission/v3/submit-draft', {
+          data: JSON.stringify({
+            submissionId: submission.id,
+            caption: payload.caption || '',
+            photosDriveLink: payload.photosDriveLink || null,
+            rawFootagesDriveLink: payload.rawFootagesDriveLink || null,
+          })
+        });
 
-      await onSectionUpdated();
-      
-      enqueueSnackbar(
-        payload.type === 'approve'
-          ? 'Photos approved successfully!'
-          : 'Changes requested for photos.',
-        { variant: payload.type === 'approve' ? 'success' : 'warning' }
-      );
+        await onSectionUpdated();
+        
+        enqueueSnackbar('Draft submitted successfully for review!', {
+          variant: 'success',
+        });
+        
+        return true;
+      } else {
+        // V2 endpoint for admin-created campaigns
+        await axiosInstance.patch('/api/submission/managePhotos', {
+          submissionId: submission.id,
+          photos: payload.photos || deliverables?.photos?.map(photo => photo.id) || [],
+          type: payload.type,
+          photoFeedback: payload.photoFeedback || '',
+          sectionOnly: true
+        });
+
+        await onSectionUpdated();
+        
+        enqueueSnackbar(
+          payload.type === 'approve'
+            ? 'Photos approved successfully!'
+            : 'Changes requested for photos.',
+          { variant: payload.type === 'approve' ? 'success' : 'warning' }
+        );
 
         return true;
+      }
     } catch (error) {
       console.error('Error submitting photo review:', error);
-      enqueueSnackbar(error?.message || 'Error submitting review', {
-        variant: 'error',
-      });
+      
+      // Handle the specific 400 error for missing deliverables in V3
+      if (isV3 && error?.response?.status === 400) {
+        enqueueSnackbar(error?.response?.data?.message || 'Please upload at least one deliverable before submitting for review.', {
+          variant: 'warning',
+        });
+      } else {
+        enqueueSnackbar(error?.message || 'Error submitting review', {
+          variant: 'error',
+        });
+      }
+      
       return false;
     }
   };

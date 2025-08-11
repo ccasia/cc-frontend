@@ -291,6 +291,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         borderColor: '#1ABF66',
         tooltip: 'All deliverables have been approved',
       },
+      CLIENT_APPROVED: {
+        color: '#1ABF66',
+        borderColor: '#1ABF66',
+        tooltip: 'All deliverables have been approved by client',
+      },
       REJECTED: {
         color: '#FF4842',
         borderColor: '#FF4842',
@@ -311,6 +316,21 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         borderColor: '#D4321C',
         tooltip: 'Changes requested by admin',
       },
+      SENT_TO_ADMIN: {
+        color: '#D4321C',
+        borderColor: '#D4321C',
+        tooltip: 'Client feedback sent to admin for review',
+      },
+      CLIENT_FEEDBACK: {
+        color: '#D4321C',
+        borderColor: '#D4321C',
+        tooltip: 'Client feedback sent to admin for review',
+      },
+      SENT_TO_CLIENT: {
+        color: '#8a5afe',
+        borderColor: '#8a5afe',
+        tooltip: 'Sent to client for review',
+      },
       NOT_STARTED: {
         color: '#8E8E93',
         borderColor: '#8E8E93',
@@ -325,7 +345,13 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     if (loadingStatuses) return <CircularProgress size={16} />;
     
     const status = creatorStatuses[userId] || 'NOT_STARTED';
-    const statusText = status.replace(/_/g, ' ');
+    let statusText = status.replace(/_/g, ' ');
+    
+    // Handle SENT_TO_ADMIN status display for admin users
+    if (status === 'SENT_TO_ADMIN') {
+      statusText = 'CLIENT FEEDBACK';
+    }
+    
     const statusInfo = getStatusInfo(status);
     
     return (
@@ -357,9 +383,16 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   const renderAccordionStatus = (submission) => {
     if (!submission) return null;
 
-    // Replace underscores with spaces in status text (used regex)
-    const statusText = submission.status ? submission.status.replace(/_/g, ' ') : '';
-    const statusInfo = getStatusInfo(submission.status);
+    // Use displayStatus for V3 submissions, fallback to regular status
+    let status = submission.displayStatus || submission.status;
+    let statusText = status ? status.replace(/_/g, ' ') : '';
+    
+    // Handle SENT_TO_ADMIN status display for admin users
+    if (status === 'SENT_TO_ADMIN') {
+      statusText = 'CLIENT FEEDBACK';
+    }
+    
+    const statusInfo = getStatusInfo(status);
 
     return (
       <Tooltip title={statusInfo.tooltip} arrow>

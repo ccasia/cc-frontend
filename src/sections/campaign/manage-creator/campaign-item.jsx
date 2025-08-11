@@ -231,7 +231,7 @@ export default function CampaignItem({ campaign, user }) {
           </Typography>
         </Box>
 
-        {campaign?.pitch && campaign?.pitch?.status !== 'approved' ? (
+        {campaign?.pitch && (campaign?.pitch?.status === 'PENDING_REVIEW' || campaign?.pitch?.status === 'SENT_TO_CLIENT' || campaign?.pitch?.status === 'undecided') ? (
           <Chip
             icon={<Iconify icon="mdi:clock" sx={{ width: 20, height: 20, mt: -0.2, ml: -0.5 }} />}
             label="PENDING APPROVAL"
@@ -272,7 +272,7 @@ export default function CampaignItem({ campaign, user }) {
                 />
                 <CircularProgress
                   variant="determinate"
-                  value={Math.min(Math.round(campaign?.totalCompletion), 100)}
+                  value={Math.min(Math.round(campaign?.totalCompletion || 0), 100)}
                   size={isSmallScreen ? 15 : 20}
                   thickness={7}
                   sx={{
@@ -284,7 +284,7 @@ export default function CampaignItem({ campaign, user }) {
                 />
               </Box>
             }
-            label={`${Math.min(Math.round(campaign?.totalCompletion), 100)}% COMPLETED`}
+            label={`${Math.min(Math.round(campaign?.totalCompletion || 0), 100)}% COMPLETED`}
             sx={{
               backgroundColor: theme.palette.common.white,
               color: '#48484a',

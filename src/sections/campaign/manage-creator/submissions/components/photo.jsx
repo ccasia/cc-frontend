@@ -93,7 +93,10 @@ const UploadPhotoModal = ({
         });
       }
 
-      await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+      // Use V3 endpoint for client-created campaigns to trigger the worker
+      const isV3 = window?.location?.pathname?.includes('v3') || (campaignId && campaignId.startsWith('cmd'));
+      const endpoint = isV3 ? endpoints.submission.v3.submitDraft : endpoints.submission.creator.draftSubmission;
+      await axiosInstance.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -106,7 +109,9 @@ const UploadPhotoModal = ({
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaignId));
     } catch (error) {
-      enqueueSnackbar('Failed to upload photos', { variant: 'error' });
+      console.error('Photo upload error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to upload photos';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
     }
   });
 
