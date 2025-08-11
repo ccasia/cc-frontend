@@ -888,7 +888,7 @@ const RawFootages = ({
         feedback: formValues.feedback || '',
       };
 
-      const response = await axiosInstance.post('/api/submission/v3/draft/approve', payload);
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', { mediaId: videoId, mediaType: 'rawFootage', feedback: formValues.feedback || 'Approved by admin' });
 
       if (response.status === 200) {
         enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });

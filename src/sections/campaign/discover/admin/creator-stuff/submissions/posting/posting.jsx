@@ -55,9 +55,11 @@ const Posting = ({
       submissionStatus: submission?.status,
       submissionDisplayStatus: submission?.displayStatus,
       submissionContent: submission?.content,
+      submissionVideos: submission?.videos,
       isV3,
       userRole: user?.role,
-      campaignOrigin: campaign?.origin
+      campaignOrigin: campaign?.origin,
+      hasContent: !!(submission?.content || (submission?.videos && submission.videos.length > 0))
     });
   }, [submission, isV3, user, campaign]);
   
@@ -257,11 +259,11 @@ const Posting = ({
             </Stack>
           </Box>
 
-          {submission?.status === 'NOT_STARTED' && <EmptyContent title="No submission." />}
-          {submission?.status === 'REJECTED' && (
+          {submission?.status === 'NOT_STARTED' && !submission?.content && !(submission?.videos && submission.videos.length > 0) && <EmptyContent title="No submission." />}
+          {submission?.status === 'REJECTED' && !submission?.content && !(submission?.videos && submission.videos.length > 0) && (
             <EmptyContent title="Waiting for another submission." />
           )}
-          {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && (
+          {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT' || submission?.status === 'IN_PROGRESS' || submission?.content || (submission?.videos && submission.videos.length > 0)) && (
             <>
               <Box
                 component={Paper}
@@ -322,6 +324,13 @@ const Posting = ({
                           wordBreak: 'break-all',
                         }}
                       >
+                        {console.log('Checking submission content display:', {
+                          hasVideos: !!(submission?.videos && submission.videos.length > 0),
+                          videosLength: submission?.videos?.length,
+                          videos: submission?.videos,
+                          hasContent: !!submission?.content,
+                          content: submission?.content
+                        })}
                         {submission?.videos && submission.videos.length > 0 ? (
                           <Stack spacing={1.5} sx={{ mt: 1, mb: 2 }}>
                             {submission.videos.map((link, index) => (
@@ -404,7 +413,7 @@ const Posting = ({
                 })}
                 
                 {/* V3: Show different buttons based on user role and submission status */}
-                {isV3 && userRole === 'client' && submission?.displayStatus === 'PENDING_REVIEW' ? (
+                {isV3 && userRole === 'client' && (submission?.displayStatus === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') ? (
                   // Client buttons for V3
                   <>
                     {console.log('Posting component - Client buttons should show:', {

@@ -859,6 +859,9 @@ const RawFootages = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // SWR mutation functions
+  deliverableMutate,
+  submissionMutate,
 }) => {
   const [selectedRawFootagesForChange, setSelectedRawFootagesForChange] = useState([]);
   const [sentSubmissions, setSentSubmissions] = useState(new Set());
@@ -906,14 +909,14 @@ const RawFootages = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
+        // Refresh data using SWR mutations
+        if (deliverableMutate) {
           console.log('[RAW FOOTAGE] Refreshing deliverables data...');
-          await deliverables.deliverableMutate();
+          await deliverableMutate();
         }
-        if (deliverables?.submissionMutate) {
+        if (submissionMutate) {
           console.log('[RAW FOOTAGE] Refreshing submission data...');
-          await deliverables.submissionMutate();
+          await submissionMutate();
         }
       }
     } catch (error) {
@@ -935,12 +938,12 @@ const RawFootages = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
+        // Refresh data using SWR mutations
+        if (deliverableMutate) {
+          await deliverableMutate();
         }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
+        if (submissionMutate) {
+          await submissionMutate();
         }
       }
     } catch (error) {
@@ -957,12 +960,12 @@ const RawFootages = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Draft sent to client successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
+        // Refresh data using SWR mutations
+        if (deliverableMutate) {
+          await deliverableMutate();
         }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
+        if (submissionMutate) {
+          await submissionMutate();
         }
       }
     } catch (error) {

@@ -101,19 +101,34 @@ const VideoCard = ({
     (submission?.status === 'PENDING_REVIEW' && !isVideoApprovedByAdmin && !hasRevisionRequested);
 
   const getVideoFeedback = () => {
-    // Check for individual feedback first
+    // Check for individual feedback first (from deliverables API)
     if (videoItem.individualFeedback && videoItem.individualFeedback.length > 0) {
       return videoItem.individualFeedback;
     }
     
-    // Fallback to submission-level feedback
+    // Get all feedback from submission (from deliverables API)
     const allFeedbacks = [
+      ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
       ...(submission?.feedback || [])
     ];
 
-    return allFeedbacks
+    // Filter feedback for this specific video
+    const videoSpecificFeedback = allFeedbacks
       .filter(feedback => feedback.videosToUpdate?.includes(videoItem.id))
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+
+    // Also include client feedback for this submission (when video status is CLIENT_FEEDBACK)
+    const clientFeedback = allFeedbacks
+      .filter(feedback => {
+        const isClient = feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client';
+        const isFeedback = feedback.type === 'REASON' || feedback.type === 'COMMENT';
+        const isClientFeedbackStatus = videoItem.status === 'CLIENT_FEEDBACK';
+        
+        return isClient && isFeedback && isClientFeedbackStatus;
+      })
+      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+
+    return [...videoSpecificFeedback, ...clientFeedback];
   };
 
   const videoFeedback = getVideoFeedback();
@@ -577,6 +592,71 @@ const VideoCard = ({
       {/* Form Section */}
       <CardContent sx={{ pt: 0 }}>
         {renderFormContent()}
+        
+        {/* Individual Media Action Buttons for Admin */}
+        {userRole === 'admin' && submission?.status === 'PENDING_REVIEW' && (
+          <Box sx={{ mt: 2 }}>
+            <Stack direction="row" spacing={1.5}>
+              <Button
+                onClick={() => {
+                  setCardType('request');
+                }}
+                size="small"
+                variant="contained"
+                disabled={isProcessing}
+                sx={{
+                  bgcolor: '#FFFFFF',
+                  border: 1.5,
+                  borderRadius: 1.15,
+                  borderColor: '#e7e7e7',
+                  borderBottom: 3,
+                  borderBottomColor: '#e7e7e7',
+                  color: '#D4321C',
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    borderColor: '#D4321C',
+                  },
+                  textTransform: 'none',
+                  py: 1.2,
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  height: '40px',
+                  flex: 1,
+                }}
+              >
+                Request a Change
+              </Button>
+              
+              <LoadingButton
+                onClick={handleApproveClick}
+                variant="contained"
+                size="small"
+                loading={isSubmitting || isProcessing}
+                sx={{
+                  bgcolor: '#FFFFFF',
+                  color: '#1ABF66',
+                  border: '1.5px solid',
+                  borderColor: '#e7e7e7',
+                  borderBottom: 3,
+                  borderBottomColor: '#e7e7e7',
+                  borderRadius: 1.15,
+                  py: 1.2,
+                  fontWeight: 600,
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    borderColor: '#1ABF66',
+                  },
+                  fontSize: '0.9rem',
+                  height: '40px',
+                  textTransform: 'none',
+                  flex: 1,
+                }}
+              >
+                Approve
+              </LoadingButton>
+            </Stack>
+          </Box>
+        )}
       </CardContent>
 
       {/* Feedback History */}
@@ -654,6 +734,76 @@ const VideoCard = ({
                     </Stack>
                   </Box>
                 )}
+
+                {/* Admin buttons for client feedback */}
+                {userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (
+                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        const adminFeedback = prompt('Edit client feedback (optional):');
+                        if (adminFeedback !== null && handleAdminEditFeedback) {
+                          handleAdminEditFeedback(videoItem.id, feedback.id, adminFeedback);
+                        }
+                      }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#000000',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          color: '#000000',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        },
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        if (handleAdminSendToCreator) {
+                          handleAdminSendToCreator(videoItem.id, feedback.id);
+                        }
+                      }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        bgcolor: '#ffffff',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#1ABF66',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f0f9f0',
+                          color: '#1ABF66',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                        },
+                      }}
+                    >
+                      Send to Creator
+                    </Button>
+                  </Stack>
+                )}
               </Box>
             ))}
           </Stack>
@@ -670,6 +820,12 @@ const DraftVideosV3 = ({
   onVideoClick,
   onSubmit,
   isDisabled,
+  // SWR mutation functions
+  deliverableMutate,
+  submissionMutate,
+  // Individual admin approval handlers
+  onIndividualApprove,
+  onIndividualRequestChange,
   // Individual client approval handlers
   handleClientApproveVideo,
   handleClientApprovePhoto,
@@ -677,6 +833,9 @@ const DraftVideosV3 = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // Admin feedback handlers
+  handleAdminEditFeedback,
+  handleAdminSendToCreator,
 }) => {
   const { user } = useAuthContext();
   const userRole = user?.role;
@@ -715,21 +874,21 @@ const DraftVideosV3 = ({
 
   const handleApprove = async (videoId, formValues) => {
     try {
-      const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-        mediaId: videoId,
-        mediaType: 'video',
-        feedback: formValues.feedback || ''
-      });
+      // Use the passed handler if available, otherwise use internal implementation
+      if (onIndividualApprove) {
+        await onIndividualApprove(videoId, formValues.feedback, formValues.dueDate);
+      } else {
+        const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+          mediaId: videoId,
+          mediaType: 'video',
+          feedback: formValues.feedback || ''
+        });
 
-      enqueueSnackbar('Video approved successfully!', { variant: 'success' });
-      
-      // Revalidate data
-      await mutateSubmission();
-      if (deliverables?.mutate) {
-        await deliverables.mutate();
-      }
-      if (submission?.mutate) {
-        await submission.mutate();
+        enqueueSnackbar('Video approved successfully!', { variant: 'success' });
+        
+        // Revalidate data using passed SWR functions
+        if (deliverableMutate) await deliverableMutate();
+        if (submissionMutate) await submissionMutate();
       }
     } catch (error) {
       console.error('Error approving video:', error);
@@ -739,22 +898,22 @@ const DraftVideosV3 = ({
 
   const handleRequestChange = async (videoId, formValues) => {
     try {
-      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-        mediaId: videoId,
-        mediaType: 'video',
-        feedback: formValues.feedback || '',
-        reasons: formValues.reasons || []
-      });
+      // Use the passed handler if available, otherwise use internal implementation
+      if (onIndividualRequestChange) {
+        await onIndividualRequestChange(videoId, formValues.feedback, formValues.reasons);
+      } else {
+        const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+          mediaId: videoId,
+          mediaType: 'video',
+          feedback: formValues.feedback || '',
+          reasons: formValues.reasons || []
+        });
 
-      enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
-      
-      // Revalidate data
-      await mutateSubmission();
-      if (deliverables?.mutate) {
-        await deliverables.mutate();
-      }
-      if (submission?.mutate) {
-        await submission.mutate();
+        enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
+        
+        // Revalidate data using passed SWR functions
+        if (deliverableMutate) await deliverableMutate();
+        if (submissionMutate) await submissionMutate();
       }
     } catch (error) {
       console.error('Error requesting changes:', error);
