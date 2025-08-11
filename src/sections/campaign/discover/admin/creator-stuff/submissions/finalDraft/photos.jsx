@@ -27,6 +27,8 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
+import { RHFMultiSelect } from 'src/components/hook-form';
+import { options_changes } from '../firstDraft/constants';
 
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 import axiosInstance from 'src/utils/axios';
@@ -128,32 +130,18 @@ const PhotoCard = ({
 
   // V2 Individual handlers
   const handleIndividualApproveClick = async () => {
-    if (!onIndividualApprove) return;
-    
-    setIsProcessing(true);
-    try {
-      const values = formMethods.getValues();
-      await onIndividualApprove(photoItem.id, values.feedback);
-      // Optimistically update local status
-      setLocalStatus('APPROVED');
-    } catch (error) {
-      console.error('Error approving photo:', error);
-    } finally {
-      setIsProcessing(false);
+    if (isV3) {
+      await handleApprove(photoItem.id, formMethods.getValues());
+    } else if (onIndividualApprove) {
+      await onIndividualApprove(photoItem.id, formMethods.getValues().feedback);
     }
   };
 
   const handleIndividualRequestClick = async () => {
-    if (!onIndividualRequestChange) return;
-    
-    setIsProcessing(true);
-    try {
-      const values = formMethods.getValues();
-      await onIndividualRequestChange(photoItem.id, values.feedback);
-      // Optimistically update local status
-      setLocalStatus('CHANGES_REQUIRED');
-    } finally {
-      setIsProcessing(false);
+    if (isV3) {
+      await handleRequestChange(photoItem.id, formMethods.getValues());
+    } else if (onIndividualRequestChange) {
+      await onIndividualRequestChange(photoItem.id, formMethods.getValues().feedback);
     }
   };
 
@@ -165,8 +153,8 @@ const PhotoCard = ({
       try {
         const values = formMethods.getValues();
         await handleApprove(photoItem.id, values);
-        // Optimistically update local status for fallback handler
-        setLocalStatus('APPROVED');
+        // Optimistically update local status for fallback handler - admin sends to client, client approves
+        setLocalStatus(userRole === 'client' ? 'APPROVED' : 'SENT_TO_CLIENT');
       } catch (error) {
         console.error('Error in fallback approve handler:', error);
       }
@@ -221,7 +209,7 @@ const PhotoCard = ({
                 textTransform: 'none',
               }}
             >
-              APPROVED
+              SENT TO CLIENT
             </Box>
           </Box>
         );
@@ -319,29 +307,56 @@ const PhotoCard = ({
                 )}
 
                 {isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW' ? (
-                  <>
+                  <Stack direction="row" spacing={2}>
                     <Button
                       variant="contained"
-                      color="primary"
-                      onClick={() => {
-                        console.log('[Send to Client Button Click] submission:', submission);
-                        if (!submission || !submission.id) {
-                          console.error('[Send to Client Button] submission or submission.id is missing!', submission);
-                          enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
-                          return;
-                        }
-                        handleSendToClient(submission.id);
-                      }}
+                      size="small"
+                      onClick={handleApproveClick}
                       disabled={isSubmitting || isProcessing}
-                      sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        color: '#1ABF66',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1.15,
+                        py: 1.2,
+                        fontWeight: 600,
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#1ABF66',
+                        },
+                        fontSize: '0.9rem',
+                        height: '40px',
+                        textTransform: 'none',
+                      }}
                     >
-                      Send to Client
+                      Approve
                     </Button>
-                  </>
+                  </Stack>
+                ) : isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_ADMIN' ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => {
+                      console.log('[Send to Client Button Click] submission:', submission);
+                      if (!submission || !submission.id) {
+                        console.error('[Send to Client Button] submission or submission.id is missing!', submission);
+                        enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
+                        return;
+                      }
+                      handleSendToClient(submission.id);
+                    }}
+                    disabled={isSubmitting || isProcessing}
+                    sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
+                  >
+                    Send to Client
+                  </Button>
                 ) : isV3 && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'SENT_TO_CLIENT') ? (
                   <Stack direction="row" spacing={1.5}>
                     <Button
-                      onClick={() => handleClientReject && handleClientReject(photoItem.id)}
+                      onClick={() => handleOpenClientRequestModal(photoItem.id)}
                       size="small"
                       variant="contained"
                       disabled={isSubmitting || isProcessing}
@@ -733,35 +748,50 @@ const Photos = ({
 
   const handleApprove = async (photoId, formValues) => {
     try {
-      const payload = {
-        type: 'approve',
-        photoFeedback: formValues.feedback,
-        selectedPhotos: [photoId],
-      };
-
-      await onSubmit(payload);
-    } catch (error) {
-      console.error('Error submitting photo review:', error);
-      enqueueSnackbar(error?.message || 'Error submitting review', {
-        variant: 'error',
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+        mediaId: photoId,
+        mediaType: 'photo',
+        feedback: formValues.feedback || ''
       });
+
+      if (response.status === 200) {
+        enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
+        // Refresh data
+        if (deliverables?.deliverableMutate) {
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+      }
+    } catch (error) {
+      console.error('Error approving photo:', error);
+      enqueueSnackbar('Failed to approve photo', { variant: 'error' });
     }
   };
 
   const handleRequestChange = async (photoId, formValues) => {
     try {
-      const payload = {
-        type: 'request',
-        photoFeedback: formValues.feedback,
-        selectedPhotos: [photoId],
-      };
-
-      await onSubmit(payload);
-    } catch (error) {
-      console.error('Error submitting photo review:', error);
-      enqueueSnackbar(error?.message || 'Error submitting review', {
-        variant: 'error',
+      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+        mediaId: photoId,
+        mediaType: 'photo',
+        feedback: formValues.feedback || '',
+        reasons: formValues.reasons || []
       });
+
+      if (response.status === 200) {
+        enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
+        // Refresh data
+        if (deliverables?.deliverableMutate) {
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+      }
+    } catch (error) {
+      console.error('Error requesting changes:', error);
+      enqueueSnackbar('Failed to request changes', { variant: 'error' });
     }
   };
 
@@ -801,16 +831,46 @@ const Photos = ({
   const userRole = user?.role || 'admin'; // Use actual user role from auth context
 
   // Client approval handler for individual media - use parent's handler with SWR
-  const handleClientApprove = async (mediaId) => {
-    if (handleClientApprovePhoto) {
-      await handleClientApprovePhoto(mediaId);
-    }
+  // Use the prop function instead of local implementation
+  const handleClientApprove = handleClientApprovePhoto;
+
+  // Use the prop function instead of local implementation
+  const handleClientReject = handleClientRejectPhoto;
+
+  // Add state for client request modal
+  const [clientRequestModalOpen, setClientRequestModalOpen] = useState(false);
+  const [clientRequestPhotoId, setClientRequestPhotoId] = useState(null);
+
+  // Add form for client request modal
+  const clientRequestForm = useForm({
+    defaultValues: { feedback: '', reasons: [] },
+  });
+
+  const handleOpenClientRequestModal = (photoId) => {
+    setClientRequestPhotoId(photoId);
+    setClientRequestModalOpen(true);
+  };
+  const handleCloseClientRequestModal = () => {
+    setClientRequestModalOpen(false);
+    setClientRequestPhotoId(null);
+    clientRequestForm.reset();
   };
 
-  // Client rejection handler for individual media - use parent's handler with SWR
-  const handleClientReject = async (mediaId) => {
-    if (handleClientRejectPhoto) {
-      await handleClientRejectPhoto(mediaId);
+  const handleClientRequestSubmit = async (data) => {
+    if (!clientRequestPhotoId) return;
+    try {
+      await axiosInstance.patch(`/api/submission/v3/${submission.id}/request-changes/client`, {
+        feedback: data.feedback,
+        reasons: data.reasons,
+        mediaId: clientRequestPhotoId,
+        mediaType: 'photo',
+      });
+      enqueueSnackbar('Change request submitted!', { variant: 'warning' });
+      handleCloseClientRequestModal();
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+    } catch (error) {
+      enqueueSnackbar('Failed to request changes', { variant: 'error' });
     }
   };
 
@@ -1047,6 +1107,35 @@ const Photos = ({
         isDisabled={false}
         selectedItemsCount={1}
       />
+
+      {clientRequestModalOpen && (
+        <FormProvider methods={clientRequestForm}>
+          <ConfirmationRequestModal
+            open={clientRequestModalOpen}
+            onClose={handleCloseClientRequestModal}
+            sectionType="photo"
+            onConfirm={clientRequestForm.handleSubmit(handleClientRequestSubmit)}
+            isDisabled={false}
+            selectedItemsCount={1}
+          >
+            <RHFMultiSelect
+              name="reasons"
+              checkbox
+              chip
+              options={options_changes.map((item) => ({ value: item, label: item }))}
+              label="Reasons"
+              size="small"
+            />
+            <RHFTextField
+              name="feedback"
+              multiline
+              minRows={5}
+              placeholder="Provide feedback for the photo."
+              size="small"
+            />
+          </ConfirmationRequestModal>
+        </FormProvider>
+      )}
     </>
   );
 };

@@ -177,11 +177,11 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         },
       });
 
-      // Use the returned agreement id for the sendAgreement call
       const agreementIdToSend = res?.data?.agreement?.id || agreement?.id;
       const sendAgreementPayload = {
         ...agreement,
         id: agreementIdToSend,
+        isNew: agreement?.isNew || false,
       };
       await axiosInstance.patch(endpoints.campaign.sendAgreement, sendAgreementPayload);
 

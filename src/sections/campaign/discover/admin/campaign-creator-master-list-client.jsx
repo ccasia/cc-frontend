@@ -760,31 +760,60 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                           : '-'}
                       </TableCell>
                       <TableCell>
-                        {(() => {
-                          const statusDisplay = getStatusDisplay(pitch);
-                          return (
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                textTransform: 'uppercase',
-                                fontWeight: 700,
-                                display: 'inline-block',
-                                px: 1.5,
-                                py: 0.5,
-                                fontSize: '0.75rem',
-                                border: '1px solid',
-                                borderBottom: '3px solid',
-                                borderRadius: 0.8,
-                                bgcolor: 'white',
-                                whiteSpace: 'nowrap',
-                                color: statusDisplay.color,
-                                borderColor: statusDisplay.color,
-                              }}
-                            >
-                              {statusDisplay.label}
-                            </Typography>
-                          );
-                        })()}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            textTransform: 'uppercase',
+                            fontWeight: 700,
+                            display: 'inline-block',
+                            px: 1.5,
+                            py: 0.5,
+                            fontSize: '0.75rem',
+                            border: '1px solid',
+                            borderBottom: '3px solid',
+                            borderRadius: 0.8,
+                            bgcolor: 'white',
+                            whiteSpace: 'nowrap',
+                            ...(pitch.isShortlisted && {
+                              color: '#1ABF66',
+                              borderColor: '#1ABF66',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW' && {
+                              color: '#FF9A02',
+                              borderColor: '#FF9A02',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'APPROVED' && {
+                              color: '#1ABF66',
+                              borderColor: '#1ABF66',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'REJECTED' && {
+                              color: '#FF4842',
+                              borderColor: '#FF4842',
+                            }),
+                            ...(!pitch.isShortlisted && pitch.status === 'undecided' && {
+                              color: '#FF9A02',
+                              borderColor: '#FF9A02',
+                            }),
+                            ...(!pitch.isShortlisted && pitch.status === 'approved' && {
+                              color: '#1ABF66',
+                              borderColor: '#1ABF66',
+                            }),
+                            ...(!pitch.isShortlisted && pitch.status === 'rejected' && {
+                              color: '#FF4842',
+                              borderColor: '#FF4842',
+                            }),
+                          }}
+                        >
+                          {pitch.isShortlisted 
+                            ? 'APPROVED' 
+                            : pitch.isV3
+                              ? (pitch.displayStatus || pitch.status).toUpperCase()
+                            : pitch.status === 'undecided' 
+                              ? 'PENDING REVIEW' 
+                              : pitch.status === 'approved'
+                                ? 'PITCH APPROVED'
+                                : pitch.status.toUpperCase()}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Button

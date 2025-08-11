@@ -158,6 +158,20 @@ const CampaignFinalDraft = ({
     [fullSubmission, dependency]
   );
 
+  // Debug logging for submission data
+  useEffect(() => {
+    console.log('Creator Final Draft - Submission data:', {
+      submissionId: submission?.id,
+      submissionStatus: submission?.status,
+      submissionFeedback: submission?.feedback,
+      previousSubmissionId: previousSubmission?.id,
+      previousSubmissionStatus: previousSubmission?.status,
+      previousSubmissionFeedback: previousSubmission?.feedback,
+      dependency: dependency,
+      fullSubmission: fullSubmission?.map(s => ({ id: s.id, type: s.submissionType?.type, status: s.status }))
+    });
+  }, [submission, previousSubmission, dependency, fullSubmission]);
+
   const feedbacksTesting = useMemo(() => {
     // Get feedback from both submissions
     const allFeedbacks = [...(submission?.feedback || []), ...(previousSubmission?.feedback || [])];
@@ -165,18 +179,38 @@ const CampaignFinalDraft = ({
     // Sort by date and remove duplicates
     const uniqueFeedbacks = allFeedbacks
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))
-      .filter((feedback, index, self) => index === self.findIndex((f) => f.id === feedback.id));
+      .filter((feedback, index, self) => 
+        index === self.findIndex((f) => f.id === feedback.id)
+      );
 
-    // Only process feedbacks that have actual changes (type === 'REQUEST', not 'COMMENT')
+    // Debug logging
+    console.log('Creator Final Draft - All feedback:', uniqueFeedbacks);
+    console.log('Creator Final Draft - Submission feedback:', submission?.feedback);
+    console.log('Creator Final Draft - Previous submission feedback:', previousSubmission?.feedback);
+    
+    // Show feedback that has content or media updates (less restrictive filtering)
     return uniqueFeedbacks
-      .filter(
-        (item) =>
-          item?.type === 'REQUEST' &&
-          (item?.photosToUpdate?.length > 0 ||
-            item?.videosToUpdate?.length > 0 ||
-            item?.rawFootageToUpdate?.length > 0)
-      )
+      .filter(item => {
+        const hasMediaUpdates = item?.photosToUpdate?.length > 0 || 
+          item?.videosToUpdate?.length > 0 || 
+          item?.rawFootageToUpdate?.length > 0;
+        const hasContent = item?.content && item.content.trim() !== '';
+        const hasReasons = item?.reasons && item.reasons.length > 0;
+        
+        // Debug logging
+        console.log('Creator Final Draft - Filtering feedback:', {
+          feedbackId: item?.id,
+          type: item?.type,
+          hasMediaUpdates,
+          hasContent,
+          hasReasons,
+          willShow: hasMediaUpdates || hasContent || hasReasons
+        });
+        
+        return hasMediaUpdates || hasContent || hasReasons;
+      })
       .map((item) => {
+        // For feedback with just content (no specific media updates), create a general change entry
         const changes = [];
 
         if (item?.photosToUpdate?.length > 0) {
@@ -204,10 +238,20 @@ const CampaignFinalDraft = ({
           });
         }
 
+        // If no specific media updates but has content, create a general feedback entry
+        if (changes.length === 0 && (item?.content || item?.reasons)) {
+          changes.push({
+            content: item.content || 'Changes requested',
+            type: 'general',
+            reasons: item?.reasons,
+          });
+        }
+
         return {
           id: item.id,
           adminName: item?.admin?.name,
           role: item?.admin?.role,
+          content: item?.content, // Include the original content
           changes: changes.length > 0 ? changes : null,
           reasons: item?.reasons?.length ? item?.reasons : null,
           createdAt: item?.createdAt,
@@ -224,23 +268,6 @@ const CampaignFinalDraft = ({
       setUploadProgress((prev) => {
         const exists = prev.some((item) => item.fileName === data.fileName);
 
-        // const handleStatusQueue = (data) => {
-        //   if (data?.status === 'queue') {
-        //     inQueue.onTrue();
-        //   }
-        // };
-
-        // socket.on('progress', handleProgress);
-        // socket.on('statusQueue', handleStatusQueue);
-
-        // socket.emit('checkQueue', { submissionId: submission?.id });
-
-        //   return () => {
-        //     socket.off('progress', handleProgress);
-        //     socket.off('statusQueue');
-        //   };
-        // }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
-
         if (exists) {
           return prev.map((item) =>
             item.fileName === data.fileName ? { ...item, ...data } : item
@@ -250,11 +277,18 @@ const CampaignFinalDraft = ({
       });
     };
 
+    const handleNewFeedback = () => {
+      // Refresh submission data when new feedback is received
+      mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+    };
+
     socket.on('progress', handleProgress);
+    socket.on('newFeedback', handleNewFeedback);
 
     // eslint-disable-next-line consistent-return
     return () => {
       socket.off('progress', handleProgress);
+      socket.off('newFeedback', handleNewFeedback);
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
@@ -499,7 +533,7 @@ const CampaignFinalDraft = ({
             )}
         </>
 
-        {submission?.status === 'PENDING_REVIEW' && (
+        {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && (
           <Stack justifyContent="center" alignItems="center" spacing={2}>
             <Box
               sx={{
@@ -563,16 +597,27 @@ const CampaignFinalDraft = ({
           </Stack>
         )}
 
-        {submission?.status === 'IN_PROGRESS' && (
+        {(submission?.status === 'IN_PROGRESS' || submission?.status === 'CHANGES_REQUIRED' || 
+          (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
           <Stack gap={2}>
             <Box>
               {!uploadProgress.length && (
                 <>
                   <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                    Please submit your second draft for this campaign.
+                    {submission?.status === 'CHANGES_REQUIRED' 
+                      ? 'Please review the feedback below and resubmit your final draft with the requested changes.'
+                      : submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                      ? 'Please review the feedback below and submit your final draft with the requested changes.'
+                      : 'Please submit your second draft for this campaign.'
+                    }
                   </Typography>
                   <Typography variant="body1" sx={{ color: '#221f20', mb: 4, ml: -1 }}>
-                    Make sure to address all the feedback provided for your first draft below.
+                    {submission?.status === 'CHANGES_REQUIRED' 
+                      ? 'Make sure to address all the feedback points mentioned in the review.'
+                      : submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0
+                      ? 'Make sure to address all the feedback points mentioned in the review.'
+                      : 'Make sure to address all the feedback provided for your first draft below.'
+                    }
                   </Typography>
                   <Box
                     sx={{
@@ -582,32 +627,35 @@ const CampaignFinalDraft = ({
                       mx: -1.5,
                     }}
                   />
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                      variant="contained"
-                      onClick={handleUploadClick}
-                      startIcon={<Iconify icon="material-symbols:add" width={24} />}
-                      sx={{
-                        bgcolor: '#203ff5',
-                        color: 'white',
-                        borderBottom: 3.5,
-                        borderBottomColor: '#112286',
-                        borderRadius: 1.5,
-                        px: 2.5,
-                        py: 1.2,
-                        '&:hover': {
-                          bgcolor: '#203ff5',
-                          opacity: 0.9,
-                        },
-                      }}
-                    >
-                      Upload
-                    </Button>
-                  </Box>
                 </>
               )}
+              
+              {/* Upload button - always show when eligible */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={handleUploadClick}
+                  startIcon={<Iconify icon="material-symbols:add" width={24} />}
+                  sx={{
+                    bgcolor: '#203ff5',
+                    color: 'white',
+                    borderBottom: 3.5,
+                    borderBottomColor: '#112286',
+                    borderRadius: 1.5,
+                    px: 2.5,
+                    py: 1.2,
+                    '&:hover': {
+                      bgcolor: '#203ff5',
+                      opacity: 0.9,
+                    },
+                  }}
+                >
+                  Upload
+                </Button>
+              </Box>
 
-              {previousSubmission?.status === 'CHANGES_REQUIRED' && (
+              {(previousSubmission?.status === 'CHANGES_REQUIRED' || 
+                (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
                 <Box sx={{ mt: 3 }}>
                   {campaign?.campaignCredits
                     ? feedbacksTesting &&

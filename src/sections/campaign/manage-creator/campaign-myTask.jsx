@@ -22,6 +22,18 @@ import CampaignFirstDraft from './submissions/campaign-first-draft';
 import CampaignFinalDraft from './submissions/campaign-final-draft';
 import MobileSubmissionLayout from './mobile-submission-layout';
 
+/**
+ * Campaign My Tasks Component
+ * 
+ * V3 Flow Compatibility:
+ * - Handles V3-specific statuses: SENT_TO_CLIENT, PENDING_REVIEW, CHANGES_REQUIRED, SENT_TO_ADMIN
+ * - Updated stage visibility logic for V3 workflow
+ * - Added helper functions for V2/V3 status compatibility
+ * - Enhanced socket event listeners for V3 flow updates
+ * - Proper status display and completion indicators for both V2 and V3 flows
+ * 
+ * Status: ✅ V3 Flow Compatibility Implemented
+ */
 export const defaultSubmission = [
   {
     name: 'Agreement Submission ✍',
@@ -101,21 +113,44 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       mutate(endpoints.auth.me);
     });
 
+    // V3 flow socket events
+    socket?.on('submissionStatusChanged', () => {
+      submissionMutate();
+    });
+
+    socket?.on('draftSubmitted', () => {
+      submissionMutate();
+    });
+
+    socket?.on('draftApproved', () => {
+      submissionMutate();
+    });
+
+    socket?.on('changesRequested', () => {
+      submissionMutate();
+    });
+
     return () => {
       socket?.off('draft');
       socket?.off('newFeedback');
       socket?.off('agreementReady');
+      socket?.off('submissionStatusChanged');
+      socket?.off('draftSubmitted');
+      socket?.off('draftApproved');
+      socket?.off('changesRequested');
     };
   }, [campaign, submissionMutate, socket]);
 
   // Auto-select posting stage when it becomes available
   useEffect(() => {
     const firstDraftSubmission = value('FIRST_DRAFT');
+    const finalDraftSubmission = value('FINAL_DRAFT');
     const postingSubmission = value('POSTING');
     
-    // If First Draft is approved and posting is available, select posting stage
+    // If First Draft or Final Draft is approved and posting is available, select posting stage
     if (
-      (firstDraftSubmission?.status === 'APPROVED' || firstDraftSubmission?.status === 'CLIENT_APPROVED') &&
+      ((firstDraftSubmission?.status === 'APPROVED' || firstDraftSubmission?.status === 'CLIENT_APPROVED') ||
+       (finalDraftSubmission?.status === 'APPROVED' || finalDraftSubmission?.status === 'CLIENT_APPROVED')) &&
       postingSubmission?.status === 'IN_PROGRESS' &&
       selectedStage !== 'POSTING'
     ) {
@@ -126,43 +161,146 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
 
   const getVisibleStages = useCallback(() => {
     let stages = [];
+    const addedStages = new Set(); // Track which stages have been added
     const agreementSubmission = value('AGREEMENT_FORM');
     const firstDraftSubmission = value('FIRST_DRAFT');
     const finalDraftSubmission = value('FINAL_DRAFT');
     const postingSubmission = value('POSTING');
 
+    console.log('Stage visibility check:', {
+      agreementStatus: agreementSubmission?.status,
+      firstDraftStatus: firstDraftSubmission?.status,
+      finalDraftStatus: finalDraftSubmission?.status,
+      postingStatus: postingSubmission?.status,
+      hasFinalDraft: !!finalDraftSubmission
+    });
+
     // Always show Agreement stage (will be last and always Stage 01)
     stages.unshift({ ...defaultSubmission[0] });
+    addedStages.add('AGREEMENT_FORM');
 
-    // Show First Draft if Agreement is approved
-    if (agreementSubmission?.status === 'APPROVED') {
+    // Show First Draft if Agreement is approved (V2) or in progress (V3)
+    if ((agreementSubmission?.status === 'APPROVED' || agreementSubmission?.status === 'CLIENT_APPROVED') && !addedStages.has('FIRST_DRAFT')) {
       stages.unshift({ ...defaultSubmission[1] });
+      addedStages.add('FIRST_DRAFT');
     }
 
-    // Show Final Draft if First Draft is in CHANGES_REQUIRED status
-    if (firstDraftSubmission?.status === 'CHANGES_REQUIRED') {
+    // Show Final Draft ONLY if First Draft is in CHANGES_REQUIRED status (V3)
+    // Don't show Final Draft if First Draft is approved without changes requested
+    if (firstDraftSubmission?.status === 'CHANGES_REQUIRED' && !addedStages.has('FINAL_DRAFT')) {
       stages.unshift({ ...defaultSubmission[2] });
+      addedStages.add('FINAL_DRAFT');
     }
 
-    // Show Posting if either First Draft or Final Draft is approved
+    // Show Final Draft if it's in progress, pending review, or has changes required (V3)
     if (
-      firstDraftSubmission?.status === 'APPROVED' ||
-      firstDraftSubmission?.status === 'CLIENT_APPROVED' ||
-      finalDraftSubmission?.status === 'APPROVED' ||
-      finalDraftSubmission?.status === 'CLIENT_APPROVED'
+      finalDraftSubmission && 
+      (finalDraftSubmission?.status === 'IN_PROGRESS' || 
+       finalDraftSubmission?.status === 'CHANGES_REQUIRED' ||
+       finalDraftSubmission?.status === 'PENDING_REVIEW' ||
+       finalDraftSubmission?.status === 'SENT_TO_CLIENT') &&
+      !addedStages.has('FINAL_DRAFT')
+    ) {
+      stages.unshift({ ...defaultSubmission[2] });
+      addedStages.add('FINAL_DRAFT');
+    }
+
+    // Show Posting if either First Draft or Final Draft is CLIENT_APPROVED (V3)
+    // Only show posting when the previous stage is fully approved by client
+    if (
+      ((firstDraftSubmission?.status === 'CLIENT_APPROVED' && !finalDraftSubmission) ||
+       (finalDraftSubmission?.status === 'CLIENT_APPROVED')) &&
+      !addedStages.has('POSTING')
     ) {
       stages.unshift({ ...defaultSubmission[3] });
+      addedStages.add('POSTING');
+    }
+
+    // Show Posting if it's in progress, pending review, or approved
+    if (
+      postingSubmission && 
+      (postingSubmission?.status === 'IN_PROGRESS' || 
+       postingSubmission?.status === 'PENDING_REVIEW' ||
+       postingSubmission?.status === 'APPROVED' ||
+       postingSubmission?.status === 'CLIENT_APPROVED') &&
+      !addedStages.has('POSTING')
+    ) {
+      stages.unshift({ ...defaultSubmission[3] });
+      addedStages.add('POSTING');
     }
 
     if (!postingSubmission) {
       stages = stages.filter((stage) => stage.value !== 'Posting');
     }
 
+    console.log('Final stages to show:', stages.map(s => ({ name: s.name, type: s.type })));
+
     // Add sequential stage numbers starting from the bottom
     return stages.map((stage, index) => ({
       ...stage,
       stage: stages.length - index, // This makes the bottom item Stage 01
     }));
+  }, [value]);
+
+  // Helper function to check if a stage is completed (V2/V3 compatible)
+  const isStageCompleted = useCallback((stageType) => {
+    const stageValue = value(stageType);
+    if (!stageValue) return false;
+    
+    // V2 statuses
+    if (stageValue.status === 'APPROVED' || stageValue.status === 'CLIENT_APPROVED') {
+      return true;
+    }
+    
+    // V3 statuses - for creator view, only CLIENT_APPROVED means truly completed
+    // SENT_TO_CLIENT means admin approved but client still needs to review
+    if (stageValue.status === 'CLIENT_APPROVED') {
+      return true;
+    }
+    
+    // Special case for First Draft in V3 - CHANGES_REQUIRED means it's been reviewed
+    if (stageType === 'FIRST_DRAFT' && stageValue.status === 'CHANGES_REQUIRED') {
+      return true;
+    }
+    
+    return false;
+  }, [value]);
+
+  // Helper function to check if a stage is in progress (V2/V3 compatible)
+  const isStageInProgress = useCallback((stageType) => {
+    const stageValue = value(stageType);
+    if (!stageValue) return false;
+    
+    return stageValue.status === 'IN_PROGRESS' || 
+           stageValue.status === 'PENDING_REVIEW' ||
+           stageValue.status === 'CHANGES_REQUIRED';
+  }, [value]);
+
+  // Helper function to get status text for display
+  const getStatusText = useCallback((stageType) => {
+    const stageValue = value(stageType);
+    if (!stageValue) return 'Not Started';
+    
+    switch (stageValue.status) {
+      case 'NOT_STARTED':
+        return 'Not Started';
+      case 'IN_PROGRESS':
+        return 'In Progress';
+      case 'PENDING_REVIEW':
+        return 'Pending Review';
+      case 'SENT_TO_CLIENT':
+        return 'In Review'; // For creators, SENT_TO_CLIENT means "In Review"
+      case 'CHANGES_REQUIRED':
+        return 'Changes Required';
+      case 'APPROVED':
+        return 'Approved';
+      case 'CLIENT_APPROVED':
+        return 'Submission Approved!'; // Special message for client approval
+      case 'SENT_TO_ADMIN':
+        return 'In Review'; // For creators, SENT_TO_ADMIN also means "In Review"
+      default:
+        return stageValue.status;
+    }
   }, [value]);
 
   const handleStageClick = (stageType) => {
@@ -186,8 +324,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     const stageValue = value(stageType);
     return (
       !viewedStages.includes(stageType) &&
-      stageValue?.status !== 'APPROVED' &&
-      stageValue?.status !== 'CLIENT_APPROVED' &&
+      !isStageCompleted(stageType) &&
       !(stageType === 'FIRST_DRAFT' && stageValue?.status === 'CHANGES_REQUIRED')
     );
   };
@@ -296,19 +433,10 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        bgcolor:
-                          value(item.type)?.status === 'APPROVED' ||
-                          value(item.type)?.status === 'CLIENT_APPROVED' ||
-                          (item.type === 'FIRST_DRAFT' &&
-                            value(item.type)?.status === 'CHANGES_REQUIRED')
-                            ? '#5abc6f'
-                            : '#f6c945',
+                        bgcolor: isStageCompleted(item.type) ? '#5abc6f' : '#f6c945',
                       }}
                     >
-                      {value(item.type)?.status === 'APPROVED' ||
-                      value(item.type)?.status === 'CLIENT_APPROVED' ||
-                      (item.type === 'FIRST_DRAFT' &&
-                        value(item.type)?.status === 'CHANGES_REQUIRED') ? (
+                      {isStageCompleted(item.type) ? (
                         <Iconify
                           icon="mingcute:check-circle-fill"
                           sx={{ color: '#fff' }}
@@ -342,16 +470,26 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                         sx={{
                           color: '#636366',
                           display: 'block',
-                          ...((value(item.type)?.status === 'APPROVED' ||
-                            value(item.type)?.status === 'CLIENT_APPROVED' ||
-                            (item.type === 'FIRST_DRAFT' &&
-                              value(item.type)?.status === 'CHANGES_REQUIRED')) && {
+                          ...(isStageCompleted(item.type) && {
                             textDecoration: 'line-through',
                             color: '#b0b0b0',
                           }),
                         }}
                       >
                         Due: {dayjs(getDueDate(item.type)).format('D MMMM, YYYY')}
+                      </Typography>
+                      
+                      {/* Show status text */}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: '#636366',
+                          display: 'block',
+                          mt: 0.5,
+                          fontWeight: 500,
+                        }}
+                      >
+                        Status: {getStatusText(item.type)}
                       </Typography>
                     </Box>
 

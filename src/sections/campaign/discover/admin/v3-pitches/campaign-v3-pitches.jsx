@@ -557,54 +557,14 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                     </TableCell>
                     <TableCell>
                       {smUp ? (
-                        <Stack direction="row" gap={1}>
-                          <Button
-                            onClick={() => handleViewPitch(pitch)}
-                            size="small"
-                            variant="contained"
-                            sx={{
-                              px: 1.5,
-                              py: 2,
-                              bgcolor: '#ffffff',
-                              color: '#221f20',
-                              border: '1.5px solid',
-                              borderColor: '#e7e7e7',
-                              borderBottom: '3px solid',
-                              borderBottomColor: '#e7e7e7',
-                              borderRadius: 1.15,
-                              fontSize: '0.85rem',
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              '&:hover': {
-                                bgcolor: '#f5f5f5',
-                                border: '1.5px solid',
-                                borderColor: '#221f20',
-                                borderBottom: '3px solid',
-                                borderBottomColor: '#221f20',
-                              },
-                            }}
-                          >
-                            View
-                          </Button>
-                          
-                          <V3PitchActions 
-                            pitch={pitch} 
-                            campaign={campaign}
-                            onUpdate={handlePitchUpdate}
-                          />
-                        </Stack>
+                        <V3PitchActions 
+                          pitch={pitch} 
+                          onViewPitch={handleViewPitch}
+                        />
                       ) : (
-                        <Stack direction="row" gap={1}>
-                          <IconButton onClick={() => handleViewPitch(pitch)}>
-                            <Iconify icon="hugeicons:view" />
-                          </IconButton>
-                          
-                          <V3PitchActions 
-                            pitch={pitch} 
-                            campaign={campaign}
-                            onUpdate={handlePitchUpdate}
-                          />
-                        </Stack>
+                        <IconButton onClick={() => handleViewPitch(pitch)}>
+                          <Iconify icon="hugeicons:view" />
+                        </IconButton>
                       )}
                     </TableCell>
                   </TableRow>
