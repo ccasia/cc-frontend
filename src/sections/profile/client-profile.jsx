@@ -38,7 +38,7 @@ const ClientProfile = () => {
     picDesignation: '',
     picMobile: userData.phoneNumber || '',
     country: company.country || userData.country || '',
-    companyLogo: company.logo || null, 
+    companyLogo: company.logo || null,
   };
 
   const methods = useForm({
