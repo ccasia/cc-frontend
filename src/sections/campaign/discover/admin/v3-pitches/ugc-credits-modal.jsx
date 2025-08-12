@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
+import { useSnackbar } from 'notistack';
 
 import {
   Box,
   Modal,
+  Stack,
   Button,
   Avatar,
+  TextField,
   Typography,
   IconButton,
-  TextField,
-  Stack,
   CircularProgress,
 } from '@mui/material';
 
-import { useSnackbar } from 'notistack';
 import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
