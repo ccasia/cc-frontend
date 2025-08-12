@@ -100,6 +100,7 @@ const VideoCard = ({
 
   // Use local status if available, otherwise use prop status
   const currentStatus = localStatus || videoItem.status;
+  // For V3: Admin approval shows as SENT_TO_CLIENT, Client approval shows as APPROVED
   const isVideoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isVideoApprovedByClient = currentStatus === 'APPROVED';
   const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
@@ -176,8 +177,8 @@ const VideoCard = ({
     try {
       const values = formMethods.getValues();
       await onIndividualApprove(videoItem.id, values.feedback, values.dueDate);
-      // Optimistically update local status
-      setLocalStatus('APPROVED');
+      // Optimistically update local status - for V3 show SENT_TO_CLIENT, for V2 show APPROVED
+      setLocalStatus(isV3 ? 'SENT_TO_CLIENT' : 'APPROVED');
     } catch (error) {
       console.error('Error approving video:', error);
     } finally {
@@ -221,8 +222,8 @@ const VideoCard = ({
       try {
         const values = formMethods.getValues();
         await handleApprove(videoItem.id, values);
-        // Optimistically update local status for fallback handler
-        setLocalStatus('APPROVED');
+        // Optimistically update local status for fallback handler - for V3 show SENT_TO_CLIENT, for V2 show APPROVED
+        setLocalStatus(isV3 ? 'SENT_TO_CLIENT' : 'APPROVED');
       } catch (error) {
         console.error('Error in fallback approve handler:', error);
       }
@@ -277,7 +278,7 @@ const VideoCard = ({
                 textTransform: 'none',
               }}
             >
-              APPROVED
+              {isV3 ? 'SENT TO CLIENT' : 'APPROVED'}
             </Box>
           </Box>
         );
@@ -994,10 +995,14 @@ const DraftVideos = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Video approved successfully!', { variant: 'success' });
-        // Refresh data
+        // Refresh data - ensure proper SWR revalidation
         if (deliverables?.deliverableMutate) {
           await deliverables.deliverableMutate();
         }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+        // Also refresh any SWR submission data if available
         if (deliverables?.submissionMutate) {
           await deliverables.submissionMutate();
         }
@@ -1209,6 +1214,17 @@ const DraftVideos = ({
         } else {
           enqueueSnackbar('Video approved successfully!', { variant: 'success' });
         }
+        
+        // Refresh SWR data for V3
+        if (deliverables?.deliverableMutate) {
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+        if (mutateSubmission) {
+          await mutateSubmission();
+        }
       } else {
         response = await onIndividualApprove(videoId, feedback);
         enqueueSnackbar('Video approved successfully!', { variant: 'success' });
@@ -1231,6 +1247,17 @@ const DraftVideos = ({
           feedback: feedback || 'Changes requested by admin',
           reasons: reasons || ['Admin feedback']
         });
+        
+        // Refresh SWR data for V3
+        if (deliverables?.deliverableMutate) {
+          await deliverables.deliverableMutate();
+        }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+        if (mutateSubmission) {
+          await mutateSubmission();
+        }
       } else {
         response = await onIndividualRequestChange(videoId, feedback);
       }

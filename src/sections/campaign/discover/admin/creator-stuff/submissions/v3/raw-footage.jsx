@@ -861,14 +861,14 @@ const RawFootagesV3 = ({
       if (onIndividualApprove) {
         await onIndividualApprove(rawFootageId, formValues.feedback);
       } else {
-        const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-          mediaId: rawFootageId,
-          mediaType: 'rawFootage',
-          feedback: formValues.feedback || ''
-        });
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+        mediaId: rawFootageId,
+        mediaType: 'rawFootage',
+        feedback: formValues.feedback || ''
+      });
 
-        enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
-        
+      enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
+      
         // Revalidate data using passed SWR functions
         if (deliverableMutate) await deliverableMutate();
         if (submissionMutate) await submissionMutate();
@@ -885,15 +885,15 @@ const RawFootagesV3 = ({
       if (onIndividualRequestChange) {
         await onIndividualRequestChange(rawFootageId, formValues.feedback, formValues.reasons);
       } else {
-        const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-          mediaId: rawFootageId,
-          mediaType: 'rawFootage',
-          feedback: formValues.feedback || '',
-          reasons: formValues.reasons || []
-        });
+      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+        mediaId: rawFootageId,
+        mediaType: 'rawFootage',
+        feedback: formValues.feedback || '',
+        reasons: formValues.reasons || []
+      });
 
-        enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
-        
+      enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
+      
         // Revalidate data using passed SWR functions
         if (deliverableMutate) await deliverableMutate();
         if (submissionMutate) await submissionMutate();

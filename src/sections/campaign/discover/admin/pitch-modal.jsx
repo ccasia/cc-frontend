@@ -160,11 +160,18 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         }
       } else {
         // Use V2 endpoint for admin-created campaigns
-        response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
-        pitchId: pitch.id,
-        status: 'approved',
-        totalUGCVideos,
-      });
+        // Only send totalUGCVideos for admin-created campaigns, not client-created ones
+        const requestData = {
+          pitchId: pitch.id,
+          status: 'approved',
+        };
+        
+        // Add UGC videos only for admin-created campaigns
+        if (campaign?.origin !== 'CLIENT') {
+          requestData.totalUGCVideos = totalUGCVideos;
+        }
+        
+        response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, requestData);
       }
 
       const updatedPitch = { ...pitch, status: 'approved' };
@@ -995,7 +1002,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   : 'Are you sure you want to decline this pitch?'}
               </Typography>
             </Stack>
-            {campaign?.campaignCredits && confirmDialog.type === 'approve' && (
+            {/* Only show UGC credits input for admin-created campaigns, not client-created campaigns */}
+            {campaign?.campaignCredits && confirmDialog.type === 'approve' && campaign?.origin !== 'CLIENT' && (
               <Box mt={2} width={1}>
                 <TextField
                   value={totalUGCVideos}
@@ -1047,6 +1055,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               isSubmitting ||
               (campaign?.campaignCredits &&
                 confirmDialog.type === 'approve' &&
+                campaign?.origin !== 'CLIENT' &&
                 (!totalUGCVideos || totalUGCVideos > ugcLeft))
             }
             sx={{

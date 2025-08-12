@@ -92,6 +92,7 @@ const RawFootageCard = ({
 
   // Use local status if available, otherwise use prop status
   const currentStatus = localStatus || rawFootageItem.status;
+  // For V3: Admin approval shows as SENT_TO_CLIENT, Client approval shows as APPROVED
   const isRawFootageApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isRawFootageApprovedByClient = currentStatus === 'APPROVED';
   const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
@@ -154,8 +155,8 @@ const RawFootageCard = ({
     try {
       const values = formMethods.getValues();
       await onIndividualApprove(rawFootageItem.id, values.feedback);
-      // Optimistically update local status
-      setLocalStatus('APPROVED');
+      // Optimistically update local status - for V3 show SENT_TO_CLIENT, for V2 show APPROVED
+      setLocalStatus(isV3 ? 'SENT_TO_CLIENT' : 'APPROVED');
     } catch (error) {
       console.error('Error approving raw footage:', error);
     } finally {
@@ -187,8 +188,8 @@ const RawFootageCard = ({
       try {
         const values = formMethods.getValues();
         await handleApprove(rawFootageItem.id, values);
-        // Optimistically update local status for fallback handler
-        setLocalStatus('APPROVED');
+        // Optimistically update local status for fallback handler - for V3 show SENT_TO_CLIENT, for V2 show APPROVED
+        setLocalStatus(isV3 ? 'SENT_TO_CLIENT' : 'APPROVED');
       } catch (error) {
         console.error('Error in fallback approve handler:', error);
       }
@@ -243,7 +244,7 @@ const RawFootageCard = ({
                 textTransform: 'none',
               }}
             >
-              APPROVED
+              {isV3 ? 'SENT TO CLIENT' : 'APPROVED'}
             </Box>
           </Box>
         );
@@ -892,10 +893,14 @@ const RawFootages = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
-        // Refresh data
+        // Refresh data - ensure proper SWR revalidation
         if (deliverables?.deliverableMutate) {
           await deliverables.deliverableMutate();
         }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+        // Also refresh any SWR submission data if available
         if (deliverables?.submissionMutate) {
           await deliverables.submissionMutate();
         }
