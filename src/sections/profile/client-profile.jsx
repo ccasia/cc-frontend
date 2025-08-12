@@ -36,9 +36,9 @@ const ClientProfile = () => {
     registrationNumber: '',
     picName: '',
     picDesignation: '',
-    picMobile: '',
-    country: '',
-    companyLogo: null,
+    picMobile: userData.phoneNumber || '',
+    country: company.country || userData.country || '',
+    companyLogo: company.logo || null, 
   };
 
   const methods = useForm({
