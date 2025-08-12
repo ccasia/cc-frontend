@@ -41,7 +41,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   const mdUp = useMediaQuery(theme.breakpoints.up('md'));
   const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
-  
+
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [expandedAccordion, setExpandedAccordion] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
@@ -83,15 +83,15 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
     console.log('🔍 Client component - Submissions data:', {
       selectedCreator: selectedCreator?.userId,
       campaignId: campaign?.id,
-      submissions: submissions?.map(s => ({
+      submissions: submissions?.map((s) => ({
         id: s.id,
         type: s.submissionType?.type,
         status: s.status,
-        displayStatus: s.displayStatus
+        displayStatus: s.displayStatus,
       })),
       loadingSubmissions,
       userRole: userRole,
-      isV3: isV3
+      isV3: isV3,
     });
   }, [submissions, selectedCreator?.userId, campaign?.id, loadingSubmissions, userRole, isV3]);
 
@@ -108,12 +108,12 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
 
     const handleProgress = (data) => {
       console.log('V3 Progress received:', data);
-      
+
       // Set processing to true when we receive the first progress event
       if (!isProcessing) {
         setIsProcessing(true);
       }
-      
+
       setUploadProgress((prev) => {
         const exists = prev.some((item) => item.fileName === data.fileName);
 
@@ -139,7 +139,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
       const timer = setTimeout(() => {
         setIsProcessing(false);
         setUploadProgress([]);
-        
+
         // Refresh data
         if (selectedCreator?.userId && campaign?.id) {
           submissionMutate();
@@ -177,16 +177,18 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   // Debug logging for posting submission
   useEffect(() => {
     console.log('🔍 Client component - Posting submission:', {
-      postingSubmission: postingSubmission ? {
-        id: postingSubmission.id,
-        type: postingSubmission.submissionType?.type,
-        status: postingSubmission.status,
-        displayStatus: postingSubmission.displayStatus
-      } : null,
+      postingSubmission: postingSubmission
+        ? {
+            id: postingSubmission.id,
+            type: postingSubmission.submissionType?.type,
+            status: postingSubmission.status,
+            displayStatus: postingSubmission.displayStatus,
+          }
+        : null,
       hasSubmissions: !!submissions,
       submissionsCount: submissions?.length,
       userRole: userRole,
-      isV3: isV3
+      isV3: isV3,
     });
   }, [postingSubmission, submissions, userRole, isV3]);
 
@@ -202,10 +204,11 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
 
     // Apply search filter
     if (search) {
-      filtered = filtered.filter((elem) =>
-        elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
-        (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
-        (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
+      filtered = filtered.filter(
+        (elem) =>
+          elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
+          (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
+          (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
       );
     }
 
@@ -213,7 +216,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
     return [...filtered].sort((a, b) => {
       const nameA = a.user.name?.toLowerCase() || '';
       const nameB = b.user.name?.toLowerCase() || '';
-      
+
       if (sortDirection === 'asc') {
         return nameA.localeCompare(nameB);
       }
@@ -234,14 +237,16 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         const statusPromises = shortlistedCreators.map(async (creator) => {
           try {
             // For client view, we'll use the V3 submissions API
-            const response = await fetch(`/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`);
+            const response = await fetch(
+              `/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`
+            );
             const submissions = await response.json();
-            
+
             // Get the most relevant submission status for display
-            const firstDraft = submissions.find(s => s.submissionType?.type === 'FIRST_DRAFT');
-            const finalDraft = submissions.find(s => s.submissionType?.type === 'FINAL_DRAFT');
-            const posting = submissions.find(s => s.submissionType?.type === 'POSTING');
-            
+            const firstDraft = submissions.find((s) => s.submissionType?.type === 'FIRST_DRAFT');
+            const finalDraft = submissions.find((s) => s.submissionType?.type === 'FINAL_DRAFT');
+            const posting = submissions.find((s) => s.submissionType?.type === 'POSTING');
+
             // Debug logging
             console.log(`Creator ${creator.userId} submissions:`, {
               firstDraft: firstDraft?.displayStatus || firstDraft?.status,
@@ -249,9 +254,9 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
               posting: posting?.displayStatus || posting?.status,
               rawFirstDraft: firstDraft,
               rawFinalDraft: finalDraft,
-              rawPosting: posting
+              rawPosting: posting,
             });
-            
+
             // Determine overall status based on V3 flow
             let overallStatus = 'NOT_STARTED';
             if (posting?.displayStatus === 'APPROVED') {
@@ -265,7 +270,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
             } else if (firstDraft?.displayStatus === 'NOT_STARTED') {
               overallStatus = 'NOT_STARTED';
             }
-            
+
             statuses[creator.userId] = overallStatus;
           } catch (error) {
             console.error(`Error fetching status for creator ${creator.userId}:`, error);
@@ -290,43 +295,46 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
     if (selectedCreator?.userId && submissions) {
       setCreatorStatuses((prevStatuses) => {
         const newStatuses = { ...prevStatuses };
-        
+
         // Filter out agreement submissions - only consider FIRST_DRAFT, FINAL_DRAFT, and POSTING
         const relevantSubmissions = submissions.filter(
-          submission => 
-            submission.submissionType?.type === 'FIRST_DRAFT' || 
-            submission.submissionType?.type === 'FINAL_DRAFT' || 
+          (submission) =>
+            submission.submissionType?.type === 'FIRST_DRAFT' ||
+            submission.submissionType?.type === 'FINAL_DRAFT' ||
             submission.submissionType?.type === 'POSTING'
         );
-        
+
         if (relevantSubmissions.length === 0) {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
           return newStatuses;
         }
-        
+
         // Find submissions by type
         const firstDraftSubmission = relevantSubmissions.find(
-          item => item.submissionType.type === 'FIRST_DRAFT'
+          (item) => item.submissionType.type === 'FIRST_DRAFT'
         );
         const finalDraftSubmission = relevantSubmissions.find(
-          item => item.submissionType.type === 'FINAL_DRAFT'
+          (item) => item.submissionType.type === 'FINAL_DRAFT'
         );
         const postingSubmission = relevantSubmissions.find(
-          item => item.submissionType.type === 'POSTING'
+          (item) => item.submissionType.type === 'POSTING'
         );
-        
+
         // Determine the status based on the latest stage in the workflow
         // Priority: Posting > Final Draft > First Draft
         if (postingSubmission) {
-          newStatuses[selectedCreator.userId] = postingSubmission.displayStatus || postingSubmission.status;
+          newStatuses[selectedCreator.userId] =
+            postingSubmission.displayStatus || postingSubmission.status;
         } else if (finalDraftSubmission) {
-          newStatuses[selectedCreator.userId] = finalDraftSubmission.displayStatus || finalDraftSubmission.status;
+          newStatuses[selectedCreator.userId] =
+            finalDraftSubmission.displayStatus || finalDraftSubmission.status;
         } else if (firstDraftSubmission) {
-          newStatuses[selectedCreator.userId] = firstDraftSubmission.displayStatus || firstDraftSubmission.status;
+          newStatuses[selectedCreator.userId] =
+            firstDraftSubmission.displayStatus || firstDraftSubmission.status;
         } else {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
         }
-        
+
         return newStatuses;
       });
     }
@@ -406,43 +414,46 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         tooltip: 'Creator has not started work yet',
       },
     };
-    
+
     return statusMap[status] || statusMap.NOT_STARTED;
   };
 
   const renderCreatorStatus = (userId) => {
     if (loadingStatuses) return <CircularProgress size={16} />;
-    
+
     const status = creatorStatuses[userId] || 'NOT_STARTED';
     let statusText = status.replace(/_/g, ' ');
-    
+
     // Special handling for posting submissions: show "POSTED" when status is "APPROVED"
     // We need to check if this is a posting status by looking at the submissions
     if (status === 'APPROVED' && submissions) {
-      const postingSubmission = submissions.find(s => s.submissionType?.type === 'POSTING');
-      if (postingSubmission && (postingSubmission.displayStatus === 'APPROVED' || postingSubmission.status === 'APPROVED')) {
+      const postingSubmission = submissions.find((s) => s.submissionType?.type === 'POSTING');
+      if (
+        postingSubmission &&
+        (postingSubmission.displayStatus === 'APPROVED' || postingSubmission.status === 'APPROVED')
+      ) {
         statusText = 'POSTED';
       }
     }
-    
+
     const statusInfo = getStatusInfo(status);
-    
+
     // Debug logging for creator status
     console.log('🔍 Creator status debug:', {
       userId,
       status,
       statusText,
-      submissions: submissions?.map(s => ({
+      submissions: submissions?.map((s) => ({
         id: s.id,
         type: s.submissionType?.type,
         status: s.status,
-        displayStatus: s.displayStatus
+        displayStatus: s.displayStatus,
       })),
-      
+
       userRole: userRole,
-      isV3: isV3
+      isV3: isV3,
     });
-    
+
     return (
       <Tooltip title={statusInfo.tooltip} arrow>
         <Typography
@@ -475,17 +486,20 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
     // Use displayStatus for V3 submissions, fallback to regular status
     const status = submission.displayStatus || submission.status;
     let statusText = status ? status.replace(/_/g, ' ') : '';
-    
+
     // Handle SENT_TO_ADMIN status display for admin and client users
-    if (status === 'SENT_TO_ADMIN' && (userRole === 'admin' || userRole === 'superadmin' || userRole === 'client')) {
+    if (
+      status === 'SENT_TO_ADMIN' &&
+      (userRole === 'admin' || userRole === 'superadmin' || userRole === 'client')
+    ) {
       statusText = 'CLIENT FEEDBACK';
     }
-    
+
     // Special handling for posting submissions: show "POSTED" when status is "APPROVED"
     if (submission.submissionType?.type === 'POSTING' && status === 'APPROVED') {
       statusText = 'POSTED';
     }
-    
+
     const statusInfo = getStatusInfo(status);
 
     // Enhanced debug logging to understand status transformation
@@ -499,7 +513,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
 
       userRole: userRole,
       isV3: isV3,
-      campaignOrigin: campaign?.origin
+      campaignOrigin: campaign?.origin,
     });
 
     return (
@@ -532,18 +546,20 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   // Helper function to check if deliverables should be shown to clients
   const shouldShowDeliverablesToClient = (submission) => {
     if (!submission) return false;
-    
+
     // For clients, show deliverables when status is PENDING_REVIEW, APPROVED, or other relevant statuses
     if (userRole === 'client') {
       const status = submission.displayStatus || submission.status;
-      return status === 'PENDING_REVIEW' || 
-             status === 'APPROVED' || 
-             status === 'CLIENT_FEEDBACK' ||
-             status === 'SENT_TO_CLIENT' ||
-             status === 'CHANGES_REQUIRED' ||
-             status === 'SENT_TO_ADMIN';
+      return (
+        status === 'PENDING_REVIEW' ||
+        status === 'APPROVED' ||
+        status === 'CLIENT_FEEDBACK' ||
+        status === 'SENT_TO_CLIENT' ||
+        status === 'CHANGES_REQUIRED' ||
+        status === 'SENT_TO_ADMIN'
+      );
     }
-    
+
     // For admins, show all deliverables
     return true;
   };
@@ -586,9 +602,9 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          submissionId, 
-          feedback: 'Approved by client' 
+        body: JSON.stringify({
+          submissionId,
+          feedback: 'Approved by client',
         }),
       });
 
@@ -596,7 +612,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error approving submission');
       }
-      
+
       submissionMutate();
       deliverableMutate();
       enqueueSnackbar('Submission approved successfully!', { variant: 'success' });
@@ -614,10 +630,10 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          submissionId, 
+        body: JSON.stringify({
+          submissionId,
           feedback: 'Changes requested by client',
-          reasons: ['Client feedback']
+          reasons: ['Client feedback'],
         }),
       });
 
@@ -625,7 +641,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error rejecting submission');
       }
-      
+
       submissionMutate();
       deliverableMutate();
       enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
@@ -639,32 +655,34 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   const handleClientApproveVideo = async (mediaId) => {
     try {
       // Optimistic update
-      const optimisticData = submissions?.map(submission => {
-        if (submission.video?.some(v => v.id === mediaId)) {
+      const optimisticData = submissions?.map((submission) => {
+        if (submission.video?.some((v) => v.id === mediaId)) {
           return {
             ...submission,
-            video: submission.video.map(v => 
+            video: submission.video.map((v) =>
               v.id === mediaId ? { ...v, status: 'APPROVED' } : v
-            )
+            ),
           };
         }
         return submission;
       });
-      
+
       submissionMutate(optimisticData, false);
 
       const response = await axiosInstance.patch('/api/submission/v3/media/approve/client', {
         mediaId,
         mediaType: 'video',
-        feedback: 'Approved by client'
+        feedback: 'Approved by client',
       });
-      
+
       enqueueSnackbar('Video approved successfully!', { variant: 'success' });
       submissionMutate();
       deliverableMutate();
     } catch (error) {
       console.error('Error approving video:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error approving video', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving video', {
+        variant: 'error',
+      });
       // Revert optimistic update on error
       submissionMutate();
     }
@@ -673,32 +691,34 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   const handleClientApprovePhoto = async (mediaId) => {
     try {
       // Optimistic update
-      const optimisticData = submissions?.map(submission => {
-        if (submission.photos?.some(p => p.id === mediaId)) {
+      const optimisticData = submissions?.map((submission) => {
+        if (submission.photos?.some((p) => p.id === mediaId)) {
           return {
             ...submission,
-            photos: submission.photos.map(p => 
+            photos: submission.photos.map((p) =>
               p.id === mediaId ? { ...p, status: 'APPROVED' } : p
-            )
+            ),
           };
         }
         return submission;
       });
-      
+
       submissionMutate(optimisticData, false);
 
       const response = await axiosInstance.patch('/api/submission/v3/media/approve/client', {
         mediaId,
         mediaType: 'photo',
-        feedback: 'Approved by client'
+        feedback: 'Approved by client',
       });
-      
+
       enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
       submissionMutate();
       deliverableMutate();
     } catch (error) {
       console.error('Error approving photo:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error approving photo', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving photo', {
+        variant: 'error',
+      });
       // Revert optimistic update on error
       submissionMutate();
     }
@@ -707,85 +727,114 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   const handleClientApproveRawFootage = async (mediaId) => {
     try {
       // Optimistic update
-      const optimisticData = submissions?.map(submission => {
-        if (submission.rawFootages?.some(r => r.id === mediaId)) {
+      const optimisticData = submissions?.map((submission) => {
+        if (submission.rawFootages?.some((r) => r.id === mediaId)) {
           return {
             ...submission,
-            rawFootages: submission.rawFootages.map(r => 
+            rawFootages: submission.rawFootages.map((r) =>
               r.id === mediaId ? { ...r, status: 'APPROVED' } : r
-            )
+            ),
           };
         }
         return submission;
       });
-      
+
       submissionMutate(optimisticData, false);
 
       const response = await axiosInstance.patch('/api/submission/v3/media/approve/client', {
         mediaId,
         mediaType: 'rawFootage',
-        feedback: 'Approved by client'
+        feedback: 'Approved by client',
       });
-      
+
       enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
       submissionMutate();
       deliverableMutate();
     } catch (error) {
       console.error('Error approving raw footage:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error approving raw footage', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving raw footage', {
+        variant: 'error',
+      });
       // Revert optimistic update on error
       submissionMutate();
     }
   };
 
-  const handleClientRejectVideo = async (mediaId, feedback = 'Changes requested by client', reasons = ['Client feedback']) => {
+  const handleClientRejectVideo = async (
+    mediaId,
+    feedback = 'Changes requested by client',
+    reasons = ['Client feedback']
+  ) => {
     try {
-      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
-        mediaId,
-        mediaType: 'video',
-        feedback,
-        reasons: reasons || ['Client feedback']
-      });
+      const response = await axiosInstance.patch(
+        '/api/submission/v3/media/request-changes/client',
+        {
+          mediaId,
+          mediaType: 'video',
+          feedback,
+          reasons: reasons || ['Client feedback'],
+        }
+      );
       enqueueSnackbar('Changes requested for video!', { variant: 'warning' });
       submissionMutate();
       deliverableMutate();
     } catch (error) {
       console.error('Error rejecting video:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', {
+        variant: 'error',
+      });
     }
   };
 
-  const handleClientRejectPhoto = async (mediaId, feedback = 'Changes requested by client', reasons = ['Client feedback']) => {
+  const handleClientRejectPhoto = async (
+    mediaId,
+    feedback = 'Changes requested by client',
+    reasons = ['Client feedback']
+  ) => {
     try {
-      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
-        mediaId,
-        mediaType: 'photo',
-        feedback,
-        reasons: reasons || ['Client feedback']
-      });
+      const response = await axiosInstance.patch(
+        '/api/submission/v3/media/request-changes/client',
+        {
+          mediaId,
+          mediaType: 'photo',
+          feedback,
+          reasons: reasons || ['Client feedback'],
+        }
+      );
       enqueueSnackbar('Changes requested for photo!', { variant: 'warning' });
       submissionMutate();
       deliverableMutate();
     } catch (error) {
       console.error('Error rejecting photo:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', {
+        variant: 'error',
+      });
     }
   };
 
-  const handleClientRejectRawFootage = async (mediaId, feedback = 'Changes requested by client', reasons = ['Client feedback']) => {
+  const handleClientRejectRawFootage = async (
+    mediaId,
+    feedback = 'Changes requested by client',
+    reasons = ['Client feedback']
+  ) => {
     try {
-      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
-        mediaId,
-        mediaType: 'rawFootage',
-        feedback,
-        reasons: reasons || ['Client feedback']
-      });
+      const response = await axiosInstance.patch(
+        '/api/submission/v3/media/request-changes/client',
+        {
+          mediaId,
+          mediaType: 'rawFootage',
+          feedback,
+          reasons: reasons || ['Client feedback'],
+        }
+      );
       enqueueSnackbar('Changes requested for raw footage!', { variant: 'warning' });
       submissionMutate();
       deliverableMutate();
     } catch (error) {
       console.error('Error rejecting raw footage:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', {
+        variant: 'error',
+      });
     }
   };
 
@@ -793,17 +842,17 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   const handleReviewAndForwardFeedback = async (submissionId, adminFeedback) => {
     try {
       console.log('Admin reviewing and forwarding client feedback for submission:', submissionId);
-      
+
       const response = await axiosInstance.patch(endpoints.submission.v3.reviewAndForwardFeedback, {
         submissionId,
-        adminFeedback
+        adminFeedback,
       });
 
       if (response.status === 200) {
         enqueueSnackbar('Client feedback reviewed and forwarded to creator successfully!', {
           variant: 'success',
         });
-        
+
         // Refresh data
         await submissionMutate();
         await deliverableMutate();
@@ -945,7 +994,12 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
           <Stack spacing={2}>
             {uploadProgress.map((currentFile) => (
               <Box
-                sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, border: '1px solid #e7e7e7' }}
+                sx={{
+                  p: 3,
+                  bgcolor: 'background.neutral',
+                  borderRadius: 2,
+                  border: '1px solid #e7e7e7',
+                }}
                 key={currentFile.fileName}
               >
                 <Stack spacing={2}>
@@ -1001,21 +1055,15 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             bgcolor: 'background.paper',
                             '& .MuiLinearProgress-bar': {
                               borderRadius: 1,
-                              bgcolor: currentFile?.progress === 100 ? 'success.main' : 'primary.main',
+                              bgcolor:
+                                currentFile?.progress === 100 ? 'success.main' : 'primary.main',
                             },
                           }}
                         />
-                        <Stack
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
+                        <Stack direction="row" justifyContent="space-between" alignItems="center">
                           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                             {currentFile?.progress === 100 ? (
-                              <Box
-                                component="span"
-                                sx={{ color: 'success.main', fontWeight: 600 }}
-                              >
+                              <Box component="span" sx={{ color: 'success.main', fontWeight: 600 }}>
                                 Processing Complete
                               </Box>
                             ) : (
@@ -1098,7 +1146,12 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
 
                     <Box sx={{ flexGrow: 1 }}>
                       <Typography
-                        sx={{ mb: 0.2, fontWeight: 400, fontSize: { xs: '0.9rem', md: '1rem' }, color: '#231F20' }}
+                        sx={{
+                          mb: 0.2,
+                          fontWeight: 400,
+                          fontSize: { xs: '0.9rem', md: '1rem' },
+                          color: '#231F20',
+                        }}
                       >
                         {creator.user?.name}
                       </Typography>
@@ -1262,98 +1315,107 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                   >
                     {firstDraftSubmission ? (
                       <>
-                        {isV3 && userRole === 'admin' && firstDraftSubmission?.displayStatus === 'PENDING_REVIEW' && (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            sx={{ 
-                              mb: 2,
-                              fontSize: '0.75rem',
-                              py: 0.8,
-                              px: 1.5,
-                              minWidth: 'auto',
-                              bgcolor: '#FFC702',
-                              borderBottom: '3px solid #e6b300',
-                              fontWeight: 600,
-                              borderRadius: '8px',
-                              textTransform: 'none',
-                              transition: 'all 0.2s ease',
-                              '&:hover': {
-                                bgcolor: '#e6b300',
-                                transform: 'translateY(-1px)',
-                                boxShadow: '0 4px 8px rgba(255, 199, 2, 0.3)',
-                              },
-                            }}
-                            onClick={() => handleSendToClient(firstDraftSubmission.id)}
-                          >
-                            Send to Client
-                          </Button>
-                        )}
-                        {isV3 && userRole === 'admin' && firstDraftSubmission?.displayStatus === 'SENT_TO_ADMIN' && (
-                          <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                        {isV3 &&
+                          userRole === 'admin' &&
+                          firstDraftSubmission?.displayStatus === 'PENDING_REVIEW' && (
                             <Button
-                              variant="outlined"
+                              variant="contained"
                               size="small"
-                              onClick={() => {
-                                // TODO: Open feedback edit modal
-                                const adminFeedback = prompt('Edit client feedback (optional):');
-                                if (adminFeedback !== null) {
-                                  handleReviewAndForwardFeedback(firstDraftSubmission.id, adminFeedback);
-                                }
-                              }}
                               sx={{
+                                mb: 2,
                                 fontSize: '0.75rem',
                                 py: 0.8,
                                 px: 1.5,
                                 minWidth: 'auto',
-                                border: '1.5px solid #e0e0e0',
-                                borderBottom: '3px solid #e0e0e0',
-                                color: '#000000',
+                                bgcolor: '#FFC702',
+                                borderBottom: '3px solid #e6b300',
                                 fontWeight: 600,
                                 borderRadius: '8px',
                                 textTransform: 'none',
                                 transition: 'all 0.2s ease',
                                 '&:hover': {
-                                  bgcolor: '#f5f5f5',
+                                  bgcolor: '#e6b300',
+                                  transform: 'translateY(-1px)',
+                                  boxShadow: '0 4px 8px rgba(255, 199, 2, 0.3)',
+                                },
+                              }}
+                              onClick={() => handleSendToClient(firstDraftSubmission.id)}
+                            >
+                              Send to Client
+                            </Button>
+                          )}
+                        {isV3 &&
+                          userRole === 'admin' &&
+                          firstDraftSubmission?.displayStatus === 'SENT_TO_ADMIN' && (
+                            <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                  // TODO: Open feedback edit modal
+                                  const adminFeedback = prompt('Edit client feedback (optional):');
+                                  if (adminFeedback !== null) {
+                                    handleReviewAndForwardFeedback(
+                                      firstDraftSubmission.id,
+                                      adminFeedback
+                                    );
+                                  }
+                                }}
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  py: 0.8,
+                                  px: 1.5,
+                                  minWidth: 'auto',
+                                  border: '1.5px solid #e0e0e0',
+                                  borderBottom: '3px solid #e0e0e0',
                                   color: '#000000',
-                                  borderColor: '#d0d0d0',
-                                  transform: 'translateY(-1px)',
-                                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                                },
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() => handleReviewAndForwardFeedback(firstDraftSubmission.id)}
-                              sx={{
-                                fontSize: '0.75rem',
-                                py: 0.8,
-                                px: 1.5,
-                                minWidth: 'auto',
-                                bgcolor: '#ffffff',
-                                border: '1.5px solid #e0e0e0',
-                                borderBottom: '3px solid #e0e0e0',
-                                color: '#1ABF66',
-                                fontWeight: 600,
-                                borderRadius: '8px',
-                                textTransform: 'none',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  bgcolor: '#f0f9f0',
+                                  fontWeight: 600,
+                                  borderRadius: '8px',
+                                  textTransform: 'none',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    bgcolor: '#f5f5f5',
+                                    color: '#000000',
+                                    borderColor: '#d0d0d0',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                                  },
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() =>
+                                  handleReviewAndForwardFeedback(firstDraftSubmission.id)
+                                }
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  py: 0.8,
+                                  px: 1.5,
+                                  minWidth: 'auto',
+                                  bgcolor: '#ffffff',
+                                  border: '1.5px solid #e0e0e0',
+                                  borderBottom: '3px solid #e0e0e0',
                                   color: '#1ABF66',
-                                  borderColor: '#d0d0d0',
-                                  transform: 'translateY(-1px)',
-                                  boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
-                                },
-                              }}
-                            >
-                              Send to Creator
-                            </Button>
-                          </Stack>
-                        )}
+                                  fontWeight: 600,
+                                  borderRadius: '8px',
+                                  textTransform: 'none',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    bgcolor: '#f0f9f0',
+                                    color: '#1ABF66',
+                                    borderColor: '#d0d0d0',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                                  },
+                                }}
+                              >
+                                Send to Creator
+                              </Button>
+                            </Stack>
+                          )}
 
                         {shouldShowDeliverablesToClient(firstDraftSubmission) ? (
                           <FirstDraft
@@ -1376,12 +1438,13 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                           />
                         ) : (
                           <Box sx={{ p: 3 }}>
-                            <EmptyContent 
-                              title="No deliverables found" 
+                            <EmptyContent
+                              title="No deliverables found"
                               description="This submission doesn't have any deliverables available for review yet."
                             />
                           </Box>
                         )}
+                      </>
                     ) : (
                       <Box sx={{ p: 3 }}>
                         <EmptyContent title="No first draft submission found" />
@@ -1476,98 +1539,107 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                   >
                     {finalDraftSubmission ? (
                       <>
-                        {isV3 && userRole === 'admin' && finalDraftSubmission?.displayStatus === 'PENDING_REVIEW' && (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            sx={{ 
-                              mb: 2,
-                              fontSize: '0.75rem',
-                              py: 0.8,
-                              px: 1.5,
-                              minWidth: 'auto',
-                              bgcolor: '#FFC702',
-                              borderBottom: '3px solid #e6b300',
-                              fontWeight: 600,
-                              borderRadius: '8px',
-                              textTransform: 'none',
-                              transition: 'all 0.2s ease',
-                              '&:hover': {
-                                bgcolor: '#e6b300',
-                                transform: 'translateY(-1px)',
-                                boxShadow: '0 4px 8px rgba(255, 199, 2, 0.3)',
-                              },
-                            }}
-                            onClick={() => handleSendToClient(finalDraftSubmission.id)}
-                          >
-                            Send to Client
-                          </Button>
-                        )}
-                        {isV3 && userRole === 'admin' && finalDraftSubmission?.displayStatus === 'CLIENT_FEEDBACK' && (
-                          <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                        {isV3 &&
+                          userRole === 'admin' &&
+                          finalDraftSubmission?.displayStatus === 'PENDING_REVIEW' && (
                             <Button
-                              variant="outlined"
+                              variant="contained"
                               size="small"
-                              onClick={() => {
-                                // TODO: Open feedback edit modal
-                                const adminFeedback = prompt('Edit client feedback (optional):');
-                                if (adminFeedback !== null) {
-                                  handleReviewAndForwardFeedback(finalDraftSubmission.id, adminFeedback);
-                                }
-                              }}
                               sx={{
+                                mb: 2,
                                 fontSize: '0.75rem',
                                 py: 0.8,
                                 px: 1.5,
                                 minWidth: 'auto',
-                                border: '1.5px solid #e0e0e0',
-                                borderBottom: '3px solid #e0e0e0',
-                                color: '#000000',
+                                bgcolor: '#FFC702',
+                                borderBottom: '3px solid #e6b300',
                                 fontWeight: 600,
                                 borderRadius: '8px',
                                 textTransform: 'none',
                                 transition: 'all 0.2s ease',
                                 '&:hover': {
-                                  bgcolor: '#f5f5f5',
+                                  bgcolor: '#e6b300',
+                                  transform: 'translateY(-1px)',
+                                  boxShadow: '0 4px 8px rgba(255, 199, 2, 0.3)',
+                                },
+                              }}
+                              onClick={() => handleSendToClient(finalDraftSubmission.id)}
+                            >
+                              Send to Client
+                            </Button>
+                          )}
+                        {isV3 &&
+                          userRole === 'admin' &&
+                          finalDraftSubmission?.displayStatus === 'CLIENT_FEEDBACK' && (
+                            <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                  // TODO: Open feedback edit modal
+                                  const adminFeedback = prompt('Edit client feedback (optional):');
+                                  if (adminFeedback !== null) {
+                                    handleReviewAndForwardFeedback(
+                                      finalDraftSubmission.id,
+                                      adminFeedback
+                                    );
+                                  }
+                                }}
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  py: 0.8,
+                                  px: 1.5,
+                                  minWidth: 'auto',
+                                  border: '1.5px solid #e0e0e0',
+                                  borderBottom: '3px solid #e0e0e0',
                                   color: '#000000',
-                                  borderColor: '#d0d0d0',
-                                  transform: 'translateY(-1px)',
-                                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                                },
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() => handleReviewAndForwardFeedback(finalDraftSubmission.id)}
-                              sx={{
-                                fontSize: '0.75rem',
-                                py: 0.8,
-                                px: 1.5,
-                                minWidth: 'auto',
-                                bgcolor: '#ffffff',
-                                border: '1.5px solid #e0e0e0',
-                                borderBottom: '3px solid #e0e0e0',
-                                color: '#1ABF66',
-                                fontWeight: 600,
-                                borderRadius: '8px',
-                                textTransform: 'none',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  bgcolor: '#f0f9f0',
+                                  fontWeight: 600,
+                                  borderRadius: '8px',
+                                  textTransform: 'none',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    bgcolor: '#f5f5f5',
+                                    color: '#000000',
+                                    borderColor: '#d0d0d0',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                                  },
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() =>
+                                  handleReviewAndForwardFeedback(finalDraftSubmission.id)
+                                }
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  py: 0.8,
+                                  px: 1.5,
+                                  minWidth: 'auto',
+                                  bgcolor: '#ffffff',
+                                  border: '1.5px solid #e0e0e0',
+                                  borderBottom: '3px solid #e0e0e0',
                                   color: '#1ABF66',
-                                  borderColor: '#d0d0d0',
-                                  transform: 'translateY(-1px)',
-                                  boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
-                                },
-                              }}
-                            >
-                              Send to Creator
-                            </Button>
-                          </Stack>
-                        )}
+                                  fontWeight: 600,
+                                  borderRadius: '8px',
+                                  textTransform: 'none',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    bgcolor: '#f0f9f0',
+                                    color: '#1ABF66',
+                                    borderColor: '#d0d0d0',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                                  },
+                                }}
+                              >
+                                Send to Creator
+                              </Button>
+                            </Stack>
+                          )}
 
                         {shouldShowDeliverablesToClient(finalDraftSubmission) ? (
                           <FinalDraft
@@ -1591,8 +1663,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                           />
                         ) : (
                           <Box sx={{ p: 3 }}>
-                            <EmptyContent 
-                              title="No deliverables found" 
+                            <EmptyContent
+                              title="No deliverables found"
                               description="This submission doesn't have any deliverables available for review yet."
                             />
                           </Box>
@@ -1692,98 +1764,105 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                   >
                     {postingSubmission ? (
                       <>
-                        {isV3 && userRole === 'admin' && postingSubmission?.displayStatus === 'PENDING_REVIEW' && (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            sx={{ 
-                              mb: 2,
-                              fontSize: '0.75rem',
-                              py: 0.8,
-                              px: 1.5,
-                              minWidth: 'auto',
-                              bgcolor: '#FFC702',
-                              borderBottom: '3px solid #e6b300',
-                              fontWeight: 600,
-                              borderRadius: '8px',
-                              textTransform: 'none',
-                              transition: 'all 0.2s ease',
-                              '&:hover': {
-                                bgcolor: '#e6b300',
-                                transform: 'translateY(-1px)',
-                                boxShadow: '0 4px 8px rgba(255, 199, 2, 0.3)',
-                              },
-                            }}
-                            onClick={() => handleSendToClient(postingSubmission.id)}
-                          >
-                            Send to Client
-                          </Button>
-                        )}
-                        {isV3 && userRole === 'admin' && postingSubmission?.displayStatus === 'CLIENT_FEEDBACK' && (
-                          <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                        {isV3 &&
+                          userRole === 'admin' &&
+                          postingSubmission?.displayStatus === 'PENDING_REVIEW' && (
                             <Button
-                              variant="outlined"
+                              variant="contained"
                               size="small"
-                              onClick={() => {
-                                // TODO: Open feedback edit modal
-                                const adminFeedback = prompt('Edit client feedback (optional):');
-                                if (adminFeedback !== null) {
-                                  handleReviewAndForwardFeedback(postingSubmission.id, adminFeedback);
-                                }
-                              }}
                               sx={{
+                                mb: 2,
                                 fontSize: '0.75rem',
                                 py: 0.8,
                                 px: 1.5,
                                 minWidth: 'auto',
-                                border: '1.5px solid #e0e0e0',
-                                borderBottom: '3px solid #e0e0e0',
-                                color: '#000000',
+                                bgcolor: '#FFC702',
+                                borderBottom: '3px solid #e6b300',
                                 fontWeight: 600,
                                 borderRadius: '8px',
                                 textTransform: 'none',
                                 transition: 'all 0.2s ease',
                                 '&:hover': {
-                                  bgcolor: '#f5f5f5',
+                                  bgcolor: '#e6b300',
+                                  transform: 'translateY(-1px)',
+                                  boxShadow: '0 4px 8px rgba(255, 199, 2, 0.3)',
+                                },
+                              }}
+                              onClick={() => handleSendToClient(postingSubmission.id)}
+                            >
+                              Send to Client
+                            </Button>
+                          )}
+                        {isV3 &&
+                          userRole === 'admin' &&
+                          postingSubmission?.displayStatus === 'CLIENT_FEEDBACK' && (
+                            <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                  // TODO: Open feedback edit modal
+                                  const adminFeedback = prompt('Edit client feedback (optional):');
+                                  if (adminFeedback !== null) {
+                                    handleReviewAndForwardFeedback(
+                                      postingSubmission.id,
+                                      adminFeedback
+                                    );
+                                  }
+                                }}
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  py: 0.8,
+                                  px: 1.5,
+                                  minWidth: 'auto',
+                                  border: '1.5px solid #e0e0e0',
+                                  borderBottom: '3px solid #e0e0e0',
                                   color: '#000000',
-                                  borderColor: '#d0d0d0',
-                                  transform: 'translateY(-1px)',
-                                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                                },
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() => handleReviewAndForwardFeedback(postingSubmission.id)}
-                              sx={{
-                                fontSize: '0.75rem',
-                                py: 0.8,
-                                px: 1.5,
-                                minWidth: 'auto',
-                                bgcolor: '#ffffff',
-                                border: '1.5px solid #e0e0e0',
-                                borderBottom: '3px solid #e0e0e0',
-                                color: '#1ABF66',
-                                fontWeight: 600,
-                                borderRadius: '8px',
-                                textTransform: 'none',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  bgcolor: '#f0f9f0',
+                                  fontWeight: 600,
+                                  borderRadius: '8px',
+                                  textTransform: 'none',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    bgcolor: '#f5f5f5',
+                                    color: '#000000',
+                                    borderColor: '#d0d0d0',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                                  },
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => handleReviewAndForwardFeedback(postingSubmission.id)}
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  py: 0.8,
+                                  px: 1.5,
+                                  minWidth: 'auto',
+                                  bgcolor: '#ffffff',
+                                  border: '1.5px solid #e0e0e0',
+                                  borderBottom: '3px solid #e0e0e0',
                                   color: '#1ABF66',
-                                  borderColor: '#d0d0d0',
-                                  transform: 'translateY(-1px)',
-                                  boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
-                                },
-                              }}
-                            >
-                              Send to Creator
-                            </Button>
-                          </Stack>
-                        )}
+                                  fontWeight: 600,
+                                  borderRadius: '8px',
+                                  textTransform: 'none',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    bgcolor: '#f0f9f0',
+                                    color: '#1ABF66',
+                                    borderColor: '#d0d0d0',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                                  },
+                                }}
+                              >
+                                Send to Creator
+                              </Button>
+                            </Stack>
+                          )}
 
                         {shouldShowDeliverablesToClient(postingSubmission) ? (
                           <Posting
@@ -1801,13 +1880,12 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                           />
                         ) : (
                           <Box sx={{ p: 3 }}>
-                            <EmptyContent 
-                              title="No deliverables found" 
+                            <EmptyContent
+                              title="No deliverables found"
                               description="This submission doesn't have any deliverables available for review yet."
                             />
                           </Box>
                         )}
-
                       </>
                     ) : (
                       <Box sx={{ p: 3 }}>
@@ -1829,4 +1907,4 @@ CampaignCreatorDeliverablesClient.propTypes = {
   campaign: PropTypes.object,
 };
 
-export default CampaignCreatorDeliverablesClient; 
+export default CampaignCreatorDeliverablesClient;
