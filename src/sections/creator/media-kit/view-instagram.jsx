@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 // import { keyframes } from '@emotion/react';
 
+import { LineChart } from '@mui/x-charts/LineChart';
 import {
   Box,
   Stack,
@@ -13,9 +14,9 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { LineChart } from '@mui/x-charts/LineChart';
 
 import { useResponsive } from 'src/hooks/use-responsive';
+
 import { useSocialMediaData } from 'src/utils/store';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -346,15 +347,14 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                     };
-                  } else {
-                    // For shorter captions, use line clamp
-                    return {
-                      display: '-webkit-box',
-                      WebkitLineClamp: isMobile ? 3 : 2, // Fewer lines for desktop
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    };
                   }
+                  // For shorter captions, use line clamp
+                  return {
+                    display: '-webkit-box',
+                    WebkitLineClamp: isMobile ? 3 : 2, // Fewer lines for desktop
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  };
                 })(),
               }}
             >
@@ -853,7 +853,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
                           (post.saved || 0);
                         return {
                           month: months[index],
-                          interactions: interactions,
+                          interactions,
                         };
                       });
                       interactionsData = calculatedData; // Already in correct order

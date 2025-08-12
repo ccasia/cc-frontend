@@ -1,5 +1,5 @@
-import { memo, useCallback } from 'react';
 import PropTypes from 'prop-types';
+import { memo, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import { Divider } from '@mui/material';

@@ -1,3 +1,4 @@
+import useSWR from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
@@ -20,7 +21,8 @@ import {
   CardContent,
 } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
+import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
@@ -28,9 +30,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
 
 import { options_changes } from '../firstDraft/constants';
-import { ConfirmationApproveModal, ConfirmationRequestModal } from '../finalDraft/confirmation-modals';
-import axiosInstance from 'src/utils/axios';
-import useSWR from 'swr';
+import { ConfirmationRequestModal } from '../finalDraft/confirmation-modals';
 
 const VideoCard = ({ 
   videoItem, 

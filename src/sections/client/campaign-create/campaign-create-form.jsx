@@ -1,6 +1,5 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-unused-vars */
-import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { pdfjs } from 'react-pdf';
 import PropTypes from 'prop-types';
@@ -22,11 +21,8 @@ import {
   IconButton,
   Typography,
   ListItemText,
-  LinearProgress,
-  CircularProgress,
-  DialogTitle,
   DialogContent,
-  DialogActions,
+  LinearProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -39,19 +35,13 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
-
 // Import steps from campaign creation
-import CampaignType from 'src/sections/campaign/create/steps/campaign-type';
-import SelectTimeline from 'src/sections/campaign/create/steps/select-timeline';
-import CampaignFormUpload from 'src/sections/campaign/create/steps/form-upload';
-import CampaignImageUpload from 'src/sections/campaign/create/steps/image-upload';
-import CampaignAdminManager from 'src/sections/campaign/create/steps/admin-manager';
-import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
+
+import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
-import CampaignUploadPhotos from './campaign-upload-photos';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 

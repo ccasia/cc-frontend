@@ -63,7 +63,12 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         </Label>
       </TableCell>
       <TableCell>
-        <Button size="small" variant="contained" onClick={openEditInvoice}>
+        <Button
+          size="small"
+          variant="contained"
+          // onClick={openEditInvoice}
+          sx={{ borderRadius: 1 / 2 }}
+        >
           View
         </Button>
       </TableCell>

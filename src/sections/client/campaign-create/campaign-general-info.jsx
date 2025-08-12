@@ -1,21 +1,24 @@
 import useSWR from 'swr';
+import dayjs from 'dayjs';
 import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
+
 import { DatePicker } from '@mui/x-date-pickers';
-import { Box, Stack, MenuItem, FormLabel, Typography, TextField, Grid } from '@mui/material';
-import dayjs from 'dayjs';
+import { Box, Grid, Stack, FormLabel, TextField, Typography } from '@mui/material';
 
 import socket from 'src/hooks/socket';
+import useGetClientCredits from 'src/hooks/use-get-client-credits';
+
 import { fetcher, endpoints } from 'src/utils/axios';
-import { interestsLists } from 'src/contants/interestLists';
+
 import { objectivesLists } from 'src/contants/objectives';
+import { interestsLists } from 'src/contants/interestLists';
 
 import Label from 'src/components/label';
 import { RHFTextField } from 'src/components/hook-form';
-import useGetClientCredits from 'src/hooks/use-get-client-credits';
 // import CustomRHFSelect from './custom-rhf-select'; // Will reuse RHFMultiSelect hook instead
 // import CustomRHFMultiSelect from './custom-rhf-multi-select'; // Will reuse RHFMultiSelect hook instead
-import { RHFMultiSelect, RHFSelect } from 'src/components/hook-form';
+import { RHFMultiSelect } from 'src/components/hook-form';
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (

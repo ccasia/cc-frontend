@@ -1,29 +1,29 @@
-import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
+import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import {
+  Grid,
+  Stack,
+  Alert,
   Dialog,
+  Button,
+  Typography,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  TextField,
-  Stack,
-  Alert,
-  CircularProgress,
-  Typography,
-  Grid,
   InputAdornment,
-  Box,
+  CircularProgress,
 } from '@mui/material';
 
-import { useSnackbar } from 'src/components/snackbar';
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import Iconify from 'src/components/iconify';
+
 import { countries } from 'src/assets/data';
+
+import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 // Validation schema
@@ -230,13 +230,13 @@ export default function ClientProfileCompletionModal({ open, onClose, onSuccess,
     if (!isSubmitting) {
       // Only allow closing if profile is completed
       // For now, we'll prevent closing entirely until form is submitted
-      return;
+      
     }
   };
 
   const handleSkip = () => {
     // Remove skip functionality - modal must be completed
-    return;
+    
   };
 
   return (

@@ -1,31 +1,33 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Stack,
   Avatar,
-  TextField,
   Button,
+  Tooltip,
+  TextField,
   Accordion,
   Typography,
+  useMediaQuery,
+  InputAdornment,
+  LinearProgress,
   AccordionSummary,
   AccordionDetails,
   CircularProgress,
-  Tooltip,
-  InputAdornment,
-  useMediaQuery,
-  LinearProgress,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 
-import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
-import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 import socket from 'src/hooks/socket';
-import { useAuthContext } from 'src/auth/hooks';
-import { useSnackbar } from 'notistack';
+import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
+import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -436,6 +438,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         status: s.status,
         displayStatus: s.displayStatus
       })),
+      
       userRole: userRole,
       isV3: isV3
     });
@@ -470,7 +473,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
     if (!submission) return null;
 
     // Use displayStatus for V3 submissions, fallback to regular status
-    let status = submission.displayStatus || submission.status;
+    const status = submission.displayStatus || submission.status;
     let statusText = status ? status.replace(/_/g, ' ') : '';
     
     // Handle SENT_TO_ADMIN status display for admin and client users
@@ -493,6 +496,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
       finalStatus: status,
       statusText,
       submissionType: submission.submissionType?.type,
+
       userRole: userRole,
       isV3: isV3,
       campaignOrigin: campaign?.origin
@@ -1350,6 +1354,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             </Button>
                           </Stack>
                         )}
+
                         {shouldShowDeliverablesToClient(firstDraftSubmission) ? (
                           <FirstDraft
                             submission={firstDraftSubmission}
@@ -1377,7 +1382,6 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             />
                           </Box>
                         )}
-                      </>
                     ) : (
                       <Box sx={{ p: 3 }}>
                         <EmptyContent title="No first draft submission found" />
@@ -1564,6 +1568,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             </Button>
                           </Stack>
                         )}
+
                         {shouldShowDeliverablesToClient(finalDraftSubmission) ? (
                           <FinalDraft
                             submission={finalDraftSubmission}
@@ -1779,6 +1784,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             </Button>
                           </Stack>
                         )}
+
                         {shouldShowDeliverablesToClient(postingSubmission) ? (
                           <Posting
                             submission={postingSubmission}
@@ -1801,6 +1807,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             />
                           </Box>
                         )}
+
                       </>
                     ) : (
                       <Box sx={{ p: 3 }}>

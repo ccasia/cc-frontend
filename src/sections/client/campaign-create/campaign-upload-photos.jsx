@@ -1,26 +1,27 @@
-import PropTypes from 'prop-types';
+import dayjs from 'dayjs';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useFormContext } from 'react-hook-form';
+
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Grid,
+  Chip,
   Stack,
+  Paper,
   Dialog,
+  Button,
+  Avatar,
+  Divider,
   Typography,
   IconButton,
-  Button,
-  Chip,
-  Divider,
-  Paper,
   DialogContent,
-  Avatar,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import dayjs from 'dayjs';
 
-import { RHFUpload } from 'src/components/hook-form';
-import Iconify from 'src/components/iconify';
 import Image from 'src/components/image';
+import Iconify from 'src/components/iconify';
+import { RHFUpload } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 

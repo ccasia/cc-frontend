@@ -1,12 +1,11 @@
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import axios from 'axios';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import { Box, Card, Chip, Menu, Avatar, MenuItem, Typography, IconButton, Button } from '@mui/material';
+import { Box, Card, Chip, Menu, Avatar, MenuItem, Typography, IconButton } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -390,8 +389,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             display: 'flex',
             justifyContent: 'center',
           }}
-        >
-        </Box>
+         />
       )}
       {false && (
         <Box
