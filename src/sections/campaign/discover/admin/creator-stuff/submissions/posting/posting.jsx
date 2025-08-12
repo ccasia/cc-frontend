@@ -99,7 +99,7 @@ const Posting = ({
           // Legacy endpoint - direct approval
         res = await axiosInstance.patch(endpoints.submission.admin.posting, {
           submissionId: submission?.id,
-          status: 'APPROVED',
+          status: 'APPROVED'
         });
         }
         dialogApprove.onFalse();
@@ -176,8 +176,8 @@ const Posting = ({
   }, [date]);
 
   const isDisabled = useMemo(
-    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
-    [user]
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced' || submission?.status === 'APPROVED',
+    [user, submission?.status]
   );
 
   return (
@@ -238,7 +238,9 @@ const Posting = ({
                     variant="caption"
                     sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
                   >
-                    {submission?.isReview
+                    {submission?.completedAt
+                      ? dayjs(submission?.completedAt).format('ddd, D MMM YYYY')
+                      : submission?.isReview
                       ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
                       : '-'}
                   </Typography>
@@ -409,11 +411,18 @@ const Posting = ({
                   isV3,
                   userRole,
                   displayStatus: submission?.displayStatus,
-                  condition: isV3 && userRole === 'client' && submission?.displayStatus === 'PENDING_REVIEW'
+                  submissionStatus: submission?.status,
+                  hasContent: !!(submission?.content || (submission?.videos && submission.videos.length > 0)),
+                  content: submission?.content,
+                  videosLength: submission?.videos?.length,
+                  shouldShowClientButtons: isV3 && userRole === 'client' && (submission?.displayStatus === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && submission?.status !== 'APPROVED',
+                  shouldShowAdminButtons: submission?.status !== 'APPROVED' && (submission?.content || (submission?.videos && submission.videos.length > 0))
                 })}
                 
+
+                
                 {/* V3: Show different buttons based on user role and submission status */}
-                {isV3 && userRole === 'client' && (submission?.displayStatus === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') ? (
+                {isV3 && userRole === 'client' && (submission?.displayStatus === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && submission?.status !== 'APPROVED' ? (
                   // Client buttons for V3
                   <>
                     {console.log('Posting component - Client buttons should show:', {
@@ -481,7 +490,8 @@ const Posting = ({
                     </LoadingButton>
                   </>
                 ) : (
-                  // Admin buttons (V2 style or V3 admin)
+                  // Admin buttons (V2 style or V3 admin) - only show if not already approved AND there's content to review
+                  submission?.status !== 'APPROVED' && (submission?.content || (submission?.videos && submission.videos.length > 0)) && (
                   <>
                 <Button
                   onClick={dialogReject.onTrue}
@@ -541,6 +551,7 @@ const Posting = ({
                   Approve
                 </LoadingButton>
                   </>
+                )
                 )}
               </Stack>
             </>

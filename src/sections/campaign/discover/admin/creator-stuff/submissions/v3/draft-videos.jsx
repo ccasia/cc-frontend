@@ -878,14 +878,14 @@ const DraftVideosV3 = ({
       if (onIndividualApprove) {
         await onIndividualApprove(videoId, formValues.feedback, formValues.dueDate);
       } else {
-        const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-          mediaId: videoId,
-          mediaType: 'video',
-          feedback: formValues.feedback || ''
-        });
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+        mediaId: videoId,
+        mediaType: 'video',
+        feedback: formValues.feedback || ''
+      });
 
-        enqueueSnackbar('Video approved successfully!', { variant: 'success' });
-        
+      enqueueSnackbar('Video approved successfully!', { variant: 'success' });
+      
         // Revalidate data using passed SWR functions
         if (deliverableMutate) await deliverableMutate();
         if (submissionMutate) await submissionMutate();
@@ -902,15 +902,15 @@ const DraftVideosV3 = ({
       if (onIndividualRequestChange) {
         await onIndividualRequestChange(videoId, formValues.feedback, formValues.reasons);
       } else {
-        const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-          mediaId: videoId,
-          mediaType: 'video',
-          feedback: formValues.feedback || '',
-          reasons: formValues.reasons || []
-        });
+      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+        mediaId: videoId,
+        mediaType: 'video',
+        feedback: formValues.feedback || '',
+        reasons: formValues.reasons || []
+      });
 
-        enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
-        
+      enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
+      
         // Revalidate data using passed SWR functions
         if (deliverableMutate) await deliverableMutate();
         if (submissionMutate) await submissionMutate();
