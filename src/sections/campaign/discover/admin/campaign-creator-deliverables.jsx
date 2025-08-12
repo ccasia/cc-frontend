@@ -32,7 +32,7 @@ import Posting from './creator-stuff/submissions/posting/posting';
 const CampaignCreatorDeliverables = ({ campaign }) => {
   const theme = useTheme();
   const mdUp = useMediaQuery(theme.breakpoints.up('md'));
-  
+
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [expandedAccordion, setExpandedAccordion] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
@@ -71,28 +71,20 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   } = useGetDeliverables(selectedCreator?.userId, campaign?.id);
 
   // Find submissions by type
-  const firstDraftSubmission = useMemo(
-    () => {
-      const found = submissions?.find((item) => item.submissionType.type === 'FIRST_DRAFT');
-      return found;
-    },
-    [submissions]
-  );
+  const firstDraftSubmission = useMemo(() => {
+    const found = submissions?.find((item) => item.submissionType.type === 'FIRST_DRAFT');
+    return found;
+  }, [submissions]);
 
-  const finalDraftSubmission = useMemo(
-    () => {
-      const found = submissions?.find((item) => item.submissionType.type === 'FINAL_DRAFT');
-      return found;
-    },
-    [submissions]
-  );
+  const finalDraftSubmission = useMemo(() => {
+    const found = submissions?.find((item) => item.submissionType.type === 'FINAL_DRAFT');
+    return found;
+  }, [submissions]);
 
   const postingSubmission = useMemo(
     () => submissions?.find((item) => item.submissionType.type === 'POSTING'),
     [submissions]
   );
-
-
 
   const filteredCreators = useMemo(() => {
     let filtered = sortedCreators;
@@ -106,10 +98,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
     // Apply search filter
     if (search) {
-      filtered = filtered.filter((elem) =>
-        elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
-        (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
-        (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
+      filtered = filtered.filter(
+        (elem) =>
+          elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
+          (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
+          (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
       );
     }
 
@@ -117,7 +110,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     return [...filtered].sort((a, b) => {
       const nameA = a.user.name?.toLowerCase() || '';
       const nameB = b.user.name?.toLowerCase() || '';
-      
+
       if (sortDirection === 'asc') {
         return nameA.localeCompare(nameB);
       }
@@ -150,44 +143,46 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         for (const creator of shortlistedCreators) {
           try {
             // Using the same API endpoint that the useGetSubmissions hook uses
-            const response = await fetch(`/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`);
-            
+            const response = await fetch(
+              `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
+            );
+
             if (!response.ok) {
               statusMap[creator.userId] = 'NOT_STARTED';
               continue;
             }
-            
+
             const data = await response.json();
-            
+
             if (!data || data.length === 0) {
               statusMap[creator.userId] = 'NOT_STARTED';
               continue;
             }
-            
+
             // Filter out agreement submissions - only consider FIRST_DRAFT, FINAL_DRAFT, and POSTING
             const relevantSubmissions = data.filter(
-              submission => 
-                submission.submissionType?.type === 'FIRST_DRAFT' || 
-                submission.submissionType?.type === 'FINAL_DRAFT' || 
+              (submission) =>
+                submission.submissionType?.type === 'FIRST_DRAFT' ||
+                submission.submissionType?.type === 'FINAL_DRAFT' ||
                 submission.submissionType?.type === 'POSTING'
             );
-            
+
             if (relevantSubmissions.length === 0) {
               statusMap[creator.userId] = 'NOT_STARTED';
               continue;
             }
-            
+
             // Find submissions by type
             const firstDraftSubmission = relevantSubmissions.find(
-              item => item.submissionType.type === 'FIRST_DRAFT'
+              (item) => item.submissionType.type === 'FIRST_DRAFT'
             );
             const finalDraftSubmission = relevantSubmissions.find(
-              item => item.submissionType.type === 'FINAL_DRAFT'
+              (item) => item.submissionType.type === 'FINAL_DRAFT'
             );
             const postingSubmission = relevantSubmissions.find(
-              item => item.submissionType.type === 'POSTING'
+              (item) => item.submissionType.type === 'POSTING'
             );
-            
+
             // Determine the status based on the latest stage in the workflow
             // Priority: Posting > Final Draft > First Draft
             if (postingSubmission) {
@@ -204,7 +199,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
             statusMap[creator.userId] = 'NOT_STARTED';
           }
         }
-        
+
         setCreatorStatuses(statusMap);
       } catch (error) {
         console.error('Error fetching creator statuses:', error);
@@ -212,7 +207,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         setLoadingStatuses(false);
       }
     };
-    
+
     fetchAllCreatorStatuses();
   }, [shortlistedCreators, campaign?.id]);
 
@@ -221,31 +216,31 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     if (selectedCreator?.userId && submissions) {
       setCreatorStatuses((prevStatuses) => {
         const newStatuses = { ...prevStatuses };
-        
+
         // Filter out agreement submissions - only consider FIRST_DRAFT, FINAL_DRAFT, and POSTING
         const relevantSubmissions = submissions.filter(
-          submission => 
-            submission.submissionType?.type === 'FIRST_DRAFT' || 
-            submission.submissionType?.type === 'FINAL_DRAFT' || 
+          (submission) =>
+            submission.submissionType?.type === 'FIRST_DRAFT' ||
+            submission.submissionType?.type === 'FINAL_DRAFT' ||
             submission.submissionType?.type === 'POSTING'
         );
-        
+
         if (relevantSubmissions.length === 0) {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
           return newStatuses;
         }
-        
+
         // Find submissions by type
         const firstDraftSubmission = relevantSubmissions.find(
-          item => item.submissionType.type === 'FIRST_DRAFT'
+          (item) => item.submissionType.type === 'FIRST_DRAFT'
         );
         const finalDraftSubmission = relevantSubmissions.find(
-          item => item.submissionType.type === 'FINAL_DRAFT'
+          (item) => item.submissionType.type === 'FINAL_DRAFT'
         );
         const postingSubmission = relevantSubmissions.find(
-          item => item.submissionType.type === 'POSTING'
+          (item) => item.submissionType.type === 'POSTING'
         );
-        
+
         // Determine the status based on the latest stage in the workflow
         // Priority: Posting > Final Draft > First Draft
         if (postingSubmission) {
@@ -257,7 +252,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         } else {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
         }
-        
+
         return newStatuses;
       });
     }
@@ -273,10 +268,10 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     if (sortedCreators?.length && !selectedCreator) {
       // Check if there's a target creator ID from notification
       const targetCreatorId = localStorage.getItem('targetCreatorId');
-      
+
       if (targetCreatorId) {
         // Find the specific creator to select
-        const targetCreator = sortedCreators.find(creator => creator.userId === targetCreatorId);
+        const targetCreator = sortedCreators.find((creator) => creator.userId === targetCreatorId);
         if (targetCreator) {
           setSelectedCreator(targetCreator);
           // Clear the target creator ID after using it
@@ -290,7 +285,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         setSelectedCreator(sortedCreators[0]);
       }
     }
-  }, [filteredCreators, selectedCreator]);
+  }, [filteredCreators, selectedCreator, sortedCreators]);
 
   // Handle creator selection
   const handleCreatorSelect = (creator) => {
@@ -354,23 +349,23 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         tooltip: 'Creator has not started work yet',
       },
     };
-    
+
     return statusMap[status] || statusMap.NOT_STARTED;
   };
 
   const renderCreatorStatus = (userId) => {
     if (loadingStatuses) return <CircularProgress size={16} />;
-    
+
     const status = creatorStatuses[userId] || 'NOT_STARTED';
     let statusText = status.replace(/_/g, ' ');
-    
+
     // Handle SENT_TO_ADMIN status display for admin users
     if (status === 'SENT_TO_ADMIN') {
       statusText = 'CLIENT FEEDBACK';
     }
-    
+
     const statusInfo = getStatusInfo(status);
-    
+
     return (
       <Tooltip title={statusInfo.tooltip} arrow>
         <Typography
@@ -403,12 +398,12 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     // Use displayStatus for V3 submissions, fallback to regular status
     const status = submission.displayStatus || submission.status;
     let statusText = status ? status.replace(/_/g, ' ') : '';
-    
+
     // Handle SENT_TO_ADMIN status display for admin users
     if (status === 'SENT_TO_ADMIN') {
       statusText = 'CLIENT FEEDBACK';
     }
-    
+
     const statusInfo = getStatusInfo(status);
 
     return (
@@ -556,7 +551,6 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         >
           Alphabetical
         </Button>
-
       </Box>
 
       {/* Content Row */}
@@ -621,7 +615,12 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
                     <Box sx={{ flexGrow: 1 }}>
                       <Typography
-                        sx={{ mb: 0.2, fontWeight: 400, fontSize: { xs: '0.9rem', md: '1rem' }, color: '#231F20' }}
+                        sx={{
+                          mb: 0.2,
+                          fontWeight: 400,
+                          fontSize: { xs: '0.9rem', md: '1rem' },
+                          color: '#231F20',
+                        }}
                       >
                         {creator.user?.name}
                       </Typography>
