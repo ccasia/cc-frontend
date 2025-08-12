@@ -91,6 +91,7 @@ const PhotoCard = ({
 
   // Use local status if available, otherwise use prop status
   const currentStatus = localStatus || photoItem.status;
+  // For V3: Admin approval shows as SENT_TO_CLIENT, Client approval shows as APPROVED
   const isPhotoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isPhotoApprovedByClient = currentStatus === 'APPROVED';
   const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
@@ -157,8 +158,8 @@ const PhotoCard = ({
     try {
       const values = formMethods.getValues();
       await onIndividualApprove(photoItem.id, values.feedback);
-      // Optimistically update local status
-      setLocalStatus('APPROVED');
+      // Optimistically update local status - for V3 show SENT_TO_CLIENT, for V2 show APPROVED
+      setLocalStatus(isV3 ? 'SENT_TO_CLIENT' : 'APPROVED');
     } catch (error) {
       console.error('Error approving photo:', error);
     } finally {
@@ -190,8 +191,8 @@ const PhotoCard = ({
       try {
         const values = formMethods.getValues();
         await handleApprove(photoItem.id, values);
-        // Optimistically update local status for fallback handler
-        setLocalStatus('APPROVED');
+        // Optimistically update local status for fallback handler - for V3 show SENT_TO_CLIENT, for V2 show APPROVED
+        setLocalStatus(isV3 ? 'SENT_TO_CLIENT' : 'APPROVED');
       } catch (error) {
         console.error('Error in fallback approve handler:', error);
       }
@@ -256,7 +257,7 @@ const PhotoCard = ({
                 textTransform: 'none',
               }}
             >
-              APPROVED
+              {isV3 ? 'SENT TO CLIENT' : 'APPROVED'}
             </Box>
           </Box>
         );
@@ -909,10 +910,14 @@ const Photos = ({
 
       if (response.status === 200) {
         enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
-        // Refresh data
+        // Refresh data - ensure proper SWR revalidation
         if (deliverables?.deliverableMutate) {
           await deliverables.deliverableMutate();
         }
+        if (deliverables?.submissionMutate) {
+          await deliverables.submissionMutate();
+        }
+        // Also refresh any SWR submission data if available
         if (deliverables?.submissionMutate) {
           await deliverables.submissionMutate();
         }

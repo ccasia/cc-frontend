@@ -202,9 +202,9 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     if (
       (firstDraftSubmission?.status === 'CHANGES_REQUIRED' || 
        (finalDraftSubmission && 
-        (finalDraftSubmission?.status === 'IN_PROGRESS' || 
-         finalDraftSubmission?.status === 'CHANGES_REQUIRED' ||
-         finalDraftSubmission?.status === 'PENDING_REVIEW' ||
+      (finalDraftSubmission?.status === 'IN_PROGRESS' || 
+       finalDraftSubmission?.status === 'CHANGES_REQUIRED' ||
+       finalDraftSubmission?.status === 'PENDING_REVIEW' ||
          finalDraftSubmission?.status === 'SENT_TO_CLIENT' ||
          finalDraftSubmission?.status === 'CLIENT_APPROVED'))) &&
       !addedStages.has('FINAL_DRAFT')

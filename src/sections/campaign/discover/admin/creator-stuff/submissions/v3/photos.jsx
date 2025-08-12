@@ -871,14 +871,14 @@ const PhotosV3 = ({
       if (onIndividualApprove) {
         await onIndividualApprove(photoId, formValues.feedback);
       } else {
-        const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
-          mediaId: photoId,
-          mediaType: 'photo',
-          feedback: formValues.feedback || ''
-        });
+      const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
+        mediaId: photoId,
+        mediaType: 'photo',
+        feedback: formValues.feedback || ''
+      });
 
-        enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
-        
+      enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
+      
         // Revalidate data using passed SWR functions
         if (deliverableMutate) await deliverableMutate();
         if (submissionMutate) await submissionMutate();
@@ -895,15 +895,15 @@ const PhotosV3 = ({
       if (onIndividualRequestChange) {
         await onIndividualRequestChange(photoId, formValues.feedback, formValues.reasons);
       } else {
-        const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
-          mediaId: photoId,
-          mediaType: 'photo',
-          feedback: formValues.feedback || '',
-          reasons: formValues.reasons || []
-        });
+      const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+        mediaId: photoId,
+        mediaType: 'photo',
+        feedback: formValues.feedback || '',
+        reasons: formValues.reasons || []
+      });
 
-        enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
-        
+      enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
+      
         // Revalidate data using passed SWR functions
         if (deliverableMutate) await deliverableMutate();
         if (submissionMutate) await submissionMutate();

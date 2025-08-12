@@ -27,6 +27,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import Label from 'src/components/label';
 import axiosInstance from 'src/utils/axios';
+import UGCCreditsModal from './ugc-credits-modal';
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -35,6 +36,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
+  const [ugcCreditsModalOpen, setUgCCreditsModalOpen] = useState(false);
   
   const displayStatus = pitch?.displayStatus || pitch?.status;
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -101,7 +103,8 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
 
   const handleApprove = () => {
     if (isAdmin && displayStatus === 'PENDING_REVIEW') {
-      handleAction('approve', 'approve');
+      // For admin, open UGC credits modal instead of direct approval
+      setUgCCreditsModalOpen(true);
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
       handleAction('approve', 'approve/client');
     }
@@ -117,6 +120,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
 
   const handleSetAgreement = () => {
     enqueueSnackbar('Agreement setup feature coming soon', { variant: 'info' });
+  };
+
+  const handleUGCCreditsSuccess = (updatedPitch) => {
+    onUpdate(updatedPitch);
+    setUgCCreditsModalOpen(false);
   };
 
   const getAvailableActions = () => {
@@ -934,6 +942,15 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* UGC Credits Assignment Modal */}
+      <UGCCreditsModal
+        open={ugcCreditsModalOpen}
+        onClose={() => setUgCCreditsModalOpen(false)}
+        pitch={pitch}
+        campaign={campaign}
+        onSuccess={handleUGCCreditsSuccess}
+      />
     </>
   );
 };

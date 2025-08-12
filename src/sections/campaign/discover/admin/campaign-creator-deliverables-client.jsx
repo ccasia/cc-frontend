@@ -524,6 +524,25 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   const isV3 = campaign?.origin === 'CLIENT';
   const userRole = user?.role; // Use the actual user role from the auth context
 
+  // Helper function to check if deliverables should be shown to clients
+  const shouldShowDeliverablesToClient = (submission) => {
+    if (!submission) return false;
+    
+    // For clients, show deliverables when status is PENDING_REVIEW, APPROVED, or other relevant statuses
+    if (userRole === 'client') {
+      const status = submission.displayStatus || submission.status;
+      return status === 'PENDING_REVIEW' || 
+             status === 'APPROVED' || 
+             status === 'CLIENT_FEEDBACK' ||
+             status === 'SENT_TO_CLIENT' ||
+             status === 'CHANGES_REQUIRED' ||
+             status === 'SENT_TO_ADMIN';
+    }
+    
+    // For admins, show all deliverables
+    return true;
+  };
+
   // Handler for admin 'Send to Client'
   const handleSendToClient = async (submissionId) => {
     try {
@@ -1330,24 +1349,33 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             </Button>
                           </Stack>
                         )}
-                        <FirstDraft
-                          submission={firstDraftSubmission}
-                          campaign={campaign}
-                          creator={selectedCreator}
-                          deliverablesData={{
-                            deliverables: deliverablesData,
-                            deliverableMutate,
-                            submissionMutate,
-                          }}
-                          isV3={true}
-                          // Individual client approval handlers
-                          handleClientApproveVideo={handleClientApproveVideo}
-                          handleClientApprovePhoto={handleClientApprovePhoto}
-                          handleClientApproveRawFootage={handleClientApproveRawFootage}
-                          handleClientRejectVideo={handleClientRejectVideo}
-                          handleClientRejectPhoto={handleClientRejectPhoto}
-                          handleClientRejectRawFootage={handleClientRejectRawFootage}
-                        />
+                        {shouldShowDeliverablesToClient(firstDraftSubmission) ? (
+                          <FirstDraft
+                            submission={firstDraftSubmission}
+                            campaign={campaign}
+                            creator={selectedCreator}
+                            deliverablesData={{
+                              deliverables: deliverablesData,
+                              deliverableMutate,
+                              submissionMutate,
+                            }}
+                            isV3={true}
+                            // Individual client approval handlers
+                            handleClientApproveVideo={handleClientApproveVideo}
+                            handleClientApprovePhoto={handleClientApprovePhoto}
+                            handleClientApproveRawFootage={handleClientApproveRawFootage}
+                            handleClientRejectVideo={handleClientRejectVideo}
+                            handleClientRejectPhoto={handleClientRejectPhoto}
+                            handleClientRejectRawFootage={handleClientRejectRawFootage}
+                          />
+                        ) : (
+                          <Box sx={{ p: 3 }}>
+                            <EmptyContent 
+                              title="No deliverables found" 
+                              description="This submission doesn't have any deliverables available for review yet."
+                            />
+                          </Box>
+                        )}
                       </>
                     ) : (
                       <Box sx={{ p: 3 }}>
@@ -1535,25 +1563,34 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             </Button>
                           </Stack>
                         )}
-                        <FinalDraft
-                          submission={finalDraftSubmission}
-                          campaign={campaign}
-                          creator={selectedCreator}
-                          firstDraftSubmission={firstDraftSubmission}
-                          deliverablesData={{
-                            deliverables: deliverablesData,
-                            deliverableMutate,
-                            submissionMutate,
-                          }}
-                          isV3={true}
-                          // Individual client approval handlers
-                          handleClientApproveVideo={handleClientApproveVideo}
-                          handleClientApprovePhoto={handleClientApprovePhoto}
-                          handleClientApproveRawFootage={handleClientApproveRawFootage}
-                          handleClientRejectVideo={handleClientRejectVideo}
-                          handleClientRejectPhoto={handleClientRejectPhoto}
-                          handleClientRejectRawFootage={handleClientRejectRawFootage}
-                        />
+                        {shouldShowDeliverablesToClient(finalDraftSubmission) ? (
+                          <FinalDraft
+                            submission={finalDraftSubmission}
+                            campaign={campaign}
+                            creator={selectedCreator}
+                            firstDraftSubmission={firstDraftSubmission}
+                            deliverablesData={{
+                              deliverables: deliverablesData,
+                              deliverableMutate,
+                              submissionMutate,
+                            }}
+                            isV3={true}
+                            // Individual client approval handlers
+                            handleClientApproveVideo={handleClientApproveVideo}
+                            handleClientApprovePhoto={handleClientApprovePhoto}
+                            handleClientApproveRawFootage={handleClientApproveRawFootage}
+                            handleClientRejectVideo={handleClientRejectVideo}
+                            handleClientRejectPhoto={handleClientRejectPhoto}
+                            handleClientRejectRawFootage={handleClientRejectRawFootage}
+                          />
+                        ) : (
+                          <Box sx={{ p: 3 }}>
+                            <EmptyContent 
+                              title="No deliverables found" 
+                              description="This submission doesn't have any deliverables available for review yet."
+                            />
+                          </Box>
+                        )}
                       </>
                     ) : (
                       <Box sx={{ p: 3 }}>
@@ -1741,19 +1778,28 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             </Button>
                           </Stack>
                         )}
-                        <Posting
-                          submission={postingSubmission}
-                          campaign={campaign}
-                          creator={selectedCreator}
-                          isV3={true}
-                          // Individual client approval handlers
-                          handleClientApproveVideo={handleClientApproveVideo}
-                          handleClientApprovePhoto={handleClientApprovePhoto}
-                          handleClientApproveRawFootage={handleClientApproveRawFootage}
-                          handleClientRejectVideo={handleClientRejectVideo}
-                          handleClientRejectPhoto={handleClientRejectPhoto}
-                          handleClientRejectRawFootage={handleClientRejectRawFootage}
-                        />
+                        {shouldShowDeliverablesToClient(postingSubmission) ? (
+                          <Posting
+                            submission={postingSubmission}
+                            campaign={campaign}
+                            creator={selectedCreator}
+                            isV3={true}
+                            // Individual client approval handlers
+                            handleClientApproveVideo={handleClientApproveVideo}
+                            handleClientApprovePhoto={handleClientApprovePhoto}
+                            handleClientApproveRawFootage={handleClientApproveRawFootage}
+                            handleClientRejectVideo={handleClientRejectVideo}
+                            handleClientRejectPhoto={handleClientRejectPhoto}
+                            handleClientRejectRawFootage={handleClientRejectRawFootage}
+                          />
+                        ) : (
+                          <Box sx={{ p: 3 }}>
+                            <EmptyContent 
+                              title="No deliverables found" 
+                              description="This submission doesn't have any deliverables available for review yet."
+                            />
+                          </Box>
+                        )}
                       </>
                     ) : (
                       <Box sx={{ p: 3 }}>
