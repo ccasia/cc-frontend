@@ -27,10 +27,8 @@ import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import Label from 'src/components/label';
-import axiosInstance from 'src/utils/axios';
-import UGCCreditsModal from './ugc-credits-modal';
 
+import UGCCreditsModal from './ugc-credits-modal';
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -40,7 +38,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const [ugcCreditsModalOpen, setUgCCreditsModalOpen] = useState(false);
-  
+
   const displayStatus = pitch?.displayStatus || pitch?.status;
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const isClient = user?.role === 'client';
@@ -91,12 +89,16 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
     setLoading(true);
     try {
       const response = await axiosInstance.patch(`/api/pitch/v3/${pitch.id}/${endpoint}`, data);
-      enqueueSnackbar(response.data.message || 'Action completed successfully', { variant: 'success' });
+      enqueueSnackbar(response.data.message || 'Action completed successfully', {
+        variant: 'success',
+      });
       onUpdate({ ...pitch, ...response.data.pitch });
       onClose();
     } catch (error) {
       console.error('Error performing action:', error);
-      enqueueSnackbar(error.response?.data?.message || 'Error performing action', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Error performing action', {
+        variant: 'error',
+      });
     } finally {
       setLoading(false);
       setRejectDialogOpen(false);
@@ -136,18 +138,31 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
     if (isAdmin) {
       if (displayStatus === 'PENDING_REVIEW') {
         actions.push(
-          { label: 'Approve & Send to Client', action: 'approve', icon: 'eva:checkmark-circle-2-fill', color: 'success' },
+          {
+            label: 'Approve & Send to Client',
+            action: 'approve',
+            icon: 'eva:checkmark-circle-2-fill',
+            color: 'success',
+          },
           { label: 'Reject', action: 'reject', icon: 'eva:close-circle-fill', color: 'error' }
         );
       } else if (displayStatus === 'APPROVED') {
-        actions.push(
-          { label: 'Set Agreement', action: 'agreement', icon: 'eva:file-text-fill', color: 'primary' }
-        );
+        actions.push({
+          label: 'Set Agreement',
+          action: 'agreement',
+          icon: 'eva:file-text-fill',
+          color: 'primary',
+        });
       }
     } else if (isClient) {
       if (displayStatus === 'PENDING_REVIEW') {
         actions.push(
-          { label: 'Approve', action: 'approve', icon: 'eva:checkmark-circle-2-fill', color: 'success' },
+          {
+            label: 'Approve',
+            action: 'approve',
+            icon: 'eva:checkmark-circle-2-fill',
+            color: 'success',
+          },
           { label: 'Reject', action: 'reject', icon: 'eva:close-circle-fill', color: 'error' }
         );
       }
@@ -472,7 +487,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                           sx={{ width: 20, height: 20 }}
                         />
                         <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                          {currentPitch?.user?.engagementRate 
+                          {currentPitch?.user?.engagementRate
                             ? `${(currentPitch.user.engagementRate * 100).toFixed(2)}%`
                             : 'N/A'}
                         </Typography>
@@ -717,7 +732,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
         <DialogActions sx={{ px: 3, pb: 3, gap: -1, mt: -3 }}>
           {availableActions.length > 0 ? (
             <>
-              {availableActions.find(action => action.action === 'reject') && (
+              {availableActions.find((action) => action.action === 'reject') && (
                 <Button
                   variant="contained"
                   onClick={() => setRejectDialogOpen(true)}
@@ -747,7 +762,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                   Reject
                 </Button>
               )}
-              {availableActions.find(action => action.action === 'approve') && (
+              {availableActions.find((action) => action.action === 'approve') && (
                 <Button
                   variant="contained"
                   onClick={handleApprove}
@@ -777,11 +792,12 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                   {loading ? (
                     <CircularProgress size={20} color="inherit" />
                   ) : (
-                    availableActions.find(action => action.action === 'approve')?.label || 'Approve'
+                    availableActions.find((action) => action.action === 'approve')?.label ||
+                    'Approve'
                   )}
                 </Button>
               )}
-              {availableActions.find(action => action.action === 'agreement') && (
+              {availableActions.find((action) => action.action === 'agreement') && (
                 <Button
                   variant="contained"
                   onClick={handleSetAgreement}
@@ -838,7 +854,12 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
       </Dialog>
 
       {/* Reject Dialog */}
-      <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={rejectDialogOpen}
+        onClose={() => setRejectDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogContent>
           <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
             <Box
@@ -937,11 +958,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
               },
             }}
           >
-            {loading ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              'Yes, reject!'
-            )}
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'Yes, reject!'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -966,4 +983,4 @@ V3PitchModal.propTypes = {
   pitch: PropTypes.object,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
-}; 
+};
