@@ -50,6 +50,10 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
   const [uploadProgress, setUploadProgress] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // V3 campaign and user role constants
+  const isV3 = campaign?.origin === 'CLIENT';
+  const userRole = user?.role;
+
   // Get shortlisted creators from campaign
   const shortlistedCreators = useMemo(() => campaign?.shortlisted || [], [campaign?.shortlisted]);
 
@@ -84,10 +88,10 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         displayStatus: s.displayStatus
       })),
       loadingSubmissions,
-      userRole: user?.role,
-      isV3: campaign?.origin === 'CLIENT'
+      userRole: userRole,
+      isV3: isV3
     });
-  }, [submissions, selectedCreator?.userId, campaign?.id, loadingSubmissions, user?.role, campaign?.origin]);
+  }, [submissions, selectedCreator?.userId, campaign?.id, loadingSubmissions, userRole, isV3]);
 
   // Get deliverables for selected creator
   const {
@@ -98,7 +102,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
 
   // Socket.io progress handling for V3 campaigns
   useEffect(() => {
-    if (!socket || campaign?.origin !== 'CLIENT') return;
+    if (!socket || !isV3) return;
 
     const handleProgress = (data) => {
       console.log('V3 Progress received:', data);
@@ -125,7 +129,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
     return () => {
       socket.off('progress', handleProgress);
     };
-  }, [socket, campaign?.origin, isProcessing]);
+  }, [socket, isV3, isProcessing]);
 
   // Check if all uploads are complete
   const checkProgress = useCallback(() => {
@@ -179,10 +183,10 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
       } : null,
       hasSubmissions: !!submissions,
       submissionsCount: submissions?.length,
-      userRole: user?.role,
-      isV3: campaign?.origin === 'CLIENT'
+      userRole: userRole,
+      isV3: isV3
     });
-  }, [postingSubmission, submissions, user?.role, campaign?.origin]);
+  }, [postingSubmission, submissions, userRole, isV3]);
 
   const filteredCreators = useMemo(() => {
     let filtered = sortedCreators;
@@ -433,7 +437,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
         displayStatus: s.displayStatus
       })),
       userRole: userRole,
-      isV3: campaign?.origin === 'CLIENT'
+      isV3: isV3
     });
     
     return (
@@ -490,7 +494,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
       statusText,
       submissionType: submission.submissionType?.type,
       userRole: userRole,
-      isV3: campaign?.origin === 'CLIENT',
+      isV3: isV3,
       campaignOrigin: campaign?.origin
     });
 
@@ -520,9 +524,6 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
       </Tooltip>
     );
   };
-
-  const isV3 = campaign?.origin === 'CLIENT';
-  const userRole = user?.role; // Use the actual user role from the auth context
 
   // Helper function to check if deliverables should be shown to clients
   const shouldShowDeliverablesToClient = (submission) => {
@@ -932,7 +933,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
       </Box>
 
       {/* Progress Display for V3 Uploads */}
-      {campaign?.origin === 'CLIENT' && isProcessing && uploadProgress.length > 0 && (
+      {isV3 && isProcessing && uploadProgress.length > 0 && (
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle1" sx={{ mb: 2, color: '#221f20', fontWeight: 600 }}>
             Processing Uploads...
@@ -1359,7 +1360,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                               deliverableMutate,
                               submissionMutate,
                             }}
-                            isV3={true}
+                            isV3={isV3}
                             // Individual client approval handlers
                             handleClientApproveVideo={handleClientApproveVideo}
                             handleClientApprovePhoto={handleClientApprovePhoto}
@@ -1574,7 +1575,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                               deliverableMutate,
                               submissionMutate,
                             }}
-                            isV3={true}
+                            isV3={isV3}
                             // Individual client approval handlers
                             handleClientApproveVideo={handleClientApproveVideo}
                             handleClientApprovePhoto={handleClientApprovePhoto}
@@ -1783,7 +1784,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
                             submission={postingSubmission}
                             campaign={campaign}
                             creator={selectedCreator}
-                            isV3={true}
+                            isV3={isV3}
                             // Individual client approval handlers
                             handleClientApproveVideo={handleClientApproveVideo}
                             handleClientApprovePhoto={handleClientApprovePhoto}
