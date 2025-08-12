@@ -208,10 +208,10 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         setSelectedAgreement(newAgreement);
         editDialog.onTrue();
         return;
-      } else {
+      } 
         enqueueSnackbar('Pitch must be approved before setting agreement', { variant: 'info' });
         return;
-      }
+      
     }
 
     // For V2 campaigns (admin-created), use existing logic

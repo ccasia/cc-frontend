@@ -2,6 +2,7 @@ import useSWR from 'swr';
 import { useMemo } from 'react';
 
 import { fetcher, endpoints } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 const useGetClientCredits = () => {
@@ -48,7 +49,7 @@ const useGetClientCredits = () => {
       };
     }
 
-    const company = companyData.company;
+    const {company} = companyData;
     
     // Find the company's active subscription
     const activeSubscription = companyDetails.subscriptions?.find(sub => 

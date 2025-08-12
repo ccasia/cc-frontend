@@ -10,6 +10,9 @@ import { ChatView } from 'src/sections/chat/view';
 import { CalendarView } from 'src/sections/calendar/view';
 import ReportingView from 'src/sections/report/view/reporting-view';
 
+// Import the client dashboard directly without lazy loading to avoid issues
+import ClientDashboard from '../../sections/client/dashboard-client';
+
 // ----------------------------------------------------------------------
 
 const IndexPage = lazy(() => import('src/pages/dashboard/one'));
@@ -20,8 +23,6 @@ const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'
 const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCards'));
 const InvoiceCreator = lazy(() => import('src/pages/dashboard/creator/invoice'));
 const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
-// Import the client dashboard directly without lazy loading to avoid issues
-import ClientDashboard from '../../sections/client/dashboard-client';
 
 // APP
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));

@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { memo, useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
-import { Divider, Collapse, ListSubheader, Typography } from '@mui/material';
+import { Divider, Collapse, ListSubheader } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 

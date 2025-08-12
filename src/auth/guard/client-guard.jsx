@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+
 import { useAuthContext } from '../hooks/use-auth-context';
 
 export default function ClientGuard({ children }) {

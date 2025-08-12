@@ -167,7 +167,7 @@ const CampaignFinalDraft = ({
       previousSubmissionId: previousSubmission?.id,
       previousSubmissionStatus: previousSubmission?.status,
       previousSubmissionFeedback: previousSubmission?.feedback,
-      dependency: dependency,
+      dependency,
       fullSubmission: fullSubmission?.map(s => ({ id: s.id, type: s.submissionType?.type, status: s.status }))
     });
   }, [submission, previousSubmission, dependency, fullSubmission]);

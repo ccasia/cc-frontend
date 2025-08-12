@@ -2,22 +2,22 @@
 import PropTypes from 'prop-types';
 import { useMemo, useState, useEffect } from 'react';
 
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Stack,
   Avatar,
-  TextField,
   Button,
+  Tooltip,
+  TextField,
   Accordion,
   Typography,
+  useMediaQuery,
+  InputAdornment,
   AccordionSummary,
   AccordionDetails,
   CircularProgress,
-  Tooltip,
-  InputAdornment,
-  useMediaQuery,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
@@ -268,10 +268,27 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  // Set first creator as selected by default
+  // Set first creator as selected by default, or use target creator from localStorage
   useEffect(() => {
-    if (filteredCreators?.length && !selectedCreator) {
-      setSelectedCreator(filteredCreators[0]);
+    if (sortedCreators?.length && !selectedCreator) {
+      // Check if there's a target creator ID from notification
+      const targetCreatorId = localStorage.getItem('targetCreatorId');
+      
+      if (targetCreatorId) {
+        // Find the specific creator to select
+        const targetCreator = sortedCreators.find(creator => creator.userId === targetCreatorId);
+        if (targetCreator) {
+          setSelectedCreator(targetCreator);
+          // Clear the target creator ID after using it
+          localStorage.removeItem('targetCreatorId');
+        } else {
+          // Fallback to first creator if target not found
+          setSelectedCreator(sortedCreators[0]);
+        }
+      } else {
+        // Default behavior - select first creator
+        setSelectedCreator(sortedCreators[0]);
+      }
     }
   }, [filteredCreators, selectedCreator]);
 
@@ -384,7 +401,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     if (!submission) return null;
 
     // Use displayStatus for V3 submissions, fallback to regular status
-    let status = submission.displayStatus || submission.status;
+    const status = submission.displayStatus || submission.status;
     let statusText = status ? status.replace(/_/g, ' ') : '';
     
     // Handle SENT_TO_ADMIN status display for admin users

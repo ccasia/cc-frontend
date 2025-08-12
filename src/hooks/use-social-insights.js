@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 // Global cache for insights data
@@ -14,9 +15,9 @@ const createCacheKey = (postingSubmissions, campaignId) => {
   return `${campaignId}_${btoa(urls).slice(0, 20)}`;
 };
 
-const isCacheValid = (timestamp, ttl = 300000) => { // 5 minutes default TTL
-  return Date.now() - timestamp < ttl;
-};
+const isCacheValid = (timestamp, ttl = 300000) =>  // 5 minutes default TTL
+   Date.now() - timestamp < ttl
+;
 
 const cleanOldCache = (cache, maxSize = 20) => {
   if (cache.size > maxSize) {
@@ -59,10 +60,10 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
         setIsLoading(false);
         setLoadingProgress({ loaded: cached.data.length, total: postingSubmissions.length });
         return;
-      } else {
+      } 
         // Remove expired cache
         insightsCache.delete(cacheKey);
-      }
+      
     }
 
     setIsLoading(true);

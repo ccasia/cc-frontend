@@ -1,17 +1,19 @@
 import PropTypes from 'prop-types';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
 import { IconButton } from '@mui/material';
 import Typography from '@mui/material/Typography';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { useResponsive } from 'src/hooks/use-responsive';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Scrollbar from 'src/components/scrollbar';
-import { NavSectionMini, NavSectionVertical } from 'src/components/nav-section';
 import { useSettingsContext } from 'src/components/settings';
+import { NavSectionMini, NavSectionVertical } from 'src/components/nav-section';
 
 import { NAV } from '../config-layout';
 import { useNavData } from './config-navigation';

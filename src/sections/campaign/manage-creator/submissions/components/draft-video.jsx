@@ -1,8 +1,8 @@
 import { mutate } from 'swr';
-import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -14,12 +14,13 @@ import {
   DialogTitle,
   DialogActions,
   DialogContent,
-  CircularProgress,
   LinearProgress,
+  CircularProgress,
 } from '@mui/material';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
 import socket from 'src/hooks/socket';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
@@ -188,7 +189,7 @@ const UploadDraftVideoModal = ({
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / k**i).toFixed(2))  } ${  sizes[i]}`;
   };
 
   const truncateText = (text, maxLength) =>

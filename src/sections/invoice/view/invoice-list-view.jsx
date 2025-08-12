@@ -890,7 +890,7 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
     inputData = inputData?.filter(
       (invoice) =>
         invoice.invoiceNumber.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        invoice.invoiceTo.name.toLowerCase().indexOf(name.toLowerCase()) !== -1
+        invoice.invoiceFrom?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 

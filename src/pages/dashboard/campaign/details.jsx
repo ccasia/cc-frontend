@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+
 import { useParams } from 'src/routes/hooks';
 
 import CampaignDetailView from 'src/sections/campaign/discover/admin/view/campaign-detail-view';

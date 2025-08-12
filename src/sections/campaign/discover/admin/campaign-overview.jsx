@@ -174,9 +174,9 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
         });
         navigate(`/dashboard/chat/thread/${newThreadResponse.data.id}`);
       }
-    } catch (error) {
-      console.log(error);
-      console.error('Error creating or finding chat thread:', error);
+    } catch (err) {
+      console.log(err);
+      console.error('Error creating or finding chat thread:', err);
     }
   };
 
@@ -193,8 +193,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
       if (onUpdate) {
         onUpdate();
       }
-    } catch (error) {
-      console.error('Error declining pitch:', error);
+    } catch (err) {
+      console.error('Error declining pitch:', err);
       enqueueSnackbar('error', { variant: 'error' });
     }
   };
