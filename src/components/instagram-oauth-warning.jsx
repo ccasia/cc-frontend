@@ -45,7 +45,11 @@ const InstagramOAuthWarning = ({
   const handleProceedNow = () => {
     setIsRedirecting(true);
     if (redirectUrl) {
-      window.open(redirectUrl);
+      const a = document.createElement('a');
+      a.href = redirectUrl;
+      a.target = '_blank';
+      a.click();
+      // window.open(redirectUrl);
       // window.location.href = redirectUrl;
     } else if (onProceed) {
       onProceed();
