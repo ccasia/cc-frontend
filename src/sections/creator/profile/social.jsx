@@ -23,7 +23,7 @@ export default function AccountSocialLinks() {
 
   const tikTokLoading = useBoolean();
   const facebookLoading = useBoolean();
-  
+
   // State for Instagram OAuth warning modal
   const [showOAuthWarning, setShowOAuthWarning] = useState(false);
 
@@ -362,11 +362,11 @@ export default function AccountSocialLinks() {
           </Stack>
         </Box>
       </Stack>
-      
+
       {/* Instagram OAuth Warning Modal */}
       {showOAuthWarning && (
         <InstagramOAuthWarning
-          redirectUrl="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://staging.cultcreativeasia.com/api/social/v2/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_insights"
+          redirectUrl={`https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=945958120199185&redirect_uri=${import.meta.env.VITE_BASE_URL}/api/social/v2/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_insights`}
           onCancel={() => setShowOAuthWarning(false)}
           autoRedirect={false}
           redirectDelay={3}

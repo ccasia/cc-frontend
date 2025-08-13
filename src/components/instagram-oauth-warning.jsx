@@ -4,12 +4,12 @@ import { useTheme } from '@mui/material/styles';
 import { m } from 'framer-motion';
 import Iconify from './iconify';
 
-const InstagramOAuthWarning = ({ 
-  onProceed, 
-  onCancel, 
-  autoRedirect = true, 
+const InstagramOAuthWarning = ({
+  onProceed,
+  onCancel,
+  autoRedirect = true,
   redirectDelay = 3,
-  redirectUrl 
+  redirectUrl,
 }) => {
   const theme = useTheme();
   const [countdown, setCountdown] = useState(redirectDelay);
@@ -42,7 +42,10 @@ const InstagramOAuthWarning = ({
   const handleProceedNow = () => {
     setIsRedirecting(true);
     if (redirectUrl) {
-      window.location.href = redirectUrl;
+      const a = document.createElement('a');
+      a.href = redirectUrl;
+      a.target = '_blank';
+      a.click();
     } else if (onProceed) {
       onProceed();
     }
@@ -102,11 +105,7 @@ const InstagramOAuthWarning = ({
             mb: 3,
           }}
         >
-          <Iconify 
-            icon="material-symbols:warning-rounded" 
-            width={40} 
-            sx={{ color: '#FF9800' }} 
-          />
+          <Iconify icon="material-symbols:warning-rounded" width={40} sx={{ color: '#FF9800' }} />
         </Box>
 
         {/* Title */}
@@ -133,10 +132,10 @@ const InstagramOAuthWarning = ({
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="flex-start">
-            <Iconify 
-              icon="material-symbols:info-rounded" 
-              width={24} 
-              sx={{ color: '#F57C00', mt: 0.2, flexShrink: 0 }} 
+            <Iconify
+              icon="material-symbols:info-rounded"
+              width={24}
+              sx={{ color: '#F57C00', mt: 0.2, flexShrink: 0 }}
             />
             <Typography
               sx={{
@@ -147,12 +146,11 @@ const InstagramOAuthWarning = ({
                 textAlign: 'left',
               }}
             >
-              ⚠️ Stay in your browser. Don't tap 'Open Instagram App' if prompted — the connection may fail.
+              ⚠️ Stay in your browser. Don&apos;t tap &apos;Open Instagram App&apos; if prompted —
+              the connection may fail.
             </Typography>
           </Stack>
         </Box>
-
-
 
         {/* Countdown and Actions */}
         {!isRedirecting ? (
@@ -170,11 +168,7 @@ const InstagramOAuthWarning = ({
               </Typography>
             )}
 
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              spacing={2} 
-              justifyContent="center"
-            >
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
               <Button
                 variant="contained"
                 onClick={handleProceedNow}
@@ -229,12 +223,12 @@ const InstagramOAuthWarning = ({
           </>
         ) : (
           <Box sx={{ py: 2 }}>
-            <CircularProgress 
-              size={32} 
-              sx={{ 
+            <CircularProgress
+              size={32}
+              sx={{
                 color: '#E1306C',
                 mb: 2,
-              }} 
+              }}
             />
             <Typography
               sx={{
@@ -252,4 +246,4 @@ const InstagramOAuthWarning = ({
   );
 };
 
-export default InstagramOAuthWarning; 
+export default InstagramOAuthWarning;
