@@ -61,7 +61,7 @@ import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
-import CampaignV3PitchesWrapper from '../v3-pitches/campaign-v3-pitches-wrapper';
+import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';

@@ -106,34 +106,49 @@ const RawFootageCard = ({
 
   // Get feedback for this specific raw footage
   const getRawFootageFeedback = () => {
-    // Check for individual feedback first (from deliverables API)
-    if (rawFootageItem.individualFeedback && rawFootageItem.individualFeedback.length > 0) {
-      return rawFootageItem.individualFeedback;
+    const combined = [];
+
+    if (Array.isArray(rawFootageItem.individualFeedback)) {
+      combined.push(...rawFootageItem.individualFeedback);
     }
-    
-    // Get all feedback from submission (from deliverables API)
+
     const allFeedbacks = [
-      ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
-      ...(submission?.feedback || [])
+      ...(deliverables?.submissions?.flatMap((sub) => sub.feedback) || []),
+      ...(submission?.feedback || []),
     ];
 
-    // Filter feedback for this specific raw footage
-    const rawFootageSpecificFeedback = allFeedbacks
-      .filter(feedback => feedback.rawFootageToUpdate?.includes(rawFootageItem.id))
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+    const rawFootageSpecificFeedback = allFeedbacks.filter((fb) => fb?.rawFootageToUpdate?.includes(rawFootageItem.id));
+    combined.push(...rawFootageSpecificFeedback);
 
-    // Also include client feedback for this submission (when raw footage status is CLIENT_FEEDBACK)
-    const clientFeedback = allFeedbacks
-      .filter(feedback => {
-        const isClient = feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client';
-        const isFeedback = feedback.type === 'REASON' || feedback.type === 'COMMENT';
-        const isClientFeedbackStatus = rawFootageItem.status === 'CLIENT_FEEDBACK';
-        
-        return isClient && isFeedback && isClientFeedbackStatus;
+    // Normalize, drop empty, and dedupe
+    const normalized = combined
+      .map((fb) => {
+        if (!fb) return null;
+        const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
+        const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
+        const displayContent = hasText
+          ? fb.content
+          : hasReasons
+          ? `Reasons: ${fb.reasons.join(', ')}`
+          : '';
+        return {
+          ...fb,
+          displayContent,
+        };
       })
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+      .filter((fb) => fb && (fb.displayContent.trim().length > 0));
 
-    return [...rawFootageSpecificFeedback, ...clientFeedback];
+    const seen = new Set();
+    const deduped = [];
+    for (const fb of normalized) {
+      const key = fb.id ? `id:${fb.id}` : `c:${fb.displayContent}|t:${fb.createdAt}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(fb);
+      }
+    }
+
+    return deduped.sort((a, b) => dayjs(b?.createdAt).diff(dayjs(a?.createdAt)));
   };
 
   const rawFootageFeedback = getRawFootageFeedback();
@@ -707,7 +722,7 @@ const RawFootageCard = ({
                 </Stack>
                 
                 <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-                  {feedback.content}
+                  {feedback.displayContent || feedback.content}
                 </Typography>
 
                 {feedback.reasons && feedback.reasons.length > 0 && (

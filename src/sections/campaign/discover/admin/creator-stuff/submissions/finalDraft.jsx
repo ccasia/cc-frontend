@@ -20,12 +20,10 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-// V3 Components
-import PhotosV3 from './v3/photos';
-// V2 Components
+import PhotosV3 from '../../../client/submissions/v3/finalDraft/photos';
+import RawFootagesV3 from '../../../client/submissions/v3/finalDraft/raw-footage';
+import DraftVideosV3 from '../../../client/submissions/v3/finalDraft/draft-videos';
 import Photos from './finalDraft/photos';
-import RawFootagesV3 from './v3/raw-footage';
-import DraftVideosV3 from './v3/draft-videos';
 import RawFootages from './finalDraft/raw-footage';
 import DraftVideos from './finalDraft/draft-videos';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
