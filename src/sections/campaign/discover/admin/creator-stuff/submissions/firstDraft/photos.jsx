@@ -107,36 +107,56 @@ const PhotoCard = ({
 
   // Get feedback for this specific photo
   const getPhotoFeedback = () => {
-    // Check for individual feedback first (from deliverables API)
-    if (photoItem.individualFeedback && photoItem.individualFeedback.length > 0) {
-      return photoItem.individualFeedback;
+    const combined = [];
+
+    // Include any per-item feedback if present (often populated by deliverables API)
+    if (Array.isArray(photoItem.individualFeedback)) {
+      combined.push(...photoItem.individualFeedback);
     }
     
-    // Get all feedback from submission (from deliverables API)
+    // Merge feedback coming from submission-level collections
     const allFeedbacks = [
-      ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
-      ...(submission?.feedback || [])
+      ...(deliverables?.submissions?.flatMap((sub) => sub.feedback) || []),
+      ...(submission?.feedback || []),
     ];
 
-    // Filter feedback for this specific photo
-    const photoSpecificFeedback = allFeedbacks
-      .filter(feedback => feedback.photosToUpdate?.includes(photoItem.id))
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+    // Only feedback that targets this photo id
+    const photoSpecificFeedback = allFeedbacks.filter((fb) => fb?.photosToUpdate?.includes(photoItem.id));
+    combined.push(...photoSpecificFeedback);
 
-    // Also include client feedback for this submission (when photo status is CLIENT_FEEDBACK)
-    const clientFeedback = allFeedbacks
-      .filter(feedback => {
-        const isClient = feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client';
-        const isFeedback = feedback.type === 'REASON' || feedback.type === 'COMMENT';
-        const isClientFeedbackStatus = photoItem.status === 'CLIENT_FEEDBACK';
-        
-        return isClient && isFeedback && isClientFeedbackStatus;
+    // Normalize, drop empty, and dedupe
+    const normalized = combined
+      .map((fb) => {
+        if (!fb) return null;
+        const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
+        const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
+        // Build a displayContent so UI never shows an empty card
+        const displayContent = hasText
+          ? fb.content
+          : hasReasons
+          ? `Reasons: ${fb.reasons.join(', ')}`
+          : '';
+        return {
+          ...fb,
+          displayContent,
+        };
       })
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+      // keep entries that have text or reasons
+      .filter((fb) => fb && (fb.displayContent.trim().length > 0));
 
-    const allFeedback = [...photoSpecificFeedback, ...clientFeedback];
-    // Return only the latest feedback
-    return allFeedback.length > 0 ? [allFeedback[0]] : [];
+    // Dedupe by (id if exists) else by content+createdAt
+    const seen = new Set();
+    const deduped = [];
+    for (const fb of normalized) {
+      const key = fb.id ? `id:${fb.id}` : `c:${fb.displayContent}|t:${fb.createdAt}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(fb);
+      }
+    }
+
+    // Sort newest first and return full history
+    return deduped.sort((a, b) => dayjs(b?.createdAt).diff(dayjs(a?.createdAt)));
   };
 
   const photoFeedback = getPhotoFeedback();
@@ -710,7 +730,7 @@ const PhotoCard = ({
                 </Stack>
                 
                 <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-                  {feedback.content}
+                  {feedback.displayContent || feedback.content}
                 </Typography>
 
                 {feedback.reasons && feedback.reasons.length > 0 && (

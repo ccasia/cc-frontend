@@ -72,7 +72,6 @@ const VideoCard = ({
 
   const { formState: { isSubmitting }, reset } = formMethods;
 
-  // Reset form when cardType changes
   useEffect(() => {
     const defaultValues = {
       feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
@@ -82,42 +81,33 @@ const VideoCard = ({
     reset(defaultValues);
   }, [cardType, reset]);
 
-  // Reset local status when videoItem status changes (server update)
   useEffect(() => {
     setLocalStatus(null);
   }, [videoItem.status]);
 
-  // Use local status if available, otherwise use prop status
   const currentStatus = localStatus || videoItem.status;
   const isVideoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isVideoApprovedByClient = currentStatus === 'APPROVED';
   const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED';
-  
-  // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
+
   const isPendingReview = userRole === 'client' ? 
-    // For clients: show approval buttons when media is SENT_TO_CLIENT or submission is PENDING_REVIEW
     (currentStatus === 'SENT_TO_CLIENT' || (submission?.status === 'PENDING_REVIEW' && !isVideoApprovedByClient && !hasRevisionRequested)) :
-    // For non-clients: show approval buttons when submission is PENDING_REVIEW and media not approved
     (submission?.status === 'PENDING_REVIEW' && !isVideoApprovedByAdmin && !hasRevisionRequested);
 
   const getVideoFeedback = () => {
-    // Check for individual feedback first (from deliverables API)
     if (videoItem.individualFeedback && videoItem.individualFeedback.length > 0) {
       return videoItem.individualFeedback;
     }
     
-    // Get all feedback from submission (from deliverables API)
     const allFeedbacks = [
       ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
       ...(submission?.feedback || [])
     ];
 
-    // Filter feedback for this specific video
     const videoSpecificFeedback = allFeedbacks
       .filter(feedback => feedback.videosToUpdate?.includes(videoItem.id))
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
 
-    // Also include client feedback for this submission (when video status is CLIENT_FEEDBACK)
     const clientFeedback = allFeedbacks
       .filter(feedback => {
         const isClient = feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client';
@@ -133,9 +123,7 @@ const VideoCard = ({
 
   const videoFeedback = getVideoFeedback();
 
-  // Helper function to determine border color
   const getBorderColor = () => {
-    // For client role, SENT_TO_CLIENT status should not show green outline
     if (userRole === 'client' && isVideoApprovedByClient) return '#1ABF66';
     if (userRole !== 'client' && isVideoApprovedByAdmin) return '#1ABF66';
     if (hasRevisionRequested) return '#D4321C';
@@ -146,13 +134,10 @@ const VideoCard = ({
     try {
       const values = formMethods.getValues();
       if (userRole === 'client') {
-        // Use client approval handler
         await handleClientApprove(videoItem.id);
       } else {
-        // Use admin approval handler
         await handleApprove(videoItem.id, values);
       }
-      // Optimistically update local status for V3 flow - admin sends to client, client approves
       setLocalStatus(userRole === 'client' ? 'APPROVED' : 'SENT_TO_CLIENT');
     } catch (error) {
       console.error('Error in V3 approve handler:', error);
@@ -163,13 +148,10 @@ const VideoCard = ({
     try {
       const values = formMethods.getValues();
       if (userRole === 'client') {
-        // Use client rejection handler
         await handleClientReject(videoItem.id, values.feedback, values.reasons);
       } else {
-        // Use admin request changes handler
         await handleRequestChange(videoItem.id, values);
       }
-      // Optimistically update local status for V3 flow
       setLocalStatus('REVISION_REQUESTED');
     } catch (error) {
       console.error('Error in V3 request handler:', error);
@@ -178,7 +160,6 @@ const VideoCard = ({
 
   const renderFormContent = () => {
     if (!isPendingReview) {
-      // For client role, SENT_TO_CLIENT status should show approval buttons, not APPROVED status
       if (isVideoApprovedByAdmin && userRole !== 'client') {
         return (
           <Box
