@@ -286,7 +286,7 @@ const InvoicePDF = ({ data }) => {
                       fontSize: '10px',
                     }}
                   >
-                    {data?.campaign?.subscription?.currency || 'MYR'} {data?.amount}
+                    {data?.campaign?.creatorAgreement[0]?.currency || data?.campaign?.subscription?.currency || 'MYR'} {data?.amount}
                   </Text>
                 </View>
 
