@@ -74,7 +74,7 @@ const InvoiceLists = ({ invoices }) => {
                   </Stack>
                 </TableCell>
                 <TableCell>{dayjs(invoice.issued).format('LL')}</TableCell>
-                <TableCell>{formatCurrencyAmount(invoice.amount, invoice.campaign.creatorAgreement[0]?.currency || 'MYR')}</TableCell>
+                <TableCell>{formatCurrencyAmount(invoice.amount, invoice.campaign?.creatorAgreement?.[0]?.currency || 'MYR')}</TableCell>
                 <TableCell>
                   <NewLabel
                     variant="soft"
