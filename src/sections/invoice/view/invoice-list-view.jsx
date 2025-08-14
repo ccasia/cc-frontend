@@ -50,6 +50,7 @@ import {
 } from 'src/components/table';
 
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';
+import { formatCurrencyAmount } from 'src/utils/currency';
 
 // ----------------------------------------------------------------------
 
@@ -680,7 +681,7 @@ export default function InvoiceListView({ campId, invoices }) {
                             />
                           </TableCell>
 
-                          <TableCell sx={{ width: 100 }}>{`${row.campaign?.subscription?.currency || 'MYR'} ${row.amount || 0}`}</TableCell>
+                          <TableCell sx={{ width: 100 }}>{formatCurrencyAmount(row.amount, row.currency)}</TableCell>
 
                           <TableCell sx={{ width: 100 }}>
                             <Typography
