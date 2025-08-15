@@ -1540,7 +1540,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   </Typography>
                 </Box>
               ) : (
-                <Alert severity="info" sx={{ mt: 1 }}>
+                <Alert severity="info" sx={{ m: 1 }}>
                   Analytics data not available for this post.
                 </Alert>
               )}

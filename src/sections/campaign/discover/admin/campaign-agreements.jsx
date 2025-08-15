@@ -412,10 +412,6 @@ const CampaignAgreements = ({ campaign }) => {
   const { user } = useAuthContext();
 
   const smUp = useResponsive('up', 'sm');
-  const mdUp = useResponsive('up', 'md');
-
-  const pendingCount = data?.filter((item) => !item.isSent).length || 0;
-  const sentCount = data?.filter((item) => item.isSent).length || 0;
 
   // Toggle sort direction
   const handleToggleSort = () => {
@@ -506,13 +502,13 @@ const CampaignAgreements = ({ campaign }) => {
   const handleSendAgreement = async (item) => {
     try {
       // Use different endpoints based on whether it's a resend or initial send
-      const endpoint = item.isSent ? endpoints.campaign.resendAgreement : endpoints.campaign.sendAgreement;
-      
+      const endpoint = item.isSent
+        ? endpoints.campaign.resendAgreement
+        : endpoints.campaign.sendAgreement;
+
       // For resend, use different payload format
-      const payload = item.isSent 
-        ? { userId: item.userId, campaignId: item.campaignId }
-        : item;
-      
+      const payload = item.isSent ? { userId: item.userId, campaignId: item.campaignId } : item;
+
       const res = await axiosInstance.patch(endpoint, payload);
       mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
       enqueueSnackbar(res?.data?.message);
@@ -972,17 +968,11 @@ const CampaignAgreements = ({ campaign }) => {
                         <>
                           {item?.user?.shortlisted[0]?.currency ? (
                             <>
-                              {item?.user?.shortlisted[0]?.currency === 'SGD' && '$ '}
-                              {item?.user?.shortlisted[0]?.currency === 'MYR' && 'RM '}
-                              {item?.user?.shortlisted[0]?.currency === 'AUD' && '$ '}
-                              {item?.user?.shortlisted[0]?.currency === 'JPY' && '¥ '}
-                              {item?.user?.shortlisted[0]?.currency === 'IDR' && 'Rp '}
-                              {item?.user?.shortlisted[0]?.currency === 'USD' && '$ '}
-                              {parseFloat(item?.amount?.toString()) ||
-                                parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}
+                              {`${item?.user?.shortlisted[0]?.currency} 
+                              ${parseFloat(item?.amount?.toString()) || parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}`}
                             </>
                           ) : (
-                            <>{`RM ${parseFloat(item?.amount?.toString())}`}</>
+                            <>{`${item?.user?.shortlisted[0]?.currency} ${parseFloat(item?.amount?.toString())}`}</>
                           )}
                         </>
                       ) : (

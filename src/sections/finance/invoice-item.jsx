@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
 
 import Label from 'src/components/label';
+import { formatCurrencyAmount } from 'src/utils/currency';
 
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
   const [value, setValue] = useState(invoice?.status);
@@ -13,10 +14,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
     setValue(invoice?.status);
   }, [setValue, invoice]);
 
-  const formatAmount = (amount) => {
-    const numericAmount = parseFloat(amount.toString().replace(/[^0-9.-]+/g, ''));
-    return `RM${numericAmount.toLocaleString()}`;
-  };
+
 
   return (
     <TableRow
@@ -46,7 +44,7 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         <Typography variant="subtitle2">{dayjs(invoice?.createdAt).format('LL')}</Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="subtitle2">{formatAmount(invoice?.amount)}</Typography>
+        <Typography variant="subtitle2">{formatCurrencyAmount(invoice?.amount, invoice?.currency || 'MYR')}</Typography>
       </TableCell>
       <TableCell>
         <Label

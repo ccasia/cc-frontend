@@ -32,8 +32,8 @@ const TABLE_HEAD = [
   { id: 'ugcCredits', label: 'UGC Credits', width: 100 },
   { id: 'industries', label: 'Industries', width: 100 },
   { id: 'deliverable', label: 'Deliverables', width: 100 },
-  { id: 'startDate', label: 'Start date', width: 100 },
-  { id: 'status', label: 'status', width: 100 },
+  { id: 'startDate', label: 'Start Date', width: 100 },
+  { id: 'status', label: 'Status', width: 100 },
 ];
 
 const STATUS_OPTIONS = [

@@ -26,6 +26,8 @@ export default function InvoiceNewEditDetails() {
 
   const totalOnRow = values.items.map((item) => item?.price);
 
+  const currency = values.items.map((item) => item?.currency)
+
   const subTotal = sum(totalOnRow);
 
   const totalAmount = subTotal;
@@ -70,7 +72,7 @@ export default function InvoiceNewEditDetails() {
     >
       <Stack direction="row" sx={{ typography: 'subtitle1' }}>
         <Box>Total</Box>
-        <Box sx={{ width: 160 }}>{`RM${totalAmount}` || '-'}</Box>
+        <Box sx={{ width: 160 }}>{`${currency} ${totalAmount}` || '-'}</Box>
       </Stack>
     </Stack>
   );
@@ -139,11 +141,11 @@ export default function InvoiceNewEditDetails() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>RM</Box>
+                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>{currency}</Box>
                     </InputAdornment>
                   ),
                 }}
-                sx={{ maxWidth: { md: 96 } }}
+                sx={{ maxWidth: { md: 100 } }}
               />
 
               <RHFTextField
@@ -162,12 +164,12 @@ export default function InvoiceNewEditDetails() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>RM</Box>
+                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>{values.items[index]?.currency}</Box>
                     </InputAdornment>
                   ),
                 }}
                 sx={{
-                  maxWidth: { md: 104 },
+                  maxWidth: { md: 120 },
                   [`& .${inputBaseClasses.input}`]: {
                     textAlign: { md: 'right' },
                   },
