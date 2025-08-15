@@ -76,7 +76,7 @@ const CampaignView = () => {
 
   // Check if user is superadmin
   const isSuperAdmin = useMemo(
-    () => user?.admin?.mode === 'god' || user?.admin?.mode === 'advanced',
+    () => user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSL',
     [user]
   );
 

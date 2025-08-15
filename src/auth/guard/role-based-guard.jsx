@@ -24,7 +24,9 @@ export default function RoleBasedGuard({ hasContent, roles, children, sx }) {
     if (typeof roles === 'undefined') return true;
     
     if (roles.includes('god')) {
-      return roles.includes(user?.admin?.mode) || roles.includes(user?.role);
+      const godPermission = roles.includes(user?.admin?.mode) || roles.includes(user?.role) || roles.includes(user?.admin?.role?.name);
+      console.log('God role check result:', godPermission);
+      return godPermission;
     }
     
     if (roles.includes(user?.role)) return true;
