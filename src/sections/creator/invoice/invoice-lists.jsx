@@ -19,6 +19,7 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { formatCurrencyAmount } from 'src/utils/currency';
 
 import NewLabel from 'src/components/styleLabel/styleLabel';
 
@@ -73,7 +74,7 @@ const InvoiceLists = ({ invoices }) => {
                   </Stack>
                 </TableCell>
                 <TableCell>{dayjs(invoice.issued).format('LL')}</TableCell>
-                <TableCell>{`RM ${new Intl.NumberFormat('en-MY', { minimumFractionDigits: 0 }).format(invoice.amount)}`}</TableCell>
+                <TableCell>{formatCurrencyAmount(invoice.amount, invoice.campaign?.creatorAgreement?.[0]?.currency || 'MYR')}</TableCell>
                 <TableCell>
                   <NewLabel
                     variant="soft"

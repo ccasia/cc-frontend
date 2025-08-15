@@ -193,8 +193,8 @@ export default function InvoiceNewEditForm({ id, creators }) {
           name: 'Cult Creative',
           email: 'support@cultcreative.asia',
           fullAddress:
-            '4-402, Level 4, The Starling Mall, Lot 4-401 &, 6, Jalan SS 21/37, Damansara Utama, 47400 Petaling Jaya, Selangor',
-          phoneNumber: '+60 11-5415 5751',
+            '5-3A, Block A, Jaya One, No.72A, Jalan Universiti, 46200 Petaling Jaya, Selangor',
+          phoneNumber: '(+60)12-849 6499',
           company: 'Cult Creative',
           addressType: 'Hq',
         },
@@ -204,6 +204,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
           ...invoice?.task,
           campaignName: invoice?.campaign?.name,
           clientName: invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name,
+          currency: invoice?.campaign?.creatorAgreement?.[0]?.currency || '',
         },
       ] || [
         {
@@ -213,6 +214,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
           // description: '',
           service: '',
           quantity: 1,
+          currency: '',
           price: 0,
           total: 0,
         },
