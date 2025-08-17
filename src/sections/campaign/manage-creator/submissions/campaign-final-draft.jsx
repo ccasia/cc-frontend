@@ -1799,7 +1799,10 @@ const CampaignFinalDraft = ({
           </>
         )}
 
-        {submission?.status === 'APPROVED' && (
+        {/* Debug: Log submission status */}
+        {console.log('🔍 Creator Final Draft - Submission status:', submission?.status)}
+        
+        {(submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED') && (
           <Stack justifyContent="center" alignItems="center" spacing={2}>
             <Box
               sx={{

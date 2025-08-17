@@ -449,8 +449,282 @@ const CampaignFirstDraft = ({
               </Stack>
             )}
 
+            {/* Upload Section for CHANGES_REQUIRED - Show upload options when creator wants to resubmit */}
+            {submission?.status === 'CHANGES_REQUIRED' && (
+              <Stack gap={2} sx={{ mt: 3 }}>
+                <Box>
+                  <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                    Make sure to address all the feedback points mentioned in the review above.
+                  </Typography>
+                </Box>
+
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  alignItems={{ xs: 'stretch', sm: 'center' }}
+                  gap={2}
+                  pb={3}
+                  mt={1}
+                >
+                  {/* Draft Video Button */}
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      border: 1,
+                      p: 2,
+                      borderRadius: 2,
+                      borderColor: submission?.video?.length > 0 ? '#5abc6f' : grey[100],
+                      transition: 'all .2s ease',
+                      width: { xs: '100%', sm: '32%' },
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        borderColor: grey[700],
+                        transform: 'scale(1.02)',
+                      },
+                    }}
+                    onClick={() => setDraftVideoModalOpen(true)}
+                  >
+                    {submission?.video?.length > 0 && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: -10,
+                          right: -10,
+                          bgcolor: '#5abc6f',
+                          borderRadius: '50%',
+                          width: 28,
+                          height: 28,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          zIndex: 1,
+                        }}
+                      >
+                        <Iconify
+                          icon="eva:checkmark-fill"
+                          sx={{ color: 'white', width: 20 }}
+                        />
+                      </Box>
+                    )}
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: submission?.video?.length > 0 ? '#5abc6f' : '#203ff5',
+                          mb: 2,
+                        }}
+                      >
+                        <Iconify icon="solar:video-library-bold" />
+                      </Avatar>
+
+                      <ListItemText
+                        sx={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                        primary="Draft Video"
+                        secondary="Upload your updated draft video for the campaign"
+                        primaryTypographyProps={{
+                          variant: 'body1',
+                          fontWeight: 'bold',
+                          gutterBottom: true,
+                          sx: { mb: 1 },
+                        }}
+                        secondaryTypographyProps={{
+                          color: 'text.secondary',
+                          lineHeight: 1.2,
+                          sx: {
+                            minHeight: '2.4em',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+
+                  {/* Raw Footage Button */}
+                  {campaign.rawFootage && (
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        border: 1,
+                        p: 2,
+                        borderRadius: 2,
+                        borderColor: submission?.rawFootages?.length > 0 ? '#5abc6f' : grey[100],
+                        transition: 'all .2s ease',
+                        width: { xs: '100%', sm: '32%' },
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          borderColor: grey[700],
+                          transform: 'scale(1.02)',
+                        },
+                      }}
+                      onClick={() => setRawFootageModalOpen(true)}
+                    >
+                      {submission?.rawFootages?.length > 0 && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: -10,
+                            right: -10,
+                            bgcolor: '#5abc6f',
+                            borderRadius: '50%',
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            zIndex: 1,
+                          }}
+                        >
+                          <Iconify
+                            icon="eva:checkmark-fill"
+                            sx={{ color: 'white', width: 20 }}
+                          />
+                        </Box>
+                      )}
+
+                      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: submission?.rawFootages?.length > 0 ? '#5abc6f' : '#203ff5',
+                            mb: 2,
+                          }}
+                        >
+                          <Iconify icon="solar:video-library-bold" />
+                        </Avatar>
+
+                        <ListItemText
+                          sx={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                          }}
+                          primary="Raw Footage"
+                          secondary="Upload your updated raw footage for the campaign"
+                          primaryTypographyProps={{
+                            variant: 'body1',
+                            fontWeight: 'bold',
+                            gutterBottom: true,
+                            sx: { mb: 1 },
+                          }}
+                          secondaryTypographyProps={{
+                            color: 'text.secondary',
+                            lineHeight: 1.2,
+                            sx: {
+                              minHeight: '2.4em',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            },
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Photos Button */}
+                  {campaign.photos && (
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        border: 1,
+                        p: 2,
+                        borderRadius: 2,
+                        borderColor: submission?.photos?.length > 0 ? '#5abc6f' : grey[100],
+                        transition: 'all .2s ease',
+                        width: { xs: '100%', sm: '32%' },
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          borderColor: grey[700],
+                          transform: 'scale(1.02)',
+                        },
+                      }}
+                      onClick={() => setPhotoModalOpen(true)}
+                    >
+                      {submission?.photos?.length > 0 && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: -10,
+                            right: -10,
+                            bgcolor: '#5abc6f',
+                            borderRadius: '50%',
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            zIndex: 1,
+                          }}
+                        >
+                          <Iconify
+                            icon="eva:checkmark-fill"
+                            sx={{ color: 'white', width: 20 }}
+                          />
+                        </Box>
+                      )}
+
+                      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: submission?.photos?.length > 0 ? '#5abc6f' : '#203ff5',
+                            mb: 2,
+                          }}
+                        >
+                          <Iconify icon="solar:gallery-bold" />
+                        </Avatar>
+
+                        <ListItemText
+                          sx={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                          }}
+                          primary="Photos"
+                          secondary="Upload your updated photos for the campaign"
+                          primaryTypographyProps={{
+                            variant: 'body1',
+                            fontWeight: 'bold',
+                            gutterBottom: true,
+                            sx: { mb: 1 },
+                          }}
+                          secondaryTypographyProps={{
+                            color: 'text.secondary',
+                            lineHeight: 1.2,
+                            sx: {
+                              minHeight: '2.4em',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            },
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+                </Stack>
+              </Stack>
+            )}
+
             {(submission?.status === 'IN_PROGRESS' ||
-              submission?.status === 'CHANGES_REQUIRED' ||
               (submission?.status === 'NOT_STARTED' &&
                 feedbacksTesting &&
                 feedbacksTesting.length > 0)) && (
@@ -1474,6 +1748,74 @@ const CampaignFirstDraft = ({
                   </Box>
                 )}
               </Box>
+            )}
+
+            {/* Resubmission Section for CHANGES_REQUIRED */}
+            {submission?.status === 'CHANGES_REQUIRED' && (
+              <Stack justifyContent="center" alignItems="center" spacing={3}>
+                <Box
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '50%',
+                    bgcolor: '#ff9500',
+                    fontSize: '50px',
+                    mb: -2,
+                  }}
+                >
+                  📝
+                </Box>
+                <Stack spacing={2} alignItems="center">
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily: 'Instrument Serif, serif',
+                      fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                      fontWeight: 550,
+                    }}
+                  >
+                    Changes Required
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: '#636366',
+                      textAlign: 'center',
+                      maxWidth: 500,
+                    }}
+                  >
+                    Please review the feedback below and resubmit your first draft with the requested changes.
+                  </Typography>
+                  
+                  <Button
+                    onClick={() => {
+                      // Scroll to the upload section or show upload modals
+                      setDraftVideoModalOpen(true);
+                    }}
+                    variant="contained"
+                    startIcon={<Iconify icon="solar:upload-bold" width={24} />}
+                    sx={{
+                      bgcolor: '#203ff5',
+                      color: 'white',
+                      borderBottom: 3.5,
+                      borderBottomColor: '#112286',
+                      borderRadius: 1.5,
+                      px: 3,
+                      py: 1.5,
+                      mt: 2,
+                      '&:hover': {
+                        bgcolor: '#203ff5',
+                        opacity: 0.9,
+                      },
+                    }}
+                  >
+                    Resubmit First Draft
+                  </Button>
+                </Stack>
+              </Stack>
             )}
 
             {(submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED') && (

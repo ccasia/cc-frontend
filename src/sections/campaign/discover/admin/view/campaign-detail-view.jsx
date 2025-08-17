@@ -56,6 +56,7 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
+import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
@@ -112,6 +113,7 @@ const CampaignDetailView = ({ id }) => {
   const menuOpen = Boolean(menuAnchorEl);
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
+  const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
 
   const open = Boolean(anchorEl);
 
@@ -190,6 +192,23 @@ const CampaignDetailView = ({ id }) => {
 
   // Check if user is client
   const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
+  
+  // Check user roles for activation
+  const isCSL = user?.admin?.role?.name === 'CSL';
+  const isSuperAdmin = user?.admin?.mode === 'god';
+  const isAdmin = user?.role === 'admin';
+  const isCSM = user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
+  
+  // Check if user can perform initial activation (CSL or Superadmin)
+  const canInitialActivate = isCSL || isSuperAdmin;
+  
+  // Check if user can complete activation (CSM/Admin assigned to campaign)
+  const isUserAssignedToCampaign = campaign?.campaignAdmin?.some(admin => 
+    admin.adminId === user?.id || 
+    admin.admin?.userId === user?.id ||
+    admin.admin?.user?.id === user?.id
+  );
+  const canCompleteActivation = (isCSM || isAdmin) && campaign?.status === 'PENDING_ADMIN_ACTIVATION' && isUserAssignedToCampaign;
 
   // Check if current tab is valid for client users
   useEffect(() => {
@@ -550,7 +569,7 @@ const CampaignDetailView = ({ id }) => {
   );
 
   const isPendingCampaign = useMemo(
-    () => campaign?.status === 'SCHEDULED' || campaign?.status === 'PENDING_CSM_REVIEW',
+    () => campaign?.status === 'SCHEDULED' || campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'PENDING_ADMIN_ACTIVATION',
     [campaign]
   );
 
@@ -675,7 +694,17 @@ const CampaignDetailView = ({ id }) => {
                       variant="contained"
                       size="small"
                       startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
-                      onClick={() => setActivateDialogOpen(true)}
+                      onClick={() => {
+                        // For superadmin on pending campaigns: use initial activation (admin assignment only)
+                        if (canInitialActivate && (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')) {
+                          console.log('Opening InitialActivateDialog (admin assignment only)');
+                          setInitialActivateDialogOpen(true);
+                        } else {
+                          // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
+                          console.log('Opening ActivateDialog (full setup)');
+                          setActivateDialogOpen(true);
+                        }
+                      }}
                       disabled={isDisabled}
                       sx={{
                         height: 42,
@@ -861,6 +890,12 @@ const CampaignDetailView = ({ id }) => {
       <ActivateCampaignDialog
         open={activateDialogOpen}
         onClose={() => setActivateDialogOpen(false)}
+        campaignId={id}
+      />
+      
+      <InitialActivateCampaignDialog
+        open={initialActivateDialogOpen}
+        onClose={() => setInitialActivateDialogOpen(false)}
         campaignId={id}
       />
 
