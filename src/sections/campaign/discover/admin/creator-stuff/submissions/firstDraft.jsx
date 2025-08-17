@@ -594,8 +594,7 @@ const FirstDraft = ({
     if (isV3 && userRole === 'admin') {
       if (status === 'PENDING_REVIEW') return '#FFC702'; // Yellow for pending review
       if (status === 'SENT_TO_CLIENT') return '#8a5afe'; // Purple for sent to client
-      if (status === 'SENT_TO_ADMIN') return '#D4321C'; // Red for client feedback sent to admin
-      if (status === 'SENT_TO_ADMIN') return '#D4321C'; // Red for client feedback sent to admin
+      if (status === 'SENT_TO_ADMIN') return '#F6C000'; // Yellow for client feedback sent to admin
     }
 
     switch (tabType) {
@@ -628,6 +627,8 @@ const FirstDraft = ({
               // Individual client approval handlers
               handleClientApprove={handleClientApproveVideoWithMutation}
               handleClientReject={handleClientRejectVideoWithMutation}
+              deliverableMutate={deliverableMutate}
+              submissionMutate={submissionMutate}
             />
           );
         case 'rawFootages':
@@ -641,6 +642,8 @@ const FirstDraft = ({
               // Individual client approval handlers
               handleClientApprove={handleClientApproveRawFootageWithMutation}
               handleClientReject={handleClientRejectRawFootageWithMutation}
+              deliverableMutate={deliverableMutate}
+              submissionMutate={submissionMutate}
             />
           );
         case 'photos':
@@ -654,6 +657,8 @@ const FirstDraft = ({
               // Individual client approval handlers
               handleClientApprove={handleClientApprovePhotoWithMutation}
               handleClientReject={handleClientRejectPhotoWithMutation}
+              deliverableMutate={deliverableMutate}
+              submissionMutate={submissionMutate}
             />
           );
         default:
@@ -661,72 +666,72 @@ const FirstDraft = ({
       }
     } else {
       // V2 components for admin-created campaigns
-      switch (selectedTab) {
-        case 'videos':
-          return (
-            <DraftVideos
-              campaign={campaign}
-              submission={submission}
-              deliverables={deliverables}
-              onVideoClick={handleDraftVideoClick}
-              onSubmit={onSubmitDraftVideo}
-              isDisabled={isDisabled}
-              // V2 individual handlers
-              onIndividualApprove={handleIndividualVideoApprove}
-              onIndividualRequestChange={handleIndividualVideoRequestChange}
-              // Individual client approval handlers
-              handleClientApproveVideo={handleClientApproveVideoWithMutation}
-              handleClientApprovePhoto={handleClientApprovePhotoWithMutation}
-              handleClientApproveRawFootage={handleClientApproveRawFootageWithMutation}
-              handleClientRejectVideo={handleClientRejectVideoWithMutation}
-              handleClientRejectPhoto={handleClientRejectPhotoWithMutation}
-              handleClientRejectRawFootage={handleClientRejectRawFootageWithMutation}
-            />
-          );
-        case 'rawFootages':
-          return (
-            <RawFootages
-              campaign={campaign}
-              submission={submission}
-              deliverables={deliverables}
-              onVideoClick={handleVideoClick}
-              onSubmit={onSubmitRawFootage}
-              isDisabled={isDisabled}
-              // V2 individual handlers
-              onIndividualApprove={handleIndividualRawFootageApprove}
-              onIndividualRequestChange={handleIndividualRawFootageRequestChange}
-              // Individual client approval handlers
-              handleClientApproveVideo={handleClientApproveVideo}
-              handleClientApprovePhoto={handleClientApprovePhoto}
-              handleClientApproveRawFootage={handleClientApproveRawFootage}
-              handleClientRejectVideo={handleClientRejectVideo}
-              handleClientRejectPhoto={handleClientRejectPhoto}
-              handleClientRejectRawFootage={handleClientRejectRawFootage}
-            />
-          );
-        case 'photos':
-          return (
-            <Photos
-              campaign={campaign}
-              submission={submission}
-              deliverables={deliverables}
-              onImageClick={handleImageClick}
-              onSubmit={onSubmitPhotos}
-              isDisabled={isDisabled}
-              // V2 individual handlers
-              onIndividualApprove={handleIndividualPhotoApprove}
-              onIndividualRequestChange={handleIndividualPhotoRequestChange}
-              // Individual client approval handlers
-              handleClientApproveVideo={handleClientApproveVideo}
-              handleClientApprovePhoto={handleClientApprovePhoto}
-              handleClientApproveRawFootage={handleClientApproveRawFootage}
-              handleClientRejectVideo={handleClientRejectVideo}
-              handleClientRejectPhoto={handleClientRejectPhoto}
-              handleClientRejectRawFootage={handleClientRejectRawFootage}
-            />
-          );
-        default:
-          return null;
+    switch (selectedTab) {
+      case 'videos':
+        return (
+          <DraftVideos
+            campaign={campaign}
+            submission={submission}
+            deliverables={deliverables}
+            onVideoClick={handleDraftVideoClick}
+            onSubmit={onSubmitDraftVideo}
+            isDisabled={isDisabled}
+            // V2 individual handlers
+            onIndividualApprove={handleIndividualVideoApprove}
+            onIndividualRequestChange={handleIndividualVideoRequestChange}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideoWithMutation}
+            handleClientApprovePhoto={handleClientApprovePhotoWithMutation}
+            handleClientApproveRawFootage={handleClientApproveRawFootageWithMutation}
+            handleClientRejectVideo={handleClientRejectVideoWithMutation}
+            handleClientRejectPhoto={handleClientRejectPhotoWithMutation}
+            handleClientRejectRawFootage={handleClientRejectRawFootageWithMutation}
+          />
+        );
+      case 'rawFootages':
+        return (
+          <RawFootages
+            campaign={campaign}
+            submission={submission}
+            deliverables={deliverables}
+            onVideoClick={handleVideoClick}
+            onSubmit={onSubmitRawFootage}
+            isDisabled={isDisabled}
+            // V2 individual handlers
+            onIndividualApprove={handleIndividualRawFootageApprove}
+            onIndividualRequestChange={handleIndividualRawFootageRequestChange}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
+          />
+        );
+      case 'photos':
+        return (
+          <Photos
+            campaign={campaign}
+            submission={submission}
+            deliverables={deliverables}
+            onImageClick={handleImageClick}
+            onSubmit={onSubmitPhotos}
+            isDisabled={isDisabled}
+            // V2 individual handlers
+            onIndividualApprove={handleIndividualPhotoApprove}
+            onIndividualRequestChange={handleIndividualPhotoRequestChange}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
+          />
+        );
+      default:
+        return null;
       }
     }
   };

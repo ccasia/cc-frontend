@@ -12,6 +12,8 @@ const PhotosWrapper = ({
   userRole,
   handleClientApprove,
   handleClientReject,
+  deliverableMutate,
+  submissionMutate,
 }) => {
   if (!deliverables?.photos || deliverables.photos.length === 0) {
     return (
@@ -38,6 +40,8 @@ const PhotosWrapper = ({
           deliverables={deliverables}
           handleClientApprove={handleClientApprove}
           handleClientReject={handleClientReject}
+          deliverableMutate={deliverableMutate}
+          submissionMutate={submissionMutate}
         />
       ))}
     </Stack>
@@ -52,6 +56,8 @@ PhotosWrapper.propTypes = {
   userRole: PropTypes.string.isRequired,
   handleClientApprove: PropTypes.func.isRequired,
   handleClientReject: PropTypes.func.isRequired,
+  deliverableMutate: PropTypes.func.isRequired,
+  submissionMutate: PropTypes.func.isRequired,
 };
 
 export default PhotosWrapper; 

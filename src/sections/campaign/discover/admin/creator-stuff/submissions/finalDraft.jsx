@@ -20,9 +20,9 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import PhotosV3 from '../../../client/submissions/v3/finalDraft/photos';
-import RawFootagesV3 from '../../../client/submissions/v3/finalDraft/raw-footage';
-import DraftVideosV3 from '../../../client/submissions/v3/finalDraft/draft-videos';
+import PhotosV3 from '../../../client/submissions/v3/finalDraft/photos-wrapper';
+import RawFootagesV3 from '../../../client/submissions/v3/finalDraft/raw-footage-wrapper';
+import DraftVideosV3 from '../../../client/submissions/v3/finalDraft/draft-videos-wrapper';
 import Photos from './finalDraft/photos';
 import RawFootages from './finalDraft/raw-footage';
 import DraftVideos from './finalDraft/draft-videos';
@@ -493,8 +493,11 @@ const FinalDraft = ({
 
   const handleIndividualVideoApprove = async (mediaId, feedback, dueDate) => {
     try {
+      console.log('🔍 Admin approving video:', { mediaId, feedback, dueDate, isV3, user: user?.role, adminMode: user?.admin?.mode });
+      
       if (isV3) {
         // V3 flow: Use V3 endpoint
+        console.log('🔍 Using V3 endpoint for video approval');
         const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
           mediaId,
           mediaType: 'video',
@@ -525,7 +528,10 @@ const FinalDraft = ({
         return response.data;
       }
     } catch (error) {
-      console.error('Error approving video:', error);
+      console.error('❌ Error approving video:', error);
+      console.error('❌ Error response:', error?.response);
+      console.error('❌ Error status:', error?.response?.status);
+      console.error('❌ Error data:', error?.response?.data);
       enqueueSnackbar(error?.response?.data?.message || 'Error approving video', { 
         variant: 'error' 
       });
@@ -535,8 +541,11 @@ const FinalDraft = ({
 
   const handleIndividualVideoRequestChange = async (mediaId, feedback, reasons) => {
     try {
+      console.log('🔍 Admin requesting video changes:', { mediaId, feedback, reasons, isV3, user: user?.role, adminMode: user?.admin?.mode });
+      
       if (isV3) {
         // V3 flow: Use V3 endpoint
+        console.log('🔍 Using V3 endpoint for video request changes');
         const response = await axiosInstance.patch('/api/submission/v3/media/request-changes', {
           mediaId,
           mediaType: 'video',
@@ -568,7 +577,10 @@ const FinalDraft = ({
         return response.data;
       }
     } catch (error) {
-      console.error('Error requesting video changes:', error);
+      console.error('❌ Error requesting video changes:', error);
+      console.error('❌ Error response:', error?.response);
+      console.error('❌ Error status:', error?.response?.status);
+      console.error('❌ Error data:', error?.response?.data);
       enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
         variant: 'error' 
       });
@@ -664,9 +676,12 @@ const FinalDraft = ({
     try {
       console.log(`Admin editing feedback for media ${mediaId}, feedback ${feedbackId}: ${adminFeedback}`);
       
-      // TODO: Implement backend endpoint for editing admin feedback
-      // For now, just log the action
-      enqueueSnackbar('Feedback editing not yet implemented', { variant: 'info' });
+      await axiosInstance.patch('/api/submission/v3/feedback/' + feedbackId, { content: adminFeedback });
+      enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
+      
+      // Refresh data
+      if (deliverableMutate) await deliverableMutate();
+      if (submissionMutate) await submissionMutate();
       
       return true;
     } catch (error) {
@@ -676,13 +691,30 @@ const FinalDraft = ({
     }
   };
 
-  const handleAdminSendToCreator = async (mediaId, feedbackId) => {
+  const handleAdminSendToCreator = async (mediaId, feedbackId, onStatusUpdate, mediaType = 'video') => {
     try {
-      console.log(`Admin sending feedback ${feedbackId} to creator for media ${mediaId}`);
+      console.log(`Admin sending feedback ${feedbackId} to creator for media ${mediaId} (${mediaType})`);
       
-      // TODO: Implement backend endpoint for sending feedback to creator
-      // For now, just log the action
-      enqueueSnackbar('Send to creator not yet implemented', { variant: 'info' });
+      // Immediately update local status to CHANGES_REQUIRED for instant UI feedback
+      if (onStatusUpdate) {
+        onStatusUpdate('CHANGES_REQUIRED');
+      }
+
+      // Call the API to review and forward client feedback
+      const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', {
+        submissionId: submission.id,
+        adminFeedback: 'Feedback reviewed and forwarded to creator',
+        mediaId,
+        mediaType
+      });
+
+      if (response.status === 200) {
+        enqueueSnackbar(`Feedback sent to creator successfully!`, { variant: 'success' });
+        
+        // Refresh data
+        if (deliverableMutate) await deliverableMutate();
+        if (submissionMutate) await submissionMutate();
+      }
       
       return true;
     } catch (error) {
@@ -918,6 +950,9 @@ const FinalDraft = ({
             handleClientRejectVideo={handleClientRejectVideo}
             handleClientRejectPhoto={handleClientRejectPhoto}
             handleClientRejectRawFootage={handleClientRejectRawFootage}
+            // Admin feedback handlers
+            handleAdminEditFeedback={handleAdminEditFeedback}
+            handleAdminSendToCreator={handleAdminSendToCreator}
           />
         );
       case 'rawFootages':
@@ -956,6 +991,9 @@ const FinalDraft = ({
             handleClientRejectVideo={handleClientRejectVideo}
             handleClientRejectPhoto={handleClientRejectPhoto}
             handleClientRejectRawFootage={handleClientRejectRawFootage}
+            // Admin feedback handlers
+            handleAdminEditFeedback={handleAdminEditFeedback}
+            handleAdminSendToCreator={handleAdminSendToCreator}
           />
         );
       case 'photos':
@@ -994,6 +1032,9 @@ const FinalDraft = ({
             handleClientRejectVideo={handleClientRejectVideo}
             handleClientRejectPhoto={handleClientRejectPhoto}
             handleClientRejectRawFootage={handleClientRejectRawFootage}
+            // Admin feedback handlers
+            handleAdminEditFeedback={handleAdminEditFeedback}
+            handleAdminSendToCreator={handleAdminSendToCreator}
           />
         );
       default:

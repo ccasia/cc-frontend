@@ -276,11 +276,11 @@ const CampaignDetailView = ({ id }) => {
                 { label: 'Campaign Details', value: 'campaign-content' },
                 // { label: 'Client Info', value: 'client' },
                 {
-                  label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
+                  label: `Creator Master List (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
                   value: 'pitch',
                 },
                 {
-                  label: `Shortlisted Creators (${campaign?.shortlisted?.length || 0})`,
+                  label: `Confirmed Creators (${campaign?.shortlisted?.length || 0})`,
                   value: 'creator',
                 },
                 {
