@@ -12,6 +12,8 @@ const DraftVideosWrapper = ({
   userRole,
   handleClientApprove,
   handleClientReject,
+  deliverableMutate,
+  submissionMutate,
 }) => {
   if (!deliverables?.videos || deliverables.videos.length === 0) {
     return (
@@ -38,6 +40,8 @@ const DraftVideosWrapper = ({
           deliverables={deliverables}
           handleClientApprove={handleClientApprove}
           handleClientReject={handleClientReject}
+          deliverableMutate={deliverableMutate}
+          submissionMutate={submissionMutate}
         />
       ))}
     </Stack>
@@ -52,6 +56,8 @@ DraftVideosWrapper.propTypes = {
   userRole: PropTypes.string.isRequired,
   handleClientApprove: PropTypes.func.isRequired,
   handleClientReject: PropTypes.func.isRequired,
+  deliverableMutate: PropTypes.func,
+  submissionMutate: PropTypes.func,
 };
 
 export default DraftVideosWrapper; 

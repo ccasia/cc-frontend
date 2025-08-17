@@ -26,13 +26,14 @@ import CampaignFinalDraft from './submissions/campaign-final-draft';
  * Campaign My Tasks Component
  * 
  * V3 Flow Compatibility:
- * - Handles V3-specific statuses: SENT_TO_CLIENT, PENDING_REVIEW, CHANGES_REQUIRED, SENT_TO_ADMIN
+ * - Handles V3-specific statuses: SENT_TO_CLIENT, PENDING_REVIEW, CHANGES_REQUIRED, SENT_TO_ADMIN, CLIENT_FEEDBACK
  * - Updated stage visibility logic for V3 workflow
  * - Added helper functions for V2/V3 status compatibility
  * - Enhanced socket event listeners for V3 flow updates
  * - Proper status display and completion indicators for both V2 and V3 flows
+ * - New status flow: CLIENT_FEEDBACK (In Review) → REVISION_REQUESTED (Changes Required)
  * 
- * Status: ✅ V3 Flow Compatibility Implemented
+ * Status: ✅ V3 Flow Compatibility Implemented with CLIENT_FEEDBACK Support
  */
 export const defaultSubmission = [
   {
@@ -158,13 +159,13 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       setSelectedStage('POSTING');
     }
     
-    // Auto-select Final Draft if First Draft has changes required
+    // Auto-select Final Draft if First Draft has changes required or client feedback
     if (
-      firstDraftSubmission?.status === 'CHANGES_REQUIRED' &&
+      (firstDraftSubmission?.status === 'CHANGES_REQUIRED' || firstDraftSubmission?.status === 'CLIENT_FEEDBACK') &&
       finalDraftSubmission?.status === 'IN_PROGRESS' &&
       selectedStage !== 'FINAL_DRAFT'
     ) {
-      console.log('Auto-selecting FINAL_DRAFT stage (changes required from First Draft)');
+      console.log('Auto-selecting FINAL_DRAFT stage (changes required or client feedback from First Draft)');
       setSelectedStage('FINAL_DRAFT');
     }
   }, [value, selectedStage]);
@@ -201,6 +202,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     // OR if Final Draft already exists and is active
     if (
       (firstDraftSubmission?.status === 'CHANGES_REQUIRED' || 
+       firstDraftSubmission?.status === 'CLIENT_FEEDBACK' ||
        (finalDraftSubmission && 
       (finalDraftSubmission?.status === 'IN_PROGRESS' || 
        finalDraftSubmission?.status === 'CHANGES_REQUIRED' ||
@@ -276,9 +278,15 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       return true;
     }
     
-    // Special case for First Draft in V3 - CHANGES_REQUIRED means it's been reviewed
+    // Special case for First Draft in V3 - CHANGES_REQUIRED means it's been reviewed and sent to creator
     if (stageType === 'FIRST_DRAFT' && stageValue.status === 'CHANGES_REQUIRED') {
       return true;
+    }
+    
+    // CLIENT_FEEDBACK means client requested changes but admin hasn't sent to creator yet
+    // So it's not completed from creator's perspective
+    if (stageType === 'FIRST_DRAFT' && stageValue.status === 'CLIENT_FEEDBACK') {
+      return false;
     }
     
     return false;
@@ -291,7 +299,8 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     
     return stageValue.status === 'IN_PROGRESS' || 
            stageValue.status === 'PENDING_REVIEW' ||
-           stageValue.status === 'CHANGES_REQUIRED';
+           stageValue.status === 'CHANGES_REQUIRED' ||
+           stageValue.status === 'CLIENT_FEEDBACK';
   }, [value]);
 
   // Helper function to get status text for display
@@ -308,6 +317,8 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
         return 'Pending Review';
       case 'SENT_TO_CLIENT':
         return 'In Review'; // For creators, SENT_TO_CLIENT means "In Review"
+      case 'CLIENT_FEEDBACK':
+        return 'In Review'; // For creators, CLIENT_FEEDBACK means "In Review" (client requested changes, admin reviewing)
       case 'CHANGES_REQUIRED':
         return 'Changes Required';
       case 'APPROVED':
@@ -343,7 +354,8 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     return (
       !viewedStages.includes(stageType) &&
       !isStageCompleted(stageType) &&
-      !(stageType === 'FIRST_DRAFT' && stageValue?.status === 'CHANGES_REQUIRED')
+      !(stageType === 'FIRST_DRAFT' && stageValue?.status === 'CHANGES_REQUIRED') &&
+      !(stageType === 'FIRST_DRAFT' && stageValue?.status === 'CLIENT_FEEDBACK')
     );
   };
 

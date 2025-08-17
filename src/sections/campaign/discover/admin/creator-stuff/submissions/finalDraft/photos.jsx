@@ -19,6 +19,7 @@ import {
   Tooltip,
   Typography,
   CardContent,
+  TextField,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -54,10 +55,16 @@ const PhotoCard = ({
   handleClientReject,
   // V3 deliverables for status checking
   deliverables,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback,
+  handleAdminSendToCreator,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
   const [localStatus, setLocalStatus] = useState(null);
+  // Add state for editing feedback
+  const [editingFeedbackId, setEditingFeedbackId] = useState(null);
+  const [editingContent, setEditingContent] = useState('');
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -92,7 +99,9 @@ const PhotoCard = ({
   const currentStatus = localStatus || photoItem.status;
   const isPhotoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isPhotoApprovedByClient = currentStatus === 'APPROVED';
-  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED';
+  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
+  const isClientFeedback = currentStatus === 'CLIENT_FEEDBACK';
+  const isChangesRequired = currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'REVISION_REQUESTED';
   
   // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
   const isPendingReview = userRole === 'client' ? 
@@ -123,9 +132,10 @@ const PhotoCard = ({
   // Helper function to determine border color
   const getBorderColor = () => {
     // For client role, SENT_TO_CLIENT status should not show green outline
-    if (userRole === 'client' && isPhotoApprovedByClient) return '#1ABF66';
-    if (userRole !== 'client' && isPhotoApprovedByAdmin) return '#1ABF66';
-    if (hasRevisionRequested) return '#D4321C';
+    if (isClientFeedback || hasRevisionRequested) return '#F6C000'; // yellow for CLIENT_FEEDBACK and REVISION_REQUESTED
+    if (isChangesRequired) return '#D4321C'; // red
+    if (isPhotoApprovedByClient) return '#1ABF66'; // green for approved (by client)
+    if (userRole !== 'client' && isPhotoApprovedByAdmin) return '#1ABF66'; // green for admin approved
     return 'divider';
   };
 
@@ -179,6 +189,42 @@ const PhotoCard = ({
 
   const renderFormContent = () => {
     if (!isPendingReview) {
+      // Show approved status when client has approved
+      if (isPhotoApprovedByClient) {
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              p: 2,
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: '#FFFFFF',
+                color: '#1ABF66',
+                border: '1.5px solid',
+                borderColor: '#1ABF66',
+                borderBottom: 3,
+                borderBottomColor: '#1ABF66',
+                borderRadius: 1,
+                py: 0.8,
+                px: 1.5,
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+              }}
+            >
+              APPROVED
+            </Box>
+          </Box>
+        );
+      }
       // For client role, SENT_TO_CLIENT status should show approval buttons, not APPROVED status
       if (isPhotoApprovedByAdmin && userRole !== 'client') {
         return (
@@ -216,6 +262,42 @@ const PhotoCard = ({
         );
       }
       if (hasRevisionRequested) {
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              p: 2,
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: '#FFFFFF',
+                color: '#F6C000',
+                border: '1.5px solid',
+                borderColor: '#F6C000',
+                borderBottom: 3,
+                borderBottomColor: '#F6C000',
+                borderRadius: 1,
+                py: 0.8,
+                px: 1.5,
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+              }}
+            >
+              CLIENT FEEDBACK
+            </Box>
+          </Box>
+        );
+      }
+
+      if (isChangesRequired) {
         return (
           <Box
             sx={{
@@ -677,8 +759,157 @@ const PhotoCard = ({
                 </Stack>
                 
                 <Typography variant="body2" sx={{ color: '#000000' }}>
-                  {feedback.content || feedback.photoContent}
+                  {editingFeedbackId === feedback.id ? (
+                    <Box>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        value={editingContent}
+                        onChange={(e) => setEditingContent(e.target.value)}
+                        size="small"
+                        sx={{ mb: 1 }}
+                      />
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={async () => {
+                            try {
+                              await handleAdminEditFeedback(photoItem.id, feedback.id, editingContent);
+                              setEditingFeedbackId(null);
+                              setEditingContent('');
+                            } catch (error) {
+                              console.error('Error updating feedback:', error);
+                            }
+                          }}
+                          sx={{
+                            fontSize: '0.75rem',
+                            py: 0.8,
+                            px: 1.5,
+                            minWidth: 'auto',
+                            border: '1.5px solid #e0e0e0',
+                            borderBottom: '3px solid #e0e0e0',
+                            color: '#1ABF66',
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            textTransform: 'none',
+                          }}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            setEditingFeedbackId(null);
+                            setEditingContent('');
+                          }}
+                          sx={{
+                            fontSize: '0.75rem',
+                            py: 0.8,
+                            px: 1.5,
+                            minWidth: 'auto',
+                            border: '1.5px solid #e0e0e0',
+                            borderBottom: '3px solid #e0e0e0',
+                            color: '#666666',
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            textTransform: 'none',
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </Stack>
+                    </Box>
+                  ) : (
+                    feedback.content || feedback.photoContent
+                  )}
                 </Typography>
+
+                {/* Admin buttons for client feedback */}
+                {userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && feedback.type === 'REASON' && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && (
+                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        if (!isV3) {
+                          enqueueSnackbar('Edit functionality is only available for V3 campaigns', { variant: 'info' });
+                          return;
+                        }
+                        setEditingFeedbackId(feedback.id);
+                        setEditingContent(feedback.content || feedback.photoContent || '');
+                      }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#000000',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          color: '#000000',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        },
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={async () => {
+                        if (!isV3) {
+                          enqueueSnackbar('Send to Creator functionality is only available for V3 campaigns', { variant: 'info' });
+                          return;
+                        }
+                        if (!handleAdminSendToCreator) {
+                          console.error('handleAdminSendToCreator is not defined');
+                          enqueueSnackbar('Send to Creator function not available', { variant: 'error' });
+                          return;
+                        }
+                        try {
+                          await handleAdminSendToCreator(photoItem.id, feedback.id, setLocalStatus, 'photo');
+                        } catch (error) {
+                          console.error('Error in handleAdminSendToCreator:', error);
+                          enqueueSnackbar('Failed to send to creator', { variant: 'error' });
+                        }
+                      }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.8,
+                        px: 1.5,
+                        minWidth: 'auto',
+                        bgcolor: '#ffffff',
+                        border: '1.5px solid #e0e0e0',
+                        borderBottom: '3px solid #e0e0e0',
+                        color: '#1ABF66',
+                        fontWeight: 600,
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: '#f0f9f0',
+                          color: '#1ABF66',
+                          borderColor: '#d0d0d0',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                        },
+                      }}
+                    >
+                      Send to Creator
+                    </Button>
+                  </Stack>
+                )}
               </Box>
             ))}
           </Stack>
@@ -714,6 +945,9 @@ PhotoCard.propTypes = {
   handleClientReject: PropTypes.func,
   // V3 deliverables for status checking
   deliverables: PropTypes.object,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback: PropTypes.func,
+  handleAdminSendToCreator: PropTypes.func,
 };
 
 const Photos = ({
@@ -736,10 +970,17 @@ const Photos = ({
   // SWR mutation functions
   deliverableMutate,
   submissionMutate,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback,
+  handleAdminSendToCreator,
 }) => {
   const [selectedPhotosForChange, setSelectedPhotosForChange] = useState([]);
   const approve = useBoolean();
   const request = useBoolean();
+
+  // Debug logging
+  console.log('Photos component - handleAdminSendToCreator:', handleAdminSendToCreator);
+  console.log('Photos component - handleAdminEditFeedback:', handleAdminEditFeedback);
 
   const handlePhotoSelection = (id) => {
     setSelectedPhotosForChange((prev) => {
@@ -945,6 +1186,9 @@ const Photos = ({
                 handleClientReject={handleClientRejectPhoto}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
+                // V3 admin feedback handlers
+                handleAdminEditFeedback={handleAdminEditFeedback}
+                handleAdminSendToCreator={handleAdminSendToCreator}
               />
             </Box>
           ))}
@@ -980,6 +1224,9 @@ const Photos = ({
                 handleClientReject={handleClientRejectPhoto}
                 // V3 deliverables for status checking
                 deliverables={deliverables}
+                // V3 admin feedback handlers
+                handleAdminEditFeedback={handleAdminEditFeedback}
+                handleAdminSendToCreator={handleAdminSendToCreator}
               />
             </Grid>
           ))}
@@ -1167,6 +1414,12 @@ Photos.propTypes = {
   handleClientRejectVideo: PropTypes.func,
   handleClientRejectPhoto: PropTypes.func,
   handleClientRejectRawFootage: PropTypes.func,
+  // SWR mutation functions
+  deliverableMutate: PropTypes.func,
+  submissionMutate: PropTypes.func,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback: PropTypes.func,
+  handleAdminSendToCreator: PropTypes.func,
 };
 
-export default Photos; 
+export default Photos;
