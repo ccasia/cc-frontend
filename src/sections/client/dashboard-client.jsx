@@ -821,7 +821,7 @@ const ClientDashboard = () => {
 
   const renderSidebar = (
     <Stack spacing={-3}>
-      <Box sx={{ ...BoxStyle, mt: 1 }}>
+      {/* <Box sx={{ ...BoxStyle, mt: 1 }}>
         <Box className="header">
           <Iconify 
             icon="eva:file-text-outline" 
@@ -847,9 +847,9 @@ const ClientDashboard = () => {
             No signed quotes available
           </Typography>
         </Box>
-      </Box>
+      </Box> */}
 
-      <Box sx={BoxStyle}>
+      {/* <Box sx={BoxStyle}>
         <Box className="header">
           <Iconify 
             icon="eva:file-text-outline" 
@@ -875,7 +875,7 @@ const ClientDashboard = () => {
             No invoices available
           </Typography>
         </Box>
-      </Box>
+      </Box> */}
     </Stack>
   );
 
