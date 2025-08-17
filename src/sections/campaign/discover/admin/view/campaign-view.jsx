@@ -19,7 +19,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import useGetCampaigns from 'src/hooks/use-get-campaigns';
+// import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { fetcher } from 'src/utils/axios';
 
@@ -51,7 +51,8 @@ const CampaignView = () => {
     []
   );
 
-  const { campaigns } = useGetCampaigns();
+  // Remove the useGetCampaigns hook since we're using useSWRInfinite for the actual data
+  // const { campaigns } = useGetCampaigns();
 
   const create = useBoolean();
 
@@ -85,8 +86,8 @@ const CampaignView = () => {
     if (pageIndex === 0) {
       let status = filter.toUpperCase();
       if (filter === 'pending') {
-        // For pending tab, we need to search for both statuses
-        status = 'SCHEDULED,PENDING_CSM_REVIEW';
+              // For pending tab, we need to search for all pending statuses
+      status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
       }
       return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}`;
     }
@@ -97,13 +98,26 @@ const CampaignView = () => {
     // Otherwise, use the nextCursor to get the next page
     let status = filter.toUpperCase();
     if (filter === 'pending') {
-      // For pending tab, we need to search for both statuses
-      status = 'SCHEDULED,PENDING_CSM_REVIEW';
+      // For pending tab, we need to search for all pending statuses
+      status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
     }
     return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
   const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher);
+  
+  // Make mutate function available globally for campaign activation
+  React.useEffect(() => {
+    window.swrMutate = mutate;
+    return () => {
+      delete window.swrMutate;
+    };
+  }, [mutate]);
+
+  const dataFiltered = useMemo(
+    () => (data ? data?.flatMap((item) => item?.data?.campaigns).reverse() : []),
+    [data]
+  );
 
   const smDown = useResponsive('down', 'sm');
 
@@ -121,34 +135,30 @@ const CampaignView = () => {
   };
 
   const activeCampaigns = useMemo(
-    () => campaigns?.filter((campaign) => campaign?.status === 'ACTIVE') || [],
-    [campaigns]
+    () => dataFiltered?.filter((campaign) => campaign?.status === 'ACTIVE') || [],
+    [dataFiltered]
   );
   const completedCampaigns = useMemo(
-    () => campaigns?.filter((campaign) => campaign?.status === 'COMPLETED') || [],
-    [campaigns]
+    () => dataFiltered?.filter((campaign) => campaign?.status === 'COMPLETED') || [],
+    [dataFiltered]
   );
   const pausedCampaigns = useMemo(
-    () => campaigns?.filter((campaign) => campaign?.status === 'PAUSED') || [],
-    [campaigns]
+    () => dataFiltered?.filter((campaign) => campaign?.status === 'PAUSED') || [],
+    [dataFiltered]
   );
   const pendingCampaigns = useMemo(
-    () => campaigns?.filter((campaign) => 
+    () => dataFiltered?.filter((campaign) => 
       campaign?.status === 'PENDING_CSM_REVIEW' || 
-      campaign?.status === 'SCHEDULED'
+      campaign?.status === 'SCHEDULED' ||
+      campaign?.status === 'PENDING_ADMIN_ACTIVATION'
     ) || [],
-    [campaigns]
+    [dataFiltered]
   );
 
   const activeCount = activeCampaigns.length;
   const completedCount = completedCampaigns.length;
   const pausedCount = pausedCampaigns.length;
   const pendingCount = pendingCampaigns.length;
-
-  const dataFiltered = useMemo(
-    () => (data ? data?.flatMap((item) => item?.data?.campaigns).reverse() : []),
-    [data]
-  );
 
   // Add console logging to debug pending campaigns
   useEffect(() => {
@@ -160,12 +170,12 @@ const CampaignView = () => {
     }
   }, [filter, pendingCampaigns, data, dataFiltered]);
 
-  // Reset filter if non-superadmin tries to access pending tab
+  // Reset filter if non-superadmin/non-CSM tries to access pending tab
   useEffect(() => {
-    if (filter === 'pending' && !isSuperAdmin) {
+    if (filter === 'pending' && !isSuperAdmin && user?.admin?.role?.name !== 'CSM' && user?.admin?.role?.name !== 'Customer Success Manager') {
       setFilter('active');
     }
-  }, [filter, isSuperAdmin]);
+  }, [filter, isSuperAdmin, user]);
 
   const handleScroll = useCallback(() => {
     const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
@@ -276,8 +286,8 @@ const CampaignView = () => {
             >
               Active ({activeCount})
             </Button>
-            {/* Only show Pending tab for superadmins */}
-            {isSuperAdmin && (
+            {/* Show Pending tab for superadmins and CSM users */}
+            {(isSuperAdmin || user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager') && (
               <Button
                 disableRipple
                 size="large"

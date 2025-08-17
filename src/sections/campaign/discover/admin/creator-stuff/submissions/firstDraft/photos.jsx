@@ -826,7 +826,17 @@ const PhotoCard = ({
                 )}
 
                 {/* Admin buttons for client feedback */}
-                {isV3 && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && feedback.type === 'REASON' && submission?.status === 'SENT_TO_ADMIN' && (
+                {/* 🔍 DEBUG: Log feedback data for troubleshooting */}
+                {console.log('🔍 DEBUG: Feedback data for admin buttons:', {
+                  isV3,
+                  userRole,
+                  feedbackType: feedback.type,
+                  feedbackAdminRole: feedback.admin?.admin?.role?.name,
+                  submissionStatus: submission?.status,
+                  feedbackId: feedback.id,
+                  feedbackContent: feedback.content
+                })}
+                {isV3 && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (feedback.type === 'REASON' || feedback.type === 'COMMENT') && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && (
                   <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
                     <Button
                       variant="outlined"
@@ -861,10 +871,16 @@ const PhotoCard = ({
                     <Button
                       variant="outlined"
                       size="small"
-                                              onClick={async () => {
-                          if (handleAdminSendToCreator) {
-                            await handleAdminSendToCreator(photoItem.id, feedback.id, setLocalStatus);
-                          }
+                                                                    onClick={async () => {
+                        console.log('🔍 DEBUG: Send to Creator button clicked for photo:', {
+                          photoId: photoItem.id,
+                          feedbackId: feedback.id,
+                          photoStatus: photoItem.status,
+                          feedbackType: feedback.type
+                        });
+                        if (handleAdminSendToCreator) {
+                          await handleAdminSendToCreator(photoItem.id, feedback.id, setLocalStatus);
+                        }
                       }}
                       sx={{
                         fontSize: '0.75rem',
@@ -1139,6 +1155,13 @@ const Photos = ({
   };
 
   const handleAdminSendToCreator = async (mediaId, feedbackId, onStatusUpdate) => {
+    console.log('🔍 DEBUG: handleAdminSendToCreator called with:', {
+      mediaId,
+      feedbackId,
+      submissionId: submission.id,
+      submissionStatus: submission.status
+    });
+
     // Check if this submission has already been sent
     if (sentSubmissions.has(mediaId)) {
       enqueueSnackbar('This submission has already been sent to creator', { variant: 'warning' });
@@ -1163,12 +1186,18 @@ const Photos = ({
       }
 
       // Call the API to review and forward client feedback
-      const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', {
+      const requestData = {
         submissionId: submission.id,
         adminFeedback: 'Feedback reviewed and forwarded to creator',
         mediaId,
         mediaType: 'photo'
-      });
+      };
+      
+      console.log('🔍 DEBUG: API request data:', requestData);
+      
+      const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', requestData);
+      
+      console.log('🔍 DEBUG: API response:', response.data);
 
       if (response.status === 200) {
         enqueueSnackbar(`Feedback for photo sent to creator successfully!`, { variant: 'success' });

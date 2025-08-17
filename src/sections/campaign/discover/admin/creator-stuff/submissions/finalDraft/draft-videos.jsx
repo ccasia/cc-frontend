@@ -903,7 +903,7 @@ const VideoCard = ({
                 )}
 
                 {/* Admin buttons for client feedback */}
-                {userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && feedback.type === 'REASON' && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && (
+                {userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (feedback.type === 'REASON' || feedback.type === 'COMMENT') && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && (
                   <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
                     <Button
                       variant="outlined"

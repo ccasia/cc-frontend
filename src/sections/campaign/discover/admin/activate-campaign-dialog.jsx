@@ -26,6 +26,8 @@ import {
   OutlinedInput,
   FormHelperText,
   CircularProgress,
+  Checkbox,
+  ListItemText,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -41,9 +43,25 @@ import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
 // ----------------------------------------------------------------------
 
-export default function ActivateCampaignDialog({ open, onClose, campaignId }) {
+export default function ActivateCampaignDialog({ open, onClose, campaignId, onSuccess }) {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
+  
+  // Check if user is superadmin/CSL
+  const isCSL = user?.admin?.role?.name === 'CSL';
+  const isSuperAdmin = user?.admin?.mode === 'god';
+  const isSuperUser = isCSL || isSuperAdmin;
+  
+  // Check if user is CSM (for completing activation)
+  const isCSM = user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
+  
+  console.log('ActivateCampaignDialog - User check:', {
+    userRole: user?.role,
+    adminMode: user?.admin?.mode,
+    adminRole: user?.admin?.role?.name,
+    isSuperUser,
+    isCSM
+  });
   
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -165,6 +183,26 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId }) {
     }
   }, [open, campaignId, enqueueSnackbar]);
 
+  // Update current step when campaign details are loaded
+  useEffect(() => {
+    if (campaignDetails) {
+      // If user is admin/CSM and campaign is PENDING_ADMIN_ACTIVATION, skip admin assignment (step 1)
+      if ((isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
+        setCurrentStep(2); // Start at Agreement Form
+        
+        // Pre-fill admin managers from campaign admin list
+        if (campaignDetails?.campaignAdmin && campaignDetails.campaignAdmin.length > 0) {
+          const assignedAdminIds = campaignDetails.campaignAdmin.map(admin => 
+            admin.adminId || admin.admin?.userId || admin.admin?.user?.id
+          ).filter(Boolean);
+          setAdminManagers(assignedAdminIds);
+        }
+      } else {
+        setCurrentStep(1); // Start at Admin Assignment
+      }
+    }
+  }, [campaignDetails, isCSM, user?.role]);
+
   const handleDeliverableChange = (event) => {
     const {
       target: { value },
@@ -182,20 +220,60 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId }) {
   };
 
   const validateForm = () => {
+    // Skip admin manager validation for admin/CSM users completing activation
+    const skipAdminValidation = (isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION';
+    
     const newErrors = {
       campaignType: !campaignType ? 'Campaign type is required' : '',
       deliverables: deliverables.length === 0 ? 'At least one deliverable is required' : '',
-      adminManagers: adminOptions.length === 0 
+      adminManagers: skipAdminValidation ? '' : (adminOptions.length === 0 
         ? 'No CSM admins available in the system. Please create a CSM role admin first.'
         : adminManagers.length === 0 
           ? 'At least one admin manager is required' 
-          : '',
+          : ''),
       agreementTemplateId: !agreementTemplateId ? 'Agreement template is required' : '',
     };
     
     setErrors(newErrors);
     
     return !Object.values(newErrors).some((error) => error);
+  };
+
+  const handleInitialActivate = async () => {
+    if (adminManagers.length === 0) {
+      enqueueSnackbar('Please select at least one admin manager', { variant: 'error' });
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      console.log('Sending initial activation data:', {
+        adminManager: adminManagers,
+      });
+      
+      const formData = new FormData();
+      formData.append('data', JSON.stringify({
+        adminManager: adminManagers, // These are the admin user IDs
+      }));
+      
+      const response = await axios.post(`/api/campaign/initialActivateCampaign/${campaignId}`, formData);
+      console.log('Initial activation response:', response.data);
+      
+      enqueueSnackbar('Campaign assigned to admin successfully. Admin will complete the setup.', { variant: 'success' });
+      onClose();
+      
+      // Trigger data revalidation
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error in initial campaign activation:', error);
+      console.error('Error details:', error.response?.data);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to assign campaign to admin', { variant: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleActivate = async () => {
@@ -230,8 +308,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId }) {
       enqueueSnackbar('Campaign activated successfully and assigned to CSM admins', { variant: 'success' });
       onClose();
       
-      // Refresh the page to show updated campaign status
-      window.location.reload();
+      // Trigger data revalidation
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Error activating campaign:', error);
       console.error('Error details:', error.response?.data);
@@ -248,7 +328,14 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId }) {
       setDeliverables([]);
       setAdminManagers([]);
       setAgreementTemplateId('');
-      setCurrentStep(1);
+      
+      // Reset step based on user role and campaign status
+      if ((isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
+        setCurrentStep(2); // Start at Agreement Form for admin/CSM
+      } else {
+        setCurrentStep(1); // Start at Admin Assignment for superadmin/CSL
+      }
+      
       setErrors({
         campaignType: '',
         deliverables: '',
@@ -312,8 +399,67 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId }) {
   ];
   
   const renderStepContent = () => {
+    // Show the full multi-step process for all users
     switch (currentStep) {
       case 1: // CS Admin Assignment
+        // For admin/CSM users completing activation, show a message that admin is already assigned
+        if ((isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
+          return (
+            <Box sx={{ py: 2 }}>
+              <Typography 
+                variant="h4" 
+                sx={{ 
+                  mb: 4, 
+                  fontFamily: 'Instrument Serif',
+                  textAlign: 'left'
+                }}
+              >
+                Admin Already Assigned
+              </Typography>
+              
+              <Paper 
+                variant="outlined" 
+                sx={{ p: 3, borderRadius: 1, bgcolor: '#E8F5E9' }}
+              >
+                <Typography variant="body1" color="success.dark" sx={{ mb: 2 }}>
+                  The campaign has already been assigned to an admin/CSM. You can proceed to complete the setup.
+                </Typography>
+                
+                {campaignDetails?.campaignAdmin && campaignDetails.campaignAdmin.length > 0 && (
+                  <Typography variant="body2" color="text.secondary">
+                    Assigned to: {campaignDetails.campaignAdmin.map(admin => 
+                      admin.admin?.user?.name || admin.adminId
+                    ).join(', ')}
+                  </Typography>
+                )}
+              </Paper>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
+                <Button
+                  variant="contained"
+                  onClick={() => setCurrentStep(2)}
+                  sx={{ 
+                    borderRadius: '8px',
+                    backgroundColor: '#1340ff',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: 80,
+                    boxShadow: '0px -3px 0px 0px #102387 inset',
+                    '&:hover': {
+                      backgroundColor: '#1935dd',
+                    },
+                  }}
+                >
+                  Continue to Agreement Form
+                </Button>
+              </Box>
+            </Box>
+          );
+        }
+        
+        // For superadmin/CSL users, show the normal admin assignment form
         return (
           <Box sx={{ py: 2 }}>
             <Typography 

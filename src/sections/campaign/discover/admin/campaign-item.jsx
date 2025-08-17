@@ -19,10 +19,19 @@ import { useSnackbar } from 'src/components/snackbar';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import ActivateCampaignDialog from './activate-campaign-dialog';
+import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
+  console.log('CampaignItem rendered:', { 
+    campaignId: campaign?.id, 
+    campaignStatus: campaign?.status,
+    campaignName: campaign?.name,
+    hasCampaignAdmin: !!campaign?.campaignAdmin,
+    campaignAdminLength: campaign?.campaignAdmin?.length
+  });
+  
   const theme = useTheme();
   const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
@@ -33,6 +42,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   const open = Boolean(anchorEl);
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
+  const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
 
   // Handle menu open
   const handleClick = (event) => {
@@ -116,7 +126,79 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     setActivateDialogOpen(false);
   };
 
-  const isPendingReview = campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED';
+  const handleCloseInitialActivateDialog = () => {
+    setInitialActivateDialogOpen(false);
+  };
+
+  // Check user role and permissions
+  const isCSL = user?.admin?.role?.name === 'CSL';
+  const isSuperAdmin = user?.admin?.mode === 'god';
+  const isAdmin = user?.role === 'admin';
+  const isCSM = user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
+  
+  // For debugging - log the actual user structure
+  console.log('User role structure:', {
+    userRole: user?.role,
+    adminRole: user?.admin?.role?.name,
+    adminMode: user?.admin?.mode,
+    isAdmin,
+    isCSM
+  });
+
+  // Debug user details
+  console.log('User details:', {
+    userRole: user?.role,
+    adminMode: user?.admin?.mode,
+    adminRole: user?.admin?.role?.name,
+    isCSL,
+    isSuperAdmin,
+    isAdmin,
+    isCSM
+  });
+
+  // Check if user can perform initial activation (CSL or Superadmin)
+  const canInitialActivate = isCSL || isSuperAdmin;
+  
+  // Check if user can complete activation (CSM/Admin assigned to campaign)
+  const isUserAssignedToCampaign = campaign?.campaignAdmin?.some(admin => {
+    const adminIdMatch = admin.adminId === user?.id;
+    const adminUserIdMatch = admin.admin?.userId === user?.id;
+    const adminUserMatch = admin.admin?.user?.id === user?.id;
+    
+    console.log('Checking admin assignment:', {
+      adminId: admin.adminId,
+      adminUserId: admin.admin?.userId,
+      adminUser: admin.admin?.user?.id,
+      userId: user?.id,
+      adminIdMatch,
+      adminUserIdMatch,
+      adminUserMatch
+    });
+    
+    return adminIdMatch || adminUserIdMatch || adminUserMatch;
+  });
+  const canCompleteActivation = (isCSM || isAdmin) && campaign?.status === 'PENDING_ADMIN_ACTIVATION' && isUserAssignedToCampaign;
+  
+  // Debug campaign admin assignment
+  console.log('Campaign admin check:', {
+    campaignId: campaign?.id,
+    campaignStatus: campaign?.status,
+    userId: user?.id,
+    campaignAdmins: campaign?.campaignAdmin?.map(admin => ({
+      adminId: admin.adminId,
+      adminUserId: admin.admin?.userId,
+      adminUser: admin.admin?.user?.id,
+      role: admin.admin?.role?.name,
+      fullAdmin: admin.admin
+    })),
+    isUserAssigned: isUserAssignedToCampaign,
+    canCompleteActivation
+  });
+
+  const isPendingReview = campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED' || campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+  
+  // Determine if the Activate Campaign button should be disabled
+  const isDisabled = (isCSL || isSuperAdmin) && campaign?.status === 'PENDING_ADMIN_ACTIVATION' && !isUserAssignedToCampaign;
 
   const renderImages = (
     <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
@@ -147,7 +229,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               ) : null
             }
             label={formatText(
-              campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED' 
+              campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED' || campaign?.status === 'PENDING_ADMIN_ACTIVATION'
                 ? 'PENDING' 
                 : campaign?.status
             )}
@@ -328,6 +410,95 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             >
               Open in New Tab
             </MenuItem>
+            
+            {/* Activate Campaign - Different behavior based on user role and campaign status */}
+            {(() => {
+              // Show button for superadmin/CSL to assign admin (initial activation)
+              const showForInitialActivation = canInitialActivate && (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED');
+              
+              // Show button for assigned admin/CSM to complete activation
+              const showForCompleteActivation = canCompleteActivation && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+              
+              // Show disabled button for superadmin/CSL after admin assignment (waiting for admin to complete)
+              const showDisabledForSuperadmin = (isCSL || isSuperAdmin) && campaign?.status === 'PENDING_ADMIN_ACTIVATION' && !isUserAssignedToCampaign;
+              
+              // TEMPORARY: Always show button for admin/CSM when status is PENDING_ADMIN_ACTIVATION
+              const showTemporaryForAdmin = (isAdmin || isCSM) && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+              
+              const shouldShow = showForInitialActivation || showForCompleteActivation || showDisabledForSuperadmin || showTemporaryForAdmin;
+              
+              console.log('Menu condition check:', {
+                campaignStatus: campaign?.status,
+                canInitialActivate,
+                canCompleteActivation,
+                showForInitialActivation,
+                showForCompleteActivation,
+                showDisabledForSuperadmin,
+                showTemporaryForAdmin,
+                shouldShow,
+                isUserAssignedToCampaign,
+                userRole: user?.role,
+                adminMode: user?.admin?.mode,
+                adminRole: user?.admin?.role?.name
+              });
+              
+              return shouldShow;
+            })() && (
+              <MenuItem 
+                onClick={(event) => {
+                  event.stopPropagation();
+                  
+                  // Don't do anything if disabled
+                  if (isDisabled) {
+                    return;
+                  }
+                  
+                  alert('Activate Campaign clicked! User: ' + user?.name + ', Role: ' + user?.role + ', Admin Mode: ' + user?.admin?.mode);
+                  
+                  console.log('Activate Campaign clicked:', {
+                    userRole: user?.role,
+                    adminMode: user?.admin?.mode,
+                    adminRole: user?.admin?.role?.name,
+                    campaignStatus: campaign?.status,
+                    canInitialActivate,
+                    canCompleteActivation,
+                    isCSL,
+                    isSuperAdmin,
+                    isCSM
+                  });
+                  
+                  // For superadmin on pending campaigns: use initial activation (admin assignment only)
+                  if (canInitialActivate && (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')) {
+                    console.log('Opening InitialActivateDialog (admin assignment only)');
+                    setInitialActivateDialogOpen(true);
+                  } else if (campaign?.status === 'PENDING_ADMIN_ACTIVATION') {
+                    // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
+                    console.log('Opening ActivateDialog (full setup)');
+                    setActivateDialogOpen(true);
+                  }
+                  handleClose();
+                }}
+                disabled={isDisabled}
+                sx={{
+                  borderRadius: 1,
+                  backgroundColor: 'white',
+                  color: isDisabled ? '#999' : 'black',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                  p: 1.5,
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  '&:hover': {
+                    backgroundColor: isDisabled ? 'white' : '#f5f5f5',
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: 'white',
+                    color: '#999',
+                  },
+                }}
+              >
+                {isDisabled ? 'Waiting for Admin Activation' : 'Activate Campaign'}
+              </MenuItem>
+            )}
             <MenuItem 
               onClick={(event) => {
                 event.stopPropagation();
@@ -427,6 +598,17 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         <ActivateCampaignDialog 
           open={activateDialogOpen} 
           onClose={handleCloseActivateDialog} 
+          campaignId={campaign?.id}
+          onSuccess={() => {
+            // Trigger a revalidation of the campaigns data
+            if (window.swrMutate) {
+              window.swrMutate();
+            }
+          }}
+        />
+        <InitialActivateCampaignDialog 
+          open={initialActivateDialogOpen} 
+          onClose={handleCloseInitialActivateDialog} 
           campaignId={campaign?.id}
         />
       </Box>
