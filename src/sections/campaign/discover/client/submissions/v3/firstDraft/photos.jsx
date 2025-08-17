@@ -27,9 +27,9 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField } from 'src/components/hook-form';
 
-import { options_changes } from './constants';
+
 import { ConfirmationRequestModal } from './confirmation-modals';
 
 const FirstDraftPhotoCard = ({ 
@@ -45,6 +45,8 @@ const FirstDraftPhotoCard = ({
   deliverables,
   handleClientApprove,
   handleClientReject,
+  deliverableMutate,
+  submissionMutate,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -61,7 +63,7 @@ const FirstDraftPhotoCard = ({
   const formMethods = useForm({
     resolver: cardType === 'request' ? yupResolver(requestSchema) : yupResolver(approveSchema),
     defaultValues: {
-      feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
+      feedback: '',
     },
   });
 
@@ -70,7 +72,7 @@ const FirstDraftPhotoCard = ({
   // Reset form when cardType changes
   useEffect(() => {
     reset({
-      feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
+      feedback: '',
     });
   }, [cardType, reset]);
 
@@ -98,23 +100,16 @@ const FirstDraftPhotoCard = ({
 
   // Get feedback for this specific photo
   const getPhotoFeedback = () => {
-    // Check for individual feedback first (from deliverables API)
-    if (photoItem.individualFeedback && photoItem.individualFeedback.length > 0) {
-      return photoItem.individualFeedback;
-    }
+    // Get feedback from deliverables API only (single source of truth)
+    const allFeedbacks = deliverables?.submissions?.flatMap(sub => sub.feedback) || [];
     
-    // Get all feedback from submission (from deliverables API)
-    const allFeedbacks = [
-      ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
-      ...(submission?.feedback || [])
-    ];
-
     // Filter feedback for this specific photo
     const photoSpecificFeedback = allFeedbacks
       .filter(feedback => feedback.photosToUpdate?.includes(photoItem.id))
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+      .filter(feedback => feedback.content && feedback.content.trim().length > 0); // Only show feedback with content
 
-    return photoSpecificFeedback;
+    // Sort newest first and return
+    return photoSpecificFeedback.sort((a, b) => dayjs(b?.createdAt).diff(dayjs(a?.createdAt)));
   };
 
   const feedback = getPhotoFeedback();
@@ -123,13 +118,49 @@ const FirstDraftPhotoCard = ({
     setIsProcessing(true);
     try {
       if (isClient) {
-        await axiosInstance.patch('/api/submission/v3/media/approve', {
+        console.log(`🔍 Client sending feedback: "${data?.feedback || ''}" for photo ${photoItem.id}`);
+        
+        // Optimistic update: immediately add the new feedback to the local data
+        const newFeedback = {
+          id: `temp-${Date.now()}`, // Temporary ID
+          content: data?.feedback || '',
+          displayContent: data?.feedback || '',
+          type: 'COMMENT',
+          adminId: { id: 'current-user', name: 'You' }, // Mock admin data
+          createdAt: new Date().toISOString(),
+          photosToUpdate: [photoItem.id]
+        };
+        
+        // Update local feedback immediately
+        const updatedDeliverables = {
+          ...deliverables,
+          submissions: deliverables?.submissions?.map(sub => ({
+            ...sub,
+            feedback: [...(sub.feedback || []), newFeedback]
+          }))
+        };
+        
+        // Update the deliverables data optimistically
+        if (deliverableMutate) {
+          deliverableMutate(updatedDeliverables, false); // false = don't revalidate immediately
+        }
+        
+        await axiosInstance.patch('/api/submission/v3/media/approve/client', {
           mediaId: photoItem.id,
           mediaType: 'photo',
           feedback: data?.feedback || ''
         });
-        if (typeof handleClientApprove === 'function') {
-          await handleClientApprove(photoItem.id, data?.feedback);
+        
+        // Don't call handleClientApprove for client approvals - it causes duplicate API calls
+        // The admin component's handleClientApprove is only for admin simulation
+        console.log(`🔍 Client approval completed - NOT calling handleClientApprove to avoid duplicate API calls`);
+        
+        // Now revalidate to get the real data from server
+        if (deliverableMutate) {
+          await deliverableMutate();
+        }
+        if (submissionMutate) {
+          await submissionMutate();
         }
       } else {
         await handleApprove(photoItem.id, data?.feedback);
@@ -139,6 +170,11 @@ const FirstDraftPhotoCard = ({
     } catch (error) {
       console.error('Error approving photo:', error);
       enqueueSnackbar('Failed to approve photo', { variant: 'error' });
+      
+      // Revert optimistic update on error
+      if (deliverableMutate) {
+        await deliverableMutate();
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -148,17 +184,26 @@ const FirstDraftPhotoCard = ({
     setIsProcessing(true);
     try {
       if (isClient) {
-        await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+        console.log(`🔍 Client requesting changes for photo ${photoItem.id} with feedback: "${data?.feedback || ''}"`);
+        
+        await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
           mediaId: photoItem.id,
           mediaType: 'photo',
           feedback: data?.feedback || '',
-          reasons: data?.reasons || []
+          reasons: [] // Empty array since we removed the reasons field
         });
-        if (typeof handleClientReject === 'function') {
-          await handleClientReject(photoItem.id, data?.feedback, data?.reasons);
+        
+
+        
+        // Revalidate to get the updated data from server
+        if (deliverableMutate) {
+          await deliverableMutate();
+        }
+        if (submissionMutate) {
+          await submissionMutate();
         }
       } else {
-        await handleRequestChange(photoItem.id, data?.feedback, data?.reasons);
+        await handleRequestChange(photoItem.id, data?.feedback, []);
       }
       setLocalStatus('REVISION_REQUESTED');
       enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
@@ -318,7 +363,7 @@ const FirstDraftPhotoCard = ({
                 </Button>
 
                 <LoadingButton
-                  onClick={handleApproveClick}
+                  onClick={formMethods.handleSubmit(handleApproveClick)}
                   variant="contained"
                   size="small"
                   loading={isSubmitting || isProcessing}
@@ -342,11 +387,7 @@ const FirstDraftPhotoCard = ({
               size="small"
             />
 
-            <RHFMultiSelect
-              name="reasons"
-              label="Reasons for Changes"
-              options={options_changes}
-            />
+
 
             <Stack spacing={1.5} sx={{ mt: 2 }}>
               <Stack direction="row" spacing={1.5}>
@@ -381,7 +422,7 @@ const FirstDraftPhotoCard = ({
                 </Button>
 
                 <LoadingButton
-                  onClick={handleRequestChangeClick}
+                  onClick={formMethods.handleSubmit(handleRequestChangeClick)}
                   variant="contained"
                   size="small"
                   loading={isSubmitting || isProcessing}
@@ -557,14 +598,7 @@ const FirstDraftPhotoCard = ({
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                     {dayjs(fb.createdAt).format('MMM D, YYYY h:mm A')}
                   </Typography>
-                  {fb.type === 'REASON' && (
-                    <Chip
-                      label="Change Request"
-                      size="small"
-                      color="error"
-                      variant="outlined"
-                    />
-                  )}
+
                 </Stack>
                 <Typography variant="body2">{fb.content}</Typography>
               </Box>
@@ -589,6 +623,8 @@ FirstDraftPhotoCard.propTypes = {
   deliverables: PropTypes.object,
   handleClientApprove: PropTypes.func,
   handleClientReject: PropTypes.func,
+  deliverableMutate: PropTypes.func,
+  submissionMutate: PropTypes.func,
 };
 
 export default FirstDraftPhotoCard; 

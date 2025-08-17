@@ -29,6 +29,7 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
 
+
 import { options_changes } from './constants';
 import { ConfirmationRequestModal } from './confirmation-modals';
 
@@ -45,6 +46,8 @@ const FirstDraftVideoCard = ({
   deliverables,
   handleClientApprove,
   handleClientReject,
+  deliverableMutate,
+  submissionMutate,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -57,14 +60,12 @@ const FirstDraftVideoCard = ({
 
   const approveSchema = Yup.object().shape({
     feedback: Yup.string().required('Comment is required.'),
-    dueDate: Yup.string().required('Due Date is required.'),
   });
 
   const formMethods = useForm({
     resolver: cardType === 'request' ? yupResolver(requestSchema) : yupResolver(approveSchema),
     defaultValues: {
-      feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
-      dueDate: null,
+      feedback: '',
       reasons: [],
     },
     mode: 'onChange',
@@ -75,8 +76,7 @@ const FirstDraftVideoCard = ({
   // Reset form when cardType changes
   useEffect(() => {
     const defaultValues = {
-      feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
-      dueDate: null,
+      feedback: '',
       reasons: [],
     };
     reset(defaultValues);
@@ -105,23 +105,16 @@ const FirstDraftVideoCard = ({
     (submission?.status === 'PENDING_REVIEW' && !isVideoApprovedByAdmin && !hasRevisionRequested);
 
   const getVideoFeedback = () => {
-    // Check for individual feedback first (from deliverables API)
-    if (videoItem.individualFeedback && videoItem.individualFeedback.length > 0) {
-      return videoItem.individualFeedback;
-    }
+    // Get feedback from deliverables API only (single source of truth)
+    const allFeedbacks = deliverables?.submissions?.flatMap(sub => sub.feedback) || [];
     
-    // Get all feedback from submission (from deliverables API)
-    const allFeedbacks = [
-      ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
-      ...(submission?.feedback || [])
-    ];
-
     // Filter feedback for this specific video
     const videoSpecificFeedback = allFeedbacks
       .filter(feedback => feedback.videosToUpdate?.includes(videoItem.id))
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+      .filter(feedback => feedback.content && feedback.content.trim().length > 0); // Only show feedback with content
 
-    return videoSpecificFeedback;
+    // Sort newest first and return
+    return videoSpecificFeedback.sort((a, b) => dayjs(b?.createdAt).diff(dayjs(a?.createdAt)));
   };
 
   const feedback = getVideoFeedback();
@@ -130,13 +123,49 @@ const FirstDraftVideoCard = ({
     setIsProcessing(true);
     try {
       if (isClient) {
-        await axiosInstance.patch('/api/submission/v3/media/approve', {
+        console.log(`🔍 Client sending feedback: "${data?.feedback || ''}" for video ${videoItem.id}`);
+        
+        // Optimistic update: immediately add the new feedback to the local data
+        const newFeedback = {
+          id: `temp-${Date.now()}`, // Temporary ID
+          content: data?.feedback || '',
+          displayContent: data?.feedback || '',
+          type: 'COMMENT',
+          adminId: { id: 'current-user', name: 'You' }, // Mock admin data
+          createdAt: new Date().toISOString(),
+          videosToUpdate: [videoItem.id]
+        };
+        
+        // Update local feedback immediately
+        const updatedDeliverables = {
+          ...deliverables,
+          submissions: deliverables?.submissions?.map(sub => ({
+            ...sub,
+            feedback: [...(sub.feedback || []), newFeedback]
+          }))
+        };
+        
+        // Update the deliverables data optimistically
+        if (deliverableMutate) {
+          deliverableMutate(updatedDeliverables, false); // false = don't revalidate immediately
+        }
+        
+        await axiosInstance.patch('/api/submission/v3/media/approve/client', {
           mediaId: videoItem.id,
           mediaType: 'video',
           feedback: data?.feedback || ''
         });
-        if (typeof handleClientApprove === 'function') {
-          await handleClientApprove(videoItem.id, data?.feedback);
+        
+        // Don't call handleClientApprove for client approvals - it causes duplicate API calls
+        // The admin component's handleClientApprove is only for admin simulation
+        console.log(`🔍 Client approval completed - NOT calling handleClientApprove to avoid duplicate API calls`);
+        
+        // Now revalidate to get the real data from server
+        if (deliverableMutate) {
+          await deliverableMutate();
+        }
+        if (submissionMutate) {
+          await submissionMutate();
         }
       } else {
         await handleApprove(videoItem.id, data?.feedback);
@@ -146,6 +175,11 @@ const FirstDraftVideoCard = ({
     } catch (error) {
       console.error('Error approving video:', error);
       enqueueSnackbar('Failed to approve video', { variant: 'error' });
+      
+      // Revert optimistic update on error
+      if (deliverableMutate) {
+        await deliverableMutate();
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -155,17 +189,23 @@ const FirstDraftVideoCard = ({
     setIsProcessing(true);
     try {
       if (isClient) {
-        await axiosInstance.patch('/api/submission/v3/media/request-changes', {
+        console.log(`🔍 Client requesting changes for video ${videoItem.id} with feedback: "${data?.feedback || ''}"`);
+        
+        await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
           mediaId: videoItem.id,
           mediaType: 'video',
           feedback: data?.feedback || '',
           reasons: data?.reasons || []
         });
-        if (typeof handleClientReject === 'function') {
-          await handleClientReject(videoItem.id, data?.feedback, data?.reasons);
+        
+
+        
+        // Revalidate to get the updated data from server
+        if (deliverableMutate) {
+          await deliverableMutate();
         }
       } else {
-        await handleRequestChange(videoItem.id, data?.feedback, data?.reasons);
+        await handleRequestChange(videoItem.id, data?.feedback, []);
       }
       setLocalStatus('REVISION_REQUESTED');
       enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
@@ -318,7 +358,7 @@ const FirstDraftVideoCard = ({
                 </Button>
 
                 <LoadingButton
-                  onClick={handleApproveClick}
+                  onClick={formMethods.handleSubmit(handleApproveClick)}
                   variant="contained"
                   size="small"
                   loading={isSubmitting || isProcessing}
@@ -381,7 +421,7 @@ const FirstDraftVideoCard = ({
                 </Button>
 
                 <LoadingButton
-                  onClick={handleRequestChangeClick}
+                  onClick={formMethods.handleSubmit(handleRequestChangeClick)}
                   variant="contained"
                   size="small"
                   loading={isSubmitting || isProcessing}
@@ -557,14 +597,7 @@ const FirstDraftVideoCard = ({
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                     {dayjs(fb.createdAt).format('MMM D, YYYY h:mm A')}
                   </Typography>
-                  {fb.type === 'REASON' && (
-                    <Chip
-                      label="Change Request"
-                      size="small"
-                      color="error"
-                      variant="outlined"
-                    />
-                  )}
+
                 </Stack>
                 <Typography variant="body2">{fb.content}</Typography>
               </Box>
@@ -589,6 +622,8 @@ FirstDraftVideoCard.propTypes = {
   deliverables: PropTypes.object,
   handleClientApprove: PropTypes.func,
   handleClientReject: PropTypes.func,
+  deliverableMutate: PropTypes.func,
+  submissionMutate: PropTypes.func,
 };
 
 export default FirstDraftVideoCard; 

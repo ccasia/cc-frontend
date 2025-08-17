@@ -4,7 +4,7 @@ import { Box, Stack, Typography } from '@mui/material';
 
 import FirstDraftRawFootageCard from './raw-footage';
 
-const RawFootageWrapper = ({ 
+const RawFootagesWrapper = ({ 
   campaign, 
   submission, 
   deliverables, 
@@ -12,6 +12,8 @@ const RawFootageWrapper = ({
   userRole,
   handleClientApprove,
   handleClientReject,
+  deliverableMutate,
+  submissionMutate,
 }) => {
   if (!deliverables?.rawFootages || deliverables.rawFootages.length === 0) {
     return (
@@ -38,13 +40,15 @@ const RawFootageWrapper = ({
           deliverables={deliverables}
           handleClientApprove={handleClientApprove}
           handleClientReject={handleClientReject}
+          deliverableMutate={deliverableMutate}
+          submissionMutate={submissionMutate}
         />
       ))}
     </Stack>
   );
 };
 
-RawFootageWrapper.propTypes = {
+RawFootagesWrapper.propTypes = {
   campaign: PropTypes.object.isRequired,
   submission: PropTypes.object.isRequired,
   deliverables: PropTypes.object.isRequired,
@@ -52,6 +56,8 @@ RawFootageWrapper.propTypes = {
   userRole: PropTypes.string.isRequired,
   handleClientApprove: PropTypes.func.isRequired,
   handleClientReject: PropTypes.func.isRequired,
+  deliverableMutate: PropTypes.func,
+  submissionMutate: PropTypes.func,
 };
 
-export default RawFootageWrapper; 
+export default RawFootagesWrapper; 

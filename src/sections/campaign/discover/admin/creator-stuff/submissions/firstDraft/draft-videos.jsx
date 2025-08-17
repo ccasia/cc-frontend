@@ -20,6 +20,7 @@ import {
   Typography,
   CardContent,
 } from '@mui/material';
+import { TextField } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -62,6 +63,8 @@ const VideoCard = ({
   const [isProcessing, setIsProcessing] = useState(false);
   // Add local state to track status optimistically
   const [localStatus, setLocalStatus] = useState(null);
+  const [editingFeedbackId, setEditingFeedbackId] = useState(null);
+  const [editingContent, setEditingContent] = useState('');
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -104,6 +107,8 @@ const VideoCard = ({
   const isVideoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isVideoApprovedByClient = currentStatus === 'APPROVED';
   const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
+  const isClientFeedback = currentStatus === 'CLIENT_FEEDBACK';
+  const isChangesRequired = currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'REVISION_REQUESTED';
   
   // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
   const isPendingReview = userRole === 'client' ? 
@@ -163,9 +168,10 @@ const VideoCard = ({
   // Helper function to determine border color
   const getBorderColor = () => {
     // For client role, SENT_TO_CLIENT status should not show green outline
+    if (isClientFeedback || hasRevisionRequested) return '#F6C000'; // yellow for CLIENT_FEEDBACK and REVISION_REQUESTED
+    if (isChangesRequired) return '#D4321C'; // red
     if (userRole === 'client' && isVideoApprovedByClient) return '#1ABF66';
     if (userRole !== 'client' && isVideoApprovedByAdmin) return '#1ABF66';
-    if (hasRevisionRequested) return '#D4321C';
     return 'divider';
   };
 
@@ -284,6 +290,42 @@ const VideoCard = ({
         );
       }
       if (hasRevisionRequested) {
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              p: 2,
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: '#FFFFFF',
+                color: '#F6C000',
+                border: '1.5px solid',
+                borderColor: '#F6C000',
+                borderBottom: 3,
+                borderBottomColor: '#F6C000',
+                borderRadius: 1,
+                py: 0.8,
+                px: 1.5,
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+              }}
+            >
+              CLIENT FEEDBACK
+            </Box>
+          </Box>
+        );
+      }
+
+      if (isChangesRequired) {
         return (
           <Box
             sx={{
@@ -638,6 +680,7 @@ const VideoCard = ({
         borderRadius: 2,
         border: '1px solid',
         borderColor: getBorderColor(),
+        boxShadow: isChangesRequired ? '0 0 0 2px rgba(212,50,28,0.15)' : 'none',
       }}
     >
       {/* Video Section */}
@@ -688,36 +731,7 @@ const VideoCard = ({
             }}
           />
 
-          {/* Status indicators */}
-          {hasRevisionRequested && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 8,
-                left: 8,
-                zIndex: 1,
-              }}
-            >
-              <Tooltip title="Changes required">
-                <Iconify icon="si:warning-fill" width={20} color="warning.main" />
-              </Tooltip>
-            </Box>
-          )}
 
-          {isVideoApprovedByAdmin && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 8,
-                left: 8,
-                zIndex: 1,
-              }}
-            >
-              <Tooltip title="Approved">
-                <Iconify icon="lets-icons:check-fill" width={20} color="success.main" />
-              </Tooltip>
-            </Box>
-          )}
 
           <Box
             sx={{
@@ -794,9 +808,44 @@ const VideoCard = ({
                   )}
                 </Stack>
                 
+                {editingFeedbackId === feedback.id ? (
+                  <Stack spacing={1} sx={{ mb: 1 }}>
+                    <TextField
+                      fullWidth
+                      value={editingContent}
+                      onChange={(e) => setEditingContent(e.target.value)}
+                      multiline
+                      rows={3}
+                    />
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={async () => {
+                          await handleAdminEditFeedback(videoItem.id, feedback.id, editingContent);
+                          setEditingFeedbackId(null);
+                          setEditingContent('');
+                        }}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          setEditingFeedbackId(null);
+                          setEditingContent('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </Stack>
+                  </Stack>
+                ) : (
                 <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-                  {feedback.content}
+                    {feedback.displayContent || feedback.content}
                 </Typography>
+                )}
 
                 {feedback.reasons && feedback.reasons.length > 0 && (
                   <Box>
@@ -831,16 +880,14 @@ const VideoCard = ({
                 )}
 
                 {/* Admin buttons for client feedback */}
-                {isV3 && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (
+                {isV3 && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && feedback.type === 'REASON' && submission?.status === 'SENT_TO_ADMIN' && (
                   <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
                     <Button
                       variant="outlined"
                       size="small"
                       onClick={() => {
-                        const adminFeedback = prompt('Edit client feedback (optional):');
-                        if (adminFeedback !== null) {
-                          handleAdminEditFeedback(videoItem.id, feedback.id, adminFeedback);
-                        }
+                        setEditingFeedbackId(feedback.id);
+                        setEditingContent(feedback.content || '');
                       }}
                       sx={{
                         fontSize: '0.75rem',
@@ -868,7 +915,9 @@ const VideoCard = ({
                     <Button
                       variant="outlined"
                       size="small"
-                      onClick={() => handleAdminSendToCreator(videoItem.id, feedback.id)}
+                      onClick={async () => {
+                        await handleAdminSendToCreator(videoItem.id, feedback.id, setLocalStatus);
+                      }}
                       sx={{
                         fontSize: '0.75rem',
                         py: 0.8,
@@ -1062,8 +1111,24 @@ const DraftVideos = ({
     }
   };
 
-  const handleClientApprove = async (mediaId) => {
+  const handleClientApprove = async (mediaId, clientFeedback) => {
     try {
+      console.log(`🔍 handleClientApprove called with mediaId: ${mediaId}, clientFeedback: "${clientFeedback}", type: ${typeof clientFeedback}`);
+      
+      // If clientFeedback is provided (including empty string), it means the client already made the API call
+      // So we don't need to make another API call, just refresh the data
+      if (clientFeedback !== undefined) {
+        console.log(`🔍 Client already approved with feedback: "${clientFeedback}", just refreshing data - NO SECOND API CALL`);
+        // Revalidate with server data
+        await mutateSubmission();
+        if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+        if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+        return;
+      }
+
+      // This is admin simulation (no client feedback provided)
+      console.log(`🔍 Admin simulating client approval with hardcoded feedback: "Approved by client"`);
+      
       // Optimistic update - immediately update the UI
       const optimisticData = deliverables?.videos?.map(video => 
         video.id === mediaId ? { ...video, status: 'APPROVED' } : video
@@ -1076,7 +1141,7 @@ const DraftVideos = ({
         );
       }
 
-      await axiosInstance.patch('/api/submission/v3/media/approve/client', {
+      await axiosInstance.patch('/api/submission/v3/media/approve', {
         mediaId,
         mediaType: 'video',
         feedback: 'Approved by client',
@@ -1115,16 +1180,17 @@ const DraftVideos = ({
 
   const handleAdminEditFeedback = async (mediaId, feedbackId, adminFeedback) => {
     try {
-      // For now, just store the edited feedback locally
-      console.log('Admin editing feedback:', { mediaId, feedbackId, adminFeedback });
+      await axiosInstance.patch('/api/submission/v3/feedback/' + feedbackId, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
     } catch (error) {
       console.error('Error updating feedback:', error);
       enqueueSnackbar('Failed to update feedback', { variant: 'error' });
     }
   };
 
-  const handleAdminSendToCreator = async (mediaId, feedbackId) => {
+  const handleAdminSendToCreator = async (mediaId, feedbackId, onStatusUpdate) => {
     // Check if this submission has already been sent
     if (sentSubmissions.has(mediaId)) {
       enqueueSnackbar('This submission has already been sent to creator', { variant: 'warning' });
@@ -1143,29 +1209,32 @@ const DraftVideos = ({
       // Mark this submission as sent immediately to prevent double-clicks
       setSentSubmissions(prev => new Set([...prev, mediaId]));
 
+      // Immediately update local status to CHANGES_REQUIRED for instant UI feedback
+      if (onStatusUpdate) {
+        onStatusUpdate('CHANGES_REQUIRED');
+      }
+
       // Call the API to review and forward client feedback
       const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', {
         submissionId: submission.id,
-        adminFeedback: 'Feedback reviewed and forwarded to creator'
+        adminFeedback: 'Feedback reviewed and forwarded to creator',
+        mediaId,
+        mediaType: 'video'
       });
 
       if (response.status === 200) {
         enqueueSnackbar(`Feedback for video sent to creator successfully!`, { variant: 'success' });
         
-        // Check if all videos have been sent
-        const allVideos = deliverables.videos || [];
-        const allVideosSent = allVideos.every(video => sentSubmissions.has(video.id));
+        // SWR revalidation for immediate UI update
+        if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+        if (deliverables?.submissionMutate) await deliverables.submissionMutate();
         
-        if (allVideosSent) {
-          enqueueSnackbar('All videos have been sent to creator!', { variant: 'success' });
-          
-          // Refresh data after all are sent
-          if (deliverables?.deliverableMutate) {
-            await deliverables.deliverableMutate();
-          }
-          if (deliverables?.submissionMutate) {
-            await deliverables.submissionMutate();
-          }
+        // Check if all revision-requested videos have been sent
+        const revisionRequestedVideos = deliverables.videos?.filter(v => v.status === 'REVISION_REQUESTED' || v.status === 'CLIENT_FEEDBACK') || [];
+        const sentRevisionVideos = revisionRequestedVideos.filter(v => sentSubmissions.has(v.id));
+        
+        if (revisionRequestedVideos.length > 0 && sentRevisionVideos.length === revisionRequestedVideos.length) {
+          enqueueSnackbar('All revision-requested videos have been sent to creator!', { variant: 'success' });
         }
       }
     } catch (error) {
