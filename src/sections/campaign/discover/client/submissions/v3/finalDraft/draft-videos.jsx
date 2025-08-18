@@ -306,7 +306,7 @@ const VideoCard = ({
   const renderFormContent = () => {
     if (!isPendingReview) {
       if (isVideoApprovedByClient) {
-        return (
+  return (
           <Box
             sx={{
               display: 'flex',
@@ -337,7 +337,7 @@ const VideoCard = ({
             >
               APPROVED
             </Box>
-          </Box>
+        </Box>
         );
       }
       if (hasRevisionRequested) {
@@ -371,7 +371,7 @@ const VideoCard = ({
               }}
             >
               CHANGES REQUESTED
-            </Box>
+              </Box>
           </Box>
         );
       }
@@ -383,7 +383,7 @@ const VideoCard = ({
     }
 
     return (
-      <FormProvider methods={formMethods}>
+          <FormProvider methods={formMethods}>
         {cardType === 'approve' ? (
           <Stack spacing={2}>
             <Typography variant="subtitle2" color="#000000">
@@ -442,23 +442,23 @@ const VideoCard = ({
             </Stack>
           </Stack>
         ) : (
-          <Stack spacing={2}>
+            <Stack spacing={2}>
             <Typography variant="subtitle2" color="#000000">
               Request Changes
             </Typography>
-            <RHFTextField
-              name="feedback"
-              multiline
+              <RHFTextField
+                name="feedback"
+                multiline
               minRows={3}
               placeholder="Provide feedback for the creator."
               size="small"
-            />
-
-            <RHFMultiSelect
-              name="reasons"
-              label="Reasons for Changes"
-              options={options_changes}
-            />
+              />
+              
+                <RHFMultiSelect
+                  name="reasons"
+                  label="Reasons for Changes"
+                  options={options_changes}
+                />
 
             <Stack spacing={1.5} sx={{ mt: 2 }}>
               <Stack direction="row" spacing={1.5}>
@@ -491,7 +491,7 @@ const VideoCard = ({
                 >
                   Approve
                 </Button>
-
+                
                 <LoadingButton
                   onClick={formMethods.handleSubmit(handleRequestChangeClick)}
                   variant="contained"
@@ -505,7 +505,7 @@ const VideoCard = ({
             </Stack>
           </Stack>
         )}
-      </FormProvider>
+          </FormProvider>
     );
   };
 

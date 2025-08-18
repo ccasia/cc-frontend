@@ -875,9 +875,9 @@ const RawFootageCard = ({
                       variant="outlined"
                       size="small"
                                               onClick={async () => {
-                          if (handleAdminSendToCreator) {
+                        if (handleAdminSendToCreator) {
                             await handleAdminSendToCreator(rawFootageItem.id, feedback.id, setLocalStatus);
-                          }
+                        }
                       }}
                       sx={{
                         fontSize: '0.75rem',

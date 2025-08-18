@@ -11,7 +11,7 @@ import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import CampaignV3Pitches from './campaign-v3-pitches';
 
-const CampaignV3PitchesWrapper = ({ campaign }) => {
+const CampaignV3PitchesWrapper = ({ campaign, campaignMutate }) => {
   const { pitches, isLoading, isError, mutate } = useGetV3Pitches(campaign?.id);
 
   const handlePitchUpdate = (updatedPitch) => {
@@ -23,6 +23,11 @@ const CampaignV3PitchesWrapper = ({ campaign }) => {
         pitch.id === updatedPitch.id ? updatedPitch : pitch
       );
     });
+
+    // If the pitch was approved by client, also trigger campaign data revalidation
+    if (updatedPitch.status === 'APPROVED' && campaignMutate) {
+      campaignMutate();
+    }
   };
 
   if (isLoading) {
@@ -56,4 +61,5 @@ export default CampaignV3PitchesWrapper;
 
 CampaignV3PitchesWrapper.propTypes = {
   campaign: PropTypes.object.isRequired,
+  campaignMutate: PropTypes.func,
 }; 
