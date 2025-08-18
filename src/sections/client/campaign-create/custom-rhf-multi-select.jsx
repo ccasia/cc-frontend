@@ -163,7 +163,8 @@ export function CustomRHFMultiSelect({
             onChange={(event) => {
               const newValue = event.target.value;
               field.onChange(newValue);
-              setOpen(false); // Close dropdown after selection
+              // Keep dropdown open after selection for better UX
+              // setOpen(false); // Remove this line to keep dropdown open
             }}
           >
             {options.map((option) => {
@@ -171,7 +172,19 @@ export function CustomRHFMultiSelect({
 
               return (
                 <MenuItem key={option.value} value={option.value}>
-                  {checkbox && <Checkbox size="small" disableRipple checked={selected} />}
+                  {checkbox && (
+                    <Checkbox 
+                      size="small" 
+                      disableRipple 
+                      checked={selected}
+                      sx={{
+                        color: '#8E8E93',
+                        '&.Mui-checked': {
+                          color: '#1ABF66',
+                        },
+                      }}
+                    />
+                  )}
 
                   {option.label}
                 </MenuItem>
