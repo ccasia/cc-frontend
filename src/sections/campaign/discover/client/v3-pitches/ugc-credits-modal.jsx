@@ -139,27 +139,6 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess }) => {
           How many UGC credits would you like to assign to this creator?
         </Typography>
 
-        {/* Creator Info */}
-        <Box sx={{ mb: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2 }}>
-          <Stack direction="row" alignItems="center" spacing={2} justifyContent="center">
-            <Avatar
-              src={pitch?.user?.photoURL}
-              sx={{ width: 40, height: 40 }}
-            >
-              {pitch?.user?.name?.charAt(0).toUpperCase()}
-            </Avatar>
-            <Typography
-              variant="subtitle1"
-              sx={{
-                fontWeight: 600,
-                color: '#231F20',
-              }}
-            >
-              {pitch?.user?.name}
-            </Typography>
-          </Stack>
-        </Box>
-
         {/* UGC Credits Input */}
         <Box sx={{ mb: 4 }}>
           <TextField
@@ -170,20 +149,6 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess }) => {
             onChange={(e) => setUgCCredits(e.target.value)}
             placeholder="Enter number of credits"
             disabled={isSubmitting}
-            InputProps={{
-              startAdornment: (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    mr: 1,
-                    fontWeight: 500,
-                  }}
-                >
-                  Credits:
-                </Typography>
-              ),
-            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -206,13 +171,19 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess }) => {
             disabled={isSubmitting}
             fullWidth
             sx={{
-              borderColor: '#e0e0e0',
-              color: '#666666',
+              textTransform: 'none',
+              minHeight: 42,
+              bgcolor: '#ffffff',
+              color: '#636366',
+              border: '1.5px solid',
+              borderColor: '#e7e7e7',
+              borderBottom: '3px solid',
+              borderBottomColor: '#e7e7e7',
+              borderRadius: 1.15,
               fontWeight: 600,
-              py: 1.5,
+              fontSize: '16px',
               '&:hover': {
-                borderColor: '#666666',
-                bgcolor: '#f5f5f5',
+                bgcolor: '#e7e7e7',
               },
             }}
           >
@@ -224,23 +195,36 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess }) => {
             disabled={isSubmitting || !ugcCredits || isNaN(ugcCredits) || parseInt(ugcCredits) <= 0}
             fullWidth
             sx={{
-              bgcolor: '#8A5AFE',
-              color: 'white',
+              textTransform: 'none',
+              minHeight: 42,
+              bgcolor: '#FFFFFF',
+              color: '#1ABF66',
+              border: '1.5px solid',
+              borderColor: '#E7E7E7',
+              borderBottom: '3px solid',
+              borderBottomColor: '#E7E7E7',
+              borderRadius: 1.15,
               fontWeight: 600,
-              py: 1.5,
+              fontSize: '16px',
               '&:hover': {
-                bgcolor: '#7B4FD8',
+                bgcolor: '#f5f5f5',
+                border: '1.5px solid',
+                borderColor: '#1ABF66',
+                borderBottom: '3px solid',
+                borderBottomColor: '#1ABF66',
               },
               '&:disabled': {
                 bgcolor: '#e0e0e0',
                 color: '#999999',
+                borderColor: '#e0e0e0',
+                borderBottomColor: '#e0e0e0',
               },
             }}
           >
             {isSubmitting ? (
               <CircularProgress size={20} color="inherit" />
             ) : (
-              'Approve & Assign Credits'
+              'Approve'
             )}
           </Button>
         </Stack>

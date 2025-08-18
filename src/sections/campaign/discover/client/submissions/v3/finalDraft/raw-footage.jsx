@@ -320,7 +320,7 @@ const RawFootageCard = ({
   const renderFormContent = () => {
     if (!isPendingReview) {
       if (isRawFootageApprovedByClient) {
-        return (
+  return (
           <Box
             sx={{
               display: 'flex',
@@ -351,7 +351,7 @@ const RawFootageCard = ({
             >
               APPROVED
             </Box>
-          </Box>
+        </Box>
         );
       }
       if (hasRevisionRequested) {
@@ -385,7 +385,7 @@ const RawFootageCard = ({
               }}
             >
               CHANGES REQUESTED
-            </Box>
+              </Box>
           </Box>
         );
       }
@@ -397,7 +397,7 @@ const RawFootageCard = ({
     }
 
     return (
-      <FormProvider methods={formMethods}>
+          <FormProvider methods={formMethods}>
         {cardType === 'approve' ? (
           <Stack spacing={2}>
             <Typography variant="subtitle2" color="#000000">
@@ -456,23 +456,23 @@ const RawFootageCard = ({
             </Stack>
           </Stack>
         ) : (
-          <Stack spacing={2}>
+            <Stack spacing={2}>
             <Typography variant="subtitle2" color="#000000">
               Request Changes
             </Typography>
-            <RHFTextField
-              name="feedback"
-              multiline
+              <RHFTextField
+                name="feedback"
+                multiline
               minRows={3}
               placeholder="Provide feedback for the creator."
               size="small"
-            />
-
-            <RHFMultiSelect
-              name="reasons"
-              label="Reasons for Changes"
-              options={options_changes}
-            />
+              />
+              
+                <RHFMultiSelect
+                  name="reasons"
+                  label="Reasons for Changes"
+                  options={options_changes}
+                />
 
             <Stack spacing={1.5} sx={{ mt: 2 }}>
               <Stack direction="row" spacing={1.5}>
@@ -505,7 +505,7 @@ const RawFootageCard = ({
                 >
                   Approve
                 </Button>
-
+                
                 <LoadingButton
                   onClick={formMethods.handleSubmit(handleRequestChangeClick)}
                   variant="contained"
@@ -519,7 +519,7 @@ const RawFootageCard = ({
             </Stack>
           </Stack>
         )}
-      </FormProvider>
+          </FormProvider>
     );
   };
 

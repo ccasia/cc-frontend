@@ -31,6 +31,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -155,6 +156,9 @@ const CampaignDetailView = ({ id }) => {
   // }, [id, campaign]);
 
   const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
+
+  // Fetch V3 pitches for client-created campaigns to get accurate count
+  const { pitches: v3Pitches } = useGetV3Pitches(campaign?.origin === 'CLIENT' ? campaign?.id : null);
 
   const generateNewAgreement = useCallback(async (template) => {
     try {
@@ -295,7 +299,15 @@ const CampaignDetailView = ({ id }) => {
                 { label: 'Campaign Details', value: 'campaign-content' },
                 // { label: 'Client Info', value: 'client' },
                 {
-                  label: `Creator Master List (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
+                  label: `Creator Master List (${
+                    campaign?.origin === 'CLIENT' 
+                      ? v3Pitches?.filter((p) => 
+                          p.status === 'PENDING_REVIEW' || 
+                          p.status === 'SENT_TO_CLIENT' ||
+                          p.status === 'undecided'
+                        ).length || 0
+                      : campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0
+                  })`,
                   value: 'pitch',
                 },
                 {
@@ -454,7 +466,7 @@ const CampaignDetailView = ({ id }) => {
     ),
     pitch:
       campaign?.origin === 'CLIENT' ? (
-        <CampaignV3PitchesWrapper campaign={campaign} />
+        <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} />
       ) : (
         <CampaignDetailPitch
           pitches={campaign?.pitch}
