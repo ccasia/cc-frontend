@@ -18,6 +18,15 @@ import {
   DialogActions,
   LinearProgress,
   CircularProgress,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Pagination,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -40,6 +49,8 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import CompanyCreationForm from './company-creation-form';
 import ClientCampaignCreateForm from './campaign-create/campaign-create-form';
 import ClientProfileCompletionModal from '../auth/client-profile-completion-modal';
+import Image from 'src/components/image';
+import dayjs from 'dayjs';
 
 const ClientDashboard = () => {
   const { user } = useAuthContext();
@@ -54,54 +65,53 @@ const ClientDashboard = () => {
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [isCheckingCompany, setIsCheckingCompany] = useState(true);
   const [showProfileCompletion, setShowProfileCompletion] = useState(false);
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const campaignsPerPage = 3; // 3 campaigns per page for table, 1 row (3 cards) for card view
 
   useEffect(() => {
-    checkClientCompany();
-    checkProfileCompletion();
+    checkClientCompanyAndProfile();
   }, []);
 
-  const checkProfileCompletion = async () => {
-    try {
-      // Simple check: if profile is already completed, don't show modal
-      const hasCompletedProfile = localStorage.getItem('profileCompleted');
-      if (hasCompletedProfile === 'true') {
-        console.log('Profile already completed, not showing modal');
-        return;
-      }
-
-      // Check if we've already shown the modal this session
-      const hasShownModal = sessionStorage.getItem('profileModalShown');
-      if (hasShownModal === 'true') {
-        console.log('Modal already shown this session');
-        return;
-      }
-
-      // Show modal only once per session
-      console.log('Showing profile completion modal');
-      sessionStorage.setItem('profileModalShown', 'true');
-      setTimeout(() => {
-        setShowProfileCompletion(true);
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Error checking profile completion:', error);
-    }
-  };
-
-  const checkClientCompany = async () => {
+  const checkClientCompanyAndProfile = async () => {
     try {
       setIsCheckingCompany(true);
       const response = await axiosInstance.get(endpoints.client.checkCompany);
-      setHasCompany(response.data.hasCompany);
-      setCompany(response.data.company);
+      const { hasCompany, company } = response.data;
       
-      if (!response.data.hasCompany) {
+      setHasCompany(hasCompany);
+      setCompany(company);
+      
+      // Handle company dialog
+      if (!hasCompany) {
         setOpenCompanyDialog(true);
       }
+      
+      // Handle profile completion modal
+      if (!hasCompany) {
+        // Check if we've already shown the modal this session
+        const hasShownModal = sessionStorage.getItem('profileModalShown');
+        if (hasShownModal !== 'true') {
+          console.log('User has no company, showing profile completion modal');
+          sessionStorage.setItem('profileModalShown', 'true');
+          setTimeout(() => {
+            setShowProfileCompletion(true);
+          }, 1000);
+        }
+      } else {
+        // Mark profile as completed in localStorage for future reference
+        localStorage.setItem('profileCompleted', 'true');
+      }
+      
     } catch (error) {
-      console.error('Error checking client company:', error);
-      // Silently handle the error without showing a snackbar
-      // This prevents the "Error checking company status" message
+      console.error('Error checking client company and profile:', error);
+      // Fallback to localStorage check if API fails
+      const hasCompletedProfile = localStorage.getItem('profileCompleted');
+      if (hasCompletedProfile === 'true') {
+        console.log('Profile already completed (fallback), not showing modal');
+      }
     } finally {
       setIsCheckingCompany(false);
     }
@@ -187,6 +197,43 @@ const ClientDashboard = () => {
     }
   };
 
+  // Calculate pagination
+  const indexOfLastCampaign = currentPage * campaignsPerPage;
+  const indexOfFirstCampaign = indexOfLastCampaign - campaignsPerPage;
+  const currentCampaigns = campaigns.slice(indexOfFirstCampaign, indexOfLastCampaign);
+  const totalPages = Math.ceil(campaigns.length / campaignsPerPage);
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
+
+  // Calculate pagination range for sliding window
+  const getPaginationRange = () => {
+    const delta = 1; // Show 1 page on each side of current page
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages);
+    } else if (totalPages > 1) {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
+  };
+
   const renderHeader = (
     <Box sx={{ 
       display: 'flex', 
@@ -219,27 +266,36 @@ const ClientDashboard = () => {
         </Typography>
       </Box>
       <Stack direction="row" spacing={1.5}>
+        
+        
+        {/* View Mode Toggle */}
         <Box
+          onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
           sx={{
-            display: { xs: 'none', sm: 'flex' },
+            display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             px: 1.5,
             py: 1.5,
             borderRadius: 1,
-            bgcolor: '#FFF',
+            bgcolor: viewMode === 'card' ? '#203ff5' : '#FFF',
             border: '1px solid #EBEBEB',
             borderBottom: '3px solid #E7E7E7',
             cursor: 'pointer',
             height: '42px',
             width: '42px',
             '&:hover': {
-              bgcolor: '#F5F5F5',
+              bgcolor: viewMode === 'card' ? '#1935dd' : '#F5F5F5',
             },
           }}
         >
-          <Iconify icon="eva:grid-outline" width={20} color="#636366" />
+          <Iconify 
+            icon={viewMode === 'table' ? 'eva:grid-outline' : 'eva:list-outline'} 
+            width={20} 
+            color={viewMode === 'card' ? 'white' : '#636366'} 
+          />
         </Box>
+        
         <Box
           onClick={handleNewCampaign}
           sx={{
@@ -606,7 +662,7 @@ const ClientDashboard = () => {
         {/* Campaign list */}
         {!isLoading && campaigns && campaigns.length > 0 && (
           <Box sx={{ width: '100%' }}>
-            {campaigns.map((campaign) => (
+            {currentCampaigns.map((campaign) => (
               <Box
                 key={campaign.id}
                 sx={{
@@ -794,7 +850,317 @@ const ClientDashboard = () => {
             ))}
           </Box>
         )}
+        
+        {/* Pagination for Table View */}
+        {totalPages > 1 && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Typography
+                onClick={() => handlePageChange(null, Math.max(1, currentPage - 1))}
+                sx={{
+                  cursor: currentPage === 1 ? 'default' : 'pointer',
+                  color: currentPage === 1 ? '#C7C7CC' : '#000000',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  userSelect: 'none',
+                }}
+              >
+                &lt;
+              </Typography>
+              
+              {getPaginationRange().map((page, index) => (
+                page === '...' ? (
+                  <Typography key={`dots-${index}`} sx={{ color: '#8E8E93', fontSize: '1rem' }}>
+                    ...
+                  </Typography>
+                ) : (
+                  <Typography
+                    key={page}
+                    onClick={() => handlePageChange(null, page)}
+                    sx={{
+                      cursor: 'pointer',
+                      color: currentPage === page ? '#1340FF' : '#000000',
+                      fontSize: '1rem',
+                      fontWeight: currentPage === page ? 700 : 500,
+                      userSelect: 'none',
+                      '&:hover': {
+                        color: currentPage === page ? '#1340FF' : '#666666',
+                      }
+                    }}
+                  >
+                    {page}
+                  </Typography>
+                )
+              ))}
+              
+              <Typography
+                onClick={() => handlePageChange(null, Math.min(totalPages, currentPage + 1))}
+                sx={{
+                  cursor: currentPage === totalPages ? 'default' : 'pointer',
+                  color: currentPage === totalPages ? '#C7C7CC' : '#000000',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  userSelect: 'none',
+                }}
+              >
+                &gt;
+              </Typography>
+            </Stack>
+          </Box>
+        )}
       </Box>
+    </Box>
+  );
+
+  const renderCampaignCards = (
+    <Box sx={{ width: '100%' }}>
+      {/* Loading state */}
+      {isLoading && (
+        <Box sx={{ py: 8, textAlign: 'center' }}>
+          <CircularProgress size={40} />
+        </Box>
+      )}
+
+      {/* Empty state for campaigns */}
+      {!isLoading && (!campaigns || campaigns.length === 0) && (
+        <Box sx={{ py: 8, textAlign: 'center' }}>
+          <EmptyContent 
+            title="No campaigns yet" 
+            description="Create your first campaign by clicking the 'New Campaign' button"
+            sx={{ py: 5 }}
+          />
+        </Box>
+      )}
+
+      {/* Campaign cards */}
+      {!isLoading && campaigns && campaigns.length > 0 && (
+        <Box
+          gap={2}
+          display="grid"
+          gridTemplateColumns={{
+            xs: 'repeat(1, 1fr)',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
+          }}
+        >
+          {currentCampaigns.map((campaign) => (
+            <Card
+              key={campaign.id}
+              onClick={() => handleViewCampaign(campaign.id)}
+              sx={{
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+                bgcolor: 'background.default',
+                borderRadius: '15px',
+                border: '1.2px solid',
+                borderColor: 'divider',
+                position: 'relative',
+                mb: -0.5,
+                height: 240,
+                '&:hover': {
+                  borderColor: '#1340ff',
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              {/* Campaign Image */}
+              <Box sx={{ position: 'relative', height: 120, overflow: 'hidden' }}>
+                <Image
+                  alt={campaign?.name}
+                  src={campaign?.campaignBrief?.images?.[0] || '/assets/images/placeholder.jpg'}
+                  sx={{
+                    height: '100%',
+                    width: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'center',
+                  }}
+                />
+                <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
+                  <Chip
+                    label={
+                      (campaign.status === 'PENDING_CSM_REVIEW' || campaign.status === 'SCHEDULED') ? 'PENDING' : campaign.status
+                    }
+                    sx={{
+                      backgroundColor: 'white',
+                      color: '#48484a',
+                      fontWeight: 600,
+                      fontSize: '0.7rem',
+                      borderRadius: '5px',
+                      height: '24px',
+                      border: '1.2px solid #e7e7e7',
+                      borderBottom: '3px solid #e7e7e7',
+                      '& .MuiChip-label': {
+                        padding: '0 5px',
+                      },
+                      '&:hover': {
+                        backgroundColor: 'white',
+                      },
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              {/* Campaign Content */}
+              <Box sx={{ position: 'relative', pt: 1, px: 2, pb: 1.5 }}>
+                <Avatar
+                  src={campaign?.brand?.logo || campaign?.company?.logo}
+                  alt={campaign?.brand?.name || campaign?.company?.name}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    border: '2px solid #ebebeb',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    top: -25,
+                    left: 12,
+                  }}
+                >
+                  {campaign?.name?.charAt(0)}
+                </Avatar>
+                
+                <Box sx={{ mt: 0.5 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 650,
+                      mb: -0.1,
+                      pb: 0.2,
+                      mt: 0.6,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontSize: '1rem',
+                    }}
+                  >
+                    {campaign?.name}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mb: 1.2,
+                      color: '#8e8e93',
+                      fontSize: '0.8rem',
+                      fontWeight: 550,
+                    }}
+                  >
+                    {campaign?.brand?.name || campaign?.company?.name || 'Client Campaign'}
+                  </Typography>
+                </Box>
+
+                <Stack spacing={0.4}>
+                  <Stack direction="row" alignItems="center" spacing={0.8}>
+                    <img
+                      src="/assets/icons/overview/IndustriesTag.svg"
+                      alt="Industries"
+                      style={{
+                        width: 14,
+                        height: 14,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#8e8e93',
+                        fontSize: '0.75rem',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {campaign?.campaignBrief?.industries || 'General'}
+                    </Typography>
+                  </Stack>
+
+                  <Stack direction="row" alignItems="center" justifyContent="space-between">
+                    <Stack direction="row" alignItems="center" spacing={0.8}>
+                      <img
+                        src="/assets/icons/overview/SmallCalendar.svg"
+                        alt="Calendar"
+                        style={{
+                          width: 14,
+                          height: 14,
+                        }}
+                      />
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: '#8e8e93',
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {campaign?.campaignBrief?.startDate && campaign?.campaignBrief?.endDate
+                          ? `${dayjs(campaign?.campaignBrief?.startDate).format('D MMM YYYY')} - ${dayjs(
+                              campaign?.campaignBrief?.endDate
+                            ).format('D MMM YYYY')}`
+                          : 'Dates TBD'
+                        }
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Stack>
+              </Box>
+            </Card>
+          ))}
+        </Box>
+      )}
+      
+      {/* Pagination for Card View */}
+      {totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Typography
+              onClick={() => handlePageChange(null, Math.max(1, currentPage - 1))}
+              sx={{
+                cursor: currentPage === 1 ? 'default' : 'pointer',
+                color: currentPage === 1 ? '#C7C7CC' : '#000000',
+                fontSize: '1rem',
+                fontWeight: 500,
+                userSelect: 'none',
+              }}
+            >
+              &lt;
+            </Typography>
+            
+            {getPaginationRange().map((page, index) => (
+              page === '...' ? (
+                <Typography key={`dots-${index}`} sx={{ color: '#8E8E93', fontSize: '1rem' }}>
+                  ...
+                </Typography>
+              ) : (
+                <Typography
+                  key={page}
+                  onClick={() => handlePageChange(null, page)}
+                  sx={{
+                    cursor: 'pointer',
+                    color: currentPage === page ? '#1340FF' : '#000000',
+                    fontSize: '1rem',
+                    fontWeight: currentPage === page ? 700 : 500,
+                    userSelect: 'none',
+                    '&:hover': {
+                      color: currentPage === page ? '#1340FF' : '#666666',
+                    }
+                  }}
+                >
+                  {page}
+                </Typography>
+              )
+            ))}
+            
+            <Typography
+              onClick={() => handlePageChange(null, Math.min(totalPages, currentPage + 1))}
+              sx={{
+                cursor: currentPage === totalPages ? 'default' : 'pointer',
+                color: currentPage === totalPages ? '#C7C7CC' : '#000000',
+                fontSize: '1rem',
+                fontWeight: 500,
+                userSelect: 'none',
+              }}
+            >
+              &gt;
+            </Typography>
+          </Stack>
+        </Box>
+      )}
     </Box>
   );
 
@@ -886,7 +1252,7 @@ const ClientDashboard = () => {
       
       <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
-          {renderCampaignTable}
+          {viewMode === 'table' ? renderCampaignTable : renderCampaignCards}
         </Grid>
         <Grid item xs={12} lg={4}>
           {renderSidebar}
@@ -959,7 +1325,7 @@ const ClientDashboard = () => {
           sessionStorage.removeItem('profileModalShown');
           console.log('Session storage cleared');
           // Refresh company data
-          checkClientCompany();
+          checkClientCompanyAndProfile();
           // Don't call checkProfileCompletion here as it might show modal again
           // Instead, just verify the completion was saved
           setTimeout(() => {

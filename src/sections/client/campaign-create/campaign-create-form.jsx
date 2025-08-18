@@ -373,10 +373,10 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         socialMediaPlatform: Array.isArray(data.socialMediaPlatform) ? data.socialMediaPlatform : [],
         videoAngle: Array.isArray(data.videoAngle) ? data.videoAngle : [],
         campaignDo: Array.isArray(data.campaignDo)
-          ? data.campaignDo.filter(Boolean).map(item => typeof item === 'object' ? (item.value || '') : item).filter(Boolean)
+          ? data.campaignDo.filter(Boolean).map(item => typeof item === 'object' ? item : { value: item }).filter(item => item.value)
           : [],
         campaignDont: Array.isArray(data.campaignDont)
-          ? data.campaignDont.filter(Boolean).map(item => typeof item === 'object' ? (item.value || '') : item).filter(Boolean)
+          ? data.campaignDont.filter(Boolean).map(item => typeof item === 'object' ? item : { value: item }).filter(item => item.value)
           : [],
       };
       

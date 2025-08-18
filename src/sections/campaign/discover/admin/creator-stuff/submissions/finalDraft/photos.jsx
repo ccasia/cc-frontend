@@ -1422,4 +1422,4 @@ Photos.propTypes = {
   handleAdminSendToCreator: PropTypes.func,
 };
 
-export default Photos;
+export default Photos; 
