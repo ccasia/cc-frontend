@@ -104,7 +104,9 @@ const CampaignView = () => {
     return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
-  const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher);
+  const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher, {
+    revalidateFirstPage: false,
+  });
   
   // Make mutate function available globally for campaign activation
   React.useEffect(() => {
@@ -115,7 +117,7 @@ const CampaignView = () => {
   }, [mutate]);
 
   const dataFiltered = useMemo(
-    () => (data ? data?.flatMap((item) => item?.data?.campaigns).reverse() : []),
+    () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
     [data]
   );
 

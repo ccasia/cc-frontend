@@ -721,7 +721,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                     whiteSpace: 'pre-wrap',
                   }}
                 >
-                  {currentPitch?.content || 'No content available'}
+                  {currentPitch?.content?.replace(/<[^>]*>/g, '') || 'No content available'}
                 </Typography>
               </Box>
             </Box>

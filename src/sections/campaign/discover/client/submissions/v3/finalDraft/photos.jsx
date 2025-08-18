@@ -341,7 +341,7 @@ const PhotoCard = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 textTransform: 'none',
-              }}
+            }}
             >
               APPROVED
             </Box>
@@ -460,13 +460,13 @@ const PhotoCard = ({
               minRows={3}
               placeholder="Provide feedback for the creator."
               size="small"
-            />
-
+              />
+              
             <RHFMultiSelect
               name="reasons"
-              label="Reasons for Changes"
-              options={options_changes}
-            />
+                  label="Reasons for Changes"
+                  options={options_changes}
+                />
 
             <Stack spacing={1.5} sx={{ mt: 2 }}>
               <Stack direction="row" spacing={1.5}>
