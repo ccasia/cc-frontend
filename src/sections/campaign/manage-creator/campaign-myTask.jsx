@@ -33,7 +33,25 @@ import CampaignFinalDraft from './submissions/campaign-final-draft';
  * - Proper status display and completion indicators for both V2 and V3 flows
  * - New status flow: CLIENT_FEEDBACK (In Review) → REVISION_REQUESTED (Changes Required)
  * 
+ * IMPORTANT: V3 Flow Feedback Logic
+ * - CLIENT_FEEDBACK: Client requested changes, admin is reviewing (creator waits)
+ * - CHANGES_REQUIRED: Admin sent changes to creator (creator works on revisions)
+ * - SENT_TO_CLIENT: Admin approved, sent to client for review (creator waits)
+ * - CLIENT_APPROVED: Client approved the submission (stage completed)
+ * 
+ * IMPORTANT: 1st Draft vs 2nd Draft Clarity
+ * - When 2nd Draft is active, 1st Draft shows as "In Review" to prevent confusion
+ * - When 1st Draft has "Changes Required", it shows as "Completed" (green) to make creators focus on 2nd Draft
+ * - This ensures creators know they should work on the 2nd Draft, not the 1st Draft
+ * - Simple color scheme: Green for completed, Yellow for everything else
+ * 
+ * This prevents multiple feedback notifications and ensures feedback appears in correct sections.
+ * 
  * Status: ✅ V3 Flow Compatibility Implemented with CLIENT_FEEDBACK Support
+ * Status: ✅ 1st Draft vs 2nd Draft Confusion Prevention Implemented
+ * Status: ✅ Simplified Color Scheme (Yellow/Green Only)
+ * Status: ✅ 1st Draft "Changes Required" Shows as Completed (Green)
+ * Status: ✅ Separate "Changes Required" Section Removed - Feedback Integrated into Main Draft Submission
  */
 export const defaultSubmission = [
   {
@@ -105,30 +123,78 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   );
 
   useEffect(() => {
+    // Track which events we've already handled to prevent duplicates
+    const handledEvents = new Set();
+    
     socket?.on('draft', () => {
-      mutate(endpoints.campaign.draft.getFirstDraftForCreator(campaign.id));
+      if (!handledEvents.has('draft')) {
+        handledEvents.add('draft');
+        console.log('🔄 Draft event received, updating first draft data');
+        mutate(endpoints.campaign.draft.getFirstDraftForCreator(campaign.id));
+        // Remove from handled events after a delay to allow future events
+        setTimeout(() => handledEvents.delete('draft'), 5000);
+      }
     });
 
-    socket?.on('newFeedback', () => submissionMutate());
+    socket?.on('newFeedback', () => {
+      if (!handledEvents.has('newFeedback')) {
+        handledEvents.add('newFeedback');
+        console.log('🔄 New feedback event received, updating submissions');
+        submissionMutate();
+        // Remove from handled events after a delay to allow future events
+        setTimeout(() => handledEvents.delete('newFeedback'), 5000);
+      }
+    });
+
     socket?.on('agreementReady', () => {
-      mutate(endpoints.auth.me);
+      if (!handledEvents.has('agreementReady')) {
+        handledEvents.add('agreementReady');
+        console.log('🔄 Agreement ready event received, updating user data');
+        mutate(endpoints.auth.me);
+        // Remove from handled events after a delay to allow future events
+        setTimeout(() => handledEvents.delete('agreementReady'), 5000);
+      }
     });
 
-    // V3 flow socket events
+    // V3 flow socket events with duplicate prevention
     socket?.on('submissionStatusChanged', () => {
-      submissionMutate();
+      if (!handledEvents.has('submissionStatusChanged')) {
+        handledEvents.add('submissionStatusChanged');
+        console.log('🔄 Submission status changed event received (V3), updating submissions');
+        submissionMutate();
+        // Remove from handled events after a delay to allow future events
+        setTimeout(() => handledEvents.delete('submissionStatusChanged'), 5000);
+      }
     });
 
     socket?.on('draftSubmitted', () => {
-      submissionMutate();
+      if (!handledEvents.has('draftSubmitted')) {
+        handledEvents.add('draftSubmitted');
+        console.log('🔄 Draft submitted event received (V3), updating submissions');
+        submissionMutate();
+        // Remove from handled events after a delay to allow future events
+        setTimeout(() => handledEvents.delete('draftSubmitted'), 5000);
+      }
     });
 
     socket?.on('draftApproved', () => {
-      submissionMutate();
+      if (!handledEvents.has('draftApproved')) {
+        handledEvents.add('draftApproved');
+        console.log('🔄 Draft approved event received (V3), updating submissions');
+        submissionMutate();
+        // Remove from handled events after a delay to allow future events
+        setTimeout(() => handledEvents.delete('draftApproved'), 5000);
+      }
     });
 
     socket?.on('changesRequested', () => {
-      submissionMutate();
+      if (!handledEvents.has('changesRequested')) {
+        handledEvents.add('changesRequested');
+        console.log('🔄 Changes requested event received (V3), updating submissions');
+        submissionMutate();
+        // Remove from handled events after a delay to allow future events
+        setTimeout(() => handledEvents.delete('changesRequested'), 5000);
+      }
     });
 
     return () => {
@@ -279,8 +345,9 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     }
     
     // Special case for First Draft in V3 - CHANGES_REQUIRED means it's been reviewed and sent to creator
+    // But only if it's not in CLIENT_FEEDBACK status (which means client requested changes)
     if (stageType === 'FIRST_DRAFT' && stageValue.status === 'CHANGES_REQUIRED') {
-      return true;
+      return true; // Show as completed so creator focuses on 2nd Draft
     }
     
     // CLIENT_FEEDBACK means client requested changes but admin hasn't sent to creator yet
@@ -297,9 +364,28 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     const stageValue = value(stageType);
     if (!stageValue) return false;
     
-    return stageValue.status === 'IN_PROGRESS' || 
-           stageValue.status === 'PENDING_REVIEW' ||
-           stageValue.status === 'CHANGES_REQUIRED' ||
+    // Only show as "in progress" if it's actually being worked on
+    return stageValue.status === 'IN_PROGRESS';
+  }, [value]);
+
+  // Helper function to check if a stage needs changes (V2/V3 compatible)
+  const isStageNeedsChanges = useCallback((stageType) => {
+    const stageValue = value(stageType);
+    if (!stageValue) return false;
+    
+    // Only show as "needs changes" if changes are actually required
+    return stageValue.status === 'CHANGES_REQUIRED';
+  }, [value]);
+
+  // Helper function to check if a stage is pending review (V2/V3 compatible)
+  const isStagePendingReview = useCallback((stageType) => {
+    const stageValue = value(stageType);
+    if (!stageValue) return false;
+    
+    // Show as "pending review" if it's waiting for admin/client review
+    return stageValue.status === 'PENDING_REVIEW' || 
+           stageValue.status === 'SENT_TO_CLIENT' ||
+           stageValue.status === 'SENT_TO_ADMIN' ||
            stageValue.status === 'CLIENT_FEEDBACK';
   }, [value]);
 
@@ -307,6 +393,29 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const getStatusText = useCallback((stageType) => {
     const stageValue = value(stageType);
     if (!stageValue) return 'Not Started';
+    
+    // Special handling for 1st Draft when 2nd Draft is active
+    // This prevents confusion about which stage creators should work on
+    if (stageType === 'FIRST_DRAFT') {
+      const finalDraftSubmission = value('FINAL_DRAFT');
+      
+      // If 2nd Draft exists and is active, show 1st Draft as "In Review" 
+      // to prevent confusion about which stage to work on
+      if (finalDraftSubmission && 
+          (finalDraftSubmission.status === 'IN_PROGRESS' || 
+           finalDraftSubmission.status === 'PENDING_REVIEW' ||
+           finalDraftSubmission.status === 'SENT_TO_CLIENT' ||
+           finalDraftSubmission.status === 'CLIENT_FEEDBACK' ||
+           finalDraftSubmission.status === 'CHANGES_REQUIRED')) {
+        return 'In Review';
+      }
+      
+      // Special case: Show 1st Draft as "Completed" when it has changes required
+      // This makes creators focus on 2nd Draft instead
+      if (stageValue.status === 'CHANGES_REQUIRED') {
+        return 'Completed';
+      }
+    }
     
     switch (stageValue.status) {
       case 'NOT_STARTED':
@@ -332,6 +441,30 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     }
   }, [value]);
 
+  // Helper function to get status color for the label
+  const getStatusColor = useCallback((stageType) => {
+    const stageValue = value(stageType);
+    if (!stageValue) return '#f6c945'; // Default yellow for not started
+    
+    if (isStageCompleted(stageType)) {
+      return '#5abc6f'; // Green for completed
+    }
+    
+    return '#f6c945'; // Yellow for everything else (in progress, pending, etc.)
+  }, [value, isStageCompleted]);
+
+  // Helper function to get status icon
+  const getStatusIcon = useCallback((stageType) => {
+    const stageValue = value(stageType);
+    if (!stageValue) return 'mdi:clock';
+    
+    if (isStageCompleted(stageType)) {
+      return 'mingcute:check-circle-fill';
+    }
+    
+    return 'mdi:clock';
+  }, [value, isStageCompleted]);
+
   const handleStageClick = (stageType) => {
     console.log('Stage clicked:', stageType);
     console.log('Current selectedStage:', selectedStage);
@@ -351,13 +484,77 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
 
   const isNewStage = (stageType) => {
     const stageValue = value(stageType);
-    return (
-      !viewedStages.includes(stageType) &&
-      !isStageCompleted(stageType) &&
-      !(stageType === 'FIRST_DRAFT' && stageValue?.status === 'CHANGES_REQUIRED') &&
-      !(stageType === 'FIRST_DRAFT' && stageValue?.status === 'CLIENT_FEEDBACK')
-    );
+    
+    // Don't show NEW if stage is already viewed
+    if (viewedStages.includes(stageType)) {
+      return false;
+    }
+    
+    // Don't show NEW if stage is completed
+    if (isStageCompleted(stageType)) {
+      return false;
+    }
+    
+    // Don't show NEW for stages that are just waiting for review/feedback
+    // These don't require creator action
+    if (isStagePendingReview(stageType)) {
+      return false;
+    }
+    
+    // Don't show NEW for stages that need changes (creator already knows about this)
+    if (isStageNeedsChanges(stageType)) {
+      return false;
+    }
+    
+    // Only show NEW for stages that are actually ready for creator to work on
+    return stageValue?.status === 'IN_PROGRESS' || stageValue?.status === 'NOT_STARTED';
   };
+
+  // Debug function to track feedback flow and prevent confusion
+  const debugFeedbackFlow = useCallback(() => {
+    if (!submissions) return;
+    
+    console.log('🔍 Debugging Feedback Flow for Campaign:', campaign.name);
+    console.log('📊 All Submissions:', submissions);
+    
+    submissions.forEach((submission) => {
+      const { submissionType, status, id } = submission;
+      console.log(`  ${submissionType?.type}: ${status} (ID: ${id})`);
+      
+      // Track feedback flow for V3
+      if (submissionType?.type === 'FIRST_DRAFT') {
+        if (status === 'CHANGES_REQUIRED') {
+          console.log('    ⚠️  Creator needs to make changes based on admin feedback');
+        } else if (status === 'CLIENT_FEEDBACK') {
+          console.log('    🔍 Client requested changes, admin is reviewing');
+        } else if (status === 'SENT_TO_CLIENT') {
+          console.log('    🔍 Admin approved, sent to client for review');
+        } else if (status === 'CLIENT_APPROVED') {
+          console.log('    ✅ Client approved, stage completed');
+        }
+      }
+      
+      if (submissionType?.type === 'FINAL_DRAFT') {
+        if (status === 'CHANGES_REQUIRED') {
+          console.log('    ⚠️  Creator needs to make changes based on admin feedback');
+        } else if (status === 'SENT_TO_CLIENT') {
+          console.log('    🔍 Admin approved, sent to client for review');
+        } else if (status === 'CLIENT_APPROVED') {
+          console.log('    ✅ Client approved, stage completed');
+        }
+      }
+    });
+    
+    console.log('🎯 Current Stage Selection:', selectedStage);
+    console.log('👀 Viewed Stages:', viewedStages);
+  }, [submissions, campaign.name, selectedStage, viewedStages]);
+
+  // Call debug function when submissions change
+  useEffect(() => {
+    if (submissions && submissions.length > 0) {
+      debugFeedbackFlow();
+    }
+  }, [submissions, debugFeedbackFlow]);
 
   if (submissionLoading || isLoading) {
     return (
@@ -463,18 +660,14 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        bgcolor: isStageCompleted(item.type) ? '#5abc6f' : '#f6c945',
+                        bgcolor: getStatusColor(item.type),
                       }}
                     >
-                      {isStageCompleted(item.type) ? (
-                        <Iconify
-                          icon="mingcute:check-circle-fill"
-                          sx={{ color: '#fff' }}
-                          width={20}
-                        />
-                      ) : (
-                        <Iconify icon="mdi:clock" sx={{ color: '#fff' }} width={20} />
-                      )}
+                      <Iconify
+                        icon={getStatusIcon(item.type)}
+                        sx={{ color: '#fff' }}
+                        width={20}
+                      />
                     </Label>
 
                     <Box sx={{ flexGrow: 1 }}>

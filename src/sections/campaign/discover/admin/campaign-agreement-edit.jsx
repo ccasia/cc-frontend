@@ -61,9 +61,14 @@ const CURRENCY_PREFIXES = {
 };
 
 const formatAmount = (value) => {
+  if (!value || value === '') return '';
+  
   const cleanValue = value.toString().replace(/[^\d.]/g, '');
+  if (!cleanValue) return '';
+  
   const parts = cleanValue.split('.');
   if (parts.length > 2) return `${parts[0]}.${parts.slice(1).join('')}`;
+  
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
@@ -336,13 +341,12 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
                     ),
                   }}
                   onChange={(e) => {
-                    const rawValue = e.target.value.replace(/,/g, '');
-                    if (!Number.isNaN(rawValue) && rawValue !== '') {
+                    const rawValue = e.target.value.replace(/[^\d.]/g, '');
+                    if (rawValue === '' || !Number.isNaN(rawValue)) {
                       setValue('paymentAmount', rawValue);
-                      e.target.value = formatAmount(rawValue);
                     }
                   }}
-                  value={formatAmount(watch('paymentAmount') || '')}
+                  value={watch('paymentAmount') ? formatAmount(watch('paymentAmount')) : ''}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1,

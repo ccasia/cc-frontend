@@ -1750,73 +1750,7 @@ const CampaignFirstDraft = ({
               </Box>
             )}
 
-            {/* Resubmission Section for CHANGES_REQUIRED */}
-            {submission?.status === 'CHANGES_REQUIRED' && (
-              <Stack justifyContent="center" alignItems="center" spacing={3}>
-                <Box
-                  sx={{
-                    width: 100,
-                    height: 100,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '50%',
-                    bgcolor: '#ff9500',
-                    fontSize: '50px',
-                    mb: -2,
-                  }}
-                >
-                  📝
-                </Box>
-                <Stack spacing={2} alignItems="center">
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontFamily: 'Instrument Serif, serif',
-                      fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                      fontWeight: 550,
-                    }}
-                  >
-                    Changes Required
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: '#636366',
-                      textAlign: 'center',
-                      maxWidth: 500,
-                    }}
-                  >
-                    Please review the feedback below and resubmit your first draft with the requested changes.
-                  </Typography>
-                  
-                  <Button
-                    onClick={() => {
-                      // Scroll to the upload section or show upload modals
-                      setDraftVideoModalOpen(true);
-                    }}
-                    variant="contained"
-                    startIcon={<Iconify icon="solar:upload-bold" width={24} />}
-                    sx={{
-                      bgcolor: '#203ff5',
-                      color: 'white',
-                      borderBottom: 3.5,
-                      borderBottomColor: '#112286',
-                      borderRadius: 1.5,
-                      px: 3,
-                      py: 1.5,
-                      mt: 2,
-                      '&:hover': {
-                        bgcolor: '#203ff5',
-                        opacity: 0.9,
-                      },
-                    }}
-                  >
-                    Resubmit First Draft
-                  </Button>
-                </Stack>
-              </Stack>
-            )}
+   
 
             {(submission?.status === 'APPROVED' || submission?.status === 'CLIENT_APPROVED') && (
               <Stack justifyContent="center" alignItems="center" spacing={2}>
