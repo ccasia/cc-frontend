@@ -27,6 +27,7 @@ import {
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import dayjs from 'dayjs';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -506,52 +507,11 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Box>
             </Box>
 
-            {/* Languages and Interests Grid */}
-            <Grid container spacing={2} sx={{ pb: 2 }}>
-              {/* Languages Section */}
-              {currentPitch?.user?.creator?.languages?.length > 0 && (
-                <Grid item xs={12} md={0.1}>
-                  <Box>
-                    <Typography variant="subtitle2" color="#8E8E93" sx={{ mb: 1 }}>
-                      Languages
-                    </Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: -1.5 }}>
-                      {currentPitch.user.creator.languages.map((language, index) => (
-                        <Chip
-                          key={index}
-                          label={language.toUpperCase()}
-                          size="medium"
-                          sx={{
-                            bgcolor: '#FFF',
-                            border: '1px solid #EBEBEB',
-                            borderRadius: 1,
-                            color: '#8E8E93',
-                            height: '34px',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            cursor: 'default',
-                            '& .MuiChip-label': {
-                              fontWeight: 600,
-                              px: 1.5,
-                              height: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginTop: '-3px',
-                              fontSize: '0.8rem',
-                            },
-                            '&:hover': {
-                              bgcolor: '#FFF',
-                            },
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Box>
-                </Grid>
-              )}
 
-              {/* Stats Section  */}
-              <Grid item xs={12} md={11.9}>
+
+            {/* Stats Section */}
+            <Grid container spacing={2} sx={{ pb: 2 }}>
+              <Grid item xs={12} md={12}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -563,7 +523,123 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     pr: 0,
                   }}
                 >
-                  <Stack direction="row" spacing={0} width="100%" justifyContent="flex-end">
+                  <Stack direction="row" spacing={0} width="100%" justifyContent="space-between">
+                    {/* Left side: Languages, Age, Pronouns */}
+                    <Stack direction="row" spacing={3} alignItems="center">
+              {/* Languages Section */}
+                  <Box>
+                        <Stack spacing={0.5} alignItems="flex-start">
+                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 500, fontSize: '12px' }}>
+                      Languages
+                    </Typography>
+                          {currentPitch?.user?.creator?.languages?.length > 0 ? (
+                            <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                              {Array.isArray(currentPitch.user.creator.languages) && 
+                                currentPitch.user.creator.languages.slice(0, 2).map((language, index) => (
+                        <Chip
+                          key={index}
+                                  label={typeof language === 'string' ? language.toUpperCase() : String(language).toUpperCase()}
+                                  size="small"
+                          sx={{
+                            bgcolor: '#FFF',
+                            border: '1px solid #EBEBEB',
+                                    borderRadius: 0.5,
+                            color: '#8E8E93',
+                                    height: '24px',
+                                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                            cursor: 'default',
+                            '& .MuiChip-label': {
+                              fontWeight: 600,
+                                      px: 1,
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                                      marginTop: '-2px',
+                                      fontSize: '0.7rem',
+                            },
+                            '&:hover': {
+                              bgcolor: '#FFF',
+                            },
+                          }}
+                        />
+                      ))}
+                              {currentPitch?.user?.creator?.languages?.length > 2 && (
+                                <Typography variant="caption" color="#8E8E93" sx={{ fontSize: '0.7rem', alignSelf: 'center' }}>
+                                  +{currentPitch.user.creator.languages.length - 2}
+                                </Typography>
+                              )}
+                            </Stack>
+                          ) : (
+                            <Typography variant="caption" color="#8E8E93" sx={{ fontStyle: 'italic', fontSize: '11px' }}>
+                              No languages
+                            </Typography>
+                          )}
+                    </Stack>
+                  </Box>
+
+                      {/* Age Section */}
+                      <Box>
+                        <Stack spacing={0.5} alignItems="flex-start">
+                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 500, fontSize: '12px' }}>
+                            Age
+                          </Typography>
+                          {currentPitch?.user?.creator?.birthDate ? (
+                            <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px' }}>
+                              {dayjs().diff(dayjs(currentPitch.user.creator.birthDate), 'year')}
+                            </Typography>
+                          ) : (
+                            <Typography variant="caption" color="#8E8E93" sx={{ fontStyle: 'italic', fontSize: '11px' }}>
+                              N/A
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Box>
+
+                      {/* Pronouns Section */}
+                      <Box>
+                        <Stack spacing={0.5} alignItems="flex-start">
+                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 500, fontSize: '12px' }}>
+                            Pronouns
+                          </Typography>
+                          {currentPitch?.user?.creator?.pronounce ? (
+                            <Chip
+                              label={currentPitch.user.creator.pronounce}
+                              size="small"
+                  sx={{
+                                bgcolor: '#FFF',
+                                border: '1px solid #EBEBEB',
+                                borderRadius: 0.5,
+                                color: '#8E8E93',
+                                height: '24px',
+                                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                                cursor: 'default',
+                                '& .MuiChip-label': {
+                                  fontWeight: 600,
+                                  px: 1,
+                                  height: '100%',
+                    display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginTop: '-2px',
+                                  fontSize: '0.7rem',
+                                },
+                                '&:hover': {
+                                  bgcolor: '#FFF',
+                                },
+                              }}
+                            />
+                          ) : (
+                            <Typography variant="caption" color="#8E8E93" sx={{ fontStyle: 'italic', fontSize: '11px' }}>
+                              N/A
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Box>
+                    </Stack>
+
+                    {/* Right side: Stats with gap */}
+                    <Stack direction="row" spacing={0} sx={{ ml: 4 }}>
                     {/* First stat */}
                     <Box
                       sx={{
@@ -674,6 +750,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                         </Typography>
                       </Stack>
                     </Box>
+                    </Stack>
                   </Stack>
                 </Box>
               </Grid>
@@ -885,8 +962,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       lineHeight: 1.5,
                       whiteSpace: 'pre-wrap',
                     }}
-                    dangerouslySetInnerHTML={{ __html: currentPitch.content }}
-                  />
+                  >
+                    {currentPitch.content?.replace(/<[^>]*>/g, '') || ''}
+                  </Typography>
                 </Box>
               )}
             </Box>
