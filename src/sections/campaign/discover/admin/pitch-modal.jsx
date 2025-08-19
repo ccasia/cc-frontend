@@ -149,6 +149,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
         console.log('Using V3 endpoint with pitch ID:', v3PitchId);
         
+        
         // Check user role to call the correct endpoint
         if (user?.role === 'client') {
           // Client approves pitch
@@ -161,7 +162,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         }
       } else {
         // Use V2 endpoint for admin-created campaigns
-        // Only send totalUGCVideos for admin-created campaigns, not client-created ones
         const requestData = {
           pitchId: pitch.id,
           status: 'approved',
