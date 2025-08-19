@@ -67,6 +67,7 @@ import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitche
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
+import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -86,6 +87,7 @@ const clientAllowedTabs = [
   'campaign-content',
   'creator-master-list',
   'deliverables',
+  'submissions-v4',
   'analytics',
 ];
 
@@ -291,6 +293,7 @@ const CampaignDetailView = ({ id }) => {
                 { label: 'Campaign Details', value: 'campaign-content' },
                 { label: 'Creator Master List', value: 'creator-master-list' },
                 { label: 'Creator Deliverables', value: 'deliverables' },
+                { label: 'Creator Submissions (V4)', value: 'submissions-v4' },
                 { label: 'Campaign Analytics', value: 'analytics' },
               ]
             : // Admin/other user tabs
@@ -321,6 +324,10 @@ const CampaignDetailView = ({ id }) => {
                 {
                   label: 'Creator Deliverables',
                   value: 'deliverables',
+                },
+                {
+                  label: 'Creator Submissions (V4)',
+                  value: 'submissions-v4',
                 },
                 {
                   label: 'Campaign Analytics',
@@ -485,6 +492,7 @@ const CampaignDetailView = ({ id }) => {
     ) : (
       <CampaignCreatorDeliverables campaign={campaign} />
     ),
+    'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} />,
     analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />,
   };
 
