@@ -4,42 +4,11 @@ import React, { useMemo } from 'react';
 
 import { Box, Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
 
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
-
 import { formatCurrencyAmount } from 'src/utils/currency';
 
 import Label from 'src/components/label';
 
 const InvoiceItem = ({ invoice, selected, onSelectRow, openEditInvoice }) => {
-  // Currency mapping
-  const CURRENCY_PREFIXES = {
-    SGD: '$',
-    MYR: 'RM',
-    AUD: '$',
-    JPY: '¥',
-    IDR: 'Rp',
-    USD: '$',
-  };
-
-  // Fetch creator agreement for the campaign
-  const campaignId = invoice?.campaign?.id;
-  const { data: agreements } = useGetAgreements(campaignId);
-
-  // Get the currency for this specific invoice
-  const invoiceCurrency = useMemo(() => {
-    if (!agreements?.length || !invoice?.creator?.user?.id) return 'MYR';
-
-    const creatorId = invoice.creator.user.id;
-    const agreement = agreements.find((ag) => ag.user?.id === creatorId);
-
-    return agreement?.user?.shortlisted?.[0]?.currency || agreement?.currency || 'MYR';
-  }, [agreements, invoice?.creator?.user?.id]);
-
-  const formatAmount = (amount) => {
-    const numericAmount = parseFloat(amount.toString().replace(/[^0-9.-]+/g, ''));
-    const currencyPrefix = CURRENCY_PREFIXES[invoiceCurrency] || 'RM';
-    return `${currencyPrefix}${numericAmount.toLocaleString()}`;
-  };
 
   return (
     <TableRow
