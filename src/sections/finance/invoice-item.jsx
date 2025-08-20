@@ -1,10 +1,12 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
+
+import { Box, Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
 
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
-import { Box, Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
+import { formatCurrencyAmount } from 'src/utils/currency';
 
 import Label from 'src/components/label';
 
@@ -67,7 +69,9 @@ const InvoiceItem = ({ invoice, selected, onSelectRow, openEditInvoice }) => {
         <Typography variant="subtitle2">{dayjs(invoice?.createdAt).format('LL')}</Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="subtitle2">{formatAmount(invoice?.amount)}</Typography>
+        <Typography variant="subtitle2">
+          {formatCurrencyAmount(invoice?.amount, invoice?.currency || 'MYR')}
+        </Typography>
       </TableCell>
       <TableCell>
         <Label

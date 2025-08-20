@@ -27,7 +27,9 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
+import { formatCurrencyAmount } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { fDate, fTime, isAfter, isBetween } from 'src/utils/format-time';
 
@@ -50,7 +52,6 @@ import {
 } from 'src/components/table';
 
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 // ----------------------------------------------------------------------
 
@@ -204,8 +205,8 @@ export default function InvoiceListView({ campId, invoices }) {
         enqueueSnackbar(res?.data?.message);
 
         setTableData(deleteRow);
-      } catch (error) {
-        enqueueSnackbar(error?.message, {
+      } catch (err) {
+        enqueueSnackbar(err?.message, {
           variant: 'error',
         });
       } finally {
@@ -226,8 +227,8 @@ export default function InvoiceListView({ campId, invoices }) {
       const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
 
       setTableData(deleteRows);
-    } catch (error) {
-      enqueueSnackbar(error?.message, {
+    } catch (err) {
+      enqueueSnackbar(err?.message, {
         variant: 'error',
       });
     } finally {
@@ -701,9 +702,9 @@ export default function InvoiceListView({ campId, invoices }) {
                             />
                           </TableCell>
 
-                          <TableCell
-                            sx={{ width: 100 }}
-                          >{`${getCreatorAgreementCurrency(row)} ${row.amount || 0}`}</TableCell>
+                          <TableCell sx={{ width: 100 }}>
+                            {formatCurrencyAmount(row.amount, row.currency)}
+                          </TableCell>
 
                           <TableCell sx={{ width: 100 }}>
                             <Typography

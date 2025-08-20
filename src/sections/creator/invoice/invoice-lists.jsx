@@ -1,8 +1,6 @@
-import React, { useMemo } from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import React, { useMemo } from 'react';
 
 import {
   Box,
@@ -21,6 +19,10 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+
+import { formatCurrencyAmount } from 'src/utils/currency';
 
 import NewLabel from 'src/components/styleLabel/styleLabel';
 
@@ -133,10 +135,10 @@ const InvoiceLists = ({ invoices }) => {
                 </TableCell>
                 <TableCell>{dayjs(invoice.issued).format('LL')}</TableCell>
                 <TableCell>
-                  {(() => {
-                    const currencyConfig = getInvoiceCurrency(invoice);
-                    return `${currencyConfig.prefix} ${new Intl.NumberFormat(currencyConfig.locale, { minimumFractionDigits: 0 }).format(invoice.amount)}`;
-                  })()}
+                  {formatCurrencyAmount(
+                    invoice.amount,
+                    invoice.campaign.creatorAgreement[0]?.currency || 'MYR'
+                  )}
                 </TableCell>
                 <TableCell>
                   <NewLabel
