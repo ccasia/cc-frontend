@@ -17,7 +17,15 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
 } from '@mui/material';
+
+import axiosInstance from 'src/utils/axios';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -25,10 +33,16 @@ import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 // ----------------------------------------------------------------------
 
 export default function V4RawFootageSubmission({ submission, campaign, index = 1, onUpdate }) {
+  const { user } = useAuthContext();
   const [feedbackDialog, setFeedbackDialog] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
+  const [reasons, setReasons] = useState([]);
+
+  // Detect client role
+  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
+  const isClient = userRole.toLowerCase() === 'client';
 
   const rawFootage = submission.rawFootages?.[0]; // V4 has one raw footage per submission
 
