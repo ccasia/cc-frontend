@@ -154,10 +154,11 @@ const MediaKitCreator = () => {
     if (currentTab === 'tiktok') {
       return {
         followers: tiktok?.overview?.follower_count || 0,
-        engagement_rate: calculateEngagementRate(
-          (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0),
-          tiktok?.overview?.follower_count
-        ) || 0,
+        engagement_rate:
+          calculateEngagementRate(
+            (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0),
+            tiktok?.overview?.follower_count
+          ) || 0,
         averageLikes: tiktok?.medias?.averageLikes || 0,
         averageComments: tiktok?.medias?.averageComments || 0,
       };
