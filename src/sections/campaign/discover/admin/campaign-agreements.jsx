@@ -229,11 +229,7 @@ const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, o
         </DialogTitle>
         <DialogContent>
           <iframe
-            src={
-              isPendingReview && agreement?.submission?.content
-                ? agreement?.submission?.content
-                : url
-            }
+            src={agreement?.submission?.content || url}
             title="Agreement"
             style={{ width: '100%', height: '600px', border: 'none' }}
           />
