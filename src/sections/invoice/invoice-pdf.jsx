@@ -186,10 +186,10 @@ export default function InvoicePDF({ invoice, currentStatus }) {
               </View>
 
               <View style={styles.tableCell_2}>
-                <Text style={styles.subtitle2}>Title</Text>
+                <Text style={styles.subtitle2}>Client Name</Text>
               </View>
               <View style={styles.tableCell_2}>
-                <Text style={styles.subtitle2}>Description</Text>
+                <Text style={styles.subtitle2}>Campaign Name</Text>
               </View>
 
               <View style={[styles.tableCell_2]}>
@@ -205,14 +205,14 @@ export default function InvoicePDF({ invoice, currentStatus }) {
               </View>
 
               <View style={[styles.tableCell_2]}>
-                <Text>{invoice?.task.title}</Text>
+                <Text>{invoice?.campaign.company?.name || invoice?.campaign.brand?.name}</Text>
               </View>
               <View style={styles.tableCell_2}>
-                <Text>{invoice?.task.description}</Text>
+                <Text>{invoice?.campaign?.name}</Text>
               </View>
 
               <View style={[styles.tableCell_2]}>
-                <Text>{`RM${invoice?.amount}`}</Text>
+                <Text>{`${invoice.campaign.creatorAgreement?.[0].currency} ${invoice?.amount}`}</Text>
               </View>
             </View>
 
@@ -224,7 +224,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 <Text style={styles.h4}>Total</Text>
               </View>
               <View style={[styles.tableCell_3, styles.alignRight]}>
-                <Text style={styles.h4}>{`RM${invoice?.amount}`}</Text>
+                <Text style={styles.h4}>{`${invoice.campaign.creatorAgreement?.[0].currency} ${invoice?.amount}`}</Text>
               </View>
             </View>
           </View>

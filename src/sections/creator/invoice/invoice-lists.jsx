@@ -34,63 +34,6 @@ const StyledTableCell = styled(TableCell)(() => ({
 const InvoiceLists = ({ invoices }) => {
   const router = useRouter();
 
-  // Currency mapping for prefixes and locales
-  const CURRENCY_CONFIG = {
-    SGD: { prefix: '$', locale: 'en-SG' },
-    MYR: { prefix: 'RM', locale: 'en-MY' },
-    AUD: { prefix: '$', locale: 'en-AU' },
-    JPY: { prefix: '¥', locale: 'ja-JP' },
-    IDR: { prefix: 'Rp', locale: 'id-ID' },
-    USD: { prefix: '$', locale: 'en-US' },
-  };
-
-  // Get unique campaign IDs from invoices
-  const campaignIds = useMemo(() => {
-    if (!invoices?.length) return [];
-    return [...new Set(invoices.map((invoice) => invoice.campaign?.id).filter(Boolean))];
-  }, [invoices]);
-
-  // Fetch creator agreements for all campaigns
-  const agreementQueries = campaignIds.map((campaignId) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useGetAgreements(campaignId)
-  );
-
-  // Create a map of campaign ID to currency
-  const campaignCurrencyMap = useMemo(() => {
-    const map = new Map();
-
-    agreementQueries.forEach((query, index) => {
-      const campaignId = campaignIds[index];
-      if (query.data?.length) {
-        // Find the agreement for the current invoice's creator
-        query.data.forEach((agreement) => {
-          const currency =
-            agreement?.user?.shortlisted?.[0]?.currency || agreement?.currency || 'MYR'; // fallback to MYR
-          map.set(`${campaignId}-${agreement.user?.id}`, currency);
-        });
-      }
-    });
-
-    return map;
-  }, [agreementQueries, campaignIds]);
-
-  // Function to get currency for a specific invoice
-  const getInvoiceCurrency = (invoice) => {
-    const campaignId = invoice.campaign?.id;
-    const creatorId = invoice.invoiceFrom?.id || invoice.creator?.user?.id;
-
-    if (campaignId && creatorId) {
-      const currency = campaignCurrencyMap.get(`${campaignId}-${creatorId}`);
-      if (currency && CURRENCY_CONFIG[currency]) {
-        return CURRENCY_CONFIG[currency];
-      }
-    }
-
-    // Fallback to MYR
-    return CURRENCY_CONFIG.MYR;
-  };
-
   return (
     <Box>
       <TableContainer>
@@ -135,10 +78,7 @@ const InvoiceLists = ({ invoices }) => {
                 </TableCell>
                 <TableCell>{dayjs(invoice.issued).format('LL')}</TableCell>
                 <TableCell>
-                  {formatCurrencyAmount(
-                    invoice.amount,
-                    invoice.campaign.creatorAgreement[0]?.currency || 'MYR'
-                  )}
+                  {formatCurrencyAmount(invoice.amount, invoice.campaign?.creatorAgreement?.[0]?.currency || 'MYR')}
                 </TableCell>
                 <TableCell>
                   <NewLabel

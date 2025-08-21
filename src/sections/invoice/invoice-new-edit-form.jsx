@@ -729,11 +729,13 @@ export default function InvoiceNewEditForm({ id, creators }) {
           ...invoice?.task,
           campaignName: invoice?.campaign?.name,
           clientName: invoice?.campaign?.company?.name || invoice?.campaign?.brand?.name,
+          currency: invoice?.campaign?.creatorAgreement?.[0]?.currency || '',
         },
       ] || [
         {
           campaignName: '',
           clientName: '',
+          currency: '',
           // title: '',
           // description: '',
           service: '',
