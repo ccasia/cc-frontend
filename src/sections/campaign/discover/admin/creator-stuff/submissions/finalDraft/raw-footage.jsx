@@ -112,37 +112,85 @@ const RawFootageCard = ({
 
   // Get feedback for this specific raw footage
   const getRawFootageFeedback = () => {
-    // Check for individual feedback first (from deliverables API)
+    const allFeedbacks = [];
+    
+    // Add individual feedback first (includes approval comments)
     if (rawFootageItem.individualFeedback && rawFootageItem.individualFeedback.length > 0) {
-      return rawFootageItem.individualFeedback;
+      allFeedbacks.push(...rawFootageItem.individualFeedback);
     }
     
     // Get all feedback from submission (from deliverables API)
-    const allFeedbacks = [
+    const submissionFeedbacks = [
       ...(deliverables?.submissions?.flatMap(sub => sub.feedback) || []),
       ...(submission?.feedback || [])
     ];
 
-    // Filter feedback for this specific raw footage
-    const rawFootageSpecificFeedback = allFeedbacks
-      .filter(feedback => feedback.rawFootageToUpdate?.includes(rawFootageItem.id))
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+    // Filter feedback for this specific raw footage (change requests)
+    const rawFootageSpecificFeedback = submissionFeedbacks
+      .filter(feedback => feedback.rawFootageToUpdate?.includes(rawFootageItem.id));
+    
+    allFeedbacks.push(...rawFootageSpecificFeedback);
 
     // Also include client feedback for this submission (when raw footage status is CLIENT_FEEDBACK)
-    const clientFeedback = allFeedbacks
+    const clientFeedback = submissionFeedbacks
       .filter(feedback => {
         const isClient = feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client';
         const isFeedback = feedback.type === 'REASON' || feedback.type === 'COMMENT';
         const isClientFeedbackStatus = rawFootageItem.status === 'CLIENT_FEEDBACK';
         
         return isClient && isFeedback && isClientFeedbackStatus;
-      })
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+      });
 
-    return [...rawFootageSpecificFeedback, ...clientFeedback];
+    allFeedbacks.push(...clientFeedback);
+
+    // Remove duplicates based on ID and filter out empty comments
+    const uniqueFeedbacks = allFeedbacks
+      .filter((feedback, index, self) => 
+        index === self.findIndex((f) => f.id === feedback.id)
+      )
+      .filter(feedback => {
+        // Check if it's client feedback
+        const isClient = feedback?.admin?.role === 'client' || feedback?.role === 'client';
+        
+        // For client feedback, be more lenient - show if it has any content
+        if (isClient) {
+          const hasContent = feedback?.content && feedback.content.trim() !== '';
+          const hasRawFootageContent = feedback?.rawFootageContent && feedback.rawFootageContent.trim() !== '';
+          return hasContent || hasRawFootageContent;
+        }
+        
+        // For admin feedback, check for meaningful content (content, media updates, or reasons)
+        const hasContent = feedback?.content && feedback.content.trim() !== '';
+        const hasRawFootageContent = feedback?.rawFootageContent && feedback.rawFootageContent.trim() !== '';
+        const hasMediaUpdates = feedback?.rawFootageToUpdate?.length > 0;
+        const hasReasons = feedback?.reasons && feedback.reasons.length > 0;
+        
+        return hasContent || hasRawFootageContent || hasMediaUpdates || hasReasons;
+      });
+
+    // Sort by date (newest first)
+    return uniqueFeedbacks.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
   };
 
   const rawFootageFeedback = getRawFootageFeedback();
+
+  // Debug logging for feedback structure
+  useEffect(() => {
+    if (rawFootageFeedback.length > 0) {
+      console.log('🔍 RAW FOOTAGE FEEDBACK DEBUG:', {
+        rawFootageId: rawFootageItem.id,
+        rawFootageStatus: rawFootageItem.status,
+        totalFeedback: rawFootageFeedback.length,
+        feedbackTypes: rawFootageFeedback.map(f => ({
+          id: f.id,
+          type: f.type,
+          content: f.content,
+          admin: f.admin?.name,
+          createdAt: f.createdAt
+        }))
+      });
+    }
+  }, [rawFootageFeedback, rawFootageItem.id, rawFootageItem.status]);
 
   // Helper function to determine border color
   const getBorderColor = () => {
@@ -775,6 +823,19 @@ const RawFootageCard = ({
                       }}
                     />
                   )}
+                  {feedback.type === 'APPROVAL' && (
+                    <Chip
+                      label="Approval"
+                      size="small"
+                      sx={{
+                        bgcolor: 'success.lighter',
+                        color: 'success.darker',
+                        fontSize: '0.7rem',
+                        height: '20px',
+                      }}
+                    />
+                  )}
+
                 </Stack>
                 
                 <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>

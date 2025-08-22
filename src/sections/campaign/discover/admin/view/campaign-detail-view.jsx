@@ -236,6 +236,21 @@ const CampaignDetailView = ({ id }) => {
     [isClient]
   );
 
+  // Allow children to request tab switching via a window event
+  useEffect(() => {
+    const handleSwitchTab = (e) => {
+      const targetTab = e?.detail;
+      if (typeof targetTab !== 'string') return;
+      if (isClient && !clientAllowedTabs.includes(targetTab)) return;
+      try {
+        localStorage.setItem('campaigndetail', targetTab);
+      } catch (err) {}
+      setCurrentTab(targetTab);
+    };
+    window.addEventListener('switchCampaignTab', handleSwitchTab);
+    return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
+  }, [isClient]);
+
   const icons = (tab) => {
     if (tab.value === 'pitch' && campaign?.pitch?.length > 0) {
       const undecidedPitches = campaign.pitch.filter((pitch) => pitch.status === 'undecided');
@@ -304,7 +319,10 @@ const CampaignDetailView = ({ id }) => {
                       ? v3Pitches?.filter((p) => 
                           p.status === 'PENDING_REVIEW' || 
                           p.status === 'SENT_TO_CLIENT' ||
-                          p.status === 'undecided'
+                          p.status === 'undecided' ||
+                          p.status === 'APPROVED' ||
+                          p.status === 'AGREEMENT_PENDING' ||
+                          p.status === 'AGREEMENT_SUBMITTED'
                         ).length || 0
                       : campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0
                   })`,
