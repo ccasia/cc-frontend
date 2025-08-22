@@ -297,11 +297,18 @@ export const endpoints = {
       submitContent: '/api/submissions/v4/submit-content',
       approve: '/api/submissions/v4/approve',
       postingLink: '/api/submissions/v4/posting-link',
+      approvePostingLink: '/api/submissions/v4/posting-link/approve',
     },
     creator: {
       agreement: '/api/submission/submitAgreement',
       draftSubmission: '/api/submission/draftSubmission',
       postSubmission: '/api/submission/postSubmission',
+      v4: {
+        getMyV4Submissions: '/api/creator/submissions/v4',
+        getMyCampaignOverview: '/api/creator/submissions/v4/campaign-overview',
+        submitContent: '/api/creator/submissions/v4/submit-content',
+        updatePostingLink: '/api/creator/submissions/v4/posting-link',
+      },
     },
     admin: {
       agreement: '/api/submission/adminManageAgreementSubmission',
