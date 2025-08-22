@@ -31,6 +31,7 @@ const getStatusColor = (status) => {
       return 'warning';
     case 'APPROVED':
     case 'CLIENT_APPROVED':
+    case 'POSTED':
       return 'success';
     case 'CHANGES_REQUIRED':
     case 'REJECTED':
@@ -55,6 +56,8 @@ const getCreatorStatusLabel = (status) => {
       return 'Approved';
     case 'CLIENT_APPROVED':
       return 'Approved';
+    case 'POSTED':
+      return 'Posted';
     case 'CHANGES_REQUIRED':
       return 'Changes Required';
     case 'REJECTED':

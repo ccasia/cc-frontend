@@ -34,7 +34,7 @@ const CampaignDetailItem = ({ campaign }) => {
         <Stack direction="row" spacing={2.5} sx={{ mt: 2 }}>
           {[
             { value: 'tasks', label: campaign?.submissionVersion === 'v4' ? 'Activity' : 'Activity' },
-            ...(campaign?.submissionVersion === 'v4' ? [{ value: 'tasks-v4', label: 'Activity (v4)' }] : []),
+            ...(campaign?.submissionVersion === 'v4' ? [{ value: 'tasks-v4', label: 'Activity (V4)' }] : []),
             { value: 'info', label: 'Campaign Details' },
             { value: 'logistics', label: 'Logistics' },
           ].map((tab) => (
