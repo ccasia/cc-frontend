@@ -36,6 +36,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
 import useGetClientCampaigns from 'src/hooks/use-get-client-campaigns';
+import useGetV3Submissions from 'src/hooks/use-get-v3-submissions';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -91,14 +92,14 @@ const ClientDashboard = () => {
       
       // Handle profile completion modal
       if (!hasCompany) {
-        // Check if we've already shown the modal this session
-        const hasShownModal = sessionStorage.getItem('profileModalShown');
+      // Check if we've already shown the modal this session
+      const hasShownModal = sessionStorage.getItem('profileModalShown');
         if (hasShownModal !== 'true') {
           console.log('User has no company, showing profile completion modal');
-          sessionStorage.setItem('profileModalShown', 'true');
-          setTimeout(() => {
-            setShowProfileCompletion(true);
-          }, 1000);
+      sessionStorage.setItem('profileModalShown', 'true');
+      setTimeout(() => {
+        setShowProfileCompletion(true);
+      }, 1000);
         }
       } else {
         // Mark profile as completed in localStorage for future reference
@@ -118,6 +119,8 @@ const ClientDashboard = () => {
   };
   
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
+  // Fetch V3 submissions to compute counts across all campaigns
+  const { submissions: allSubmissions, isLoading: submissionsLoading } = useGetV3Submissions();
   const { 
     totalCredits, 
     usedCredits, 
@@ -139,6 +142,58 @@ const ClientDashboard = () => {
   };
 
   const remainingDays = calculateRemainingDays();
+
+  // Compute creators to approve and drafts to approve
+  const creatorsToApprove = React.useMemo(() => {
+    if (!Array.isArray(campaigns) || campaigns.length === 0) return 0;
+    // Count V3 pitches that are SENT_TO_CLIENT (client needs to approve)
+    // We may not have pitches here, so rely on V3 submissions: status SENT_TO_CLIENT for FIRST_DRAFT/FINAL_DRAFT
+    if (!Array.isArray(allSubmissions)) return 0;
+    return allSubmissions.filter((s) => {
+      const type = s?.submissionType?.type || s?.submissionType;
+      return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && s?.status === 'SENT_TO_CLIENT';
+    }).length;
+  }, [campaigns, allSubmissions]);
+
+  const draftsToApprove = React.useMemo(() => {
+    if (!Array.isArray(campaigns) || campaigns.length === 0) return 0;
+    if (!Array.isArray(allSubmissions)) return 0;
+    // Count submissions awaiting client review or change request
+    return allSubmissions.filter((s) => {
+      const type = s?.submissionType?.type || s?.submissionType;
+      return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') &&
+        (s?.status === 'PENDING_REVIEW' || s?.status === 'CLIENT_FEEDBACK');
+    }).length;
+  }, [campaigns, allSubmissions]);
+
+  // Debug logging for counts and data shapes
+  useEffect(() => {
+    try {
+      console.log('[ClientDashboard] campaigns length:', Array.isArray(campaigns) ? campaigns.length : 'n/a');
+      if (Array.isArray(campaigns)) {
+        console.log('[ClientDashboard] campaigns ids:', campaigns.map((c) => c.id));
+      }
+      console.log('[ClientDashboard] allSubmissions length:', Array.isArray(allSubmissions) ? allSubmissions.length : 'n/a');
+      if (Array.isArray(allSubmissions)) {
+        const sample = allSubmissions[0] || null;
+        console.log('[ClientDashboard] submission sample:', sample);
+        const statuses = [...new Set(allSubmissions.map((s) => s?.status))];
+        console.log('[ClientDashboard] unique submission statuses:', statuses);
+        const creatorsToApproveItems = allSubmissions.filter((s) => {
+          const type = s?.submissionType?.type || s?.submissionType;
+          return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && s?.status === 'SENT_TO_CLIENT';
+        });
+        const draftsToApproveItems = allSubmissions.filter((s) => {
+          const type = s?.submissionType?.type || s?.submissionType;
+          return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && (s?.status === 'PENDING_REVIEW' || s?.status === 'CLIENT_FEEDBACK');
+        });
+        console.log('[ClientDashboard] creatorsToApprove count/items:', creatorsToApproveItems.length, creatorsToApproveItems.slice(0, 5));
+        console.log('[ClientDashboard] draftsToApprove count/items:', draftsToApproveItems.length, draftsToApproveItems.slice(0, 5));
+      }
+    } catch (e) {
+      console.warn('[ClientDashboard] debug log error:', e);
+    }
+  }, [campaigns, allSubmissions]);
 
   const handleCompanyCreated = (newCompany) => {
     setHasCompany(true);
@@ -375,7 +430,7 @@ const ClientDashboard = () => {
                   ml: { xs: 1, sm: 2 }
                 }}
               >
-                0
+                {creatorsToApprove}
               </Box>
             </Box>
             <Box 
@@ -418,7 +473,7 @@ const ClientDashboard = () => {
                   ml: { xs: 1, sm: 2 }
                 }}
               >
-                0
+                {draftsToApprove}
               </Box>
             </Box>
           </Stack>
@@ -732,7 +787,7 @@ const ClientDashboard = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 14%' }, pr: 1 }}>
-                  {(campaign.status === 'PENDING_CSM_REVIEW' || campaign.status === 'SCHEDULED') ? (
+                  {(campaign.status === 'PENDING_CSM_REVIEW' || campaign.status === 'SCHEDULED' || campaign.status === 'PENDING_ADMIN_ACTIVATION') ? (
                     <Tooltip title="Waiting for admin approval">
                       <Chip
                         label={
@@ -777,7 +832,9 @@ const ClientDashboard = () => {
                     </Tooltip>
                   ) : (
                   <Chip
-                    label={campaign.status}
+                    label={
+                      campaign.status === 'PENDING_ADMIN_ACTIVATION' ? 'PENDING' : campaign.status
+                    }
                     size="small"
                     sx={{ 
                       borderRadius: '4px',
@@ -788,6 +845,11 @@ const ClientDashboard = () => {
                       fontSize: { xs: '0.7rem', sm: '0.8rem' },
                       height: { xs: 24, sm: 26 },
                       minWidth: { xs: 60, sm: 70 },
+                      ...(campaign.status === 'PENDING_ADMIN_ACTIVATION' && {
+                        color: '#1340FF',
+                        border: '1px solid #1340FF',
+                        boxShadow: '0px -3px 0px 0px #1340FF inset',
+                      }),
                       ...(campaign.status === 'ACTIVE' && {
                         color: '#1abf66',
                         border: '1px solid #1abf66',
@@ -906,7 +968,7 @@ const ClientDashboard = () => {
                 &gt;
               </Typography>
             </Stack>
-          </Box>
+      </Box>
         )}
       </Box>
     </Box>
@@ -979,17 +1041,17 @@ const ClientDashboard = () => {
                 <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
                   <Chip
                     label={
-                      (campaign.status === 'PENDING_CSM_REVIEW' || campaign.status === 'SCHEDULED') ? 'PENDING' : campaign.status
+                      (campaign.status === 'PENDING_CSM_REVIEW' || campaign.status === 'SCHEDULED' || campaign.status === 'PENDING_ADMIN_ACTIVATION') ? 'PENDING' : campaign.status
                     }
                     sx={{
                       backgroundColor: 'white',
-                      color: '#48484a',
+                      color: (campaign.status === 'PENDING_ADMIN_ACTIVATION') ? '#1340FF' : '#48484a',
                       fontWeight: 600,
                       fontSize: '0.7rem',
                       borderRadius: '5px',
                       height: '24px',
-                      border: '1.2px solid #e7e7e7',
-                      borderBottom: '3px solid #e7e7e7',
+                      border: (campaign.status === 'PENDING_ADMIN_ACTIVATION') ? '1.2px solid #1340FF' : '1.2px solid #e7e7e7',
+                      borderBottom: (campaign.status === 'PENDING_ADMIN_ACTIVATION') ? '3px solid #1340FF' : '3px solid #e7e7e7',
                       '& .MuiChip-label': {
                         padding: '0 5px',
                       },
