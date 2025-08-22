@@ -1,4 +1,4 @@
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
@@ -185,6 +185,10 @@ const VideoCard = ({
       await onIndividualApprove(videoItem.id, values.feedback, values.dueDate);
       // Optimistically update local status - for V3 show SENT_TO_CLIENT, for V2 show APPROVED
       setLocalStatus(isV3 ? 'SENT_TO_CLIENT' : 'APPROVED');
+      
+      // SWR revalidation for immediate UI update
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
     } catch (error) {
       console.error('Error approving video:', error);
     } finally {
@@ -213,6 +217,10 @@ const VideoCard = ({
       await onIndividualRequestChange(videoItem.id, values.feedback, cleanReasons);
       // Optimistically update local status
       setLocalStatus('CHANGES_REQUIRED');
+      
+      // SWR revalidation for immediate UI update
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
     } catch (error) {
       console.error('Error requesting video changes:', error);
     } finally {
@@ -1182,8 +1190,32 @@ const DraftVideos = ({
     try {
       await axiosInstance.patch('/api/submission/v3/feedback/' + feedbackId, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
+      
+      // Force refresh all related data to ensure admin side sees the changes
       if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
       if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+      if (mutateSubmission) await mutateSubmission();
+      
+      // Additional SWR invalidation to ensure feedback data is refreshed
+      // This ensures both admin and client sides see the updated feedback
+      try {
+        // Invalidate any SWR keys that might contain feedback data
+        await mutate(
+          (key) => key && typeof key === 'string' && (
+            key.includes('feedback') || 
+            key.includes('submission') || 
+            key.includes('deliverables')
+          ),
+          undefined,
+          { revalidate: true }
+        );
+      } catch (mutateError) {
+        console.log('SWR mutate error (non-critical):', mutateError);
+      }
+      
+      // Force a re-render by updating local state if needed
+      // Note: These state variables are managed in the DraftVideoCard component
+      
     } catch (error) {
       console.error('Error updating feedback:', error);
       enqueueSnackbar('Failed to update feedback', { variant: 'error' });
@@ -1228,6 +1260,7 @@ const DraftVideos = ({
         // SWR revalidation for immediate UI update
         if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
         if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+        if (mutateSubmission) await mutateSubmission();
         
         // Check if all revision-requested videos have been sent
         const revisionRequestedVideos = deliverables.videos?.filter(v => v.status === 'REVISION_REQUESTED' || v.status === 'CLIENT_FEEDBACK') || [];

@@ -1,4 +1,5 @@
 import { debounce } from 'lodash';
+import useSWR from 'swr';
 import useSWRInfinite from 'swr/infinite';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -121,6 +122,29 @@ const CampaignView = () => {
     [data]
   );
 
+  // Persistent counts across tabs: fetch per-status counts independently of current filter
+  const buildCountKey = useCallback((statusString) => {
+    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(
+      debouncedQuery
+    )}&status=${statusString}&limit=${500}`; // larger limit to approximate full count
+  }, [user?.id, debouncedQuery]);
+
+  const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, { revalidateOnFocus: false });
+  const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, { revalidateOnFocus: false });
+  const { data: pausedData } = useSWR(buildCountKey('PAUSED'), fetcher, { revalidateOnFocus: false });
+  const { data: pendingData } = useSWR(
+    buildCountKey('SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION'),
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
+  // Use independent datasets for counts so they persist regardless of the current tab
+  const activeCount = activeData?.data?.campaigns?.length || 0;
+  const completedCount = completedData?.data?.campaigns?.length || 0;
+  const pausedCount = pausedData?.data?.campaigns?.length || 0;
+  const pendingCount = pendingData?.data?.campaigns?.length || 0;
+
+  // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
 
   const handleClick = (event) => {
@@ -136,41 +160,10 @@ const CampaignView = () => {
     handleClose();
   };
 
-  const activeCampaigns = useMemo(
-    () => dataFiltered?.filter((campaign) => campaign?.status === 'ACTIVE') || [],
-    [dataFiltered]
-  );
-  const completedCampaigns = useMemo(
-    () => dataFiltered?.filter((campaign) => campaign?.status === 'COMPLETED') || [],
-    [dataFiltered]
-  );
-  const pausedCampaigns = useMemo(
-    () => dataFiltered?.filter((campaign) => campaign?.status === 'PAUSED') || [],
-    [dataFiltered]
-  );
-  const pendingCampaigns = useMemo(
-    () => dataFiltered?.filter((campaign) => 
-      campaign?.status === 'PENDING_CSM_REVIEW' || 
-      campaign?.status === 'SCHEDULED' ||
-      campaign?.status === 'PENDING_ADMIN_ACTIVATION'
-    ) || [],
-    [dataFiltered]
-  );
-
-  const activeCount = activeCampaigns.length;
-  const completedCount = completedCampaigns.length;
-  const pausedCount = pausedCampaigns.length;
-  const pendingCount = pendingCampaigns.length;
-
-  // Add console logging to debug pending campaigns
   useEffect(() => {
-    if (filter === 'pending') {
-      console.log('Pending filter active');
-      console.log('Pending campaigns in memory:', pendingCampaigns);
-      console.log('Data from API:', data);
-      console.log('Filtered data:', dataFiltered);
-    }
-  }, [filter, pendingCampaigns, data, dataFiltered]);
+    // Debug: verify counts persist across tabs
+    console.log('[CampaignView] Counts -> Active:', activeCount, 'Pending:', pendingCount, 'Completed:', completedCount, 'Paused:', pausedCount);
+  }, [activeCount, pendingCount, completedCount, pausedCount]);
 
   // Reset filter if non-superadmin/non-CSM tries to access pending tab
   useEffect(() => {

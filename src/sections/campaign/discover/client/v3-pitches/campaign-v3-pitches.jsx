@@ -47,7 +47,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   ).length || 0;
   
   const approvedCount = pitches?.filter((pitch) => 
-    (pitch.displayStatus || pitch.status) === 'APPROVED'
+    (pitch.displayStatus || pitch.status) === 'APPROVED' ||
+    (pitch.displayStatus || pitch.status) === 'AGREEMENT_PENDING' ||
+    (pitch.displayStatus || pitch.status) === 'AGREEMENT_SUBMITTED'
   ).length || 0;
 
   // Toggle sort direction
@@ -69,7 +71,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       );
     } else if (selectedFilter === 'APPROVED') {
       filtered = filtered?.filter((pitch) => 
-        (pitch.displayStatus || pitch.status) === 'APPROVED'
+        (pitch.displayStatus || pitch.status) === 'APPROVED' ||
+        (pitch.displayStatus || pitch.status) === 'AGREEMENT_PENDING' ||
+        (pitch.displayStatus || pitch.status) === 'AGREEMENT_SUBMITTED'
       );
     }
 

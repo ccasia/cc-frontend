@@ -27,9 +27,10 @@ import { RHFUpload } from 'src/components/hook-form';
 
 CampaignUploadPhotos.propTypes = {
   isPreview: PropTypes.bool,
+  isLoading: PropTypes.bool,
 };
 
-export default function CampaignUploadPhotos({ isPreview = false }) {
+export default function CampaignUploadPhotos({ isPreview = false, isLoading = false }) {
   const { control, watch, setValue } = useFormContext();
   const [openPreview, setOpenPreview] = useState(false);
   const theme = useTheme();
@@ -217,6 +218,7 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                 <Button
                   variant="contained"
                   onClick={() => window.dispatchEvent(new CustomEvent('confirmCampaign'))}
+                  disabled={isLoading}
                   sx={{
                     bgcolor: '#3A3A3C',
                     '&:hover': {
@@ -226,7 +228,7 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                     fontWeight: 600,
                   }}
                 >
-                  Confirm
+                  {isLoading ? 'Processing...' : 'Confirm'}
                 </Button>
               </Stack>
             </Grid>
@@ -1258,6 +1260,7 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                     <Button
                       variant="contained"
                       onClick={() => window.dispatchEvent(new CustomEvent('confirmCampaign'))}
+                      disabled={isLoading}
                       sx={{
                         bgcolor: '#3A3A3C',
                         '&:hover': {
@@ -1267,7 +1270,7 @@ export default function CampaignUploadPhotos({ isPreview = false }) {
                         fontWeight: 600,
                       }}
                     >
-                      Confirm
+                      {isLoading ? 'Processing...' : 'Confirm'}
                     </Button>
                   </Stack>
                 </Grid>

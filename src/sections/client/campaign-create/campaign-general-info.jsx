@@ -48,6 +48,25 @@ const ClientCampaignGeneralInfo = () => {
   const endDate = watch('campaignEndDate');
   const credits = watch('campaignCredits');
 
+  // Persist available credits for parent validation
+  useEffect(() => {
+    try {
+      localStorage.setItem('clientAvailableCredits', String(availableCredits || 0));
+    } catch (e) {}
+  }, [availableCredits]);
+
+  // Compute exceed state and notify parent
+  const numericAvailable = Number(availableCredits) || 0;
+  const requestedCredits = Number(credits ?? 0);
+  const exceedOnly = requestedCredits > numericAvailable && numericAvailable > 0;
+  const blockInvalid = numericAvailable <= 0 || requestedCredits <= 0 || exceedOnly;
+
+  useEffect(() => {
+    try {
+      window.dispatchEvent(new CustomEvent('client-campaign-credits-error', { detail: blockInvalid }));
+    } catch (e) {}
+  }, [blockInvalid]);
+
   useEffect(() => {
     if (socket) {
       socket.on('campaign', () => {
@@ -175,6 +194,8 @@ const ClientCampaignGeneralInfo = () => {
                       max: availableCredits || 999999,
                     },
                   }}
+                  helperText={exceedOnly ? `Exceeds limits: available ${numericAvailable}` : ''}
+                  error={exceedOnly}
                   sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
                 />
               </FormField>
