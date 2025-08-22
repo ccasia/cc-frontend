@@ -12,10 +12,15 @@ import {
   LinearProgress,
   Alert,
   Chip,
-  Grid
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton
 } from '@mui/material';
 
-import { endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import { Upload } from 'src/components/upload';
@@ -34,6 +39,9 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [caption, setCaption] = useState('');
+  const [postingDialog, setPostingDialog] = useState(false);
+  const [postingLink, setPostingLink] = useState('');
+  const [postingLoading, setPostingLoading] = useState(false);
 
   const handleDrop = (acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
@@ -132,9 +140,42 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
     }
   };
 
+
+  const handleAddPostingLink = () => {
+    setPostingLink(submission.content || '');
+    setPostingDialog(true);
+  };
+
+  const handleSubmitPostingLink = async () => {
+    if (!postingLink.trim()) {
+      enqueueSnackbar('Please enter a posting link', { variant: 'error' });
+      return;
+    }
+
+    try {
+      setPostingLoading(true);
+      await axiosInstance.put(endpoints.submission.creator.v4.updatePostingLink, {
+        submissionId: submission.id,
+        postingLink: postingLink.trim(),
+      });
+
+      enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
+      setPostingDialog(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating posting link:', error);
+      enqueueSnackbar(error.message || 'Failed to update posting link', { variant: 'error' });
+    } finally {
+      setPostingLoading(false);
+    }
+  };
+
   const isSubmitted = submission.photos?.some(p => p.url);
   const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
+  const isPosted = submission.status === 'POSTED';
+  const hasPostingLink = Boolean(submission.content);
+  const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
 
   return (
     <Stack spacing={3}>
@@ -152,7 +193,23 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
       </Stack>
 
       {/* Status Messages */}
-      {isApproved && (
+      {isPosted && (
+        <Alert severity="success">
+          <Typography variant="body2">
+            🎉 Your photos have been posted! The posting link has been approved.
+          </Typography>
+        </Alert>
+      )}
+
+      {hasPendingPostingLink && (
+        <Alert severity="info">
+          <Typography variant="body2">
+            ⏳ Your posting link is pending admin approval.
+          </Typography>
+        </Alert>
+      )}
+
+      {isApproved && !isPosted && (
         <Alert severity="success">
           <Typography variant="body2">
             🎉 Your photos have been approved! Great work!
@@ -312,6 +369,108 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
           </Stack>
         </Card>
       )}
+
+      {/* Posting Link Section */}
+      {(isApproved || isPosted) && (
+        <Card sx={{ p: 3 }}>
+          <Stack spacing={3}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography variant="subtitle1">
+                Posting Link
+                {hasPendingPostingLink && (
+                  <Chip 
+                    label="Pending Approval" 
+                    size="small" 
+                    color="warning" 
+                    sx={{ ml: 1 }} 
+                  />
+                )}
+                {isPosted && (
+                  <Chip 
+                    label="Posted" 
+                    size="small" 
+                    color="success" 
+                    sx={{ ml: 1 }} 
+                  />
+                )}
+              </Typography>
+              {!isPosted && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handleAddPostingLink}
+                  startIcon={<Iconify icon="eva:link-2-fill" />}
+                >
+                  {hasPostingLink ? 'Update Link' : 'Add Link'}
+                </Button>
+              )}
+            </Stack>
+            
+            <Alert severity={hasPendingPostingLink ? "warning" : "info"}>
+              <Typography variant="body2">
+                {hasPendingPostingLink 
+                  ? "⏳ Your posting link is waiting for admin approval before going live."
+                  : isPosted
+                  ? "✅ Your posting link has been approved and is now live!"
+                  : "🔗 Add the social media post URL where this photo was published (TikTok, Instagram, YouTube, etc.)"
+                }
+              </Typography>
+            </Alert>
+
+            <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
+              {hasPostingLink ? (
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
+                    {submission.content}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => window.open(submission.content, '_blank')}
+                  >
+                    <Iconify icon="eva:external-link-fill" />
+                  </IconButton>
+                </Stack>
+              ) : (
+                <Typography color="text.secondary">
+                  No posting link added yet. Click "Add Link" to share where you published this video.
+                </Typography>
+              )}
+            </Card>
+          </Stack>
+        </Card>
+      )}
+
+      {/* Posting Link Dialog */}
+      <Dialog open={postingDialog} onClose={() => setPostingDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {hasPostingLink ? 'Update Posting Link' : 'Add Posting Link'}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Posting URL"
+            value={postingLink}
+            onChange={(e) => setPostingLink(e.target.value)}
+            placeholder="https://www.tiktok.com/@username/video/123456789"
+            sx={{ mt: 1 }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            Enter the social media post URL where this photo was published
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPostingDialog(false)} disabled={postingLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitPostingLink}
+            variant="contained"
+            disabled={postingLoading}
+          >
+            {postingLoading ? 'Saving...' : 'Save Link'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 };
@@ -323,6 +482,7 @@ const getStatusColor = (status) => {
     case 'PENDING_REVIEW': return 'warning';
     case 'APPROVED':
     case 'CLIENT_APPROVED': return 'success';
+    case 'POSTED': return 'success';
     case 'CHANGES_REQUIRED':
     case 'REJECTED': return 'error';
     case 'SENT_TO_CLIENT': return 'secondary';
@@ -336,6 +496,7 @@ const getCreatorStatusLabel = (status) => {
     case 'PENDING_REVIEW': return 'In Review';
     case 'APPROVED':
     case 'CLIENT_APPROVED': return 'Approved';
+    case 'POSTED': return 'Posted';
     case 'CHANGES_REQUIRED':
     case 'REJECTED': return 'Changes Required';
     case 'SENT_TO_CLIENT': return 'In Review';
