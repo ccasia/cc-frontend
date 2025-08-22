@@ -112,22 +112,68 @@ const PhotoCard = ({
 
   // Get feedback for this specific photo
   const getPhotoFeedback = () => {
-    // Check for individual feedback first
+    const allFeedbacks = [];
+    
+    // Add individual feedback first (includes approval comments)
     if (photoItem.individualFeedback && photoItem.individualFeedback.length > 0) {
-      return photoItem.individualFeedback;
+      allFeedbacks.push(...photoItem.individualFeedback);
     }
     
-    // Fallback to submission-level feedback
-    const allFeedbacks = [
-      ...(submission?.feedback || [])
-    ];
+    // Add submission-level feedback (change requests)
+    const submissionFeedbacks = (submission?.feedback || [])
+      .filter(feedback => feedback.photosToUpdate?.includes(photoItem.id));
+    
+    allFeedbacks.push(...submissionFeedbacks);
 
-    return allFeedbacks
-      .filter(feedback => feedback.photosToUpdate?.includes(photoItem.id))
-      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+    // Remove duplicates based on ID and filter out empty comments
+    const uniqueFeedbacks = allFeedbacks
+      .filter((feedback, index, self) => 
+        index === self.findIndex((f) => f.id === feedback.id)
+      )
+      .filter(feedback => {
+        // Check if it's client feedback
+        const isClient = feedback?.admin?.role === 'client' || feedback?.role === 'client';
+        
+        // For client feedback, be more lenient - show if it has any content
+        if (isClient) {
+          const hasContent = feedback?.content && feedback.content.trim() !== '';
+          const hasPhotoContent = feedback?.photoContent && feedback.photoContent.trim() !== '';
+          return hasContent || hasPhotoContent;
+        }
+        
+        // For admin feedback, check for meaningful content (content, media updates, or reasons)
+        const hasContent = feedback?.content && feedback.content.trim() !== '';
+        const hasPhotoContent = feedback?.photoContent && feedback.photoContent.trim() !== '';
+        const hasMediaUpdates = feedback?.photosToUpdate?.length > 0;
+        const hasReasons = feedback?.reasons && feedback.reasons.length > 0;
+        
+        return hasContent || hasPhotoContent || hasMediaUpdates || hasReasons;
+      });
+
+    // Sort by date (newest first)
+    return uniqueFeedbacks.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
   };
 
   const photoFeedback = getPhotoFeedback();
+
+  // Debug logging for feedback structure
+  useEffect(() => {
+    if (photoFeedback.length > 0) {
+      console.log('🔍 PHOTO FEEDBACK DEBUG:', {
+        photoId: photoItem.id,
+        photoStatus: photoItem.status,
+        totalFeedback: photoFeedback.length,
+        feedbackTypes: photoFeedback.map(f => ({
+          id: f.id,
+          type: f.type,
+          content: f.content,
+          photoContent: f.photoContent,
+          admin: f.admin?.name,
+          createdAt: f.createdAt
+        }))
+      });
+    }
+  }, [photoFeedback, photoItem.id, photoItem.status]);
 
   // Helper function to determine border color
   const getBorderColor = () => {
@@ -756,6 +802,19 @@ const PhotoCard = ({
                       }}
                     />
                   )}
+                  {feedback.type === 'APPROVAL' && (
+                    <Chip
+                      label="Approval"
+                      size="small"
+                      sx={{
+                        bgcolor: 'success.lighter',
+                        color: 'success.darker',
+                        fontSize: '0.7rem',
+                        height: '20px',
+                      }}
+                    />
+                  )}
+
                 </Stack>
                 
                 <Typography variant="body2" sx={{ color: '#000000' }}>

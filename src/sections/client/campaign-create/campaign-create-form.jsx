@@ -63,6 +63,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const [status, setStatus] = useState('');
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [image, setImage] = useState(null);
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
@@ -298,10 +299,27 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const isStepOptional = (step) => step === 7;
 
   const handleNext = async () => {
+    // Prevent progressing if credits are zero or invalid
+    const creditsErrorRef = { current: false };
+    const listener = (e) => {
+      creditsErrorRef.current = !!e?.detail;
+    };
+    window.addEventListener('client-campaign-credits-error', listener, { once: true });
+
     const result = await trigger();
-    if (result) {
+    window.removeEventListener('client-campaign-credits-error', listener);
+
+    // Also validate locally: if availableCredits is 0 and step is General Campaign Information
+    const isGeneralInfoStep = steps[activeStep]?.title === 'General Campaign Information';
+    const requestedCredits = Number(getValues('campaignCredits') || 0);
+    const availableCredits = Number(localStorage.getItem('clientAvailableCredits') || 0);
+    const isExceed = isGeneralInfoStep && (availableCredits <= 0 || requestedCredits <= 0 || requestedCredits > availableCredits);
+
+    if (result && !creditsErrorRef.current && !isExceed) {
       localStorage.setItem('clientActiveStep', activeStep + 1);
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    } else if (isExceed) {
+      enqueueSnackbar('Exceeds limits: please adjust Number Of Credits based on available credits', { variant: 'error' });
     }
   };
 
@@ -441,6 +459,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
   // Add function to handle confirmation
   const handleConfirmCampaign = () => {
+    setIsConfirming(true);
     setOpenConfirmModal(true);
   };
 
@@ -448,6 +467,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const handleFinalSubmit = async () => {
     try {
       setIsLoading(true);
+      setOpenConfirmModal(false); // Close the modal immediately when submission starts
       
       // Try to create client record and associate with company first
       try {
@@ -465,7 +485,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       
       // Use the existing onSubmit logic for actual submission
       await onSubmit(formValues);
-      setOpenConfirmModal(false);
       
       // Reset form or redirect as needed
       // setActiveStep(0);
@@ -474,6 +493,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       enqueueSnackbar('Failed to submit campaign', { variant: 'error' });
     } finally {
       setIsLoading(false);
+      setIsConfirming(false);
     }
   };
   
@@ -505,7 +525,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 1:
         return <CampaignTargetAudience />;
       case 2:
-        return <CampaignUploadPhotos />;
+        return <CampaignUploadPhotos isLoading={isLoading} />;
       default:
         return null;
     }
@@ -527,6 +547,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             }}
             color="default"
             variant="outlined"
+            disabled={isLoading || isConfirming}
             onClick={onClose}
           >
             <Iconify icon="ic:round-close" />
@@ -558,7 +579,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           <Stack direction="row" justifyContent="space-between" sx={{ py: 3 }}>
             <Button
               color="inherit"
-              disabled={activeStep === 0}
+              disabled={activeStep === 0 || isLoading || isConfirming}
               onClick={handleBack}
               sx={{ 
                 mr: 1,
@@ -580,9 +601,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
             {activeStep === steps.length - 1 ? (
               <Stack direction="row" spacing={2}>
+                
                 <Button 
                   variant="contained" 
                   onClick={handleConfirmCampaign}
+                  disabled={isConfirming || isLoading}
                   sx={{
                     bgcolor: '#1340FF',
                     '&:hover': {
@@ -592,13 +615,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                     fontWeight: 600,
                   }}
                 >
-                  Confirm Campaign
+                  {isConfirming ? 'Opening Preview...' : isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
                 </Button>
               </Stack>
             ) : (
               <Button
                 variant="contained"
                 onClick={handleNext}
+                disabled={isLoading || isConfirming}
                 sx={{
                   bgcolor: '#1340FF',
                   '&:hover': {
@@ -743,7 +767,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           fullWidth
           maxWidth="sm"
           open={openConfirmModal}
-          onClose={() => setOpenConfirmModal(false)}
+          onClose={() => !isLoading && setOpenConfirmModal(false)}
           PaperProps={{
             sx: {
               borderRadius: 2,
@@ -752,7 +776,95 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           }}
         >
           <DialogContent sx={{ overflow: 'auto', maxHeight: 'calc(90vh - 64px)', p: 0 }}>
-            <CampaignUploadPhotos isPreview />
+            <CampaignUploadPhotos isPreview isLoading={isLoading} />
+            
+            {/* Loading overlay for confirmation modal */}
+            {isLoading && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  bgcolor: 'rgba(255, 255, 255, 0.95)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1000,
+                  borderRadius: 2,
+                }}
+              >
+                <Box 
+                  sx={{ 
+                    textAlign: 'center',
+                    bgcolor: 'white',
+                    borderRadius: 2,
+                    p: 3,
+                    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.1)',
+                    border: '1px solid #E7E7E7',
+                    minWidth: 280,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: '50%',
+                      bgcolor: '#FFD700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mx: 'auto',
+                      mb: 2,
+                      position: 'relative',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: -1,
+                        left: -1,
+                        right: -1,
+                        bottom: -1,
+                        borderRadius: '50%',
+                        background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                        zIndex: -1,
+                        animation: 'rotate 2s linear infinite',
+                      },
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: 24,
+                        lineHeight: 1,
+                        userSelect: 'none',
+                      }}
+                    >
+                      ⏳
+                    </Typography>
+                  </Box>
+                  <Typography 
+                    variant="subtitle1" 
+                    sx={{ 
+                      color: '#3A3A3C', 
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      mb: 1,
+                    }}
+                  >
+                    Processing
+                  </Typography>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: '#8E8E93',
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    Please wait...
+                  </Typography>
+                </Box>
+              </Box>
+            )}
           </DialogContent>
         </Dialog>
 
@@ -772,6 +884,116 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         user={user}
         setAgreementForm={setValue}
       />
+
+        {/* Loading Overlay for Campaign Creation */}
+        {isLoading && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 9999,
+              bgcolor: 'white',
+              borderRadius: 3,
+              boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+              border: '1px solid #E7E7E7',
+              p: 4,
+              minWidth: 320,
+              maxWidth: 400,
+              textAlign: 'center',
+            }}
+          >
+            {/* Loading Icon */}
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: '#FFD700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3,
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: -2,
+                  left: -2,
+                  right: -2,
+                  bottom: -2,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                  zIndex: -1,
+                  animation: 'rotate 2s linear infinite',
+                },
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: 32,
+                  lineHeight: 1,
+                  userSelect: 'none',
+                }}
+              >
+                ⏳
+              </Typography>
+            </Box>
+            
+            {/* Loading Text */}
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 600,
+                color: '#3A3A3C',
+                mb: 1.5,
+                fontSize: '1.1rem',
+                fontFamily: 'Instrument Serif, serif',
+              }}
+            >
+              Creating Your Campaign
+            </Typography>
+            
+            {/* Progress Bar */}
+            <Box sx={{ width: '100%', mb: 2 }}>
+              <LinearProgress
+                sx={{
+                  height: 6,
+                  borderRadius: 3,
+                  bgcolor: '#F2F2F7',
+                  '& .MuiLinearProgress-bar': {
+                    bgcolor: '#1340FF',
+                    borderRadius: 3,
+                    background: 'linear-gradient(90deg, #1340FF, #4A90E2)',
+                  },
+                }}
+              />
+            </Box>
+            
+            {/* Status Text */}
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#8E8E93',
+                fontSize: '0.75rem',
+                fontStyle: 'italic',
+              }}
+            >
+              This may take a few moments...
+            </Typography>
+          </Box>
+        )}
+
+      <style>
+        {`
+            @keyframes rotate {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+        </style>
     </Box>
   );
 }

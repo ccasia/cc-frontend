@@ -61,6 +61,14 @@ const CampaignOverviewClient = ({ campaign }) => {
     navigate(`/dashboard/creator/profile/${creatorId}`);
   };
 
+  const handleOpenMediaKit = (creatorUser) => {
+    // Support being called with either the shortlisted item or the nested user
+    const creatorId = creatorUser?.creator?.id || creatorUser?.user?.creator?.id;
+    if (creatorId) {
+      navigate(paths.dashboard.creator.mediaKit(creatorId));
+    }
+  };
+
   // Filter pitches to only show approved ones for client users
   const approvedPitches = campaign?.pitch?.filter((pitch) => pitch.status === 'approved') || [];
   const shortlistedCreators = campaign?.shortlisted || [];
@@ -162,7 +170,13 @@ const CampaignOverviewClient = ({ campaign }) => {
             
             <Button
               variant="contained"
-              onClick={() => navigate(paths.dashboard.campaign.analytics(campaign?.id))}
+              onClick={() => {
+                try {
+                  localStorage.setItem('campaigndetail', 'analytics');
+                  window.dispatchEvent(new CustomEvent('switchCampaignTab', { detail: 'analytics' }));
+                } catch (e) {}
+                // No navigation needed; campaign-detail-view listens for the event and switches tabs in-place
+              }}
               sx={{
                 textTransform: 'none',
                 bgcolor: 'white',
@@ -629,7 +643,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                         <Button
                           size="small"
                           variant="outlined"
-                        //   onClick={() => handleViewProfile(item.userId)}
+                          onClick={() => handleOpenMediaKit(item)}
                           sx={{
                             textTransform: 'none',
                             minHeight: { xs: 34, sm: 38 },
@@ -785,78 +799,6 @@ const CampaignOverviewClient = ({ campaign }) => {
         </Grid>
       </Grid>
 
-      {/* References & Attachments Section */}
-      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mt: { xs: 1, sm: 2 } }}>
-        {/* Left Column: References */}
-        <Grid item xs={12} md={6}>
-          <Zoom in>
-            <Box sx={{
-              ...BoxStyle,
-              minHeight: referenceLinks.length === 0 ? 'auto' : 'auto',
-            }}>
-              <Box className="header">
-                <Iconify
-                  icon="eva:link-2-fill"
-                  sx={{
-                    color: '#203ff5',
-                    width: 20,
-                    height: 20,
-                  }}
-                />
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#221f20',
-                      fontWeight: 600,
-                      fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                    }}
-                  >
-                    REFERENCES
-                  </Typography>
-                </Stack>
-              </Box>
-              
-              {referenceLinks.length === 0 ? (
-                <Typography
-                  variant="caption"
-                  sx={{ color: 'text.secondary', py: 1, textAlign: 'center', display: 'block' }}
-                >
-                  No references available
-                </Typography>
-              ) : (
-                <Scrollbar sx={{ maxHeight: 200 }}>
-                  <Stack spacing={1}>
-                    {referenceLinks.map((link, index) => (
-                      <Box
-                        key={index}
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 1,
-                          bgcolor: 'background.neutral',
-                        }}
-                      >
-                        <Link 
-                          href={link} 
-                          target="_blank" 
-                          rel="noopener" 
-                          sx={{ 
-                            color: 'primary.main',
-                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                            wordBreak: 'break-all'
-                          }}
-                        >
-                          {link}
-                        </Link>
-                      </Box>
-                    ))}
-                  </Stack>
-                </Scrollbar>
-              )}
-            </Box>
-          </Zoom>
-        </Grid>
-      </Grid>
 
       <PitchModal
         pitch={selectedPitch}

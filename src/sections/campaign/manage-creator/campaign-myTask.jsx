@@ -130,7 +130,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       if (!handledEvents.has('draft')) {
         handledEvents.add('draft');
         console.log('🔄 Draft event received, updating first draft data');
-        mutate(endpoints.campaign.draft.getFirstDraftForCreator(campaign.id));
+      mutate(endpoints.campaign.draft.getFirstDraftForCreator(campaign.id));
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('draft'), 5000);
       }
@@ -150,7 +150,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       if (!handledEvents.has('agreementReady')) {
         handledEvents.add('agreementReady');
         console.log('🔄 Agreement ready event received, updating user data');
-        mutate(endpoints.auth.me);
+      mutate(endpoints.auth.me);
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('agreementReady'), 5000);
       }
@@ -161,7 +161,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       if (!handledEvents.has('submissionStatusChanged')) {
         handledEvents.add('submissionStatusChanged');
         console.log('🔄 Submission status changed event received (V3), updating submissions');
-        submissionMutate();
+      submissionMutate();
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('submissionStatusChanged'), 5000);
       }
@@ -171,7 +171,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       if (!handledEvents.has('draftSubmitted')) {
         handledEvents.add('draftSubmitted');
         console.log('🔄 Draft submitted event received (V3), updating submissions');
-        submissionMutate();
+      submissionMutate();
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('draftSubmitted'), 5000);
       }
@@ -181,7 +181,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       if (!handledEvents.has('draftApproved')) {
         handledEvents.add('draftApproved');
         console.log('🔄 Draft approved event received (V3), updating submissions');
-        submissionMutate();
+      submissionMutate();
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('draftApproved'), 5000);
       }
@@ -191,7 +191,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       if (!handledEvents.has('changesRequested')) {
         handledEvents.add('changesRequested');
         console.log('🔄 Changes requested event received (V3), updating submissions');
-        submissionMutate();
+      submissionMutate();
         // Remove from handled events after a delay to allow future events
         setTimeout(() => handledEvents.delete('changesRequested'), 5000);
       }
@@ -663,11 +663,11 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                         bgcolor: getStatusColor(item.type),
                       }}
                     >
-                      <Iconify
+                        <Iconify
                         icon={getStatusIcon(item.type)}
-                        sx={{ color: '#fff' }}
-                        width={20}
-                      />
+                          sx={{ color: '#fff' }}
+                          width={20}
+                        />
                     </Label>
 
                     <Box sx={{ flexGrow: 1 }}>

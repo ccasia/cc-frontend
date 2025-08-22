@@ -233,22 +233,7 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
       </DialogTitle>
 
       <DialogContent>
-        <Stack spacing={3} sx={{ mt: 2 }}>
-          {campaignDetails && (
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                Campaign Details
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {campaignDetails.name}
-              </Typography>
-            </Box>
-          )}
-
-          <Typography variant="body1" color="text.secondary">
-            Assign the campaign to an admin/CSM who will complete the setup including agreement, campaign type, and deliverables.
-          </Typography>
-
+        <Stack spacing={3} sx={{ mt: 2, mb: 4 }}>
           <FormControl fullWidth error={!!errors.adminManagers}>
             <InputLabel id="admin-managers-label">Assign to Admin/CSM *</InputLabel>
             <Select
@@ -274,31 +259,45 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
               <FormHelperText>{errors.adminManagers}</FormHelperText>
             )}
           </FormControl>
-
-          <Box sx={{ bgcolor: 'warning.lighter', p: 2, borderRadius: 1 }}>
-            <Typography variant="body2" color="warning.dark">
-              <strong>Notesss:</strong> After assignment, the admin/CSM will need to complete the campaign setup including agreement template, campaign type, and deliverables before the campaign becomes active.
-            </Typography>
-          </Box>
         </Stack>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 0 }}>
-        <Button onClick={handleClose} disabled={submitting}>
+      <DialogActions sx={{ p: 3, pt: 0, gap: 2 }}>
+        <Button 
+          onClick={handleClose} 
+          disabled={submitting}
+          variant="contained"
+          sx={{
+            bgcolor: 'white',
+            color: '#3A3A3C',
+            border: '1px solid #E7E7E7',
+            '&:hover': {
+              bgcolor: '#F8F8F8',
+              border: '1px solid #D1D1D1',
+            },
+            fontWeight: 600,
+            px: 3,
+            py: 1,
+            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+          }}
+        >
           Cancel
         </Button>
         <Button
           onClick={handleInitialActivate}
           variant="contained"
           disabled={submitting}
-          startIcon={submitting ? <CircularProgress size={20} /> : <Iconify icon="solar:user-check-bold" />}
+          startIcon={submitting ? <CircularProgress size={20} /> : null}
           sx={{
-            bgcolor: '#203ff5',
+            bgcolor: '#1340FF',
             color: 'white',
             '&:hover': {
-              bgcolor: '#203ff5',
-              opacity: 0.9,
+              bgcolor: '#0030e0',
             },
+            fontWeight: 600,
+            px: 3,
+            py: 1,
+            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
           }}
         >
           {submitting ? 'Activating...' : 'Activate Campaign'}
