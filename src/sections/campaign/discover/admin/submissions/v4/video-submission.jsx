@@ -31,7 +31,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { approveV4Submission, updateV4PostingLink } from 'src/hooks/use-get-v4-submissions';
 
-import { options_changes } from '../../../client/submissions/v4';
+import { options_changes } from './constants';
 
 // ----------------------------------------------------------------------
 
@@ -39,9 +39,11 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
   const { user } = useAuthContext();
   const [feedbackDialog, setFeedbackDialog] = useState(false);
   const [postingDialog, setPostingDialog] = useState(false);
+  const [postingApprovalDialog, setPostingApprovalDialog] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [postingLink, setPostingLink] = useState('');
   const [loading, setLoading] = useState(false);
+  const [postingApprovalLoading, setPostingApprovalLoading] = useState(false);
   const [action, setAction] = useState('approve');
   const [reasons, setReasons] = useState([]);
 
@@ -50,8 +52,10 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
   const isClient = userRole.toLowerCase() === 'client';
 
   const video = submission.video?.[0]; // V4 has one video per submission
-  const isApproved = submission.status === 'APPROVED';
+  const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
+  const isPosted = submission.status === 'POSTED';
   const hasPostingLink = Boolean(submission.content);
+  const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
 
   const handleApprove = useCallback(() => {
     setAction('approve');
@@ -155,11 +159,35 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
     }
   }, [postingLink, submission.id, onUpdate]);
 
+  const handlePostingLinkApproval = useCallback(async (approvalAction) => {
+    try {
+      setPostingApprovalLoading(true);
+      await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
+        submissionId: submission.id,
+        action: approvalAction,
+      });
+
+      enqueueSnackbar(
+        `Posting link ${approvalAction}d successfully`, 
+        { variant: 'success' }
+      );
+      
+      setPostingApprovalDialog(false);
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error approving posting link:', error);
+      enqueueSnackbar(error.message || 'Failed to process posting link approval', { variant: 'error' });
+    } finally {
+      setPostingApprovalLoading(false);
+    }
+  }, [submission.id, onUpdate]);
+
   const getStatusColor = (status) => {
     const statusColors = {
       PENDING_REVIEW: 'warning',
       IN_PROGRESS: 'info', 
       APPROVED: 'success',
+      POSTED: 'success',
       REJECTED: 'error',
       CHANGES_REQUIRED: 'warning',
       SENT_TO_CLIENT: 'primary',
@@ -174,6 +202,34 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
     return status?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
   };
 
+  // Map admin statuses to client-friendly labels based on the business process
+  const getClientStatusLabel = (status) => {
+    if (!isClient) return formatStatus(status); // Admins see the raw status
+
+    switch (status) {
+      case 'NOT_STARTED':
+        return 'Not Started';
+      case 'IN_PROGRESS':
+        return 'In Progress';
+      case 'PENDING_REVIEW':
+        return 'In Progress'; // Creator has submitted, admin reviewing
+      case 'SENT_TO_CLIENT':
+        return 'Pending Review'; // Client should see this as pending their review
+      case 'CLIENT_APPROVED':
+      case 'APPROVED':
+        return 'Approved';
+      case 'POSTED':
+        return 'Posted';
+      case 'CLIENT_FEEDBACK':
+        return 'Changes Required'; // Client requested changes
+      case 'CHANGES_REQUIRED':
+      case 'REJECTED':
+        return 'Changes Required';
+      default:
+        return formatStatus(status);
+    }
+  };
+
   return (
     <>
       <Accordion>
@@ -186,7 +242,7 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
                   Video {index}
                 </Typography>
                 <Chip
-                  label={formatStatus(submission.status)}
+                  label={getClientStatusLabel(submission.status)}
                   color={getStatusColor(submission.status)}
                   size="small"
                 />
@@ -273,8 +329,24 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
               <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Typography variant="subtitle2">
                   Posting Link
+                  {hasPendingPostingLink && (
+                    <Chip 
+                      label="Pending Approval" 
+                      size="small" 
+                      color="warning" 
+                      sx={{ ml: 1 }} 
+                    />
+                  )}
+                  {isPosted && (
+                    <Chip 
+                      label="Posted" 
+                      size="small" 
+                      color="success" 
+                      sx={{ ml: 1 }} 
+                    />
+                  )}
                 </Typography>
-                {isApproved && (
+                {isApproved && !isClient && (
                   <Button
                     size="small"
                     variant="outlined"
@@ -305,6 +377,32 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
                   </Typography>
                 )}
               </Card>
+
+              {/* Admin Posting Link Approval */}
+              {!isClient && hasPendingPostingLink && (
+                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="small"
+                    onClick={() => handlePostingLinkApproval('approve')}
+                    disabled={postingApprovalLoading}
+                    startIcon={<Iconify icon="eva:checkmark-fill" />}
+                  >
+                    Approve Link
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={() => handlePostingLinkApproval('reject')}
+                    disabled={postingApprovalLoading}
+                    startIcon={<Iconify icon="eva:close-fill" />}
+                  >
+                    Reject Link
+                  </Button>
+                </Stack>
+              )}
             </Box>
 
             {/* Admin Actions */}

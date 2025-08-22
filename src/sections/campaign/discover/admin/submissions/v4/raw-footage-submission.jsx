@@ -29,6 +29,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
+import { options_changes } from './constants';
 
 // ----------------------------------------------------------------------
 
@@ -70,22 +71,46 @@ export default function V4RawFootageSubmission({ submission, campaign, index = 1
       return;
     }
 
+    if (!feedback.trim() && (action === 'approve' || action === 'request_revision')) {
+      enqueueSnackbar('Please provide feedback', { variant: 'error' });
+      return;
+    }
+
     try {
       setLoading(true);
-      await approveV4Submission({
-        submissionId: submission.id,
-        action,
-        feedback: feedback.trim() || undefined,
-        reasons: [],
-      });
+      
+      if (isClient) {
+        // Client-specific endpoint
+        const clientAction = action === 'approve' ? 'approve' : 'request_changes';
+        await axiosInstance.post('/api/submissions/v4/approve/client', {
+          submissionId: submission.id,
+          action: clientAction,
+          feedback: feedback.trim(),
+          reasons: reasons || []
+        });
 
-      enqueueSnackbar(
-        `Raw footage ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'revision requested'} successfully`,
-        { variant: 'success' }
-      );
+        enqueueSnackbar(
+          `Raw footage ${clientAction === 'approve' ? 'approved' : 'changes requested'} successfully`,
+          { variant: 'success' }
+        );
+      } else {
+        // Admin endpoint
+        await approveV4Submission({
+          submissionId: submission.id,
+          action,
+          feedback: feedback.trim() || undefined,
+          reasons: reasons || [],
+        });
+
+        enqueueSnackbar(
+          `Raw footage ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'revision requested'} successfully`,
+          { variant: 'success' }
+        );
+      }
       
       setFeedbackDialog(false);
       setFeedback('');
+      setReasons([]);
       onUpdate?.();
     } catch (error) {
       console.error('Error submitting feedback:', error);
@@ -93,7 +118,7 @@ export default function V4RawFootageSubmission({ submission, campaign, index = 1
     } finally {
       setLoading(false);
     }
-  }, [action, feedback, submission.id, onUpdate]);
+  }, [action, feedback, reasons, submission.id, onUpdate, isClient]);
 
   const getStatusColor = (status) => {
     const statusColors = {
@@ -114,6 +139,32 @@ export default function V4RawFootageSubmission({ submission, campaign, index = 1
     return status?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
   };
 
+  // Map admin statuses to client-friendly labels based on the business process
+  const getClientStatusLabel = (status) => {
+    if (!isClient) return formatStatus(status); // Admins see the raw status
+
+    switch (status) {
+      case 'NOT_STARTED':
+        return 'Not Started';
+      case 'IN_PROGRESS':
+        return 'In Progress';
+      case 'PENDING_REVIEW':
+        return 'In Progress'; // Creator has submitted, admin reviewing
+      case 'SENT_TO_CLIENT':
+        return 'Pending Review'; // Client should see this as pending their review
+      case 'CLIENT_APPROVED':
+      case 'APPROVED':
+        return 'Approved';
+      case 'CLIENT_FEEDBACK':
+        return 'Changes Required'; // Client requested changes
+      case 'CHANGES_REQUIRED':
+      case 'REJECTED':
+        return 'Changes Required';
+      default:
+        return formatStatus(status);
+    }
+  };
+
   return (
     <>
       <Accordion>
@@ -126,7 +177,7 @@ export default function V4RawFootageSubmission({ submission, campaign, index = 1
                   Raw Footage {index}
                 </Typography>
                 <Chip
-                  label={formatStatus(submission.status)}
+                  label={getClientStatusLabel(submission.status)}
                   color={getStatusColor(submission.status)}
                   size="small"
                 />
@@ -200,7 +251,7 @@ export default function V4RawFootageSubmission({ submission, campaign, index = 1
             )}
 
             {/* Admin Actions */}
-            {submission.status === 'PENDING_REVIEW' && (
+            {!isClient && submission.status === 'PENDING_REVIEW' && (
               <Stack direction="row" spacing={2}>
                 <Button
                   variant="contained"
@@ -229,6 +280,28 @@ export default function V4RawFootageSubmission({ submission, campaign, index = 1
               </Stack>
             )}
 
+            {/* Client Actions */}
+            {isClient && submission.status === 'SENT_TO_CLIENT' && (
+              <Stack direction="row" spacing={2}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleApprove}
+                  startIcon={<Iconify icon="eva:checkmark-fill" />}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  onClick={handleRequestRevision}
+                  startIcon={<Iconify icon="eva:edit-fill" />}
+                >
+                  Request Changes
+                </Button>
+              </Stack>
+            )}
+
             {/* Submission Metadata */}
             <Box sx={{ pt: 2, borderTop: 1, borderColor: 'divider' }}>
               <Typography variant="caption" color="text.secondary">
@@ -251,7 +324,7 @@ export default function V4RawFootageSubmission({ submission, campaign, index = 1
             fullWidth
             multiline
             rows={4}
-            label={action === 'approve' ? 'Approval message (optional)' : 'Feedback'}
+            label={action === 'approve' ? 'Approval message' : 'Feedback'}
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             placeholder={
@@ -259,9 +332,37 @@ export default function V4RawFootageSubmission({ submission, campaign, index = 1
               action === 'reject' ? 'Please explain why this raw footage is being rejected...' :
               'Please specify what changes are needed...'
             }
-            required={action === 'reject'}
+            required
             sx={{ mt: 1 }}
           />
+          
+          {/* Reasons selection for client request changes */}
+          {isClient && action === 'request_revision' && (
+            <Box sx={{ mt: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel>Select Issues (Optional)</InputLabel>
+                <Select
+                  multiple
+                  value={reasons}
+                  onChange={(e) => setReasons(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                  input={<OutlinedInput label="Select Issues (Optional)" />}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => (
+                        <Chip key={value} label={value} size="small" />
+                      ))}
+                    </Box>
+                  )}
+                >
+                  {options_changes.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setFeedbackDialog(false)} disabled={loading}>
