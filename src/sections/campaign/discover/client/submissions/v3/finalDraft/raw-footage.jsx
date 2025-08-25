@@ -124,10 +124,20 @@ const RawFootageCard = ({
       combined.push(...rawFootageItem.individualFeedback);
     }
     
-    // Merge feedback coming from submission-level collections
+    // For final draft, prioritize feedback from the current submission (final draft)
+    // and only include first draft feedback if it's specifically marked as sent to creator
+    const currentSubmissionFeedback = submission?.feedback || [];
+    const firstDraftFeedback = deliverables?.submissions?.find(sub => 
+      sub.submissionType?.type === 'FIRST_DRAFT'
+    )?.feedback || [];
+    
+    // Filter first draft feedback to only include those marked as sent to creator
+    const creatorVisibleFirstDraftFeedback = firstDraftFeedback.filter(fb => fb.sentToCreator);
+    
+    // Combine feedback with priority: current submission first, then filtered first draft
     const allFeedbacks = [
-      ...(deliverables?.submissions?.flatMap((sub) => sub.feedback) || []),
-      ...(submission?.feedback || []),
+      ...currentSubmissionFeedback,
+      ...creatorVisibleFirstDraftFeedback,
     ];
 
     // Only feedback that targets this raw footage id
