@@ -42,7 +42,7 @@ const BoxStyle = {
   },
 };
 
-const CampaignOverviewClient = ({ campaign }) => {
+const CampaignOverviewClient = ({ campaign, onUpdate }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const [selectedPitch, setSelectedPitch] = useState(null);
@@ -812,6 +812,7 @@ const CampaignOverviewClient = ({ campaign }) => {
 
 CampaignOverviewClient.propTypes = {
   campaign: PropTypes.object,
+  onUpdate: PropTypes.func,
 };
 
 export default CampaignOverviewClient; 

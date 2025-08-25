@@ -465,9 +465,9 @@ const CampaignDetailView = ({ id }) => {
 
   const renderTabContent = {
     overview: isClient ? (
-      <CampaignOverviewClient campaign={campaign} />
+      <CampaignOverviewClient campaign={campaign} onUpdate={campaignMutate} />
     ) : (
-      <CampaignOverview campaign={campaign} />
+      <CampaignOverview campaign={campaign} onUpdate={campaignMutate} />
     ),
     'campaign-content': isClient ? (
       <CampaignDetailContentClient campaign={campaign} />
