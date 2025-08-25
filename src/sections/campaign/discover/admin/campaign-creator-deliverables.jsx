@@ -263,6 +263,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
+
   // Set first creator as selected by default, or use target creator from localStorage
   useEffect(() => {
     if (sortedCreators?.length && !selectedCreator) {
@@ -454,103 +455,102 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           mb: { xs: 1, sm: 2 },
         }}
       >
-        <TextField
-          placeholder="Search by Creator Name"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          fullWidth
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="material-symbols:search" />
-              </InputAdornment>
-            ),
-            sx: {
-              height: '42px',
-              '& input': {
-                py: 3,
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%' }}>
+          <TextField
+            placeholder="Search by Creator Name"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify icon="material-symbols:search" />
+                </InputAdornment>
+              ),
+              sx: {
                 height: '42px',
+                '& input': {
+                  py: 3,
+                  height: '42px',
+                },
               },
-            },
-          }}
-          sx={{
-            width: '100%',
-            maxWidth: { sm: 260 },
-            flexGrow: { sm: 0 },
-            '& .MuiOutlinedInput-root': {
+            }}
+            sx={{
+              flexGrow: 1,
+              maxWidth: { sm: 250 },
+              '& .MuiOutlinedInput-root': {
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+              },
+            }}
+          />
+          <Button
+            onClick={handleToggleSort}
+            endIcon={
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {sortDirection === 'asc' ? (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                  </Stack>
+                )}
+                <Iconify
+                  icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
+                  width={12}
+                />
+              </Stack>
+            }
+            sx={{
+              px: 1.5,
+              py: 0.75,
               height: '42px',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
+              color: '#637381',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              backgroundColor: { xs: '#f9f9f9', sm: 'transparent' },
+              border: { xs: '1px solid #e7e7e7', sm: 'none' },
+              borderBottom: { xs: '3px solid #e7e7e7', sm: 'none' },
               borderRadius: 1,
-            },
-          }}
-        />
-        <Button
-          onClick={handleToggleSort}
-          endIcon={
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              {sortDirection === 'asc' ? (
-                <Stack direction="column" alignItems="center" spacing={0}>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                  >
-                    A
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                  >
-                    Z
-                  </Typography>
-                </Stack>
-              ) : (
-                <Stack direction="column" alignItems="center" spacing={0}>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                  >
-                    Z
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                  >
-                    A
-                  </Typography>
-                </Stack>
-              )}
-              <Iconify
-                icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
-                width={12}
-              />
-            </Stack>
-          }
-          sx={{
-            px: 1.5,
-            py: 0.75,
-            height: '42px',
-            color: '#637381',
-            fontWeight: 600,
-            fontSize: '0.875rem',
-            backgroundColor: { xs: '#f9f9f9', sm: 'transparent' },
-            border: { xs: '1px solid #e7e7e7', sm: 'none' },
-            borderBottom: { xs: '3px solid #e7e7e7', sm: 'none' },
-            borderRadius: 1,
-            textTransform: 'none',
-            whiteSpace: 'nowrap',
-            boxShadow: 'none',
-            width: { xs: '100%', sm: 'auto' },
-            minWidth: { sm: '140px' },
-            justifyContent: { xs: 'space-between', sm: 'center' },
-            '&:hover': {
-              backgroundColor: { xs: '#f5f5f5', sm: 'transparent' },
-              color: '#221f20',
-            },
-          }}
-        >
-          Alphabetical
-        </Button>
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              boxShadow: 'none',
+              minWidth: { sm: '140px' },
+              justifyContent: 'center',
+              '&:hover': {
+                backgroundColor: { xs: '#f5f5f5', sm: 'transparent' },
+                color: '#221f20',
+              },
+            }}
+          >
+            Alphabetical
+          </Button>
+        </Stack>
       </Box>
 
       {/* Content Row */}

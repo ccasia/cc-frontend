@@ -753,6 +753,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         modalClose={modal.onFalse}
         creditsLeft={ugcLeft}
         campaign={campaign}
+        campaignMutate={campaignMutate}
       />
 
       <CampaignAgreementEdit
