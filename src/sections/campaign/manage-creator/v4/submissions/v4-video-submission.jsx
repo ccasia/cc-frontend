@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
@@ -42,7 +42,8 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
   const [postingLink, setPostingLink] = useState('');
   const [postingLoading, setPostingLoading] = useState(false);
 
-  const handleDrop = (acceptedFiles, rejectedFiles) => {
+
+  const handleDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
       rejectedFiles.forEach((rejection) => {
         rejection.errors.forEach((error) => {
@@ -60,15 +61,15 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
     if (acceptedFiles.length > 0) {
       setSelectedFiles(prev => [...prev, ...acceptedFiles]);
     }
-  };
+  }, []);
 
-  const handleRemoveFile = (index) => {
+  const handleRemoveFile = useCallback((index) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const handleRemoveAllFiles = () => {
+  const handleRemoveAllFiles = useCallback(() => {
     setSelectedFiles([]);
-  };
+  }, []);
 
   const handleSubmit = async () => {
     if (selectedFiles.length === 0) {
@@ -139,10 +140,10 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
     }
   };
 
-  const handleAddPostingLink = () => {
+  const handleAddPostingLink = useCallback(() => {
     setPostingLink(submission.content || '');
     setPostingDialog(true);
-  };
+  }, [submission.content]);
 
   const handleSubmitPostingLink = async () => {
     if (!postingLink.trim()) {
@@ -168,12 +169,41 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
     }
   };
 
-  const isSubmitted = submission.video?.some(v => v.url);
-  const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
-  const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
-  const isPosted = submission.status === 'POSTED';
-  const hasPostingLink = Boolean(submission.content);
-  const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
+  // Memoize status calculations to avoid recalculating on each render
+  const statusInfo = useMemo(() => {
+    const isSubmitted = submission.video?.some(v => v.url);
+    const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
+    const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
+    const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
+    const isPosted = submission.status === 'POSTED';
+    const hasPostingLink = Boolean(submission.content);
+    const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
+    
+    return {
+      isSubmitted,
+      isInReview,
+      hasChangesRequired,
+      isApproved,
+      isPosted,
+      hasPostingLink,
+      hasPendingPostingLink
+    };
+  }, [submission.video, submission.status, submission.content]);
+
+  const { 
+    isSubmitted, 
+    isInReview, 
+    hasChangesRequired, 
+    isApproved, 
+    isPosted, 
+    hasPostingLink, 
+    hasPendingPostingLink 
+  } = statusInfo;
+
+  // Memoize feedback filtering to avoid recalculation
+  const relevantFeedback = useMemo(() => {
+    return submission.feedback?.filter(feedback => feedback.sentToCreator) || [];
+  }, [submission.feedback]);
 
   return (
     <>
@@ -243,9 +273,9 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
       )}
 
       {submission.status === 'CLIENT_FEEDBACK' && (
-        <Alert severity="warning">
+        <Alert severity="info">
           <Typography variant="body2">
-            🗣️ Client has provided feedback. Admin will review and provide guidance shortly.
+            🗣️ Client has provided feedback. Admin is reviewing the feedback before forwarding to you.
           </Typography>
         </Alert>
       )}
@@ -277,32 +307,54 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
       )}
 
       {/* Feedback */}
-      {submission.video?.some(v => v.feedback) && (
+      {relevantFeedback.length > 0 && (
         <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
           <Typography variant="subtitle2" gutterBottom>
             Feedback:
           </Typography>
-          {submission.video.map((video, index) => 
-            video.feedback && (
-              <Stack key={video.id} spacing={1}>
-                <Typography variant="body2" color="text.secondary">
-                  Video {index + 1}: {video.feedback}
-                </Typography>
-                {video.reasons?.length > 0 && (
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                    {video.reasons.map((reason, i) => (
-                      <Chip key={i} label={reason} size="small" variant="outlined" />
-                    ))}
+          <Stack spacing={2}>
+            {relevantFeedback.map((feedback, index) => (
+                <Stack key={index} spacing={1}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Box sx={{ 
+                      minWidth: 20, 
+                      height: 20, 
+                      borderRadius: '50%', 
+                      bgcolor: 'primary.main', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center' 
+                    }}>
+                      <Typography variant="caption" sx={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
+                        {feedback.admin?.name?.charAt(0) || 'A'}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" fontWeight="medium">
+                      {feedback.admin?.name || 'Admin'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(feedback.createdAt).toLocaleDateString()}
+                    </Typography>
                   </Stack>
-                )}
-              </Stack>
-            )
-          )}
+                  <Typography variant="body2" color="text.secondary">
+                    {feedback.content}
+                  </Typography>
+                  {feedback.reasons?.length > 0 && (
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {feedback.reasons.map((reason, i) => (
+                        <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
+                      ))}
+                    </Stack>
+                  )}
+                </Stack>
+              ))
+            }
+          </Stack>
         </Card>
       )}
 
       {/* Upload Form */}
-      {(!isApproved) && (
+      {(!isInReview && !isApproved && !isPosted) && (
         <Card sx={{ p: 3 }}>
           <Stack spacing={3}>
             <Typography variant="subtitle1">
@@ -320,17 +372,6 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
               maxSize={VIDEO_UPLOAD_CONFIG.maxSize}
               disabled={uploading}
             />
-
-            {/* Upload Guidelines */}
-            <Alert severity="info">
-              <Typography variant="body2">
-                📹 <strong>Video Guidelines:</strong>
-                <br />• Maximum file size: 500MB per video
-                <br />• Supported formats: MP4, MOV, AVI, MKV, WebM
-                <br />• Upload multiple videos if required for this submission
-                <br />• Videos will be compressed and optimized automatically
-              </Typography>
-            </Alert>
 
             {/* Caption */}
             <TextField
@@ -410,7 +451,7 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
                 {hasPendingPostingLink 
                   ? "⏳ Your posting link is waiting for admin approval before going live."
                   : isPosted
-                  ? "✅ Your posting link has been approved and is now live!"
+                  ? "✅ Your posting link has been approved."
                   : "🔗 Add the social media post URL where this video was published (TikTok, Instagram, YouTube, etc.)"
                 }
               </Typography>
@@ -480,11 +521,13 @@ const getStatusColor = (status) => {
   switch (status) {
     case 'IN_PROGRESS': return 'info';
     case 'PENDING_REVIEW': return 'warning';
+    case 'PENDING': return 'warning';
     case 'APPROVED':
     case 'CLIENT_APPROVED': return 'success';
     case 'POSTED': return 'success';
     case 'CHANGES_REQUIRED':
-    case 'REJECTED': return 'error';
+    case 'REJECTED':
+    case 'REVISION_REQUESTED': return 'error';
     case 'SENT_TO_CLIENT': return 'secondary';
     case 'CLIENT_FEEDBACK': return 'warning';
     default: return 'default';
@@ -495,11 +538,13 @@ const getCreatorStatusLabel = (status) => {
   switch (status) {
     case 'IN_PROGRESS': return 'In Progress';
     case 'PENDING_REVIEW': return 'In Review';
+    case 'PENDING': return 'In Review';
     case 'APPROVED': return 'Approved';
     case 'CLIENT_APPROVED': return 'Approved';
     case 'POSTED': return 'Posted';
     case 'CHANGES_REQUIRED': return 'Changes Required';
     case 'REJECTED': return 'Changes Required';
+    case 'REVISION_REQUESTED': return 'Needs Re-upload';
     case 'SENT_TO_CLIENT': return 'Client Review';
     case 'CLIENT_FEEDBACK': return 'Client Review';
     default: return status;

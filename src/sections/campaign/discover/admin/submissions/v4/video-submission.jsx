@@ -29,29 +29,34 @@ import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { approveV4Submission, updateV4PostingLink } from 'src/hooks/use-get-v4-submissions';
+import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 
 import { options_changes } from './constants';
 
 // ----------------------------------------------------------------------
 
-export default function V4VideoSubmission({ submission, campaign, index = 1, onUpdate }) {
+export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
   const { user } = useAuthContext();
   const [feedbackDialog, setFeedbackDialog] = useState(false);
-  const [postingDialog, setPostingDialog] = useState(false);
-  const [postingApprovalDialog, setPostingApprovalDialog] = useState(false);
   const [feedback, setFeedback] = useState('');
-  const [postingLink, setPostingLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [postingApprovalLoading, setPostingApprovalLoading] = useState(false);
   const [action, setAction] = useState('approve');
   const [reasons, setReasons] = useState([]);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [forwardFeedbackDialog, setForwardFeedbackDialog] = useState(false);
+  const [forwardFeedback, setForwardFeedback] = useState('');
+  const [forwardLoading, setForwardLoading] = useState(false);
 
   // Detect client role
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
 
-  const video = submission.video?.[0]; // V4 has one video per submission
+  // Determine if client can see the actual content vs just placeholder
+  const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'CLIENT_FEEDBACK', 'APPROVED', 'POSTED'].includes(submission.status);
+
+  const video = submission.video?.[0]; // V4 has single video
+
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
   const isPosted = submission.status === 'POSTED';
   const hasPostingLink = Boolean(submission.content);
@@ -130,34 +135,6 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
     }
   }, [action, feedback, reasons, submission.id, onUpdate, isClient]);
 
-  const handleAddPostingLink = useCallback(() => {
-    setPostingLink(submission.content || '');
-    setPostingDialog(true);
-  }, [submission.content]);
-
-  const handleSubmitPostingLink = useCallback(async () => {
-    if (!postingLink.trim()) {
-      enqueueSnackbar('Please enter a posting link', { variant: 'error' });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await updateV4PostingLink({
-        submissionId: submission.id,
-        postingLink: postingLink.trim(),
-      });
-
-      enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
-      setPostingDialog(false);
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error updating posting link:', error);
-      enqueueSnackbar(error.message || 'Failed to update posting link', { variant: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  }, [postingLink, submission.id, onUpdate]);
 
   const handlePostingLinkApproval = useCallback(async (approvalAction) => {
     try {
@@ -172,7 +149,7 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
         { variant: 'success' }
       );
       
-      setPostingApprovalDialog(false);
+      // Posting approval completed
       onUpdate?.();
     } catch (error) {
       console.error('Error approving posting link:', error);
@@ -181,6 +158,27 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
       setPostingApprovalLoading(false);
     }
   }, [submission.id, onUpdate]);
+
+  const handleSubmitForwardFeedback = useCallback(async () => {
+    try {
+      setForwardLoading(true);
+      
+      await axiosInstance.post('/api/submissions/v4/forward-client-feedback', {
+        submissionId: submission.id,
+        adminFeedback: forwardFeedback.trim() || undefined
+      });
+
+      enqueueSnackbar('Client feedback forwarded to creator successfully', { variant: 'success' });
+      setForwardFeedbackDialog(false);
+      setForwardFeedback('');
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error forwarding client feedback:', error);
+      enqueueSnackbar(error.message || 'Failed to forward client feedback', { variant: 'error' });
+    } finally {
+      setForwardLoading(false);
+    }
+  }, [submission.id, forwardFeedback, onUpdate]);
 
   const getStatusColor = (status) => {
     const statusColors = {
@@ -204,7 +202,15 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
 
   // Map admin statuses to client-friendly labels based on the business process
   const getClientStatusLabel = (status) => {
-    if (!isClient) return formatStatus(status); // Admins see the raw status
+    if (!isClient) {
+      // Admin-specific status labels
+      switch (status) {
+        case 'CLIENT_FEEDBACK':
+          return 'Client Feedback Received';
+        default:
+          return formatStatus(status);
+      }
+    }
 
     switch (status) {
       case 'NOT_STARTED':
@@ -221,7 +227,7 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
       case 'POSTED':
         return 'Posted';
       case 'CLIENT_FEEDBACK':
-        return 'Changes Required'; // Client requested changes
+        return 'In Progress'; // For clients - they've submitted feedback, now admin processing it
       case 'CHANGES_REQUIRED':
       case 'REJECTED':
         return 'Changes Required';
@@ -264,13 +270,11 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
           <Stack spacing={3}>
             {/* Video Content */}
             <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                Video Content
-              </Typography>
-              {video ? (
-                <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-                  <Stack spacing={2}>
-                    {video.url ? (
+              {clientVisible ? (
+                // Show actual content to admins or when sent to client
+                video?.url ? (
+                  <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
+                    <Stack spacing={2}>                          
                       <Box>
                         <video
                           controls
@@ -278,51 +282,103 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
                           src={video.url}
                         />
                       </Box>
-                    ) : (
-                      <Typography color="text.secondary">No video uploaded yet</Typography>
-                    )}
-                    
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Chip
-                        label={formatStatus(video.status)}
-                        color={getStatusColor(video.status)}
-                        size="small"
-                      />
-                      {video.feedback && (
-                        <Typography variant="caption" color="text.secondary">
-                          Last feedback: {new Date(video.feedbackAt).toLocaleDateString()}
-                        </Typography>
+
+                      {/* All submission feedback history */}
+                      {submission.feedback && submission.feedback.length > 0 && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="caption" fontWeight="medium" color="text.secondary">
+                            Feedback History:
+                          </Typography>
+                          <Stack spacing={1} sx={{ mt: 1 }}>
+                            {submission.feedback.map((feedback, feedbackIndex) => (
+                              <Card key={feedbackIndex} sx={{ p: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                  <Box sx={{ 
+                                    minWidth: 24, 
+                                    height: 24, 
+                                    borderRadius: '50%', 
+                                    bgcolor: 'primary.main', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center' 
+                                  }}>
+                                    <Typography variant="caption" sx={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                                      {feedback.admin?.name?.charAt(0) || feedback.user?.name?.charAt(0) || 'U'}
+                                    </Typography>
+                                  </Box>
+                                  <Box sx={{ flex: 1 }}>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                      <Typography variant="caption" fontWeight="medium">
+                                        {feedback.admin?.name || feedback.user?.name || 'User'}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {new Date(feedback.createdAt).toLocaleDateString()}
+                                      </Typography>
+                                    </Stack>
+                                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                      {feedback.content}
+                                    </Typography>
+                                    {feedback.reasons && feedback.reasons.length > 0 && (
+                                      <Box sx={{ mt: 1 }}>
+                                        <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                          {feedback.reasons.map((reason, idx) => (
+                                            <Chip
+                                              key={idx}
+                                              label={reason}
+                                              size="small"
+                                              variant="outlined"
+                                              color="warning"
+                                            />
+                                          ))}
+                                        </Stack>
+                                      </Box>
+                                    )}
+                                    {/* Forward button for client feedback */}
+                                    {!isClient && feedback.admin?.role === 'client' && !feedback.sentToCreator && (
+                                      <Box sx={{ mt: 1 }}>
+                                        <Button
+                                          size="small"
+                                          variant="outlined"
+                                          color="primary"
+                                          onClick={() => {
+                                            setSelectedFeedback(feedback);
+                                            setForwardFeedbackDialog(true);
+                                          }}
+                                          startIcon={<Iconify icon="eva:arrow-forward-fill" />}
+                                        >
+                                          Forward to Creator
+                                        </Button>
+                                      </Box>
+                                    )}
+                                  </Box>
+                                </Box>
+                              </Card>
+                            ))}
+                          </Stack>
+                        </Box>
                       )}
                     </Stack>
-
-                    {video.feedback && (
-                      <Box sx={{ mt: 1 }}>
-                        <Typography variant="caption" fontWeight="medium">
-                          Feedback:
-                        </Typography>
-                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                          {video.feedback}
-                        </Typography>
-                      </Box>
-                    )}
+                  </Card>
+                ) : (
+                  <Typography color="text.secondary">No video uploaded yet</Typography>
+                )
+              ) : (
+                // Show placeholder for clients when content is being processed
+                <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
+                  <Stack spacing={2} alignItems="center">
+                    <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
+                    <Typography variant="body2" color="text.secondary">
+                      Video content is being processed by the admin
+                    </Typography>
+                    <Chip
+                      label="In Progress"
+                      color="info"
+                      size="small"
+                    />
                   </Stack>
                 </Card>
-              ) : (
-                <Typography color="text.secondary">No video data available</Typography>
               )}
             </Box>
-
-            {/* Caption */}
-            {submission.caption && (
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Caption
-                </Typography>
-                <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-                  <Typography variant="body2">{submission.caption}</Typography>
-                </Card>
-              </Box>
-            )}
 
             {/* Posting Link */}
             <Box>
@@ -346,16 +402,6 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
                     />
                   )}
                 </Typography>
-                {isApproved && !isClient && (
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={handleAddPostingLink}
-                    startIcon={<Iconify icon="eva:link-2-fill" />}
-                  >
-                    {hasPostingLink ? 'Update Link' : 'Add Link'}
-                  </Button>
-                )}
               </Stack>
               
               <Card sx={{ p: 2, bgcolor: 'background.neutral', mt: 1 }}>
@@ -534,34 +580,87 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
         </DialogActions>
       </Dialog>
 
-      {/* Posting Link Dialog */}
-      <Dialog open={postingDialog} onClose={() => setPostingDialog(false)} maxWidth="sm" fullWidth>
+
+      {/* Forward Client Feedback Dialog */}
+      <Dialog open={forwardFeedbackDialog} onClose={() => setForwardFeedbackDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {hasPostingLink ? 'Update Posting Link' : 'Add Posting Link'}
+          Forward Client Feedback to Creator {console.log('Selected feedback: ', selectedFeedback)}
         </DialogTitle>
         <DialogContent>
+          {selectedFeedback && (
+            <Card sx={{ p: 2, bgcolor: 'background.neutral', mb: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Original Client Feedback:
+              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <Box sx={{ 
+                  minWidth: 20, 
+                  height: 20, 
+                  borderRadius: '50%', 
+                  bgcolor: 'primary.main', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}>
+                  <Typography variant="caption" sx={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
+                    {selectedFeedback.admin?.name?.charAt(0) || 'C'}
+                  </Typography>
+                </Box>
+                <Typography variant="caption" fontWeight="medium">
+                  {selectedFeedback.admin?.name || 'Client'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {new Date(selectedFeedback.createdAt).toLocaleDateString()}
+                </Typography>
+              </Stack>
+              <Typography variant="body2">
+                {selectedFeedback.content}
+              </Typography>
+              {selectedFeedback.reasons && selectedFeedback.reasons.length > 0 && (
+                <Box sx={{ mt: 1 }}>
+                  <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                    {selectedFeedback.reasons.map((reason, idx) => (
+                      <Chip
+                        key={idx}
+                        label={reason}
+                        size="small"
+                        variant="outlined"
+                        color="warning"
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+            </Card>
+          )}
           <TextField
             fullWidth
-            label="Posting URL"
-            value={postingLink}
-            onChange={(e) => setPostingLink(e.target.value)}
-            placeholder="https://www.tiktok.com/@username/video/123456789"
+            multiline
+            rows={4}
+            label="Additional message (optional)"
+            value={forwardFeedback}
+            onChange={(e) => setForwardFeedback(e.target.value)}
+            placeholder="Add any additional context or instructions for the creator..."
             sx={{ mt: 1 }}
           />
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            Enter the social media post URL where this video was published
+            The original client feedback will be forwarded along with any additional message you provide.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPostingDialog(false)} disabled={loading}>
+          <Button onClick={() => {
+            setForwardFeedbackDialog(false);
+            setSelectedFeedback(null);
+          }} disabled={forwardLoading}>
             Cancel
           </Button>
           <Button
-            onClick={handleSubmitPostingLink}
+            onClick={handleSubmitForwardFeedback}
             variant="contained"
-            loading={loading}
+            loading={forwardLoading}
+            color="primary"
           >
-            {hasPostingLink ? 'Update' : 'Add'} Link
+            Forward to Creator
           </Button>
         </DialogActions>
       </Dialog>
@@ -571,7 +670,6 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
 
 V4VideoSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
-  campaign: PropTypes.object.isRequired,
   index: PropTypes.number,
   onUpdate: PropTypes.func,
 };
