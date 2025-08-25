@@ -762,9 +762,10 @@ const FinalDraft = ({
   const availableTabs = useMemo(() => {
     const tabs = [];
     
-    // Show content if firstDraft has changes required OR if final draft is pending review
+    // Show content if firstDraft has changes required OR if final draft is pending review OR if final draft has changes required
     const shouldShowContent = firstDraftSubmission?.status === 'CHANGES_REQUIRED' || 
-                             submission?.status === 'PENDING_REVIEW';
+                             submission?.status === 'PENDING_REVIEW' ||
+                             submission?.status === 'CHANGES_REQUIRED';
     
     if (!shouldShowContent) {
       return tabs; // Return empty tabs if conditions are not met
