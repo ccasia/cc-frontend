@@ -15,6 +15,7 @@ import { formatText } from 'src/utils/format-test';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
+import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
@@ -24,19 +25,19 @@ import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
-  console.log('CampaignItem rendered:', { 
-    campaignId: campaign?.id, 
+  console.log('CampaignItem rendered:', {
+    campaignId: campaign?.id,
     campaignStatus: campaign?.status,
     campaignName: campaign?.name,
     hasCampaignAdmin: !!campaign?.campaignAdmin,
-    campaignAdminLength: campaign?.campaignAdmin?.length
+    campaignAdminLength: campaign?.campaignAdmin?.length,
   });
-  
+
   const theme = useTheme();
   const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
-  
+
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -61,13 +62,13 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     event.stopPropagation();
 
     const campaignName = campaign?.name || 'Campaign Details';
-    
+
     // Check if this campaign is already in campaignTabs
-    const tabExists = window.campaignTabs.some(tab => tab.id === campaign.id);
-    
+    const tabExists = window.campaignTabs.some((tab) => tab.id === campaign.id);
+
     if (tabExists) {
       // If tab already exists, update the name to ensure it's current
-      window.campaignTabs = window.campaignTabs.map(tab => {
+      window.campaignTabs = window.campaignTabs.map((tab) => {
         if (tab.id === campaign.id) {
           return { ...tab, name: campaignName };
         }
@@ -84,20 +85,20 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       // If tab doesn't exist yet, add it to campaignTabs
       window.campaignTabs.push({
         id: campaign.id,
-        name: campaignName
+        name: campaignName,
       });
-      
+
       // Update status tracking for tabs
       if (typeof window !== 'undefined') {
         if (!window.campaignTabsStatus) {
           window.campaignTabsStatus = {};
         }
-        
+
         window.campaignTabsStatus[campaign.id] = {
-          status: campaign.status
+          status: campaign.status,
         };
       }
-      
+
       // Save to localStorage
       try {
         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
@@ -105,10 +106,10 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         console.error('Error saving campaign tabs to localStorage:', error);
       }
     }
-    
+
     // Navigate to the campaign detail page - commented out for now in case CC wants this feature
     // router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
-    
+
     handleClose();
   };
 
@@ -134,15 +135,16 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   const isCSL = user?.admin?.role?.name === 'CSL';
   const isSuperAdmin = user?.admin?.mode === 'god';
   const isAdmin = user?.role === 'admin';
-  const isCSM = user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
-  
+  const isCSM =
+    user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
+
   // For debugging - log the actual user structure
   console.log('User role structure:', {
     userRole: user?.role,
     adminRole: user?.admin?.role?.name,
     adminMode: user?.admin?.mode,
     isAdmin,
-    isCSM
+    isCSM,
   });
 
   // Debug user details
@@ -153,18 +155,18 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     isCSL,
     isSuperAdmin,
     isAdmin,
-    isCSM
+    isCSM,
   });
 
   // Check if user can perform initial activation (CSL or Superadmin)
   const canInitialActivate = isCSL || isSuperAdmin;
-  
+
   // Check if user can complete activation (CSM/Admin assigned to campaign)
-  const isUserAssignedToCampaign = campaign?.campaignAdmin?.some(admin => {
+  const isUserAssignedToCampaign = campaign?.campaignAdmin?.some((admin) => {
     const adminIdMatch = admin.adminId === user?.id;
     const adminUserIdMatch = admin.admin?.userId === user?.id;
     const adminUserMatch = admin.admin?.user?.id === user?.id;
-    
+
     console.log('Checking admin assignment:', {
       adminId: admin.adminId,
       adminUserId: admin.admin?.userId,
@@ -172,33 +174,42 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       userId: user?.id,
       adminIdMatch,
       adminUserIdMatch,
-      adminUserMatch
+      adminUserMatch,
     });
-    
+
     return adminIdMatch || adminUserIdMatch || adminUserMatch;
   });
-  const canCompleteActivation = (isCSM || isAdmin) && campaign?.status === 'PENDING_ADMIN_ACTIVATION' && isUserAssignedToCampaign;
-  
+  const canCompleteActivation =
+    (isCSM || isAdmin) &&
+    campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
+    isUserAssignedToCampaign;
+
   // Debug campaign admin assignment
   console.log('Campaign admin check:', {
     campaignId: campaign?.id,
     campaignStatus: campaign?.status,
     userId: user?.id,
-    campaignAdmins: campaign?.campaignAdmin?.map(admin => ({
+    campaignAdmins: campaign?.campaignAdmin?.map((admin) => ({
       adminId: admin.adminId,
       adminUserId: admin.admin?.userId,
       adminUser: admin.admin?.user?.id,
       role: admin.admin?.role?.name,
-      fullAdmin: admin.admin
+      fullAdmin: admin.admin,
     })),
     isUserAssigned: isUserAssignedToCampaign,
-    canCompleteActivation
+    canCompleteActivation,
   });
 
-  const isPendingReview = campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED' || campaign?.status === 'PENDING_ADMIN_ACTIVATION';
-  
+  const isPendingReview =
+    campaign?.status === 'PENDING_CSM_REVIEW' ||
+    campaign?.status === 'SCHEDULED' ||
+    campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+
   // Determine if the Activate Campaign button should be disabled
-  const isDisabled = (isCSL || isSuperAdmin) && campaign?.status === 'PENDING_ADMIN_ACTIVATION' && !isUserAssignedToCampaign;
+  const isDisabled =
+    (isCSL || isSuperAdmin) &&
+    campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
+    !isUserAssignedToCampaign;
 
   const renderImages = (
     <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
@@ -229,8 +240,10 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               ) : null
             }
             label={formatText(
-              campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED' || campaign?.status === 'PENDING_ADMIN_ACTIVATION'
-                ? 'PENDING' 
+              campaign?.status === 'PENDING_CSM_REVIEW' ||
+                campaign?.status === 'SCHEDULED' ||
+                campaign?.status === 'PENDING_ADMIN_ACTIVATION'
+                ? 'PENDING'
                 : campaign?.status
             )}
             sx={{
@@ -394,7 +407,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               },
             }}
           >
-            <MenuItem 
+            <MenuItem
               onClick={handleOpenInNewTab}
               sx={{
                 borderRadius: 1,
@@ -410,23 +423,34 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             >
               Open in New Tab
             </MenuItem>
-            
+
             {/* Activate Campaign - Different behavior based on user role and campaign status */}
             {(() => {
               // Show button for superadmin/CSL to assign admin (initial activation)
-              const showForInitialActivation = canInitialActivate && (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED');
-              
+              const showForInitialActivation =
+                canInitialActivate &&
+                (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED');
+
               // Show button for assigned admin/CSM to complete activation
-              const showForCompleteActivation = canCompleteActivation && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
-              
+              const showForCompleteActivation =
+                canCompleteActivation && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+
               // Show disabled button for superadmin/CSL after admin assignment (waiting for admin to complete)
-              const showDisabledForSuperadmin = (isCSL || isSuperAdmin) && campaign?.status === 'PENDING_ADMIN_ACTIVATION' && !isUserAssignedToCampaign;
-              
+              const showDisabledForSuperadmin =
+                (isCSL || isSuperAdmin) &&
+                campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
+                !isUserAssignedToCampaign;
+
               // TEMPORARY: Always show button for admin/CSM when status is PENDING_ADMIN_ACTIVATION
-              const showTemporaryForAdmin = (isAdmin || isCSM) && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
-              
-              const shouldShow = showForInitialActivation || showForCompleteActivation || showDisabledForSuperadmin || showTemporaryForAdmin;
-              
+              const showTemporaryForAdmin =
+                (isAdmin || isCSM) && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+
+              const shouldShow =
+                showForInitialActivation ||
+                showForCompleteActivation ||
+                showDisabledForSuperadmin ||
+                showTemporaryForAdmin;
+
               console.log('Menu condition check:', {
                 campaignStatus: campaign?.status,
                 canInitialActivate,
@@ -439,22 +463,26 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                 isUserAssignedToCampaign,
                 userRole: user?.role,
                 adminMode: user?.admin?.mode,
-                adminRole: user?.admin?.role?.name
+                adminRole: user?.admin?.role?.name,
               });
-              
+
               return shouldShow;
             })() && (
-              <MenuItem 
+              <MenuItem
                 onClick={(event) => {
                   event.stopPropagation();
-                  
+
                   // Don't do anything if disabled
                   if (isDisabled) {
                     return;
                   }
-                  
-                  alert('Activate Campaign clicked! User: ' + user?.name + ', Role: ' + user?.role + ', Admin Mode: ' + user?.admin?.mode);
-                  
+
+                  alert(
+                    `Activate Campaign clicked! User: ${user?.name}, Role: ${
+                      user?.role
+                    }, Admin Mode: ${user?.admin?.mode}`
+                  );
+
                   console.log('Activate Campaign clicked:', {
                     userRole: user?.role,
                     adminMode: user?.admin?.mode,
@@ -464,11 +492,14 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                     canCompleteActivation,
                     isCSL,
                     isSuperAdmin,
-                    isCSM
+                    isCSM,
                   });
-                  
+
                   // For superadmin on pending campaigns: use initial activation (admin assignment only)
-                  if (canInitialActivate && (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')) {
+                  if (
+                    canInitialActivate &&
+                    (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')
+                  ) {
                     console.log('Opening InitialActivateDialog (admin assignment only)');
                     setInitialActivateDialogOpen(true);
                   } else if (campaign?.status === 'PENDING_ADMIN_ACTIVATION') {
@@ -499,7 +530,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                 {isDisabled ? 'Waiting for Admin Activation' : 'Activate Campaign'}
               </MenuItem>
             )}
-            <MenuItem 
+            <MenuItem
               onClick={(event) => {
                 event.stopPropagation();
                 setCampaignLogIsOpen(true);
@@ -560,8 +591,26 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             display: 'flex',
             justifyContent: 'center',
           }}
-         />
+        />
       )}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          zIndex: 1,
+          border: 0.5,
+          borderRadius: 20,
+          display: 'inline-flex',
+          borderColor: 'gray',
+          boxShadow: '0px 0px 5px 0px #5c5c5c',
+        }}
+      >
+        <Iconify
+          icon={`emojione:flag-for-${campaign?.campaignRequirement?.country.toLowerCase()}`}
+          width={40}
+        />
+      </Box>
       {false && (
         <Box
           mt={4}
@@ -592,12 +641,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       )}
       {renderImages}
       {renderTexts}
-
       <Box onClick={(e) => e.stopPropagation()}>
         <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
-        <ActivateCampaignDialog 
-          open={activateDialogOpen} 
-          onClose={handleCloseActivateDialog} 
+        <ActivateCampaignDialog
+          open={activateDialogOpen}
+          onClose={handleCloseActivateDialog}
           campaignId={campaign?.id}
           onSuccess={() => {
             // Trigger a revalidation of the campaigns data
@@ -606,9 +654,9 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             }
           }}
         />
-        <InitialActivateCampaignDialog 
-          open={initialActivateDialogOpen} 
-          onClose={handleCloseInitialActivateDialog} 
+        <InitialActivateCampaignDialog
+          open={initialActivateDialogOpen}
+          onClose={handleCloseInitialActivateDialog}
           campaignId={campaign?.id}
         />
       </Box>
