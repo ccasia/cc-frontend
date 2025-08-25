@@ -15,8 +15,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { formatText } from 'src/utils/format-test';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
