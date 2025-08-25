@@ -593,24 +593,28 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
           }}
         />
       )}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 1,
-          border: 0.5,
-          borderRadius: 20,
-          display: 'inline-flex',
-          borderColor: 'gray',
-          boxShadow: '0px 0px 5px 0px #5c5c5c',
-        }}
-      >
-        <Iconify
-          icon={`emojione:flag-for-${campaign?.campaignRequirement?.country.toLowerCase()}`}
-          width={40}
-        />
-      </Box>
+
+      {campaign?.campaignRequirement?.country && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            zIndex: 1,
+            border: 0.5,
+            borderRadius: 20,
+            display: 'inline-flex',
+            borderColor: 'gray',
+            boxShadow: '0px 0px 5px 0px #5c5c5c',
+          }}
+        >
+          <Iconify
+            icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
+            width={40}
+          />
+        </Box>
+      )}
+
       {false && (
         <Box
           mt={4}
