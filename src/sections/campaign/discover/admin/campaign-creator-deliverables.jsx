@@ -108,8 +108,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
     // Apply sorting
     return [...filtered].sort((a, b) => {
-      const nameA = a.user.name?.toLowerCase() || '';
-      const nameB = b.user.name?.toLowerCase() || '';
+      const nameA = a.user?.name?.toLowerCase() || '';
+      const nameB = b.user?.name?.toLowerCase() || '';
 
       if (sortDirection === 'asc') {
         return nameA.localeCompare(nameB);
@@ -129,32 +129,28 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       setLoadingStatuses(true);
       const statusMap = {};
 
-      // Define status priority for determining the "latest" status
-      const statusPriority = {
-        APPROVED: 5,
-        PENDING_REVIEW: 4,
-        CHANGES_REQUIRED: 3,
-        IN_PROGRESS: 2,
-        NOT_STARTED: 1,
-      };
-
       try {
         // Process creators one by one to avoid too many simultaneous requests
         for (const creator of shortlistedCreators) {
           try {
-            // Using the same API endpoint that the useGetSubmissions hook uses
+            console.log(`Fetching status for creator: ${creator.user?.name} (${creator.userId})`);
+            
+            // Using the correct API endpoint for campaign submissions
             const response = await fetch(
-              `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
+              `/api/campaign/getSubmissions?userId=${creator.userId}&campaignId=${campaign.id}`
             );
 
             if (!response.ok) {
+              console.log(`Response not ok for creator ${creator.userId}:`, response.status);
               statusMap[creator.userId] = 'NOT_STARTED';
               continue;
             }
 
             const data = await response.json();
+            console.log(`Submissions data for ${creator.user?.name}:`, data);
 
             if (!data || data.length === 0) {
+              console.log(`No submissions found for creator ${creator.userId}`);
               statusMap[creator.userId] = 'NOT_STARTED';
               continue;
             }
@@ -167,39 +163,53 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                 submission.submissionType?.type === 'POSTING'
             );
 
+            console.log(`Relevant submissions for ${creator.user?.name}:`, relevantSubmissions);
+
             if (relevantSubmissions.length === 0) {
+              console.log(`No relevant submissions found for creator ${creator.userId}`);
               statusMap[creator.userId] = 'NOT_STARTED';
               continue;
             }
 
             // Find submissions by type
             const firstDraftSubmission = relevantSubmissions.find(
-              (item) => item.submissionType.type === 'FIRST_DRAFT'
+              (item) => item.submissionType?.type === 'FIRST_DRAFT'
             );
             const finalDraftSubmission = relevantSubmissions.find(
-              (item) => item.submissionType.type === 'FINAL_DRAFT'
+              (item) => item.submissionType?.type === 'FINAL_DRAFT'
             );
             const postingSubmission = relevantSubmissions.find(
-              (item) => item.submissionType.type === 'POSTING'
+              (item) => item.submissionType?.type === 'POSTING'
             );
+
+            console.log(`Submission types for ${creator.user?.name}:`, {
+              firstDraft: firstDraftSubmission?.status,
+              finalDraft: finalDraftSubmission?.status,
+              posting: postingSubmission?.status
+            });
 
             // Determine the status based on the latest stage in the workflow
             // Priority: Posting > Final Draft > First Draft
+            let finalStatus = 'NOT_STARTED';
+            
             if (postingSubmission) {
-              statusMap[creator.userId] = postingSubmission.status;
+              finalStatus = postingSubmission.status;
             } else if (finalDraftSubmission) {
-              statusMap[creator.userId] = finalDraftSubmission.status;
+              finalStatus = finalDraftSubmission.status;
             } else if (firstDraftSubmission) {
-              statusMap[creator.userId] = firstDraftSubmission.status;
-            } else {
-              statusMap[creator.userId] = 'NOT_STARTED';
+              finalStatus = firstDraftSubmission.status;
             }
+
+            statusMap[creator.userId] = finalStatus;
+            console.log(`Final status for ${creator.user?.name}: ${finalStatus}`);
+            
           } catch (error) {
             console.error(`Error fetching status for creator ${creator.userId}:`, error);
             statusMap[creator.userId] = 'NOT_STARTED';
           }
         }
 
+        console.log('Final status map:', statusMap);
         setCreatorStatuses(statusMap);
       } catch (error) {
         console.error('Error fetching creator statuses:', error);
@@ -209,7 +219,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     };
 
     fetchAllCreatorStatuses();
-  }, [shortlistedCreators, campaign?.id]);
+  }, [shortlistedCreators, campaign?.id, campaign?.shortlisted]);
 
   // Update creator statuses when submissions change for the selected creator
   useEffect(() => {
@@ -261,6 +271,92 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   // Toggle sort direction
   const handleToggleSort = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Refresh creator statuses
+  const refreshCreatorStatuses = () => {
+    setLoadingStatuses(true);
+    setCreatorStatuses({});
+    
+    // Trigger the useEffect to refetch statuses
+    const fetchAllCreatorStatuses = async () => {
+      if (!shortlistedCreators.length || !campaign?.id) {
+        setLoadingStatuses(false);
+        return;
+      }
+
+      const statusMap = {};
+
+      try {
+        for (const creator of shortlistedCreators) {
+          try {
+            console.log(`Refreshing status for creator: ${creator.user?.name} (${creator.userId})`);
+            
+            const response = await fetch(
+              `/api/campaign/getSubmissions?userId=${creator.userId}&campaignId=${campaign.id}`
+            );
+
+            if (!response.ok) {
+              statusMap[creator.userId] = 'NOT_STARTED';
+              continue;
+            }
+
+            const data = await response.json();
+
+            if (!data || data.length === 0) {
+              statusMap[creator.userId] = 'NOT_STARTED';
+              continue;
+            }
+
+            const relevantSubmissions = data.filter(
+              (submission) =>
+                submission.submissionType?.type === 'FIRST_DRAFT' ||
+                submission.submissionType?.type === 'FINAL_DRAFT' ||
+                submission.submissionType?.type === 'POSTING'
+            );
+
+            if (relevantSubmissions.length === 0) {
+              statusMap[creator.userId] = 'NOT_STARTED';
+              continue;
+            }
+
+            const firstDraftSubmission = relevantSubmissions.find(
+              (item) => item.submissionType?.type === 'FIRST_DRAFT'
+            );
+            const finalDraftSubmission = relevantSubmissions.find(
+              (item) => item.submissionType?.type === 'FINAL_DRAFT'
+            );
+            const postingSubmission = relevantSubmissions.find(
+              (item) => item.submissionType?.type === 'POSTING'
+            );
+
+            let finalStatus = 'NOT_STARTED';
+            
+            if (postingSubmission) {
+              finalStatus = postingSubmission.status;
+            } else if (finalDraftSubmission) {
+              finalStatus = finalDraftSubmission.status;
+            } else if (firstDraftSubmission) {
+              finalStatus = firstDraftSubmission.status;
+            }
+
+            statusMap[creator.userId] = finalStatus;
+            
+          } catch (error) {
+            console.error(`Error refreshing status for creator ${creator.userId}:`, error);
+            statusMap[creator.userId] = 'NOT_STARTED';
+          }
+        }
+
+        setCreatorStatuses(statusMap);
+      } catch (error) {
+        console.error('Error refreshing creator statuses:', error);
+      } finally {
+        setLoadingStatuses(false);
+      }
+    };
+
+    fetchAllCreatorStatuses();
   };
 
   // Set first creator as selected by default, or use target creator from localStorage
@@ -448,7 +544,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
           gap: { xs: 2, sm: 2 },
-          justifyContent: { xs: 'stretch', sm: 'flex-start' },
+          justifyContent: { xs: 'stretch', sm: 'space-between' },
           alignItems: { xs: 'stretch', sm: 'center' },
           width: '100%',
           mb: { xs: 1, sm: 2 },
@@ -475,8 +571,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           }}
           sx={{
             width: '100%',
-            maxWidth: { sm: 260 },
-            flexGrow: { sm: 0 },
+            maxWidth: { sm: 300 },
+            flexGrow: { sm: 1 },
             '& .MuiOutlinedInput-root': {
               height: '42px',
               border: '1px solid #e7e7e7',
@@ -485,72 +581,110 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
             },
           }}
         />
-        <Button
-          onClick={handleToggleSort}
-          endIcon={
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              {sortDirection === 'asc' ? (
-                <Stack direction="column" alignItems="center" spacing={0}>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                  >
-                    A
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                  >
-                    Z
-                  </Typography>
-                </Stack>
+        <Stack direction="row" spacing={1}>
+          <Button
+            onClick={handleToggleSort}
+            endIcon={
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {sortDirection === 'asc' ? (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                  </Stack>
+                )}
+                <Iconify
+                  icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
+                  width={12}
+                />
+              </Stack>
+            }
+            sx={{
+              px: 1.5,
+              py: 0.75,
+              height: '42px',
+              color: '#637381',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              backgroundColor: { xs: '#f9f9f9', sm: 'transparent' },
+              border: { xs: '1px solid #e7e7e7', sm: 'none' },
+              borderBottom: { xs: '3px solid #e7e7e7', sm: 'none' },
+              borderRadius: 1,
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              boxShadow: 'none',
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { sm: '140px' },
+              justifyContent: { xs: 'space-between', sm: 'center' },
+              '&:hover': {
+                backgroundColor: { xs: '#f5f5f5', sm: 'transparent' },
+                color: '#221f20',
+              },
+            }}
+          >
+            Alphabetical
+          </Button>
+
+          <Button
+            onClick={refreshCreatorStatuses}
+            disabled={loadingStatuses}
+            startIcon={
+              loadingStatuses ? (
+                <CircularProgress size={16} />
               ) : (
-                <Stack direction="column" alignItems="center" spacing={0}>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                  >
-                    Z
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                  >
-                    A
-                  </Typography>
-                </Stack>
-              )}
-              <Iconify
-                icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
-                width={12}
-              />
-            </Stack>
-          }
-          sx={{
-            px: 1.5,
-            py: 0.75,
-            height: '42px',
-            color: '#637381',
-            fontWeight: 600,
-            fontSize: '0.875rem',
-            backgroundColor: { xs: '#f9f9f9', sm: 'transparent' },
-            border: { xs: '1px solid #e7e7e7', sm: 'none' },
-            borderBottom: { xs: '3px solid #e7e7e7', sm: 'none' },
-            borderRadius: 1,
-            textTransform: 'none',
-            whiteSpace: 'nowrap',
-            boxShadow: 'none',
-            width: { xs: '100%', sm: 'auto' },
-            minWidth: { sm: '140px' },
-            justifyContent: { xs: 'space-between', sm: 'center' },
-            '&:hover': {
-              backgroundColor: { xs: '#f5f5f5', sm: 'transparent' },
-              color: '#221f20',
-            },
-          }}
-        >
-          Alphabetical
-        </Button>
+                <Iconify icon="eva:refresh-fill" width={16} />
+              )
+            }
+            sx={{
+              px: 1.5,
+              py: 0.75,
+              height: '42px',
+              color: '#637381',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              backgroundColor: { xs: '#f9f9f9', sm: 'transparent' },
+              border: { xs: '1px solid #e7e7e7', sm: 'none' },
+              borderBottom: { xs: '3px solid #e7e7e7', sm: 'none' },
+              borderRadius: 1,
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              boxShadow: 'none',
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { sm: '100px' },
+              justifyContent: { xs: 'space-between', sm: 'center' },
+              '&:hover': {
+                backgroundColor: { xs: '#f5f5f5', sm: 'transparent' },
+                color: '#221f20',
+              },
+            }}
+          >
+            Refresh
+          </Button>
+        </Stack>
       </Box>
 
       {/* Content Row */}

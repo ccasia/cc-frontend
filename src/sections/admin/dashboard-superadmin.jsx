@@ -354,6 +354,9 @@ import {
   ListItemAvatar,
   CircularProgress,
   ListItemSecondaryAction,
+  TextField,
+  TablePagination,
+  InputAdornment,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -379,6 +382,11 @@ const DashboardSuperadmin = () => {
   const { socket } = useSocketContext();
   const [onlineUsers, setOnlineUsers] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
   const { user } = useAuthContext();
   const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher);
   const router = useRouter();
@@ -413,6 +421,49 @@ const DashboardSuperadmin = () => {
     return total;
   }, [campaigns]);
 
+  // Calculate approved and rejected pitches
+  const pitchStats = useMemo(() => {
+    if (!campaigns) return { approved: 0, rejected: 0 };
+    
+    let approved = 0;
+    let rejected = 0;
+    
+    campaigns.forEach((campaign) => {
+      if (campaign?.pitch) {
+        campaign.pitch.forEach((pitch) => {
+          if (pitch.status === 'approved') {
+            approved += 1;
+          } else if (pitch.status === 'rejected') {
+            rejected += 1;
+          }
+        });
+      }
+    });
+    
+    return { approved, rejected };
+  }, [campaigns]);
+
+  // Calculate creators with media kits
+  const creatorsWithMediaKits = useMemo(() => {
+    if (!creators) return 0;
+    return creators.filter((creator) => creator?.creator?.mediaKit).length;
+  }, [creators]);
+
+  // Get creators count per campaign
+  const creatorsPerCampaign = useMemo(() => {
+    if (!campaigns) return [];
+    return campaigns
+      .filter((campaign) => campaign.status === 'ACTIVE')
+      .map((campaign) => ({
+        id: campaign.id,
+        name: campaign.name,
+        creatorCount: campaign?.shortlisted?.length || 0,
+        brandName: campaign?.brand?.name || 'No brand',
+        image: campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo,
+      }))
+      .sort((a, b) => b.creatorCount - a.creatorCount); // Sort by creator count (highest first)
+  }, [campaigns]);
+
   // Get all pending pitches
   const pendingPitches = useMemo(() => {
     if (!campaigns) return [];
@@ -442,6 +493,29 @@ const DashboardSuperadmin = () => {
     if (selectedCampaign === 'all') return pendingPitches;
     return pendingPitches.filter((pitch) => pitch.campaignId === selectedCampaign);
   }, [pendingPitches, selectedCampaign]);
+
+  // Filter and paginate creators per campaign
+  const filteredCreatorsPerCampaign = useMemo(() => {
+    if (!creatorsPerCampaign) return [];
+    
+    let filtered = creatorsPerCampaign;
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter((campaign) =>
+        campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        campaign.brandName.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [creatorsPerCampaign, searchTerm]);
+
+  // Get paginated data
+  const paginatedCreatorsPerCampaign = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    return filteredCreatorsPerCampaign.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredCreatorsPerCampaign, page, rowsPerPage]);
 
   const totalChats = user?._count?.UserThread || 0;
   const totalCreators = creators?.length || 0;
@@ -475,8 +549,9 @@ const DashboardSuperadmin = () => {
     />
   );
 
-  // Metric cards with clean design
+  // Metric cards with clean design - reorganized for better flow
   const metricCards = [
+    // Core platform metrics (first row)
     {
       title: 'Active Campaigns',
       value: activeCampaigns.length,
@@ -490,16 +565,35 @@ const DashboardSuperadmin = () => {
       icon: icon('ic_creators'),
     },
     {
-      title: 'Total Pitches',
-      value: totalPitches,
-      color: colors.secondary,
-      icon: <Iconify icon="icon-park-outline:chart-histogram" width={20} />,
+      title: 'Creators with Media Kit',
+      value: creatorsWithMediaKits,
+      color: '#8b5cf6',
+      icon: <Iconify icon="mdi:file-document" width={20} />,
     },
     {
       title: 'Total Clients',
       value: totalClients,
       color: colors.tertiary,
       icon: icon('ic_clients'),
+    },
+    // Pitch performance metrics (second row)
+    {
+      title: 'Total Pitches',
+      value: totalPitches,
+      color: colors.secondary,
+      icon: <Iconify icon="icon-park-outline:chart-histogram" width={20} />,
+    },
+    {
+      title: 'Approved Pitches',
+      value: pitchStats.approved,
+      color: '#22c55e',
+      icon: <Iconify icon="mdi:check-circle" width={20} />,
+    },
+    {
+      title: 'Rejected Pitches',
+      value: pitchStats.rejected,
+      color: '#ef4444',
+      icon: <Iconify icon="mdi:close-circle" width={20} />,
     },
   ];
 
@@ -512,6 +606,79 @@ const DashboardSuperadmin = () => {
     localStorage.setItem('campaigndetail', 'pitch');
     // Navigate to the campaign's pitch section
     router.push(paths.dashboard.campaign.adminCampaignDetail(pitch.campaignId));
+  };
+
+  const handleExportCampaignCreators = async (campaignId, campaignName) => {
+    setIsExporting(true);
+    
+    try {
+      // Google Sheets configuration
+      const spreadSheetId = '1E6Rcm-0VA5INObz7weqpcdaQ7pcSLej7guiq8mwfjKo';
+      const sheetByTitle = 'Campaign';
+      
+      const response = await fetch(`/api/admin/export-campaign-creators/${campaignId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          spreadSheetId,
+          sheetByTitle,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Successfully exported ${result.exportedCount} creators from "${result.campaignName}" to Google Sheets!`);
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Export failed');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert(`Failed to export creators: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportAllCampaigns = async () => {
+    setIsExporting(true);
+    setExportSuccess(false);
+    
+    try {
+      // Google Sheets configuration
+      const spreadSheetId = '1E6Rcm-0VA5INObz7weqpcdaQ7pcSLej7guiq8mwfjKo';
+      const sheetByTitle = 'Campaign';
+      
+      // Use the bulk export endpoint
+      const response = await fetch('/api/admin/export-all-campaign-creators', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          spreadSheetId,
+          sheetByTitle,
+        }),
+      });
+
+      if (response.ok) {
+        setExportSuccess(true);
+        // Reset success state after 3 seconds
+        setTimeout(() => {
+          setExportSuccess(false);
+        }, 3000);
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Export failed');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      // You can add a toast notification here if needed
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const renderMetricCard = (metric, index) => (
@@ -1010,21 +1177,22 @@ const DashboardSuperadmin = () => {
                           },
                           cursor: 'default',
                         }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                </Tooltip>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="body2" color={colors.secondary}>
-            No active campaigns
-          </Typography>
-        </Box>
-      )}
+                                                />
+                        </TableCell>
+
+                      </TableRow>
+                    </Tooltip>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="body2" color={colors.secondary}>
+                {searchTerm ? 'No campaigns found matching your search' : 'No active campaigns'}
+              </Typography>
+            </Box>
+          )}
     </Card>
   );
 
@@ -1200,6 +1368,243 @@ const DashboardSuperadmin = () => {
             {renderPendingPitches}
           </Grid>
         </Grid>
+
+        {/* Creators per Campaign Breakdown */}
+        <Card
+          sx={{
+            bgcolor: colors.background,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 1,
+            overflow: 'hidden',
+          }}
+        >
+          <Box sx={{ p: 3, borderBottom: `1px solid ${colors.border}` }}>
+            <Stack spacing={2}>
+                              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: colors.primary,
+                        fontWeight: 600,
+                        fontSize: '1.1rem',
+                      }}
+                    >
+                      Creators per Campaign
+                    </Typography>
+                    <Chip
+                      label={`${filteredCreatorsPerCampaign.length} campaigns`}
+                      size="small"
+                      sx={{
+                        bgcolor: colors.accent,
+                        color: colors.background,
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        height: 24,
+                      }}
+                    />
+                  </Stack>
+
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                                         {/* Search Bar */}
+                     <TextField
+                       size="small"
+                       placeholder="Search campaigns..."
+                       value={searchTerm}
+                       onChange={(e) => {
+                         setSearchTerm(e.target.value);
+                         setPage(0); // Reset to first page when searching
+                       }}
+                       sx={{
+                         minWidth: 250,
+                         '& .MuiOutlinedInput-root': {
+                           fontSize: '0.8rem',
+                           '& fieldset': {
+                             borderColor: colors.border,
+                           },
+                           '&:hover fieldset': {
+                             borderColor: colors.accent,
+                           },
+                           '&.Mui-focused fieldset': {
+                             borderColor: colors.accent,
+                           },
+                         },
+                       }}
+                       InputProps={{
+                         startAdornment: (
+                           <InputAdornment position="start">
+                             <Iconify icon="eva:search-fill" width={16} sx={{ color: colors.secondary }} />
+                           </InputAdornment>
+                         ),
+                         endAdornment: searchTerm && (
+                           <InputAdornment position="end">
+                             <IconButton
+                               size="small"
+                               onClick={() => {
+                                 setSearchTerm('');
+                                 setPage(0);
+                               }}
+                               sx={{ color: colors.secondary }}
+                             >
+                               <Iconify icon="eva:close-fill" width={16} />
+                             </IconButton>
+                           </InputAdornment>
+                         ),
+                       }}
+                     />
+
+                     {/* Export All Button */}
+                     <Tooltip 
+                       title={
+                         exportSuccess 
+                           ? "Export completed successfully!" 
+                           : isExporting 
+                           ? "Exporting creators..." 
+                           : "Export all campaign creators to Google Sheets"
+                       } 
+                       arrow
+                     >
+                       <IconButton
+                         onClick={handleExportAllCampaigns}
+                         disabled={isExporting || filteredCreatorsPerCampaign.filter(c => c.creatorCount > 0).length === 0}
+                         sx={{
+                           bgcolor: exportSuccess ? '#22c55e' : colors.accent,
+                           color: colors.background,
+                           width: 32,
+                           height: 32,
+                           transition: 'all 0.3s ease',
+                           '&:hover': {
+                             bgcolor: exportSuccess ? '#22c55e' : colors.accent,
+                             opacity: 0.8,
+                           },
+                           '&:disabled': {
+                             bgcolor: colors.light,
+                             color: colors.secondary,
+                           },
+                         }}
+                       >
+                         {isExporting ? (
+                           <CircularProgress size={16} sx={{ color: colors.background }} />
+                         ) : exportSuccess ? (
+                           <Iconify icon="eva:checkmark-fill" width={16} />
+                         ) : (
+                           <Iconify icon="eva:download-fill" width={16} />
+                         )}
+                       </IconButton>
+                     </Tooltip>
+                   </Stack>
+                 </Stack>
+               </Stack>
+             </Box>
+
+          {filteredCreatorsPerCampaign.length > 0 ? (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      sx={{
+                        fontWeight: 600,
+                        color: colors.primary,
+                        border: 'none',
+                        bgcolor: colors.light,
+                        fontSize: '0.8rem',
+                        width: '50%',
+                        pl: 3,
+                      }}
+                    >
+                      Campaign
+                    </TableCell>
+
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontWeight: 600,
+                        color: colors.primary,
+                        border: 'none',
+                        bgcolor: colors.light,
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      Creators Count
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedCreatorsPerCampaign.map((campaign) => (
+                    <Tooltip key={campaign.id} title="Go To Campaign" arrow>
+                      <TableRow
+                        onClick={() => handleViewCampaign(campaign.id)}
+                        sx={{
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s ease',
+                          '&:hover': {
+                            bgcolor: colors.surface,
+                          },
+                        }}
+                      >
+                        <TableCell sx={{ border: 'none', py: 2, pl: 3 }}>
+                          <Stack direction="row" alignItems="center" spacing={2}>
+                            <Avatar
+                              src={campaign.image}
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                bgcolor: colors.light,
+                                border: `1px solid ${colors.border}`,
+                              }}
+                            >
+                              <Image sx={{ fontSize: 20, color: colors.secondary }} />
+                            </Avatar>
+                            <Box>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: colors.primary,
+                                  fontWeight: 600,
+                                  fontSize: '0.85rem',
+                                  lineHeight: 1.2,
+                                  mb: 0.5,
+                                }}
+                              >
+                                {campaign.name}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </TableCell>
+
+                        <TableCell align="center" sx={{ border: 'none', py: 2 }}>
+                          <Chip
+                            label={campaign.creatorCount}
+                            size="small"
+                            sx={{
+                              bgcolor: campaign.creatorCount > 0 ? colors.accent : colors.light,
+                              color: campaign.creatorCount > 0 ? colors.background : colors.primary,
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24,
+                              minWidth: 32,
+                              '&:hover': {
+                                bgcolor: campaign.creatorCount > 0 ? colors.accent : colors.light,
+                              },
+                              cursor: 'default',
+                            }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    </Tooltip>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="body2" color={colors.secondary}>
+                No active campaigns
+              </Typography>
+            </Box>
+          )}
+        </Card>
 
         {/* Campaigns Table */}
         {renderCampaignTable}
