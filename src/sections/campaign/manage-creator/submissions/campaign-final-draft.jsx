@@ -187,7 +187,10 @@ const CampaignFinalDraft = ({
     // Hook is declared below; this early return will be executed after the hook value is ready
     // but since this is inside useMemo, it will recompute when dependency changes
     // Get feedback from both submissions
-    const allFeedbacks = [...(submission?.feedback || []), ...(previousSubmission?.feedback || [])];
+    const allFeedbacks = [
+      ...(submission?.feedback || []).map(f => ({ ...f, submissionId: submission.id })),
+      ...(previousSubmission?.feedback || []).map(f => ({ ...f, submissionId: previousSubmission.id }))
+    ];
 
     // Sort by date and remove duplicates
     const uniqueFeedbacks = allFeedbacks
@@ -277,12 +280,19 @@ const CampaignFinalDraft = ({
         f?.content?.includes('Feedback reviewed and forwarded to creator');
       
       // Show client feedback always, and admin feedback when it's a change request OR sent to creator (but not approval)
-      const shouldShow = isClient || (isAdmin && (isChangeRequest || hasSendToCreatorContent) && !isAdminApproval);
+      let shouldShow = isClient || (isAdmin && (isChangeRequest || hasSendToCreatorContent) && !isAdminApproval);
       
       // Special case: if it's admin feedback with "send to creator" content, always show it
       if (isAdmin && hasSendToCreatorContent) {
         console.log('✅ INCLUDING: Admin send to creator feedback');
-        return true;
+        shouldShow = true;
+      }
+      
+      // Special case: if this is feedback from the previous submission (first draft) that has CHANGES_REQUIRED status,
+      // always show it so creators can see what changes were requested
+      if (previousSubmission?.status === 'CHANGES_REQUIRED' && f.submissionId === previousSubmission.id) {
+        console.log('✅ INCLUDING: Previous submission feedback (CHANGES_REQUIRED)');
+        shouldShow = true;
       }
       
       console.log('🔍 RELEVANT FEEDBACKS FILTER:', {
@@ -293,6 +303,8 @@ const CampaignFinalDraft = ({
         isChangeRequest,
         isAdminApproval,
         hasSendToCreatorContent,
+        previousSubmissionStatus: previousSubmission?.status,
+        isFromPreviousSubmission: f.submissionId === previousSubmission?.id,
         shouldShow
       });
       
@@ -359,7 +371,8 @@ const CampaignFinalDraft = ({
         return false;
       }
       
-      // For admin feedback, ONLY show if it was actually "sent to creator" AND has media updates
+      // For admin feedback, show if it was actually "sent to creator" AND has media updates
+      // OR if the submission status is CHANGES_REQUIRED (admin requested changes)
       const isAdmin = (item?.admin?.role === 'admin') || (item?.role === 'admin');
       if (isAdmin) {
         // Check if this feedback was sent to creator (has specific content or indicators)
@@ -370,6 +383,17 @@ const CampaignFinalDraft = ({
           (item?.videosToUpdate?.length || 0) > 0 || 
           (item?.rawFootageToUpdate?.length || 0) > 0;
         
+        // Special case: If submission status is CHANGES_REQUIRED, show admin feedback
+        // This ensures creators can see what changes were requested
+        if (submission?.status === 'CHANGES_REQUIRED') {
+          console.log('🔍 ADMIN FEEDBACK CHECK - CHANGES_REQUIRED:', {
+            id: item.id,
+            submissionStatus: submission?.status,
+            willShow: true
+          });
+          return true;
+        }
+        
         console.log('🔍 ADMIN FEEDBACK CHECK:', {
           id: item.id,
           hasSendToCreatorContent,
@@ -377,11 +401,22 @@ const CampaignFinalDraft = ({
           willShow: hasSendToCreatorContent && hasMediaUpdates
         });
         
-        // ONLY show admin feedback if it was explicitly sent to creator AND has media updates
+        // Show admin feedback if it was explicitly sent to creator AND has media updates
         return hasSendToCreatorContent && hasMediaUpdates;
       }
       
-      // For client feedback, hide them too (only show admin "send to creator" comments)
+      // For client feedback, show them when submission status is CHANGES_REQUIRED
+      // This ensures creators can see client feedback when changes are requested
+      if (submission?.status === 'CHANGES_REQUIRED') {
+        console.log('🔍 CLIENT FEEDBACK CHECK - CHANGES_REQUIRED:', {
+          id: item.id,
+          submissionStatus: submission?.status,
+          willShow: true
+        });
+        return true;
+      }
+      
+      // Otherwise, hide client feedback (only show admin "send to creator" comments)
       console.log('❌ FILTERED OUT: Client feedback');
       return false;
     });
@@ -719,9 +754,33 @@ const CampaignFinalDraft = ({
     return options;
   };
 
+  // Debug logging for component visibility
+  console.log('🔍 CREATOR FINAL DRAFT - COMPONENT VISIBILITY CHECK:', {
+    submissionId: submission?.id,
+    submissionStatus: submission?.status,
+    previousSubmissionId: previousSubmission?.id,
+    previousSubmissionStatus: previousSubmission?.status,
+    feedbacksTestingLength: feedbacksTesting?.length || 0,
+    hasFeedback: !!(feedbacksTesting && feedbacksTesting.length > 0),
+    isInProgress: submission?.status === 'IN_PROGRESS',
+    isNotStarted: submission?.status === 'NOT_STARTED',
+    hasPreviousChangesRequired: previousSubmission?.status === 'CHANGES_REQUIRED',
+    shouldShowComponent: (feedbacksTesting && feedbacksTesting.length > 0) ||
+                        submission?.status === 'IN_PROGRESS' ||
+                        submission?.status === 'NOT_STARTED' ||
+                        previousSubmission?.status === 'CHANGES_REQUIRED'
+  });
+
   return (
     (
-      feedbacksTesting && feedbacksTesting.length > 0
+      // Show the 2nd Draft Submission section when:
+      // 1. There's feedback to address, OR
+      // 2. The current submission is in progress, OR  
+      // 3. The previous submission (first draft) has changes required
+      (feedbacksTesting && feedbacksTesting.length > 0) ||
+      submission?.status === 'IN_PROGRESS' ||
+      submission?.status === 'NOT_STARTED' ||
+      previousSubmission?.status === 'CHANGES_REQUIRED'
     ) && (
       <Box p={1.5} sx={{ pb: 0 }}>
         <Box
@@ -991,19 +1050,22 @@ const CampaignFinalDraft = ({
         )}
 
         {(submission?.status === 'CHANGES_REQUIRED' || 
-                (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
+                submission?.status === 'NOT_STARTED' || 
+                submission?.status === 'IN_PROGRESS' ||
+                (previousSubmission?.status === 'CHANGES_REQUIRED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
           <>
             {campaign?.campaignCredits ? (
               <Stack spacing={2}>
                 <Box>
-                                                              {feedbacksTesting && feedbacksTesting.length > 0 && (
+                                                              {/* Show feedback when available, or when previous submission has changes required */}
+                                                              {((feedbacksTesting && feedbacksTesting.length > 0) || previousSubmission?.status === 'CHANGES_REQUIRED') && (
                         <>
                           {/* 🔍 LOG WHAT FEEDBACK IS BEING DISPLAYED */}
                       {console.log('🔍 CREATOR FINAL DRAFT - DISPLAYING FEEDBACK IN UI (SINGLE SECTION):', {
                             submissionId: submission?.id,
                             submissionStatus: submission?.status,
-                            totalFeedbacksToDisplay: feedbacksTesting.length,
-                            feedbacks: feedbacksTesting.map(f => ({
+                            totalFeedbacksToDisplay: feedbacksTesting?.length || 0,
+                            feedbacks: (feedbacksTesting || []).map(f => ({
                               id: f.id,
                               adminName: f.adminName,
                               role: f.role,
@@ -1018,7 +1080,7 @@ const CampaignFinalDraft = ({
                         feedbacksTestingLength: feedbacksTesting?.length,
                         totalFeedbacks: feedbacksTesting?.length || 0
                       })}
-                      {feedbacksTesting.map((feedback, feedbackIndex) => {
+                      {(feedbacksTesting || []).map((feedback, feedbackIndex) => {
                         console.log('🔍 RENDERING INDIVIDUAL FEEDBACK:', {
                           feedbackIndex,
                           feedbackId: feedback.id,
