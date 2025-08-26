@@ -192,6 +192,7 @@ export const endpoints = {
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
     getCampaignPitchById: (id) => `/api/campaign/getClientByCampID/${id}`,
     shortlistCreator: '/api/campaign/shortlistCreator',
+    guestShortListCreator: '/api/campaign/v3/shortlistCreator/guest',
     activateClientCampaign: (id) => `/api/campaign/activateClientCampaign/${id}`,
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
@@ -275,9 +276,11 @@ export const endpoints = {
       getById: (submissionId) => `/api/submission/v3/${submissionId}`,
       submitDraft: '/api/submission/v3/submit-draft',
       approveByAdmin: (submissionId) => `/api/submission/v3/${submissionId}/approve/admin`,
-      requestChangesByAdmin: (submissionId) => `/api/submission/v3/${submissionId}/request-changes/admin`,
+      requestChangesByAdmin: (submissionId) =>
+        `/api/submission/v3/${submissionId}/request-changes/admin`,
       approveByClient: (submissionId) => `/api/submission/v3/${submissionId}/approve/client`,
-      requestChangesByClient: (submissionId) => `/api/submission/v3/${submissionId}/request-changes/client`,
+      requestChangesByClient: (submissionId) =>
+        `/api/submission/v3/${submissionId}/request-changes/client`,
       forwardFeedback: (submissionId) => `/api/submission/v3/${submissionId}/forward-feedback`,
       reviewAndForwardFeedback: '/api/submission/v3/draft/review-feedback',
       // V3 posting endpoints
