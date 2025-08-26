@@ -137,23 +137,25 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       setIsSubmitting(true);
 
       let response;
-      
+
       // Check if this is a V3 pitch (client-created campaign)
       if (campaign?.origin === 'CLIENT') {
         // Debug: Check what endpoints are available
         console.log('Available endpoints:', endpoints);
         console.log('Pitch endpoints:', endpoints?.pitch);
         console.log('Campaign endpoints:', endpoints?.campaign);
-        
+
         // Use V3 endpoint for client-created campaigns
         const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
         console.log('Using V3 endpoint with pitch ID:', v3PitchId);
-        
+
         // Check user role to call the correct endpoint
         if (user?.role === 'client') {
           // Client approves pitch
           console.log('Client approving pitch with ID:', v3PitchId);
-          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.approveClient(v3PitchId));
+          response = await axiosInstance.patch(
+            endpoints.campaign.pitch.v3.approveClient(v3PitchId)
+          );
         } else {
           // Admin approves pitch
           console.log('Admin approving pitch with ID:', v3PitchId);
@@ -166,12 +168,12 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           pitchId: pitch.id,
           status: 'approved',
         };
-        
+
         // Add UGC videos only for admin-created campaigns
         if (campaign?.origin !== 'CLIENT') {
           requestData.totalUGCVideos = totalUGCVideos;
         }
-        
+
         response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, requestData);
       }
 
@@ -196,32 +198,35 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const handleDecline = async () => {
     try {
       setIsSubmitting(true);
-      
+
       let response;
-      
+
       // Check if this is a V3 pitch (client-created campaign)
       if (campaign?.origin === 'CLIENT') {
         // Use V3 endpoint for client-created campaigns
         const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
-        
+
         // Check user role to call the correct endpoint
         if (user?.role === 'client') {
           // Client rejects pitch
-          response = await axiosInstance.patch(endpoints.campaign.pitch.v3.rejectClient(v3PitchId), {
-            rejectionReason: 'Rejected by client'
-          });
+          response = await axiosInstance.patch(
+            endpoints.campaign.pitch.v3.rejectClient(v3PitchId),
+            {
+              rejectionReason: 'Rejected by client',
+            }
+          );
         } else {
           // Admin rejects pitch
           response = await axiosInstance.patch(endpoints.campaign.pitch.v3.reject(v3PitchId), {
-            rejectionReason: 'Rejected by admin'
+            rejectionReason: 'Rejected by admin',
           });
         }
       } else {
         // Use V2 endpoint for admin-created campaigns
         response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
-        pitchId: pitch.id,
-        status: 'rejected',
-      });
+          pitchId: pitch.id,
+          status: 'rejected',
+        });
       }
 
       const updatedPitch = { ...pitch, status: 'rejected' };
@@ -507,8 +512,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Box>
             </Box>
 
-
-
             {/* Stats Section */}
             <Grid container spacing={2} sx={{ pb: 2 }}>
               <Grid item xs={12} md={12}>
@@ -526,62 +529,84 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   <Stack direction="row" spacing={0} width="100%" justifyContent="space-between">
                     {/* Left side: Languages, Age, Pronouns */}
                     <Stack direction="row" spacing={3} alignItems="center">
-              {/* Languages Section */}
-                  <Box>
+                      {/* Languages Section */}
+                      <Box>
                         <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 500, fontSize: '12px' }}>
-                      Languages
-                    </Typography>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{ fontWeight: 500, fontSize: '12px' }}
+                          >
+                            Languages
+                          </Typography>
                           {currentPitch?.user?.creator?.languages?.length > 0 ? (
                             <Stack direction="row" flexWrap="wrap" gap={0.5}>
-                              {Array.isArray(currentPitch.user.creator.languages) && 
-                                currentPitch.user.creator.languages.slice(0, 2).map((language, index) => (
-                        <Chip
-                          key={index}
-                                  label={typeof language === 'string' ? language.toUpperCase() : String(language).toUpperCase()}
-                                  size="small"
-                          sx={{
-                            bgcolor: '#FFF',
-                            border: '1px solid #EBEBEB',
-                                    borderRadius: 0.5,
-                            color: '#8E8E93',
-                                    height: '24px',
-                                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                            cursor: 'default',
-                            '& .MuiChip-label': {
-                              fontWeight: 600,
-                                      px: 1,
-                              height: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                                      marginTop: '-2px',
-                                      fontSize: '0.7rem',
-                            },
-                            '&:hover': {
-                              bgcolor: '#FFF',
-                            },
-                          }}
-                        />
-                      ))}
+                              {Array.isArray(currentPitch.user.creator.languages) &&
+                                currentPitch.user.creator.languages
+                                  .slice(0, 2)
+                                  .map((language, index) => (
+                                    <Chip
+                                      key={index}
+                                      label={
+                                        typeof language === 'string'
+                                          ? language.toUpperCase()
+                                          : String(language).toUpperCase()
+                                      }
+                                      size="small"
+                                      sx={{
+                                        bgcolor: '#FFF',
+                                        border: '1px solid #EBEBEB',
+                                        borderRadius: 0.5,
+                                        color: '#8E8E93',
+                                        height: '24px',
+                                        boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                                        cursor: 'default',
+                                        '& .MuiChip-label': {
+                                          fontWeight: 600,
+                                          px: 1,
+                                          height: '100%',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          marginTop: '-2px',
+                                          fontSize: '0.7rem',
+                                        },
+                                        '&:hover': {
+                                          bgcolor: '#FFF',
+                                        },
+                                      }}
+                                    />
+                                  ))}
                               {currentPitch?.user?.creator?.languages?.length > 2 && (
-                                <Typography variant="caption" color="#8E8E93" sx={{ fontSize: '0.7rem', alignSelf: 'center' }}>
+                                <Typography
+                                  variant="caption"
+                                  color="#8E8E93"
+                                  sx={{ fontSize: '0.7rem', alignSelf: 'center' }}
+                                >
                                   +{currentPitch.user.creator.languages.length - 2}
                                 </Typography>
                               )}
                             </Stack>
                           ) : (
-                            <Typography variant="caption" color="#8E8E93" sx={{ fontStyle: 'italic', fontSize: '11px' }}>
+                            <Typography
+                              variant="caption"
+                              color="#8E8E93"
+                              sx={{ fontStyle: 'italic', fontSize: '11px' }}
+                            >
                               No languages
                             </Typography>
                           )}
-                    </Stack>
-                  </Box>
+                        </Stack>
+                      </Box>
 
                       {/* Age Section */}
                       <Box>
                         <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 500, fontSize: '12px' }}>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{ fontWeight: 500, fontSize: '12px' }}
+                          >
                             Age
                           </Typography>
                           {currentPitch?.user?.creator?.birthDate ? (
@@ -589,7 +614,11 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                               {dayjs().diff(dayjs(currentPitch.user.creator.birthDate), 'year')}
                             </Typography>
                           ) : (
-                            <Typography variant="caption" color="#8E8E93" sx={{ fontStyle: 'italic', fontSize: '11px' }}>
+                            <Typography
+                              variant="caption"
+                              color="#8E8E93"
+                              sx={{ fontStyle: 'italic', fontSize: '11px' }}
+                            >
                               N/A
                             </Typography>
                           )}
@@ -599,14 +628,18 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       {/* Pronouns Section */}
                       <Box>
                         <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 500, fontSize: '12px' }}>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{ fontWeight: 500, fontSize: '12px' }}
+                          >
                             Pronouns
                           </Typography>
                           {currentPitch?.user?.creator?.pronounce ? (
                             <Chip
                               label={currentPitch.user.creator.pronounce}
                               size="small"
-                  sx={{
+                              sx={{
                                 bgcolor: '#FFF',
                                 border: '1px solid #EBEBEB',
                                 borderRadius: 0.5,
@@ -618,7 +651,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                                   fontWeight: 600,
                                   px: 1,
                                   height: '100%',
-                    display: 'flex',
+                                  display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   marginTop: '-2px',
@@ -630,7 +663,11 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                               }}
                             />
                           ) : (
-                            <Typography variant="caption" color="#8E8E93" sx={{ fontStyle: 'italic', fontSize: '11px' }}>
+                            <Typography
+                              variant="caption"
+                              color="#8E8E93"
+                              sx={{ fontStyle: 'italic', fontSize: '11px' }}
+                            >
                               N/A
                             </Typography>
                           )}
@@ -640,116 +677,116 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
 
                     {/* Right side: Stats with gap */}
                     <Stack direction="row" spacing={0} sx={{ ml: 4 }}>
-                    {/* First stat */}
-                    <Box
-                      sx={{
-                        flex: 0,
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        minWidth: '80px',
-                      }}
-                    >
-                      <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
-                        <Box
-                          component="img"
-                          src="/assets/icons/overview/purpleGroup.svg"
-                          sx={{ width: 20, height: 20 }}
-                        />
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                          N/A
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="#8e8e93"
-                          sx={{
-                            whiteSpace: 'nowrap',
-                            fontWeight: 500,
-                            overflow: 'visible',
-                            width: '100%',
-                            fontSize: '12px',
-                            textAlign: 'right',
-                          }}
-                        >
-                          Followers
-                        </Typography>
-                      </Stack>
-                    </Box>
+                      {/* First stat */}
+                      <Box
+                        sx={{
+                          flex: 0,
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          minWidth: '80px',
+                        }}
+                      >
+                        <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                          <Box
+                            component="img"
+                            src="/assets/icons/overview/purpleGroup.svg"
+                            sx={{ width: 20, height: 20 }}
+                          />
+                          <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                            N/A
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{
+                              whiteSpace: 'nowrap',
+                              fontWeight: 500,
+                              overflow: 'visible',
+                              width: '100%',
+                              fontSize: '12px',
+                              textAlign: 'right',
+                            }}
+                          >
+                            Followers
+                          </Typography>
+                        </Stack>
+                      </Box>
 
-                    {/* Divider */}
-                    <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                      {/* Divider */}
+                      <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
 
-                    {/* Second stat */}
-                    <Box
-                      sx={{
-                        flex: 0,
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        minWidth: '120px',
-                      }}
-                    >
-                      <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
-                        <Box
-                          component="img"
-                          src="/assets/icons/overview/greenChart.svg"
-                          sx={{ width: 20, height: 20 }}
-                        />
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                          N/A
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="#8e8e93"
-                          sx={{
-                            whiteSpace: 'nowrap',
-                            fontWeight: 500,
-                            overflow: 'visible',
-                            width: '100%',
-                            fontSize: '12px',
-                            textAlign: 'right',
-                          }}
-                        >
-                          Engagement Rate
-                        </Typography>
-                      </Stack>
-                    </Box>
+                      {/* Second stat */}
+                      <Box
+                        sx={{
+                          flex: 0,
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          minWidth: '120px',
+                        }}
+                      >
+                        <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                          <Box
+                            component="img"
+                            src="/assets/icons/overview/greenChart.svg"
+                            sx={{ width: 20, height: 20 }}
+                          />
+                          <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                            N/A
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{
+                              whiteSpace: 'nowrap',
+                              fontWeight: 500,
+                              overflow: 'visible',
+                              width: '100%',
+                              fontSize: '12px',
+                              textAlign: 'right',
+                            }}
+                          >
+                            Engagement Rate
+                          </Typography>
+                        </Stack>
+                      </Box>
 
-                    {/* Divider */}
-                    <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                      {/* Divider */}
+                      <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
 
-                    {/* Third stat */}
-                    <Box
-                      sx={{
-                        flex: 0,
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        minWidth: '105px',
-                      }}
-                    >
-                      <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
-                        <Box
-                          component="img"
-                          src="/assets/icons/overview/bubbleHeart.svg"
-                          sx={{ width: 20, height: 20 }}
-                        />
-                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                          N/A
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="#8e8e93"
-                          sx={{
-                            whiteSpace: 'nowrap',
-                            fontWeight: 500,
-                            overflow: 'visible',
-                            width: '100%',
-                            fontSize: '12px',
-                            textAlign: 'right',
-                          }}
-                        >
-                          Average Likes
-                        </Typography>
-                      </Stack>
-                    </Box>
+                      {/* Third stat */}
+                      <Box
+                        sx={{
+                          flex: 0,
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          minWidth: '105px',
+                        }}
+                      >
+                        <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                          <Box
+                            component="img"
+                            src="/assets/icons/overview/bubbleHeart.svg"
+                            sx={{ width: 20, height: 20 }}
+                          />
+                          <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                            N/A
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{
+                              whiteSpace: 'nowrap',
+                              fontWeight: 500,
+                              overflow: 'visible',
+                              width: '100%',
+                              fontSize: '12px',
+                              textAlign: 'right',
+                            }}
+                          >
+                            Average Likes
+                          </Typography>
+                        </Stack>
+                      </Box>
                     </Stack>
                   </Stack>
                 </Box>
@@ -968,6 +1005,25 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Box>
               )}
             </Box>
+            {user?.role !== 'client' && (
+              <Box mb={2}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}
+                >
+                  CS Comments (Optional)
+                </Typography>
+
+                <TextField
+                  multiline
+                  minRows={3}
+                  fullWidth
+                  size="small"
+                  placeholder="Input comments about the creator that your clients might find helpful"
+                  onChange={(e) => setComments(e.target.value)}
+                />
+              </Box>
+            )}
           </Stack>
         </DialogContent>
 
@@ -1081,25 +1137,27 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Typography>
             </Stack>
             {/* Only show UGC credits input for admin-created campaigns, not client-created campaigns */}
-            {campaign?.campaignCredits && confirmDialog.type === 'approve' && campaign?.origin !== 'CLIENT' && (
-              <Box mt={2} width={1}>
-                <TextField
-                  value={totalUGCVideos}
-                  size="small"
-                  placeholder="UGC Videos"
-                  type="number"
-                  fullWidth
-                  onKeyDown={(e) => {
-                    if (e.key === '0' && totalUGCVideos.length === 0) e.preventDefault();
-                  }}
-                  onChange={(e) => {
-                    setTotalUGCVideos(e.currentTarget.value);
-                  }}
-                  error={totalUGCVideos > ugcLeft}
-                  helperText={totalUGCVideos > ugcLeft && `Maximum of ${ugcLeft} UGC Videos`}
-                />
-              </Box>
-            )}
+            {campaign?.campaignCredits &&
+              confirmDialog.type === 'approve' &&
+              campaign?.origin !== 'CLIENT' && (
+                <Box mt={2} width={1}>
+                  <TextField
+                    value={totalUGCVideos}
+                    size="small"
+                    placeholder="UGC Videos"
+                    type="number"
+                    fullWidth
+                    onKeyDown={(e) => {
+                      if (e.key === '0' && totalUGCVideos.length === 0) e.preventDefault();
+                    }}
+                    onChange={(e) => {
+                      setTotalUGCVideos(e.currentTarget.value);
+                    }}
+                    error={totalUGCVideos > ugcLeft}
+                    helperText={totalUGCVideos > ugcLeft && `Maximum of ${ugcLeft} UGC Videos`}
+                  />
+                </Box>
+              )}
           </Stack>
         </DialogContent>
 
