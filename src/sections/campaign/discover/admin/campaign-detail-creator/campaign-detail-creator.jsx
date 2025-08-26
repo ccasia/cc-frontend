@@ -200,7 +200,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
           user: creator.user,
           shortlistedCreator: {
             amount: null,
-            currency: 'SGD'
+            currency: 'MYR'
           },
           isNew: true // Flag to indicate this is a new agreement for V3
         };

@@ -1,13 +1,24 @@
 import React, { memo } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
-import { Box, Grid, Chip, Stack, Button, FormLabel, Typography, IconButton } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Chip,
+  Stack,
+  Button,
+  MenuItem,
+  FormLabel,
+  Typography,
+  IconButton,
+} from '@mui/material';
 
 import { langList } from 'src/contants/language';
+import { countriesCities } from 'src/contants/countries';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
-import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
 
 const videoAngle = [
   'Product Demo/Review',
@@ -65,6 +76,7 @@ const CampaignDetails = () => {
   const { control, watch } = useFormContext();
 
   const audienceGeoLocation = watch('audienceLocation');
+  const country = watch('country');
 
   const {
     append: doAppend,
@@ -112,22 +124,33 @@ const CampaignDetails = () => {
             />
           </FormField>
 
-          <FormField label="City/Area">
-            <RHFMultiSelect
-              name="audienceLocation"
-              placeholder="Select city"
-              checkbox
-              chip
-              options={[
-                { value: 'KlangValley', label: 'Klang Valley' },
-                { value: 'Selangor', label: 'Selangor' },
-                { value: 'KualaLumpur', label: 'Kuala Lumpur' },
-                { value: 'MainCities', label: 'Main cities in Malaysia' },
-                { value: 'EastMalaysia', label: 'East Malaysia' },
-                { value: 'Others', label: 'Others' },
-              ]}
+          <FormField label="Country">
+            <RHFAutocomplete
+              name="country"
+              placeholder="Select country"
+              options={Object.keys(countriesCities)}
+              getOptionLabel={(option) => option}
             />
           </FormField>
+
+          {country?.toLowerCase() === 'malaysia' && (
+            <FormField label="City/Area">
+              <RHFMultiSelect
+                name="audienceLocation"
+                placeholder="Select city"
+                checkbox
+                chip
+                options={[
+                  { value: 'KlangValley', label: 'Klang Valley' },
+                  { value: 'Selangor', label: 'Selangor' },
+                  { value: 'KualaLumpur', label: 'Kuala Lumpur' },
+                  { value: 'MainCities', label: 'Main cities in Malaysia' },
+                  { value: 'EastMalaysia', label: 'East Malaysia' },
+                  { value: 'Others', label: 'Others' },
+                ]}
+              />
+            </FormField>
+          )}
 
           {audienceGeoLocation?.includes('Others') && (
             <RHFTextField
