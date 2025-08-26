@@ -474,7 +474,7 @@ const CampaignDetailView = ({ id }) => {
     ) : (
       <CampaignDetailContent campaign={campaign} />
     ),
-    'creator-master-list': <CampaignCreatorMasterListClient campaign={campaign} />,
+    'creator-master-list': <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />,
     creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
     logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />,
@@ -499,7 +499,7 @@ const CampaignDetailView = ({ id }) => {
       ),
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
     deliverables: isClient ? (
-      <CampaignCreatorDeliverablesClient campaign={campaign} />
+      <CampaignCreatorDeliverablesClient campaign={campaign} campaignMutate={campaignMutate} />
     ) : (
       <CampaignCreatorDeliverables campaign={campaign} />
     ),

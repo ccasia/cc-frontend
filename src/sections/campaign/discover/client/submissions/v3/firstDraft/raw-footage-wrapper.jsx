@@ -26,25 +26,59 @@ const RawFootagesWrapper = ({
   }
 
   return (
-    <Stack spacing={2}>
-      {deliverables.rawFootages.map((rawFootage, index) => (
-        <FirstDraftRawFootageCard
-          key={rawFootage.id}
-          rawFootageItem={rawFootage}
-          index={index}
-          submission={submission}
-          onRawFootageClick={onVideoClick}
-          handleApprove={() => {}} // Not used for client role
-          handleRequestChange={() => {}} // Not used for client role
-          userRole={userRole}
-          deliverables={deliverables}
-          handleClientApprove={handleClientApprove}
-          handleClientReject={handleClientReject}
-          deliverableMutate={deliverableMutate}
-          submissionMutate={submissionMutate}
-        />
-      ))}
-    </Stack>
+    <Box sx={{ position: 'relative' }}>
+      {/* Horizontal Scrollable Container */}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          pb: 1,
+          maxWidth: '100%',
+          '&::-webkit-scrollbar': {
+            height: 8,
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: '#f1f1f1',
+            borderRadius: 4,
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: '#c1c1c1',
+            borderRadius: 4,
+            '&:hover': {
+              backgroundColor: '#a8a8a8',
+            },
+          },
+        }}
+      >
+        {deliverables.rawFootages.map((rawFootage, index) => (
+          <Box
+            key={rawFootage.id}
+            sx={{
+              width: { xs: '280px', sm: '300px', md: '300px' },
+              minWidth: { xs: '280px', sm: '300px', md: '300px' },
+              flexShrink: 0,
+            }}
+          >
+            <FirstDraftRawFootageCard
+              rawFootageItem={rawFootage}
+              index={index}
+              submission={submission}
+              onRawFootageClick={onVideoClick}
+              handleApprove={() => {}} // Not used for client role
+              handleRequestChange={() => {}} // Not used for client role
+              userRole={userRole}
+              deliverables={deliverables}
+              handleClientApprove={handleClientApprove}
+              handleClientReject={handleClientReject}
+              deliverableMutate={deliverableMutate}
+              submissionMutate={submissionMutate}
+            />
+          </Box>
+        ))}
+      </Box>
+    </Box>
   );
 };
 
