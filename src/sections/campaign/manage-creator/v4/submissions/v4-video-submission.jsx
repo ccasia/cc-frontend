@@ -306,6 +306,18 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
         </Card>
       )}
 
+      {/* Caption */}
+      {submission.caption && (
+        <Card sx={{ p: 2 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Caption:
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {submission.caption}
+          </Typography>
+        </Card>
+      )}
+
       {/* Feedback */}
       {relevantFeedback.length > 0 && (
         <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
