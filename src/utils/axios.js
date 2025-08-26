@@ -252,6 +252,8 @@ export const endpoints = {
     resendAgreement: `/api/campaign/resendAgreement`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
     linkNewAgreement: `/api/campaign/linkNewAgreement`,
+    exportActiveCompleted: '/api/campaign/export/active-completed',
+    exportCampaignCreators: '/api/campaign/export/campaign-creators',
     removeCreator: `/api/campaign/removeCreatorFromCampaign`,
   },
   submission: {
