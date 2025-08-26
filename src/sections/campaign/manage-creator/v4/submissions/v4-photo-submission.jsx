@@ -42,6 +42,9 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
   const [postingDialog, setPostingDialog] = useState(false);
   const [postingLink, setPostingLink] = useState('');
   const [postingLoading, setPostingLoading] = useState(false);
+  const [feedbackDialog, setFeedbackDialog] = useState(false);
+  const [selectedPhotoFeedback, setSelectedPhotoFeedback] = useState(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const handleDrop = (acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
@@ -170,12 +173,37 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
     }
   };
 
+  const handleShowPhotoFeedback = async (photoId) => {
+    try {
+      setFeedbackLoading(true);
+      setFeedbackDialog(true);
+      
+      const response = await axiosInstance.get(`/api/submissions/v4/photo/${photoId}/feedback`);
+      setSelectedPhotoFeedback(response.data);
+    } catch (error) {
+      console.error('Error fetching photo feedback:', error);
+      enqueueSnackbar('Failed to load feedback', { variant: 'error' });
+      setFeedbackDialog(false);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
   const isSubmitted = submission.photos?.some(p => p.url);
+  const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
   const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
   const isPosted = submission.status === 'POSTED';
   const hasPostingLink = Boolean(submission.content);
   const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
+  
+  // Check if any individual photos need revision
+  const hasIndividualPhotosNeedingRevision = submission.photos?.some(p => 
+    ['REVISION_REQUESTED', 'REJECTED'].includes(p.status)
+  );
+  
+  // Creator can upload if not in final states and either hasn't submitted or has photos needing revision
+  const canUpload = !isApproved && !isPosted && (!isInReview || hasIndividualPhotosNeedingRevision || hasChangesRequired);
 
   return (
     <Stack spacing={3}>
@@ -217,15 +245,17 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
         </Alert>
       )}
 
-      {hasChangesRequired && (
+      {(hasChangesRequired || hasIndividualPhotosNeedingRevision) && (
         <Alert severity="warning">
           <Typography variant="body2">
-            📝 Changes requested. Please review the feedback below and resubmit.
+            📝 {hasIndividualPhotosNeedingRevision 
+              ? 'Some photos need changes. Please review the feedback for each photo and re-upload as needed.'
+              : 'Changes requested. Please review the feedback below and resubmit.'}
           </Typography>
         </Alert>
       )}
 
-      {submission.status === 'PENDING_REVIEW' && (
+      {isInReview && (
         <Alert severity="info">
           <Typography variant="body2">
             ⏳ Your photos are being reviewed. We'll notify you once feedback is available.
@@ -234,7 +264,7 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
       )}
 
       {/* Existing Content */}
-      {submission.photos?.length > 0 && (
+      {!isInReview && submission.photos?.length > 0 && (
         <Card sx={{ p: 2 }}>
           <Typography variant="subtitle2" gutterBottom>
             Current Submissions ({submission.photos.length} photos):
@@ -242,23 +272,87 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
           <Grid container spacing={2}>
             {submission.photos.map((photo, index) => (
               <Grid item xs={12} sm={6} md={4} key={photo.id}>
-                <Card sx={{ p: 2, height: '100%' }}>
-                  <Stack spacing={1} height="100%">
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Iconify icon="eva:image-outline" />
-                      <Typography variant="caption">Photo {index + 1}</Typography>
-                    </Stack>
-                    <Box flex={1}>
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        {photo.url || 'No URL provided'}
-                      </Typography>
-                    </Box>
-                    <Chip 
-                      label={getCreatorStatusLabel(photo.status)} 
-                      color={getStatusColor(photo.status)} 
-                      size="small" 
+                <Card sx={{ height: '100%', overflow: 'hidden' }}>
+                  {/* Photo Preview */}
+                  {photo.url && (
+                    <Box
+                      component="img"
+                      src={photo.url}
+                      alt={`Photo ${index + 1}`}
+                      sx={{
+                        width: '100%',
+                        height: 160,
+                        objectFit: 'cover',
+                      }}
                     />
-                  </Stack>
+                  )}
+                  
+                  <Box sx={{ p: 2 }}>
+                    <Stack spacing={1}>
+                      <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Iconify icon="eva:image-outline" />
+                          <Typography variant="caption" fontWeight="medium">
+                            Photo {index + 1}
+                          </Typography>
+                        </Stack>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleShowPhotoFeedback(photo.id)}
+                          title="View feedback history"
+                        >
+                          <Iconify icon="eva:message-circle-outline" />
+                        </IconButton>
+                      </Stack>
+                      
+                      <Chip 
+                        label={getCreatorStatusLabel(photo.status)} 
+                        color={getStatusColor(photo.status)} 
+                        size="small" 
+                        variant="filled"
+                      />
+
+                      {/* Individual photo feedback */}
+                      {photo.feedback && (
+                        <Box sx={{ mt: 1, p: 1, bgcolor: 'background.neutral', borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" fontWeight="medium">
+                            Feedback:
+                          </Typography>
+                          <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                            {photo.feedback}
+                          </Typography>
+                          {photo.reasons?.length > 0 && (
+                            <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ mt: 1 }}>
+                              {photo.reasons.map((reason, i) => (
+                                <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
+                              ))}
+                            </Stack>
+                          )}
+                        </Box>
+                      )}
+
+                      {/* Upload status for rejected photos */}
+                      {['REVISION_REQUESTED', 'REJECTED'].includes(photo.status) && (
+                        <Typography variant="caption" color="error" sx={{ fontStyle: 'italic' }}>
+                          ⚠️ This photo needs to be re-uploaded
+                        </Typography>
+                      )}
+                      
+                      {/* Approved status */}
+                      {['APPROVED', 'CLIENT_APPROVED'].includes(photo.status) && (
+                        <Typography variant="caption" color="success.main" sx={{ fontStyle: 'italic' }}>
+                          ✅ Approved
+                        </Typography>
+                      )}
+                      
+                      {/* In review status */}
+                      {['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(photo.status) && (
+                        <Typography variant="caption" color="info.main" sx={{ fontStyle: 'italic' }}>
+                          ⏳ In review
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
                 </Card>
               </Grid>
             ))}
@@ -266,49 +360,23 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
         </Card>
       )}
 
-      {/* Feedback */}
-      {submission.photos?.some(p => p.feedback) && (
-        <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Feedback:
-          </Typography>
-          <Stack spacing={2}>
-            {submission.photos.map((photo, index) => 
-              photo.feedback && (
-                <Box key={photo.id}>
-                  <Typography variant="body2" color="text.secondary" fontWeight="bold">
-                    Photo {index + 1}:
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                    {photo.feedback}
-                  </Typography>
-                  {photo.reasons?.length > 0 && (
-                    <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1, ml: 1 }}>
-                      {photo.reasons.map((reason, i) => (
-                        <Chip key={i} label={reason} size="small" variant="outlined" />
-                      ))}
-                    </Stack>
-                  )}
-                </Box>
-              )
-            )}
-          </Stack>
-        </Card>
-      )}
 
       {/* Upload Form */}
-      {(!isApproved) && (
+      {canUpload && (
         <Card sx={{ p: 3 }}>
           <Stack spacing={3}>
             <Typography variant="subtitle1">
-              {isSubmitted ? 'Update Photos' : 'Upload Photos'}
+              {hasIndividualPhotosNeedingRevision ? 'Re-upload Photos' : 
+               isSubmitted ? 'Update Photos' : 'Upload Photos'}
             </Typography>
-
-            <Alert severity="info" sx={{ mb: 2 }}>
-              <Typography variant="body2">
-                📸 Upload multiple high-quality photos. Recommended: landscape shots, product close-ups, lifestyle images, and behind-the-scenes content.
-              </Typography>
-            </Alert>
+            
+            {hasIndividualPhotosNeedingRevision && (
+              <Alert severity="info" sx={{ mt: 1 }}>
+                <Typography variant="body2">
+                  💡 You can upload new photos to replace the ones that need changes. All photos will be reviewed together.
+                </Typography>
+              </Alert>
+            )}
 
             {/* File Upload Area */}
             <Upload
@@ -321,17 +389,6 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
               maxSize={PHOTO_UPLOAD_CONFIG.maxSize}
               disabled={uploading}
             />
-
-            {/* Upload Guidelines */}
-            <Alert severity="info">
-              <Typography variant="body2">
-                📸 <strong>Photo Guidelines:</strong>
-                <br />• Maximum file size: 50MB per photo
-                <br />• Supported formats: JPG, PNG, GIF, WebP, HEIC
-                <br />• Upload multiple high-quality photos
-                <br />• Recommended: landscape shots, product close-ups, lifestyle images
-              </Typography>
-            </Alert>
 
             {/* Caption */}
             <TextField
@@ -363,7 +420,9 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
                 startIcon={<Iconify icon="eva:upload-fill" />}
                 size="large"
               >
-                {uploading ? 'Uploading...' : isSubmitted ? 'Update Photos' : 'Submit Photos'}
+                {uploading ? 'Uploading...' : 
+                 hasIndividualPhotosNeedingRevision ? 'Re-submit Photos' :
+                 isSubmitted ? 'Update Photos' : 'Submit Photos'}
               </Button>
             </Box>
           </Stack>
@@ -411,8 +470,6 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
                 {hasPendingPostingLink 
                   ? "⏳ Your posting link is waiting for admin approval before going live."
                   : isPosted
-                  ? "✅ Your posting link has been approved and is now live!"
-                  : "🔗 Add the social media post URL where this photo was published (TikTok, Instagram, YouTube, etc.)"
                 }
               </Typography>
             </Alert>
@@ -471,6 +528,117 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Photo Feedback History Dialog */}
+      <Dialog open={feedbackDialog} onClose={() => setFeedbackDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Iconify icon="eva:message-circle-fill" />
+            <Typography variant="h6">
+              Feedback History - Photo
+            </Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          {feedbackLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <Typography>Loading feedback...</Typography>
+            </Box>
+          ) : selectedPhotoFeedback ? (
+            <Stack spacing={3}>
+              {/* Photo Info */}
+              <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  {selectedPhotoFeedback.photo.url && (
+                    <Box
+                      component="img"
+                      src={selectedPhotoFeedback.photo.url}
+                      alt="Photo"
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        objectFit: 'cover',
+                        borderRadius: 1
+                      }}
+                    />
+                  )}
+                  <Box>
+                    <Typography variant="subtitle2">
+                      Current Status
+                    </Typography>
+                    <Chip
+                      label={getCreatorStatusLabel(selectedPhotoFeedback.photo.status)}
+                      color={getStatusColor(selectedPhotoFeedback.photo.status)}
+                      size="small"
+                    />
+                  </Box>
+                </Stack>
+              </Card>
+
+              {/* Feedback History - Only show feedback that's sent to creator */}
+              {selectedPhotoFeedback.feedbackHistory.filter(f => f.sentToCreator).length > 0 ? (
+                <Stack spacing={2}>
+                  <Typography variant="subtitle2">
+                    Feedback from Review:
+                  </Typography>
+                  {selectedPhotoFeedback.feedbackHistory
+                    .filter(feedback => feedback.sentToCreator)
+                    .map((feedback) => (
+                    <Card key={feedback.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider' }}>
+                      <Stack spacing={1}>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <Box sx={{ 
+                            minWidth: 32, 
+                            height: 32, 
+                            borderRadius: '50%', 
+                            bgcolor: 'primary.main',
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center' 
+                          }}>
+                            <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              {feedback.admin?.name?.charAt(0) || 'A'}
+                            </Typography>
+                          </Box>
+                          <Box flex={1}>
+                            <Typography variant="subtitle2">
+                              {feedback.admin?.name || 'Admin'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {new Date(feedback.createdAt).toLocaleString()}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                        
+                        <Typography variant="body2">
+                          {feedback.feedback}
+                        </Typography>
+                        
+                        {feedback.reasons?.length > 0 && (
+                          <Stack direction="row" spacing={1} flexWrap="wrap">
+                            {feedback.reasons.map((reason, i) => (
+                              <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
+                            ))}
+                          </Stack>
+                        )}
+                      </Stack>
+                    </Card>
+                  ))}
+                </Stack>
+              ) : (
+                <Typography color="text.secondary" textAlign="center" py={2}>
+                  No feedback available for this photo yet.
+                </Typography>
+              )}
+            </Stack>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFeedbackDialog(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 };
@@ -484,8 +652,10 @@ const getStatusColor = (status) => {
     case 'CLIENT_APPROVED': return 'success';
     case 'POSTED': return 'success';
     case 'CHANGES_REQUIRED':
-    case 'REJECTED': return 'error';
-    case 'SENT_TO_CLIENT': return 'secondary';
+    case 'REJECTED':
+    case 'REVISION_REQUESTED': return 'error';
+    case 'SENT_TO_CLIENT':
+    case 'CLIENT_FEEDBACK': return 'secondary';
     default: return 'default';
   }
 };
@@ -498,8 +668,10 @@ const getCreatorStatusLabel = (status) => {
     case 'CLIENT_APPROVED': return 'Approved';
     case 'POSTED': return 'Posted';
     case 'CHANGES_REQUIRED':
-    case 'REJECTED': return 'Changes Required';
+    case 'REJECTED':
+    case 'REVISION_REQUESTED': return 'Changes Required';
     case 'SENT_TO_CLIENT': return 'In Review';
+    case 'CLIENT_FEEDBACK': return 'Client Reviewing';
     default: return status;
   }
 };
