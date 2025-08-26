@@ -283,6 +283,18 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                         />
                       </Box>
 
+                      {/* Caption */}
+                      {submission.caption && (
+                        <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                          <Typography variant="caption" fontWeight="medium" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                            Caption:
+                          </Typography>
+                          <Typography variant="body2">
+                            {submission.caption}
+                          </Typography>
+                        </Box>
+                      )}
+
                       {/* All submission feedback history */}
                       {submission.feedback && submission.feedback.length > 0 && (
                         <Box sx={{ mt: 2 }}>
@@ -297,23 +309,32 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                                     minWidth: 24, 
                                     height: 24, 
                                     borderRadius: '50%', 
-                                    bgcolor: 'primary.main', 
+                                    bgcolor: feedback.admin?.role === 'client' ? 'warning.main' : 'primary.main', 
                                     display: 'flex', 
                                     alignItems: 'center', 
                                     justifyContent: 'center' 
                                   }}>
                                     <Typography variant="caption" sx={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
-                                      {feedback.admin?.name?.charAt(0) || feedback.user?.name?.charAt(0) || 'U'}
+                                      {feedback.admin?.role === 'client' ? 'C' : (feedback.admin?.name?.charAt(0) || feedback.user?.name?.charAt(0) || 'A')}
                                     </Typography>
                                   </Box>
                                   <Box sx={{ flex: 1 }}>
                                     <Stack direction="row" alignItems="center" spacing={1}>
                                       <Typography variant="caption" fontWeight="medium">
                                         {feedback.admin?.name || feedback.user?.name || 'User'}
+                                        {feedback.admin?.role === 'client' && ' (Client)'}
                                       </Typography>
                                       <Typography variant="caption" color="text.secondary">
                                         {new Date(feedback.createdAt).toLocaleDateString()}
+                                        {feedback.sentToCreator && feedback.admin?.role === 'client' && ' (forwarded to creator)'}
                                       </Typography>
+                                      <Chip 
+                                        label={feedback.admin?.role === 'client' ? 'Client Feedback' : 'Admin Feedback'} 
+                                        size="small" 
+                                        variant="outlined"
+                                        color={feedback.admin?.role === 'client' ? 'warning' : 'primary'}
+                                        sx={{ ml: 1 }}
+                                      />
                                     </Stack>
                                     <Typography variant="body2" sx={{ mt: 0.5 }}>
                                       {feedback.content}
@@ -334,7 +355,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                                       </Box>
                                     )}
                                     {/* Forward button for client feedback */}
-                                    {!isClient && feedback.admin?.role === 'client' && !feedback.sentToCreator && (
+                                    {!isClient && !feedback.sentToCreator && feedback.admin?.role === 'client' && !isApproved && (
                                       <Box sx={{ mt: 1 }}>
                                         <Button
                                           size="small"
