@@ -470,6 +470,8 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
                 {hasPendingPostingLink 
                   ? "⏳ Your posting link is waiting for admin approval before going live."
                   : isPosted
+                  ? "✅ Your posting link has been approved."
+                  : "🔗 Add the social media post URL where this video was published (TikTok, Instagram, YouTube, etc.)"
                 }
               </Typography>
             </Alert>

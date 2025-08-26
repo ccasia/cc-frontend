@@ -617,58 +617,6 @@ export default function V4PhotoSubmission({ submission, campaign, index = 1, onU
               )}
             </Box>
 
-            {/* Admin Actions */}
-            {!isClient && submission.status === 'PENDING_REVIEW' && (
-              <Stack direction="row" spacing={2}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleApprove}
-                  startIcon={<Iconify icon="eva:checkmark-fill" />}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  onClick={handleRequestRevision}
-                  startIcon={<Iconify icon="eva:edit-fill" />}
-                >
-                  Request Changes
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={handleReject}
-                  startIcon={<Iconify icon="eva:close-fill" />}
-                >
-                  Reject
-                </Button>
-              </Stack>
-            )}
-
-            {/* Client Actions */}
-            {isClient && submission.status === 'SENT_TO_CLIENT' && (
-              <Stack direction="row" spacing={2}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleApprove}
-                  startIcon={<Iconify icon="eva:checkmark-fill" />}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  onClick={handleRequestRevision}
-                  startIcon={<Iconify icon="eva:edit-fill" />}
-                >
-                  Request Changes
-                </Button>
-              </Stack>
-            )}
-
             {/* Submission Metadata */}
             <Box sx={{ pt: 2, borderTop: 1, borderColor: 'divider' }}>
               <Typography variant="caption" color="text.secondary">
