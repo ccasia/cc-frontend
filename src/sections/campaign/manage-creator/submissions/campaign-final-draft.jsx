@@ -166,11 +166,7 @@ const CampaignFinalDraft = ({
   //   return data;
   // }, { refreshInterval: 3000, revalidateOnFocus: true });
 
-  // const creatorVisibleFeedback = creatorFeedbackResp?.feedback || [];
-  
-  // Use local filtering instead
-  const creatorFeedbackResp = null;
-  const creatorVisibleFeedback = [];
+  const creatorVisibleFeedback = creatorFeedbackResp?.feedback || [];
 
   // Debug logging for submission data
   useEffect(() => {
@@ -277,67 +273,43 @@ const CampaignFinalDraft = ({
     const relevantFeedbacks = uniqueFeedbacks.filter(f => {
       const isClient = (f?.admin?.role === 'client') || (f?.role === 'admin');
       const isAdmin = (f?.admin?.role === 'admin') || (f?.role === 'admin');
+      const isChangeRequest = f?.type === 'REQUEST' || f?.videosToUpdate?.length > 0 || f?.photosToUpdate?.length > 0 || f?.rawFootageToUpdate?.length > 0;
+      const isAdminApproval = f?.type === 'APPROVAL';
+      const hasSendToCreatorContent = f?.content?.includes('send to creator') || 
+        f?.content?.includes('forwarded to creator') ||
+        f?.content?.includes('Feedback reviewed and forwarded to creator');
       
-      // For admin feedback, only show if it has media updates (actual change requests)
-      if (isAdmin) {
-        const hasMediaUpdates = (f?.videosToUpdate?.length || 0) > 0 || 
-                               (f?.photosToUpdate?.length || 0) > 0 || 
-                               (f?.rawFootageToUpdate?.length || 0) > 0;
-        
-        // Only show admin feedback if it has media updates (actual change requests)
-        if (hasMediaUpdates) {
-          console.log('✅ INCLUDING: Admin feedback with media updates (change request)');
-          return true;
-        }
-        
-        // Don't show generic admin feedback without media updates
-        console.log('❌ FILTERED OUT: Admin feedback without media updates');
-        return false;
+      // Show client feedback always, and admin feedback when it's a change request OR sent to creator (but not approval)
+      let shouldShow = isClient || (isAdmin && (isChangeRequest || hasSendToCreatorContent) && !isAdminApproval);
+      
+      // Special case: if it's admin feedback with "send to creator" content, always show it
+      if (isAdmin && hasSendToCreatorContent) {
+        console.log('✅ INCLUDING: Admin send to creator feedback');
+        shouldShow = true;
       }
       
-      // For client feedback, only show if submission status is CHANGES_REQUIRED
-      if (isClient) {
-        if (submission?.status === 'CHANGES_REQUIRED' || previousSubmission?.status === 'CHANGES_REQUIRED') {
-          console.log('✅ INCLUDING: Client feedback (changes required)');
-          return true;
-        }
-        console.log('❌ FILTERED OUT: Client feedback (no changes required)');
-        return false;
+      // Special case: if this is feedback from the previous submission (first draft) that has CHANGES_REQUIRED status,
+      // always show it so creators can see what changes were requested
+      if (previousSubmission?.status === 'CHANGES_REQUIRED' && f.submissionId === previousSubmission.id) {
+        console.log('✅ INCLUDING: Previous submission feedback (CHANGES_REQUIRED)');
+        shouldShow = true;
       }
       
-      console.log('❌ FILTERED OUT: Unknown role feedback');
-      return false;
+      console.log('🔍 RELEVANT FEEDBACKS FILTER:', {
+        id: f.id,
+        content: f.content,
+        isClient,
+        isAdmin,
+        isChangeRequest,
+        isAdminApproval,
+        hasSendToCreatorContent,
+        previousSubmissionStatus: previousSubmission?.status,
+        isFromPreviousSubmission: f.submissionId === previousSubmission?.id,
+        shouldShow
+      });
+      
+      return shouldShow;
     });
-    
-    // Filter to only show the LATEST change request feedback for each media type
-    let latestChangeRequests = [];
-    
-    // Group feedback by media type and get the latest for each
-    const videoFeedback = relevantFeedbacks.filter(f => f.videosToUpdate?.length > 0);
-    const photoFeedback = relevantFeedbacks.filter(f => f.photosToUpdate?.length > 0);
-    const rawFootageFeedback = relevantFeedbacks.filter(f => f.rawFootageToUpdate?.length > 0);
-    
-    // Get the latest feedback for each media type
-    if (videoFeedback.length > 0) {
-      const latestVideo = videoFeedback.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
-      latestChangeRequests.push(latestVideo);
-      console.log('✅ INCLUDING: Latest video change request:', latestVideo.id);
-    }
-    
-    if (photoFeedback.length > 0) {
-      const latestPhoto = photoFeedback.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
-      latestChangeRequests.push(latestPhoto);
-      console.log('✅ INCLUDING: Latest photo change request:', latestPhoto.id);
-    }
-    
-    if (rawFootageFeedback.length > 0) {
-      const latestRawFootage = rawFootageFeedback.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
-      latestChangeRequests.push(latestRawFootage);
-      console.log('✅ INCLUDING: Latest raw footage change request:', latestRawFootage.id);
-    }
-    
-    // Replace relevantFeedbacks with only the latest change requests
-    const finalFilteredFeedbacks = latestChangeRequests;
 
     // Debug the relevantFeedbacks array
     console.log('🔍 RELEVANT FEEDBACKS ARRAY:', {
@@ -374,17 +346,93 @@ const CampaignFinalDraft = ({
       })),
     });
 
-    console.log('🔍 FINAL FILTERED FEEDBACKS:', {
-      submissionId: submission?.id,
-      count: finalFilteredFeedbacks.length,
-      feedbacks: finalFilteredFeedbacks.map(f => ({
-        id: f.id,
-        content: f.content,
-        adminRole: f.admin?.role,
-        role: f.role,
-        hasMediaUpdates: !!(f?.videosToUpdate?.length || f?.photosToUpdate?.length || f?.rawFootageToUpdate?.length)
-      }))
+    // Apply additional filtering to remove admin approval comments
+    console.log('🔍 STARTING FINAL FILTERING with', relevantFeedbacks.length, 'items');
+    let finalFilteredFeedbacks = relevantFeedbacks.filter(item => {
+      // Debug each item being filtered
+      console.log('🔍 FILTERING ITEM:', {
+        id: item.id,
+        content: item.content,
+        adminRole: item.admin?.role,
+        role: item.role,
+        type: item.type,
+        isAdmin: (item?.admin?.role === 'admin') || (item?.role === 'admin'),
+        isClient: (item?.admin?.role === 'client') || (item?.role === 'client'),
+        hasSendToCreatorContent: item?.content?.includes('send to creator') || 
+          item?.content?.includes('forwarded to creator') ||
+          item?.content?.includes('Feedback reviewed and forwarded to creator')
+      });
+
+      // Exclude admin approval feedback
+      const isAdminApproval = item?.type === 'APPROVAL';
+      
+      if (isAdminApproval) {
+        console.log('❌ FILTERED OUT: Admin approval feedback');
+        return false;
+      }
+      
+      // For admin feedback, show if it was actually "sent to creator" AND has media updates
+      // OR if the submission status is CHANGES_REQUIRED (admin requested changes)
+      const isAdmin = (item?.admin?.role === 'admin') || (item?.role === 'admin');
+      if (isAdmin) {
+        // Check if this feedback was sent to creator (has specific content or indicators)
+        const hasSendToCreatorContent = item?.content?.includes('send to creator') || 
+          item?.content?.includes('forwarded to creator') ||
+          item?.content?.includes('Feedback reviewed and forwarded to creator');
+        const hasMediaUpdates = (item?.photosToUpdate?.length || 0) > 0 || 
+          (item?.videosToUpdate?.length || 0) > 0 || 
+          (item?.rawFootageToUpdate?.length || 0) > 0;
+        
+        // Special case: If submission status is CHANGES_REQUIRED, show admin feedback
+        // This ensures creators can see what changes were requested
+        if (submission?.status === 'CHANGES_REQUIRED') {
+          console.log('🔍 ADMIN FEEDBACK CHECK - CHANGES_REQUIRED:', {
+            id: item.id,
+            submissionStatus: submission?.status,
+            willShow: true
+          });
+          return true;
+        }
+        
+        console.log('🔍 ADMIN FEEDBACK CHECK:', {
+          id: item.id,
+          hasSendToCreatorContent,
+          hasMediaUpdates,
+          willShow: hasSendToCreatorContent && hasMediaUpdates
+        });
+        
+        // Show admin feedback if it was explicitly sent to creator AND has media updates
+        return hasSendToCreatorContent && hasMediaUpdates;
+      }
+      
+      // For client feedback, show them when submission status is CHANGES_REQUIRED
+      // This ensures creators can see client feedback when changes are requested
+      if (submission?.status === 'CHANGES_REQUIRED') {
+        console.log('🔍 CLIENT FEEDBACK CHECK - CHANGES_REQUIRED:', {
+          id: item.id,
+          submissionStatus: submission?.status,
+          willShow: true
+        });
+        return true;
+      }
+      
+      // Otherwise, hide client feedback (only show admin "send to creator" comments)
+      console.log('❌ FILTERED OUT: Client feedback');
+      return false;
     });
+    
+    // Keep at most ONE generic forwarded-without-media item (newest)
+    const GENERIC_TEXT = 'feedback reviewed and forwarded to creator';
+    const isGenericForward = (f) => {
+      const hasMedia = (f?.photosToUpdate?.length || 0) > 0 || (f?.videosToUpdate?.length || 0) > 0 || (f?.rawFootageToUpdate?.length || 0) > 0;
+      const isForwardedText = (f?.content || '').trim().toLowerCase() === GENERIC_TEXT;
+      return !hasMedia && isForwardedText;
+    };
+    const genericItems = finalFilteredFeedbacks.filter(isGenericForward);
+    if (genericItems.length > 1) {
+      const latestGeneric = [...genericItems].sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
+      finalFilteredFeedbacks = finalFilteredFeedbacks.filter((f) => !isGenericForward(f) || f.id === latestGeneric.id);
+    }
 
     // Debug the final filtered results
     console.log('🔍 CREATOR FINAL DRAFT - FINAL FILTERED FEEDBACK:', {
@@ -1005,25 +1053,13 @@ const CampaignFinalDraft = ({
         {(submission?.status === 'CHANGES_REQUIRED' || 
                 submission?.status === 'NOT_STARTED' || 
                 submission?.status === 'IN_PROGRESS' ||
-                previousSubmission?.status === 'CHANGES_REQUIRED') && 
-                submission?.status !== 'PENDING_REVIEW' && 
-                submission?.status !== 'SENT_TO_CLIENT' && (
+                (previousSubmission?.status === 'CHANGES_REQUIRED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
           <>
             {campaign?.campaignCredits ? (
               <Stack spacing={2}>
                 <Box>
-                                                                                {/* Show feedback section when there's feedback OR when previous submission has changes required */}
-                  {(() => {
-                    console.log('🔍 FEEDBACK SECTION CONDITION CHECK:', {
-                      hasFeedbacksTesting: !!(feedbacksTesting && feedbacksTesting.length > 0),
-                      feedbacksTestingLength: feedbacksTesting?.length || 0,
-                      previousSubmissionStatus: previousSubmission?.status,
-                      previousSubmissionId: previousSubmission?.id,
-                      willShowFeedback: !!(feedbacksTesting && feedbacksTesting.length > 0),
-                      willShowFallback: !!(previousSubmission?.status === 'CHANGES_REQUIRED' && (!feedbacksTesting || feedbacksTesting.length === 0))
-                    });
-                    return (feedbacksTesting && feedbacksTesting.length > 0) || previousSubmission?.status === 'CHANGES_REQUIRED';
-                  })() ? (
+                                                              {/* Show feedback when available, or when previous submission has changes required */}
+                                                              {((feedbacksTesting && feedbacksTesting.length > 0) || previousSubmission?.status === 'CHANGES_REQUIRED') && (
                         <>
                           {/* 🔍 LOG WHAT FEEDBACK IS BEING DISPLAYED */}
                       {console.log('🔍 CREATOR FINAL DRAFT - DISPLAYING FEEDBACK IN UI (SINGLE SECTION):', {
@@ -1499,23 +1535,22 @@ const CampaignFinalDraft = ({
                       );
                       })}
                     </>
-                  ) : (
-                    /* Show message when no feedback but previous submission has changes required */
-                    previousSubmission?.status === 'CHANGES_REQUIRED' && (
-                      <Box
-                        component="div"
-                        mb={2}
-                        p={2}
-                        border={1}
-                        borderColor="grey.300"
-                        borderRadius={1}
-                        sx={{ bgcolor: 'background.neutral' }}
-                      >
-                        <Typography variant="body1" color="text.secondary">
-                          Changes were requested for your first draft. Please review and submit your revised content.
-                        </Typography>
-                      </Box>
-                    )
+                  )}
+
+                  {(!feedbacksTesting || feedbacksTesting.length === 0) && previousSubmission?.status === 'CHANGES_REQUIRED' && (
+                    <Box
+                      component="div"
+                      mb={2}
+                      p={2}
+                      border={1}
+                      borderColor="grey.300"
+                      borderRadius={1}
+                      sx={{ bgcolor: 'background.neutral' }}
+                    >
+                      <Typography variant="body1" color="text.secondary">
+                        Changes were requested for your first draft. Please review and submit your revised content.
+                      </Typography>
+                    </Box>
                   )}
                   
 

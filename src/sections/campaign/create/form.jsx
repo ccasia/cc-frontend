@@ -120,9 +120,13 @@ function CreateCampaignForm({ onClose, mutate }) {
     audienceGender: Yup.array()
       .min(1, 'At least one option')
       .required('Audience Gender is required'),
-    audienceLocation: Yup.array()
-      .min(1, 'At least one option')
-      .required('Audience location is required'),
+    country: Yup.string().required('Country is required'),
+    audienceLocation: Yup.array().when('country', {
+      is: 'Malaysia',
+      then: (schema) =>
+        schema.min(1, 'At least one option').required('Audience location is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
     othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
       .min(1, 'At least one option')
@@ -172,9 +176,13 @@ function CreateCampaignForm({ onClose, mutate }) {
     audienceGender: Yup.array()
       .min(1, 'At least one option')
       .required('Audience Gender is required'),
-    audienceLocation: Yup.array()
-      .min(1, 'At least one option')
-      .required('Audience location is required'),
+    country: Yup.string().required('Country is required'),
+    audienceLocation: Yup.array().when('country', {
+      is: 'Malaysia',
+      then: (schema) =>
+        schema.min(1, 'At least one option').required('Audience location is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
     othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
       .min(1, 'At least one option')
@@ -273,6 +281,7 @@ function CreateCampaignForm({ onClose, mutate }) {
     hasBrand: false,
     campaignTitle: '',
     client: null,
+    country: '',
     campaignBrand: null,
     campaignStartDate: null,
     campaignEndDate: null,
@@ -287,7 +296,6 @@ function CreateCampaignForm({ onClose, mutate }) {
     audienceUserPersona: '',
     socialMediaPlatform: [],
     videoAngle: [],
-
     campaignDo: [
       {
         value: '',
