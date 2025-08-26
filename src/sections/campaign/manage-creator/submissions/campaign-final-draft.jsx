@@ -159,14 +159,18 @@ const CampaignFinalDraft = ({
     [fullSubmission, dependency]
   );
 
-  // New: Fetch creator-visible feedback from backend (Option A)
-  const creatorFeedbackKey = submission?.id ? `/api/submission/v3/creator-feedback/${submission.id}` : null;
-  const { data: creatorFeedbackResp, mutate: mutateCreatorFeedback } = useSWR(creatorFeedbackKey, async (url) => {
-    const { data } = await axiosInstance.get(url);
-    return data;
-  }, { refreshInterval: 3000, revalidateOnFocus: true });
+  // Commented out: Backend endpoint doesn't exist yet
+  // const creatorFeedbackKey = submission?.id ? `/api/submission/v3/creator-feedback/${submission.id}` : null;
+  // const { data: creatorFeedbackResp, mutate: mutateCreatorFeedback } = useSWR(creatorFeedbackKey, async (url) => {
+  //   const { data } = await axiosInstance.get(url);
+  //   return data;
+  // }, { refreshInterval: 3000, revalidateOnFocus: true });
 
-  const creatorVisibleFeedback = creatorFeedbackResp?.feedback || [];
+  // const creatorVisibleFeedback = creatorFeedbackResp?.feedback || [];
+  
+  // Use local filtering instead
+  const creatorFeedbackResp = null;
+  const creatorVisibleFeedback = [];
 
   // Debug logging for submission data
   useEffect(() => {
@@ -187,7 +191,10 @@ const CampaignFinalDraft = ({
     // Hook is declared below; this early return will be executed after the hook value is ready
     // but since this is inside useMemo, it will recompute when dependency changes
     // Get feedback from both submissions
-    const allFeedbacks = [...(submission?.feedback || []), ...(previousSubmission?.feedback || [])];
+    const allFeedbacks = [
+      ...(submission?.feedback || []).map(f => ({ ...f, submissionId: submission.id })),
+      ...(previousSubmission?.feedback || []).map(f => ({ ...f, submissionId: previousSubmission.id }))
+    ];
 
     // Sort by date and remove duplicates
     const uniqueFeedbacks = allFeedbacks
@@ -266,38 +273,71 @@ const CampaignFinalDraft = ({
       console.log('🔍 Server creator-visible feedback empty, falling back to local filtering');
     }
 
-    // Keep both client feedback and admin feedback for change requests (creators need to see admin feedback when changes are requested)
+    // Only show feedback that's actually relevant for the current change request context
     const relevantFeedbacks = uniqueFeedbacks.filter(f => {
-      const isClient = (f?.admin?.role === 'client') || (f?.role === 'client');
+      const isClient = (f?.admin?.role === 'client') || (f?.role === 'admin');
       const isAdmin = (f?.admin?.role === 'admin') || (f?.role === 'admin');
-      const isChangeRequest = f?.type === 'REQUEST' || f?.videosToUpdate?.length > 0 || f?.photosToUpdate?.length > 0 || f?.rawFootageToUpdate?.length > 0;
-      const isAdminApproval = f?.type === 'APPROVAL';
-      const hasSendToCreatorContent = f?.content?.includes('send to creator') || 
-        f?.content?.includes('forwarded to creator') ||
-        f?.content?.includes('Feedback reviewed and forwarded to creator');
       
-      // Show client feedback always, and admin feedback when it's a change request OR sent to creator (but not approval)
-      const shouldShow = isClient || (isAdmin && (isChangeRequest || hasSendToCreatorContent) && !isAdminApproval);
-      
-      // Special case: if it's admin feedback with "send to creator" content, always show it
-      if (isAdmin && hasSendToCreatorContent) {
-        console.log('✅ INCLUDING: Admin send to creator feedback');
-        return true;
+      // For admin feedback, only show if it has media updates (actual change requests)
+      if (isAdmin) {
+        const hasMediaUpdates = (f?.videosToUpdate?.length || 0) > 0 || 
+                               (f?.photosToUpdate?.length || 0) > 0 || 
+                               (f?.rawFootageToUpdate?.length || 0) > 0;
+        
+        // Only show admin feedback if it has media updates (actual change requests)
+        if (hasMediaUpdates) {
+          console.log('✅ INCLUDING: Admin feedback with media updates (change request)');
+          return true;
+        }
+        
+        // Don't show generic admin feedback without media updates
+        console.log('❌ FILTERED OUT: Admin feedback without media updates');
+        return false;
       }
       
-      console.log('🔍 RELEVANT FEEDBACKS FILTER:', {
-        id: f.id,
-        content: f.content,
-        isClient,
-        isAdmin,
-        isChangeRequest,
-        isAdminApproval,
-        hasSendToCreatorContent,
-        shouldShow
-      });
+      // For client feedback, only show if submission status is CHANGES_REQUIRED
+      if (isClient) {
+        if (submission?.status === 'CHANGES_REQUIRED' || previousSubmission?.status === 'CHANGES_REQUIRED') {
+          console.log('✅ INCLUDING: Client feedback (changes required)');
+          return true;
+        }
+        console.log('❌ FILTERED OUT: Client feedback (no changes required)');
+        return false;
+      }
       
-      return shouldShow;
+      console.log('❌ FILTERED OUT: Unknown role feedback');
+      return false;
     });
+    
+    // Filter to only show the LATEST change request feedback for each media type
+    let latestChangeRequests = [];
+    
+    // Group feedback by media type and get the latest for each
+    const videoFeedback = relevantFeedbacks.filter(f => f.videosToUpdate?.length > 0);
+    const photoFeedback = relevantFeedbacks.filter(f => f.photosToUpdate?.length > 0);
+    const rawFootageFeedback = relevantFeedbacks.filter(f => f.rawFootageToUpdate?.length > 0);
+    
+    // Get the latest feedback for each media type
+    if (videoFeedback.length > 0) {
+      const latestVideo = videoFeedback.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
+      latestChangeRequests.push(latestVideo);
+      console.log('✅ INCLUDING: Latest video change request:', latestVideo.id);
+    }
+    
+    if (photoFeedback.length > 0) {
+      const latestPhoto = photoFeedback.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
+      latestChangeRequests.push(latestPhoto);
+      console.log('✅ INCLUDING: Latest photo change request:', latestPhoto.id);
+    }
+    
+    if (rawFootageFeedback.length > 0) {
+      const latestRawFootage = rawFootageFeedback.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
+      latestChangeRequests.push(latestRawFootage);
+      console.log('✅ INCLUDING: Latest raw footage change request:', latestRawFootage.id);
+    }
+    
+    // Replace relevantFeedbacks with only the latest change requests
+    const finalFilteredFeedbacks = latestChangeRequests;
 
     // Debug the relevantFeedbacks array
     console.log('🔍 RELEVANT FEEDBACKS ARRAY:', {
@@ -334,70 +374,17 @@ const CampaignFinalDraft = ({
       })),
     });
 
-    // Apply additional filtering to remove admin approval comments
-    console.log('🔍 STARTING FINAL FILTERING with', relevantFeedbacks.length, 'items');
-    let finalFilteredFeedbacks = relevantFeedbacks.filter(item => {
-      // Debug each item being filtered
-      console.log('🔍 FILTERING ITEM:', {
-        id: item.id,
-        content: item.content,
-        adminRole: item.admin?.role,
-        role: item.role,
-        type: item.type,
-        isAdmin: (item?.admin?.role === 'admin') || (item?.role === 'admin'),
-        isClient: (item?.admin?.role === 'client') || (item?.role === 'client'),
-        hasSendToCreatorContent: item?.content?.includes('send to creator') || 
-          item?.content?.includes('forwarded to creator') ||
-          item?.content?.includes('Feedback reviewed and forwarded to creator')
-      });
-
-      // Exclude admin approval feedback
-      const isAdminApproval = item?.type === 'APPROVAL';
-      
-      if (isAdminApproval) {
-        console.log('❌ FILTERED OUT: Admin approval feedback');
-        return false;
-      }
-      
-      // For admin feedback, ONLY show if it was actually "sent to creator" AND has media updates
-      const isAdmin = (item?.admin?.role === 'admin') || (item?.role === 'admin');
-      if (isAdmin) {
-        // Check if this feedback was sent to creator (has specific content or indicators)
-        const hasSendToCreatorContent = item?.content?.includes('send to creator') || 
-          item?.content?.includes('forwarded to creator') ||
-          item?.content?.includes('Feedback reviewed and forwarded to creator');
-        const hasMediaUpdates = (item?.photosToUpdate?.length || 0) > 0 || 
-          (item?.videosToUpdate?.length || 0) > 0 || 
-          (item?.rawFootageToUpdate?.length || 0) > 0;
-        
-        console.log('🔍 ADMIN FEEDBACK CHECK:', {
-          id: item.id,
-          hasSendToCreatorContent,
-          hasMediaUpdates,
-          willShow: hasSendToCreatorContent && hasMediaUpdates
-        });
-        
-        // ONLY show admin feedback if it was explicitly sent to creator AND has media updates
-        return hasSendToCreatorContent && hasMediaUpdates;
-      }
-      
-      // For client feedback, hide them too (only show admin "send to creator" comments)
-      console.log('❌ FILTERED OUT: Client feedback');
-      return false;
+    console.log('🔍 FINAL FILTERED FEEDBACKS:', {
+      submissionId: submission?.id,
+      count: finalFilteredFeedbacks.length,
+      feedbacks: finalFilteredFeedbacks.map(f => ({
+        id: f.id,
+        content: f.content,
+        adminRole: f.admin?.role,
+        role: f.role,
+        hasMediaUpdates: !!(f?.videosToUpdate?.length || f?.photosToUpdate?.length || f?.rawFootageToUpdate?.length)
+      }))
     });
-    
-    // Keep at most ONE generic forwarded-without-media item (newest)
-    const GENERIC_TEXT = 'feedback reviewed and forwarded to creator';
-    const isGenericForward = (f) => {
-      const hasMedia = (f?.photosToUpdate?.length || 0) > 0 || (f?.videosToUpdate?.length || 0) > 0 || (f?.rawFootageToUpdate?.length || 0) > 0;
-      const isForwardedText = (f?.content || '').trim().toLowerCase() === GENERIC_TEXT;
-      return !hasMedia && isForwardedText;
-    };
-    const genericItems = finalFilteredFeedbacks.filter(isGenericForward);
-    if (genericItems.length > 1) {
-      const latestGeneric = [...genericItems].sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
-      finalFilteredFeedbacks = finalFilteredFeedbacks.filter((f) => !isGenericForward(f) || f.id === latestGeneric.id);
-    }
 
     // Debug the final filtered results
     console.log('🔍 CREATOR FINAL DRAFT - FINAL FILTERED FEEDBACK:', {
@@ -719,9 +706,33 @@ const CampaignFinalDraft = ({
     return options;
   };
 
+  // Debug logging for component visibility
+  console.log('🔍 CREATOR FINAL DRAFT - COMPONENT VISIBILITY CHECK:', {
+    submissionId: submission?.id,
+    submissionStatus: submission?.status,
+    previousSubmissionId: previousSubmission?.id,
+    previousSubmissionStatus: previousSubmission?.status,
+    feedbacksTestingLength: feedbacksTesting?.length || 0,
+    hasFeedback: !!(feedbacksTesting && feedbacksTesting.length > 0),
+    isInProgress: submission?.status === 'IN_PROGRESS',
+    isNotStarted: submission?.status === 'NOT_STARTED',
+    hasPreviousChangesRequired: previousSubmission?.status === 'CHANGES_REQUIRED',
+    shouldShowComponent: (feedbacksTesting && feedbacksTesting.length > 0) ||
+                        submission?.status === 'IN_PROGRESS' ||
+                        submission?.status === 'NOT_STARTED' ||
+                        previousSubmission?.status === 'CHANGES_REQUIRED'
+  });
+
   return (
     (
-      feedbacksTesting && feedbacksTesting.length > 0
+      // Show the 2nd Draft Submission section when:
+      // 1. There's feedback to address, OR
+      // 2. The current submission is in progress, OR  
+      // 3. The previous submission (first draft) has changes required
+      (feedbacksTesting && feedbacksTesting.length > 0) ||
+      submission?.status === 'IN_PROGRESS' ||
+      submission?.status === 'NOT_STARTED' ||
+      previousSubmission?.status === 'CHANGES_REQUIRED'
     ) && (
       <Box p={1.5} sx={{ pb: 0 }}>
         <Box
@@ -990,20 +1001,36 @@ const CampaignFinalDraft = ({
           </Stack>
         )}
 
+        {/* Only show feedback and re-upload when changes are required, NOT when in review or sent to client */}
         {(submission?.status === 'CHANGES_REQUIRED' || 
-                (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
+                submission?.status === 'NOT_STARTED' || 
+                submission?.status === 'IN_PROGRESS' ||
+                previousSubmission?.status === 'CHANGES_REQUIRED') && 
+                submission?.status !== 'PENDING_REVIEW' && 
+                submission?.status !== 'SENT_TO_CLIENT' && (
           <>
             {campaign?.campaignCredits ? (
               <Stack spacing={2}>
                 <Box>
-                                                              {feedbacksTesting && feedbacksTesting.length > 0 && (
+                                                                                {/* Show feedback section when there's feedback OR when previous submission has changes required */}
+                  {(() => {
+                    console.log('🔍 FEEDBACK SECTION CONDITION CHECK:', {
+                      hasFeedbacksTesting: !!(feedbacksTesting && feedbacksTesting.length > 0),
+                      feedbacksTestingLength: feedbacksTesting?.length || 0,
+                      previousSubmissionStatus: previousSubmission?.status,
+                      previousSubmissionId: previousSubmission?.id,
+                      willShowFeedback: !!(feedbacksTesting && feedbacksTesting.length > 0),
+                      willShowFallback: !!(previousSubmission?.status === 'CHANGES_REQUIRED' && (!feedbacksTesting || feedbacksTesting.length === 0))
+                    });
+                    return (feedbacksTesting && feedbacksTesting.length > 0) || previousSubmission?.status === 'CHANGES_REQUIRED';
+                  })() ? (
                         <>
                           {/* 🔍 LOG WHAT FEEDBACK IS BEING DISPLAYED */}
                       {console.log('🔍 CREATOR FINAL DRAFT - DISPLAYING FEEDBACK IN UI (SINGLE SECTION):', {
                             submissionId: submission?.id,
                             submissionStatus: submission?.status,
-                            totalFeedbacksToDisplay: feedbacksTesting.length,
-                            feedbacks: feedbacksTesting.map(f => ({
+                            totalFeedbacksToDisplay: feedbacksTesting?.length || 0,
+                            feedbacks: (feedbacksTesting || []).map(f => ({
                               id: f.id,
                               adminName: f.adminName,
                               role: f.role,
@@ -1018,7 +1045,7 @@ const CampaignFinalDraft = ({
                         feedbacksTestingLength: feedbacksTesting?.length,
                         totalFeedbacks: feedbacksTesting?.length || 0
                       })}
-                      {feedbacksTesting.map((feedback, feedbackIndex) => {
+                      {(feedbacksTesting || []).map((feedback, feedbackIndex) => {
                         console.log('🔍 RENDERING INDIVIDUAL FEEDBACK:', {
                           feedbackIndex,
                           feedbackId: feedback.id,
@@ -1472,7 +1499,26 @@ const CampaignFinalDraft = ({
                       );
                       })}
                     </>
+                  ) : (
+                    /* Show message when no feedback but previous submission has changes required */
+                    previousSubmission?.status === 'CHANGES_REQUIRED' && (
+                      <Box
+                        component="div"
+                        mb={2}
+                        p={2}
+                        border={1}
+                        borderColor="grey.300"
+                        borderRadius={1}
+                        sx={{ bgcolor: 'background.neutral' }}
+                      >
+                        <Typography variant="body1" color="text.secondary">
+                          Changes were requested for your first draft. Please review and submit your revised content.
+                        </Typography>
+                      </Box>
+                    )
                   )}
+                  
+
 
                   <Box
                     sx={{
@@ -1483,7 +1529,8 @@ const CampaignFinalDraft = ({
                     }}
                   />
 
-                  {!uploadProgress.length && (
+                  {/* Only show Re-Upload button when NOT in review */}
+                  {!uploadProgress.length && submission?.status !== 'IN_REVIEW' && (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Button
                         variant="contained"
@@ -1606,28 +1653,31 @@ const CampaignFinalDraft = ({
                       }}
                     />
 
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <Button
-                        variant="contained"
-                        onClick={handleUploadClick}
-                        startIcon={<Iconify icon="material-symbols:add" width={24} />}
-                        sx={{
-                          bgcolor: '#203ff5',
-                          color: 'white',
-                          borderBottom: 3.5,
-                          borderBottomColor: '#112286',
-                          borderRadius: 1.5,
-                          px: 2.5,
-                          py: 1.2,
-                          '&:hover': {
+                    {/* Only show Re-Upload button when NOT in review */}
+                    {submission?.status !== 'IN_REVIEW' && (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                          variant="contained"
+                          onClick={handleUploadClick}
+                          startIcon={<Iconify icon="material-symbols:add" width={24} />}
+                          sx={{
                             bgcolor: '#203ff5',
-                            opacity: 0.9,
-                          },
-                        }}
-                      >
-                        Re-Upload
-                      </Button>
-                    </Box>
+                            color: 'white',
+                            borderBottom: 3.5,
+                            borderBottomColor: '#112286',
+                            borderRadius: 1.5,
+                            px: 2.5,
+                            py: 1.2,
+                            '&:hover': {
+                              bgcolor: '#203ff5',
+                              opacity: 0.9,
+                            },
+                          }}
+                        >
+                          Re-Upload
+                        </Button>
+                      </Box>
+                    )}
                   </Box>
                 )}
                 <Typography variant="subtitle2" color="text.secondary">
@@ -1838,6 +1888,28 @@ const CampaignFinalDraft = ({
                       </Box>
                     </Box>
                   ))}
+
+                  {/* Show fallback message when no feedback but previous submission has changes required */}
+                  {(!feedbacksTesting || feedbacksTesting.length === 0) && previousSubmission?.status === 'CHANGES_REQUIRED' && (
+                    <Box
+                      sx={{
+                        p: 3,
+                        mb: 2,
+                        border: 1,
+                        borderColor: 'warning.main',
+                        borderRadius: 2,
+                        bgcolor: 'warning.lighter',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <Typography variant="h6" color="warning.darker" sx={{ mb: 1 }}>
+                        📝 Changes Required
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        Changes were requested for your first draft. Please review and submit your revised content.
+                      </Typography>
+                    </Box>
+                  )}
               </Box>
             )}
 

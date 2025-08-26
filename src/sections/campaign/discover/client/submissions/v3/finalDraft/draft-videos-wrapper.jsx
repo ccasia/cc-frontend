@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Box, Stack, Typography, CircularProgress } from '@mui/material';
+import { Box, Stack, Typography, Grid, IconButton } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 import VideoCard from './draft-videos';
+import Iconify from 'src/components/iconify';
 
 const DraftVideosWrapper = ({ 
   campaign,
@@ -32,6 +33,8 @@ const DraftVideosWrapper = ({
   const { user } = useAuthContext();
   const userRole = user?.role || 'admin';
   
+
+  
   console.log('🔍 DraftVideosWrapper - User info:', { 
     userId: user?.id, 
     userRole: user?.role, 
@@ -50,31 +53,63 @@ const DraftVideosWrapper = ({
   }
 
   return (
-    <Box>     
-      <Stack spacing={2}>
-        {deliverables.videos.map((video, index) => (
-          <VideoCard
-            key={video.id}
-            videoItem={video}
-            index={index}
-            submission={submission}
-            onVideoClick={onVideoClick}
-            handleApprove={onIndividualApprove}
-            handleRequestChange={onIndividualRequestChange}
-            selectedVideosForChange={[]}
-            handleVideoSelection={() => {}}
-            userRole={userRole}
-            deliverables={deliverables}
-            handleClientApprove={handleClientApproveVideo}
-            handleClientReject={handleClientRejectVideo}
-            deliverableMutate={deliverableMutate}
-            submissionMutate={submissionMutate}
-            // Admin feedback handlers
-            handleAdminEditFeedback={handleAdminEditFeedback}
-            handleAdminSendToCreator={handleAdminSendToCreator}
-          />
-        ))}
-      </Stack>
+    <Box sx={{ position: 'relative' }}>
+      {/* Horizontal Scrollable Container */}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          pb: 1,
+          maxWidth: '100%',
+          '&::-webkit-scrollbar': {
+            height: 8,
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: '#f1f1f1',
+            borderRadius: 4,
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: '#c1c1c1',
+            borderRadius: 4,
+            '&:hover': {
+              backgroundColor: '#a8a8a8',
+            },
+          },
+        }}
+      >
+                      {deliverables.videos.map((video, index) => (
+              <Box
+                key={video.id}
+                sx={{
+                  width: { xs: '280px', sm: '300px', md: '300px' },
+                  minWidth: { xs: '280px', sm: '300px', md: '300px' },
+                  flexShrink: 0,
+                }}
+              >
+                <VideoCard
+                  videoItem={video}
+                  index={index}
+                  submission={submission}
+                  onVideoClick={onVideoClick}
+                  handleApprove={onIndividualApprove}
+                  handleRequestChange={onIndividualRequestChange}
+                  selectedVideosForChange={[]}
+                  handleVideoSelection={() => {}}
+                  userRole={userRole}
+                  deliverables={deliverables}
+                  handleClientApprove={handleClientApproveVideo}
+                  handleClientReject={handleClientRejectVideo}
+                  deliverableMutate={deliverableMutate}
+                  submissionMutate={submissionMutate}
+                  // Admin feedback handlers
+                  handleAdminEditFeedback={handleAdminEditFeedback}
+                  handleAdminSendToCreator={handleAdminSendToCreator}
+                />
+              </Box>
+            ))}
+        </Box>
     </Box>
   );
 };

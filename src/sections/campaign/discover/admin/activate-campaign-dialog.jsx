@@ -386,16 +386,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const campaignTypeOptions = [
     { value: 'normal', label: 'UGC (With Posting)' },
     { value: 'ugc', label: 'UGC (No Posting)' },
-    { value: 'INFLUENCER', label: 'Influencer' },
-    { value: 'MIXED', label: 'Mixed' },
   ];
   
   const deliverableOptions = [
-    { value: 'VIDEOS', label: 'Videos' },
     { value: 'PHOTOS', label: 'Photos' },
     { value: 'RAW_FOOTAGES', label: 'Raw Footage' },
-    { value: 'ADS', label: 'Ads' },
-    { value: 'CROSS_POSTING', label: 'Cross Posting' },
+    { value: 'WITHOUT_RAW_PHOTOS', label: 'Without Raw Footage and Photos' },
   ];
   
   const renderStepContent = () => {

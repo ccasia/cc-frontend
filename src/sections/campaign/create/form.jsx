@@ -110,7 +110,9 @@ function CreateCampaignForm({ onClose, mutate }) {
   const campaignSchema = Yup.object().shape({
     campaignIndustries: Yup.string().required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
-    campaignTitle: Yup.string().required('Campaign title is required'),
+    campaignTitle: Yup.string()
+      .required('Campaign title is required')
+      .max(40, 'Campaign title must be 40 characters or less'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
     // productName: Yup.string().required('Product or Service name is required.'),
@@ -157,7 +159,9 @@ function CreateCampaignForm({ onClose, mutate }) {
   const campaignInformationSchema = Yup.object().shape({
     campaignIndustries: Yup.string().required('Campaign industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
-    campaignTitle: Yup.string().required('Campaign title is required'),
+    campaignTitle: Yup.string()
+      .required('Campaign title is required')
+      .max(40, 'Campaign title must be 40 characters or less'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
     productName: Yup.string(),

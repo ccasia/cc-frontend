@@ -36,7 +36,7 @@ import FirstDraft from './creator-stuff/submissions/firstDraft';
 import FinalDraft from './creator-stuff/submissions/finalDraft';
 import Posting from './creator-stuff/submissions/posting/posting';
 
-const CampaignCreatorDeliverablesClient = ({ campaign }) => {
+const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
   const theme = useTheme();
   const mdUp = useMediaQuery(theme.breakpoints.up('md'));
   const { user } = useAuthContext();
@@ -1905,6 +1905,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign }) => {
 
 CampaignCreatorDeliverablesClient.propTypes = {
   campaign: PropTypes.object,
+  campaignMutate: PropTypes.func,
 };
 
 export default CampaignCreatorDeliverablesClient;
