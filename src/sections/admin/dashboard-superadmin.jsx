@@ -355,6 +355,8 @@ import {
   CircularProgress,
   ListItemSecondaryAction,
 } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -382,6 +384,11 @@ const DashboardSuperadmin = () => {
   const { user } = useAuthContext();
   const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher);
   const router = useRouter();
+
+  const [exportCampaignsLoading, setExportCampaignsLoading] = useState(false);
+  const [exportCreatorsLoading, setExportCreatorsLoading] = useState(false);
+  const [exportCampaignsDone, setExportCampaignsDone] = useState(false);
+  const [exportCreatorsDone, setExportCreatorsDone] = useState(false);
 
   // Minimal color palette with blue accent
   const colors = {
@@ -447,6 +454,37 @@ const DashboardSuperadmin = () => {
   const totalCreators = creators?.length || 0;
   const totalClients = clientData || 0;
 
+  // Approved / Rejected pitches across all campaigns
+  const totalApprovedPitches = useMemo(() => {
+    if (!campaigns) return 0;
+    return campaigns.reduce((acc, c) => acc + (c?.pitch?.filter?.((p) => p.status === 'approved')?.length || 0), 0);
+  }, [campaigns]);
+
+  const totalRejectedPitches = useMemo(() => {
+    if (!campaigns) return 0;
+    return campaigns.reduce((acc, c) => acc + (c?.pitch?.filter?.((p) => p.status === 'rejected')?.length || 0), 0);
+  }, [campaigns]);
+
+  // Creators with media kit connected (approximate: has connected IG or TikTok account)
+  const totalCreatorsWithMediaKit = useMemo(() => {
+    if (!creators) return 0;
+    return creators.filter((u) => u?.creator?.instagramUser || u?.creator?.tiktokUser).length;
+  }, [creators]);
+
+  // Creators who are in at least one campaign (based on shortlisted membership across all campaigns)
+  const totalCreatorsInAtLeastOneCampaign = useMemo(() => {
+    if (!campaigns) return 0;
+    const counts = new Map();
+    campaigns.forEach((c) => {
+      (c?.shortlisted || []).forEach((s) => {
+        const uid = s?.userId;
+        if (!uid) return;
+        counts.set(uid, (counts.get(uid) || 0) + 1);
+      });
+    });
+    return Array.from(counts.values()).filter((cnt) => cnt >= 1).length;
+  }, [campaigns]);
+
   // Generate last 6 months data based on actual metrics
   const monthlyData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
@@ -500,6 +538,30 @@ const DashboardSuperadmin = () => {
       value: totalClients,
       color: colors.tertiary,
       icon: icon('ic_clients'),
+    },
+    {
+      title: 'Approved Pitches',
+      value: totalApprovedPitches,
+      color: '#16a34a',
+      icon: <Iconify icon="mdi:check-decagram-outline" width={20} />,
+    },
+    {
+      title: 'Rejected Pitches',
+      value: totalRejectedPitches,
+      color: '#ef4444',
+      icon: <Iconify icon="mdi:close-octagon-outline" width={20} />,
+    },
+    {
+      title: 'Media Kits Connected',
+      value: totalCreatorsWithMediaKit,
+      color: '#0ea5e9',
+      icon: <Iconify icon="mdi:account-link-outline" width={20} />,
+    },
+    {
+      title: 'Creators in Campaigns',
+      value: totalCreatorsInAtLeastOneCampaign,
+      color: '#8b5cf6',
+      icon: <Iconify icon="mdi:account-multiple-check-outline" width={20} />,
     },
   ];
 
@@ -799,28 +861,93 @@ const DashboardSuperadmin = () => {
       }}
     >
       <Box sx={{ p: 3, borderBottom: `1px solid ${colors.border}` }}>
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Typography
-            variant="h6"
-            sx={{
-              color: colors.primary,
-              fontWeight: 600,
-              fontSize: '1.1rem',
-            }}
-          >
-            Active Campaigns
-          </Typography>
-          <Chip
-            label={`${activeCampaigns.length}`}
-            size="small"
-            sx={{
-              bgcolor: colors.accent,
-              color: colors.background,
-              fontWeight: 600,
-              fontSize: '0.75rem',
-              height: 24,
-            }}
-          />
+        <Stack direction="row" alignItems="center" spacing={1.5} justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: colors.primary,
+                fontWeight: 600,
+                fontSize: '1.1rem',
+              }}
+            >
+              Active Campaigns
+            </Typography>
+            <Chip
+              label={`${activeCampaigns.length}`}
+              size="small"
+              sx={{
+                bgcolor: colors.accent,
+                color: colors.background,
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 24,
+                ml: 0.5,
+              }}
+            />
+          </Stack>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            {user?.role === 'superadmin' && (
+            <LoadingButton
+              size="small"
+              loading={exportCampaignsLoading}
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  setExportCampaignsLoading(true);
+                  await axiosInstance.post(endpoints.campaign.exportActiveCompleted);
+                  setExportCampaignsLoading(false);
+                  setExportCampaignsDone(true);
+                  setTimeout(() => setExportCampaignsDone(false), 1500);
+                } catch {
+                  setExportCampaignsLoading(false);
+                }
+              }}
+              sx={{
+                bgcolor: exportCampaignsDone ? '#22c55e' : colors.primary,
+                color: colors.background,
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 28,
+                px: 1.5,
+                '&:hover': { opacity: 0.9, bgcolor: exportCampaignsDone ? '#16a34a' : colors.primary },
+              }}
+              variant="contained"
+            >
+              {exportCampaignsDone ? 'Done' : 'Export Campaigns'}
+            </LoadingButton>
+            )}
+            {user?.role === 'superadmin' && (
+            <LoadingButton
+              size="small"
+              loading={exportCreatorsLoading}
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  setExportCreatorsLoading(true);
+                  await axiosInstance.post(endpoints.campaign.exportCampaignCreators);
+                  setExportCreatorsLoading(false);
+                  setExportCreatorsDone(true);
+                  setTimeout(() => setExportCreatorsDone(false), 1500);
+                } catch {
+                  setExportCreatorsLoading(false);
+                }
+              }}
+              sx={{
+                bgcolor: exportCreatorsDone ? '#22c55e' : colors.secondary,
+                color: colors.background,
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 28,
+                px: 1.5,
+                '&:hover': { opacity: 0.9, bgcolor: exportCreatorsDone ? '#16a34a' : colors.secondary },
+              }}
+              variant="contained"
+            >
+              {exportCreatorsDone ? 'Done' : 'Export Creators'}
+            </LoadingButton>
+            )}
+          </Stack>
         </Stack>
       </Box>
 
