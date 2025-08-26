@@ -736,7 +736,8 @@ const ClientDashboard = () => {
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: 1.5,
-                  pr: 1
+                  pr: 1,
+                  minWidth: 0, // Allow flex item to shrink below content size
                 }}>
                   <Avatar
                     src={campaign.brand?.logo || ''}
@@ -759,6 +760,8 @@ const ClientDashboard = () => {
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      minWidth: 0, // Allow text to shrink
+                      flex: 1, // Take remaining space
                     }}
                   >
                     {campaign.name}
