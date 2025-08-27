@@ -611,7 +611,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
           {selectedFeedback && (
             <Card sx={{ p: 2, bgcolor: 'background.neutral', mb: 2 }}>
               <Typography variant="subtitle2" gutterBottom>
-                Original Client Feedback:
+                Client Feedback:
               </Typography>
               <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                 <Box sx={{ 

@@ -306,18 +306,6 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
         </Card>
       )}
 
-      {/* Caption */}
-      {submission.caption && (
-        <Card sx={{ p: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Caption:
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {submission.caption}
-          </Typography>
-        </Card>
-      )}
-
       {/* Feedback */}
       {relevantFeedback.length > 0 && (
         <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
@@ -396,6 +384,17 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
               disabled={uploading}
             />
 
+            {submission.caption && (
+              <Card sx={{ p: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Caption:
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {submission.caption}
+                </Typography>
+              </Card>
+            )}
+
             {/* Submit Button */}
             <Box>
               {uploading && (
@@ -411,7 +410,7 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
               <Button
                 variant="contained"
                 onClick={handleSubmit}
-                disabled={uploading || selectedFiles.length === 0}
+                disabled={uploading || selectedFiles.length === 0 || selectedFiles.length > 1}
                 startIcon={<Iconify icon="eva:upload-fill" />}
                 size="large"
               >
