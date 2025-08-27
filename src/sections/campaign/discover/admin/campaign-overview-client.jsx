@@ -69,7 +69,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
     return calculateSummaryStats(insightsData);
   }, [insightsData]);
 
-  // Calculate metrics with percentage changes and trends
+  // Calculate metrics with real percentage changes based on multiple posts
   const metrics = useMemo(() => {
     if (!summaryStats) {
       return {
@@ -79,50 +79,74 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
       };
     }
 
-    // Calculate realistic percentage changes based on available data
-    // For now, we'll simulate some realistic trends based on the data
     const views = summaryStats.totalViews || 0;
     const likes = summaryStats.totalLikes || 0;
     const comments = summaryStats.totalComments || 0;
 
-    // Simulate realistic trends (in a real app, this would come from historical data comparison)
-    const calculateTrend = (value, type) => {
-      if (value === 0) return { change: 0, increase: true };
-      
-      // Generate realistic percentage changes based on the metric type
-      let change, increase;
-      if (type === 'views') {
-        // Views typically have moderate growth
-        change = Math.random() * 20 + 5; // 5-25% increase
-        increase = true;
-      } else if (type === 'likes') {
-        // Likes can vary more
-        change = Math.random() * 30 - 5; // -5 to 25% change
-        increase = change > 0;
-      } else {
-        // Comments are more volatile
-        change = Math.random() * 40 - 20; // -20 to 20% change
-        increase = change > 0;
+    // Calculate real trends by comparing with previous posts
+    const calculateRealTrend = (currentValue, metricType) => {
+      if (!insightsData || insightsData.length < 2) {
+        // If we don't have enough data for comparison, show no change
+        return { change: 0, increase: true };
       }
-      
-      return { change: Math.round(change * 10) / 10, increase };
+
+      // Get the metric value from insights data
+      const getMetricValue = (insight, metricName) => {
+        if (!insight || !Array.isArray(insight)) return 0;
+        const metric = insight.find(item => item.name === metricName);
+        return metric ? metric.value : 0;
+      };
+
+      // Calculate average of previous posts (excluding the latest one)
+      const previousPosts = insightsData.slice(0, -1); // All posts except the latest
+      const currentPost = insightsData[insightsData.length - 1]; // Latest post
+
+      if (previousPosts.length === 0) {
+        return { change: 0, increase: true };
+      }
+
+      // Calculate average of previous posts
+      const previousAverage = previousPosts.reduce((sum, post) => {
+        return sum + getMetricValue(post.insight, metricType);
+      }, 0) / previousPosts.length;
+
+      // Get current post value
+      const currentPostValue = getMetricValue(currentPost.insight, metricType);
+
+      // Calculate percentage change
+      let change = 0;
+      let increase = true;
+
+      if (previousAverage > 0) {
+        change = ((currentPostValue - previousAverage) / previousAverage) * 100;
+        increase = change >= 0;
+      } else if (currentPostValue > 0) {
+        // If previous average was 0 but current has value, it's a 100% increase
+        change = 100;
+        increase = true;
+      }
+
+      return { 
+        change: Math.round(change * 10) / 10, // Round to 1 decimal place
+        increase 
+      };
     };
 
     return {
       views: {
         value: views,
-        ...calculateTrend(views, 'views')
+        ...calculateRealTrend(views, 'views')
       },
       likes: {
         value: likes,
-        ...calculateTrend(likes, 'likes')
+        ...calculateRealTrend(likes, 'likes')
       },
       comments: {
         value: comments,
-        ...calculateTrend(comments, 'comments')
+        ...calculateRealTrend(comments, 'comments')
       }
     };
-  }, [summaryStats]);
+  }, [summaryStats, insightsData]);
 
   const handleViewPitch = (pitch) => {
     setSelectedPitch(pitch);
