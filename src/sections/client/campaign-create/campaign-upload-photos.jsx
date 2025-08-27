@@ -40,6 +40,15 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
   const clientBrandName =
     user?.company?.name || user?.client?.company?.name || user?.brandName || user?.name || 'Your Brand';
 
+  // Resolve client company logo (from profile/company or local persisted value)
+  let clientLogoUrl = '';
+  try {
+    const stored = localStorage.getItem('client_company_logo');
+    clientLogoUrl = stored || user?.company?.logo || user?.client?.company?.logo || '';
+  } catch {
+    clientLogoUrl = user?.company?.logo || user?.client?.company?.logo || '';
+  }
+
   // Watch all necessary form values for preview
   const campaignTitle = watch('campaignTitle');
   const campaignStartDate = watch('campaignStartDate');
@@ -139,7 +148,7 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
 
           {/* Company Avatar */}
           <Avatar
-            src=""
+            src={clientLogoUrl}
             alt={clientBrandName}
             sx={{
               position: 'absolute',

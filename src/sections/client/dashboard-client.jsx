@@ -124,6 +124,12 @@ const ClientDashboard = () => {
   const { submissions: allSubmissions, isLoading: submissionsLoading } = useGetV3Submissions();
   // Fetch V3 pitches (creator master list items)
   const { pitches: allPitches, isLoading: pitchesLoading } = useGetV3Pitches();
+
+  // Client campaign ids for scoping counts to "their own" campaigns
+  const clientCampaignIds = React.useMemo(() => {
+    if (!Array.isArray(campaigns)) return new Set();
+    return new Set(campaigns.map((c) => c.id));
+  }, [campaigns]);
   const { 
     totalCredits, 
     usedCredits, 
@@ -146,10 +152,19 @@ const ClientDashboard = () => {
 
   const remainingDays = calculateRemainingDays();
 
+  // Resolve client company logo from localStorage as a fallback for campaign rows
+  const clientCompanyLogo = (() => {
+    try {
+      return localStorage.getItem('client_company_logo') || '';
+    } catch (e) {
+      return '';
+    }
+  })();
+
   // Compute creators to approve and drafts to approve
   const creatorsToApprove = React.useMemo(() => {
     // Count creators in the master list that are still pending (PENDING_REVIEW)
-    if (!Array.isArray(allPitches)) return 0;
+    if (!Array.isArray(allPitches) || clientCampaignIds.size === 0) return 0;
     const normalize = (p) => {
       const status = p?.displayStatus || p?.status;
       if (status === 'undecided') return 'PENDING_REVIEW';
@@ -157,17 +172,17 @@ const ClientDashboard = () => {
       if (status === 'rejected') return 'REJECTED';
       return status;
     };
-    return allPitches.filter((p) => normalize(p) === 'PENDING_REVIEW').length;
-  }, [allPitches]);
+    return allPitches.filter((p) => clientCampaignIds.has(p?.campaignId) && normalize(p) === 'PENDING_REVIEW').length;
+  }, [allPitches, clientCampaignIds]);
 
   const draftsToApprove = React.useMemo(() => {
     // Count drafts that were sent to client and awaiting first action
-    if (!Array.isArray(allSubmissions)) return 0;
+    if (!Array.isArray(allSubmissions) || clientCampaignIds.size === 0) return 0;
     return allSubmissions.filter((s) => {
       const type = s?.submissionType?.type || s?.submissionType;
-      return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && s?.status === 'SENT_TO_CLIENT';
+      return clientCampaignIds.has(s?.campaignId) && (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && s?.status === 'SENT_TO_CLIENT';
     }).length;
-  }, [allSubmissions]);
+  }, [allSubmissions, clientCampaignIds]);
 
   // Debug logging for counts and data shapes
   useEffect(() => {
@@ -185,11 +200,11 @@ const ClientDashboard = () => {
         console.log('[ClientDashboard] unique submission statuses:', statuses);
         const creatorsToApproveItems = Array.isArray(allPitches) ? allPitches.filter((p) => {
           const st = p?.displayStatus || p?.status;
-          return st === 'PENDING_REVIEW' || st === 'undecided';
+          return clientCampaignIds.has(p?.campaignId) && (st === 'PENDING_REVIEW' || st === 'undecided');
         }) : [];
         const draftsToApproveItems = allSubmissions.filter((s) => {
           const type = s?.submissionType?.type || s?.submissionType;
-          return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && s?.status === 'SENT_TO_CLIENT';
+          return clientCampaignIds.has(s?.campaignId) && (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && s?.status === 'SENT_TO_CLIENT';
         });
         console.log('[ClientDashboard] creatorsToApprove count/items:', creatorsToApproveItems.length, creatorsToApproveItems.slice(0, 5));
         console.log('[ClientDashboard] draftsToApprove count/items:', draftsToApproveItems.length, draftsToApproveItems.slice(0, 5));
@@ -744,7 +759,7 @@ const ClientDashboard = () => {
                   minWidth: 0, // Allow flex item to shrink below content size
                 }}>
                   <Avatar
-                    src={campaign.brand?.logo || ''}
+                    src={campaign.brand?.logo || campaign.company?.logo || clientCompanyLogo || ''}
                     sx={{
                       width: { xs: 32, sm: 36 },
                       height: { xs: 32, sm: 36 },
