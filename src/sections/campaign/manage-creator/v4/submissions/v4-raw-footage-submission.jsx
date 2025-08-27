@@ -459,7 +459,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
               {/* Raw Footage Info */}
               <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  {selectedRawFootageFeedback.rawFootage.url && (
+                  {selectedRawFootageFeedback.content.url && (
                     <Box sx={{ width: 80, height: 60, bgcolor: 'background.paper', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Iconify icon="eva:film-fill" sx={{ color: 'text.disabled', fontSize: 24 }} />
                     </Box>
@@ -469,8 +469,8 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
                       Current Status
                     </Typography>
                     <Chip
-                      label={getCreatorStatusLabel(selectedRawFootageFeedback.rawFootage.status)}
-                      color={getStatusColor(selectedRawFootageFeedback.rawFootage.status)}
+                      label={getCreatorStatusLabel(selectedRawFootageFeedback.content.status)}
+                      color={getStatusColor(selectedRawFootageFeedback.content.status)}
                       size="small"
                     />
                   </Box>
