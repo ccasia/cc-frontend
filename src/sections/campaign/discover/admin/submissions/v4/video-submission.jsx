@@ -605,7 +605,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
       {/* Forward Client Feedback Dialog */}
       <Dialog open={forwardFeedbackDialog} onClose={() => setForwardFeedbackDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Forward Client Feedback to Creator {console.log('Selected feedback: ', selectedFeedback)}
+          Forward Client Feedback to Creator
         </DialogTitle>
         <DialogContent>
           {selectedFeedback && (
