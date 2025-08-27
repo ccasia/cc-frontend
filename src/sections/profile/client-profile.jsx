@@ -49,50 +49,105 @@ const ClientProfile = () => {
 
   const countryValue = watch('country');
 
+  // Local persistence for PIC fields as a safety net when reopening
+  const PIC_OVERRIDE_KEY = 'client_pic_override';
+  const loadPicOverride = () => {
+    try {
+      const raw = localStorage.getItem(PIC_OVERRIDE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+  const savePicOverride = (pic) => {
+    try {
+      localStorage.setItem(PIC_OVERRIDE_KEY, JSON.stringify(pic || {}));
+    } catch {}
+  };
+
   // Fetch company data when component mounts
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
         setLoading(true);
-        
-        // First try to get user data to find associated company
+        // Prefer server-side association check
+        const check = await axiosInstance.get(endpoints.client.checkCompany);
+        const hasCompany = !!check?.data?.hasCompany;
+        const company = check?.data?.company || null;
+
+        if (hasCompany && company) {
+          const pic = company.pic?.[0] || {};
+          const override = loadPicOverride();
+          const mergedPic = {
+            name: pic.name || override?.name || '',
+            email: pic.email || override?.email || '',
+            designation: pic.designation || override?.designation || '',
+          };
+          setCompanyData(company);
+          try { localStorage.setItem('client_company_logo', company.logo || ''); } catch {}
+          reset({
+            companyLogo: company.logo || {},
+            companyName: company.name || '',
+            companyAddress: company.address || '',
+            picEmail: mergedPic.email,
+            registrationNumber: company.registration_number || '',
+            picName: mergedPic.name,
+            picDesignation: mergedPic.designation,
+            picMobile: user?.phoneNumber || '',
+            country: company.country || user?.country || '',
+            companyLogo: company.logo || null,
+          });
+          return;
+        }
+
+        // Fallback: attempt to match by email if server has no link yet
         const userResponse = await axiosInstance.get(`${endpoints.auth.me}`);
         const userData = userResponse.data.user;
-
-        console.log('User data: ', userData)
-        
-        // If user has client data and we need to find the company
-        if (userData?.client || userData?.email) {
-          // Get all companies and find the one matching user email or PIC email
-          const allCompanies = await axiosInstance.get(`${endpoints.company.getAll}`);
-          const companies = allCompanies.data;
-
-          // Find company where user email matches company email or PIC email
-          const matchedCompany = companies.find(company => 
-            company.email?.toLowerCase() === userData.email?.toLowerCase() ||
-            company.pic?.some(pic => pic.email?.toLowerCase() === userData.email?.toLowerCase())
-          );
-          
-          if (matchedCompany) {
-            console.log('Company info: ', matchedCompany)
-            const company = matchedCompany;
-            const pic = company.pic?.find(p => p.email?.toLowerCase() === userData.email?.toLowerCase()) || company.pic?.[0] || {};
-            
-            setCompanyData(company);
+        const allCompanies = await axiosInstance.get(`${endpoints.company.getAll}`);
+        const companies = allCompanies.data;
+        const matchedCompany = companies.find((co) =>
+          co.email?.toLowerCase() === userData.email?.toLowerCase() ||
+          co.pic?.some((p) => p.email?.toLowerCase() === userData.email?.toLowerCase())
+        );
+        if (matchedCompany) {
+          const pic = matchedCompany.pic?.find((p) => p.email?.toLowerCase() === userData.email?.toLowerCase()) || matchedCompany.pic?.[0] || {};
+          const override = loadPicOverride();
+          const mergedPic = {
+            name: pic.name || override?.name || '',
+            email: pic.email || override?.email || '',
+            designation: pic.designation || override?.designation || '',
+          };
+          setCompanyData(matchedCompany);
+          try { localStorage.setItem('client_company_logo', matchedCompany.logo || ''); } catch {}
+          reset({
+            companyLogo: matchedCompany.logo || {},
+            companyName: matchedCompany.name || '',
+            companyAddress: matchedCompany.address || '',
+            picEmail: mergedPic.email,
+            registrationNumber: matchedCompany.registration_number || '',
+            picName: mergedPic.name,
+            picDesignation: mergedPic.designation,
+            picMobile: userData.phoneNumber || '',
+            country: matchedCompany.country || userData.country || '',
+            companyLogo: matchedCompany.logo || null,
+          });
+        } else {
+          // Do not warn; allow user to fill the form and update
+          setCompanyData(null);
+          const override = loadPicOverride();
+          if (override) {
             reset({
-              companyLogo: company.logo || {},
-              companyName: company.name || '',
-              companyAddress: company.address || '',
-              picEmail: pic.email || '',
-              registrationNumber: company.registration_number || '',
-              picName: pic.name || '',
-              picDesignation: pic.designation || '',
-              picMobile: userData.phoneNumber || '',
-              country: company.country || userData.country || '',
-              companyLogo: company.logo || null,
+              companyLogo: null,
+              companyName: '',
+              companyAddress: '',
+              picEmail: override.email || '',
+              registrationNumber: '',
+              picName: override.name || '',
+              picDesignation: override.designation || '',
+              picMobile: user?.phoneNumber || '',
+              country: user?.country || '',
+              companyLogo: null,
             });
-          } else {
-            enqueueSnackbar('No associated company found for this client', { variant: 'warning' });
           }
         }
       } catch (error) {
@@ -153,6 +208,45 @@ const ClientProfile = () => {
       });
 
       enqueueSnackbar('Profile updated successfully');
+      // Keep the submitted values visible; optionally merge fresh server data
+      const submittedValues = {
+        companyLogo: data.companyLogo || null,
+        companyName: data.companyName || '',
+        companyAddress: data.companyAddress || '',
+        picEmail: data.picEmail || '',
+        registrationNumber: data.registrationNumber || '',
+        picName: data.picName || '',
+        picDesignation: data.picDesignation || '',
+        picMobile: data.picMobile || '',
+        country: data.country || '',
+      };
+      reset(submittedValues);
+      // Persist PIC fields locally so they show after reopening
+      savePicOverride({ name: submittedValues.picName, email: submittedValues.picEmail, designation: submittedValues.picDesignation });
+
+      // Background refresh to sync with server without wiping PIC fields
+      try {
+        const check = await axiosInstance.get(endpoints.client.checkCompany);
+        if (check?.data?.company) {
+          const company = check.data.company;
+          const pic = company.pic?.[0] || {};
+          setCompanyData(company);
+          try { localStorage.setItem('client_company_logo', company.logo || ''); } catch {}
+          reset({
+            companyLogo: company.logo || submittedValues.companyLogo,
+            companyName: company.name || submittedValues.companyName,
+            companyAddress: company.address || submittedValues.companyAddress,
+            // Prefer submitted PIC values so the user sees their edits
+            picEmail: submittedValues.picEmail || pic.email || '',
+            registrationNumber: company.registration_number || submittedValues.registrationNumber,
+            picName: submittedValues.picName || pic.name || '',
+            picDesignation: submittedValues.picDesignation || pic.designation || '',
+            picMobile: submittedValues.picMobile || user?.phoneNumber || '',
+            country: company.country || submittedValues.country,
+            companyLogo: company.logo || submittedValues.companyLogo,
+          });
+        }
+      } catch {}
     } catch (error) {
       enqueueSnackbar('Error updating profile', { variant: 'error' });
     } finally {
