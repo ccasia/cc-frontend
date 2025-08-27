@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
@@ -38,13 +38,18 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [caption, setCaption] = useState('');
+  const [caption, setCaption] = useState(submission.caption || '');
   const [postingDialog, setPostingDialog] = useState(false);
   const [postingLink, setPostingLink] = useState('');
   const [postingLoading, setPostingLoading] = useState(false);
   const [feedbackDialog, setFeedbackDialog] = useState(false);
   const [selectedPhotoFeedback, setSelectedPhotoFeedback] = useState(null);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+
+  // Update caption when submission changes
+  useEffect(() => {
+    setCaption(submission.caption || '');
+  }, [submission.caption]);
 
   const handleDrop = (acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
@@ -357,9 +362,18 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
               </Grid>
             ))}
           </Grid>
+          {submission.caption && (
+            <Card sx={{ p: 2, mt: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Caption:
+              </Typography>
+              <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
+                <Typography variant="body2">{submission.caption}</Typography>
+              </Card>
+            </Card>
+          )}
         </Card>
       )}
-
 
       {/* Upload Form */}
       {canUpload && (
@@ -392,7 +406,7 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
 
             {/* Caption */}
             <TextField
-              label="Caption/Notes (Optional)"
+              label={submission.caption ? "Update Caption" : "Caption"}
               multiline
               rows={3}
               value={caption}

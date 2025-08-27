@@ -59,86 +59,13 @@ export default function V4PhotoSubmission({ submission, campaign, index = 1, onU
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
 
-  const clientCanSeeContent = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'CLIENT_FEEDBACK', 'POSTED'].includes(submission.status);
+  const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'CLIENT_FEEDBACK', 'POSTED'].includes(submission.status);
 
   const photos = submission.photos || [];
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
   const isPosted = submission.status === 'POSTED';
   const hasPostingLink = Boolean(submission.content);
   const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
-
-  const handleApprove = useCallback(() => {
-    setAction('approve');
-    setFeedback('');
-    setFeedbackDialog(true);
-  }, []);
-
-  const handleReject = useCallback(() => {
-    setAction('reject');
-    setFeedback('');
-    setFeedbackDialog(true);
-  }, []);
-
-  const handleRequestRevision = useCallback(() => {
-    setAction('request_revision');
-    setFeedback('');
-    setFeedbackDialog(true);
-  }, []);
-
-  const handleSubmitFeedback = useCallback(async () => {
-    if (action === 'reject' && !feedback.trim()) {
-      enqueueSnackbar('Please provide feedback for rejection', { variant: 'error' });
-      return;
-    }
-
-    if (!feedback.trim() && (action === 'approve' || action === 'request_revision')) {
-      enqueueSnackbar('Please provide feedback', { variant: 'error' });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      if (isClient) {
-        // Client-specific endpoint
-        const clientAction = action === 'approve' ? 'approve' : 'request_changes';
-        await axiosInstance.post('/api/submissions/v4/approve/client', {
-          submissionId: submission.id,
-          action: clientAction,
-          feedback: feedback.trim(),
-          reasons: reasons || []
-        });
-
-        enqueueSnackbar(
-          `Photos ${clientAction === 'approve' ? 'approved' : 'changes requested'} successfully`,
-          { variant: 'success' }
-        );
-      } else {
-        // Admin endpoint
-        await approveV4Submission({
-          submissionId: submission.id,
-          action,
-          feedback: feedback.trim() || undefined,
-          reasons: reasons || [],
-        });
-
-        enqueueSnackbar(
-          `Photos ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'revision requested'} successfully`,
-          { variant: 'success' }
-        );
-      }
-      
-      setFeedbackDialog(false);
-      setFeedback('');
-      setReasons([]);
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      enqueueSnackbar(error.message || 'Failed to submit feedback', { variant: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  }, [action, feedback, reasons, submission.id, onUpdate, isClient]);
 
   const handleAddPostingLink = useCallback(() => {
     setPostingLink(submission.content || '');
@@ -335,9 +262,9 @@ export default function V4PhotoSubmission({ submission, campaign, index = 1, onU
       case 'IN_PROGRESS':
         return 'In Progress';
       case 'PENDING_REVIEW':
-        return 'In Progress'; // Creator has submitted, admin reviewing
+        return 'In Progress';
       case 'SENT_TO_CLIENT':
-        return 'Pending Review'; // Client should see this as pending their review
+        return 'Pending Review';
       case 'CLIENT_APPROVED':
       case 'APPROVED':
         return 'Approved';
@@ -395,10 +322,10 @@ export default function V4PhotoSubmission({ submission, campaign, index = 1, onU
             {/* Photo Content */}
             <Box>
               <Typography variant="subtitle2" gutterBottom>
-                Photo Content {clientCanSeeContent && photos.length > 0 && `(${photos.length} photo${photos.length !== 1 ? 's' : ''})`}
+                Photo Content {clientVisible && photos.length > 0 && `(${photos.length} photo${photos.length !== 1 ? 's' : ''})`}
               </Typography>
               
-              {clientCanSeeContent ? (
+              {clientVisible ? (
                 // Show actual content to admins or when sent to client
                 photos.length > 0 ? (
                   <Grid container spacing={2}>
@@ -418,16 +345,11 @@ export default function V4PhotoSubmission({ submission, campaign, index = 1, onU
                           <Box sx={{ p: 1 }}>
                             <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                               <Chip
-                                label={formatStatus(photo.status)}
+                                label={getClientStatusLabel(photo.status)}
                                 color={getStatusColor(photo.status)}
                                 size="small"
                               />
                               <Stack direction="row" spacing={1} alignItems="center">
-                                {photo.feedback && (
-                                  <Typography variant="caption" color="text.secondary">
-                                    Has feedback
-                                  </Typography>
-                                )}
                                 <IconButton
                                   size="small"
                                   onClick={() => handleShowPhotoFeedback(photo.id)}
@@ -481,7 +403,7 @@ export default function V4PhotoSubmission({ submission, campaign, index = 1, onU
                                   onClick={() => handleIndividualPhotoAction(photo.id, 'request_changes')}
                                   startIcon={<Iconify icon="eva:edit-fill" />}
                                 >
-                                  Request Changes
+                                  Request a Change
                                 </Button>
                               </Stack>
                             )}
@@ -628,72 +550,6 @@ export default function V4PhotoSubmission({ submission, campaign, index = 1, onU
         </AccordionDetails>
       </Accordion>
 
-      {/* Feedback Dialog */}
-      <Dialog open={feedbackDialog} onClose={() => setFeedbackDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {action === 'approve' ? 'Approve Photos' : 
-           action === 'reject' ? 'Reject Photos' : 'Request Changes'}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label={action === 'approve' ? 'Approval message' : 'Feedback'}
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            placeholder={
-              action === 'approve' ? 'Add any additional comments...' :
-              action === 'reject' ? 'Please explain why these photos are being rejected...' :
-              'Please specify what changes are needed...'
-            }
-            required
-            sx={{ mt: 1 }}
-          />
-          
-          {/* Reasons selection for client request changes */}
-          {isClient && action === 'request_revision' && (
-            <Box sx={{ mt: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Select Issues (Optional)</InputLabel>
-                <Select
-                  multiple
-                  value={reasons}
-                  onChange={(e) => setReasons(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-                  input={<OutlinedInput label="Select Issues (Optional)" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  {options_changes.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setFeedbackDialog(false)} disabled={loading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmitFeedback}
-            variant="contained"
-            loading={loading}
-            color={action === 'approve' ? 'success' : action === 'request_changes' ? 'warning' : 'error'}
-          >
-            {action === 'approve' ? 'Approve' : action === 'request_changes' ? 'Request Changes' : 'Reject'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       {/* Posting Link Dialog */}
       <Dialog open={postingDialog} onClose={() => setPostingDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
@@ -737,12 +593,12 @@ export default function V4PhotoSubmission({ submission, campaign, index = 1, onU
             fullWidth
             multiline
             rows={4}
-            label={individualPhotoAction === 'approve' ? 'Approval message (optional)' : 'Feedback'}
+            label={individualPhotoAction === 'approve' ? 'Approval message' : 'Feedback'}
             value={individualPhotoFeedback}
             onChange={(e) => setIndividualPhotoFeedback(e.target.value)}
             placeholder={
               individualPhotoAction === 'approve' ? 'Add any additional comments...' :
-              individualPhotoAction === 'reject' ? 'Please explain why this photo is being rejected...' :
+              individualPhotoAction === 'request_changes' ? 'Please explain why this photo needs changes...' :
               'Please specify what changes are needed for this photo...'
             }
             required={individualPhotoAction !== 'approve'}
@@ -750,7 +606,7 @@ export default function V4PhotoSubmission({ submission, campaign, index = 1, onU
           />
           
           {/* Reasons selection for client request changes */}
-          {isClient && individualPhotoAction === 'request_changes' && (
+          {individualPhotoAction === 'request_changes' && (
             <Box sx={{ mt: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Select Issues (Optional)</InputLabel>
