@@ -67,13 +67,13 @@ const VideoCard = ({
   });
 
   const approveSchema = Yup.object().shape({
-    feedback: Yup.string().required('Comment is required.'),
+    feedback: Yup.string().trim().min(1).default('Thank you for submitting!').required('Comment is required.'),
   });
 
   const formMethods = useForm({
     resolver: cardType === 'request' ? yupResolver(requestSchema) : yupResolver(approveSchema),
     defaultValues: {
-      feedback: '',
+      feedback: 'Thank you for submitting!',
       reasons: [],
     },
     mode: 'onChange',
@@ -84,7 +84,7 @@ const VideoCard = ({
   // Reset form when cardType changes
   useEffect(() => {
     const defaultValues = {
-      feedback: '',
+      feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
       reasons: [],
     };
     reset(defaultValues);
