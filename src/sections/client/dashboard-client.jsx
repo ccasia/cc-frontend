@@ -37,6 +37,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
 import useGetClientCampaigns from 'src/hooks/use-get-client-campaigns';
 import useGetV3Submissions from 'src/hooks/use-get-v3-submissions';
+import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -121,6 +122,8 @@ const ClientDashboard = () => {
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
   // Fetch V3 submissions to compute counts across all campaigns
   const { submissions: allSubmissions, isLoading: submissionsLoading } = useGetV3Submissions();
+  // Fetch V3 pitches (creator master list items)
+  const { pitches: allPitches, isLoading: pitchesLoading } = useGetV3Pitches();
   const { 
     totalCredits, 
     usedCredits, 
@@ -145,26 +148,26 @@ const ClientDashboard = () => {
 
   // Compute creators to approve and drafts to approve
   const creatorsToApprove = React.useMemo(() => {
-    if (!Array.isArray(campaigns) || campaigns.length === 0) return 0;
-    // Count V3 pitches that are SENT_TO_CLIENT (client needs to approve)
-    // We may not have pitches here, so rely on V3 submissions: status SENT_TO_CLIENT for FIRST_DRAFT/FINAL_DRAFT
+    // Count creators in the master list that are still pending (PENDING_REVIEW)
+    if (!Array.isArray(allPitches)) return 0;
+    const normalize = (p) => {
+      const status = p?.displayStatus || p?.status;
+      if (status === 'undecided') return 'PENDING_REVIEW';
+      if (status === 'approved') return 'APPROVED';
+      if (status === 'rejected') return 'REJECTED';
+      return status;
+    };
+    return allPitches.filter((p) => normalize(p) === 'PENDING_REVIEW').length;
+  }, [allPitches]);
+
+  const draftsToApprove = React.useMemo(() => {
+    // Count drafts that were sent to client and awaiting first action
     if (!Array.isArray(allSubmissions)) return 0;
     return allSubmissions.filter((s) => {
       const type = s?.submissionType?.type || s?.submissionType;
       return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && s?.status === 'SENT_TO_CLIENT';
     }).length;
-  }, [campaigns, allSubmissions]);
-
-  const draftsToApprove = React.useMemo(() => {
-    if (!Array.isArray(campaigns) || campaigns.length === 0) return 0;
-    if (!Array.isArray(allSubmissions)) return 0;
-    // Count submissions awaiting client review or change request
-    return allSubmissions.filter((s) => {
-      const type = s?.submissionType?.type || s?.submissionType;
-      return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') &&
-        (s?.status === 'PENDING_REVIEW' || s?.status === 'CLIENT_FEEDBACK');
-    }).length;
-  }, [campaigns, allSubmissions]);
+  }, [allSubmissions]);
 
   // Debug logging for counts and data shapes
   useEffect(() => {
@@ -174,18 +177,19 @@ const ClientDashboard = () => {
         console.log('[ClientDashboard] campaigns ids:', campaigns.map((c) => c.id));
       }
       console.log('[ClientDashboard] allSubmissions length:', Array.isArray(allSubmissions) ? allSubmissions.length : 'n/a');
+      console.log('[ClientDashboard] allPitches length:', Array.isArray(allPitches) ? allPitches.length : 'n/a');
       if (Array.isArray(allSubmissions)) {
         const sample = allSubmissions[0] || null;
         console.log('[ClientDashboard] submission sample:', sample);
         const statuses = [...new Set(allSubmissions.map((s) => s?.status))];
         console.log('[ClientDashboard] unique submission statuses:', statuses);
-        const creatorsToApproveItems = allSubmissions.filter((s) => {
-          const type = s?.submissionType?.type || s?.submissionType;
-          return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && s?.status === 'SENT_TO_CLIENT';
-        });
+        const creatorsToApproveItems = Array.isArray(allPitches) ? allPitches.filter((p) => {
+          const st = p?.displayStatus || p?.status;
+          return st === 'PENDING_REVIEW' || st === 'undecided';
+        }) : [];
         const draftsToApproveItems = allSubmissions.filter((s) => {
           const type = s?.submissionType?.type || s?.submissionType;
-          return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && (s?.status === 'PENDING_REVIEW' || s?.status === 'CLIENT_FEEDBACK');
+          return (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') && s?.status === 'SENT_TO_CLIENT';
         });
         console.log('[ClientDashboard] creatorsToApprove count/items:', creatorsToApproveItems.length, creatorsToApproveItems.slice(0, 5));
         console.log('[ClientDashboard] draftsToApprove count/items:', draftsToApproveItems.length, draftsToApproveItems.slice(0, 5));
