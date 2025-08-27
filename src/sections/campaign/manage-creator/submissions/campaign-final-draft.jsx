@@ -159,12 +159,21 @@ const CampaignFinalDraft = ({
     [fullSubmission, dependency]
   );
 
+  // Fallback: if dependency link missing, use FIRST_DRAFT as the previous submission (where feedback usually lives)
+  const previousOrFirstDraft = useMemo(() => {
+    if (previousSubmission) return previousSubmission;
+    return fullSubmission?.find((item) => item?.submissionType?.type === 'FIRST_DRAFT') || null;
+  }, [previousSubmission, fullSubmission]);
+
   // Commented out: Backend endpoint doesn't exist yet
   // const creatorFeedbackKey = submission?.id ? `/api/submission/v3/creator-feedback/${submission.id}` : null;
   // const { data: creatorFeedbackResp, mutate: mutateCreatorFeedback } = useSWR(creatorFeedbackKey, async (url) => {
   //   const { data } = await axiosInstance.get(url);
   //   return data;
   // }, { refreshInterval: 3000, revalidateOnFocus: true });
+
+  // Since the backend endpoint is not available yet, ensure the variable exists to avoid reference errors
+  const creatorFeedbackResp = null;
 
   const creatorVisibleFeedback = creatorFeedbackResp?.feedback || [];
 
@@ -189,7 +198,7 @@ const CampaignFinalDraft = ({
     // Get feedback from both submissions
     const allFeedbacks = [
       ...(submission?.feedback || []).map(f => ({ ...f, submissionId: submission.id })),
-      ...(previousSubmission?.feedback || []).map(f => ({ ...f, submissionId: previousSubmission.id }))
+      ...(previousOrFirstDraft?.feedback || []).map(f => ({ ...f, submissionId: previousOrFirstDraft.id }))
     ];
 
     // Sort by date and remove duplicates
@@ -271,8 +280,11 @@ const CampaignFinalDraft = ({
 
     // Only show feedback that's actually relevant for the current change request context
     const relevantFeedbacks = uniqueFeedbacks.filter(f => {
-      const isClient = (f?.admin?.role === 'client') || (f?.role === 'admin');
-      const isAdmin = (f?.admin?.role === 'admin') || (f?.role === 'admin');
+      // Robust role detection (handles V2 and V3 shapes)
+      const roleName = f?.admin?.admin?.role?.name || f?.admin?.role || f?.role || '';
+      const normalizedRole = typeof roleName === 'string' ? roleName.toLowerCase() : '';
+      const isClient = normalizedRole === 'client';
+      const isAdmin = normalizedRole === 'admin' || normalizedRole === 'superadmin';
       const isChangeRequest = f?.type === 'REQUEST' || f?.videosToUpdate?.length > 0 || f?.photosToUpdate?.length > 0 || f?.rawFootageToUpdate?.length > 0;
       const isAdminApproval = f?.type === 'APPROVAL';
       const hasSendToCreatorContent = f?.content?.includes('send to creator') || 
@@ -290,7 +302,7 @@ const CampaignFinalDraft = ({
       
       // Special case: if this is feedback from the previous submission (first draft) that has CHANGES_REQUIRED status,
       // always show it so creators can see what changes were requested
-      if (previousSubmission?.status === 'CHANGES_REQUIRED' && f.submissionId === previousSubmission.id) {
+      if (previousOrFirstDraft?.status === 'CHANGES_REQUIRED' && f.submissionId === previousOrFirstDraft.id) {
         console.log('✅ INCLUDING: Previous submission feedback (CHANGES_REQUIRED)');
         shouldShow = true;
       }
@@ -303,8 +315,8 @@ const CampaignFinalDraft = ({
         isChangeRequest,
         isAdminApproval,
         hasSendToCreatorContent,
-        previousSubmissionStatus: previousSubmission?.status,
-        isFromPreviousSubmission: f.submissionId === previousSubmission?.id,
+        previousSubmissionStatus: previousOrFirstDraft?.status,
+        isFromPreviousSubmission: f.submissionId === previousOrFirstDraft?.id,
         shouldShow
       });
       
@@ -349,18 +361,66 @@ const CampaignFinalDraft = ({
     // Apply additional filtering to remove admin approval comments
     console.log('🔍 STARTING FINAL FILTERING with', relevantFeedbacks.length, 'items');
     let finalFilteredFeedbacks = relevantFeedbacks.filter(item => {
+      // Robust role detection
+      const roleName = item?.admin?.admin?.role?.name || item?.admin?.role || item?.role || '';
+      const normalizedRole = typeof roleName === 'string' ? roleName.toLowerCase() : '';
+      const isAdmin = normalizedRole === 'admin' || normalizedRole === 'superadmin';
+      const isClient = normalizedRole === 'client';
+
+      const contentLower = (item?.content || '').toLowerCase();
+      const hasSendToCreatorContent = contentLower.includes('send to creator') ||
+        contentLower.includes('forwarded to creator') ||
+        contentLower.includes('feedback reviewed and forwarded to creator');
+      const hasMediaUpdates = (item?.photosToUpdate?.length || 0) > 0 || 
+        (item?.videosToUpdate?.length || 0) > 0 || 
+        (item?.rawFootageToUpdate?.length || 0) > 0;
+      const hasAnyContent = !!(item?.content && item.content.trim() !== '');
+      const hasReasons = !!(item?.reasons?.length);
+
+      // Exclude feedback whose targeted media are already approved
+      const isVideoApprovedById = (id) => {
+        const v = (deliverables?.videos || []).find((x) => x.id === id);
+        return v?.status === 'APPROVED';
+      };
+      const isPhotoApprovedById = (id) => {
+        const p = (deliverables?.photos || []).find((x) => x.id === id);
+        return p?.status === 'APPROVED';
+      };
+      const isRawApprovedById = (id) => {
+        const r = (deliverables?.rawFootages || []).find((x) => x.id === id);
+        return r?.status === 'APPROVED';
+      };
+      const allTargetsApproved = (
+        (Array.isArray(item?.videosToUpdate) ? item.videosToUpdate.every(isVideoApprovedById) : true) &&
+        (Array.isArray(item?.photosToUpdate) ? item.photosToUpdate.every(isPhotoApprovedById) : true) &&
+        (Array.isArray(item?.rawFootageToUpdate) ? item.rawFootageToUpdate.every(isRawApprovedById) : true)
+      );
+
+      // Helper: does this item share any target media with a client REQUEST?
+      const sharesTargetsWithClientRequest = relevantFeedbacks.some((other) => {
+        const otherRoleName = other?.admin?.admin?.role?.name || other?.admin?.role || other?.role || '';
+        const otherRole = typeof otherRoleName === 'string' ? otherRoleName.toLowerCase() : '';
+        if (otherRole !== 'client' || other?.type !== 'REQUEST') return false;
+        const share = (arrA, arrB) => Array.isArray(arrA) && Array.isArray(arrB) && arrA.some((id) => arrB.includes(id));
+        return (
+          share(item?.videosToUpdate, other?.videosToUpdate) ||
+          share(item?.photosToUpdate, other?.photosToUpdate) ||
+          share(item?.rawFootageToUpdate, other?.rawFootageToUpdate)
+        );
+      });
+
       // Debug each item being filtered
       console.log('🔍 FILTERING ITEM:', {
         id: item.id,
-        content: item.content,
-        adminRole: item.admin?.role,
-        role: item.role,
+        roleName,
+        normalizedRole,
+        isAdmin,
+        isClient,
         type: item.type,
-        isAdmin: (item?.admin?.role === 'admin') || (item?.role === 'admin'),
-        isClient: (item?.admin?.role === 'client') || (item?.role === 'client'),
-        hasSendToCreatorContent: item?.content?.includes('send to creator') || 
-          item?.content?.includes('forwarded to creator') ||
-          item?.content?.includes('Feedback reviewed and forwarded to creator')
+        hasSendToCreatorContent,
+        hasMediaUpdates,
+        hasAnyContent,
+        hasReasons,
       });
 
       // Exclude admin approval feedback
@@ -370,54 +430,44 @@ const CampaignFinalDraft = ({
         console.log('❌ FILTERED OUT: Admin approval feedback');
         return false;
       }
+
+      if (hasMediaUpdates && allTargetsApproved) {
+        console.log('❌ FILTERED OUT: Feedback targets already approved');
+        return false;
+      }
       
-      // For admin feedback, show if it was actually "sent to creator" AND has media updates
-      // OR if the submission status is CHANGES_REQUIRED (admin requested changes)
-      const isAdmin = (item?.admin?.role === 'admin') || (item?.role === 'admin');
+      // Admin feedback display logic
       if (isAdmin) {
-        // Check if this feedback was sent to creator (has specific content or indicators)
-        const hasSendToCreatorContent = item?.content?.includes('send to creator') || 
-          item?.content?.includes('forwarded to creator') ||
-          item?.content?.includes('Feedback reviewed and forwarded to creator');
-        const hasMediaUpdates = (item?.photosToUpdate?.length || 0) > 0 || 
-          (item?.videosToUpdate?.length || 0) > 0 || 
-          (item?.rawFootageToUpdate?.length || 0) > 0;
-        
-        // Special case: If submission status is CHANGES_REQUIRED, show admin feedback
-        // This ensures creators can see what changes were requested
-        if (submission?.status === 'CHANGES_REQUIRED') {
-          console.log('🔍 ADMIN FEEDBACK CHECK - CHANGES_REQUIRED:', {
-            id: item.id,
-            submissionStatus: submission?.status,
-            willShow: true
-          });
-          return true;
+        // Hide pure routing notes like "sent to client/forwarded to creator"
+        if (hasSendToCreatorContent && !hasReasons && !hasMediaUpdates && !hasAnyContent) {
+          console.log('❌ FILTERED OUT: Admin routing note (no content)');
+          return false;
         }
-        
-        console.log('🔍 ADMIN FEEDBACK CHECK:', {
-          id: item.id,
-          hasSendToCreatorContent,
-          hasMediaUpdates,
-          willShow: hasSendToCreatorContent && hasMediaUpdates
-        });
-        
-        // Show admin feedback if it was explicitly sent to creator AND has media updates
-        return hasSendToCreatorContent && hasMediaUpdates;
+        // If there is a client REQUEST that overlaps same targets, hide the admin routing/forward note
+        if (hasSendToCreatorContent && sharesTargetsWithClientRequest) {
+          console.log('❌ FILTERED OUT: Admin routing note overlapped by client request');
+          return false;
+        }
+        if (submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'CLIENT_FEEDBACK') {
+          const willShow = hasAnyContent || hasReasons || hasMediaUpdates;
+          console.log('🔍 ADMIN FEEDBACK CHECK - FEEDBACK PHASE:', { willShow });
+          return willShow;
+        }
+        const willShow = hasSendToCreatorContent || hasMediaUpdates;
+        console.log('🔍 ADMIN FEEDBACK CHECK - NON FEEDBACK PHASE:', { willShow });
+        return willShow;
       }
-      
-      // For client feedback, show them when submission status is CHANGES_REQUIRED
-      // This ensures creators can see client feedback when changes are requested
-      if (submission?.status === 'CHANGES_REQUIRED') {
-        console.log('🔍 CLIENT FEEDBACK CHECK - CHANGES_REQUIRED:', {
-          id: item.id,
-          submissionStatus: submission?.status,
-          willShow: true
-        });
-        return true;
+
+      // Client feedback display logic during feedback phases
+      if (isClient) {
+        if (submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'CLIENT_FEEDBACK') {
+          const willShow = hasAnyContent || hasReasons || hasMediaUpdates;
+          console.log('🔍 CLIENT FEEDBACK CHECK - FEEDBACK PHASE:', { willShow });
+          return willShow;
+        }
       }
-      
-      // Otherwise, hide client feedback (only show admin "send to creator" comments)
-      console.log('❌ FILTERED OUT: Client feedback');
+
+      console.log('❌ FILTERED OUT: Non-relevant feedback');
       return false;
     });
     
@@ -433,6 +483,51 @@ const CampaignFinalDraft = ({
       const latestGeneric = [...genericItems].sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
       finalFilteredFeedbacks = finalFilteredFeedbacks.filter((f) => !isGenericForward(f) || f.id === latestGeneric.id);
     }
+
+    // When admin has forwarded specific feedback to creator, show only that forwarded item per media target.
+    const getTargetKey = (f) => {
+      const vids = Array.isArray(f?.videosToUpdate) ? [...f.videosToUpdate].sort() : [];
+      const phs = Array.isArray(f?.photosToUpdate) ? [...f.photosToUpdate].sort() : [];
+      const raws = Array.isArray(f?.rawFootageToUpdate) ? [...f.rawFootageToUpdate].sort() : [];
+      return JSON.stringify({ v: vids, p: phs, r: raws });
+    };
+    const hasSendToCreator = (f) => {
+      const c = (f?.content || '').toLowerCase();
+      return c.includes('send to creator') || c.includes('forwarded to creator') || c.includes('feedback reviewed and forwarded to creator');
+    };
+    const isClientRequest = (f) => {
+      const roleName = f?.admin?.admin?.role?.name || f?.admin?.role || f?.role || '';
+      const normalizedRole = typeof roleName === 'string' ? roleName.toLowerCase() : '';
+      return normalizedRole === 'client' && f?.type === 'REQUEST';
+    };
+
+    const groupedByTarget = finalFilteredFeedbacks.reduce((acc, f) => {
+      const key = getTargetKey(f);
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(f);
+      return acc;
+    }, {});
+
+    let reducedToForwardedOnly = [];
+    Object.values(groupedByTarget).forEach((group) => {
+      const sent = group.filter(hasSendToCreator);
+      if (sent.length > 0) {
+        // pick newest sent item only
+        const newestSent = [...sent].sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
+        reducedToForwardedOnly.push(newestSent);
+        return;
+      }
+      const clientReqs = group.filter(isClientRequest);
+      if (clientReqs.length > 0) {
+        const newestClientReq = [...clientReqs].sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
+        reducedToForwardedOnly.push(newestClientReq);
+        return;
+      }
+      // fallback: keep newest item in group
+      const newest = [...group].sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))[0];
+      reducedToForwardedOnly.push(newest);
+    });
+    finalFilteredFeedbacks = reducedToForwardedOnly;
 
     // Debug the final filtered results
     console.log('🔍 CREATOR FINAL DRAFT - FINAL FILTERED FEEDBACK:', {
@@ -814,113 +909,112 @@ const CampaignFinalDraft = ({
 
         {/* To show upload progress */}
         <>
-          {(submission?.status === 'IN_PROGRESS' || submission?.status === 'CHANGES_REQUIRED') &&
-            !!uploadProgress.length && (
-              <Stack spacing={1} mb={2}>
-                {uploadProgress.length &&
-                  uploadProgress.map((currentFile) => (
-                    <Box
-                      sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}
-                      key={currentFile.fileName}
-                    >
-                      <Stack spacing={2}>
-                        <Stack direction="row" spacing={2} alignItems="center">
-                          {currentFile?.type?.startsWith('video') ? (
-                            <Box
-                              sx={{
-                                width: 120,
-                                height: 68,
-                                borderRadius: 1,
-                                overflow: 'hidden',
-                                position: 'relative',
-                                bgcolor: 'background.paper',
-                                boxShadow: theme.customShadows.z8,
-                              }}
-                            >
-                              {currentFile.preview ? (
-                                <Box
-                                  component="img"
-                                  src={currentFile.preview}
-                                  sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                  }}
-                                />
-                              ) : (
-                                <Box
-                                  sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: 'background.neutral',
-                                  }}
-                                >
-                                  <Iconify
-                                    icon="solar:video-library-bold"
-                                    width={24}
-                                    sx={{ color: 'text.secondary' }}
-                                  />
-                                </Box>
-                              )}
-                            </Box>
-                          ) : (
-                            <Box
-                              component="img"
-                              src="/assets/icons/files/ic_img.svg"
-                              sx={{ width: 40, height: 40 }}
-                            />
-                          )}
-
-                          <Stack spacing={1} flexGrow={1}>
-                            <Typography variant="subtitle2" noWrap>
-                              {truncateText(currentFile?.fileName, 50) || 'Uploading file...'}
-                            </Typography>
-                            <Stack spacing={1}>
-                              <LinearProgress
-                                variant="determinate"
-                                value={currentFile?.progress || 0}
+          {(!!uploadProgress.length) && (
+            <Stack spacing={1} mb={2}>
+              {uploadProgress.length &&
+                uploadProgress.map((currentFile) => (
+                  <Box
+                    sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}
+                    key={currentFile.fileName}
+                  >
+                    <Stack spacing={2}>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        {currentFile?.type?.startsWith('video') ? (
+                          <Box
+                            sx={{
+                              width: 120,
+                              height: 68,
+                              borderRadius: 1,
+                              overflow: 'hidden',
+                              position: 'relative',
+                              bgcolor: 'background.paper',
+                              boxShadow: theme.customShadows.z8,
+                            }}
+                          >
+                            {currentFile.preview ? (
+                              <Box
+                                component="img"
+                                src={currentFile.preview}
                                 sx={{
-                                  height: 6,
-                                  borderRadius: 1,
-                                  bgcolor: 'background.paper',
-                                  '& .MuiLinearProgress-bar': {
-                                    borderRadius: 1,
-                                    bgcolor: progress === 100 ? 'success.main' : 'primary.main',
-                                  },
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
                                 }}
                               />
-                              <Stack
-                                direction="row"
-                                justifyContent="space-between"
-                                alignItems="center"
+                            ) : (
+                              <Box
+                                sx={{
+                                  width: '100%',
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  bgcolor: 'background.neutral',
+                                }}
                               >
-                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  {currentFile?.progress === 100 ? (
-                                    <Box
-                                      component="span"
-                                      sx={{ color: 'success.main', fontWeight: 600 }}
-                                    >
-                                      Upload Complete
-                                    </Box>
-                                  ) : (
-                                    `${currentFile?.name || 'Uploading'}... ${currentFile?.progress || 0}%`
-                                  )}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  {formatFileSize(currentFile?.fileSize || 0)}
-                                </Typography>
-                              </Stack>
+                                <Iconify
+                                  icon="solar:video-library-bold"
+                                  width={24}
+                                  sx={{ color: 'text.secondary' }}
+                                />
+                              </Box>
+                            )}
+                          </Box>
+                        ) : (
+                          <Box
+                            component="img"
+                            src="/assets/icons/files/ic_img.svg"
+                            sx={{ width: 40, height: 40 }}
+                          />
+                        )}
+
+                        <Stack spacing={1} flexGrow={1}>
+                          <Typography variant="subtitle2" noWrap>
+                            {truncateText(currentFile?.fileName, 50) || 'Uploading file...'}
+                          </Typography>
+                          <Stack spacing={1}>
+                            <LinearProgress
+                              variant="determinate"
+                              value={currentFile?.progress || 0}
+                              sx={{
+                                height: 6,
+                                borderRadius: 1,
+                                bgcolor: 'background.paper',
+                                '& .MuiLinearProgress-bar': {
+                                  borderRadius: 1,
+                                  bgcolor: (currentFile?.progress || 0) === 100 ? 'success.main' : 'primary.main',
+                                },
+                              }}
+                            />
+                            <Stack
+                              direction="row"
+                              justifyContent="space-between"
+                              alignItems="center"
+                            >
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                {currentFile?.progress === 100 ? (
+                                  <Box
+                                    component="span"
+                                    sx={{ color: 'success.main', fontWeight: 600 }}
+                                  >
+                                    Upload Complete
+                                  </Box>
+                                ) : (
+                                  `${currentFile?.fileName || 'Uploading'}... ${currentFile?.progress || 0}%`
+                                )}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                {formatFileSize(currentFile?.fileSize || 0)}
+                              </Typography>
                             </Stack>
                           </Stack>
                         </Stack>
                       </Stack>
-                    </Box>
-                  ))}
-              </Stack>
-            )}
+                    </Stack>
+                  </Box>
+                ))}
+            </Stack>
+          )}
         </>
 
         {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && (
@@ -1052,8 +1146,9 @@ const CampaignFinalDraft = ({
         {/* Only show feedback and re-upload when changes are required, NOT when in review or sent to client */}
         {(submission?.status === 'CHANGES_REQUIRED' || 
                 submission?.status === 'NOT_STARTED' || 
-                submission?.status === 'IN_PROGRESS' ||
-                (previousSubmission?.status === 'CHANGES_REQUIRED' && feedbacksTesting && feedbacksTesting.length > 0)) && (
+                (submission?.status === 'IN_PROGRESS' && submission?.status !== 'PENDING_REVIEW' && submission?.status !== 'SENT_TO_CLIENT') ||
+                (previousSubmission?.status === 'CHANGES_REQUIRED' && feedbacksTesting && feedbacksTesting.length > 0)) && 
+        !(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && (
           <>
             {campaign?.campaignCredits ? (
               <Stack spacing={2}>
