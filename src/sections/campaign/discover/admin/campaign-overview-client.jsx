@@ -25,7 +25,7 @@ import Scrollbar from 'src/components/scrollbar';
 
 import PitchModal from './pitch-modal';
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
-import { calculateSummaryStats } from 'src/utils/socialMetricsCalculator';
+import { calculateSummaryStats, formatNumber } from 'src/utils/socialMetricsCalculator';
 
 const BoxStyle = {
   border: '1px solid #e0e0e0',
@@ -283,11 +283,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                 )}
               </Stack>
               
-              {summaryStats && !loadingInsights && (
-                <Typography variant="caption" sx={{ color: '#636366', fontStyle: 'italic' }}>
-                  Real-time data
-                </Typography>
-              )}
+ 
             </Stack>
             
   
@@ -348,20 +344,20 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                   sx={{
                     width: 60,
                     height: 60,
-                    borderRadius: 2,
-                    bgcolor: '#3366FF',
+                    borderRadius: 1,
+                    bgcolor: '#1340FF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: 24,
-                    fontWeight: 600,
+                    fontSize: 18,
+                    fontWeight: 400,
                   }}
                 >
                   {loadingInsights ? (
                     <CircularProgress size={20} color="inherit" />
                   ) : (
-                    metrics.views.value.toLocaleString()
+                    formatNumber(metrics.views.value)
                   )}
                 </Box>
               </Box>
@@ -413,20 +409,20 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                   sx={{
                     width: 60,
                     height: 60,
-                    borderRadius: 2,
-                    bgcolor: '#3366FF',
+                    borderRadius: 1,
+                    bgcolor: '#1340FF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: 24,
-                    fontWeight: 600,
+                    fontSize: 18,
+                    fontWeight: 400,
                   }}
                 >
                   {loadingInsights ? (
                     <CircularProgress size={20} color="inherit" />
                   ) : (
-                    metrics.likes.value.toLocaleString()
+                    formatNumber(metrics.likes.value)
                   )}
                 </Box>
               </Box>
@@ -478,20 +474,20 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                   sx={{
                     width: 60,
                     height: 60,
-                    borderRadius: 2,
-                    bgcolor: '#3366FF',
+                    borderRadius: 1,
+                    bgcolor: '#1340FF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: 24,
-                    fontWeight: 600,
+                    fontSize: 18,
+                    fontWeight: 400,
                   }}
                 >
                   {loadingInsights ? (
                     <CircularProgress size={20} color="inherit" />
                   ) : (
-                    metrics.comments.value.toLocaleString()
+                    formatNumber(metrics.comments.value)
                   )}
                 </Box>
               </Box>
