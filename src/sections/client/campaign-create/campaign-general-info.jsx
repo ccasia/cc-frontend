@@ -114,8 +114,11 @@ const ClientCampaignGeneralInfo = () => {
         <FormField label="Campaign Title">
           <RHFTextField
             name="campaignTitle"
-            placeholder="Enter campaign title"
+            placeholder="Enter campaign title (max 40 characters)"
             size="small"
+            inputProps={{
+              maxLength: 40,
+            }}
             sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
           />
         </FormField>

@@ -159,12 +159,12 @@ const CampaignFinalDraft = ({
     [fullSubmission, dependency]
   );
 
-  // New: Fetch creator-visible feedback from backend (Option A)
-  const creatorFeedbackKey = submission?.id ? `/api/submission/v3/creator-feedback/${submission.id}` : null;
-  const { data: creatorFeedbackResp, mutate: mutateCreatorFeedback } = useSWR(creatorFeedbackKey, async (url) => {
-    const { data } = await axiosInstance.get(url);
-    return data;
-  }, { refreshInterval: 3000, revalidateOnFocus: true });
+  // Commented out: Backend endpoint doesn't exist yet
+  // const creatorFeedbackKey = submission?.id ? `/api/submission/v3/creator-feedback/${submission.id}` : null;
+  // const { data: creatorFeedbackResp, mutate: mutateCreatorFeedback } = useSWR(creatorFeedbackKey, async (url) => {
+  //   const { data } = await axiosInstance.get(url);
+  //   return data;
+  // }, { refreshInterval: 3000, revalidateOnFocus: true });
 
   const creatorVisibleFeedback = creatorFeedbackResp?.feedback || [];
 
@@ -269,9 +269,9 @@ const CampaignFinalDraft = ({
       console.log('🔍 Server creator-visible feedback empty, falling back to local filtering');
     }
 
-    // Keep both client feedback and admin feedback for change requests (creators need to see admin feedback when changes are requested)
+    // Only show feedback that's actually relevant for the current change request context
     const relevantFeedbacks = uniqueFeedbacks.filter(f => {
-      const isClient = (f?.admin?.role === 'client') || (f?.role === 'client');
+      const isClient = (f?.admin?.role === 'client') || (f?.role === 'admin');
       const isAdmin = (f?.admin?.role === 'admin') || (f?.role === 'admin');
       const isChangeRequest = f?.type === 'REQUEST' || f?.videosToUpdate?.length > 0 || f?.photosToUpdate?.length > 0 || f?.rawFootageToUpdate?.length > 0;
       const isAdminApproval = f?.type === 'APPROVAL';
@@ -1049,6 +1049,7 @@ const CampaignFinalDraft = ({
           </Stack>
         )}
 
+        {/* Only show feedback and re-upload when changes are required, NOT when in review or sent to client */}
         {(submission?.status === 'CHANGES_REQUIRED' || 
                 submission?.status === 'NOT_STARTED' || 
                 submission?.status === 'IN_PROGRESS' ||
@@ -1536,6 +1537,24 @@ const CampaignFinalDraft = ({
                     </>
                   )}
 
+                  {(!feedbacksTesting || feedbacksTesting.length === 0) && previousSubmission?.status === 'CHANGES_REQUIRED' && (
+                    <Box
+                      component="div"
+                      mb={2}
+                      p={2}
+                      border={1}
+                      borderColor="grey.300"
+                      borderRadius={1}
+                      sx={{ bgcolor: 'background.neutral' }}
+                    >
+                      <Typography variant="body1" color="text.secondary">
+                        Changes were requested for your first draft. Please review and submit your revised content.
+                      </Typography>
+                    </Box>
+                  )}
+                  
+
+
                   <Box
                     sx={{
                       borderBottom: '1px solid',
@@ -1545,7 +1564,8 @@ const CampaignFinalDraft = ({
                     }}
                   />
 
-                  {!uploadProgress.length && (
+                  {/* Only show Re-Upload button when NOT in review */}
+                  {!uploadProgress.length && submission?.status !== 'IN_REVIEW' && (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Button
                         variant="contained"
@@ -1668,28 +1688,31 @@ const CampaignFinalDraft = ({
                       }}
                     />
 
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <Button
-                        variant="contained"
-                        onClick={handleUploadClick}
-                        startIcon={<Iconify icon="material-symbols:add" width={24} />}
-                        sx={{
-                          bgcolor: '#203ff5',
-                          color: 'white',
-                          borderBottom: 3.5,
-                          borderBottomColor: '#112286',
-                          borderRadius: 1.5,
-                          px: 2.5,
-                          py: 1.2,
-                          '&:hover': {
+                    {/* Only show Re-Upload button when NOT in review */}
+                    {submission?.status !== 'IN_REVIEW' && (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                          variant="contained"
+                          onClick={handleUploadClick}
+                          startIcon={<Iconify icon="material-symbols:add" width={24} />}
+                          sx={{
                             bgcolor: '#203ff5',
-                            opacity: 0.9,
-                          },
-                        }}
-                      >
-                        Re-Upload
-                      </Button>
-                    </Box>
+                            color: 'white',
+                            borderBottom: 3.5,
+                            borderBottomColor: '#112286',
+                            borderRadius: 1.5,
+                            px: 2.5,
+                            py: 1.2,
+                            '&:hover': {
+                              bgcolor: '#203ff5',
+                              opacity: 0.9,
+                            },
+                          }}
+                        >
+                          Re-Upload
+                        </Button>
+                      </Box>
+                    )}
                   </Box>
                 )}
                 <Typography variant="subtitle2" color="text.secondary">
@@ -1900,6 +1923,28 @@ const CampaignFinalDraft = ({
                       </Box>
                     </Box>
                   ))}
+
+                  {/* Show fallback message when no feedback but previous submission has changes required */}
+                  {(!feedbacksTesting || feedbacksTesting.length === 0) && previousSubmission?.status === 'CHANGES_REQUIRED' && (
+                    <Box
+                      sx={{
+                        p: 3,
+                        mb: 2,
+                        border: 1,
+                        borderColor: 'warning.main',
+                        borderRadius: 2,
+                        bgcolor: 'warning.lighter',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <Typography variant="h6" color="warning.darker" sx={{ mb: 1 }}>
+                        📝 Changes Required
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        Changes were requested for your first draft. Please review and submit your revised content.
+                      </Typography>
+                    </Box>
+                  )}
               </Box>
             )}
 

@@ -79,7 +79,7 @@ const getStatusDisplay = (pitch) => {
   return statusMap[status] || { color: '#637381', label: status?.toUpperCase() || 'UNKNOWN' };
 };
 
-const CampaignCreatorMasterListClient = ({ campaign }) => {
+const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
@@ -93,6 +93,7 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
     isError: v3PitchesError,
+    mutate: v3PitchesMutate,
   } = useGetV3Pitches(campaign?.origin === 'CLIENT' ? campaign?.id : null);
 
   // Debug log for V3 pitches
@@ -232,6 +233,9 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
       (creator) => getNormalizedStatus(creator) === 'APPROVED' && !creator.isShortlisted
     ).length || 0;
   const shortlistedCount = creators.filter((creator) => creator.isShortlisted).length || 0;
+  const rejectedCount = creators.filter(
+    (creator) => getNormalizedStatus(creator) === 'REJECTED'
+  ).length || 0;
 
   // Handle toggling sort direction
   const handleToggleSort = () => {
@@ -250,6 +254,8 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
       );
     } else if (selectedFilter === 'shortlisted') {
       filtered = filtered.filter((creator) => creator.isShortlisted);
+    } else if (selectedFilter === 'rejected') {
+      filtered = filtered.filter((creator) => getNormalizedStatus(creator) === 'REJECTED');
     }
 
     // Apply search filter
@@ -366,6 +372,18 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
 
   const handleClosePitchModal = () => {
     setOpenPitchModal(false);
+  };
+
+  const handlePitchUpdate = (updatedPitch) => {
+    // Refresh V3 pitches data when a pitch is updated (approved/rejected)
+    if (campaign?.origin === 'CLIENT') {
+      v3PitchesMutate();
+    }
+    
+    // Also refresh campaign data to update shortlisted creators
+    if (campaignMutate) {
+      campaignMutate();
+    }
   };
 
   const handleOpenMediaKit = (creatorId) => {
@@ -520,6 +538,37 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
             }}
           >
             {`Shortlisted (${shortlistedCount})`}
+          </Button>
+
+          <Button
+            fullWidth={!mdUp}
+            onClick={() => setSelectedFilter('rejected')}
+            sx={{
+              px: 1.5,
+              py: 2.5,
+              height: '42px',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              ...(selectedFilter === 'rejected'
+                ? {
+                    color: '#203ff5',
+                    bgcolor: 'rgba(32, 63, 245, 0.04)',
+                  }
+                : {
+                    color: '#637381',
+                    bgcolor: 'transparent',
+                  }),
+              '&:hover': {
+                bgcolor:
+                  selectedFilter === 'rejected' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+              },
+            }}
+          >
+            {`Rejected (${rejectedCount})`}
           </Button>
 
           <Button
@@ -859,6 +908,7 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
         pitch={selectedPitch}
         open={openPitchModal}
         onClose={handleClosePitchModal}
+        onUpdate={handlePitchUpdate}
         campaign={campaign}
       />
 
@@ -877,4 +927,5 @@ export default CampaignCreatorMasterListClient;
 
 CampaignCreatorMasterListClient.propTypes = {
   campaign: PropTypes.object,
+  campaignMutate: PropTypes.func,
 };

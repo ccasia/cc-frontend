@@ -22,6 +22,7 @@ import {
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
@@ -34,6 +35,10 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
   const { control, watch, setValue } = useFormContext();
   const [openPreview, setOpenPreview] = useState(false);
   const theme = useTheme();
+  const { user } = useAuthContext();
+
+  const clientBrandName =
+    user?.company?.name || user?.client?.company?.name || user?.brandName || user?.name || 'Your Brand';
 
   // Watch all necessary form values for preview
   const campaignTitle = watch('campaignTitle');
@@ -135,7 +140,7 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
           {/* Company Avatar */}
           <Avatar
             src=""
-            alt="Your Brand"
+            alt={clientBrandName}
             sx={{
               position: 'absolute',
               left: 24,
@@ -185,7 +190,7 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
                     fontWeight: 480,
                   }}
                 >
-                  Your Brand
+                  {clientBrandName}
                 </Typography>
               </Stack>
             </Grid>
@@ -595,29 +600,58 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
                         Gender
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        <Chip
-                          label={audienceGender || 'Not specified'}
-                          size="small"
-                          sx={{
-                            bgcolor: '#FFF',
-                            border: 1,
-                            borderColor: '#EBEBEB',
-                            borderRadius: 1,
-                            color: '#636366',
-                            height: '32px',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            '& .MuiChip-label': {
-                              fontWeight: 700,
-                              px: 1.5,
-                              height: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginTop: '-3px',
-                            },
-                            '&:hover': { bgcolor: '#FFF' },
-                          }}
-                        />
+                        {Array.isArray(audienceGender) && audienceGender.length > 0 ? (
+                          audienceGender.map((gender, index) => (
+                            <Chip
+                              key={index}
+                              label={gender}
+                              size="small"
+                              sx={{
+                                bgcolor: '#FFF',
+                                border: 1,
+                                borderColor: '#EBEBEB',
+                                borderRadius: 1,
+                                color: '#636366',
+                                height: '32px',
+                                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                '& .MuiChip-label': {
+                                  fontWeight: 700,
+                                  px: 1.5,
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginTop: '-3px',
+                                },
+                                '&:hover': { bgcolor: '#FFF' },
+                              }}
+                            />
+                          ))
+                        ) : (
+                          <Chip
+                            label="Not specified"
+                            size="small"
+                            sx={{
+                              bgcolor: '#FFF',
+                              border: 1,
+                              borderColor: '#EBEBEB',
+                              borderRadius: 1,
+                              color: '#636366',
+                              height: '32px',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                              '& .MuiChip-label': {
+                                fontWeight: 700,
+                                px: 1.5,
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginTop: '-3px',
+                              },
+                              '&:hover': { bgcolor: '#FFF' },
+                            }}
+                          />
+                        )}
                       </Box>
                     </Box>
 
@@ -630,29 +664,58 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
                         Age
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        <Chip
-                          label={audienceAge || 'Not specified'}
-                          size="small"
-                          sx={{
-                            bgcolor: '#FFF',
-                            border: 1,
-                            borderColor: '#EBEBEB',
-                            borderRadius: 1,
-                            color: '#636366',
-                            height: '32px',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            '& .MuiChip-label': {
-                              fontWeight: 700,
-                              px: 1.5,
-                              height: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginTop: '-3px',
-                            },
-                            '&:hover': { bgcolor: '#FFF' },
-                          }}
-                        />
+                        {Array.isArray(audienceAge) && audienceAge.length > 0 ? (
+                          audienceAge.map((age, index) => (
+                            <Chip
+                              key={index}
+                              label={age}
+                              size="small"
+                              sx={{
+                                bgcolor: '#FFF',
+                                border: 1,
+                                borderColor: '#EBEBEB',
+                                borderRadius: 1,
+                                color: '#636366',
+                                height: '32px',
+                                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                '& .MuiChip-label': {
+                                  fontWeight: 700,
+                                  px: 1.5,
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginTop: '-3px',
+                                },
+                                '&:hover': { bgcolor: '#FFF' },
+                              }}
+                            />
+                          ))
+                        ) : (
+                          <Chip
+                            label="Not specified"
+                            size="small"
+                            sx={{
+                              bgcolor: '#FFF',
+                              border: 1,
+                              borderColor: '#EBEBEB',
+                              borderRadius: 1,
+                              color: '#636366',
+                              height: '32px',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                              '& .MuiChip-label': {
+                                fontWeight: 700,
+                                px: 1.5,
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginTop: '-3px',
+                              },
+                              '&:hover': { bgcolor: '#FFF' },
+                            }}
+                          />
+                        )}
                       </Box>
                     </Box>
 
@@ -738,29 +801,58 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
                         Creator Persona
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        <Chip
-                          label={audienceCreatorPersona || 'Not specified'}
-                          size="small"
-                          sx={{
-                            bgcolor: '#FFF',
-                            border: 1,
-                            borderColor: '#EBEBEB',
-                            borderRadius: 1,
-                            color: '#636366',
-                            height: '32px',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            '& .MuiChip-label': {
-                              fontWeight: 700,
-                              px: 1.5,
-                              height: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginTop: '-3px',
-                            },
-                            '&:hover': { bgcolor: '#FFF' },
-                          }}
-                        />
+                        {Array.isArray(audienceCreatorPersona) && audienceCreatorPersona.length > 0 ? (
+                          audienceCreatorPersona.map((persona, index) => (
+                            <Chip
+                              key={index}
+                              label={persona}
+                              size="small"
+                              sx={{
+                                bgcolor: '#FFF',
+                                border: 1,
+                                borderColor: '#EBEBEB',
+                                borderRadius: 1,
+                                color: '#636366',
+                                height: '32px',
+                                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                '& .MuiChip-label': {
+                                  fontWeight: 700,
+                                  px: 1.5,
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginTop: '-3px',
+                                },
+                                '&:hover': { bgcolor: '#FFF' },
+                              }}
+                            />
+                          ))
+                        ) : (
+                          <Chip
+                            label="Not specified"
+                            size="small"
+                            sx={{
+                              bgcolor: '#FFF',
+                              border: 1,
+                              borderColor: '#EBEBEB',
+                              borderRadius: 1,
+                              color: '#636366',
+                              height: '32px',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                              '& .MuiChip-label': {
+                                fontWeight: 700,
+                                px: 1.5,
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginTop: '-3px',
+                              },
+                              '&:hover': { bgcolor: '#FFF' },
+                            }}
+                          />
+                        )}
                       </Box>
                     </Box>
 
@@ -1002,7 +1094,7 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
                     fontWeight: 550,
                   }}
                 >
-                  Your Brand
+                  {clientBrandName}
                 </Typography>
               </Box>
 
@@ -1184,7 +1276,7 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
             {/* Company Avatar */}
             <Avatar
               src=""
-              alt="Your Brand"
+              alt={clientBrandName}
               sx={{
                 position: 'absolute',
                 left: 24,
@@ -1226,7 +1318,7 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
                       fontWeight: 480,
                     }}
                   >
-                    Your Brand
+                    {clientBrandName}
                   </Typography>
                 </Stack>
               </Grid>
@@ -1637,29 +1729,58 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
                           Gender
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          <Chip
-                            label={audienceGender || 'Not specified'}
-                            size="small"
-                            sx={{
-                              bgcolor: '#FFF',
-                              border: 1,
-                              borderColor: '#EBEBEB',
-                              borderRadius: 1,
-                              color: '#636366',
-                              height: '32px',
-                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                              '& .MuiChip-label': {
-                                fontWeight: 700,
-                                px: 1.5,
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginTop: '-3px',
-                              },
-                              '&:hover': { bgcolor: '#FFF' },
-                            }}
-                          />
+                          {Array.isArray(audienceGender) && audienceGender.length > 0 ? (
+                            audienceGender.map((gender, index) => (
+                              <Chip
+                                key={index}
+                                label={gender}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#FFF',
+                                  border: 1,
+                                  borderColor: '#EBEBEB',
+                                  borderRadius: 1,
+                                  color: '#636366',
+                                  height: '32px',
+                                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                  '& .MuiChip-label': {
+                                    fontWeight: 700,
+                                    px: 1.5,
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginTop: '-3px',
+                                  },
+                                  '&:hover': { bgcolor: '#FFF' },
+                                }}
+                              />
+                            ))
+                          ) : (
+                            <Chip
+                              label="Not specified"
+                              size="small"
+                              sx={{
+                                bgcolor: '#FFF',
+                                border: 1,
+                                borderColor: '#EBEBEB',
+                                borderRadius: 1,
+                                color: '#636366',
+                                height: '32px',
+                                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                '& .MuiChip-label': {
+                                  fontWeight: 700,
+                                  px: 1.5,
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginTop: '-3px',
+                                },
+                                '&:hover': { bgcolor: '#FFF' },
+                              }}
+                            />
+                          )}
                         </Box>
                       </Box>
 
@@ -1672,29 +1793,58 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
                           Age
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          <Chip
-                            label={audienceAge || 'Not specified'}
-                            size="small"
-                            sx={{
-                              bgcolor: '#FFF',
-                              border: 1,
-                              borderColor: '#EBEBEB',
-                              borderRadius: 1,
-                              color: '#636366',
-                              height: '32px',
-                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                              '& .MuiChip-label': {
-                                fontWeight: 700,
-                                px: 1.5,
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginTop: '-3px',
-                              },
-                              '&:hover': { bgcolor: '#FFF' },
-                            }}
-                          />
+                          {Array.isArray(audienceAge) && audienceAge.length > 0 ? (
+                            audienceAge.map((age, index) => (
+                              <Chip
+                                key={index}
+                                label={age}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#FFF',
+                                  border: 1,
+                                  borderColor: '#EBEBEB',
+                                  borderRadius: 1,
+                                  color: '#636366',
+                                  height: '32px',
+                                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                  '& .MuiChip-label': {
+                                    fontWeight: 700,
+                                    px: 1.5,
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginTop: '-3px',
+                                  },
+                                  '&:hover': { bgcolor: '#FFF' },
+                                }}
+                              />
+                            ))
+                          ) : (
+                            <Chip
+                              label="Not specified"
+                              size="small"
+                              sx={{
+                                bgcolor: '#FFF',
+                                border: 1,
+                                borderColor: '#EBEBEB',
+                                borderRadius: 1,
+                                color: '#636366',
+                                height: '32px',
+                                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                '& .MuiChip-label': {
+                                  fontWeight: 700,
+                                  px: 1.5,
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginTop: '-3px',
+                                },
+                                '&:hover': { bgcolor: '#FFF' },
+                              }}
+                            />
+                          )}
                         </Box>
                       </Box>
 
@@ -1780,29 +1930,58 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
                           Creator Persona
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          <Chip
-                            label={audienceCreatorPersona || 'Not specified'}
-                            size="small"
-                            sx={{
-                              bgcolor: '#FFF',
-                              border: 1,
-                              borderColor: '#EBEBEB',
-                              borderRadius: 1,
-                              color: '#636366',
-                              height: '32px',
-                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                              '& .MuiChip-label': {
-                                fontWeight: 700,
-                                px: 1.5,
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginTop: '-3px',
-                              },
-                              '&:hover': { bgcolor: '#FFF' },
-                            }}
-                          />
+                          {Array.isArray(audienceCreatorPersona) && audienceCreatorPersona.length > 0 ? (
+                            audienceCreatorPersona.map((persona, index) => (
+                              <Chip
+                                key={index}
+                                label={persona}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#FFF',
+                                  border: 1,
+                                  borderColor: '#EBEBEB',
+                                  borderRadius: 1,
+                                  color: '#636366',
+                                  height: '32px',
+                                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                  '& .MuiChip-label': {
+                                    fontWeight: 700,
+                                    px: 1.5,
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginTop: '-3px',
+                                  },
+                                  '&:hover': { bgcolor: '#FFF' },
+                                }}
+                              />
+                            ))
+                          ) : (
+                            <Chip
+                              label="Not specified"
+                              size="small"
+                              sx={{
+                                bgcolor: '#FFF',
+                                border: 1,
+                                borderColor: '#EBEBEB',
+                                borderRadius: 1,
+                                color: '#636366',
+                                height: '32px',
+                                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                '& .MuiChip-label': {
+                                  fontWeight: 700,
+                                  px: 1.5,
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginTop: '-3px',
+                                },
+                                '&:hover': { bgcolor: '#FFF' },
+                              }}
+                            />
+                          )}
                         </Box>
                       </Box>
 
