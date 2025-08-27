@@ -27,9 +27,8 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField } from 'src/components/hook-form';
 
-import { options_changes } from './constants';
 import { ConfirmationRequestModal } from './confirmation-modals';
 
 const PhotoCard = ({ 
@@ -57,7 +56,6 @@ const PhotoCard = ({
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
-    reasons: Yup.array(),
   });
 
   const approveSchema = Yup.object().shape({
@@ -68,7 +66,6 @@ const PhotoCard = ({
     resolver: cardType === 'request' ? yupResolver(requestSchema) : yupResolver(approveSchema),
     defaultValues: {
       feedback: '',
-      reasons: [],
     },
     mode: 'onChange',
   });
@@ -79,7 +76,6 @@ const PhotoCard = ({
   useEffect(() => {
     const defaultValues = {
       feedback: '',
-      reasons: [],
     };
     reset(defaultValues);
   }, [cardType, reset]);
@@ -277,7 +273,6 @@ const PhotoCard = ({
           mediaId: photoItem.id,
           mediaType: 'photo',
           feedback: data.feedback || 'Changes requested by client',
-          reasons: data?.reasons || []
         });
         
         if (response.status === 200) {
@@ -289,7 +284,7 @@ const PhotoCard = ({
         }
       } else {
         console.log('🔍 Admin requesting photo changes via handleRequestChange function');
-        await handleRequestChange(photoItem.id, data.feedback, data.reasons);
+        await handleRequestChange(photoItem.id, data.feedback);
       }
       setLocalStatus('REVISION_REQUESTED');
     } catch (error) {
@@ -471,12 +466,6 @@ const PhotoCard = ({
               placeholder="Provide feedback for the creator."
               size="small"
               />
-              
-            <RHFMultiSelect
-              name="reasons"
-                  label="Reasons for Changes"
-                  options={options_changes}
-                />
 
             <Stack spacing={1.5} sx={{ mt: 2 }}>
               <Stack direction="row" spacing={1.5}>

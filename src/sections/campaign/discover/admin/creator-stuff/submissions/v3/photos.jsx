@@ -1,4 +1,4 @@
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
@@ -49,6 +49,10 @@ const PhotoCard = ({
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
   const [localStatus, setLocalStatus] = useState(null);
+  const [localFeedbackUpdates, setLocalFeedbackUpdates] = useState({});
+  const [lastEdited, setLastEdited] = useState(null); // { photoId, feedbackId, content, at }
+  const getFeedbackLocalKey = (fb) => (fb?.id ? fb.id : `${fb?.content || ''}|${fb?.createdAt || ''}`);
+  const getPhotoFeedbackLocalKey = (photo, fb) => `${photo?.id || 'no-photo-id'}|${getFeedbackLocalKey(fb)}`;
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -121,7 +125,20 @@ const PhotoCard = ({
       })
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
 
-    return [...photoSpecificFeedback, ...clientFeedback];
+    let list = [...photoSpecificFeedback, ...clientFeedback];
+    if (lastEdited && lastEdited.photoId === photoItem.id) {
+      const idx = list.findIndex((f) => f && f.id === lastEdited.feedbackId);
+      if (idx !== -1) list[idx] = { ...list[idx], content: lastEdited.content };
+      else list.unshift({ id: lastEdited.feedbackId, content: lastEdited.content, createdAt: new Date().toISOString(), admin: { name: 'Admin' }, type: 'COMMENT', photosToUpdate: [photoItem.id], reasons: [] });
+    }
+    return list.map((fb) => {
+      const compositeKey = getPhotoFeedbackLocalKey(photoItem, fb);
+      const override = localFeedbackUpdates[fb.id] ?? localFeedbackUpdates[compositeKey];
+      const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
+      const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
+      const fallbackDisplay = hasText ? fb.content : (hasReasons ? `Reasons: ${fb.reasons.join(', ')}` : '');
+      return { ...fb, displayContent: override ?? fallbackDisplay };
+    });
   };
 
   const photoFeedback = getPhotoFeedback();
@@ -690,7 +707,11 @@ const PhotoCard = ({
                 </Stack>
                 
                 <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-                  {feedback.content}
+                  {(lastEdited && lastEdited.photoId === photoItem.id && lastEdited.feedbackId === feedback.id)
+                    ? lastEdited.content
+                    : (localFeedbackUpdates[feedback.id]
+                        ?? localFeedbackUpdates[getPhotoFeedbackLocalKey(photoItem, feedback)]
+                        ?? (feedback.displayContent || feedback.content))}
                 </Typography>
 
                 {feedback.reasons && feedback.reasons.length > 0 && (
@@ -734,7 +755,20 @@ const PhotoCard = ({
                       onClick={() => {
                         const adminFeedback = prompt('Edit client feedback (optional):');
                         if (adminFeedback !== null && handleAdminEditFeedback) {
-                          handleAdminEditFeedback(photoItem.id, feedback.id, adminFeedback);
+                          handleAdminEditFeedback(photoItem.id, feedback.id, adminFeedback).then((ok) => {
+                            if (ok !== false) {
+                              const compositeKey = getPhotoFeedbackLocalKey(photoItem, feedback);
+                              setLocalFeedbackUpdates((prev) => ({ ...prev, [feedback.id]: adminFeedback, [compositeKey]: adminFeedback }));
+                              setLastEdited({ photoId: photoItem.id, feedbackId: feedback.id, content: adminFeedback, at: Date.now() });
+                              try {
+                                globalMutate(
+                                  (key) => typeof key === 'string' && (key.includes('submission') || key.includes('deliverables') || key.includes('feedback')),
+                                  undefined,
+                                  { revalidate: true }
+                                );
+                              } catch {}
+                            }
+                          });
                         }
                       }}
                       sx={{
@@ -765,7 +799,7 @@ const PhotoCard = ({
                       size="small"
                       onClick={() => {
                         if (handleAdminSendToCreator) {
-                          handleAdminSendToCreator(photoItem.id, feedback.id);
+                          handleAdminSendToCreator(photoItem.id, feedback.id, null, 'photo');
                         }
                       }}
                       sx={{

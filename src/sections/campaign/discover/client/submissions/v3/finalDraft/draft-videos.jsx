@@ -466,8 +466,14 @@ const VideoCard = ({
               
                 <RHFMultiSelect
                   name="reasons"
-                  label="Reasons for Changes"
-                  options={options_changes}
+                  checkbox
+                  chip
+                  options={options_changes.map((item) => ({
+                    value: item,
+                    label: item,
+                  }))}
+                  label="Reasons"
+                  size="small"
                 />
 
             <Stack spacing={1.5} sx={{ mt: 2 }}>

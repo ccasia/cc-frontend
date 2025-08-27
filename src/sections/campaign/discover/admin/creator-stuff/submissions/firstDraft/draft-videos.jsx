@@ -4,7 +4,7 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -65,6 +65,11 @@ const VideoCard = ({
   const [localStatus, setLocalStatus] = useState(null);
   const [editingFeedbackId, setEditingFeedbackId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
+  const [localFeedbackUpdates, setLocalFeedbackUpdates] = useState({});
+
+  // Remove local state variables - these are now handled in the main component
+  // const [sentToCreatorItems, setSentToCreatorItems] = useState(new Set());
+  // const allFeedbackSentToCreator = useMemo(() => { ... }, [deliverables, sentToCreatorItems]);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -828,11 +833,54 @@ const VideoCard = ({
                     <Stack direction="row" spacing={1}>
                       <Button
                         size="small"
-                        variant="contained"
+                        variant="outlined"
                         onClick={async () => {
-                          await handleAdminEditFeedback(videoItem.id, feedback.id, editingContent);
+                          const ok = await handleAdminEditFeedback(videoItem.id, feedback.id, editingContent);
+                          if (ok) {
+                            setLocalFeedbackUpdates((prev) => ({ ...prev, [feedback.id]: editingContent }));
+                            
+                            // SWR mutation to refresh data
+                            if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+                            if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+                            
+                            // Additional SWR invalidation to ensure all related data is refreshed
+                            try {
+                              await mutate(
+                                (key) => typeof key === 'string' && (
+                                  key.includes('feedback') || 
+                                  key.includes('submission') || 
+                                  key.includes('deliverables')
+                                ),
+                                undefined,
+                                { revalidate: true }
+                              );
+                            } catch (mutateError) {
+                              console.log('SWR mutate error (non-critical):', mutateError);
+                            }
+                          }
                           setEditingFeedbackId(null);
                           setEditingContent('');
+                        }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          bgcolor: '#ffffff',
+                          border: '1.5px solid #1ABF66',
+                          borderBottom: '3px solid #169c52',
+                          color: '#1ABF66',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f0f9f0',
+                            color: '#1ABF66',
+                            borderColor: '#169c52',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                          },
                         }}
                       >
                         Save
@@ -844,6 +892,27 @@ const VideoCard = ({
                           setEditingFeedbackId(null);
                           setEditingContent('');
                         }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          bgcolor: '#ffffff',
+                          border: '1.5px solid #e0e0e0',
+                          borderBottom: '3px solid #e0e0e0',
+                          color: '#666666',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                            color: '#666666',
+                            borderColor: '#d0d0d0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          },
+                        }}
                       >
                         Cancel
                       </Button>
@@ -851,7 +920,7 @@ const VideoCard = ({
                   </Stack>
                 ) : (
                 <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-                    {feedback.displayContent || feedback.content}
+                    {localFeedbackUpdates[feedback.id] ?? (feedback.displayContent || feedback.content)}
                 </Typography>
                 )}
 
@@ -977,7 +1046,7 @@ VideoCard.propTypes = {
   handleRequestChange: PropTypes.func.isRequired,
   selectedVideosForChange: PropTypes.array.isRequired,
   handleVideoSelection: PropTypes.func.isRequired,
-  // V2 props
+  // V2 individual handlers
   onIndividualApprove: PropTypes.func,
   onIndividualRequestChange: PropTypes.func,
   isV3: PropTypes.bool,
@@ -988,6 +1057,9 @@ VideoCard.propTypes = {
   handleClientReject: PropTypes.func,
   // V3 deliverables for status checking
   deliverables: PropTypes.object,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback: PropTypes.func,
+  handleAdminSendToCreator: PropTypes.func,
 };
 
 // Add SWR hook for submission
@@ -996,12 +1068,12 @@ const fetchSubmission = async (url) => {
   return data;
 };
 
-const DraftVideos = ({
-  campaign,
-  submission,
-  deliverables,
-  onVideoClick,
-  onSubmit,
+const DraftVideos = ({ 
+  campaign, 
+  submission, 
+  deliverables, 
+  onVideoClick, 
+  onSubmit, 
   isDisabled,
   // V2 individual handlers
   onIndividualApprove,
@@ -1013,10 +1085,36 @@ const DraftVideos = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // Shared function to check all client feedback across all media types
+  checkAllClientFeedbackProcessed,
 }) => {
   const [selectedVideosForChange, setSelectedVideosForChange] = useState([]);
   const [sentSubmissions, setSentSubmissions] = useState(new Set());
   const [isSending, setIsSending] = useState(false);
+  
+  // Track which media items have been sent to creator
+  const [sentToCreatorItems, setSentToCreatorItems] = useState(new Set());
+
+  // Check if all client feedback has been sent to creator
+  const allFeedbackSentToCreator = useMemo(() => {
+    if (!deliverables?.videos) return true;
+    
+    const itemsWithClientFeedback = new Set();
+    
+    // Check videos
+    deliverables.videos?.forEach(video => {
+      if (video.status === 'CLIENT_FEEDBACK' || video.status === 'SENT_TO_ADMIN') {
+        itemsWithClientFeedback.add(`video_${video.id}`);
+      }
+    });
+    
+    // If no items have client feedback, consider it all sent
+    if (itemsWithClientFeedback.size === 0) return true;
+    
+    // Check if all items with client feedback have been sent to creator
+    return Array.from(itemsWithClientFeedback).every(itemKey => sentToCreatorItems.has(itemKey));
+  }, [deliverables, sentToCreatorItems]);
+
   const approve = useBoolean();
   const request = useBoolean();
 
@@ -1191,10 +1289,21 @@ const DraftVideos = ({
       await axiosInstance.patch('/api/submission/v3/feedback/' + feedbackId, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
       
-      // Force refresh all related data to ensure admin side sees the changes
+      // Force refresh all related data to ensure both sides see the changes
       if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
       if (deliverables?.submissionMutate) await deliverables.submissionMutate();
       if (mutateSubmission) await mutateSubmission();
+      try {
+        await mutate(
+          (key) => typeof key === 'string' && (
+            key.includes('feedback') || 
+            key.includes('submission') || 
+            key.includes('deliverables')
+          ),
+          undefined,
+          { revalidate: true }
+        );
+      } catch {}
       
       // Additional SWR invalidation to ensure feedback data is refreshed
       // This ensures both admin and client sides see the updated feedback
@@ -1223,68 +1332,88 @@ const DraftVideos = ({
   };
 
   const handleAdminSendToCreator = async (mediaId, feedbackId, onStatusUpdate) => {
-    // Check if this submission has already been sent
-    if (sentSubmissions.has(mediaId)) {
-      enqueueSnackbar('This submission has already been sent to creator', { variant: 'warning' });
-      return;
-    }
+    console.log('🔍 DEBUG: handleAdminSendToCreator called with:', {
+      mediaId,
+      feedbackId,
+      onStatusUpdate: !!onStatusUpdate
+    });
 
-    // Check if we're currently sending
-    if (isSending) {
-      enqueueSnackbar('Please wait, sending in progress...', { variant: 'info' });
-      return;
-    }
-
-    setIsSending(true);
-    
     try {
-      // Mark this submission as sent immediately to prevent double-clicks
-      setSentSubmissions(prev => new Set([...prev, mediaId]));
+      // Track this item as sent to creator
+      const itemKey = `video_${mediaId}`;
+      setSentToCreatorItems(prev => new Set([...prev, itemKey]));
 
-      // Immediately update local status to CHANGES_REQUIRED for instant UI feedback
-      if (onStatusUpdate) {
-        onStatusUpdate('CHANGES_REQUIRED');
-      }
-
-      // Call the API to review and forward client feedback
-      const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', {
+      const requestData = {
         submissionId: submission.id,
         adminFeedback: 'Feedback reviewed and forwarded to creator',
         mediaId,
-        mediaType: 'video'
-      });
+        mediaType: 'video',
+        feedbackId, // Added feedbackId
+      };
+
+      console.log('📤 Sending request:', requestData);
+
+      const response = await axiosInstance.patch('/api/submission/v3/draft/forward-feedback', requestData);
 
       if (response.status === 200) {
-        enqueueSnackbar(`Feedback for video sent to creator successfully!`, { variant: 'success' });
+        console.log('✅ Successfully sent to creator');
+        enqueueSnackbar('Feedback sent to creator successfully!', { variant: 'success' });
         
-        // SWR revalidation for immediate UI update
+        // Check if all feedback has been sent (including the current item)
+        const itemsWithClientFeedback = new Set();
+        deliverables.videos?.forEach(video => {
+          if (video.status === 'CLIENT_FEEDBACK' || video.status === 'SENT_TO_ADMIN') {
+            itemsWithClientFeedback.add(`video_${video.id}`);
+          }
+        });
+        
+        const allItemsSent = itemsWithClientFeedback.size === 0 || 
+          Array.from(itemsWithClientFeedback).every(itemKey => 
+            sentToCreatorItems.has(itemKey) || itemKey === `video_${mediaId}`
+          );
+        
+        // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
+        const allClientFeedbackProcessed = checkAllClientFeedbackProcessed();
+        
+        // Only update submission status to CHANGES_REQUIRED if all feedback has been sent AND all CLIENT_FEEDBACK items processed
+        if (allItemsSent && allClientFeedbackProcessed) {
+          console.log('✅ All feedback sent to creator and all CLIENT_FEEDBACK items processed - updating submission status to CHANGES_REQUIRED');
+          if (onStatusUpdate) {
+            onStatusUpdate('CHANGES_REQUIRED');
+          }
+        } else {
+          console.log('⏳ Not all feedback sent or CLIENT_FEEDBACK items still exist - keeping current submission status');
+        }
+
+        // Refresh data
         if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
         if (deliverables?.submissionMutate) await deliverables.submissionMutate();
-        if (mutateSubmission) await mutateSubmission();
         
-        // Check if all revision-requested videos have been sent
-        const revisionRequestedVideos = deliverables.videos?.filter(v => v.status === 'REVISION_REQUESTED' || v.status === 'CLIENT_FEEDBACK') || [];
-        const sentRevisionVideos = revisionRequestedVideos.filter(v => sentSubmissions.has(v.id));
-        
-        if (revisionRequestedVideos.length > 0 && sentRevisionVideos.length === revisionRequestedVideos.length) {
-          enqueueSnackbar('All revision-requested videos have been sent to creator!', { variant: 'success' });
+        // Additional SWR invalidation to ensure all related data is refreshed
+        try {
+          await mutate(
+            (key) => typeof key === 'string' && (
+              key.includes('feedback') || 
+              key.includes('submission') || 
+              key.includes('deliverables')
+            ),
+            undefined,
+            { revalidate: true }
+          );
+        } catch (mutateError) {
+          console.log('SWR mutate error (non-critical):', mutateError);
         }
+        
+        return true;
       }
     } catch (error) {
-      console.error('Error sending feedback to creator:', error);
-      
-      // Remove from sent submissions if it failed
-      setSentSubmissions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(mediaId);
-        return newSet;
-      });
-      
-      enqueueSnackbar('Failed to send feedback to creator', { variant: 'error' });
-    } finally {
-      setIsSending(false);
+      console.error('❌ Error sending to creator:', error);
+      enqueueSnackbar('Failed to send to creator', { variant: 'error' });
+      return false;
     }
   };
+
+
 
   // Check if all videos are already approved
   const allVideosApproved = deliverables?.videos?.length > 0 && 
@@ -1602,6 +1731,8 @@ DraftVideos.propTypes = {
   handleClientRejectVideo: PropTypes.func,
   handleClientRejectPhoto: PropTypes.func,
   handleClientRejectRawFootage: PropTypes.func,
+  // Shared function to check all client feedback across all media types
+  checkAllClientFeedbackProcessed: PropTypes.func,
 };
 
 export default DraftVideos; 
