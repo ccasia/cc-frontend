@@ -98,7 +98,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const loading = useBoolean();
   const [selectedAgreement, setSelectedAgreement] = useState(null);
   // const [selectedCreators, setSelectedCreators] = useState(null);
-  const ugcVidesoModal = useBoolean();
+  const ugcVideosModal = useBoolean();
   const { addCreators, shortlistedCreators: creators } = useShortlistedCreators();
 
   const totalUsedCredits = campaign?.shortlisted?.reduce(
@@ -398,7 +398,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               loading={loading.value}
               onClick={() => {
                 if (campaign?.campaignCredits) {
-                  ugcVidesoModal.onTrue();
+                  ugcVideosModal.onTrue();
                 } else {
                   console.log('ASDS');
                 }
@@ -746,8 +746,8 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         : renderShortlistFormModalWithoutCampaignCredits}
 
       <AssignUGCVideoModal
-        dialog={ugcVidesoModal.value}
-        onClose={ugcVidesoModal.onFalse}
+        dialog={ugcVideosModal.value}
+        onClose={ugcVideosModal.onFalse}
         credits={campaign?.campaignCredits ?? 0}
         campaignId={campaign.id}
         modalClose={modal.onFalse}
