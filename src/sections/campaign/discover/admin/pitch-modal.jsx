@@ -1005,25 +1005,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Box>
               )}
             </Box>
-            {user?.role !== 'client' && (
-              <Box mb={2}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}
-                >
-                  CS Comments (Optional)
-                </Typography>
-
-                <TextField
-                  multiline
-                  minRows={3}
-                  fullWidth
-                  size="small"
-                  placeholder="Input comments about the creator that your clients might find helpful"
-                  onChange={(e) => setComments(e.target.value)}
-                />
-              </Box>
-            )}
           </Stack>
         </DialogContent>
 

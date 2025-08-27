@@ -38,6 +38,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const [ugcCreditsModalOpen, setUgCCreditsModalOpen] = useState(false);
+  const [comments, setComments] = useState('');
 
   const displayStatus = pitch?.displayStatus || pitch?.status;
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -53,6 +54,8 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
         return '#FFC702';
       case 'SENT_TO_CLIENT':
         return '#8B5CF6'; // Purple color for SENT_TO_CLIENT
+      case 'SENT_TO_CLIENT_WITH_COMMENTS':
+        return '#8B5CF6';
       case 'APPROVED':
         return '#1ABF66';
       case 'REJECTED':
@@ -71,6 +74,8 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
       case 'PENDING_REVIEW':
         return 'Pending Review';
       case 'SENT_TO_CLIENT':
+        return 'Sent to Client';
+      case 'SENT_TO_CLIENT_WITH_COMMENTS':
         return 'Sent to Client';
       case 'APPROVED':
         return 'Approved';
@@ -111,7 +116,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
       // For admin, open UGC credits modal instead of direct approval
       setUgCCreditsModalOpen(true);
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
-      handleAction('approve', 'approve/client');
+      handleAction('approve', 'approve/client', { adminComments: comments });
     }
   };
 
@@ -597,7 +602,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                     )}
                     <Stack>
                       <Typography variant="h6">
-                        {currentPitch?.type === 'video' ? 'Video Pitch' : 'Letter Pitch'}
+                        {currentPitch?.type === 'video' ? 'Video Pitch' : 'Letter Pitch tet'}
                       </Typography>
 
                       {/* Match Percentage Chip */}
@@ -694,9 +699,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 </Grid>
               </Grid>
             </Box>
-
             <Divider />
-
             {/* Pitch Content Section */}
             <Box>
               <Box
@@ -725,6 +728,26 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 </Typography>
               </Box>
             </Box>
+            //V3.1 comment section
+            {user?.role !== 'client' && (
+              <Box mb={2}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}
+                >
+                  CS Comments (Optional)
+                </Typography>
+
+                <TextField
+                  multiline
+                  minRows={1}
+                  fullWidth
+                  size="small"
+                  placeholder="Input comments about the creator that your clients might find helpful"
+                  onChange={(e) => setComments(e.target.value)}
+                />
+              </Box>
+            )}
           </Stack>
         </DialogContent>
 
@@ -969,6 +992,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
         onClose={() => setUgCCreditsModalOpen(false)}
         pitch={pitch}
         campaign={campaign}
+        comments={comments}
         onSuccess={handleUGCCreditsSuccess}
       />
     </>
