@@ -838,25 +838,13 @@ const VideoCard = ({
                           const ok = await handleAdminEditFeedback(videoItem.id, feedback.id, editingContent);
                           if (ok) {
                             setLocalFeedbackUpdates((prev) => ({ ...prev, [feedback.id]: editingContent }));
-                            
-                            // SWR mutation to refresh data
-                            if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
-                            if (deliverables?.submissionMutate) await deliverables.submissionMutate();
-                            
-                            // Additional SWR invalidation to ensure all related data is refreshed
+                            // Defer background revalidation slightly to avoid visible jump
                             try {
-                              await mutate(
-                                (key) => typeof key === 'string' && (
-                                  key.includes('feedback') || 
-                                  key.includes('submission') || 
-                                  key.includes('deliverables')
-                                ),
-                                undefined,
-                                { revalidate: true }
-                              );
-                            } catch (mutateError) {
-                              console.log('SWR mutate error (non-critical):', mutateError);
-                            }
+                              setTimeout(() => {
+                                try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}
+                                try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch {}
+                              }, 500);
+                            } catch {}
                           }
                           setEditingFeedbackId(null);
                           setEditingContent('');
@@ -1288,13 +1276,12 @@ const DraftVideos = ({
     try {
       await axiosInstance.patch('/api/submission/v3/feedback/' + feedbackId, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
-      
-      // Force refresh all related data to ensure both sides see the changes
-      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
-      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
-      if (mutateSubmission) await mutateSubmission();
+      // Non-blocking SWR revalidation to avoid remount
+      try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}
+      try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch {}
+      try { if (mutateSubmission) mutateSubmission(); } catch {}
       try {
-        await mutate(
+        mutate(
           (key) => typeof key === 'string' && (
             key.includes('feedback') || 
             key.includes('submission') || 
@@ -1304,30 +1291,11 @@ const DraftVideos = ({
           { revalidate: true }
         );
       } catch {}
-      
-      // Additional SWR invalidation to ensure feedback data is refreshed
-      // This ensures both admin and client sides see the updated feedback
-      try {
-        // Invalidate any SWR keys that might contain feedback data
-        await mutate(
-          (key) => key && typeof key === 'string' && (
-            key.includes('feedback') || 
-            key.includes('submission') || 
-            key.includes('deliverables')
-          ),
-          undefined,
-          { revalidate: true }
-        );
-      } catch (mutateError) {
-        console.log('SWR mutate error (non-critical):', mutateError);
-      }
-      
-      // Force a re-render by updating local state if needed
-      // Note: These state variables are managed in the DraftVideoCard component
-      
+      return true;
     } catch (error) {
       console.error('Error updating feedback:', error);
       enqueueSnackbar('Failed to update feedback', { variant: 'error' });
+      return false;
     }
   };
 
