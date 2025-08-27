@@ -4,7 +4,7 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -58,6 +58,8 @@ const RawFootageCard = ({
   // V3 admin feedback handlers
   handleAdminEditFeedback,
   handleAdminSendToCreator,
+  // State management for tracking sent items
+  setParentSentToCreatorItems,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -65,6 +67,16 @@ const RawFootageCard = ({
   const [localStatus, setLocalStatus] = useState(null);
   const [editingFeedbackId, setEditingFeedbackId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
+  const [localFeedbackUpdates, setLocalFeedbackUpdates] = useState({});
+  const getFeedbackLocalKey = (fb) => (fb?.id ? fb.id : `${fb?.displayContent || fb?.content || ''}|${fb?.createdAt || ''}`);
+  const getRawFeedbackLocalKey = (raw, fb) => `${raw?.id || 'no-raw-id'}|${getFeedbackLocalKey(fb)}`;
+  const [lastEdited, setLastEdited] = useState(null); // { rawId, feedbackId, content, at }
+
+  // Persist overrides across remounts
+  const STORAGE_KEY = 'cc_raw_feedback_overrides_v1';
+  const loadOverrides = () => { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; } catch { return {}; } };
+  const saveOverrides = (overrides) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); } catch {} };
+  useEffect(() => { const stored = loadOverrides(); if (stored && Object.keys(stored).length) setLocalFeedbackUpdates((prev) => ({ ...stored, ...prev })); }, []);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -127,21 +139,26 @@ const RawFootageCard = ({
     const rawFootageSpecificFeedback = allFeedbacks.filter((fb) => fb?.rawFootageToUpdate?.includes(rawFootageItem.id));
     combined.push(...rawFootageSpecificFeedback);
 
+    // If we have a last edited feedback for this raw footage, update or inject it before normalization
+    if (lastEdited && lastEdited.rawId === rawFootageItem.id) {
+      const idx = combined.findIndex((fb) => fb && fb.id === lastEdited.feedbackId);
+      if (idx !== -1) {
+        combined[idx] = { ...combined[idx], content: lastEdited.content };
+      } else {
+        combined.unshift({ id: lastEdited.feedbackId, content: lastEdited.content, createdAt: new Date().toISOString(), admin: { name: 'Admin' }, type: 'COMMENT', rawFootageToUpdate: [rawFootageItem.id], reasons: [] });
+      }
+    }
+
     // Normalize, drop empty, and dedupe
     const normalized = combined
       .map((fb) => {
         if (!fb) return null;
+        const compositeKey = getRawFeedbackLocalKey(rawFootageItem, fb);
+        const override = localFeedbackUpdates[fb.id] ?? localFeedbackUpdates[compositeKey];
         const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
         const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
-        const displayContent = hasText
-          ? fb.content
-          : hasReasons
-          ? `Reasons: ${fb.reasons.join(', ')}`
-          : '';
-        return {
-          ...fb,
-          displayContent,
-        };
+        const fallbackDisplay = hasText ? fb.content : (hasReasons ? `Reasons: ${fb.reasons.join(', ')}` : '');
+        return { ...fb, displayContent: override ?? fallbackDisplay, isOverridden: Boolean(override) };
       })
       .filter((fb) => fb && (fb.displayContent.trim().length > 0));
 
@@ -787,11 +804,62 @@ const RawFootageCard = ({
                     <Stack direction="row" spacing={1}>
                       <Button
                         size="small"
-                        variant="contained"
+                        variant="outlined"
                         onClick={async () => {
-                          await handleAdminEditFeedback(rawFootageItem.id, feedback.id, editingContent);
+                          const ok = await handleAdminEditFeedback(rawFootageItem.id, feedback.id, editingContent);
+                          if (ok) {
+                            const compositeKey = getRawFeedbackLocalKey(rawFootageItem, feedback);
+                            const idKey = feedback?.id;
+                            setLocalFeedbackUpdates((prev) => {
+                              const next = { ...prev, ...(idKey ? { [idKey]: editingContent } : {}), [compositeKey]: editingContent };
+                              const stored = loadOverrides();
+                              saveOverrides({ ...stored, ...next });
+                              return next;
+                            });
+                            setLastEdited({ rawId: rawFootageItem.id, feedbackId: feedback.id, content: editingContent, at: Date.now() });
+                            
+                            // SWR mutation to refresh data
+                            if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+                            if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+                            
+                            // Additional SWR invalidation to ensure all related data is refreshed
+                            try {
+                              await mutate(
+                                (key) => typeof key === 'string' && (
+                                  key.includes('feedback') || 
+                                  key.includes('submission') || 
+                                  key.includes('deliverables')
+                                ),
+                                undefined,
+                                { revalidate: true }
+                              );
+                            } catch (mutateError) {
+                              console.log('SWR mutate error (non-critical):', mutateError);
+                            }
+                          }
                           setEditingFeedbackId(null);
                           setEditingContent('');
+                        }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          bgcolor: '#ffffff',
+                          border: '1.5px solid #1ABF66',
+                          borderBottom: '3px solid #169c52',
+                          color: '#1ABF66',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f0f9f0',
+                            color: '#1ABF66',
+                            borderColor: '#169c52',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                          },
                         }}
                       >
                         Save
@@ -803,6 +871,27 @@ const RawFootageCard = ({
                           setEditingFeedbackId(null);
                           setEditingContent('');
                         }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          bgcolor: '#ffffff',
+                          border: '1.5px solid #e0e0e0',
+                          borderBottom: '3px solid #e0e0e0',
+                          color: '#666666',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                            color: '#666666',
+                            borderColor: '#d0d0d0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          },
+                        }}
                       >
                         Cancel
                       </Button>
@@ -810,7 +899,11 @@ const RawFootageCard = ({
                   </Stack>
                 ) : (
                 <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-                    {feedback.displayContent || feedback.content}
+                  {(lastEdited && lastEdited.rawId === rawFootageItem.id && lastEdited.feedbackId === feedback.id)
+                    ? lastEdited.content
+                    : (localFeedbackUpdates[feedback.id]
+                        ?? localFeedbackUpdates[getRawFeedbackLocalKey(rawFootageItem, feedback)]
+                        ?? (feedback.displayContent || feedback.content))}
                 </Typography>
                 )}
 
@@ -948,14 +1041,19 @@ RawFootageCard.propTypes = {
   handleClientReject: PropTypes.func,
   // V3 deliverables for status checking
   deliverables: PropTypes.object,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback: PropTypes.func,
+  handleAdminSendToCreator: PropTypes.func,
+  // State management for tracking sent items
+  setParentSentToCreatorItems: PropTypes.func,
 };
 
-const RawFootages = ({
-  campaign,
-  submission,
-  deliverables,
-  onVideoClick,
-  onSubmit,
+const RawFootages = ({ 
+  campaign, 
+  submission, 
+  deliverables, 
+  onVideoClick, 
+  onSubmit, 
   isDisabled,
   // V2 individual handlers
   onIndividualApprove,
@@ -967,22 +1065,71 @@ const RawFootages = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // Shared function to check all client feedback across all media types
+  checkAllClientFeedbackProcessed,
 }) => {
-  const [selectedRawFootagesForChange, setSelectedRawFootagesForChange] = useState([]);
-  const [sentSubmissions, setSentSubmissions] = useState(new Set());
-  const [isSending, setIsSending] = useState(false);
-  const approve = useBoolean();
-  const request = useBoolean();
+  const { user } = useAuthContext();
+  const userRole = user?.role || 'admin';
 
-  // Add SWR hook for submission
-  const { data: swrSubmission, mutate: mutateSubmission, isLoading: isSubmissionLoading, error: submissionError } = useSWR(
+  // SWR for real-time data updates
+  const { data: currentSubmission, mutate: mutateSubmission } = useSWR(
     submission?.id ? `/api/submission/v3/${submission.id}` : null,
-    fetchSubmission,
+    (url) => axiosInstance.get(url).then(res => res.data),
     { refreshInterval: 0 }
   );
 
+  const [selectedRawFootagesForChange, setSelectedRawFootagesForChange] = useState([]);
+  const [clientRequestModalOpen, setClientRequestModalOpen] = useState(false);
+  const [clientRequestRawFootageId, setClientRequestRawFootageId] = useState(null);
+
+  // Track which media items have been sent to creator
+  const [sentToCreatorItems, setSentToCreatorItems] = useState(new Set());
+
+  // Check if all client feedback has been sent to creator
+  const allFeedbackSentToCreator = useMemo(() => {
+    if (!deliverables?.rawFootages) return true;
+    
+    const itemsWithClientFeedback = new Set();
+    
+    // Check raw footage
+    deliverables.rawFootages?.forEach(footage => {
+      if (footage.status === 'CLIENT_FEEDBACK' || footage.status === 'SENT_TO_ADMIN') {
+        itemsWithClientFeedback.add(`rawFootage_${footage.id}`);
+      }
+    });
+    
+    // If no items have client feedback, consider it all sent
+    if (itemsWithClientFeedback.size === 0) return true;
+    
+    // Check if all items with client feedback have been sent to creator
+    return Array.from(itemsWithClientFeedback).every(itemKey => sentToCreatorItems.has(itemKey));
+  }, [deliverables, sentToCreatorItems]);
+
+  const clientRequestForm = useForm({
+    resolver: yupResolver(
+      Yup.object().shape({
+        feedback: Yup.string().required('Feedback is required'),
+        reasons: Yup.array().min(1, 'At least one reason is required'),
+      })
+    ),
+    defaultValues: {
+      feedback: '',
+      reasons: [],
+    },
+  });
+
+  const approve = useBoolean();
+  const request = useBoolean();
+
+  // Remove duplicate SWR declarations - these are already declared in the main RawFootages component
+  // const { data: swrSubmission, mutate: mutateSubmission, isLoading: isSubmissionLoading, error: submissionError } = useSWR(
+  //   submission?.id ? `/api/submission/v3/${submission.id}` : null,
+  //   fetchSubmission,
+  //   { refreshInterval: 0 }
+  // );
+
   // Use SWR submission as the source of truth
-  const currentSubmission = swrSubmission || submission;
+  // const currentSubmission = swrSubmission || submission;
 
   const handleRawFootageSelection = (id) => {
     setSelectedRawFootagesForChange((prev) => {
@@ -1150,8 +1297,9 @@ const RawFootages = ({
 
   // In RawFootages (parent), define isV3 and userRole
   const isV3 = campaign?.origin === 'CLIENT';
-  const { user } = useAuthContext();
-  const userRole = user?.role || 'admin'; // Use actual user role from auth context
+  // Remove duplicate declarations - these are already declared in the main RawFootages component
+  // const { user } = useAuthContext();
+  // const userRole = user?.role || 'admin'; // Use actual user role from auth context
 
   // Admin feedback handlers
   const handleAdminEditFeedback = async (mediaId, feedbackId, adminFeedback) => {
@@ -1159,10 +1307,21 @@ const RawFootages = ({
       await axiosInstance.patch('/api/submission/v3/feedback/' + feedbackId, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
       
-      // Force refresh all related data to ensure admin side sees the changes
+      // Force refresh all related data to ensure both sides see the changes
       if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
       if (deliverables?.submissionMutate) await deliverables.submissionMutate();
       if (mutateSubmission) await mutateSubmission();
+      try {
+        await mutate(
+          (key) => typeof key === 'string' && (
+            key.includes('feedback') || 
+            key.includes('submission') || 
+            key.includes('deliverables')
+          ),
+          undefined,
+          { revalidate: true }
+        );
+      } catch {}
       
       // Additional SWR invalidation to ensure feedback data is refreshed
       // This ensures both admin and client sides see the updated feedback
@@ -1181,76 +1340,90 @@ const RawFootages = ({
         console.log('SWR mutate error (non-critical):', mutateError);
       }
       
-      // Force a re-render by updating local state if needed
-      // Note: These state variables are managed in the RawFootageCard component
-      
+      // Indicate success to caller so it can update localFeedbackUpdates immediately
+      return true;
     } catch (error) {
       console.error('Error updating feedback:', error);
       enqueueSnackbar('Failed to update feedback', { variant: 'error' });
+      return false;
     }
   };
 
   const handleAdminSendToCreator = async (mediaId, feedbackId, onStatusUpdate) => {
-    // Check if this submission has already been sent
-    if (sentSubmissions.has(mediaId)) {
-      enqueueSnackbar('This submission has already been sent to creator', { variant: 'warning' });
-      return;
-    }
 
-    // Check if we're currently sending
-    if (isSending) {
-      enqueueSnackbar('Please wait, sending in progress...', { variant: 'info' });
-      return;
-    }
 
-    setIsSending(true);
-    
     try {
-      // Mark this submission as sent immediately to prevent double-clicks
-      setSentSubmissions(prev => new Set([...prev, mediaId]));
+      // Track this item as sent to creator
+      const itemKey = `rawFootage_${mediaId}`;
+      setParentSentToCreatorItems(prev => new Set([...prev, itemKey]));
 
-      // Immediately update local status to CHANGES_REQUIRED for instant UI feedback
-      if (onStatusUpdate) {
-        onStatusUpdate('CHANGES_REQUIRED');
-      }
-
-      // Call the API to review and forward client feedback
-      const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', {
+      const requestData = {
         submissionId: submission.id,
         adminFeedback: 'Feedback reviewed and forwarded to creator',
         mediaId,
-        mediaType: 'rawFootage'
-      });
+        mediaType: 'rawFootage',
+        feedbackId, // Added feedbackId
+      };
+
+      console.log('📤 Sending request:', requestData);
+
+      const response = await axiosInstance.patch('/api/submission/v3/draft/forward-feedback', requestData);
 
       if (response.status === 200) {
-        enqueueSnackbar(`Feedback for raw footage sent to creator successfully!`, { variant: 'success' });
+        console.log('✅ Successfully sent to creator');
+        enqueueSnackbar('Feedback sent to creator successfully!', { variant: 'success' });
         
-        // SWR revalidation for immediate UI update
+        // Check if all feedback has been sent (including the current item)
+        const itemsWithClientFeedback = new Set();
+        deliverables.rawFootages?.forEach(footage => {
+          if (footage.status === 'CLIENT_FEEDBACK' || footage.status === 'SENT_TO_ADMIN') {
+            itemsWithClientFeedback.add(`rawFootage_${footage.id}`);
+          }
+        });
+        
+        const allItemsSent = itemsWithClientFeedback.size === 0 || 
+          Array.from(itemsWithClientFeedback).every(itemKey => 
+            sentToCreatorItems.has(itemKey) || itemKey === `rawFootage_${mediaId}`
+          );
+        
+        // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
+        const allClientFeedbackProcessed = checkAllClientFeedbackProcessed();
+        
+        // Only update submission status to CHANGES_REQUIRED if all feedback has been sent AND all CLIENT_FEEDBACK items processed
+        if (allItemsSent && allClientFeedbackProcessed) {
+          console.log('✅ All feedback sent to creator and all CLIENT_FEEDBACK items processed - updating submission status to CHANGES_REQUIRED');
+          if (onStatusUpdate) {
+            onStatusUpdate('CHANGES_REQUIRED');
+          }
+        } else {
+          console.log('⏳ Not all feedback sent or CLIENT_FEEDBACK items still exist - keeping current submission status');
+        }
+
+        // Refresh data
         if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
         if (deliverables?.submissionMutate) await deliverables.submissionMutate();
-        if (mutateSubmission) await mutateSubmission();
         
-        // Check if all revision-requested raw footages have been sent
-        const revisionRequestedRawFootages = deliverables.rawFootages?.filter(r => r.status === 'REVISION_REQUESTED' || r.status === 'CLIENT_FEEDBACK') || [];
-        const sentRevisionRawFootages = revisionRequestedRawFootages.filter(r => sentSubmissions.has(r.id));
-        
-        if (revisionRequestedRawFootages.length > 0 && sentRevisionRawFootages.length === revisionRequestedRawFootages.length) {
-          enqueueSnackbar('All revision-requested raw footages have been sent to creator!', { variant: 'success' });
+        // Additional SWR invalidation to ensure all related data is refreshed
+        try {
+          await mutate(
+            (key) => typeof key === 'string' && (
+              key.includes('feedback') || 
+              key.includes('submission') || 
+              key.includes('deliverables')
+            ),
+            undefined,
+            { revalidate: true }
+          );
+        } catch (mutateError) {
+          console.log('SWR mutate error (non-critical):', mutateError);
         }
+        
+        return true;
       }
     } catch (error) {
-      console.error('Error sending feedback to creator:', error);
-      
-      // Remove from sent submissions if it failed
-      setSentSubmissions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(mediaId);
-        return newSet;
-      });
-      
-      enqueueSnackbar('Failed to send feedback to creator', { variant: 'error' });
-    } finally {
-      setIsSending(false);
+      console.error('❌ Error sending to creator:', error);
+      enqueueSnackbar('Failed to send to creator', { variant: 'error' });
+      return false;
     }
   };
 
@@ -1345,6 +1518,8 @@ const RawFootages = ({
                   // V3 admin feedback handlers
                   handleAdminEditFeedback={handleAdminEditFeedback}
                   handleAdminSendToCreator={handleAdminSendToCreator}
+                  // State management for tracking sent items
+                  setParentSentToCreatorItems={setSentToCreatorItems}
                 />
               </Box>
             );
@@ -1411,6 +1586,8 @@ const RawFootages = ({
                   // V3 admin feedback handlers
                   handleAdminEditFeedback={handleAdminEditFeedback}
                   handleAdminSendToCreator={handleAdminSendToCreator}
+                  // State management for tracking sent items
+                  setParentSentToCreatorItems={setSentToCreatorItems}
                 />
               </Grid>
             );
@@ -1570,6 +1747,8 @@ RawFootages.propTypes = {
   handleClientRejectVideo: PropTypes.func,
   handleClientRejectPhoto: PropTypes.func,
   handleClientRejectRawFootage: PropTypes.func,
+  // Shared function to check all client feedback across all media types
+  checkAllClientFeedbackProcessed: PropTypes.func,
 };
 
 // Add SWR hook for submission

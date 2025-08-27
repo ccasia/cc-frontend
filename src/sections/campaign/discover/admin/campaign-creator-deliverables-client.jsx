@@ -394,13 +394,13 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
         tooltip: 'Changes requested by admin',
       },
       SENT_TO_ADMIN: {
-        color: '#D4321C',
-        borderColor: '#D4321C',
+        color: '#F6C000',
+        borderColor: '#F6C000',
         tooltip: 'Client feedback sent to admin for review',
       },
       CLIENT_FEEDBACK: {
-        color: '#D4321C',
-        borderColor: '#D4321C',
+        color: '#F6C000',
+        borderColor: '#F6C000',
         tooltip: 'Client feedback sent to admin for review',
       },
       SENT_TO_CLIENT: {

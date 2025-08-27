@@ -65,6 +65,7 @@ const PhotoCard = ({
   // Add state for editing feedback
   const [editingFeedbackId, setEditingFeedbackId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
+  const [localFeedbackUpdates, setLocalFeedbackUpdates] = useState({});
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -836,6 +837,7 @@ const PhotoCard = ({
                           onClick={async () => {
                             try {
                               await handleAdminEditFeedback(photoItem.id, feedback.id, editingContent);
+                              setLocalFeedbackUpdates((prev) => ({ ...prev, [feedback.id]: editingContent }));
                               setEditingFeedbackId(null);
                               setEditingContent('');
                             } catch (error) {
@@ -882,7 +884,7 @@ const PhotoCard = ({
                       </Stack>
                     </Box>
                   ) : (
-                    feedback.content || feedback.photoContent
+                    localFeedbackUpdates[feedback.id] ?? (feedback.content || feedback.photoContent)
                   )}
                 </Typography>
 
