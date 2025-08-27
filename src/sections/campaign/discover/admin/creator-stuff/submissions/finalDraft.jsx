@@ -97,6 +97,43 @@ const FinalDraft = ({
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [currentSectionType, setCurrentSectionType] = useState('video');
 
+  // Track which media items have been sent to creator
+  const [sentToCreatorItems, setSentToCreatorItems] = useState(new Set());
+
+  // Check if all client feedback has been sent to creator
+  const allFeedbackSentToCreator = useMemo(() => {
+    if (!deliverables) return true;
+    
+    const itemsWithClientFeedback = new Set();
+    
+    // Check videos
+    deliverables.videos?.forEach(video => {
+      if (video.status === 'CLIENT_FEEDBACK' || video.status === 'SENT_TO_ADMIN') {
+        itemsWithClientFeedback.add(`video_${video.id}`);
+      }
+    });
+    
+    // Check photos
+    deliverables.photos?.forEach(photo => {
+      if (photo.status === 'CLIENT_FEEDBACK' || photo.status === 'SENT_TO_ADMIN') {
+        itemsWithClientFeedback.add(`photo_${photo.id}`);
+      }
+    });
+    
+    // Check raw footage
+    deliverables.rawFootages?.forEach(footage => {
+      if (footage.status === 'CLIENT_FEEDBACK' || footage.status === 'SENT_TO_ADMIN') {
+        itemsWithClientFeedback.add(`rawFootage_${footage.id}`);
+      }
+    });
+    
+    // If no items have client feedback, consider it all sent
+    if (itemsWithClientFeedback.size === 0) return true;
+    
+    // Check if all items with client feedback have been sent to creator
+    return Array.from(itemsWithClientFeedback).every(itemKey => sentToCreatorItems.has(itemKey));
+  }, [deliverables, sentToCreatorItems]);
+
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
@@ -679,9 +716,27 @@ const FinalDraft = ({
       await axiosInstance.patch('/api/submission/v3/feedback/' + feedbackId, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
       
-      // Refresh data
+      // Refresh data across both admin and creator-visible lists
       if (deliverableMutate) await deliverableMutate();
       if (submissionMutate) await submissionMutate();
+      try {
+        await mutate(
+          (key) => typeof key === 'string' && (
+            key.includes('feedback') ||
+            key.includes('submission') ||
+            key.includes('deliverables')
+          ),
+          undefined,
+          { revalidate: true }
+        );
+      } catch (e) {
+        // no-op
+      }
+      // Optimistic local UI update for the currently displayed feedback item
+      try {
+        setEditingFeedbackId(null);
+        setEditingContent('');
+      } catch {}
       
       return true;
     } catch (error) {
@@ -695,21 +750,31 @@ const FinalDraft = ({
     try {
       console.log(`Admin sending feedback ${feedbackId} to creator for media ${mediaId} (${mediaType})`);
       
-      // Immediately update local status to CHANGES_REQUIRED for instant UI feedback
-      if (onStatusUpdate) {
-        onStatusUpdate('CHANGES_REQUIRED');
-      }
-
+      // Track this item as sent to creator
+      const itemKey = `${mediaType}_${mediaId}`;
+      setSentToCreatorItems(prev => new Set([...prev, itemKey]));
+      
       // Call the API to review and forward client feedback
       const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', {
         submissionId: submission.id,
         adminFeedback: 'Feedback reviewed and forwarded to creator',
         mediaId,
-        mediaType
+        mediaType,
+        feedbackId
       });
 
       if (response.status === 200) {
         enqueueSnackbar(`Feedback sent to creator successfully!`, { variant: 'success' });
+        
+        // Only update submission status to CHANGES_REQUIRED if all feedback has been sent
+        if (allFeedbackSentToCreator) {
+          console.log('✅ All feedback sent to creator - updating submission status to CHANGES_REQUIRED');
+          if (onStatusUpdate) {
+            onStatusUpdate('CHANGES_REQUIRED');
+          }
+        } else {
+          console.log('⏳ Not all feedback sent yet - keeping current submission status');
+        }
         
         // Refresh data
         if (deliverableMutate) await deliverableMutate();
@@ -868,7 +933,7 @@ const FinalDraft = ({
     if (isV3 && userRole === 'admin') {
       if (status === 'PENDING_REVIEW') return '#FFC702'; // Yellow for pending review
       if (status === 'SENT_TO_CLIENT') return '#8a5afe'; // Purple for sent to client
-      if (status === 'SENT_TO_ADMIN') return '#D4321C'; // Red for client feedback sent to admin
+      if (status === 'SENT_TO_ADMIN') return '#F6C000'; // Yellow for client feedback sent to admin
     }
 
     if (submission?.status === 'PENDING_REVIEW') return '#FFC702';

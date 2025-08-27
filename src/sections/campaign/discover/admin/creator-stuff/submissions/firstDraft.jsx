@@ -71,6 +71,42 @@ const FirstDraft = ({
     [user]
   );
 
+  // Shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
+  const checkAllClientFeedbackProcessed = () => {
+    // Check if videos exist and have CLIENT_FEEDBACK
+    const videosWithClientFeedback = deliverables?.videos?.some(video => 
+      video.status === 'CLIENT_FEEDBACK' || video.status === 'SENT_TO_ADMIN'
+    );
+    
+    // Check if photos exist and have CLIENT_FEEDBACK
+    const photosWithClientFeedback = deliverables?.photos?.some(photo => 
+      photo.status === 'CLIENT_FEEDBACK' || photo.status === 'SENT_TO_ADMIN'
+    );
+    
+    // Check if raw footage exists and have CLIENT_FEEDBACK
+    const rawFootagesWithClientFeedback = deliverables?.rawFootages?.some(footage => 
+      footage.status === 'CLIENT_FEEDBACK' || footage.status === 'SENT_TO_ADMIN'
+    );
+    
+    console.log('🔍 DEBUG checkAllClientFeedbackProcessed:', {
+      videosWithClientFeedback,
+      photosWithClientFeedback,
+      rawFootagesWithClientFeedback,
+      videosCount: deliverables?.videos?.length || 0,
+      photosCount: deliverables?.photos?.length || 0,
+      rawFootagesCount: deliverables?.rawFootages?.length || 0,
+      videosStatuses: deliverables?.videos?.map(v => v.status) || [],
+      photosStatuses: deliverables?.photos?.map(p => p.status) || [],
+      rawFootagesStatuses: deliverables?.rawFootages?.map(r => r.status) || [],
+    });
+    
+    // Return true only if NO existing media types have CLIENT_FEEDBACK status
+    // If a media type doesn't exist (empty array or undefined), it's considered "processed"
+    const result = !videosWithClientFeedback && !photosWithClientFeedback && !rawFootagesWithClientFeedback;
+    console.log('🔍 DEBUG checkAllClientFeedbackProcessed result:', result);
+    return result;
+  };
+
   const checkSubmissionReadiness = async () => {
     try {
       const response = await axiosInstance.get(
@@ -629,6 +665,7 @@ const FirstDraft = ({
               handleClientReject={handleClientRejectVideoWithMutation}
               deliverableMutate={deliverableMutate}
               submissionMutate={submissionMutate}
+              checkAllClientFeedbackProcessed={checkAllClientFeedbackProcessed}
             />
           );
         case 'rawFootages':
@@ -644,6 +681,7 @@ const FirstDraft = ({
               handleClientReject={handleClientRejectRawFootageWithMutation}
               deliverableMutate={deliverableMutate}
               submissionMutate={submissionMutate}
+              checkAllClientFeedbackProcessed={checkAllClientFeedbackProcessed}
             />
           );
         case 'photos':
@@ -659,6 +697,7 @@ const FirstDraft = ({
               handleClientReject={handleClientRejectPhotoWithMutation}
               deliverableMutate={deliverableMutate}
               submissionMutate={submissionMutate}
+              checkAllClientFeedbackProcessed={checkAllClientFeedbackProcessed}
             />
           );
         default:
@@ -686,6 +725,7 @@ const FirstDraft = ({
             handleClientRejectVideo={handleClientRejectVideoWithMutation}
             handleClientRejectPhoto={handleClientRejectPhotoWithMutation}
             handleClientRejectRawFootage={handleClientRejectRawFootageWithMutation}
+            checkAllClientFeedbackProcessed={checkAllClientFeedbackProcessed}
           />
         );
       case 'rawFootages':
@@ -707,6 +747,7 @@ const FirstDraft = ({
             handleClientRejectVideo={handleClientRejectVideo}
             handleClientRejectPhoto={handleClientRejectPhoto}
             handleClientRejectRawFootage={handleClientRejectRawFootage}
+            checkAllClientFeedbackProcessed={checkAllClientFeedbackProcessed}
           />
         );
       case 'photos':
@@ -728,6 +769,7 @@ const FirstDraft = ({
             handleClientRejectVideo={handleClientRejectVideo}
             handleClientRejectPhoto={handleClientRejectPhoto}
             handleClientRejectRawFootage={handleClientRejectRawFootage}
+            checkAllClientFeedbackProcessed={checkAllClientFeedbackProcessed}
           />
         );
       default:
