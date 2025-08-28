@@ -215,6 +215,7 @@ export const endpoints = {
         reject: (pitchId) => `/api/pitch/v3/${pitchId}/reject`,
         approveClient: (pitchId) => `/api/pitch/v3/${pitchId}/approve/client`,
         rejectClient: (pitchId) => `/api/pitch/v3/${pitchId}/reject/client`,
+        maybeClient: (pitchId) => `/api/pitch/v3/${pitchId}/maybe/client`,
         agreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
         setAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
         submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
@@ -275,9 +276,11 @@ export const endpoints = {
       getById: (submissionId) => `/api/submission/v3/${submissionId}`,
       submitDraft: '/api/submission/v3/submit-draft',
       approveByAdmin: (submissionId) => `/api/submission/v3/${submissionId}/approve/admin`,
-      requestChangesByAdmin: (submissionId) => `/api/submission/v3/${submissionId}/request-changes/admin`,
+      requestChangesByAdmin: (submissionId) =>
+        `/api/submission/v3/${submissionId}/request-changes/admin`,
       approveByClient: (submissionId) => `/api/submission/v3/${submissionId}/approve/client`,
-      requestChangesByClient: (submissionId) => `/api/submission/v3/${submissionId}/request-changes/client`,
+      requestChangesByClient: (submissionId) =>
+        `/api/submission/v3/${submissionId}/request-changes/client`,
       forwardFeedback: (submissionId) => `/api/submission/v3/${submissionId}/forward-feedback`,
       reviewAndForwardFeedback: '/api/submission/v3/draft/review-feedback',
       // V3 posting endpoints
