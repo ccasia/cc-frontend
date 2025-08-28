@@ -193,96 +193,101 @@ const Overview = () => {
                 ))}
 
                 <Divider />
+              </>
+            )}
 
-                <Box
+            {/* SEE ALL CAMPAIGNS link - only shown when there are campaigns */}
+            {!isLoading && data?.adjustedCampaigns?.length >= 1 && (
+              <Box
+                sx={{
+                  p: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  fontWeight="bolder"
+                  component={RouterLink}
                   sx={{
-                    p: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
                   }}
+                  href={paths.dashboard.campaign.creator.manage}
                 >
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    fontWeight="bolder"
-                    component={RouterLink}
+                  SEE ALL CAMPAIGNS
+                </Typography>
+                <Iconify icon="ic:round-navigate-next" width={18} />
+              </Box>
+            )}
+
+            {/* Creator Academy Promotional Section - shown for all users */}
+            {!isLoading && (
+              <Box
+                sx={{
+                  p: 1,
+                }}
+              >
+                <Stack direction="row" spacing={3} alignItems="center">
+                  <Box
+                    component="a"
+                    href="https://bit.ly/CreatorAcademybyCCandOA"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     sx={{
+                      flexShrink: 0,
+                      width: 300,
+                      height: 80,
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      cursor: 'pointer',
                       textDecoration: 'none',
                       '&:hover': {
-                        textDecoration: 'underline',
+                        opacity: 0.8,
                       },
                     }}
-                    href={paths.dashboard.campaign.creator.manage}
                   >
-                    SEE ALL CAMPAIGNS
-                  </Typography>
-                  <Iconify icon="ic:round-navigate-next" width={18} />
-                </Box>
-
-                {/* Creator Academy Promotional Section */}
-                <Box
-                  sx={{
-                    p: 1,
-                  }}
-                >
-                  <Stack direction="row" spacing={3} alignItems="center">
-                    <Box
-                      component="a"
-                      href="https://bit.ly/CreatorAcademybyCCandOA"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Image
+                      src="/assets/images/home/b0b60c98a5d1e3b63c69d2bb614bed427b04d118.png"
+                      alt="Creator Academy"
                       sx={{
-                        flexShrink: 0,
-                        width: 300,
-                        height: 80,
-                        borderRadius: 3,
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        textDecoration: 'none',
-                        '&:hover': {
-                          opacity: 0.8,
-                        },
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                  </Box>
+                  <Stack spacing={0.5} sx={{ flex: 1 }}>
+                    <Typography
+                      variant="h3"
+                      sx={{
+                        fontFamily: 'Instrument Serif, serif',
+                        fontWeight: 400,
+                        color: '#000',
+                        lineHeight: 1.2,
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      <Image
-                        src="/assets/images/home/b0b60c98a5d1e3b63c69d2bb614bed427b04d118.png"
-                        alt="Creator Academy"
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    </Box>
-                    <Stack spacing={0.5} sx={{ flex: 1 }}>
-                      <Typography
-                        variant="h3"
-                        sx={{
-                          fontFamily: 'Instrument Serif, serif',
-                          fontWeight: 400,
-                          color: '#000',
-                          lineHeight: 1.2,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        From Content to Contentpreneur
-                      </Typography>
-                      <Typography
-                        variant="h5"
-                        sx={{
-                          fontFamily: 'Inter Display, sans-serif',
-                          color: '#666',
-                          fontWeight: 400,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        Use code CCCCREATORS for 15% off!
-                      </Typography>
-                    </Stack>
+                      From Content to Contentpreneur
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontFamily: 'Inter Display, sans-serif',
+                        color: '#666',
+                        fontWeight: 400,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Use code CCCCREATORS for 15% off!
+                    </Typography>
                   </Stack>
-                </Box>
-              </>
+                </Stack>
+              </Box>
             )}
           </Stack>
         </Box>
