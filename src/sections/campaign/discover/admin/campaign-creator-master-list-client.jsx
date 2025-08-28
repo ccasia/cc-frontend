@@ -61,6 +61,7 @@ const getStatusDisplay = (pitch) => {
 
   const statusMap = {
     PENDING_REVIEW: { color: '#FF9A02', label: 'PENDING REVIEW' },
+    MAYBE: { color: '#FF9A02', label: 'Maybe' },
     APPROVED: { color: '#1ABF66', label: 'APPROVED' },
     REJECTED: { color: '#FF4842', label: 'REJECTED' },
     AGREEMENT_SUBMITTED: { color: '#1ABF66', label: 'AGREEMENT SUBMITTED' },
@@ -828,6 +829,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                               borderColor: '#1ABF66',
                             }),
                             ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW' && {
+                              color: '#FF9A02',
+                              borderColor: '#FF9A02',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'MAYBE' && {
                               color: '#FF9A02',
                               borderColor: '#FF9A02',
                             }),

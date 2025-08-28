@@ -381,7 +381,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
           </Button>
         </Stack>
 
-        {/* <TextField
+        <TextField
           placeholder="Search by Creator Name"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -409,37 +409,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
               borderRadius: 1,
             },
           }}
-        /> */}
-        {!smUp ? (
-          <IconButton
-            sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
-            onClick={handleModalOpen}
-          >
-            <Iconify icon="fluent:people-add-28-filled" width={18} />
-          </IconButton>
-        ) : (
-          <Button
-            onClick={handleModalOpen}
-            disabled={isDisabled || totalUsedCredits === campaign?.campaignCredits}
-            sx={{
-              bgcolor: '#ffffff',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              height: 44,
-              color: '#203ff5',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              px: 3,
-              '&:hover': {
-                bgcolor: alpha('#636366', 0.08),
-                opacity: 0.9,
-              },
-            }}
-            startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
-          >
-            Add New Creators
-          </Button>
-        )}
+        />
       </Stack>
 
       <Box>
