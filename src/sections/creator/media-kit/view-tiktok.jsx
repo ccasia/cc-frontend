@@ -429,8 +429,8 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   // Carousel for mobile, grid for desktop
   return (
     <Box width={1}>
-      {hasContent ? (
-        <TopContentGrid topContents={contentToShow} />
+      {tiktokData?.videos?.data?.videos.length ? (
+        <TopContentGrid topContents={tiktokData?.videos?.data?.videos} />
       ) : (
         <Typography variant="subtitle1" color="text.secondary" textAlign="center">
           No top content data available
