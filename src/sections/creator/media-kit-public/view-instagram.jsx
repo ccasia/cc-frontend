@@ -3,15 +3,7 @@ import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 // import { keyframes } from '@emotion/react';
 
-import {
-  Box,
-  Stack,
-  alpha,
-  useTheme,
-  CardMedia,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Stack, alpha, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -104,7 +96,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                   width: '100%',
                   transition: 'all .3s ease',
                   objectFit: 'cover',
-                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.media_url}) center/cover no-repeat`,
+                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.media_type === 'VIDEO' ? content?.thumbnail_url : content?.media_url}) center/cover no-repeat`,
                 }}
               />
               <Box
@@ -125,7 +117,9 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                   </Stack>
                   <Stack direction="row" alignItems="center" spacing={0.5}>
                     <Iconify icon="iconamoon:comment" width={20} />
-                    <Typography variant="subtitle2">{formatNumber(content?.comments_count)}</Typography>
+                    <Typography variant="subtitle2">
+                      {formatNumber(content?.comments_count)}
+                    </Typography>
                   </Stack>
                 </Stack>
               </Box>
@@ -250,7 +244,9 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
 
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="iconamoon:comment" width={20} />
-                  <Typography variant="subtitle2">{formatNumber(content?.comments_count)}</Typography>
+                  <Typography variant="subtitle2">
+                    {formatNumber(content?.comments_count)}
+                  </Typography>
                 </Stack>
               </Stack>
             </Box>
@@ -343,7 +339,9 @@ const MediaKitSocialContent = ({ instagramVideos, forceDesktop = false }) => {
               pt: 1,
             }}
           >
-            {instagramVideos?.length > 0 && <TopContentGrid topContents={instagramVideos} mobileCarousel />}
+            {instagramVideos?.length > 0 && (
+              <TopContentGrid topContents={instagramVideos} mobileCarousel />
+            )}
           </Box>
         </Box>
       ) : (
