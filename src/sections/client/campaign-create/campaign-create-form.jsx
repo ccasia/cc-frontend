@@ -10,6 +10,7 @@ import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { lazy, useState, useEffect, useCallback } from 'react';
+import { mutate as globalMutate } from 'swr';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -427,6 +428,27 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       
       setIsLoading(false);
       enqueueSnackbar('Campaign submitted successfully! CSM will review and activate your campaign.', { variant: 'success' });
+
+      // Revalidate client credits so dashboard reflects deduction immediately
+      try {
+        // Optimistically adjust local available credits
+        const requestedCredits = Number(clientCampaignData.campaignCredits) || 0;
+        try {
+          const currentAvail = Number(localStorage.getItem('clientAvailableCredits') || 0);
+          const nextAvail = Math.max(0, currentAvail - requestedCredits);
+          localStorage.setItem('clientAvailableCredits', String(nextAvail));
+        } catch {}
+
+        // Revalidate SWR caches for credits
+        await globalMutate(endpoints.client.checkCompany);
+        try {
+          const check = await axiosInstance.get(endpoints.client.checkCompany);
+          const companyId = check?.data?.company?.id;
+          if (companyId) {
+            await globalMutate(`${endpoints.company.getCompany}/${companyId}`);
+          }
+        } catch {}
+      } catch {}
       reset();
       mutate();
       setStatus('');

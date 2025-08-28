@@ -32,6 +32,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -161,6 +162,7 @@ const CampaignDetailView = ({ id }) => {
 
   // Fetch V3 pitches for client-created campaigns to get accurate count
   const { pitches: v3Pitches } = useGetV3Pitches(campaign?.origin === 'CLIENT' ? campaign?.id : null);
+  const { data: v3Agreements } = useGetAgreements(campaign?.origin === 'CLIENT' ? campaign?.id : null);
 
   const generateNewAgreement = useCallback(async (template) => {
     try {
@@ -263,8 +265,11 @@ const CampaignDetailView = ({ id }) => {
       return <Label>{campaign?.shortlisted?.length}</Label>;
     }
 
-    if (tab.value === 'agreement' && campaign?.creatorAgreement?.length) {
-      return <Label>{campaign?.creatorAgreement?.length}</Label>;
+    if (tab.value === 'agreement') {
+      const v3Count = Array.isArray(v3Agreements) ? v3Agreements.length : 0;
+      const v2Count = Array.isArray(campaign?.creatorAgreement) ? campaign.creatorAgreement.length : 0;
+      const count = campaign?.origin === 'CLIENT' ? v3Count : v2Count;
+      return count > 0 ? <Label>{count}</Label> : null;
     }
 
     return '';
@@ -336,7 +341,7 @@ const CampaignDetailView = ({ id }) => {
                   value: 'creator',
                 },
                 {
-                  label: `Agreements (${campaign?.creatorAgreement?.length || 0})`,
+                  label: `Agreements (${campaign?.origin === 'CLIENT' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : (campaign?.creatorAgreement?.length || 0)})`,
                   value: 'agreement',
                 },
                 {

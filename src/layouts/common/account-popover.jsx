@@ -64,6 +64,19 @@ export default function AccountPopover({ isOnline }) {
     }
   };
 
+  // Prefer client company logo if available for client users
+  const resolveAvatarSrc = () => {
+    try {
+      if (user?.role === 'client') {
+        const companyLogo = localStorage.getItem('client_company_logo');
+        if (companyLogo && typeof companyLogo === 'string' && companyLogo.length > 0) {
+          return companyLogo;
+        }
+      }
+    } catch {}
+    return user?.photoURL;
+  };
+
   return (
     <>
       <IconButton
@@ -109,7 +122,7 @@ export default function AccountPopover({ isOnline }) {
           }}
         >
           <Avatar
-            src={user?.photoURL}
+            src={resolveAvatarSrc()}
             alt={user?.name}
             sx={{
               display: 'flex',
@@ -139,7 +152,7 @@ export default function AccountPopover({ isOnline }) {
         <Box sx={{ p: 2, pb: 1 }}>
           <Stack direction="row" spacing={1} alignItems="center">
             <Avatar
-              src={user?.photoURL}
+              src={resolveAvatarSrc()}
               // sx={{
               //   width: 40,
               //   height: 40,
