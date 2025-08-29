@@ -19,3 +19,8 @@ export const shortlistCreator = async (data) => {
   const res = await axiosInstance.post(endpoints.campaign.shortlistCreator, data);
   return res;
 };
+
+export const shortlistGuestCreator = async (data) => {
+  const res = await axiosInstance.post(endpoints.campaign.guestShortListCreator, data);
+  return res;
+};
