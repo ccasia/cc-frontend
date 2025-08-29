@@ -20,9 +20,11 @@ import {
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { getDueDateInfo } from 'src/utils/dueDateHelpers';
 
 import Iconify from 'src/components/iconify';
 import { Upload } from 'src/components/upload';
+import dayjs from 'dayjs';
 
 // File upload configuration for videos
 const VIDEO_UPLOAD_CONFIG = {
@@ -37,7 +39,8 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [caption, setCaption] = useState('');
+  const [caption, setCaption] = useState(submission.caption || '');
+  const [isEditingCaption, setIsEditingCaption] = useState(false);
   const [postingDialog, setPostingDialog] = useState(false);
   const [postingLink, setPostingLink] = useState('');
   const [postingLoading, setPostingLoading] = useState(false);
@@ -86,7 +89,7 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
       // Add form data as JSON string (following v3 pattern)
       const requestData = {
         submissionId: submission.id,
-        caption: caption.trim()
+        caption: (isEditingCaption || !submission.caption) ? caption.trim() : (submission.caption || '')
       };
       formData.append('data', JSON.stringify(requestData));
 
@@ -126,7 +129,7 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
       enqueueSnackbar('Videos uploaded successfully and are being processed!', { variant: 'success' });
       onUpdate();
       setSelectedFiles([]);
-      setCaption('');
+      setIsEditingCaption(false);
       
     } catch (error) {
       console.error('Submit error:', error);
@@ -205,6 +208,9 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
     return submission.feedback?.filter(feedback => feedback.sentToCreator) || [];
   }, [submission.feedback]);
 
+  // Get due date info using helper function
+  const dueDateInfo = useMemo(() => getDueDateInfo(submission.dueDate), [submission.dueDate]);
+
   return (
     <>
       <Stack spacing={3}>
@@ -220,8 +226,32 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
             color={getStatusColor(submission.status)} 
             size="small" 
           />
+          {/* Due Date Display */}
+          {dueDateInfo && (
+            <Chip
+              icon={<Iconify icon="eva:calendar-fill" />}
+              label={dueDateInfo.message}
+              color={dueDateInfo.color}
+              variant="outlined"
+              size="small"
+            />
+          )}
         </Stack>
       </Stack>
+
+      {/* Due Date Alert */}
+      {dueDateInfo && ['overdue', 'due-today', 'due-tomorrow'].includes(dueDateInfo.status) && (
+        <Alert severity={dueDateInfo.severity} sx={{ mb: 2 }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="eva:calendar-fill" />
+            <Typography variant="body2">
+              {dueDateInfo.status === 'overdue' && '⚠️ This submission is overdue! Please submit as soon as possible.'}
+              {dueDateInfo.status === 'due-today' && '🔔 This submission is due today! Please submit before the deadline.'}
+              {dueDateInfo.status === 'due-tomorrow' && '⏰ This submission is due tomorrow. Don\'t forget to submit!'}
+            </Typography>
+          </Stack>
+        </Alert>
+      )}
 
       {/* Status Messages */}
       {isPosted && (
@@ -380,15 +410,33 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
               rows={3}
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Add any notes or caption for your videos..."
-              disabled={uploading}
+              placeholder={
+                submission.caption && !isEditingCaption 
+                  ? "Click 'Update Caption' below to modify your existing caption"
+                  : "Add any notes or caption for your videos..."
+              }
+              disabled={uploading || (submission.caption && !isEditingCaption)}
             />
 
             {submission.caption && (
               <Card sx={{ p: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Caption:
-                </Typography>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Typography variant="subtitle2" gutterBottom>
+                    Caption:
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      setCaption(submission.caption);
+                      setIsEditingCaption(true);
+                    }}
+                    startIcon={<Iconify icon="eva:edit-2-fill" />}
+                    disabled={uploading}
+                  >
+                    Update Caption
+                  </Button>
+                </Stack>
                 <Typography variant="body2" color="text.secondary">
                   {submission.caption}
                 </Typography>

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
 import {
@@ -11,22 +11,25 @@ import {
   Dialog,
   TextField,
   Typography,
-  IconButton,
   DialogTitle,
   DialogActions,
   DialogContent,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   OutlinedInput,
+  IconButton,
+  Slider
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import dayjs from 'dayjs';
 
 import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
+import { getDueDateStatus } from 'src/utils/dueDateHelpers';
 
 import Iconify from 'src/components/iconify';
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -37,103 +40,133 @@ import { options_changes } from './constants';
 
 export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
   const { user } = useAuthContext();
-  const [feedbackDialog, setFeedbackDialog] = useState(false);
-  const [feedback, setFeedback] = useState('');
+
+  const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+
   const [loading, setLoading] = useState(false);
   const [postingApprovalLoading, setPostingApprovalLoading] = useState(false);
   const [action, setAction] = useState('approve');
-  const [reasons, setReasons] = useState([]);
-  const [selectedFeedback, setSelectedFeedback] = useState(null);
-  const [forwardFeedbackDialog, setForwardFeedbackDialog] = useState(false);
-  const [forwardFeedback, setForwardFeedback] = useState('');
-  const [forwardLoading, setForwardLoading] = useState(false);
+  const [reasons, setReasons] = useState(() => {
+    if (isClientFeedback && submission.feedback && submission.feedback.length > 0) {
+      // Find the most recent client feedback and use its reasons
+      const clientFeedbacks = submission.feedback.filter(fb => fb.admin?.role === 'client');
+      const latestClientFeedback = clientFeedbacks[0];
+      return latestClientFeedback?.reasons || [];
+    }
+    return [];
+  });
+
+  // Feedback
+  const [feedback, setFeedback] = useState(isClientFeedback ? (submission.video?.[0]?.feedback || '') : '');
+  // Due date
+  const [dueDateDialog, setDueDateDialog] = useState(false);
+  const [selectedDueDate, setSelectedDueDate] = useState(null);
+  const [dueDateLoading, setDueDateLoading] = useState(false);
+  // Video Player
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const videoRef = useRef(null);
 
   // Detect client role
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
 
   // Determine if client can see the actual content vs just placeholder
-  const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'CLIENT_FEEDBACK', 'APPROVED', 'POSTED'].includes(submission.status);
+  const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
 
   const video = submission.video?.[0]; // V4 has single video
-
+  
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
   const isPosted = submission.status === 'POSTED';
   const hasPostingLink = Boolean(submission.content);
   const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
 
-  const handleApprove = useCallback(() => {
-    setAction('approve');
-    setFeedback('');
-    setFeedbackDialog(true);
-  }, []);
 
-  const handleReject = useCallback(() => {
-    setAction('reject');
-    setFeedback('');
-    setFeedbackDialog(true);
-  }, []);
-
-  const handleRequestRevision = useCallback(() => {
-    setAction('request_revision');
-    setFeedback('');
-    setFeedbackDialog(true);
-  }, []);
-
-  const handleSubmitFeedback = useCallback(async () => {
-    if (action === 'reject' && !feedback.trim()) {
-      enqueueSnackbar('Please provide feedback for rejection', { variant: 'error' });
-      return;
-    }
-
-    if (!feedback.trim() && (action === 'approve' || action === 'request_changes')) {
-      enqueueSnackbar('Please provide feedback', { variant: 'error' });
-      return;
-    }
-
+  const handleApprove = useCallback(async () => {
     try {
       setLoading(true);
       
       if (isClient) {
         // Client-specific endpoint
-        const clientAction = action === 'approve' ? 'approve' : 'request_changes';
         await axiosInstance.post('/api/submissions/v4/approve/client', {
           submissionId: submission.id,
-          action: clientAction,
+          action: 'approve',
           feedback: feedback.trim(),
           reasons: reasons || []
         });
 
-        enqueueSnackbar(
-          `Video ${clientAction === 'approve' ? 'approved' : 'changes requested'} successfully`,
-          { variant: 'success' }
-        );
+        enqueueSnackbar('Video approved successfully', { variant: 'success' });
       } else {
         // Admin endpoint
         await approveV4Submission({
           submissionId: submission.id,
-          action,
+          action: 'approve',
           feedback: feedback.trim() || undefined,
           reasons: reasons || [],
         });
 
-        enqueueSnackbar(
-          `Video ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'revision requested'} successfully`,
-          { variant: 'success' }
-        );
+        enqueueSnackbar('Video approved successfully', { variant: 'success' });
       }
-      
-      setFeedbackDialog(false);
       setFeedback('');
       setReasons([]);
+      setAction('approve');
       onUpdate?.();
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      enqueueSnackbar(error.message || 'Failed to submit feedback', { variant: 'error' });
+      console.error('Error approving video:', error);
+      enqueueSnackbar(error.message || 'Failed to approve video', { variant: 'error' });
     } finally {
       setLoading(false);
     }
-  }, [action, feedback, reasons, submission.id, onUpdate, isClient]);
+  }, [feedback, reasons, submission.id, onUpdate, isClient]);
+
+  const handleRequestChanges = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Ensure we have either feedback content or reasons
+      const hasContent = feedback.trim();
+      const hasReasons = reasons && reasons.length > 0;
+      
+      if (!hasContent && !hasReasons) {
+        enqueueSnackbar('Please provide feedback or select reasons for changes', { variant: 'warning' });
+        setLoading(false);
+        return;
+      }
+      
+      if (isClient) {
+        // Client-specific endpoint
+        await axiosInstance.post('/api/submissions/v4/approve/client', {
+          submissionId: submission.id,
+          action: 'request_changes',
+          feedback: hasContent ? feedback.trim() : '',
+          reasons: reasons || []
+        });
+
+        enqueueSnackbar('Changes requested successfully', { variant: 'success' });
+      } else {
+        // Admin endpoint
+        await approveV4Submission({
+          submissionId: submission.id,
+          action: 'request_revision',
+          feedback: hasContent ? feedback.trim() : '',
+          reasons: reasons || [],
+        });
+
+        enqueueSnackbar('Changes requested successfully', { variant: 'success' });
+      }
+      setFeedback('');
+      setReasons([]);
+      setAction('approve');
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error requesting changes:', error);
+      enqueueSnackbar(error.message || 'Failed to request changes', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [feedback, reasons, submission.id, onUpdate, isClient]);
 
 
   const handlePostingLinkApproval = useCallback(async (approvalAction) => {
@@ -159,26 +192,36 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
     }
   }, [submission.id, onUpdate]);
 
-  const handleSubmitForwardFeedback = useCallback(async () => {
+
+  const handleSetDueDate = useCallback(() => {
+    setSelectedDueDate(submission.dueDate ? dayjs(submission.dueDate) : null);
+    setDueDateDialog(true);
+  }, [submission.dueDate]);
+
+  const handleSubmitDueDate = useCallback(async () => {
+    if (!selectedDueDate) {
+      enqueueSnackbar('Please select a due date', { variant: 'error' });
+      return;
+    }
+
     try {
-      setForwardLoading(true);
+      setDueDateLoading(true);
       
-      await axiosInstance.post('/api/submissions/v4/forward-client-feedback', {
+      await axiosInstance.put('/api/submissions/v4/due-date', {
         submissionId: submission.id,
-        adminFeedback: forwardFeedback.trim() || undefined
+        dueDate: selectedDueDate.toISOString(),
       });
 
-      enqueueSnackbar('Client feedback forwarded to creator successfully', { variant: 'success' });
-      setForwardFeedbackDialog(false);
-      setForwardFeedback('');
+      enqueueSnackbar('Due date updated successfully', { variant: 'success' });
+      setDueDateDialog(false);
       onUpdate?.();
     } catch (error) {
-      console.error('Error forwarding client feedback:', error);
-      enqueueSnackbar(error.message || 'Failed to forward client feedback', { variant: 'error' });
+      console.error('Error updating due date:', error);
+      enqueueSnackbar(error.message || 'Failed to update due date', { variant: 'error' });
     } finally {
-      setForwardLoading(false);
+      setDueDateLoading(false);
     }
-  }, [submission.id, forwardFeedback, onUpdate]);
+  }, [selectedDueDate, submission.id, onUpdate]);
 
   const getStatusColor = (status) => {
     const statusColors = {
@@ -206,7 +249,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
       // Admin-specific status labels
       switch (status) {
         case 'CLIENT_FEEDBACK':
-          return 'Client Feedback Received';
+          return 'Client Feedback';
         default:
           return formatStatus(status);
       }
@@ -236,10 +279,83 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
     }
   };
 
+  const dueDateStatus = getDueDateStatus(submission.dueDate);
+
+  // Video player controls
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeek = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const pos = (event.clientX - rect.left) / rect.width;
+    const newTime = pos * duration;
+    if (videoRef.current) {
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleVolumeChange = (_, newValue) => {
+    const newVolume = newValue / 100;
+    setVolume(newVolume);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      if (volume === 0) {
+        // Unmute - restore to 50% volume
+        setVolume(0.5);
+        videoRef.current.volume = 0.5;
+      } else {
+        // Mute
+        setVolume(0);
+        videoRef.current.volume = 0;
+      }
+    }
+  };
+
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+
   return (
-    <>
-      <Accordion>
-        <AccordionSummary expandIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}>
+      <Box sx={{ 
+        overflow: 'hidden',
+        bgcolor: 'background.neutral'
+      }}>
+        {/* Header */}
+        <Box sx={{ 
+          p: 2, 
+          bgcolor: 'background.paper',
+          borderBottom: '1px solid',
+          borderBottomColor: 'divider'
+        }}>
           <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%' }}>
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Stack direction="row" alignItems="center" spacing={2}>
@@ -261,28 +377,56 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                     size="small"
                   />
                 )}
+                {/* Due Date Display/Set */}
+                {dueDateStatus && (
+                  <Chip
+                    icon={<Iconify icon="eva:calendar-fill" />}
+                    label={`Due ${dueDateStatus.formattedDate}`}
+                    color={dueDateStatus.color}
+                    variant="outlined"
+                    size="small"
+                  />
+                )}
               </Stack>
             </Box>
+            {!isClient && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="primary"
+                onClick={handleSetDueDate}
+                startIcon={<Iconify icon="eva:calendar-fill" />}
+              >
+                {submission.dueDate ? 'Update Due Date' : 'Set Due Date'}
+              </Button>
+            )}
           </Stack>
-        </AccordionSummary>
+        </Box>
 
-        <AccordionDetails>
-          <Stack spacing={3}>
-            {/* Video Content */}
-            <Box>
-              {clientVisible ? (
-                // Show actual content to admins or when sent to client
-                video?.url ? (
-                  <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-                    <Stack spacing={2}>                          
-                      <Box>
-                        <video
-                          controls
-                          style={{ width: '100%', maxWidth: 400, height: 'auto' }}
-                          src={video.url}
-                        />
-                      </Box>
-
+        {/* Video Content */}
+        <Box>
+          {clientVisible ? (
+            // Show actual content to admins or when sent to client
+            video?.url ? (
+              <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
+                {/* Horizontal Layout: Caption on Left, Video on Right */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  gap: 3,
+                  alignItems: 'stretch',
+                  minHeight: 500
+                }}>
+                  {/* Caption Section - Left Side */}
+                  <Box sx={{ 
+                    flex: 1, 
+                    minWidth: 300,
+                    height: 300,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    {/* Top Content - Flexible space */}
+                    <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                       {/* Caption */}
                       {submission.caption && (
                         <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
@@ -295,402 +439,543 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                         </Box>
                       )}
 
-                      {/* All submission feedback history */}
-                      {submission.feedback && submission.feedback.length > 0 && (
-                        <Box sx={{ mt: 2 }}>
-                          <Typography variant="caption" fontWeight="medium" color="text.secondary">
-                            Feedback History:
-                          </Typography>
-                          <Stack spacing={1} sx={{ mt: 1 }}>
-                            {submission.feedback.map((feedback, feedbackIndex) => (
-                              <Card key={feedbackIndex} sx={{ p: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                  <Box sx={{ 
-                                    minWidth: 24, 
-                                    height: 24, 
-                                    borderRadius: '50%', 
-                                    bgcolor: feedback.admin?.role === 'client' ? 'warning.main' : 'primary.main', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center' 
-                                  }}>
-                                    <Typography variant="caption" sx={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
-                                      {feedback.admin?.role === 'client' ? 'C' : (feedback.admin?.name?.charAt(0) || feedback.user?.name?.charAt(0) || 'A')}
+                      {/* Feedback History */}
+                      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        {submission.feedback && submission.feedback.length > 0 && (
+                          <Box sx={{ flex: 1, overflow: 'auto', minHeight: 150, maxHeight: 255 }}>
+                          <Stack spacing={1}>
+                            {[submission.feedback[0]].map((feedback, feedbackIndex) => (
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                <Box sx={{ flex: 1 }}>
+                                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                    <Typography fontSize={12} fontWeight="medium">
+                                      {feedback.admin?.name || 'Client'}
+                                    </Typography>
+                                    <Typography fontSize={12} color="text.secondary">
+                                      {new Date(feedback.createdAt).toLocaleDateString()}
                                     </Typography>
                                   </Box>
-                                  <Box sx={{ flex: 1 }}>
-                                    <Stack direction="row" alignItems="center" spacing={1}>
-                                      <Typography variant="caption" fontWeight="medium">
-                                        {feedback.admin?.name || feedback.user?.name || 'User'}
-                                        {feedback.admin?.role === 'client' && ' (Client)'}
-                                      </Typography>
-                                      <Typography variant="caption" color="text.secondary">
-                                        {new Date(feedback.createdAt).toLocaleDateString()}
-                                        {feedback.sentToCreator && feedback.admin?.role === 'client' && ' (forwarded to creator)'}
-                                      </Typography>
-                                      <Chip 
-                                        label={feedback.admin?.role === 'client' ? 'Client Feedback' : 'Admin Feedback'} 
-                                        size="small" 
-                                        variant="outlined"
-                                        color={feedback.admin?.role === 'client' ? 'warning' : 'primary'}
-                                        sx={{ ml: 1 }}
-                                      />
-                                    </Stack>
-                                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                  {feedback.content && (
+                                    <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
                                       {feedback.content}
                                     </Typography>
-                                    {feedback.reasons && feedback.reasons.length > 0 && (
-                                      <Box sx={{ mt: 1 }}>
-                                        <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                                          {feedback.reasons.map((reason, idx) => (
-                                            <Chip
-                                              key={idx}
-                                              label={reason}
-                                              size="small"
-                                              variant="outlined"
-                                              color="warning"
-                                            />
-                                          ))}
-                                        </Stack>
-                                      </Box>
-                                    )}
-                                    {/* Forward button for client feedback */}
-                                    {!isClient && !feedback.sentToCreator && feedback.admin?.role === 'client' && !isApproved && (
-                                      <Box sx={{ mt: 1 }}>
-                                        <Button
-                                          size="small"
-                                          variant="outlined"
-                                          color="primary"
-                                          onClick={() => {
-                                            setSelectedFeedback(feedback);
-                                            setForwardFeedbackDialog(true);
-                                          }}
-                                          startIcon={<Iconify icon="eva:arrow-forward-fill" />}
-                                        >
-                                          Forward to Creator
-                                        </Button>
-                                      </Box>
-                                    )}
-                                  </Box>
+                                  )}
                                 </Box>
-                              </Card>
+                              </Box>
                             ))}
                           </Stack>
-                        </Box>
-                      )}
-                    </Stack>
-                  </Card>
-                ) : (
-                  <Typography color="text.secondary">No video uploaded yet</Typography>
-                )
-              ) : (
-                // Show placeholder for clients when content is being processed
-                <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
-                  <Stack spacing={2} alignItems="center">
-                    <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
-                    <Typography variant="body2" color="text.secondary">
-                      Video content is being processed by the admin
-                    </Typography>
-                    <Chip
-                      label="In Progress"
-                      color="info"
-                      size="small"
-                    />
-                  </Stack>
-                </Card>
-              )}
-            </Box>
-
-            {/* Posting Link */}
-            <Box>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle2">
-                  Posting Link
-                  {hasPendingPostingLink && (
-                    <Chip 
-                      label="Pending Approval" 
-                      size="small" 
-                      color="warning" 
-                      sx={{ ml: 1 }} 
-                    />
-                  )}
-                  {isPosted && (
-                    <Chip 
-                      label="Posted" 
-                      size="small" 
-                      color="success" 
-                      sx={{ ml: 1 }} 
-                    />
-                  )}
-                </Typography>
-              </Stack>
-              
-              <Card sx={{ p: 2, bgcolor: 'background.neutral', mt: 1 }}>
-                {hasPostingLink ? (
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
-                      {submission.content}
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => window.open(submission.content, '_blank')}
-                    >
-                      <Iconify icon="eva:external-link-fill" />
-                    </IconButton>
-                  </Stack>
-                ) : (
-                  <Typography color="text.secondary">
-                    {isApproved ? 'Creator can add posting link after approval' : 'Available after approval'}
-                  </Typography>
-                )}
-              </Card>
-
-              {/* Admin Posting Link Approval */}
-              {!isClient && hasPendingPostingLink && (
-                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    size="small"
-                    onClick={() => handlePostingLinkApproval('approve')}
-                    disabled={postingApprovalLoading}
-                    startIcon={<Iconify icon="eva:checkmark-fill" />}
-                  >
-                    Approve Link
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    size="small"
-                    onClick={() => handlePostingLinkApproval('reject')}
-                    disabled={postingApprovalLoading}
-                    startIcon={<Iconify icon="eva:close-fill" />}
-                  >
-                    Reject Link
-                  </Button>
-                </Stack>
-              )}
-            </Box>
-
-            {/* Admin Actions */}
-            {!isClient && submission.status === 'PENDING_REVIEW' && (
-              <Stack direction="row" spacing={2}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleApprove}
-                  startIcon={<Iconify icon="eva:checkmark-fill" />}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  onClick={handleRequestRevision}
-                  startIcon={<Iconify icon="eva:edit-fill" />}
-                >
-                  Request Changes
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={handleReject}
-                  startIcon={<Iconify icon="eva:close-fill" />}
-                >
-                  Reject
-                </Button>
-              </Stack>
-            )}
-
-            {/* Client Actions */}
-            {isClient && submission.status === 'SENT_TO_CLIENT' && (
-              <Stack direction="row" spacing={2}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleApprove}
-                  startIcon={<Iconify icon="eva:checkmark-fill" />}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  onClick={handleRequestRevision}
-                  startIcon={<Iconify icon="eva:edit-fill" />}
-                >
-                  Request Changes
-                </Button>
-              </Stack>
-            )}
-
-            {/* Submission Metadata */}
-            <Box sx={{ pt: 2, borderTop: 1, borderColor: 'divider' }}>
-              <Typography variant="caption" color="text.secondary">
-                Created: {new Date(submission.createdAt).toLocaleString()} •
-                Last updated: {new Date(submission.updatedAt).toLocaleString()}
-              </Typography>
-            </Box>
-          </Stack>
-        </AccordionDetails>
-      </Accordion>
-
-      {/* Feedback Dialog */}
-      <Dialog open={feedbackDialog} onClose={() => setFeedbackDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {action === 'approve' ? 'Approve Video' : 
-           action === 'reject' ? 'Reject Video' : 'Request Changes'}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label={action === 'approve' ? 'Approval message' : 'Feedback'}
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            placeholder={
-              action === 'approve' ? 'Add any additional comments...' :
-              action === 'reject' ? 'Please explain why this video is being rejected...' :
-              'Please specify what changes are needed...'
-            }
-            required
-            sx={{ mt: 1 }}
-          />
-          
-          {/* Reasons selection for client request changes */}
-          {isClient && action === 'request_revision' && (
-            <Box sx={{ mt: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Select Issues (Optional)</InputLabel>
-                <Select
-                  multiple
-                  value={reasons}
-                  onChange={(e) => setReasons(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-                  input={<OutlinedInput label="Select Issues (Optional)" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
+                          </Box>
+                        )}
+                      </Box>
                     </Box>
-                  )}
-                >
-                  {options_changes.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setFeedbackDialog(false)} disabled={loading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmitFeedback}
-            variant="contained"
-            loading={loading}
-            color={action === 'approve' ? 'success' : action === 'reject' ? 'error' : 'warning'}
-          >
-            {action === 'approve' ? 'Approve' : action === 'reject' ? 'Reject' : 'Request Changes'}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
+                    {/* Feedback Section */}
+                    {((!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) || (isClient && submission.status === 'SENT_TO_CLIENT')) && (
+                      <Box sx={{ flex: '0 0 auto', pt: 2 }}>
+                        <Stack spacing={2}>
+                          {/* Action Buttons */}
+                          <Stack direction="row" spacing={1} width="100%" justifyContent="flex-end">
+                            {(clientVisible && !isClientFeedback) && (
+                              <Button
+                                variant="contained"
+                                color="warning"
+                                onClick={() => setAction('request_revision')}
+                                disabled={loading}
+                                
+                                sx={{
+                                  display: action === 'request_revision' ? 'none' : 'flex',
+                                  borderRadius: 1,
+                                  border: '1px solid #E7E7E7',
+                                  backgroundColor: '#FFFFFF',
+                                  color: '#D4321C',
+                                  boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
+                                  fontSize: 12,
+                                  fontWeight: 'bold',
+                                  '&:hover': {
+                                    backgroundColor: '#F5F5F5',
+                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
+                                  },
+                                }}
+                              >
+                                {loading ? 'Processing...' : 'Request a Change'}
+                              </Button>
+                            )}
+                            {(action === 'request_revision' && clientVisible) ? (
+                              <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
+                                <Button
+                                  variant="contained"
+                                  color="secondary"
+                                  onClick={() => setAction('approve')}
+                                  disabled={loading}
+                                  sx={{
+                                    display: 'flex',
+                                    borderRadius: 1,
+                                    border: '1px solid #E7E7E7',
+                                    backgroundColor: '#FFFFFF',
+                                    color: '#000',
+                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
+                                    fontSize: 12,
+                                    fontWeight: 'bold',
+                                    '&:hover': {
+                                      backgroundColor: '#F5F5F5',
+                                      boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
+                                    },
+                                  }}
+                                >
+                                  Cancel Change Request
+                                </Button>
+                                <Button
+                                  variant="contained"
+                                  color={!isClient ? "success" : 'warning'}
+                                  onClick={handleRequestChanges}
+                                  disabled={loading}
+                                  sx={{
+                                    display: 'flex',
+                                    borderRadius: 1,
+                                    border: '1px solid #E7E7E7',
+                                    backgroundColor: '#FFFFFF',
+                                    color: '#1ABF66',
+                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
+                                    fontSize: 12,
+                                    fontWeight: 'bold',
+                                    '&:hover': {
+                                      backgroundColor: '#F5F5F5',
+                                      boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
+                                    },
+                                  }}
+                                >
+                                  {loading ? 'Processing...' : !isClient ? 'Send to Creator' : 'Request a Change'}
+                                </Button>
+                              </Box>
+                              ) : !isClientFeedback && (
+                              <Button
+                                variant="contained"
+                                color="success"
+                                onClick={handleApprove}
+                                disabled={loading}
+                                sx={{
+                                  display: 'flex',
+                                  borderRadius: 1,
+                                  border: '1px solid #E7E7E7',
+                                  backgroundColor: '#FFFFFF',
+                                  color: '#1ABF66',
+                                  boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
+                                  fontSize: 12,
+                                  fontWeight: 'bold',
+                                  '&:hover': {
+                                    backgroundColor: '#F5F5F5',
+                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
+                                  },
+                                }}
+                              >
+                                {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
+                              </Button>
+                              )
+                            }
 
-      {/* Forward Client Feedback Dialog */}
-      <Dialog open={forwardFeedbackDialog} onClose={() => setForwardFeedbackDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Forward Client Feedback to Creator
-        </DialogTitle>
-        <DialogContent>
-          {selectedFeedback && (
-            <Card sx={{ p: 2, bgcolor: 'background.neutral', mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Client Feedback:
-              </Typography>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                <Box sx={{ 
-                  minWidth: 20, 
-                  height: 20, 
-                  borderRadius: '50%', 
-                  bgcolor: 'primary.main', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center' 
-                }}>
-                  <Typography variant="caption" sx={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
-                    {selectedFeedback.admin?.name?.charAt(0) || 'C'}
-                  </Typography>
-                </Box>
-                <Typography variant="caption" fontWeight="medium">
-                  {selectedFeedback.admin?.name || 'Client'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(selectedFeedback.createdAt).toLocaleDateString()}
-                </Typography>
-              </Stack>
-              <Typography variant="body2">
-                {selectedFeedback.content}
-              </Typography>
-              {selectedFeedback.reasons && selectedFeedback.reasons.length > 0 && (
-                <Box sx={{ mt: 1 }}>
-                  <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                    {selectedFeedback.reasons.map((reason, idx) => (
-                      <Chip
-                        key={idx}
-                        label={reason}
-                        size="small"
-                        variant="outlined"
-                        color="warning"
+                            {!isClient && isClientFeedback &&
+                              <Stack spacing={1} sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                                <Typography variant="caption" fontWeight="bold" color={'#636366'}>Client Feedback:</Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                  {reasons.map((reason, reasonIndex) => (
+                                    <Chip key={reasonIndex} label={reason} size="small" variant="outlined" color="warning" />
+                                  ))}
+                                </Box>
+                                <Button
+                                  variant="contained"
+                                  color="secondary"
+                                  onClick={handleRequestChanges}
+                                  disabled={loading}
+                                  sx={{ alignSelf: 'flex-end' }}
+                                >
+                                  {loading ? 'Processing...' : 'Send to Creator'}
+                                </Button>
+                              </Stack>
+                            }
+                          </Stack>
+
+                          {(action === 'request_revision' || action === 'request_changes') &&
+                            <FormControl fullWidth>
+                              <InputLabel>Reasons for changes (optional)</InputLabel>
+                              <Select
+                                multiple
+                                value={reasons}
+                                onChange={(e) => setReasons(e.target.value)}
+                                input={<OutlinedInput label="Reasons for changes (optional)" />}
+                                renderValue={(selected) => (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selected.map((value) => (
+                                      <Chip key={value} label={value} size="small" />
+                                    ))}
+                                  </Box>
+                                )}
+                              >
+                                {options_changes.map((option) => (
+                                  <MenuItem key={option} value={option}>
+                                    {option}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+                          }
+
+                          {/* Feedback Message Box */}
+                          <TextField
+                            multiline
+                            rows={3}
+                            fullWidth
+                            placeholder="Insert optional comments here"
+                            value={feedback}
+                            onChange={(e) => setFeedback(e.target.value)}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                bgcolor: 'background.paper',
+                              },
+                            }}
+                            size='small'
+                          />
+                        </Stack>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Video Container - Right Side */}
+                  <Box 
+                    sx={{ 
+                      width: 631, 
+                      height: 405,
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      bgcolor: 'background.paper',
+                      flexShrink: 0
+                    }}
+                  >
+                    {/* Video Display Area */}
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center',
+                        bgcolor: 'black',
+                        minHeight: 300,
+                        p: 2
+                      }}
+                    >
+                      <video
+                        ref={videoRef}
+                        style={{ 
+                          maxWidth: 200, 
+                          height: 'auto',
+                          display: 'block'
+                        }}
+                        src={video.url}
+                        onTimeUpdate={handleTimeUpdate}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                        onClick={togglePlay}
                       />
-                    ))}
-                  </Stack>
+                    </Box>
+
+                    {/* Custom Controls Bar - Full Width */}
+                    <Box 
+                      sx={{ 
+                        width: '100%',
+                        bgcolor: 'rgba(0, 0, 0, 0.9)',
+                        p: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        minHeight: 48
+                      }}
+                    >
+                      {/* Play/Pause Button */}
+                      <IconButton 
+                        size="small" 
+                        onClick={togglePlay}
+                        sx={{ 
+                          color: 'white',
+                          bgcolor: 'rgba(255,255,255,0.1)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          minWidth: 32,
+                          minHeight: 32,
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.2)'
+                          }
+                        }}
+                      >
+                        {isPlaying ? (
+                          <Box sx={{ 
+                            width: 8, 
+                            height: 16, 
+                            display: 'flex', 
+                            gap: 0.5 
+                          }}>
+                            <Box sx={{ 
+                              width: 3, 
+                              height: '100%', 
+                              bgcolor: 'white' 
+                            }} />
+                            <Box sx={{ 
+                              width: 3, 
+                              height: '100%', 
+                              bgcolor: 'white' 
+                            }} />
+                          </Box>
+                        ) : (
+                          <Box sx={{
+                            width: 0,
+                            height: 0,
+                            borderLeft: '8px solid white',
+                            borderTop: '6px solid transparent',
+                            borderBottom: '6px solid transparent',
+                            ml: 0.5
+                          }} />
+                        )}
+                      </IconButton>
+
+                      {/* Current Time */}
+                      <Typography variant="caption" sx={{ color: 'white', minWidth: '40px' }}>
+                        {formatTime(currentTime)}
+                      </Typography>
+
+                      {/* Progress Bar - Takes up remaining space */}
+                      <Box 
+                        sx={{ 
+                          flex: 1, 
+                          height: 6, 
+                          bgcolor: 'rgba(255,255,255,0.3)', 
+                          borderRadius: 3,
+                          cursor: 'pointer',
+                          position: 'relative',
+                          mx: 1,
+                          '&:hover': {
+                            height: 8
+                          }
+                        }}
+                        onClick={handleSeek}
+                      >
+                        <Box
+                          sx={{
+                            width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                            height: '100%',
+                            bgcolor: 'primary.main',
+                            borderRadius: 3,
+                            transition: 'width 0.1s ease'
+                          }}
+                        />
+                      </Box>
+
+                      {/* Duration */}
+                      <Typography variant="caption" sx={{ color: 'white', minWidth: '40px' }}>
+                        {formatTime(duration)}
+                      </Typography>
+
+                      {/* Volume Control */}
+                      <IconButton 
+                        size="small"
+                        onClick={toggleMute}
+                        sx={{ 
+                          color: 'white',
+                          p: 1,
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.1)'
+                          },
+                        }}
+                      >
+                        <Iconify 
+                          icon={volume === 0 ? "eva:volume-mute-fill" : "eva:volume-up-fill"} 
+                          width={16}
+                          height={16}
+                        />
+                      </IconButton>
+
+                      {/* Volume Slider */}
+                      <Box sx={{ 
+                        width: 80, 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        height: '100%',
+                        mr: 0.5
+                      }}>
+                        <Slider
+                          size="small"
+                          value={volume * 100}
+                          onChange={handleVolumeChange}
+                          sx={{
+                            color: 'primary.main',
+                            height: 4,
+                            '& .MuiSlider-thumb': {
+                              width: 12,
+                              height: 12,
+                              backgroundColor: 'white',
+                              '&:hover, &.Mui-focusVisible': {
+                                boxShadow: '0 0 0 8px rgba(255,255,255,0.16)',
+                              }
+                            },
+                            '& .MuiSlider-track': {
+                              border: 'none',
+                              backgroundColor: 'primary.main'
+                            },
+                            '& .MuiSlider-rail': {
+                              opacity: 0.5,
+                              backgroundColor: 'rgba(255,255,255,0.3)',
+                            },
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  </Box>
                 </Box>
-              )}
+              </Card>
+            ) : (
+              <Box p={2}>
+                <Typography color="text.secondary">No video uploaded yet.</Typography>              
+              </Box>
+            )
+          ) : (
+            // Show placeholder for clients when content is being processed
+            <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
+              <Stack spacing={2} alignItems="center">
+                <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Video content is being processed.
+                </Typography>
+                <Chip
+                  label="In Progress"
+                  color="info"
+                  size="small"
+                />
+              </Stack>
             </Card>
           )}
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label="Additional message (optional)"
-            value={forwardFeedback}
-            onChange={(e) => setForwardFeedback(e.target.value)}
-            placeholder="Add any additional context or instructions for the creator..."
-            sx={{ mt: 1 }}
-          />
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            The original client feedback will be forwarded along with any additional message you provide.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-            setForwardFeedbackDialog(false);
-            setSelectedFeedback(null);
-          }} disabled={forwardLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmitForwardFeedback}
-            variant="contained"
-            loading={forwardLoading}
-            color="primary"
-          >
-            Forward to Creator
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  );
-}
+        </Box>
 
-V4VideoSubmission.propTypes = {
-  submission: PropTypes.object.isRequired,
-  index: PropTypes.number,
-  onUpdate: PropTypes.func,
+        {/* Posting Link */}
+        <Box sx={{ p: 2 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="subtitle2">
+              Posting Link
+              {hasPendingPostingLink && (
+                <Chip 
+                  label="Pending Approval" 
+                  size="small" 
+                  color="warning" 
+                  sx={{ ml: 1 }} 
+                />
+              )}
+              {isPosted && (
+                <Chip 
+                  label="Posted" 
+                  size="small" 
+                  color="success" 
+                  sx={{ ml: 1 }} 
+                />
+              )}
+            </Typography>
+          </Stack>
+          
+          <Card sx={{ p: 2, bgcolor: '#fff', mt: 1, borderRadius: 1, boxShadow: 'none', border: '1px solid #EBEBEB' }}>
+            {hasPostingLink ? (
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
+                  {submission.content}
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => window.open(submission.content, '_blank')}
+                >
+                  <Iconify icon="eva:external-link-fill" />
+                </IconButton>
+              </Stack>
+            ) : (
+              <Typography color="text.secondary">
+                {isApproved ? 'Creator can add posting link' : 'Available after approved submission'}
+              </Typography>
+            )}
+          </Card>
+
+          {/* Admin Posting Link Approval */}
+          {!isClient && hasPendingPostingLink && (
+            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={() => handlePostingLinkApproval('approve')}
+                disabled={postingApprovalLoading}
+                startIcon={<Iconify icon="eva:checkmark-fill" />}
+              >
+                Approve Link
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={() => handlePostingLinkApproval('reject')}
+                disabled={postingApprovalLoading}
+                startIcon={<Iconify icon="eva:close-fill" />}
+              >
+                Reject Link
+              </Button>
+            </Stack>
+          )}
+        </Box>
+
+        {/* Submission Metadata */}
+        <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Typography variant="caption" color="text.secondary">
+            Created: {new Date(submission.createdAt).toLocaleString()} •
+            Last updated: {new Date(submission.updatedAt).toLocaleString()}
+          </Typography>
+        </Box>
+
+        {/* Due Date Dialog */}
+        <Dialog open={dueDateDialog} onClose={() => setDueDateDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>
+            {submission.dueDate ? 'Update Due Date' : 'Set Due Date'}
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Set the due date for this video submission. The creator will be able to see this deadline.
+            </Typography>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Due Date"
+                value={selectedDueDate}
+                onChange={(newValue) => setSelectedDueDate(newValue)}
+                format="DD/MM/YYYY"
+                minDate={dayjs()}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    sx: { mt: 2 }
+                  }
+                }}
+              />
+            </LocalizationProvider>
+            {selectedDueDate && (
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Due date: {selectedDueDate.format('dddd, MMMM DD, YYYY')}
+              </Typography>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDueDateDialog(false)} disabled={dueDateLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitDueDate}
+              variant="contained"
+              disabled={dueDateLoading || !selectedDueDate}
+              startIcon={<Iconify icon="eva:calendar-fill" />}
+            >
+              {dueDateLoading ? 'Saving...' : submission.dueDate ? 'Update Due Date' : 'Set Due Date'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
 };
