@@ -235,13 +235,20 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             rejectionReason: 'Rejected by admin',
           });
         }
-      } else {
-        // Use V2 endpoint for admin-created campaigns
-        response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
-          pitchId: pitch.id,
-          status: 'rejected',
-        });
-      }
+     } else {
+  // Use V2 endpoint for admin-created campaigns
+  response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
+    pitchId: pitch.id,
+    status: 'rejected',
+  });
+}
+
+const updatedPitch = { ...pitch, status: 'rejected' };
+setCurrentPitch(updatedPitch);
+
+if (onUpdate) {
+  onUpdate(updatedPitch);
+}
       enqueueSnackbar(response?.data?.message || 'Pitch declined successfully');
       setConfirmDialog({ open: false, type: null });
     } catch (error) {
@@ -1239,6 +1246,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   mb: -2,
                 }}
               >
+
                 {confirmDialog.type === 'approve' ? '🫣' : '🥹'}
               </Box>
               <Stack spacing={1} alignItems="center">

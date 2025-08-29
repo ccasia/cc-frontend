@@ -192,6 +192,7 @@ export const endpoints = {
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
     getCampaignPitchById: (id) => `/api/campaign/getClientByCampID/${id}`,
     shortlistCreator: '/api/campaign/shortlistCreator',
+    guestShortListCreator: '/api/campaign/v3/shortlistCreator/guest',
     activateClientCampaign: (id) => `/api/campaign/activateClientCampaign/${id}`,
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
@@ -275,6 +276,7 @@ export const endpoints = {
       getAll: '/api/submission/v3',
       getById: (submissionId) => `/api/submission/v3/${submissionId}`,
       submitDraft: '/api/submission/v3/submit-draft',
+      checkStatus: '/api/submission/v3/check-status',
       approveByAdmin: (submissionId) => `/api/submission/v3/${submissionId}/approve/admin`,
       requestChangesByAdmin: (submissionId) =>
         `/api/submission/v3/${submissionId}/request-changes/admin`,

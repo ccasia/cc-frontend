@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
+import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 
 import Iconify from 'src/components/iconify';
@@ -42,13 +43,45 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'undecided', or 'approved'
 
   // Get shortlisted creators from campaign
-  const shortlistedCreators = useMemo(() => campaign?.shortlisted || [], [campaign?.shortlisted]);
+  const shortlistedCreators = useMemo(() => {
+    const creators = campaign?.shortlisted || [];
+    
+    // Debug logging to understand the data structure
+    if (creators.length > 0) {
+      console.log('🔍 Shortlisted creators data:', {
+        total: creators.length,
+        sample: creators.slice(0, 2).map(c => ({
+          userId: c.userId,
+          hasUser: !!c.user,
+          userData: c.user ? {
+            name: c.user.name,
+            username: c.user.username,
+            hasCreator: !!c.user.creator
+          } : null
+        }))
+      });
+    }
+    
+    return creators;
+  }, [campaign?.shortlisted]);
 
   // Sort creators alphabetically
   const sortedCreators = useMemo(() => {
     if (!shortlistedCreators.length) return [];
 
-    return [...shortlistedCreators].sort((a, b) => {
+    // Filter out creators without user data to prevent null reference errors
+    const validCreators = shortlistedCreators.filter(creator => creator?.user);
+    
+    // Debug logging for sorted creators
+    if (validCreators.length !== shortlistedCreators.length) {
+      console.warn('⚠️ Some creators were filtered out due to missing user data:', {
+        total: shortlistedCreators.length,
+        valid: validCreators.length,
+        filtered: shortlistedCreators.length - validCreators.length
+      });
+    }
+
+    return validCreators.sort((a, b) => {
       const nameA = (a.user?.name || '').toLowerCase();
       const nameB = (b.user?.name || '').toLowerCase();
 
@@ -56,12 +89,26 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     });
   }, [shortlistedCreators, sortDirection]);
 
-  // Get submissions for selected creator
+  // Check if this is a V3 campaign (client-origin)
+  const isV3 = campaign?.origin === 'CLIENT';
+
+  // Get submissions for selected creator - use V3 for V3 campaigns
   const {
-    data: submissions,
-    isLoading: loadingSubmissions,
-    mutate: submissionMutate,
+    data: submissionsV2,
+    isLoading: loadingSubmissionsV2,
+    mutate: submissionMutateV2,
   } = useGetSubmissions(selectedCreator?.userId, campaign?.id);
+
+  const {
+    data: submissionsV3,
+    isLoading: loadingSubmissionsV3,
+    mutate: submissionMutateV3,
+  } = useGetSubmissionsV3(selectedCreator?.userId, campaign?.id);
+
+  // Use the appropriate submissions data based on campaign type
+  const submissions = isV3 ? submissionsV3 : submissionsV2;
+  const loadingSubmissions = isV3 ? loadingSubmissionsV3 : loadingSubmissionsV2;
+  const submissionMutate = isV3 ? submissionMutateV3 : submissionMutateV2;
 
   // Get deliverables for selected creator
   const {
@@ -89,6 +136,9 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   const filteredCreators = useMemo(() => {
     let filtered = sortedCreators;
 
+    // First, filter out any creators without user data to prevent null reference errors
+    filtered = filtered.filter((creator) => creator?.user);
+
     // Apply status filter
     if (selectedFilter === 'undecided') {
       filtered = filtered.filter((creator) => creator.status === 'undecided');
@@ -99,17 +149,23 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     // Apply search filter
     if (search) {
       filtered = filtered.filter(
-        (elem) =>
-          elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
-          (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
-          (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
+        (elem) => {
+          // Add null checks for elem.user
+          if (!elem?.user) return false;
+          
+          return (
+            elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
+            (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
+            (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
+          );
+        }
       );
     }
 
-    // Apply sorting
     return [...filtered].sort((a, b) => {
-      const nameA = a.user.name?.toLowerCase() || '';
-      const nameB = b.user.name?.toLowerCase() || '';
+      // Add null checks for sorting
+      const nameA = a?.user?.name?.toLowerCase() || '';
+      const nameB = b?.user?.name?.toLowerCase() || '';
 
       if (sortDirection === 'asc') {
         return nameA.localeCompare(nameB);
@@ -129,30 +185,39 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       setLoadingStatuses(true);
       const statusMap = {};
 
-      // Define status priority for determining the "latest" status
-      const statusPriority = {
-        APPROVED: 5,
-        PENDING_REVIEW: 4,
-        CHANGES_REQUIRED: 3,
-        IN_PROGRESS: 2,
-        NOT_STARTED: 1,
-      };
+      // Use the isV3 variable defined above
 
       try {
         // Process creators one by one to avoid too many simultaneous requests
         for (const creator of shortlistedCreators) {
+          // Safety check to ensure creator has required data
+          if (!creator?.userId) {
+            console.warn('⚠️ Skipping creator without userId:', creator);
+            continue;
+          }
+
           try {
-            // Using the same API endpoint that the useGetSubmissions hook uses
-            const response = await fetch(
-              `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
-            );
+            let response;
+            let data;
+
+            if (isV3) {
+              // Use V3 API endpoint for client-origin campaigns
+              response = await fetch(
+                `/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`
+              );
+            } else {
+              // Use legacy API endpoint for admin-origin campaigns
+              response = await fetch(
+                `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
+              );
+            }
 
             if (!response.ok) {
               statusMap[creator.userId] = 'NOT_STARTED';
               continue;
             }
 
-            const data = await response.json();
+            data = await response.json();
 
             if (!data || data.length === 0) {
               statusMap[creator.userId] = 'NOT_STARTED';
@@ -185,12 +250,19 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
             // Determine the status based on the latest stage in the workflow
             // Priority: Posting > Final Draft > First Draft
+            // For V3 campaigns, use displayStatus if available
             if (postingSubmission) {
-              statusMap[creator.userId] = postingSubmission.status;
+              statusMap[creator.userId] = isV3 && postingSubmission.displayStatus 
+                ? postingSubmission.displayStatus 
+                : postingSubmission.status;
             } else if (finalDraftSubmission) {
-              statusMap[creator.userId] = finalDraftSubmission.status;
+              statusMap[creator.userId] = isV3 && finalDraftSubmission.displayStatus 
+                ? finalDraftSubmission.displayStatus 
+                : finalDraftSubmission.status;
             } else if (firstDraftSubmission) {
-              statusMap[creator.userId] = firstDraftSubmission.status;
+              statusMap[creator.userId] = isV3 && firstDraftSubmission.displayStatus 
+                ? firstDraftSubmission.displayStatus 
+                : firstDraftSubmission.status;
             } else {
               statusMap[creator.userId] = 'NOT_STARTED';
             }
@@ -209,13 +281,16 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     };
 
     fetchAllCreatorStatuses();
-  }, [shortlistedCreators, campaign?.id]);
+  }, [shortlistedCreators, campaign?.id, campaign?.origin]);
 
   // Update creator statuses when submissions change for the selected creator
   useEffect(() => {
     if (selectedCreator?.userId && submissions) {
       setCreatorStatuses((prevStatuses) => {
         const newStatuses = { ...prevStatuses };
+
+        // Check if this is a V3 campaign (client-origin)
+        const isV3 = campaign?.origin === 'CLIENT';
 
         // Filter out agreement submissions - only consider FIRST_DRAFT, FINAL_DRAFT, and POSTING
         const relevantSubmissions = submissions.filter(
@@ -243,12 +318,19 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
         // Determine the status based on the latest stage in the workflow
         // Priority: Posting > Final Draft > First Draft
+        // For V3 campaigns, use displayStatus if available
         if (postingSubmission) {
-          newStatuses[selectedCreator.userId] = postingSubmission.status;
+          newStatuses[selectedCreator.userId] = isV3 && postingSubmission.displayStatus 
+            ? postingSubmission.displayStatus 
+            : postingSubmission.status;
         } else if (finalDraftSubmission) {
-          newStatuses[selectedCreator.userId] = finalDraftSubmission.status;
+          newStatuses[selectedCreator.userId] = isV3 && finalDraftSubmission.displayStatus 
+            ? finalDraftSubmission.displayStatus 
+            : finalDraftSubmission.status;
         } else if (firstDraftSubmission) {
-          newStatuses[selectedCreator.userId] = firstDraftSubmission.status;
+          newStatuses[selectedCreator.userId] = isV3 && firstDraftSubmission.displayStatus 
+            ? firstDraftSubmission.displayStatus 
+            : firstDraftSubmission.status;
         } else {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
         }
@@ -256,11 +338,166 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         return newStatuses;
       });
     }
-  }, [selectedCreator?.userId, submissions]);
+  }, [selectedCreator?.userId, submissions, campaign?.origin]);
+
+  // Refresh creator statuses when submissions change for the selected creator
+  useEffect(() => {
+    if (selectedCreator?.userId && submissions && !loadingSubmissions) {
+      // Trigger a refresh of all creator statuses to ensure consistency
+      const refreshStatuses = async () => {
+        if (!shortlistedCreators.length || !campaign?.id) return;
+
+        const statusMap = { ...creatorStatuses };
+
+        try {
+          // Update the status for the selected creator based on current submissions
+          const relevantSubmissions = submissions.filter(
+            (submission) =>
+              submission.submissionType?.type === 'FIRST_DRAFT' ||
+              submission.submissionType?.type === 'FINAL_DRAFT' ||
+              submission.submissionType?.type === 'POSTING'
+          );
+
+          if (relevantSubmissions.length > 0) {
+            const firstDraftSubmission = relevantSubmissions.find(
+              (item) => item.submissionType.type === 'FIRST_DRAFT'
+            );
+            const finalDraftSubmission = relevantSubmissions.find(
+              (item) => item.submissionType.type === 'FINAL_DRAFT'
+            );
+            const postingSubmission = relevantSubmissions.find(
+              (item) => item.submissionType.type === 'POSTING'
+            );
+
+            // Determine the status based on the latest stage in the workflow
+            if (postingSubmission) {
+              statusMap[selectedCreator.userId] = isV3 && postingSubmission.displayStatus 
+                ? postingSubmission.displayStatus 
+                : postingSubmission.status;
+            } else if (finalDraftSubmission) {
+              statusMap[selectedCreator.userId] = isV3 && finalDraftSubmission.displayStatus 
+                ? finalDraftSubmission.displayStatus 
+                : finalDraftSubmission.status;
+            } else if (firstDraftSubmission) {
+              statusMap[selectedCreator.userId] = isV3 && firstDraftSubmission.displayStatus 
+                ? firstDraftSubmission.displayStatus 
+                : firstDraftSubmission.status;
+            }
+          }
+
+          setCreatorStatuses(statusMap);
+        } catch (error) {
+          console.error('Error refreshing creator statuses:', error);
+        }
+      };
+
+      refreshStatuses();
+    }
+  }, [selectedCreator?.userId, submissions, loadingSubmissions, campaign?.origin, shortlistedCreators, creatorStatuses, isV3]);
 
   // Toggle sort direction
   const handleToggleSort = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Manual refresh function for creator statuses
+  const handleRefreshStatuses = async () => {
+    if (!shortlistedCreators.length || !campaign?.id) return;
+
+    setLoadingStatuses(true);
+    const statusMap = {};
+
+    try {
+      // Process creators one by one to avoid too many simultaneous requests
+      for (const creator of shortlistedCreators) {
+        // Safety check to ensure creator has required data
+        if (!creator?.userId) {
+          console.warn('⚠️ Skipping creator without userId:', creator);
+          continue;
+        }
+
+        try {
+          let response;
+          let data;
+
+          if (isV3) {
+            // Use V3 API endpoint for client-origin campaigns
+            response = await fetch(
+              `/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`
+            );
+          } else {
+            // Use legacy API endpoint for admin-origin campaigns
+            response = await fetch(
+              `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
+            );
+          }
+
+          if (!response.ok) {
+            statusMap[creator.userId] = 'NOT_STARTED';
+            continue;
+          }
+
+          data = await response.json();
+
+          if (!data || data.length === 0) {
+            statusMap[creator.userId] = 'NOT_STARTED';
+            continue;
+          }
+
+          // Filter out agreement submissions - only consider FIRST_DRAFT, FINAL_DRAFT, and POSTING
+          const relevantSubmissions = data.filter(
+            (submission) =>
+              submission.submissionType?.type === 'FIRST_DRAFT' ||
+              submission.submissionType?.type === 'FINAL_DRAFT' ||
+              submission.submissionType?.type === 'POSTING'
+          );
+
+          if (relevantSubmissions.length === 0) {
+            statusMap[creator.userId] = 'NOT_STARTED';
+            continue;
+          }
+
+          // Find submissions by type
+          const firstDraftSubmission = relevantSubmissions.find(
+            (item) => item.submissionType.type === 'FIRST_DRAFT'
+          );
+          const finalDraftSubmission = relevantSubmissions.find(
+            (item) => item.submissionType.type === 'FINAL_DRAFT'
+          );
+          const postingSubmission = relevantSubmissions.find(
+            (item) => item.submissionType.type === 'POSTING'
+          );
+
+          // Determine the status based on the latest stage in the workflow
+          // Priority: Posting > Final Draft > First Draft
+          // For V3 campaigns, use displayStatus if available
+          if (postingSubmission) {
+            statusMap[creator.userId] = isV3 && postingSubmission.displayStatus 
+              ? postingSubmission.displayStatus 
+              : postingSubmission.status;
+          } else if (finalDraftSubmission) {
+            statusMap[creator.userId] = isV3 && finalDraftSubmission.displayStatus 
+              ? finalDraftSubmission.displayStatus 
+              : finalDraftSubmission.status;
+          } else if (firstDraftSubmission) {
+            statusMap[creator.userId] = isV3 && firstDraftSubmission.displayStatus 
+              ? firstDraftSubmission.displayStatus 
+              : firstDraftSubmission.status;
+          } else {
+            statusMap[creator.userId] = 'NOT_STARTED';
+          }
+        } catch (error) {
+          console.error(`Error fetching status for creator ${creator.userId}:`, error);
+          statusMap[creator.userId] = 'NOT_STARTED';
+        }
+      }
+
+      setCreatorStatuses(statusMap);
+    } catch (error) {
+      console.error('Error refreshing creator statuses:', error);
+    } finally {
+      setLoadingStatuses(false);
+    }
   };
 
 
@@ -279,17 +516,26 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           localStorage.removeItem('targetCreatorId');
         } else {
           // Fallback to first creator if target not found
-          setSelectedCreator(sortedCreators[0]);
+          if (sortedCreators[0]?.userId && sortedCreators[0]?.user) {
+            setSelectedCreator(sortedCreators[0]);
+          }
         }
       } else {
         // Default behavior - select first creator
-        setSelectedCreator(sortedCreators[0]);
+        if (sortedCreators[0]?.userId && sortedCreators[0]?.user) {
+          setSelectedCreator(sortedCreators[0]);
+        }
       }
     }
   }, [filteredCreators, selectedCreator, sortedCreators]);
 
   // Handle creator selection
   const handleCreatorSelect = (creator) => {
+    // Safety check to ensure creator has required data
+    if (!creator?.userId || !creator?.user) {
+      console.warn('⚠️ Attempted to select invalid creator:', creator);
+      return;
+    }
     setSelectedCreator(creator);
   };
 
@@ -330,13 +576,13 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         tooltip: 'Changes requested by admin',
       },
       SENT_TO_ADMIN: {
-        color: '#D4321C',
-        borderColor: '#D4321C',
+        color: '#F6C000',
+        borderColor: '#F6C000',
         tooltip: 'Client feedback sent to admin for review',
       },
       CLIENT_FEEDBACK: {
-        color: '#D4321C',
-        borderColor: '#D4321C',
+        color: '#F6C000',
+        borderColor: '#F6C000',
         tooltip: 'Client feedback sent to admin for review',
       },
       SENT_TO_CLIENT: {
@@ -355,6 +601,12 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   };
 
   const renderCreatorStatus = (userId) => {
+    // Safety check for userId
+    if (!userId) {
+      console.warn('⚠️ renderCreatorStatus called with invalid userId:', userId);
+      return <CircularProgress size={16} />;
+    }
+
     if (loadingStatuses) return <CircularProgress size={16} />;
 
     const status = creatorStatuses[userId] || 'NOT_STARTED';
@@ -550,6 +802,45 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           >
             Alphabetical
           </Button>
+
+          {/* Refresh Button */}
+          {/* <Button
+            onClick={handleRefreshStatuses}
+            disabled={loadingStatuses}
+            startIcon={
+              loadingStatuses ? (
+                <CircularProgress size={16} />
+              ) : (
+                <Iconify icon="eva:refresh-fill" width={16} />
+              )
+            }
+            sx={{
+              px: 1.5,
+              py: 0.75,
+              height: '42px',
+              color: '#637381',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              backgroundColor: { xs: '#f9f9f9', sm: 'transparent' },
+              border: { xs: '1px solid #e7e7e7', sm: 'none' },
+              borderBottom: { xs: '3px solid #e7e7e7', sm: 'none' },
+              borderRadius: 1,
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              boxShadow: 'none',
+              minWidth: { sm: '100px' },
+              justifyContent: 'center',
+              '&:hover': {
+                backgroundColor: { xs: '#f5f5f5', sm: 'transparent' },
+                color: '#221f20',
+              },
+              '&:disabled': {
+                opacity: 0.6,
+              },
+            }}
+          >
+            {loadingStatuses ? 'Refreshing...' : 'Refresh'}
+          </Button> */}
         </Stack>
       </Box>
 

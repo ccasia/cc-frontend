@@ -38,7 +38,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -433,6 +433,42 @@ const CampaignFirstDraft = ({
       return 'Already uploaded';
     }
     return defaultText;
+  };
+
+  // Check if creator has uploaded all required deliverables
+  const areDeliverablesComplete = useMemo(() => {
+    const hasVideo = Array.isArray(submission?.video) ? submission.video.length > 0 : !!submission?.content;
+    const needsRaw = !!campaign?.rawFootage;
+    const needsPhotos = !!campaign?.photos;
+    const hasRaw = Array.isArray(submission?.rawFootages) && submission.rawFootages.length > 0;
+    const hasPhotos = Array.isArray(submission?.photos) && submission.photos.length > 0;
+
+    return hasVideo && (!needsRaw || hasRaw) && (!needsPhotos || hasPhotos);
+  }, [submission, campaign]);
+
+  const handleForceSubmitForReview = async () => {
+    try {
+      setShowSubmitDialog(true);
+      setSubmitStatus('submitting');
+      const isV3 = campaign?.origin === 'CLIENT' || (campaign?.id && campaign.id.startsWith('cmd'));
+      if (isV3) {
+        await axiosInstance.patch(endpoints.submission.v3.checkStatus, {
+          submissionId: submission?.id,
+        });
+      } else {
+        await axiosInstance.patch('/api/submission/status', {
+          submissionId: submission?.id,
+          status: 'PENDING_REVIEW',
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+      setSubmitStatus('success');
+      enqueueSnackbar('Submitted for review', { variant: 'success' });
+    } catch (error) {
+      setSubmitStatus('error');
+      enqueueSnackbar(error?.message || 'Failed to submit for review', { variant: 'error' });
+    }
   };
 
   // Helper function to get the index for the caption tab
@@ -1504,6 +1540,28 @@ const CampaignFirstDraft = ({
                         )}
                       </Stack>
                     </Box>
+                  </Stack>
+                )}
+
+                {submission?.status === 'IN_PROGRESS' && areDeliverablesComplete && !uploadProgress.length && (
+                  <Stack alignItems="center" sx={{ mt: 2 }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleForceSubmitForReview}
+                      startIcon={<Iconify icon="solar:upload-square-bold" width={22} />}
+                      sx={{
+                        bgcolor: '#203ff5',
+                        color: 'white',
+                        borderBottom: 3.5,
+                        borderBottomColor: '#112286',
+                        borderRadius: 1.5,
+                        px: 2.5,
+                        py: 1,
+                        '&:hover': { bgcolor: '#203ff5', opacity: 0.9 },
+                      }}
+                    >
+                      Submit for Review
+                    </Button>
                   </Stack>
                 )}
               </>

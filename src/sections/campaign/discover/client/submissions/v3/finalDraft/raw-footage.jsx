@@ -27,9 +27,8 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField } from 'src/components/hook-form';
 
-import { options_changes } from './constants';
 import { ConfirmationRequestModal } from './confirmation-modals';
 
 const RawFootageCard = ({ 
@@ -63,18 +62,16 @@ const RawFootageCard = ({
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
-    reasons: Yup.array(),
   });
 
   const approveSchema = Yup.object().shape({
-    feedback: Yup.string().required('Comment is required.'),
+    feedback: Yup.string().trim().min(1).default('Thank you for submitting!').required('Comment is required.'),
   });
 
   const formMethods = useForm({
     resolver: cardType === 'request' ? yupResolver(requestSchema) : yupResolver(approveSchema),
     defaultValues: {
-      feedback: '',
-      reasons: [],
+      feedback: 'Thank you for submitting!',
     },
     mode: 'onChange',
   });
@@ -84,8 +81,7 @@ const RawFootageCard = ({
   // Reset form when cardType changes
   useEffect(() => {
     const defaultValues = {
-      feedback: '',
-      reasons: [],
+      feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
     };
     reset(defaultValues);
   }, [cardType, reset]);
@@ -295,7 +291,7 @@ const RawFootageCard = ({
         }
       } else {
         console.log('🔍 Admin requesting raw footage changes via handleRequestChange function');
-        await handleRequestChange(rawFootageItem.id, data.feedback, data.reasons);
+        await handleRequestChange(rawFootageItem.id, data.feedback);
       }
       setLocalStatus('REVISION_REQUESTED');
     } catch (error) {
@@ -477,12 +473,6 @@ const RawFootageCard = ({
               placeholder="Provide feedback for the creator."
               size="small"
               />
-              
-                <RHFMultiSelect
-                  name="reasons"
-                  label="Reasons for Changes"
-                  options={options_changes}
-                />
 
             <Stack spacing={1.5} sx={{ mt: 2 }}>
               <Stack direction="row" spacing={1.5}>

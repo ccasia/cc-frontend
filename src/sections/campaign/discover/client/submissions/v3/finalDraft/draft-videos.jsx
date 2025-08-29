@@ -67,13 +67,13 @@ const VideoCard = ({
   });
 
   const approveSchema = Yup.object().shape({
-    feedback: Yup.string().required('Comment is required.'),
+    feedback: Yup.string().trim().min(1).default('Thank you for submitting!').required('Comment is required.'),
   });
 
   const formMethods = useForm({
     resolver: cardType === 'request' ? yupResolver(requestSchema) : yupResolver(approveSchema),
     defaultValues: {
-      feedback: '',
+      feedback: 'Thank you for submitting!',
       reasons: [],
     },
     mode: 'onChange',
@@ -84,7 +84,7 @@ const VideoCard = ({
   // Reset form when cardType changes
   useEffect(() => {
     const defaultValues = {
-      feedback: '',
+      feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
       reasons: [],
     };
     reset(defaultValues);
@@ -466,8 +466,14 @@ const VideoCard = ({
               
                 <RHFMultiSelect
                   name="reasons"
-                  label="Reasons for Changes"
-                  options={options_changes}
+                  checkbox
+                  chip
+                  options={options_changes.map((item) => ({
+                    value: item,
+                    label: item,
+                  }))}
+                  label="Reasons"
+                  size="small"
                 />
 
             <Stack spacing={1.5} sx={{ mt: 2 }}>

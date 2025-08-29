@@ -1,4 +1,4 @@
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
@@ -49,6 +49,7 @@ const VideoCard = ({
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
   const [localStatus, setLocalStatus] = useState(null);
+  const [localFeedbackUpdates, setLocalFeedbackUpdates] = useState({});
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -681,7 +682,7 @@ const VideoCard = ({
                 </Stack>
                 
                 <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-                  {feedback.content}
+                  {localFeedbackUpdates[feedback.id] ?? (feedback.displayContent || feedback.content)}
                 </Typography>
 
                 {feedback.reasons && feedback.reasons.length > 0 && (
@@ -725,7 +726,18 @@ const VideoCard = ({
                       onClick={() => {
                         const adminFeedback = prompt('Edit client feedback (optional):');
                         if (adminFeedback !== null && handleAdminEditFeedback) {
-                          handleAdminEditFeedback(videoItem.id, feedback.id, adminFeedback);
+                          handleAdminEditFeedback(videoItem.id, feedback.id, adminFeedback).then((ok) => {
+                            if (ok !== false) {
+                              setLocalFeedbackUpdates((prev) => ({ ...prev, [feedback.id]: adminFeedback }));
+                              try {
+                                globalMutate(
+                                  (key) => typeof key === 'string' && (key.includes('submission') || key.includes('deliverables') || key.includes('feedback')),
+                                  undefined,
+                                  { revalidate: true }
+                                );
+                              } catch {}
+                            }
+                          });
                         }
                       }}
                       sx={{
@@ -756,7 +768,7 @@ const VideoCard = ({
                       size="small"
                       onClick={() => {
                         if (handleAdminSendToCreator) {
-                          handleAdminSendToCreator(videoItem.id, feedback.id);
+                          handleAdminSendToCreator(videoItem.id, feedback.id, null, 'video');
                         }
                       }}
                       sx={{

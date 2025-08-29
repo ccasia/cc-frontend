@@ -18,7 +18,7 @@ import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 
-const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess }) => {
+const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [ugcCredits, setUgCCredits] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,19 +34,23 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess }) => {
       // Call the pitch approval endpoint with UGC credits
       const response = await axiosInstance.patch(`/api/pitch/v3/${pitch.id}/approve`, {
         ugcCredits: parseInt(ugcCredits),
-        feedback: 'Pitch approved by admin'
+        feedback: 'Pitch approved by admin',
+        adminComments: comments,
+      });
+      enqueueSnackbar('Pitch approved and UGC credits assigned successfully!', {
+        variant: 'success',
       });
 
-      enqueueSnackbar('Pitch approved and UGC credits assigned successfully!', { variant: 'success' });
-      
       if (onSuccess) {
         onSuccess(response.data.pitch);
       }
-      
+
       onClose();
     } catch (error) {
       console.error('Error approving pitch with UGC credits:', error);
-      enqueueSnackbar(error.response?.data?.message || 'Error approving pitch', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Error approving pitch', {
+        variant: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -221,11 +225,7 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess }) => {
               },
             }}
           >
-            {isSubmitting ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              'Approve'
-            )}
+            {isSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Approve'}
           </Button>
         </Stack>
       </Box>
@@ -241,4 +241,4 @@ UGCCreditsModal.propTypes = {
   onSuccess: PropTypes.func,
 };
 
-export default UGCCreditsModal; 
+export default UGCCreditsModal;

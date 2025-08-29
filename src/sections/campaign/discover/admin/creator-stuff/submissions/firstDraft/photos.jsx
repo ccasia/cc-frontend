@@ -1,10 +1,10 @@
-import useSWR, { mutate } from 'swr';
+import useSWR, { mutate, mutate as globalMutate } from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -58,12 +58,36 @@ const PhotoCard = ({
   // V3 admin feedback handlers
   handleAdminEditFeedback,
   handleAdminSendToCreator,
+  // State management for tracking sent items
+  setParentSentToCreatorItems,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
   const [localStatus, setLocalStatus] = useState(null);
   const [editingFeedbackId, setEditingFeedbackId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
+  const [localFeedbackUpdates, setLocalFeedbackUpdates] = useState({});
+  const getFeedbackLocalKey = (fb) => (fb?.id ? fb.id : `${fb?.displayContent || fb?.content || ''}|${fb?.createdAt || ''}`);
+  const getPhotoFeedbackLocalKey = (photo, fb) => `${photo?.id || 'no-photo-id'}|${getFeedbackLocalKey(fb)}`;
+  const [lastEdited, setLastEdited] = useState(null); // { photoId, feedbackId, content, at }
+
+  // Persist overrides across remounts
+  const STORAGE_KEY = 'cc_photo_feedback_overrides_v1';
+  const loadOverrides = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  };
+  const saveOverrides = (overrides) => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); } catch {}
+  };
+  useEffect(() => {
+    const stored = loadOverrides();
+    if (stored && Object.keys(stored).length) {
+      setLocalFeedbackUpdates((prev) => ({ ...stored, ...prev }));
+    }
+  }, []);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -129,21 +153,42 @@ const PhotoCard = ({
     const photoSpecificFeedback = allFeedbacks.filter((fb) => fb?.photosToUpdate?.includes(photoItem.id));
     combined.push(...photoSpecificFeedback);
 
+    // If we have a last edited feedback for this photo, update or inject it before normalization
+    if (lastEdited && lastEdited.photoId === photoItem.id) {
+      const idx = combined.findIndex((fb) => fb && fb.id === lastEdited.feedbackId);
+      if (idx !== -1) {
+        combined[idx] = { ...combined[idx], content: lastEdited.content };
+      } else {
+        combined.unshift({
+          id: lastEdited.feedbackId,
+          content: lastEdited.content,
+          createdAt: new Date().toISOString(),
+          admin: { name: 'Admin' },
+          type: 'COMMENT',
+          photosToUpdate: [photoItem.id],
+          reasons: [],
+        });
+      }
+    }
+
     // Normalize, drop empty, and dedupe
     const normalized = combined
       .map((fb) => {
         if (!fb) return null;
+        // Prefer local override if present
+        const compositeKey = getPhotoFeedbackLocalKey(photoItem, fb);
+        const override = localFeedbackUpdates[fb.id] ?? localFeedbackUpdates[compositeKey];
         const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
         const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
-        // Build a displayContent so UI never shows an empty card
-        const displayContent = hasText
+        const fallbackDisplay = hasText
           ? fb.content
           : hasReasons
           ? `Reasons: ${fb.reasons.join(', ')}`
           : '';
         return {
           ...fb,
-          displayContent,
+          displayContent: override ?? fallbackDisplay,
+          isOverridden: Boolean(override),
         };
       })
       // keep entries that have text or reasons
@@ -778,11 +823,61 @@ const PhotoCard = ({
                     <Stack direction="row" spacing={1}>
                       <Button
                         size="small"
-                        variant="contained"
+                        variant="outlined"
                         onClick={async () => {
-                          await handleAdminEditFeedback(photoItem.id, feedback.id, editingContent);
+                          const ok = await handleAdminEditFeedback(photoItem.id, feedback.id, editingContent);
+                          if (ok) {
+                            const compositeKey = getPhotoFeedbackLocalKey(photoItem, feedback);
+                            const idKey = feedback?.id;
+                            setLocalFeedbackUpdates((prev) => {
+                              const next = {
+                                ...prev,
+                                ...(idKey ? { [idKey]: editingContent } : {}),
+                                [compositeKey]: editingContent,
+                              };
+                              // persist
+                              const stored = loadOverrides();
+                              saveOverrides({ ...stored, ...next });
+                              return next;
+                            });
+                            setLastEdited({ photoId: photoItem.id, feedbackId: feedback.id, content: editingContent, at: Date.now() });
+                            console.log('✅ Optimistic override set for photo feedback:', {
+                              photoId: photoItem.id,
+                              feedbackId: feedback.id,
+                              idKey,
+                              compositeKey,
+                              newValue: editingContent,
+                            });
+                            
+                            // Defer SWR revalidation slightly to avoid UI jump
+                            setTimeout(() => {
+                              try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}
+                              try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch {}
+                            }, 500);
+                          }
                           setEditingFeedbackId(null);
                           setEditingContent('');
+                        }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          bgcolor: '#ffffff',
+                          border: '1.5px solid #1ABF66',
+                          borderBottom: '3px solid #169c52',
+                          color: '#1ABF66',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f0f9f0',
+                            color: '#1ABF66',
+                            borderColor: '#169c52',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                          },
                         }}
                       >
                         Save
@@ -794,15 +889,49 @@ const PhotoCard = ({
                           setEditingFeedbackId(null);
                           setEditingContent('');
                         }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          bgcolor: '#ffffff',
+                          border: '1.5px solid #e0e0e0',
+                          borderBottom: '3px solid #e0e0e0',
+                          color: '#666666',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                            color: '#666666',
+                            borderColor: '#d0d0d0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          },
+                        }}
                       >
                         Cancel
                       </Button>
                     </Stack>
                   </Stack>
                 ) : (
-                <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-                    {feedback.displayContent || feedback.content}
-                </Typography>
+                  <>
+                    {(() => {
+                      const compositeKey = getPhotoFeedbackLocalKey(photoItem, feedback);
+                      const isLastEdited = lastEdited && lastEdited.photoId === photoItem.id && lastEdited.feedbackId === feedback.id;
+                      const chosenText = isLastEdited
+                        ? lastEdited.content
+                        : (localFeedbackUpdates[feedback.id]
+                          ?? localFeedbackUpdates[compositeKey]
+                          ?? (feedback.displayContent || feedback.content));
+                      return (
+                        <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
+                          {chosenText}
+                        </Typography>
+                      );
+                    })()}
+                  </>
                 )}
 
                 {feedback.reasons && feedback.reasons.length > 0 && (
@@ -838,16 +967,6 @@ const PhotoCard = ({
                 )}
 
                 {/* Admin buttons for client feedback */}
-                {/* 🔍 DEBUG: Log feedback data for troubleshooting */}
-                {console.log('🔍 DEBUG: Feedback data for admin buttons:', {
-                  isV3,
-                  userRole,
-                  feedbackType: feedback.type,
-                  feedbackAdminRole: feedback.admin?.admin?.role?.name,
-                  submissionStatus: submission?.status,
-                  feedbackId: feedback.id,
-                  feedbackContent: feedback.content
-                })}
                 {isV3 && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (feedback.type === 'REASON' || feedback.type === 'COMMENT') && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && (
                   <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
                     <Button
@@ -955,6 +1074,11 @@ PhotoCard.propTypes = {
   handleClientReject: PropTypes.func,
   // V3 deliverables for status checking
   deliverables: PropTypes.object,
+  // V3 admin feedback handlers
+  handleAdminEditFeedback: PropTypes.func,
+  handleAdminSendToCreator: PropTypes.func,
+  // State management for tracking sent items
+  setParentSentToCreatorItems: PropTypes.func,
 };
 
 // Add SWR hook for submission
@@ -963,12 +1087,12 @@ const fetchSubmission = async (url) => {
   return data;
 };
 
-const Photos = ({
-  campaign,
-  submission,
-  deliverables,
-  onImageClick,
-  onSubmit,
+const Photos = ({ 
+  campaign, 
+  submission, 
+  deliverables, 
+  onImageClick, 
+  onSubmit, 
   isDisabled,
   // V2 individual handlers
   onIndividualApprove,
@@ -980,22 +1104,61 @@ const Photos = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // Shared function to check all client feedback across all media types
+  checkAllClientFeedbackProcessed,
 }) => {
-  const [selectedPhotosForChange, setSelectedPhotosForChange] = useState([]);
-  const [sentSubmissions, setSentSubmissions] = useState(new Set());
-  const [isSending, setIsSending] = useState(false);
-  const approve = useBoolean();
-  const request = useBoolean();
+  const { user } = useAuthContext();
+  const userRole = user?.role || 'admin';
 
-  // SWR for submission status
-  const { data: swrSubmission, mutate: mutateSubmission, isLoading: isSubmissionLoading, error: submissionError } = useSWR(
+  // SWR for real-time data updates
+  const { data: currentSubmission, mutate: mutateSubmission } = useSWR(
     submission?.id ? `/api/submission/v3/${submission.id}` : null,
-    fetchSubmission,
+    (url) => axiosInstance.get(url).then(res => res.data),
     { refreshInterval: 0 }
   );
 
-  // Use SWR submission as the source of truth
-  const currentSubmission = swrSubmission || submission;
+  const [selectedPhotosForChange, setSelectedPhotosForChange] = useState([]);
+  const [clientRequestModalOpen, setClientRequestModalOpen] = useState(false);
+  const [clientRequestPhotoId, setClientRequestPhotoId] = useState(null);
+
+  // Track which media items have been sent to creator
+  const [sentToCreatorItems, setSentToCreatorItems] = useState(new Set());
+
+  // Check if all client feedback has been sent to creator
+  const allFeedbackSentToCreator = useMemo(() => {
+    if (!deliverables?.photos) return true;
+    
+    const itemsWithClientFeedback = new Set();
+    
+    // Check photos
+    deliverables.photos?.forEach(photo => {
+      if (photo.status === 'CLIENT_FEEDBACK' || photo.status === 'SENT_TO_ADMIN') {
+        itemsWithClientFeedback.add(`photo_${photo.id}`);
+      }
+    });
+    
+    // If no items have client feedback, consider it all sent
+    if (itemsWithClientFeedback.size === 0) return true;
+    
+    // Check if all items with client feedback have been sent to creator
+    return Array.from(itemsWithClientFeedback).every(itemKey => sentToCreatorItems.has(itemKey));
+  }, [deliverables, sentToCreatorItems]);
+
+  const clientRequestForm = useForm({
+    resolver: yupResolver(
+      Yup.object().shape({
+        feedback: Yup.string().required('Feedback is required'),
+        reasons: Yup.array().min(1, 'At least one reason is required'),
+      })
+    ),
+    defaultValues: {
+      feedback: '',
+      reasons: [],
+    },
+  });
+
+  const approve = useBoolean();
+  const request = useBoolean();
 
   const handlePhotoSelection = (id) => {
     setSelectedPhotosForChange((prev) => {
@@ -1158,18 +1321,13 @@ const Photos = ({
     try {
       await axiosInstance.patch('/api/submission/v3/feedback/' + feedbackId, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
-      
-      // Force refresh all related data to ensure admin side sees the changes
-      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
-      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
-      if (mutateSubmission) await mutateSubmission();
-      
-      // Additional SWR invalidation to ensure feedback data is refreshed
-      // This ensures both admin and client sides see the updated feedback
+      // Non-blocking SWR revalidation
+      try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}
+      try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch {}
+      try { if (mutateSubmission) mutateSubmission(); } catch {}
       try {
-        // Invalidate any SWR keys that might contain feedback data
-        await mutate(
-          (key) => key && typeof key === 'string' && (
+        mutate(
+          (key) => typeof key === 'string' && (
             key.includes('feedback') || 
             key.includes('submission') || 
             key.includes('deliverables')
@@ -1177,16 +1335,12 @@ const Photos = ({
           undefined,
           { revalidate: true }
         );
-      } catch (mutateError) {
-        console.log('SWR mutate error (non-critical):', mutateError);
-      }
-      
-      // Force a re-render by updating local state if needed
-      // Note: These state variables are managed in the PhotoCard component
-      
+      } catch {}
+      return true;
     } catch (error) {
       console.error('Error updating feedback:', error);
       enqueueSnackbar('Failed to update feedback', { variant: 'error' });
+      return false;
     }
   };
 
@@ -1194,76 +1348,81 @@ const Photos = ({
     console.log('🔍 DEBUG: handleAdminSendToCreator called with:', {
       mediaId,
       feedbackId,
-      submissionId: submission.id,
-      submissionStatus: submission.status
+      onStatusUpdate: !!onStatusUpdate
     });
 
-    // Check if this submission has already been sent
-    if (sentSubmissions.has(mediaId)) {
-      enqueueSnackbar('This submission has already been sent to creator', { variant: 'warning' });
-      return;
-    }
-
-    // Check if we're currently sending
-    if (isSending) {
-      enqueueSnackbar('Please wait, sending in progress...', { variant: 'info' });
-      return;
-    }
-
-    setIsSending(true);
-    
     try {
-      // Mark this submission as sent immediately to prevent double-clicks
-      setSentSubmissions(prev => new Set([...prev, mediaId]));
+      // Track this item as sent to creator
+      const itemKey = `photo_${mediaId}`;
+      setSentToCreatorItems(prev => new Set([...prev, itemKey]));
 
-      // Immediately update local status to CHANGES_REQUIRED for instant UI feedback
-      if (onStatusUpdate) {
-        onStatusUpdate('CHANGES_REQUIRED');
-      }
-
-      // Call the API to review and forward client feedback
       const requestData = {
         submissionId: submission.id,
         adminFeedback: 'Feedback reviewed and forwarded to creator',
         mediaId,
-        mediaType: 'photo'
+        mediaType: 'photo',
+        feedbackId, // Added feedbackId
       };
-      
-      console.log('🔍 DEBUG: API request data:', requestData);
-      
-      const response = await axiosInstance.patch('/api/submission/v3/draft/review-feedback', requestData);
-      
-      console.log('🔍 DEBUG: API response:', response.data);
+
+      console.log('📤 Sending request:', requestData);
+
+      const response = await axiosInstance.patch('/api/submission/v3/draft/forward-feedback', requestData);
 
       if (response.status === 200) {
-        enqueueSnackbar(`Feedback for photo sent to creator successfully!`, { variant: 'success' });
+        console.log('✅ Successfully sent to creator');
+        enqueueSnackbar('Feedback sent to creator successfully!', { variant: 'success' });
         
-        // SWR revalidation for immediate UI update
+        // Check if all feedback has been sent (including the current item)
+        const itemsWithClientFeedback = new Set();
+        deliverables.photos?.forEach(photo => {
+          if (photo.status === 'CLIENT_FEEDBACK' || photo.status === 'SENT_TO_ADMIN') {
+            itemsWithClientFeedback.add(`photo_${photo.id}`);
+          }
+        });
+        
+        const allItemsSent = itemsWithClientFeedback.size === 0 || 
+          Array.from(itemsWithClientFeedback).every(itemKey => 
+            sentToCreatorItems.has(itemKey) || itemKey === `photo_${mediaId}`
+          );
+        
+        // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
+        const allClientFeedbackProcessed = checkAllClientFeedbackProcessed();
+        
+        // Only update submission status to CHANGES_REQUIRED if all feedback has been sent AND all CLIENT_FEEDBACK items processed
+        if (allItemsSent && allClientFeedbackProcessed) {
+          console.log('✅ All feedback sent to creator and all CLIENT_FEEDBACK items processed - updating submission status to CHANGES_REQUIRED');
+          if (onStatusUpdate) {
+            onStatusUpdate('CHANGES_REQUIRED');
+          }
+        } else {
+          console.log('⏳ Not all feedback sent or CLIENT_FEEDBACK items still exist - keeping current submission status');
+        }
+
+        // Refresh data
         if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
         if (deliverables?.submissionMutate) await deliverables.submissionMutate();
-        if (mutateSubmission) await mutateSubmission();
         
-        // Check if all revision-requested photos have been sent
-        const revisionRequestedPhotos = deliverables.photos?.filter(p => p.status === 'REVISION_REQUESTED' || p.status === 'CLIENT_FEEDBACK') || [];
-        const sentRevisionPhotos = revisionRequestedPhotos.filter(p => sentSubmissions.has(p.id));
-        
-        if (revisionRequestedPhotos.length > 0 && sentRevisionPhotos.length === revisionRequestedPhotos.length) {
-          enqueueSnackbar('All revision-requested photos have been sent to creator!', { variant: 'success' });
+        // Additional SWR invalidation to ensure all related data is refreshed
+        try {
+          await mutate(
+            (key) => typeof key === 'string' && (
+              key.includes('feedback') || 
+              key.includes('submission') || 
+              key.includes('deliverables')
+            ),
+            undefined,
+            { revalidate: true }
+          );
+        } catch (mutateError) {
+          console.log('SWR mutate error (non-critical):', mutateError);
         }
+        
+        return true;
       }
     } catch (error) {
-      console.error('Error sending feedback to creator:', error);
-      
-      // Remove from sent submissions if it failed
-      setSentSubmissions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(mediaId);
-        return newSet;
-      });
-      
-      enqueueSnackbar('Failed to send feedback to creator', { variant: 'error' });
-    } finally {
-      setIsSending(false);
+      console.error('❌ Error sending to creator:', error);
+      enqueueSnackbar('Failed to send to creator', { variant: 'error' });
+      return false;
     }
   };
 
@@ -1277,8 +1436,9 @@ const Photos = ({
   const shouldUseGrid = hasPhotos && deliverables.photos.length === 1;
 
   const isV3 = campaign?.origin === 'CLIENT';
-  const { user } = useAuthContext();
-  const userRole = user?.role || 'admin'; // Use actual user role from auth context
+  // Remove duplicate declarations - these are already declared in the main Photos component
+  // const { user } = useAuthContext();
+  // const userRole = user?.role || 'admin'; // Use actual user role from auth context
 
   return (
     <>
@@ -1314,7 +1474,7 @@ const Photos = ({
         >
           {deliverables.photos.map((photo, index) => (
             <Box
-              key={photo.id || index}
+              key={photo.id}
               sx={{
                 width: { xs: '280px', sm: '300px', md: '300px' },
                 minWidth: { xs: '280px', sm: '300px', md: '300px' },
@@ -1344,6 +1504,8 @@ const Photos = ({
                 // V3 admin feedback handlers
                 handleAdminEditFeedback={handleAdminEditFeedback}
                 handleAdminSendToCreator={handleAdminSendToCreator}
+                // State management for tracking sent items
+                setParentSentToCreatorItems={setSentToCreatorItems}
               />
             </Box>
           ))}
@@ -1357,7 +1519,7 @@ const Photos = ({
               item 
               xs={12} 
               md={7} 
-              key={photo.id || index}
+              key={photo.id}
             >
               <PhotoCard 
                 photoItem={photo} 
@@ -1382,6 +1544,8 @@ const Photos = ({
                 // V3 admin feedback handlers
                 handleAdminEditFeedback={handleAdminEditFeedback}
                 handleAdminSendToCreator={handleAdminSendToCreator}
+                // State management for tracking sent items
+                setParentSentToCreatorItems={setSentToCreatorItems}
               />
             </Grid>
           ))}
@@ -1540,6 +1704,8 @@ Photos.propTypes = {
   handleClientRejectVideo: PropTypes.func,
   handleClientRejectPhoto: PropTypes.func,
   handleClientRejectRawFootage: PropTypes.func,
+  // Shared function to check all client feedback across all media types
+  checkAllClientFeedbackProcessed: PropTypes.func,
 };
 
 export default Photos; 

@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -19,6 +19,7 @@ import {
   Typography,
   InputAdornment,
   TableContainer,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -34,9 +35,9 @@ import MediaKitModal from './media-kit-modal';
 
 const TABLE_HEAD = [
   { id: 'creator', label: 'Creator', width: 300 },
-  { id: 'username', label: 'Username', width: 350 },
-  { id: 'instagram', label: 'Engagement Rate', width: 120 },
-  { id: 'engagement', label: 'Follower Count', width: 100 },
+  { id: 'username', label: 'Username (Media Kit)', width: 350 },
+  { id: 'instagram', label: 'Engagement Rate (Media Kit)', width: 120 },
+  { id: 'engagement', label: 'Follower Count (Media Kit)', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
   { id: 'actions', label: 'Actions', width: 80 },
 ];
@@ -61,6 +62,7 @@ const getStatusDisplay = (pitch) => {
 
   const statusMap = {
     PENDING_REVIEW: { color: '#FF9A02', label: 'PENDING REVIEW' },
+    MAYBE: { color: '#FF9A02', label: 'Maybe' },
     APPROVED: { color: '#1ABF66', label: 'APPROVED' },
     REJECTED: { color: '#FF4842', label: 'REJECTED' },
     AGREEMENT_SUBMITTED: { color: '#1ABF66', label: 'AGREEMENT SUBMITTED' },
@@ -95,6 +97,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     isError: v3PitchesError,
     mutate: v3PitchesMutate,
   } = useGetV3Pitches(campaign?.origin === 'CLIENT' ? campaign?.id : null);
+
+
 
   // Debug log for V3 pitches
   if (campaign?.origin === 'CLIENT') {
@@ -213,6 +217,34 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     return [...shortlistedCreators, ...pitchCreators];
   }, [campaign, v3Pitches]);
 
+  // Enhanced data extraction from existing pitch data
+  const enhancedCreators = useMemo(() => {
+    if (!creators || creators.length === 0) return [];
+
+    return creators.map(creator => {
+      // Extract media kit data from the existing pitch/user data
+      const mediaKitData = {
+        username: creator.user?.instagramUser?.username || 
+                  creator.user?.creator?.instagram?.username ||
+                  creator.user?.username,
+        engagementRate: creator.user?.instagramUser?.engagement_rate || 
+                       creator.user?.creator?.instagram?.engagement_rate ||
+                       creator.user?.engagementRate,
+        followerCount: creator.user?.instagramUser?.followers_count || 
+                      creator.user?.creator?.instagram?.followers_count ||
+                      creator.user?.followerCount,
+      };
+
+      return {
+        ...creator,
+        mediaKitData
+      };
+    });
+  }, [creators]);
+
+  // Use enhanced creators with media kit data
+  const creatorsWithMediaKit = enhancedCreators;
+
   // Debug logs for creators
   if (campaign?.origin === 'CLIENT') {
     // eslint-disable-next-line no-console
@@ -243,7 +275,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   };
 
   const filteredCreators = useMemo(() => {
-    let filtered = creators;
+    let filtered = creatorsWithMediaKit;
 
     // Apply status filter
     if (selectedFilter === 'pending') {
@@ -797,14 +829,20 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                           <Typography variant="body2">{pitch.user?.name}</Typography>
                         </Stack>
                       </TableCell>
-                      <TableCell>{pitch.user?.username || '-'}</TableCell>
                       <TableCell>
-                        {pitch.user?.engagementRate
+                        {pitch.mediaKitData?.username || pitch.user?.username || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {pitch.mediaKitData?.engagementRate
+                          ? `${(Number(pitch.mediaKitData.engagementRate) * 100).toFixed(2)}%`
+                          : pitch.user?.engagementRate
                           ? `${(pitch.user.engagementRate * 100).toFixed(2)}%`
                           : '-'}
                       </TableCell>
                       <TableCell>
-                        {pitch.user?.followerCount
+                        {pitch.mediaKitData?.followerCount
+                          ? Number(pitch.mediaKitData.followerCount).toLocaleString()
+                          : pitch.user?.followerCount
                           ? pitch.user.followerCount.toLocaleString()
                           : '-'}
                       </TableCell>
@@ -828,6 +866,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                               borderColor: '#1ABF66',
                             }),
                             ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW' && {
+                              color: '#FF9A02',
+                              borderColor: '#FF9A02',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'MAYBE' && {
                               color: '#FF9A02',
                               borderColor: '#FF9A02',
                             }),
