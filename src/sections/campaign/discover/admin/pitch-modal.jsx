@@ -22,6 +22,10 @@ import {
   Typography,
   DialogContent,
   DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
@@ -43,6 +47,16 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const [totalUGCVideos, setTotalUGCVideos] = useState(null);
   const { mutate } = useGetCampaignById(campaign.id);
   const navigate = useNavigate();
+
+  const [maybeOpen, setMaybeOpen] = useState(false);
+  const [maybeReason, setMaybeReason] = useState('');
+  const [maybeNote, setMaybeNote] = useState('');
+  const MAYBE_REASONS = [
+    { value: 'engagement_low', label: 'Engagement Rate Too Low' },
+    { value: 'not_fit_brief', label: 'Does Not Fit Criteria in Campaign Brief' },
+    { value: 'not_fit_campaign', label: 'Content is Not Fit for the Campaign' },
+    { value: 'others', label: 'Others' },
+  ];
 
   useEffect(() => {
     setCurrentPitch(pitch);
@@ -221,26 +235,77 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             rejectionReason: 'Rejected by admin',
           });
         }
-      } else {
-        // Use V2 endpoint for admin-created campaigns
-        response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
-          pitchId: pitch.id,
-          status: 'rejected',
-        });
-      }
+     } else {
+  // Use V2 endpoint for admin-created campaigns
+  response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
+    pitchId: pitch.id,
+    status: 'rejected',
+  });
+}
 
-      const updatedPitch = { ...pitch, status: 'rejected' };
-      setCurrentPitch(updatedPitch);
+const updatedPitch = { ...pitch, status: 'rejected' };
+setCurrentPitch(updatedPitch);
 
-      if (onUpdate) {
-        onUpdate(updatedPitch);
-      }
-
+if (onUpdate) {
+  onUpdate(updatedPitch);
+}
       enqueueSnackbar(response?.data?.message || 'Pitch declined successfully');
       setConfirmDialog({ open: false, type: null });
     } catch (error) {
       console.error('Error declining pitch:', error);
       enqueueSnackbar('Error declining pitch', { variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseMaybe = () => {
+    setMaybeOpen(false);
+    setMaybeReason('');
+    setMaybeNote('');
+  };
+
+  const handleMaybeSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+
+      let response;
+
+      if (campaign?.origin === 'CLIENT' && user?.role === 'client') {
+        const v3PitchId = pitch.pitchId || pitch.id;
+
+        // Build request body
+        let body;
+        if (maybeReason === 'others') {
+          body = { customRejectionText: maybeNote.trim() };
+        } else {
+          const reasonLabel =
+            MAYBE_REASONS.find((r) => r.value === maybeReason)?.label || 'Unspecified';
+          body = { rejectionReason: reasonLabel };
+        }
+
+        // Call your endpoint
+        response = await axiosInstance.patch(
+          endpoints.campaign.pitch.v3.maybeClient(v3PitchId),
+          body
+        );
+
+        // Update pitch status
+        const updatedPitch = { ...pitch, status: 'maybe' };
+        setCurrentPitch(updatedPitch);
+        onUpdate?.(updatedPitch);
+
+        enqueueSnackbar(response?.data?.message || 'Pitch marked as Maybe');
+        setMaybeOpen(false);
+        setMaybeReason('');
+        setMaybeNote('');
+      } else {
+        console.warn('Maybe action is only available for client-created campaigns by clients');
+        return;
+      }
+    } catch (error) {
+      console.error('Error setting maybe:', error);
+      enqueueSnackbar('Error setting Maybe', { variant: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -1066,85 +1131,173 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           >
             Approve
           </Button>
+          {user?.role === 'client' && (
+            <Button
+              variant="contained"
+              onClick={() => setMaybeOpen(true)}
+              disabled={isDisabled || isSubmitting || currentPitch?.status === 'rejected'}
+              sx={{
+                textTransform: 'none',
+                minHeight: 42,
+                minWidth: 100,
+                bgcolor: '#ffffff',
+                color: '#FFC702',
+                border: '1.5px solid',
+                borderColor: '#e7e7e7',
+                borderBottom: '3px solid',
+                borderBottomColor: '#e7e7e7',
+                borderRadius: 1.15,
+                fontWeight: 600,
+                fontSize: '16px',
+                '&:hover': {
+                  bgcolor: '#f5f5f5',
+                  border: '1.5px solid',
+                  borderColor: '#FFC702',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#FFC702',
+                },
+              }}
+            >
+              Maybe
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialog.open} onClose={handleCloseConfirmDialog} maxWidth="xs" fullWidth>
         <DialogContent>
-          {campaign?.campaignCredits && (
+          {/* Credits badge (only useful for approve view) */}
+          {campaign?.campaignCredits && confirmDialog.type === 'approve' && (
             <Box mt={2} textAlign="end">
               <Label color="info">{ugcLeft} Credits left</Label>
             </Box>
           )}
-          <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
-            <Box
-              sx={{
-                width: 100,
-                height: 100,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '50%',
-                bgcolor: confirmDialog.type === 'approve' ? '#5abc6f' : '#ff3b30',
-                fontSize: '50px',
-                mb: -2,
-              }}
-            >
-              {confirmDialog.type === 'approve' ? '🫣' : '🥹'}
-            </Box>
-            <Stack spacing={1} alignItems="center">
+
+          {/* CONDITIONAL BODY */}
+          {confirmDialog.type === 'decline' && user?.role === 'client' ? (
+            // --- Client Decline: reason UI (reusing the dialog) ---
+            <Stack spacing={2} sx={{ pt: 2 }}>
               <Typography
                 variant="h6"
                 sx={{
                   fontFamily: 'Instrument Serif, serif',
-                  fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                  fontSize: { xs: '1.5rem', sm: '2rem' },
                   fontWeight: 550,
                 }}
               >
-                {confirmDialog.type === 'approve' ? 'Approve Pitch?' : 'Decline Pitch?'}
+                Reason for Rejection
               </Typography>
-              <Typography
-                variant="body1"
+
+              {/* Title above field (no InputLabel) */}
+              <Typography variant="caption" sx={{ fontWeight: 400 }}>
+                Selection Reason
+              </Typography>
+              <Box>
+                <Select
+                  fullWidth
+                  value={maybeReason}
+                  onChange={(e) => setMaybeReason(e.target.value)}
+                  displayEmpty
+                >
+                  <MenuItem value="" disabled>
+                    Select Reason
+                  </MenuItem>
+                  {MAYBE_REASONS.map((r) => (
+                    <MenuItem key={r.value} value={r.value}>
+                      {r.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
+              {maybeReason === 'others' && (
+                <Stack spacing={1}>
+                  <Typography variant="caption" sx={{ fontWeight: 400 }}>
+                    Selection Description
+                  </Typography>
+                  <TextField
+                    placeholder="Type your reason…"
+                    multiline
+                    minRows={3}
+                    value={maybeNote}
+                    onChange={(e) => setMaybeNote(e.target.value)}
+                    fullWidth
+                    required
+                    error={!maybeNote.trim() && isSubmitting}
+                    helperText={!maybeNote.trim() && isSubmitting ? 'This field is required' : ''}
+                  />
+                </Stack>
+              )}
+            </Stack>
+          ) : (
+            // --- Approve OR Admin Decline: original look ---
+            <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
+              <Box
                 sx={{
-                  color: '#636366',
-                  mt: -0.5,
-                  mb: -3,
+                  width: 100,
+                  height: 100,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  bgcolor: confirmDialog.type === 'approve' ? '#5abc6f' : '#ff3b30',
+                  fontSize: '50px',
+                  mb: -2,
                 }}
               >
-                {confirmDialog.type === 'approve'
-                  ? 'Are you sure you want to approve this pitch?'
-                  : 'Are you sure you want to decline this pitch?'}
-              </Typography>
+
+                {confirmDialog.type === 'approve' ? '🫣' : '🥹'}
+              </Box>
+              <Stack spacing={1} alignItems="center">
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                    fontWeight: 550,
+                  }}
+                >
+                  {confirmDialog.type === 'approve' ? 'Approve Pitch?' : 'Decline Pitch?'}
+                </Typography>
+                <Typography variant="body1" sx={{ color: '#636366', mt: -0.5, mb: -3 }}>
+                  {confirmDialog.type === 'approve'
+                    ? 'Are you sure you want to approve this pitch?'
+                    : 'Are you sure you want to decline this pitch?'}
+                </Typography>
+              </Stack>
+
+              {/* UGC input (approve, admin-created only) */}
+              {campaign?.campaignCredits &&
+                confirmDialog.type === 'approve' &&
+                campaign?.origin !== 'CLIENT' && (
+                  <Box mt={2} width={1}>
+                    <TextField
+                      value={totalUGCVideos}
+                      size="small"
+                      placeholder="UGC Videos"
+                      type="number"
+                      fullWidth
+                      onKeyDown={(e) => {
+                        if (e.key === '0' && totalUGCVideos?.length === 0) e.preventDefault();
+                      }}
+                      onChange={(e) => setTotalUGCVideos(e.currentTarget.value)}
+                      error={totalUGCVideos > ugcLeft}
+                      helperText={totalUGCVideos > ugcLeft && `Maximum of ${ugcLeft} UGC Videos`}
+                    />
+                  </Box>
+                )}
             </Stack>
-            {/* Only show UGC credits input for admin-created campaigns, not client-created campaigns */}
-            {campaign?.campaignCredits &&
-              confirmDialog.type === 'approve' &&
-              campaign?.origin !== 'CLIENT' && (
-                <Box mt={2} width={1}>
-                  <TextField
-                    value={totalUGCVideos}
-                    size="small"
-                    placeholder="UGC Videos"
-                    type="number"
-                    fullWidth
-                    onKeyDown={(e) => {
-                      if (e.key === '0' && totalUGCVideos.length === 0) e.preventDefault();
-                    }}
-                    onChange={(e) => {
-                      setTotalUGCVideos(e.currentTarget.value);
-                    }}
-                    error={totalUGCVideos > ugcLeft}
-                    helperText={totalUGCVideos > ugcLeft && `Maximum of ${ugcLeft} UGC Videos`}
-                  />
-                </Box>
-              )}
-          </Stack>
+          )}
         </DialogContent>
 
         <DialogActions sx={{ pb: 3, px: 3 }}>
           <Button
-            onClick={handleCloseConfirmDialog}
+            onClick={() => {
+              setMaybeReason('');
+              setMaybeNote('');
+              handleCloseConfirmDialog();
+            }}
             disabled={isSubmitting}
             sx={{
               bgcolor: '#ffffff',
@@ -1159,25 +1312,40 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               flex: 1,
               mr: 1,
               fontWeight: 600,
-              '&:hover': {
-                bgcolor: '#e7e7e7',
-              },
+              '&:hover': { bgcolor: '#e7e7e7' },
             }}
           >
             Cancel
           </Button>
+
           <Button
-            onClick={confirmDialog.type === 'approve' ? handleApprove : handleDecline}
+            onClick={
+              confirmDialog.type === 'decline' && user?.role === 'client'
+                ? handleMaybeSubmit
+                : confirmDialog.type === 'approve'
+                  ? handleApprove
+                  : handleDecline
+            }
             disabled={
               isSubmitting ||
-              (campaign?.campaignCredits &&
-                confirmDialog.type === 'approve' &&
+              // approve guard (unchanged)
+              (confirmDialog.type === 'approve' &&
+                campaign?.campaignCredits &&
                 campaign?.origin !== 'CLIENT' &&
-                (!totalUGCVideos || totalUGCVideos > ugcLeft))
+                (!totalUGCVideos || totalUGCVideos > ugcLeft)) ||
+              // client-decline guard: require reason & if others then note
+              (confirmDialog.type === 'decline' &&
+                user?.role === 'client' &&
+                (!maybeReason || (maybeReason === 'others' && !maybeNote.trim())))
             }
             sx={{
               bgcolor: confirmDialog.type === 'approve' ? '#2e6c56' : '#ffffff',
-              color: confirmDialog.type === 'approve' ? '#fff' : '#ff3b30',
+              color:
+                confirmDialog.type === 'approve'
+                  ? '#fff'
+                  : user?.role === 'client' && confirmDialog.type === 'decline'
+                    ? '#D4321C'
+                    : '#ff3b30',
               border: confirmDialog.type === 'approve' ? 'none' : '1.5px solid #e7e7e7',
               borderBottom: '3px solid',
               borderBottomColor: confirmDialog.type === 'approve' ? '#202021' : '#e7e7e7',
@@ -1199,9 +1367,81 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 {confirmDialog.type === 'approve' && (
                   <Iconify icon="eva:checkmark-fill" width={20} sx={{ mr: 0.5 }} />
                 )}
-                {`Yes, ${confirmDialog.type === 'approve' ? 'approve!' : 'decline!'}`}
+                {confirmDialog.type === 'approve'
+                  ? 'Yes, approve!'
+                  : user?.role === 'client' && confirmDialog.type === 'decline'
+                    ? 'Submit Reason' // 🔥 client-side decline
+                    : 'Yes, decline!'}
               </>
             )}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={maybeOpen} onClose={handleCloseMaybe} maxWidth="sm" fullWidth>
+        <DialogContent sx={{ pt: 3 }}>
+          <Stack spacing={1}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                fontWeight: 550,
+              }}
+            >
+              Reason for Maybe
+            </Typography>
+
+            <Typography variant="caption" sx={{ fontWeight: 400 }}>
+              Selection Reason
+            </Typography>
+
+            <FormControl fullWidth>
+              <Select
+                value={maybeReason}
+                onChange={(e) => setMaybeReason(e.target.value)}
+                displayEmpty
+              >
+                <MenuItem value="" disabled>
+                  Select Reason
+                </MenuItem>
+                {MAYBE_REASONS.map((r) => (
+                  <MenuItem key={r.value} value={r.value}>
+                    {r.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {maybeReason === 'others' && (
+              <Stack spacing={1}>
+                <Typography variant="caption" sx={{ fontWeight: 400 }}>
+                  Selection Description
+                </Typography>
+
+                <TextField
+                  placeholder="Please describe the reason for your selection, so we can provide more creators more suited to your needs"
+                  multiline
+                  minRows={3}
+                  value={maybeNote}
+                  onChange={(e) => setMaybeNote(e.target.value)}
+                  fullWidth
+                  required
+                  error={!maybeNote.trim() && isSubmitting}
+                  helperText={!maybeNote.trim() && isSubmitting ? 'This field is required' : ''}
+                />
+              </Stack>
+            )}
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ pb: 3, px: 3 }}>
+          <Button
+            onClick={handleMaybeSubmit}
+            disabled={
+              isSubmitting || !maybeReason || (maybeReason === 'others' && !maybeNote.trim())
+            }
+          >
+            {isSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Submit Reason'}
           </Button>
         </DialogActions>
       </Dialog>

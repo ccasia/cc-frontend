@@ -216,6 +216,7 @@ export const endpoints = {
         reject: (pitchId) => `/api/pitch/v3/${pitchId}/reject`,
         approveClient: (pitchId) => `/api/pitch/v3/${pitchId}/approve/client`,
         rejectClient: (pitchId) => `/api/pitch/v3/${pitchId}/reject/client`,
+        maybeClient: (pitchId) => `/api/pitch/v3/${pitchId}/maybe/client`,
         agreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
         setAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
         submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
