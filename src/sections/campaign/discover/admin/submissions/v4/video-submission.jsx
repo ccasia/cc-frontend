@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { useState, useCallback, useRef } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
@@ -17,8 +16,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
-  OutlinedInput,
   IconButton,
   Slider
 } from '@mui/material';
@@ -58,6 +55,8 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
 
   // Feedback
   const [feedback, setFeedback] = useState(isClientFeedback ? (submission.video?.[0]?.feedback || '') : '');
+  // Caption editing
+  const [caption, setCaption] = useState(submission.caption || '');
   // Due date
   const [dueDateDialog, setDueDateDialog] = useState(false);
   const [selectedDueDate, setSelectedDueDate] = useState(null);
@@ -105,6 +104,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
           action: 'approve',
           feedback: feedback.trim() || undefined,
           reasons: reasons || [],
+          caption: caption.trim() || undefined,
         });
 
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
@@ -119,7 +119,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
     } finally {
       setLoading(false);
     }
-  }, [feedback, reasons, submission.id, onUpdate, isClient]);
+  }, [feedback, reasons, caption, submission.id, onUpdate, isClient]);
 
   const handleRequestChanges = useCallback(async () => {
     try {
@@ -152,6 +152,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
           action: 'request_revision',
           feedback: hasContent ? feedback.trim() : '',
           reasons: reasons || [],
+          caption: caption.trim() || undefined,
         });
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
@@ -166,7 +167,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
     } finally {
       setLoading(false);
     }
-  }, [feedback, reasons, submission.id, onUpdate, isClient]);
+  }, [feedback, reasons, caption, submission.id, onUpdate, isClient]);
 
 
   const handlePostingLinkApproval = useCallback(async (approvalAction) => {
@@ -249,7 +250,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
       // Admin-specific status labels
       switch (status) {
         case 'CLIENT_FEEDBACK':
-          return 'Client Feedback';
+          return 'CLIENT FEEDBACK';
         default:
           return formatStatus(status);
       }
@@ -414,13 +415,11 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                   display: 'flex', 
                   gap: 3,
                   alignItems: 'stretch',
-                  minHeight: 500
+                  minHeight: 405
                 }}>
                   {/* Caption Section - Left Side */}
                   <Box sx={{ 
                     flex: 1, 
-                    minWidth: 300,
-                    height: 300,
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between'
@@ -428,38 +427,60 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                     {/* Top Content - Flexible space */}
                     <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                       {/* Caption */}
-                      {submission.caption && (
-                        <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                          <Typography variant="caption" fontWeight="medium" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                            Caption:
-                          </Typography>
-                          <Typography variant="body2">
+                      {!isClient ? (
+                        <Box>
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            placeholder="Enter caption here..."
+                            value={caption}
+                            onChange={(e) => setCaption(e.target.value)}
+                            size="small"
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                bgcolor: 'background.paper',
+                              },
+                            }}
+                          />
+                        </Box>
+                      ) : submission.caption ? (
+                        <Box>
+                          <Typography fontSize={14} color={'#636366'}>
                             {submission.caption}
                           </Typography>
                         </Box>
-                      )}
+                      ) : null}
 
                       {/* Feedback History */}
-                      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    </Box>
+
+                    {(submission.status === 'CHANGES_REQUIRED' || 'CLIENT_FEEDBACK') &&
+                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         {submission.feedback && submission.feedback.length > 0 && (
-                          <Box sx={{ flex: 1, overflow: 'auto', minHeight: 150, maxHeight: 255 }}>
+                          <Box sx={{ flex: 1, overflow: 'auto' }}>
                           <Stack spacing={1}>
-                            {[submission.feedback[0]].map((feedback, feedbackIndex) => (
-                              <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                            {[submission.feedback[0]].map((feedback, index) => (
+                              <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start' }}>
                                 <Box sx={{ flex: 1 }}>
-                                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                    <Typography fontSize={12} fontWeight="medium">
-                                      {feedback.admin?.name || 'Client'}
-                                    </Typography>
-                                    <Typography fontSize={12} color="text.secondary">
-                                      {new Date(feedback.createdAt).toLocaleDateString()}
-                                    </Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                                    {reasons.map((reason, reasonIndex) => (
+                                      <Chip key={reasonIndex} label={reason} size="small" variant="outlined" color="warning" />
+                                    ))}
                                   </Box>
-                                  {feedback.content && (
-                                    <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
-                                      {feedback.content}
-                                    </Typography>
-                                  )}
+                                  {feedback.reasons?.map((reason, reasonIndex) => (
+                                    <Chip sx={{ mr: 1, mb: 1 }} key={reasonIndex} label={reason} size="small" variant="outlined" color="warning" />
+                                  ))}                                  
+                                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                    {(feedback.content || feedback.reasons) && 
+                                      <Typography variant='caption' fontWeight="bold" color={'#636366'}>
+                                        {feedback.admin?.name || 'CS Comments'}
+                                      </Typography>
+                                    }
+                                  </Box>
+                                  <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
+                                    {feedback.content}
+                                  </Typography>
                                 </Box>
                               </Box>
                             ))}
@@ -467,12 +488,12 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                           </Box>
                         )}
                       </Box>
-                    </Box>
+                    }
 
                     {/* Feedback Section */}
                     {((!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) || (isClient && submission.status === 'SENT_TO_CLIENT')) && (
                       <Box sx={{ flex: '0 0 auto', pt: 2 }}>
-                        <Stack spacing={2}>
+                        <Stack spacing={1}>
                           {/* Action Buttons */}
                           <Stack direction="row" spacing={1} width="100%" justifyContent="flex-end">
                             {(clientVisible && !isClientFeedback) && (
@@ -505,7 +526,10 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                                 <Button
                                   variant="contained"
                                   color="secondary"
-                                  onClick={() => setAction('approve')}
+                                  onClick={() => {
+                                    setAction('approve');
+                                    setReasons([]);
+                                  }}
                                   disabled={loading}
                                   sx={{
                                     display: 'flex',
@@ -575,18 +599,27 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
 
                             {!isClient && isClientFeedback &&
                               <Stack spacing={1} sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                                <Typography variant="caption" fontWeight="bold" color={'#636366'}>Client Feedback:</Typography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                  {reasons.map((reason, reasonIndex) => (
-                                    <Chip key={reasonIndex} label={reason} size="small" variant="outlined" color="warning" />
-                                  ))}
-                                </Box>
                                 <Button
                                   variant="contained"
                                   color="secondary"
                                   onClick={handleRequestChanges}
                                   disabled={loading}
-                                  sx={{ alignSelf: 'flex-end' }}
+                                  sx={{
+                                    display: action === 'request_revision' ? 'none' : 'flex',
+                                    borderRadius: 1,
+                                    border: '1px solid #E7E7E7',
+                                    backgroundColor: '#FFFFFF',
+                                    color: '#D4321C',
+                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
+                                    fontSize: 12,
+                                    fontWeight: 'bold',
+                                    '&:hover': {
+                                      backgroundColor: '#F5F5F5',
+                                      boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
+                                    },
+                                    width: 140,
+                                    alignSelf: 'flex-end'
+                                  }}
                                 >
                                   {loading ? 'Processing...' : 'Send to Creator'}
                                 </Button>
@@ -595,20 +628,24 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                           </Stack>
 
                           {(action === 'request_revision' || action === 'request_changes') &&
-                            <FormControl fullWidth>
-                              <InputLabel>Reasons for changes (optional)</InputLabel>
+                            <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10 }} hiddenLabel size='small'>
                               <Select
                                 multiple
                                 value={reasons}
                                 onChange={(e) => setReasons(e.target.value)}
-                                input={<OutlinedInput label="Reasons for changes (optional)" />}
-                                renderValue={(selected) => (
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                    {selected.map((value) => (
-                                      <Chip key={value} label={value} size="small" />
-                                    ))}
-                                  </Box>
-                                )}
+                                displayEmpty
+                                renderValue={(selected) => {
+                                  if (selected.length === 0) {
+                                    return <span style={{ color: '#999' }}>Change Request Reasons</span>;
+                                  }
+                                  return (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 35 }}>
+                                      {selected.map((value) => (
+                                        <Chip key={value} label={value} size="small" />
+                                      ))}
+                                    </Box>
+                                  );
+                                }}
                               >
                                 {options_changes.map((option) => (
                                   <MenuItem key={option} value={option}>
