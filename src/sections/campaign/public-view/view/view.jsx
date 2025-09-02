@@ -38,7 +38,6 @@ import CampaignLists from '../campaign-list';
 
 const PublicCampaignView = () => {
   const settings = useSettingsContext();
-  // const { campaigns } = useGetCampaigns('creator');
 
   const [filter, setFilter] = useState('all');
 
@@ -276,6 +275,22 @@ const PublicCampaignView = () => {
       handleScrollThrottled.cancel();
     };
   }, [handleScroll, ref, lgUp]);
+
+  useEffect(() => {
+    
+    (async () => {
+      console.log('SAD');
+    })();
+
+    const test = async () => {
+      const url = new URL(window.location.href);
+
+      if (url.searchParams.get('campaign')) {
+        localStorage.setItem('campaign', url.searchParams.get('campaign'));
+      }
+    };
+    test();
+  }, []);
 
   return (
     <Container

@@ -1,5 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router';
 
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -17,7 +18,9 @@ import CampaignModal from './dialog/campaign-dialog';
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, mutate }) {
-  const campaignInfo = useBoolean();
+  const campaignID = localStorage.getItem('campaign');
+  const campaignInfo = useBoolean(campaignID && campaignID === campaign.id);
+  const navigation = useNavigate();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -166,7 +169,18 @@ export default function CampaignItem({ campaign, mutate }) {
 
       <CampaignModal
         open={campaignInfo.value}
-        handleClose={campaignInfo.onFalse}
+        handleClose={() => {
+          const url = new URL(window.location.href);
+
+          if (url.searchParams.has('campaign')) {
+            url.searchParams.delete('campaign');
+          }
+
+          localStorage.removeItem('campaign');
+          campaignInfo.onFalse();
+
+          navigation(url.pathname + url.search, { replace: true });
+        }}
         campaign={campaign}
       />
     </Card>
