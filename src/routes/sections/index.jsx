@@ -12,6 +12,7 @@ import { authRoutes } from './auth';
 import { adminRoutes } from './admin';
 import { publicRoutes } from './public';
 import { dashboardRoutes } from './dashboard';
+import { publicCampaingRoute } from './publicCampaign';
 
 // ----------------------------------------------------------------------
 
@@ -34,6 +35,8 @@ export default function Router() {
     ...adminRoutes,
 
     ...publicRoutes,
+
+    ...publicCampaingRoute,
 
     { path: '/auth/creator-form-view', element: <CreatorFormView /> },
     { path: '/auth/verify', element: <Verify /> },

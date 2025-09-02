@@ -2,15 +2,11 @@ import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import CampaignItem from './campaign-item';
 
 // ----------------------------------------------------------------------
 
 export default function CampaignLists({ campaigns, mutate }) {
-  const { user } = useAuthContext();
-
   return (
     <Box
       gap={2}
@@ -22,7 +18,7 @@ export default function CampaignLists({ campaigns, mutate }) {
       }}
     >
       {campaigns.map((campaign) => (
-        <CampaignItem key={campaign.id} campaign={campaign} user={user} mutate={mutate} />
+        <CampaignItem key={campaign.id} campaign={campaign} mutate={mutate} />
       ))}
     </Box>
   );

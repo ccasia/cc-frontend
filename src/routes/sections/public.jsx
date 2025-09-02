@@ -11,10 +11,6 @@ const PublicManageCreatorView = lazy(
   () => import('src/sections/public-access/publicCreatorManage')
 );
 
-const CampaignManageCreatorView = lazy(
-  () => import('src/pages/dashboard/campaign/admin/creator/campaign-manage-creator')
-);
-
 // ----------------------------------------------------------------------
 
 export const publicRoutes = [
