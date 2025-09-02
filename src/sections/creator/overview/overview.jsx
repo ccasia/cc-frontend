@@ -221,7 +221,69 @@ const Overview = () => {
                 </Box>
               </>
             )}
+            {/* Creator Academy Promotional Section */}
           </Stack>
+          <Box
+            sx={{
+              p: 1,
+            }}
+          >
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
+              <Box
+                component="a"
+                href="https://bit.ly/CreatorAcademybyCCandOA"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  flexShrink: 0,
+                  width: 300,
+                  height: 80,
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    opacity: 0.8,
+                  },
+                }}
+              >
+                <Image
+                  src="/assets/images/home/b0b60c98a5d1e3b63c69d2bb614bed427b04d118.png"
+                  alt="Creator Academy"
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              </Box>
+              <Stack spacing={0.5} sx={{ flex: 1 }}>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                    color: '#000',
+                    lineHeight: 1.2,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  From Content to Contentpreneur
+                </Typography>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    color: '#666',
+                    fontWeight: 400,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Use code CCCCREATORS for 15% off!
+                </Typography>
+              </Stack>
+            </Stack>
+          </Box>
         </Box>
       </Grid>
 
