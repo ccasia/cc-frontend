@@ -62,14 +62,38 @@ const PublicCampaignView = () => {
 
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
-    if (pageIndex === 0)
-      return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}${campaignId ? `&campaignId=${campaignId}` : ""}`;
+    if (pageIndex === 0){
+
+      const params = new URLSearchParams({
+      search: debouncedQuery,
+      take: "10",
+    });
+
+    if (campaignId) {
+  params.append("campaignId", campaignId);
+} 
+
+
+      // return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}${campaignId ? `&campaignId=${campaignId}` : ""}`;
+      return `/api/campaign/public?${params.toString()}`;
+    }
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
+       const params = new URLSearchParams({
+      search: debouncedQuery,
+      take: "10",
+      cursor:previousPageData?.metaData?.lastCursor
+    });
+
+    if (campaignId) {
+  params.append("campaignId", campaignId);
+} 
+
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}${campaignId ? `&campaignId=${campaignId}` : ""}`;
+    // return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}${campaignId ? `&campaignId=${campaignId}` : ""}`;
+     return `/api/campaign/public?${params.toString()}`;
   };
 
   const { data, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(getKey, fetcher, {
