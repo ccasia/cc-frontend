@@ -1,22 +1,22 @@
 import { m } from 'framer-motion';
+import { useTheme } from '@emotion/react';
 import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
 import { orderBy, debounce, throttle } from 'lodash';
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import Container from '@mui/material/Container';
-import { useTheme } from '@mui/material/styles';
 import {
-  Fab,
   Box,
+  Fab,
   Stack,
   Button,
   Select,
   Divider,
   MenuItem,
+  Container,
   InputBase,
-  IconButton,
   Typography,
+  IconButton,
   ListItemText,
   CircularProgress,
 } from '@mui/material';
@@ -34,23 +34,15 @@ import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
-import CreatorForm from 'src/sections/creator/form/creatorForm';
-
 import CampaignLists from '../campaign-list';
 
-// ----------------------------------------------------------------------
-
-// ----------------------------------------------------------------------
-// Check
-export default function CampaignListView() {
+const PublicCampaignView = () => {
   const settings = useSettingsContext();
-
-  const url = new URLSearchParams(window.location.search);
-  const campaignID = url.get('campaign');
+  // const { campaigns } = useGetCampaigns('creator');
 
   const [filter, setFilter] = useState('all');
 
-  const { mainRef } = useMainContext();
+  const ref = useMainContext();
 
   const lgUp = useResponsive('up', 'lg');
 
@@ -70,13 +62,13 @@ export default function CampaignListView() {
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
     if (pageIndex === 0)
-      return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}`;
+      return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}`;
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+    return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
   const { data, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(getKey, fetcher, {
@@ -84,8 +76,6 @@ export default function CampaignListView() {
   });
 
   const { user } = useAuthContext();
-  const dialog = useBoolean(!user?.creator?.isOnBoardingFormCompleted);
-  const backdrop = useBoolean(!user?.creator?.isFormCompleted);
 
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
@@ -97,14 +87,6 @@ export default function CampaignListView() {
   const theme = useTheme();
 
   const [showScrollTop, setShowScrollTop] = useState(false);
-
-  // const [page, setPage] = useState(1);
-  // const MAX_ITEM = 9;
-
-  // const onOpenCreatorForm = () => {
-  //   backdrop.onTrue();
-  //   dialog.onTrue();
-  // };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -161,12 +143,6 @@ export default function CampaignListView() {
       socket?.off('pitch-uploaded', handlePitchSuccess);
     };
   }, [socket, upload, mutate]);
-
-  useEffect(() => {
-    if (campaignID) {
-      localStorage.setItem('campaign', campaignID);
-    }
-  }, [campaignID]);
 
   const renderUploadProgress = (
     <Box
@@ -229,29 +205,8 @@ export default function CampaignListView() {
     </Box>
   );
 
-  // const handlePageChange = (event, value) => {
-  //   setPage(value);
-  // };
-
-  // const filteredData = useMemo(() => {
-  //   const indexOfLastItem = page * MAX_ITEM;
-  //   const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
-
-  // return applyFilter({
-  //   inputData: campaigns
-  //     ?.filter((campaign) => campaign?.status === 'ACTIVE')
-  //     ?.slice(indexOfFirstItem, indexOfLastItem),
-  //   filter,
-  //   user,
-  //   sortBy,
-  //   search,
-  // });
-  // }, [campaigns, filter, user, sortBy, page, search]);
-
   const filteredData = useMemo(() => {
     const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
-    
-    console.log('Campaign discover - Raw campaigns:', campaigns?.map(c => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin })));
 
     return applyFilter({
       inputData: campaigns?.filter((campaign) => campaign?.status === 'ACTIVE'),
@@ -262,65 +217,12 @@ export default function CampaignListView() {
     });
   }, [data, filter, user, sortBy, search]);
 
-  // const filteredData = useMemo(
-  //   () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
-  //   [data]
-  // );
-
-  // const handleSearch = useCallback(
-  //   (inputValue) => {
-  //     setSearch((prevState) => ({
-  //       ...prevState,
-  //       query: inputValue,
-  //     }));
-
-  //     if (inputValue && filteredData) {
-  //       const filteredCampaigns = applyFilter({ inputData: filteredData, filter, user });
-  //       const results = filteredCampaigns.filter(
-  //         (campaign) =>
-  //           campaign.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-  //           campaign.company.name.toLowerCase().includes(inputValue.toLowerCase())
-  //       );
-
-  //       setSearch((prevState) => ({
-  //         ...prevState,
-  //         results,
-  //       }));
-  //     }
-  //   },
-  //   [filteredData, filter, user]
-  // );
-
-  // const handleScroll = useCallback(() => {
-  //   if (!scrollContainerRef.current) return;
-
-  //   const bottom =
-  //     scrollContainerRef.current.scrollHeight <=
-  //     scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight + 1;
-
-  //   if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
-  //     setSize(size + 1);
-  //   }
-  // }, [data, isValidating, setSize, size]);
-
-  // useEffect(() => {
-  //   const scrollContainer = scrollContainerRef.current;
-  //   if (!scrollContainer) return;
-
-  //   const scrollListener = () => handleScroll();
-  //   scrollContainer.addEventListener('scroll', scrollListener);
-  //   // eslint-disable-next-line consistent-return
-  //   return () => {
-  //     scrollContainer.removeEventListener('scroll', scrollListener);
-  //   };
-  // }, [data, isValidating, size, setSize, handleScroll]);
-
   const handleScroll = useCallback(() => {
     if (lgUp) {
       // Desktop view handler
-      if (!mainRef?.current) return; // Early return if ref not available
+      if (!ref?.mainRef?.current) return; // Early return if ref not available
 
-      const scrollContainer = mainRef.current;
+      const scrollContainer = ref?.mainRef.current;
       const bottom =
         scrollContainer.scrollHeight <=
         scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
@@ -353,10 +255,10 @@ export default function CampaignListView() {
         setSize((currentSize) => currentSize + 1);
       }
     }
-  }, [data, isValidating, setSize, size, mainRef, lgUp]);
+  }, [data, isValidating, setSize, size, ref, lgUp]);
 
   useEffect(() => {
-    const scrollElement = lgUp ? mainRef?.current : window;
+    const scrollElement = lgUp ? ref?.mainRef?.current : window;
 
     if (!scrollElement) {
       return undefined;
@@ -373,35 +275,7 @@ export default function CampaignListView() {
       scrollElement.removeEventListener('scroll', handleScrollThrottled);
       handleScrollThrottled.cancel();
     };
-  }, [handleScroll, mainRef, lgUp]);
-
-  // const sortCampaigns = (campaigns) => {
-  //   if (!campaigns) return [];
-
-  //   switch (sortBy) {
-  //     case 'Highest':
-  //       return [...campaigns].sort((a, b) => (b.percentageMatch || 0) - (a.percentageMatch || 0));
-  //     case 'Lowest':
-  //       return [...campaigns].sort((a, b) => (a.percentageMatch || 0) - (b.percentageMatch || 0));
-  //     default:
-  //       return campaigns;
-  //   }
-  // };
-
-  // const sortedCampaigns = useMemo(() => {
-  //   const dataToSort = search.query ? search.results : filteredData;
-  //   return sortCampaigns(dataToSort, sortBy);
-  // }, [search.query, search.results, filteredData, sortBy]);
-
-  // const paginatedCampaigns = useMemo(() => {
-  //   const indexOfLastItem = page * MAX_ITEM;
-  //   const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
-  //   return filteredData?.slice(indexOfFirstItem, indexOfLastItem);
-  // }, [filteredData, page]);
-
-  // useEffect(() => {
-  //   setPage(1); // Reset to first page when search query changes
-  // }, [search.query]);
+  }, [handleScroll, ref, lgUp]);
 
   return (
     <Container
@@ -503,7 +377,7 @@ export default function CampaignListView() {
             >
               For you
             </Button>
-            <Button
+            {/* <Button
               disableRipple
               size="large"
               onClick={() => setFilter('saved')}
@@ -549,7 +423,7 @@ export default function CampaignListView() {
               }}
             >
               Saved
-            </Button>
+            </Button> */}
           </Stack>
 
           {/* Desktop Search and Sort Stack */}
@@ -649,6 +523,7 @@ export default function CampaignListView() {
                   </Typography>
                 )}
                 sx={{
+                  width: 1,
                   height: '100%',
                   '& .MuiSelect-select': {
                     py: 1.5,
@@ -669,33 +544,6 @@ export default function CampaignListView() {
                   },
                 }}
               >
-                <MenuItem
-                  value="Most matched"
-                  sx={{
-                    mx: 0.2,
-                    my: 0.5,
-                    borderRadius: 0.5,
-                    '&.Mui-selected': {
-                      bgcolor: '#F5F5F5 !important',
-                      '&:hover': {
-                        bgcolor: '#F5F5F5',
-                      },
-                    },
-                    '&:hover': {
-                      bgcolor: '#F5F5F5',
-                    },
-                  }}
-                >
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
-                    Most matched
-                    {sortBy === 'Most matched' && (
-                      <Iconify
-                        icon="eva:checkmark-fill"
-                        sx={{ ml: 'auto', width: 20, height: 20, color: '#000000' }}
-                      />
-                    )}
-                  </Stack>
-                </MenuItem>
                 <MenuItem
                   value="Most recent"
                   sx={{
@@ -894,8 +742,6 @@ export default function CampaignListView() {
 
       {upload.length > 0 && renderUploadProgress}
 
-      {/* <CreatorForm dialog={dialog} user={user} backdrop={backdrop} /> */}
-
       {showScrollTop && (
         <Fab
           color="primary"
@@ -911,13 +757,11 @@ export default function CampaignListView() {
           <Iconify icon="mdi:arrow-up" />
         </Fab>
       )}
-
-      <CreatorForm open={dialog.value} onClose={dialog.onFalse} />
     </Container>
   );
-}
+};
 
-// ----------------------------------------------------------------------
+export default PublicCampaignView;
 
 const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
   if (filter === 'saved') {
@@ -934,10 +778,9 @@ const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
 
   if (sortBy === 'Most matched') {
     inputData = orderBy(inputData, ['percentageMatch'], ['desc']);
-  } else if (sortBy === 'Most recent') {
-    inputData = orderBy(inputData, ['createdAt'], ['desc']);
-  } else {
-    // Default sorting: newest first
+  }
+
+  if (sortBy === 'Most recent') {
     inputData = orderBy(inputData, ['createdAt'], ['desc']);
   }
 

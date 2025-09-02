@@ -1,19 +1,13 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router';
 import { enqueueSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { Bookmark, BookmarkBorder } from '@mui/icons-material';
-import {
-  Box,
-  Card,
-  Chip,
-  Avatar,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -35,7 +29,10 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
   const dialog = useBoolean();
-  const campaignInfo = useBoolean();
+  const campaignID = localStorage.getItem('campaign');
+  const campaignInfo = useBoolean(campaignID === campaign.id);
+
+  const navigation = useNavigate();
 
   const { socket } = useSocketContext();
 
@@ -124,6 +121,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
     if (isMobile) {
       router.push(paths.dashboard.campaign.creator.discover(campaign.id));
     } else {
+      localStorage.setItem('campaign', campaign.id);
       campaignInfo.onTrue();
     }
   };
@@ -353,7 +351,27 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
         <CampaignModal
           dialog={dialog}
           open={campaignInfo.value}
-          handleClose={campaignInfo.onFalse}
+          // handleClose={() => {
+          //   const url = new URLSearchParams(window.location.href);
+          //   if (url.has('campaign')) {
+          //     url.delete('campaign');
+          //   }
+          //   localStorage.removeItem('campaign');
+          //   campaignInfo.onFalse();
+          //   window.location.href = url.toString();
+          // }}
+          handleClose={() => {
+            const url = new URL(window.location.href);
+
+            if (url.searchParams.has('campaign')) {
+              url.searchParams.delete('campaign');
+            }
+
+            localStorage.removeItem('campaign');
+            campaignInfo.onFalse();
+
+            navigation(url.pathname + url.search, { replace: true });
+          }}
           campaign={campaign}
           bookMark={bookMark}
           onSaveCampaign={saveCampaign}
