@@ -63,13 +63,13 @@ const PublicCampaignView = () => {
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
     if (pageIndex === 0)
-      return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}${campaignId && `&campaignId=${campaignId}`}`;
+      return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}${campaignId ? `&campaignId=${campaignId}` : ""}`;
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}${campaignId && `&campaignId=${campaignId}`}`;
+    return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}${campaignId ? `&campaignId=${campaignId}` : ""}`;
   };
 
   const { data, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(getKey, fetcher, {
