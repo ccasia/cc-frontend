@@ -830,7 +830,7 @@ if (onUpdate) {
                                                      creatorProfileFull?.creator?.instagramUser?.engagement_rate ||
                                                      creatorProfileFull?.instagramUser?.engagement_rate;
                                 if (!engagementRate) return 'N/A';
-                                return `${engagementRate.toFixed(2)}%`;
+                                return `${Math.round(engagementRate)}%`;
                               })()}
                               </Typography>
                               <Typography
@@ -878,7 +878,7 @@ if (onUpdate) {
                                   const k = likes / 1000;
                                   return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
                                 }
-                                return likes.toLocaleString();
+                                return Math.round(likes).toLocaleString();
                               })()}
                               </Typography>
                               <Typography
@@ -972,7 +972,7 @@ if (onUpdate) {
                                                      creatorProfileFull?.creator?.tiktokUser?.engagement_rate ||
                                                      creatorProfileFull?.tiktokUser?.engagement_rate;
                                 if (!engagementRate) return 'N/A';
-                                return `${engagementRate.toFixed(2)}%`;
+                                return `${Math.round(engagementRate)}%`;
                               })()}
                             </Typography>
                           <Typography
@@ -1020,7 +1020,7 @@ if (onUpdate) {
                                   const k = likes / 1000;
                                   return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
                                 }
-                                return likes.toLocaleString();
+                                return Math.round(likes).toLocaleString();
                               })()}
                             </Typography>
                             <Typography
