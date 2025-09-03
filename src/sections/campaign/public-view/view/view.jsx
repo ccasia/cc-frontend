@@ -3,7 +3,7 @@ import { useTheme } from '@emotion/react';
 import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
 import { orderBy, debounce, throttle, get } from 'lodash';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 
 import {
   Box,
@@ -28,7 +28,7 @@ import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
-import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
+// import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -41,7 +41,7 @@ const PublicCampaignView = () => {
 
   const [filter, setFilter] = useState('all');
 
-  const ref = useMainContext();
+  const ref = useRef(null);
 
   const lgUp = useResponsive('up', 'lg');
 
@@ -243,9 +243,10 @@ const PublicCampaignView = () => {
   const handleScroll = useCallback(() => {
     if (lgUp) {
       // Desktop view handler
-      if (!ref?.mainRef?.current) return; // Early return if ref not available
+      if (!ref?.current) return; // Early return if ref not available
 
-      const scrollContainer = ref?.mainRef.current;
+      const scrollContainer = ref?.current;
+
       // const bottom =
       //   scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight;
 
@@ -283,10 +284,10 @@ const PublicCampaignView = () => {
         setSize((currentSize) => currentSize + 1);
       }
     }
-  }, [lgUp, ref?.mainRef, isValidating, data, setSize, size]);
+  }, [lgUp, ref, isValidating, data, setSize, size]);
 
   useEffect(() => {
-    const scrollElement = lgUp ? ref?.mainRef?.current : window;
+    const scrollElement = lgUp ? ref?.current : window;
 
     if (!scrollElement) {
       return undefined;
@@ -320,13 +321,16 @@ const PublicCampaignView = () => {
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
         px: { xs: 2, sm: 3, md: 4 },
+        pt: { lg: 2, xs: 2, sm: 2 },
+        // bgcolor: 'beige',
+        // overflow: 'hidden',
       }}
     >
       <Typography
         variant="h2"
         sx={{
           mb: 0.2,
-          mt: { lg: 2, xs: 2, sm: 2 },
+          // mt: { lg: 2, xs: 2, sm: 2 },
           fontFamily: theme.typography.fontSecondaryFamily,
           fontWeight: 'normal',
         }}
@@ -754,7 +758,7 @@ const PublicCampaignView = () => {
 
       {!isLoading &&
         (filteredData?.length > 0 ? (
-          <Box>
+          <Box ref={ref}>
             <CampaignLists
               campaigns={filteredData}
               totalCampaigns={filteredData?.length}
