@@ -243,20 +243,36 @@ const PublicCampaignView = () => {
   const handleScroll = useCallback(() => {
     if (lgUp) {
       // Desktop view handler
-      if (!ref?.mainRef?.current) return; // Early return if ref not available
+      // if (!ref?.mainRef?.current) return; // Early return if ref not available
 
-      const scrollContainer = ref?.mainRef.current;
-      const bottom =
-        scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight;
+      // const scrollContainer = ref?.mainRef.current;
+      // const bottom =
+      //   scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight;
+
+      // if (
+      //   bottom &&
+      //   !isValidating &&
+      //   data &&
+      //   data.length > 0 &&
+      //   data[data.length - 1]?.metaData?.lastCursor
+      // ) {
+      //   setSize(size + 1);
+      // }
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.body.scrollHeight;
+      const scrolled = window.scrollY;
+
+      // checks if user has scrolled to bottom
+      const isAtBottom = windowHeight + scrolled + 50 >= documentHeight;
 
       if (
-        bottom &&
+        isAtBottom &&
         !isValidating &&
         data &&
         data.length > 0 &&
         data[data.length - 1]?.metaData?.lastCursor
       ) {
-        setSize(size + 1);
+        setSize((currentSize) => currentSize + 1);
       }
     } else {
       // Mobile view handler
@@ -277,7 +293,7 @@ const PublicCampaignView = () => {
         setSize((currentSize) => currentSize + 1);
       }
     }
-  }, [data, isValidating, setSize, size, ref, lgUp]);
+  }, [data, isValidating, setSize, lgUp]);
 
   useEffect(() => {
     const scrollElement = lgUp ? ref?.mainRef?.current : window;
