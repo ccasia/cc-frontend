@@ -320,6 +320,8 @@ const PublicCampaignView = () => {
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
         px: { xs: 2, sm: 3, md: 4 },
+
+        pb: 10,
       }}
     >
       <Typography
@@ -333,6 +335,7 @@ const PublicCampaignView = () => {
       >
         Discover Campaigns ✨
       </Typography>
+
       <Typography
         variant="body1"
         sx={{ fontFamily: theme.typography.fontFamily, color: '#636366', mb: 3 }}
