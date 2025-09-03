@@ -455,40 +455,33 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                       {/* Feedback History */}
                     </Box>
 
-                    {(submission.status === 'CHANGES_REQUIRED' || 'CLIENT_FEEDBACK') &&
-                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        {submission.feedback && submission.feedback.length > 0 && (
-                          <Box sx={{ flex: 1, overflow: 'auto' }}>
-                          <Stack spacing={1}>
-                            {[submission.feedback[0]].map((feedback, index) => (
-                              <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                                <Box sx={{ flex: 1 }}>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-                                    {reasons.map((reason, reasonIndex) => (
-                                      <Chip key={reasonIndex} label={reason} size="small" variant="outlined" color="warning" />
-                                    ))}
-                                  </Box>
-                                  {feedback.reasons?.map((reason, reasonIndex) => (
-                                    <Chip sx={{ mr: 1, mb: 1 }} key={reasonIndex} label={reason} size="small" variant="outlined" color="warning" />
-                                  ))}                                  
-                                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                    {(feedback.content || feedback.reasons) && 
-                                      <Typography variant='caption' fontWeight="bold" color={'#636366'}>
-                                        {feedback.admin?.name || 'CS Comments'}
-                                      </Typography>
-                                    }
-                                  </Box>
-                                  <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
-                                    {feedback.content}
-                                  </Typography>
+                    <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                      {submission.feedback && submission.feedback.length > 0 && (
+                        <Box sx={{ flex: 1, overflow: 'auto' }}>
+                        <Stack spacing={1}>
+                          {[submission.feedback[0]].map((feedback, index) => (
+                            <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                              <Box sx={{ flex: 1 }}>
+                                {feedback.reasons?.map((reason, reasonIndex) => (
+                                  <Chip sx={{ mr: 1, mb: 1 }} key={reasonIndex} label={reason} size="small" variant="outlined" color="warning" />
+                                ))}                                  
+                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                  {(feedback.content || feedback.reasons) && 
+                                    <Typography variant='caption' fontWeight="bold" color={'#636366'}>
+                                      {feedback.admin?.name || 'CS Comments'}
+                                    </Typography>
+                                  }
                                 </Box>
+                                <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
+                                  {feedback.content}
+                                </Typography>
                               </Box>
-                            ))}
-                          </Stack>
-                          </Box>
-                        )}
-                      </Box>
-                    }
+                            </Box>
+                          ))}
+                        </Stack>
+                        </Box>
+                      )}
+                    </Box>
 
                     {/* Feedback Section */}
                     {((!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) || (isClient && submission.status === 'SENT_TO_CLIENT')) && (
