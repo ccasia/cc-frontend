@@ -391,81 +391,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                     {currentPitch?.user?.email}
                   </Typography>
 
-                  {/* Languages, Age, Pronouns under name/email */}
-                  {(currentPitch?.user?.creator?.languages?.length > 0 ||
-                    currentPitch?.user?.creator?.birthDate ||
-                    currentPitch?.user?.creator?.pronounce) && (
-                    <Stack direction="row" spacing={3} alignItems="flex-start" sx={{ mt: 1 }}>
-                      {/* Languages */}
-                      {currentPitch?.user?.creator?.languages?.length > 0 && (
-                        <Box>
-                          <Typography variant="caption" color="#8E8E93" sx={{ mb: 0.5, display: 'block' }}>
-                            Languages
-                          </Typography>
-                          <Stack direction="row" flexWrap="wrap" gap={0.5}>
-                            {Array.isArray(currentPitch.user.creator.languages) &&
-                              currentPitch.user.creator.languages.slice(0, 2).map((language, index) => (
-                                <Chip
-                                  key={index}
-                                  label={language.toUpperCase()}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: '#FFF',
-                                    border: '1px solid #EBEBEB',
-                                    borderRadius: 1,
-                                    color: '#8E8E93',
-                                    height: 28,
-                                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                                    cursor: 'default',
-                                    '& .MuiChip-label': {
-                                      fontWeight: 600,
-                                      px: 1,
-                                      height: '100%',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      marginTop: '-3px',
-                                      fontSize: '0.75rem',
-                                    },
-                                  }}
-                                />
-                              ))}
-                            {currentPitch?.user?.creator?.languages?.length > 2 && (
-                              <Typography variant="caption" sx={{ fontSize: '0.7rem', alignSelf: 'center' }}>
-                                +{currentPitch.user.creator.languages.length - 2}
-                              </Typography>
-                            )}
-                          </Stack>
-                        </Box>
-                      )}
 
-                      {/* Age */}
-                      {currentPitch?.user?.creator?.birthDate && (
-                        <Box>
-                          <Typography variant="caption" color="#8E8E93" sx={{ mb: 0.5, display: 'block' }}>
-                            Age
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px' }}>
-                            {dayjs().diff(dayjs(currentPitch.user.creator.birthDate), 'year')}
-                          </Typography>
-                        </Box>
-                      )}
-
-                      {/* Pronouns */}
-                      {currentPitch?.user?.creator?.pronounce && (
-                        <Box>
-                          <Typography variant="caption" color="#8E8E93" sx={{ mb: 0.5, display: 'block' }}>
-                            Pronouns
-                          </Typography>
-                          <Chip
-                            label={currentPitch.user.creator.pronounce}
-                            size="small"
-                            sx={{ bgcolor: '#F2F2F7', color: '#1C1C1E', height: 24 }}
-                          />
-                        </Box>
-                      )}
-                    </Stack>
-                  )}
 
                   {/* Social Media Icons - Mobile */}
                   <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
@@ -763,7 +689,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                                                      creatorProfileFull?.creator?.instagramUser?.engagement_rate ||
                                                      creatorProfileFull?.instagramUser?.engagement_rate;
                                 if (!engagementRate) return 'N/A';
-                                return `${engagementRate.toFixed(2)}%`;
+                                return `${Math.round(engagementRate)}%`;
                               })()}
                             </Typography>
                             <Typography
@@ -811,7 +737,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                                   const k = likes / 1000;
                                   return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
                                 }
-                                return likes.toLocaleString();
+                                return Math.round(likes).toLocaleString();
                               })()}
                             </Typography>
                             <Typography
@@ -905,7 +831,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                                                      creatorProfileFull?.creator?.tiktokUser?.engagement_rate ||
                                                      creatorProfileFull?.tiktokUser?.engagement_rate;
                                 if (!engagementRate) return 'N/A';
-                                return `${engagementRate.toFixed(2)}%`;
+                                return `${Math.round(engagementRate)}%`;
                               })()}
                             </Typography>
                             <Typography
@@ -953,7 +879,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                                   const k = likes / 1000;
                                   return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
                                 }
-                                return likes.toLocaleString();
+                                return Math.round(likes).toLocaleString();
                               })()}
                             </Typography>
                             <Typography
