@@ -708,7 +708,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             />
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
-                                const followers = currentPitch?.user?.creator?.instagramFollowers;
+                                // Try multiple possible sources for media kit data
+                                const followers = currentPitch?.user?.creator?.instagramFollowers || 
+                                               creatorProfileFull?.creator?.instagramFollowers ||
+                                               creatorProfileFull?.instagramFollowers ||
+                                               currentPitch?.user?.mediaKit?.instagram?.followers;
                                 if (!followers) return 'N/A';
                                 if (followers >= 1000) {
                                   const k = followers / 1000;
@@ -752,9 +756,15 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                               sx={{ width: 20, height: 20 }}
                             />
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                              {currentPitch?.user?.creator?.instagramEngagementRate
-                                ? `${(currentPitch.user.creator.instagramEngagementRate * 100).toFixed(2)}%`
-                                : 'N/A'}
+                              {(() => {
+                                // Try multiple possible sources for media kit data
+                                const engagementRate = currentPitch?.user?.creator?.instagramEngagementRate ||
+                                                     creatorProfileFull?.creator?.instagramEngagementRate ||
+                                                     creatorProfileFull?.instagramEngagementRate ||
+                                                     currentPitch?.user?.mediaKit?.instagram?.engagementRate;
+                                if (!engagementRate) return 'N/A';
+                                return `${(engagementRate * 100).toFixed(2)}%`;
+                              })()}
                             </Typography>
                             <Typography
                               variant="caption"
@@ -792,7 +802,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             />
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
-                                const likes = currentPitch?.user?.creator?.instagramAverageLikes;
+                                // Try multiple possible sources for media kit data
+                                const likes = currentPitch?.user?.creator?.instagramAverageLikes ||
+                                            creatorProfileFull?.creator?.instagramAverageLikes ||
+                                            creatorProfileFull?.instagramAverageLikes ||
+                                            currentPitch?.user?.mediaKit?.instagram?.averageLikes;
                                 if (!likes) return 'N/A';
                                 if (likes >= 1000) {
                                   const k = likes / 1000;
@@ -839,7 +853,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             />
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
-                                const followers = currentPitch?.user?.creator?.tiktokFollowers;
+                                // Try multiple possible sources for media kit data
+                                const followers = currentPitch?.user?.creator?.tiktokFollowers || 
+                                               creatorProfileFull?.creator?.tiktokFollowers ||
+                                               creatorProfileFull?.tiktokFollowers ||
+                                               currentPitch?.user?.mediaKit?.tiktok?.followers;
                                 if (!followers) return 'N/A';
                                 if (followers >= 1000) {
                                   const k = followers / 1000;
@@ -883,9 +901,15 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                               sx={{ width: 20, height: 20 }}
                             />
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                              {currentPitch?.user?.creator?.tiktokEngagementRate
-                                ? `${(currentPitch.user.creator.tiktokEngagementRate * 100).toFixed(2)}%`
-                                : 'N/A'}
+                              {(() => {
+                                // Try multiple possible sources for media kit data
+                                const engagementRate = currentPitch?.user?.creator?.tiktokEngagementRate ||
+                                                     creatorProfileFull?.creator?.tiktokEngagementRate ||
+                                                     creatorProfileFull?.tiktokEngagementRate ||
+                                                     currentPitch?.user?.mediaKit?.tiktok?.engagementRate;
+                                if (!engagementRate) return 'N/A';
+                                return `${(engagementRate * 100).toFixed(2)}%`;
+                              })()}
                             </Typography>
                             <Typography
                               variant="caption"
@@ -923,7 +947,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             />
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
-                                const likes = currentPitch?.user?.creator?.tiktokAverageLikes;
+                                // Try multiple possible sources for media kit data
+                                const likes = currentPitch?.user?.creator?.tiktokAverageLikes ||
+                                            creatorProfileFull?.creator?.tiktokAverageLikes ||
+                                            creatorProfileFull?.tiktokAverageLikes ||
+                                            currentPitch?.user?.mediaKit?.tiktok?.averageLikes;
                                 if (!likes) return 'N/A';
                                 if (likes >= 1000) {
                                   const k = likes / 1000;
