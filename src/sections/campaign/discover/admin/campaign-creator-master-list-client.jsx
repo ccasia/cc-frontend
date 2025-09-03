@@ -20,6 +20,7 @@ import {
   InputAdornment,
   TableContainer,
   CircularProgress,
+  Tooltip,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -62,12 +63,12 @@ const getStatusDisplay = (pitch) => {
 
   const statusMap = {
     PENDING_REVIEW: { color: '#FF9A02', label: 'PENDING REVIEW' },
-    MAYBE: { color: '#FF9A02', label: 'Maybe' },
+    MAYBE: { color: '#FFC702', label: 'Maybe' },
     APPROVED: { color: '#1ABF66', label: 'APPROVED' },
     REJECTED: { color: '#FF4842', label: 'REJECTED' },
     AGREEMENT_SUBMITTED: { color: '#1ABF66', label: 'AGREEMENT SUBMITTED' },
     AGREEMENT_PENDING: { color: '#1340FF', label: 'AGREEMENT PENDING' },
-    SENT_TO_CLIENT: { color: '#FF9A02', label: 'SENT TO CLIENT' },
+    SENT_TO_CLIENT: { color: '#8B5CF6', label: 'SENT TO CLIENT' },
     pending: { color: '#FF9A02', label: 'PENDING' },
     filtered: { color: '#FF4842', label: 'FILTERED' },
     draft: { color: '#637381', label: 'DRAFT' },
@@ -100,19 +101,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 
 
 
-  // Debug log for V3 pitches
-  if (campaign?.origin === 'CLIENT') {
-    // eslint-disable-next-line no-console
-    console.log('V3 pitches for client:', v3Pitches);
-    // eslint-disable-next-line no-console
-    console.log('Campaign ID:', campaign?.id);
-    // eslint-disable-next-line no-console
-    console.log('Campaign origin:', campaign?.origin);
-    // eslint-disable-next-line no-console
-    console.log('V3 pitches loading:', v3PitchesLoading);
-    // eslint-disable-next-line no-console
-    console.log('V3 pitches error:', v3PitchesError);
-  }
+
 
   // Create a list of creators from the shortlisted array and pitches
   const creators = useMemo(() => {
@@ -120,14 +109,9 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 
     // For client-created campaigns, use V3 pitches
     if (campaign.origin === 'CLIENT' && v3Pitches) {
-      // eslint-disable-next-line no-console
-      console.log('Processing V3 pitches:', v3Pitches);
-
       return (
         v3Pitches
           .map((pitch) => {
-            // eslint-disable-next-line no-console
-            console.log('Processing pitch:', pitch);
 
             return {
               id: pitch.userId || pitch.id,
@@ -149,6 +133,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               isShortlisted: false,
               pitchId: pitch.id,
               isV3: true,
+              adminComments: pitch.adminComments,
+              // Include rejection reason fields for CLIENT REASON display
+              rejectionReason: pitch.rejectionReason,
+              customRejectionText: pitch.customRejectionText,
             };
           })
           // FIX: Only require user to exist, not user.creator
@@ -245,17 +233,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   // Use enhanced creators with media kit data
   const creatorsWithMediaKit = enhancedCreators;
 
-  // Debug logs for creators
-  if (campaign?.origin === 'CLIENT') {
-    // eslint-disable-next-line no-console
-    console.log('Creators array:', creators);
-    // eslint-disable-next-line no-console
-    console.log('Creators length:', creators.length);
-    if (creators.length > 0) {
-      // eslint-disable-next-line no-console
-      console.log('First creator:', creators[0]);
-    }
-  }
+
 
   const activeCount = creators.length || 0;
   const pendingCount =
@@ -312,17 +290,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     });
   }, [creators, search, sortDirection, selectedFilter]);
 
-  // Debug logs for filtered creators
-  if (campaign?.origin === 'CLIENT') {
-    // eslint-disable-next-line no-console
-    console.log('Filtered creators:', filteredCreators);
-    // eslint-disable-next-line no-console
-    console.log('Filtered creators length:', filteredCreators.length);
-    // eslint-disable-next-line no-console
-    console.log('Selected filter:', selectedFilter);
-    // eslint-disable-next-line no-console
-    console.log('Search term:', search);
-  }
+
 
   const matchCampaignPercentage = (pitch) => {
     if (!pitch) return null;
@@ -847,12 +815,13 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                           : '-'}
                       </TableCell>
                       <TableCell>
-                        <Typography
-                          variant="body2"
+                        <Box
                           sx={{
                             textTransform: 'uppercase',
                             fontWeight: 700,
-                            display: 'inline-block',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.25,
                             px: 1.5,
                             py: 0.5,
                             fontSize: '0.75rem',
@@ -870,8 +839,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                               borderColor: '#FF9A02',
                             }),
                             ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'MAYBE' && {
-                              color: '#FF9A02',
-                              borderColor: '#FF9A02',
+                              color: '#FFC702',
+                              borderColor: '#FFC702',
                             }),
                             ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'APPROVED' && {
                               color: '#1ABF66',
@@ -880,6 +849,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                             ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'REJECTED' && {
                               color: '#FF4842',
                               borderColor: '#FF4842',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT' && {
+                              color: '#8B5CF6',
+                              borderColor: '#8B5CF6',
                             }),
                             ...(!pitch.isShortlisted && pitch.status === 'undecided' && {
                               color: '#FF9A02',
@@ -904,7 +877,19 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                               : pitch.status === 'approved'
                                 ? 'PITCH APPROVED'
                                 : pitch.status.toUpperCase()}
-                        </Typography>
+                          {((pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT' || pitch.status === 'SENT_TO_CLIENT') && 
+                           pitch.adminComments && 
+                           pitch.adminComments.trim().length > 0 && (
+                            <Tooltip title="CS Comments provided" arrow>
+                              <Box
+                                component="img"
+                                src="/assets/icons/components/ic-comments.svg"
+                                alt="Comments"
+                                sx={{ width: 16, height: 16 }}
+                              />
+                            </Tooltip>
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Button

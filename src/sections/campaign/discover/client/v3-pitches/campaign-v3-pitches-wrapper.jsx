@@ -19,9 +19,10 @@ const CampaignV3PitchesWrapper = ({ campaign, campaignMutate }) => {
     mutate((currentPitches) => {
       if (!currentPitches) return currentPitches;
       
-      return currentPitches.map((pitch) => 
+      const updatedPitches = currentPitches.map((pitch) => 
         pitch.id === updatedPitch.id ? updatedPitch : pitch
       );
+      return updatedPitches;
     });
 
     // If the pitch was approved by client, also trigger campaign data revalidation
