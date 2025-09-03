@@ -247,8 +247,7 @@ const PublicCampaignView = () => {
 
       const scrollContainer = ref?.mainRef.current;
       const bottom =
-        scrollContainer.scrollHeight <=
-        scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
+        scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight;
 
       if (
         bottom &&
@@ -302,17 +301,12 @@ const PublicCampaignView = () => {
 
   useEffect(() => {
     (async () => {
-      console.log('SAD');
-    })();
-
-    const test = async () => {
       const url = new URL(window.location.href);
 
       if (url.searchParams.get('campaign')) {
         localStorage.setItem('campaign', url.searchParams.get('campaign'));
       }
-    };
-    test();
+    })();
   }, []);
 
   return (
@@ -320,8 +314,6 @@ const PublicCampaignView = () => {
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
         px: { xs: 2, sm: 3, md: 4 },
-
-        pb: 10,
       }}
     >
       <Typography
