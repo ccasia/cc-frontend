@@ -51,6 +51,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const [maybeOpen, setMaybeOpen] = useState(false);
   const [maybeReason, setMaybeReason] = useState('');
   const [maybeNote, setMaybeNote] = useState('');
+  const [creatorProfileFull, setCreatorProfileFull] = useState(null);
+  const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram', 'tiktok', or 'both'
   const MAYBE_REASONS = [
     { value: 'engagement_low', label: 'Engagement Rate Too Low' },
     { value: 'not_fit_brief', label: 'Does Not Fit Criteria in Campaign Brief' },
@@ -61,6 +63,53 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   useEffect(() => {
     setCurrentPitch(pitch);
   }, [pitch]);
+
+  // Set default platform when modal opens
+  useEffect(() => {
+    if (open && currentPitch?.user?.creator) {
+      if (currentPitch.user.creator.instagram && currentPitch.user.creator.tiktok) {
+        setSelectedPlatform('both'); // Show both if both platforms exist
+      } else if (currentPitch.user.creator.instagram) {
+        setSelectedPlatform('instagram');
+      } else if (currentPitch.user.creator.tiktok) {
+        setSelectedPlatform('tiktok');
+      }
+    }
+  }, [open, currentPitch?.user?.creator]);
+
+  // Fetch full creator profile to hydrate Languages/Age/Pronouns when modal opens
+  useEffect(() => {
+    const userId = currentPitch?.user?.id;
+    if (open && userId) {
+      axiosInstance
+        .get(endpoints.creators.getCreatorFullInfo(userId))
+        .then((res) => {
+          // API may return { user } or the user directly
+          const payload = res?.data?.user || res?.data || null;
+          if (payload) setCreatorProfileFull(payload);
+        })
+        .catch(() => {
+          // non-blocking; keep UI as-is on error
+        });
+    }
+  }, [open, currentPitch?.user?.id]);
+
+  // Derive creator profile data from multiple possible sources
+  const creatorProfile = creatorProfileFull?.creator || currentPitch?.user?.creator || {};
+  const accountUser = creatorProfileFull || currentPitch?.user || {};
+  const derivedLanguages = (Array.isArray(creatorProfile.languages) && creatorProfile.languages.length
+    ? creatorProfile.languages
+    : Array.isArray(accountUser.languages)
+      ? accountUser.languages
+      : [])
+    .filter(Boolean);
+  const derivedBirthDate = creatorProfile.birthDate || accountUser.birthDate || null;
+  const derivedPronouns = creatorProfile.pronounce || accountUser.pronounce || accountUser.pronouns || null;
+
+  // Normalized CS Comments text (for client view rendering)
+  const adminCommentsText = ((currentPitch?.adminComments ?? pitch?.adminComments ?? '') || '')
+    .toString()
+    .trim();
 
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
@@ -291,7 +340,7 @@ if (onUpdate) {
         );
 
         // Update pitch status
-        const updatedPitch = { ...pitch, status: 'maybe' };
+        const updatedPitch = { ...pitch, status: 'MAYBE' };
         setCurrentPitch(updatedPitch);
         onUpdate?.(updatedPitch);
 
@@ -361,6 +410,101 @@ if (onUpdate) {
           <Iconify icon="eva:close-fill" width={32} height={32} />
         </IconButton>
 
+        {/* Social links under close button (desktop) */}
+        <Box
+          sx={{
+            display: { xs: 'none', sm: 'flex' },
+            position: 'absolute',
+            right: 14,
+            top: 60,
+            zIndex: 9,
+            flexDirection: 'row',
+            gap: 1,
+          }}
+        >
+          <Tooltip title="Instagram Stats">
+            <IconButton
+              onClick={() => setSelectedPlatform('instagram')}
+              size="small"
+              disabled={selectedPlatform === 'instagram'}
+              sx={{
+                p: 0.8,
+                color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
+                bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
+                border: '1px solid #ebebeb',
+                borderBottom: '3px solid #ebebeb',
+                borderRadius: '10px',
+                height: '42px',
+                width: '42px',
+                '&:hover': { 
+                  bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5' 
+                },
+                '&.Mui-disabled': {
+                  bgcolor: '#F2F2F7',
+                  color: '#8E8E93',
+                },
+              }}
+            >
+              <Iconify icon="mdi:instagram" width={22} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="TikTok Stats">
+            <IconButton
+              onClick={() => setSelectedPlatform('tiktok')}
+              size="small"
+              disabled={selectedPlatform === 'tiktok'}
+              sx={{
+                p: 0.8,
+                color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#000000',
+                bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
+                border: '1px solid #ebebeb',
+                borderBottom: '3px solid #ebebeb',
+                borderRadius: '10px',
+                height: '42px',
+                width: '42px',
+                '&:hover': { 
+                  bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5' 
+                },
+                '&.Mui-disabled': {
+                  bgcolor: '#F2F2F7',
+                  color: '#8E8E93',
+                },
+              }}
+            >
+              <Iconify icon="ic:baseline-tiktok" width={22} />
+            </IconButton>
+          </Tooltip>
+          {/* Both Platforms Button */}
+          {currentPitch?.user?.creator?.instagram && currentPitch?.user?.creator?.tiktok && (
+            <Tooltip title="Both Platforms">
+              <IconButton
+                onClick={() => setSelectedPlatform('both')}
+                size="small"
+                disabled={selectedPlatform === 'both'}
+                sx={{
+                  p: 0.8,
+                  color: selectedPlatform === 'both' ? '#8E8E93' : '#636366',
+                  bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#FFF',
+                  border: '1px solid #ebebeb',
+                  borderBottom: '3px solid #ebebeb',
+                  borderRadius: '10px',
+                  height: '42px',
+                  width: '42px',
+                  '&:hover': { 
+                    bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#f5f5f5' 
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: '#F2F2F7',
+                    color: '#8E8E93',
+                  },
+                }}
+              >
+                <Iconify icon="eva:layers-fill" width={22} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+
         {/* Fixed User Info Section */}
         <Box
           sx={{
@@ -408,52 +552,87 @@ if (onUpdate) {
                   <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
                     <Stack direction="row" spacing={1.5}>
                       {currentPitch?.user?.creator?.instagram && (
-                        <Tooltip title="Instagram Profile">
+                        <Tooltip title="Instagram Stats">
                           <IconButton
-                            href={`https://instagram.com/${currentPitch.user.creator.instagram}`}
-                            target="_blank"
+                            onClick={() => setSelectedPlatform('instagram')}
                             size="small"
+                            disabled={selectedPlatform === 'instagram'}
                             sx={{
                               p: 0.8,
-                              color: '#231F20',
-                              bgcolor: '#FFF',
+                              color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
+                              bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
                               border: '1px solid #ebebeb',
                               borderBottom: '3px solid #ebebeb',
                               borderRadius: '10px',
                               height: '42px',
                               width: '42px',
                               '&:hover': {
-                                bgcolor: '#f5f5f5',
+                                bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5' 
+                              },
+                              '&.Mui-disabled': {
+                                bgcolor: '#F2F2F7',
+                                color: '#8E8E93',
                               },
                             }}
-                            onClick={(e) => e.stopPropagation()}
                           >
                             <Iconify icon="mdi:instagram" width={24} />
                           </IconButton>
                         </Tooltip>
                       )}
                       {currentPitch?.user?.creator?.tiktok && (
-                        <Tooltip title="TikTok Profile">
+                        <Tooltip title="TikTok Stats">
                           <IconButton
-                            href={`https://tiktok.com/@${currentPitch.user.creator.tiktok}`}
-                            target="_blank"
+                            onClick={() => setSelectedPlatform('tiktok')}
                             size="small"
+                            disabled={selectedPlatform === 'tiktok'}
                             sx={{
                               p: 0.8,
-                              color: '#000000',
-                              bgcolor: '#FFF',
+                              color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#000000',
+                              bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
                               border: '1px solid #ebebeb',
                               borderBottom: '3px solid #ebebeb',
                               borderRadius: '10px',
                               height: '42px',
                               width: '42px',
                               '&:hover': {
-                                bgcolor: '#f5f5f5',
+                                bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5' 
+                              },
+                              '&.Mui-disabled': {
+                                bgcolor: '#F2F2F7',
+                                color: '#8E8E93',
                               },
                             }}
-                            onClick={(e) => e.stopPropagation()}
                           >
                             <Iconify icon="ic:baseline-tiktok" width={24} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {/* Both Platforms Button */}
+                      {currentPitch?.user?.creator?.instagram && currentPitch?.user?.creator?.tiktok && (
+                        <Tooltip title="Both Platforms">
+                          <IconButton
+                            onClick={() => setSelectedPlatform('both')}
+                            size="small"
+                            disabled={selectedPlatform === 'both'}
+                            sx={{
+                              p: 0.8,
+                              color: selectedPlatform === 'both' ? '#8E8E93' : '#636366',
+                              bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#FFF',
+                              border: '1px solid #ebebeb',
+                              borderBottom: '3px solid #ebebeb',
+                              borderRadius: '10px',
+                              height: '42px',
+                              width: '42px',
+                              '&:hover': { 
+                                bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#f5f5f5' 
+                              },
+                              '&.Mui-disabled': {
+                                bgcolor: '#F2F2F7',
+                                color: '#8E8E93',
+                              },
+                            }}
+                          >
+                            <Iconify icon="eva:layers-fill" width={24} />
                           </IconButton>
                         </Tooltip>
                       )}
@@ -500,52 +679,87 @@ if (onUpdate) {
               >
                 <Stack direction="row" spacing={1}>
                   {currentPitch?.user?.creator?.instagram && (
-                    <Tooltip title="Instagram Profile">
+                    <Tooltip title="Instagram Stats">
                       <IconButton
-                        href={`https://instagram.com/${currentPitch.user.creator.instagram}`}
-                        target="_blank"
+                        onClick={() => setSelectedPlatform('instagram')}
                         size="small"
+                        disabled={selectedPlatform === 'instagram'}
                         sx={{
                           p: 0.8,
-                          color: '#231F20',
-                          bgcolor: '#FFF',
+                          color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
+                          bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
                           border: '1px solid #ebebeb',
                           borderBottom: '3px solid #ebebeb',
                           borderRadius: '10px',
                           height: '48px',
                           width: '48px',
                           '&:hover': {
-                            bgcolor: '#f5f5f5',
+                            bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5' 
+                          },
+                          '&.Mui-disabled': {
+                            bgcolor: '#F2F2F7',
+                            color: '#8E8E93',
                           },
                         }}
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <Iconify icon="mdi:instagram" width={28} />
                       </IconButton>
                     </Tooltip>
                   )}
                   {currentPitch?.user?.creator?.tiktok && (
-                    <Tooltip title="TikTok Profile">
+                    <Tooltip title="TikTok Stats">
                       <IconButton
-                        href={`https://tiktok.com/@${currentPitch.user.creator.tiktok}`}
-                        target="_blank"
+                        onClick={() => setSelectedPlatform('tiktok')}
                         size="small"
+                        disabled={selectedPlatform === 'tiktok'}
                         sx={{
                           p: 0.8,
-                          color: '#000000',
-                          bgcolor: '#FFF',
+                          color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#000000',
+                          bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
                           border: '1px solid #ebebeb',
                           borderBottom: '3px solid #ebebeb',
                           borderRadius: '10px',
                           height: '48px',
                           width: '48px',
                           '&:hover': {
-                            bgcolor: '#f5f5f5',
+                            bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5' 
+                          },
+                          '&.Mui-disabled': {
+                            bgcolor: '#F2F2F7',
+                            color: '#8E8E93',
                           },
                         }}
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <Iconify icon="ic:baseline-tiktok" width={28} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {/* Both Platforms Button */}
+                  {currentPitch?.user?.creator?.instagram && currentPitch?.user?.creator?.tiktok && (
+                    <Tooltip title="Both Platforms">
+                      <IconButton
+                        onClick={() => setSelectedPlatform('both')}
+                        size="small"
+                        disabled={selectedPlatform === 'both'}
+                        sx={{
+                          p: 0.8,
+                          color: selectedPlatform === 'both' ? '#8E8E93' : '#636366',
+                          bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#FFF',
+                          border: '1px solid #ebebeb',
+                          borderBottom: '3px solid #ebebeb',
+                          borderRadius: '10px',
+                          height: '48px',
+                          width: '48px',
+                          '&:hover': { 
+                            bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#f5f5f5' 
+                          },
+                          '&.Mui-disabled': {
+                            bgcolor: '#F2F2F7',
+                            color: '#8E8E93',
+                          },
+                        }}
+                      >
+                        <Iconify icon="eva:layers-fill" width={28} />
                       </IconButton>
                     </Tooltip>
                   )}
@@ -600,14 +814,13 @@ if (onUpdate) {
                           <Typography
                             variant="caption"
                             color="#8e8e93"
-                            sx={{ fontWeight: 500, fontSize: '12px' }}
+                            sx={{ fontWeight: 700, fontSize: '12px' }}
                           >
                             Languages
                           </Typography>
-                          {currentPitch?.user?.creator?.languages?.length > 0 ? (
-                            <Stack direction="row" flexWrap="wrap" gap={0.5}>
-                              {Array.isArray(currentPitch.user.creator.languages) &&
-                                currentPitch.user.creator.languages
+                          {derivedLanguages.length > 0 ? (
+                            <Stack direction="row" flexWrap="nowrap" gap={0.5} alignItems="center" sx={{ mt: 1.80 }}>
+                              {derivedLanguages
                                   .slice(0, 2)
                                   .map((language, index) => (
                                     <Chip
@@ -623,18 +836,18 @@ if (onUpdate) {
                                         border: '1px solid #EBEBEB',
                                         borderRadius: 0.5,
                                         color: '#8E8E93',
-                                        height: '24px',
+                                      height: '30px',
                                         boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
                                         cursor: 'default',
                                         '& .MuiChip-label': {
                                           fontWeight: 600,
-                                          px: 1,
+                                        px: 1.25,
                                           height: '100%',
                                           display: 'flex',
                                           alignItems: 'center',
                                           justifyContent: 'center',
                                           marginTop: '-2px',
-                                          fontSize: '0.7rem',
+                                        fontSize: '0.8rem',
                                         },
                                         '&:hover': {
                                           bgcolor: '#FFF',
@@ -642,13 +855,13 @@ if (onUpdate) {
                                       }}
                                     />
                                   ))}
-                              {currentPitch?.user?.creator?.languages?.length > 2 && (
+                              {derivedLanguages.length > 2 && (
                                 <Typography
                                   variant="caption"
                                   color="#8E8E93"
                                   sx={{ fontSize: '0.7rem', alignSelf: 'center' }}
                                 >
-                                  +{currentPitch.user.creator.languages.length - 2}
+                                  +{derivedLanguages.length - 2}
                                 </Typography>
                               )}
                             </Stack>
@@ -658,7 +871,7 @@ if (onUpdate) {
                               color="#8E8E93"
                               sx={{ fontStyle: 'italic', fontSize: '11px' }}
                             >
-                              No languages
+                              —
                             </Typography>
                           )}
                         </Stack>
@@ -670,79 +883,498 @@ if (onUpdate) {
                           <Typography
                             variant="caption"
                             color="#8e8e93"
-                            sx={{ fontWeight: 500, fontSize: '12px' }}
+                            sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}
                           >
                             Age
                           </Typography>
-                          {currentPitch?.user?.creator?.birthDate ? (
-                            <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px' }}>
-                              {dayjs().diff(dayjs(currentPitch.user.creator.birthDate), 'year')}
+                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
+                            {derivedBirthDate ? dayjs().diff(dayjs(derivedBirthDate), 'year') : '—'}
                             </Typography>
-                          ) : (
-                            <Typography
-                              variant="caption"
-                              color="#8E8E93"
-                              sx={{ fontStyle: 'italic', fontSize: '11px' }}
-                            >
-                              N/A
-                            </Typography>
-                          )}
                         </Stack>
                       </Box>
 
                       {/* Pronouns Section */}
                       <Box>
                         <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography
-                            variant="caption"
-                            color="#8e8e93"
-                            sx={{ fontWeight: 500, fontSize: '12px' }}
-                          >
-                            Pronouns
-                          </Typography>
-                          {currentPitch?.user?.creator?.pronounce ? (
-                            <Chip
-                              label={currentPitch.user.creator.pronounce}
-                              size="small"
-                              sx={{
-                                bgcolor: '#FFF',
-                                border: '1px solid #EBEBEB',
-                                borderRadius: 0.5,
-                                color: '#8E8E93',
-                                height: '24px',
-                                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                                cursor: 'default',
-                                '& .MuiChip-label': {
-                                  fontWeight: 600,
-                                  px: 1,
-                                  height: '100%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  marginTop: '-2px',
-                                  fontSize: '0.7rem',
-                                },
-                                '&:hover': {
-                                  bgcolor: '#FFF',
-                                },
-                              }}
-                            />
-                          ) : (
                             <Typography
                               variant="caption"
-                              color="#8E8E93"
-                              sx={{ fontStyle: 'italic', fontSize: '11px' }}
+                            color="#8e8e93"
+                            sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}
                             >
-                              N/A
+                            Pronouns
                             </Typography>
-                          )}
+                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
+                            {derivedPronouns || '—'}
+                          </Typography>
                         </Stack>
                       </Box>
                     </Stack>
 
-                    {/* Right side: Stats with gap */}
-                    <Stack direction="row" spacing={0} sx={{ ml: 4 }}>
-                      {/* First stat */}
+                                      {/* Right side: Stats with gap */}
+                  <Stack direction="row" spacing={0} sx={{ ml: 4 }}>
+                    {/* Instagram Stats */}
+                    {currentPitch?.user?.creator?.instagram && selectedPlatform === 'instagram' && (
+                      <>
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '80px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/purpleGroup.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.instagramFollowers?.toLocaleString() || 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Followers
+                            </Typography>
+                          </Stack>
+                        </Box>
+
+                        {/* Divider */}
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '120px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/greenChart.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.instagramEngagementRate
+                                ? `${(currentPitch.user.creator.instagramEngagementRate * 100).toFixed(2)}%`
+                                : 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Engagement Rate
+                            </Typography>
+                          </Stack>
+                        </Box>
+
+                        {/* Divider */}
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '105px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/bubbleHeart.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.instagramAverageLikes?.toLocaleString() || 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Average Likes
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      </>
+                    )}
+
+                    {/* TikTok Stats */}
+                    {currentPitch?.user?.creator?.tiktok && selectedPlatform === 'tiktok' && (
+                      <>
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '80px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/purpleGroup.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.tiktokFollowers?.toLocaleString() || 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Followers
+                            </Typography>
+                        </Stack>
+                      </Box>
+
+                        {/* Divider */}
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '120px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/greenChart.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.tiktokEngagementRate
+                                ? `${(currentPitch.user.creator.tiktokEngagementRate * 100).toFixed(2)}%`
+                                : 'N/A'}
+                            </Typography>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Engagement Rate
+                          </Typography>
+                          </Stack>
+                        </Box>
+
+                        {/* Divider */}
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                        <Box
+                              sx={{
+                            flex: 0,
+                                  display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '105px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/bubbleHeart.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.tiktokAverageLikes?.toLocaleString() || 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Average Likes
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      </>
+                    )}
+
+                    {/* Both Platforms Stats */}
+                    {currentPitch?.user?.creator?.instagram && currentPitch?.user?.creator?.tiktok && selectedPlatform === 'both' && (
+                      <>
+                        {/* Instagram Stats */}
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '80px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/purpleGroup.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.instagramFollowers?.toLocaleString() || 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Followers
+                            </Typography>
+                        </Stack>
+                      </Box>
+
+                        {/* Divider */}
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '120px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/greenChart.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.instagramEngagementRate
+                                ? `${(currentPitch.user.creator.instagramEngagementRate * 100).toFixed(2)}%`
+                                : 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Engagement Rate
+                            </Typography>
+                    </Stack>
+                        </Box>
+
+                        {/* Divider */}
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '105px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/bubbleHeart.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.instagramAverageLikes?.toLocaleString() || 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Average Likes
+                            </Typography>
+                          </Stack>
+                        </Box>
+
+                        {/* Divider */}
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                        {/* TikTok Stats */}
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '80px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/purpleGroup.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.tiktokFollowers?.toLocaleString() || 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Followers
+                            </Typography>
+                          </Stack>
+                        </Box>
+
+                        {/* Divider */}
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '120px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/greenChart.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.tiktokEngagementRate
+                                ? `${(currentPitch.user.creator.tiktokEngagementRate * 100).toFixed(2)}%`
+                                : 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Engagement Rate
+                            </Typography>
+                          </Stack>
+                        </Box>
+
+                        {/* Divider */}
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                        <Box
+                          sx={{
+                            flex: 0,
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            minWidth: '105px',
+                          }}
+                        >
+                          <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                            <Box
+                              component="img"
+                              src="/assets/icons/overview/bubbleHeart.svg"
+                              sx={{ width: 20, height: 20 }}
+                            />
+                            <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
+                              {currentPitch?.user?.creator?.tiktokAverageLikes?.toLocaleString() || 'N/A'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="#8e8e93"
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                overflow: 'visible',
+                                width: '100%',
+                                fontSize: '12px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              Average Likes
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      </>
+                    )}
+
+                    {/* Fallback if no social media stats */}
+                    {!currentPitch?.user?.creator?.instagram && !currentPitch?.user?.creator?.tiktok && (
+                      <>
                       <Box
                         sx={{
                           flex: 0,
@@ -780,7 +1412,6 @@ if (onUpdate) {
                       {/* Divider */}
                       <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
 
-                      {/* Second stat */}
                       <Box
                         sx={{
                           flex: 0,
@@ -818,7 +1449,6 @@ if (onUpdate) {
                       {/* Divider */}
                       <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
 
-                      {/* Third stat */}
                       <Box
                         sx={{
                           flex: 0,
@@ -852,6 +1482,8 @@ if (onUpdate) {
                           </Typography>
                         </Stack>
                       </Box>
+                      </>
+                    )}
                     </Stack>
                   </Stack>
                 </Box>
@@ -968,16 +1600,16 @@ if (onUpdate) {
                 <Grid item xs={12} md={6}>
                   <Stack
                     direction={{ xs: 'row', sm: 'row' }}
-                    spacing={3}
+                    spacing={0}
                     alignItems="center"
                     justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
                     sx={{ width: '100%' }}
                   >
-                    <Stack alignItems={{ xs: 'flex-start', md: 'flex-end' }}>
-                      <Typography variant="caption" color="text.secondary">
+                    <Stack alignItems={{ xs: 'flex-start', md: 'flex-start' }} sx={{ mr: { md: 11 } }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right', width: '100%' }}>
                         SUBMITTED ON
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'left', width: '100%' }}>
                         {new Date(currentPitch?.createdAt).toLocaleDateString('en-US', {
                           day: 'numeric',
                           month: 'short',
@@ -1006,6 +1638,36 @@ if (onUpdate) {
                       </Typography>
                     </Stack>
                   </Stack>
+                  
+                  {/* CLIENT REASON Display for V3 pitches */}
+                  {(currentPitch?.customRejectionText || currentPitch?.rejectionReason || 
+                    (currentPitch?.status || '').toUpperCase() === 'MAYBE' || 
+                    (currentPitch?.displayStatus || '').toUpperCase() === 'MAYBE') && (
+                    <Box sx={{ mt: 1.5, width: { xs: '100%', md: 220 }, ml: { md: 'auto' } }}>
+                      <Stack spacing={0.25} alignItems="flex-start">
+                        <Typography
+                          variant="caption"
+                          sx={{ color: '#FFC702', fontWeight: 700, letterSpacing: 0.5, textAlign: 'left' }}
+                        >
+                          CLIENT REASON
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: '#000',
+                            fontWeight: 400,
+                            fontFamily: 'Inter Display, Inter, sans-serif',
+                            lineHeight: 1.35,
+                            textAlign: 'left',
+                            wordBreak: 'break-word',
+                            fontSize: { xs: '0.75rem', md: '0.75rem' },
+                          }}
+                        >
+                          {currentPitch?.customRejectionText || currentPitch?.rejectionReason || '—'}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                  )}
                 </Grid>
               </Grid>
             </Box>
@@ -1070,15 +1732,37 @@ if (onUpdate) {
                 </Box>
               )}
             </Box>
+            {/* CS Comments for client */}
+            {user?.role === 'client' && adminCommentsText.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}>
+                  CS Comments
+                </Typography>
+                <Box
+                  sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    bgcolor: '#ffffff',
+                    border: '1px solid #e7e7e7',
+                    '& p': { margin: 0, '& + p': { mt: 0.5 } },
+                  }}
+                >
+                  <Typography variant="body1" sx={{ color: '#000000', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    {adminCommentsText}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
           </Stack>
         </DialogContent>
 
-        {/* Action Buttons */}
+                {/* Action Buttons - Only show if pitch hasn't been acted upon */}
+        {currentPitch?.status === 'PENDING_REVIEW' && (
         <DialogActions sx={{ px: 3, pb: 3, gap: -1, mt: -3 }}>
           <Button
             variant="contained"
             onClick={() => setConfirmDialog({ open: true, type: 'decline' })}
-            disabled={isDisabled || isSubmitting || currentPitch?.status === 'rejected'}
+              disabled={isDisabled || isSubmitting}
             sx={{
               textTransform: 'none',
               minHeight: 42,
@@ -1106,7 +1790,7 @@ if (onUpdate) {
           <Button
             variant="contained"
             onClick={() => setConfirmDialog({ open: true, type: 'approve' })}
-            disabled={isDisabled || isSubmitting || currentPitch?.status === 'approved'}
+              disabled={isDisabled || isSubmitting}
             sx={{
               textTransform: 'none',
               minHeight: 42,
@@ -1135,7 +1819,7 @@ if (onUpdate) {
             <Button
               variant="contained"
               onClick={() => setMaybeOpen(true)}
-              disabled={isDisabled || isSubmitting || currentPitch?.status === 'rejected'}
+                disabled={isDisabled || isSubmitting}
               sx={{
                 textTransform: 'none',
                 minHeight: 42,
@@ -1162,6 +1846,7 @@ if (onUpdate) {
             </Button>
           )}
         </DialogActions>
+        )}
       </Dialog>
 
       {/* Confirmation Dialog */}
