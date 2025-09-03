@@ -247,14 +247,15 @@ const PublicCampaignView = () => {
 
       const scrollContainer = ref?.current;
 
-      // const bottom =
-      //   scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight;
-
-      const preloadOffset = 50;
-
       const bottom =
-        scrollContainer.scrollHeight - scrollContainer.scrollTop <=
-        scrollContainer.clientHeight + preloadOffset;
+        scrollContainer.scrollHeight <=
+        scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
+
+      // const preloadOffset = 50;
+
+      // const bottom =
+      //   scrollContainer.scrollHeight - scrollContainer.scrollTop <=
+      //   scrollContainer.clientHeight + preloadOffset;
 
       if (
         bottom &&
