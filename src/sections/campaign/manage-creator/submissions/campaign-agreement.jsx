@@ -36,15 +36,17 @@ import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
-
-// pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-//   'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
-//   import.meta.url
-// ).toString();
+// Configure PDF.js worker - use CDN for better reliability
+try {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+} catch (error) {
+  // Fallback to local worker if CDN fails
+  console.warn('Failed to set CDN worker, falling back to local worker:', error);
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).toString();
+}
 
 // eslint-disable-next-line react/prop-types
 const AvatarIcon = ({ icon, ...props }) => (
@@ -104,8 +106,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
   const onDocumentLoadError = (error) => {
     setPdfError(true);
-    enqueueSnackbar('Error to load PDF', { variant: 'error' });
     console.error('Error loading PDF:', error);
+    
+    // More specific error messages
+    if (error.message.includes('worker')) {
+      enqueueSnackbar('PDF viewer initialization failed. Please refresh the page.', { variant: 'error' });
+    } else if (error.message.includes('Invalid PDF')) {
+      enqueueSnackbar('Invalid PDF file. Please check the file format.', { variant: 'error' });
+    } else {
+      enqueueSnackbar('Failed to load PDF. Please try again.', { variant: 'error' });
+    }
   };
 
   // V3: Fetch agreements for this campaign and find the one for this user
@@ -115,12 +125,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   // Use V3 agreementUrl if present, else fallback to admin logic
   const agreementUrl = myAgreement?.agreementUrl || campaign?.agreement?.agreementUrl;
 
-  // Debug logging
-  console.log('[CreatorAgreement Debug] campaignId:', campaign?.id);
-  console.log('[CreatorAgreement Debug] userId:', user?.id);
-  console.log('[CreatorAgreement Debug] agreements:', agreements);
-  console.log('[CreatorAgreement Debug] myAgreement:', myAgreement);
-  console.log('[CreatorAgreement Debug] agreementUrl:', agreementUrl);
+
 
   const agreement = campaign?.campaignTimeline?.find((elem) => elem?.name === 'Agreement');
 
