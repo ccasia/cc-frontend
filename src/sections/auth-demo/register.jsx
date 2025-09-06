@@ -273,10 +273,11 @@ const Register = () => {
             birthDate: creatorData.birthDate || null,
             Nationality: creatorData.Nationality || '',
             city: creatorData.city || '',
+            referralCode: creatorData.referralCode || '',
           },
         };
 
-        // console.log('Sending registration payload with token from creatorForm');
+        console.log('Sending registration payload with referral code:', registerPayload);
         const user = await register(registerPayload);
         setEmail(user);
 

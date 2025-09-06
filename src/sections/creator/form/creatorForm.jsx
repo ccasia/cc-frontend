@@ -105,6 +105,7 @@ const stepSchemas = Yup.object({
   birthDate: Yup.mixed().nullable().required('Please enter your birth date'),
   interests: Yup.array().min(3, 'Choose at least three option'),
   languages: Yup.array().min(1, 'Choose at least one option'),
+  referralCode: Yup.string().optional(),
   recaptcha: Yup.string().required('Please complete the reCAPTCHA'),
 });
 
@@ -173,6 +174,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       Nationality: '',
       city: '',
       otherPronounce: '',
+      referralCode: '',
     }),
     []
   );
