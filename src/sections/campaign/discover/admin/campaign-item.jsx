@@ -371,7 +371,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         }}
       >
         <Iconify
-          icon={`emojione:flag-for-${campaign?.campaignRequirement?.country.toLowerCase()}`}
+          icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
           width={40}
         />
       </Box>
