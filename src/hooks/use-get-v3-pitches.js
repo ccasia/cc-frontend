@@ -2,7 +2,13 @@ import useSWR from 'swr';
 
 import axiosInstance from 'src/utils/axios';
 
-const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
+const fetcher = (url) => {
+  return axiosInstance.get(url).then((res) => {
+    return res.data;
+  }).catch((error) => {
+    throw error;
+  });
+};
 
 export default function useGetV3Pitches(campaignId = null, status = null) {
   let url = '/api/pitch/v3';

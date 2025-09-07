@@ -130,6 +130,45 @@ const CampaignDetails = () => {
               placeholder="Select country"
               options={Object.keys(countriesCities)}
               getOptionLabel={(option) => option}
+              slotProps={{
+                paper: {
+                  sx: {
+                    '& .MuiAutocomplete-listbox': {
+                      maxHeight: 300, // force scroll
+                      overflowY: 'auto',
+                      /* Scrollbar customization */
+                      '&::-webkit-scrollbar': {
+                        width: 8,
+                      },
+                      '&::-webkit-scrollbar-track': {
+                        backgroundColor: '#f1f1f1',
+                        borderRadius: 8,
+                      },
+                      '&::-webkit-scrollbar-thumb': {
+                        backgroundColor: '#888',
+                        borderRadius: 8,
+                      },
+                      '&::-webkit-scrollbar-thumb:hover': {
+                        backgroundColor: '#555',
+                      },
+                      /* Firefox */
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#888 #fff00',
+                    },
+                  },
+                },
+              }}
+              renderOption={(props, option) => {
+                // eslint-disable-next-line react/prop-types
+                const { key, ...optionProps } = props;
+
+                return (
+                  <Box key={key} {...optionProps} sx={{ display: 'flex', gap: 1 }}>
+                    <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
+                    <Typography variant="subtitle2">{option}</Typography>
+                  </Box>
+                );
+              }}
             />
           </FormField>
 

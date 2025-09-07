@@ -27,6 +27,7 @@ import {
   TableContainer,
   CircularProgress,
 } from '@mui/material';
+import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -81,6 +82,24 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     pitches?.filter((pitch) => (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT').length ||
     0;
 
+  const maybeCount = (() => {
+    const maybePitches = pitches?.filter((pitch) => {
+      const status = pitch.displayStatus || pitch.status;
+      const isMaybe = status?.toUpperCase() === 'MAYBE';
+      if (isMaybe) {
+        console.log('📊 Found MAYBE pitch:', {
+          id: pitch.id,
+          status: pitch.status,
+          displayStatus: pitch.displayStatus,
+          finalStatus: status
+        });
+      }
+      return isMaybe;
+    }) || [];
+
+    return maybePitches.length;
+  })();
+
   const approvedCount =
     pitches?.filter(
       (pitch) =>
@@ -106,6 +125,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       filtered = filtered?.filter(
         (pitch) => (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT'
       );
+    } else if (selectedFilter === 'MAYBE') {
+      filtered = filtered?.filter((pitch) => {
+        const status = pitch.displayStatus || pitch.status;
+        const isMaybe = status?.toUpperCase() === 'MAYBE';
+        return isMaybe;
+      });
     } else if (selectedFilter === 'APPROVED') {
       filtered = filtered?.filter(
         (pitch) =>
@@ -161,6 +186,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         borderColor: '#FFC702',
         tooltip: 'Pitch is pending admin review',
       },
+      maybe: {
+        color: '#FFC702',
+        borderColor: '#FFC702',
+        tooltip: 'Pitch is pending admin review',
+      },
       SENT_TO_CLIENT: {
         color: '#8A5AFE',
         borderColor: '#8A5AFE',
@@ -202,6 +232,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       PENDING_REVIEW: 'PENDING REVIEW',
       SENT_TO_CLIENT: 'SENT TO CLIENT',
       MAYBE: 'MAYBE',
+      maybe: 'MAYBE',
       APPROVED: 'APPROVED',
       REJECTED: 'REJECTED',
       AGREEMENT_PENDING: 'AGREEMENT PENDING',
@@ -401,6 +432,37 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
               }}
             >
               {`Sent to Client(${sentToClientCount})`}
+            </Button>
+
+            <Button
+              fullWidth={!mdUp}
+              onClick={() => setSelectedFilter('MAYBE')}
+              sx={{
+                px: 1.5,
+                py: 2.5,
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                ...(selectedFilter === 'MAYBE'
+                  ? {
+                      color: '#203ff5',
+                      bgcolor: 'rgba(32, 63, 245, 0.04)',
+                    }
+                  : {
+                      color: '#637381',
+                      bgcolor: 'transparent',
+                    }),
+                '&:hover': {
+                  bgcolor:
+                    selectedFilter === 'MAYBE' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                },
+              }}
+            >
+              {`Maybe (${maybeCount})`}
             </Button>
 
             <Button
@@ -630,12 +692,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography
-                        variant="body2"
+                      <Box
                         sx={{
                           textTransform: 'uppercase',
                           fontWeight: 700,
-                          display: 'inline-block',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 0.25,
                           px: 1.5,
                           py: 0.5,
                           fontSize: '0.75rem',
@@ -649,7 +712,19 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                         }}
                       >
                         {getStatusText(displayStatus)}
-                      </Typography>
+                        {displayStatus === 'SENT_TO_CLIENT' &&
+                          pitch?.adminComments &&
+                          pitch.adminComments.trim().length > 0 && (
+                            <Tooltip title="CS Comments provided" arrow>
+                              <Box
+                                component="img"
+                                src="/assets/icons/components/ic-comments.svg"
+                                alt="Comments"
+                                sx={{ width: 16, height: 16 }}
+                              />
+                            </Tooltip>
+                          )}
+                      </Box>
                     </TableCell>
                     <TableCell>
                       {smUp ? (
