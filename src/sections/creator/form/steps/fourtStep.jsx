@@ -8,7 +8,7 @@ import { langList } from 'src/contants/language';
 import { primaryFont } from 'src/theme/typography';
 import { interestsLists } from 'src/contants/interestLists';
 
-import { RHFAutocomplete } from 'src/components/hook-form';
+import { RHFAutocomplete, RHFTextField } from 'src/components/hook-form';
 
 // import { interestsList } from '../creatorForm';
 
@@ -180,6 +180,21 @@ const FourthStep = ({ item }) => {
             />
             {errors.interests && <ErrorIcon />}
           </Stack>
+        </Stack>
+
+        <Stack spacing={1}>
+          <FormLabel sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}>
+            Referral Code
+          </FormLabel>
+          <RHFTextField
+            name="referralCode"
+            placeholder="Enter referral code if you have one"
+            sx={{
+              '& .MuiInputBase-root': {
+                p: { xs: '5px 5px 5px 8px', sm: '7px 9px' },
+              },
+            }}
+          />
         </Stack>
       </Stack>
     </>
