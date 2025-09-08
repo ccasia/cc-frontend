@@ -2,7 +2,7 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { LoadingButton } from '@mui/lab';
 import { useForm } from 'react-hook-form';
 
@@ -33,6 +33,7 @@ import { alpha } from '@mui/material/styles';
 import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { shortlistCreator, useGetAllCreators, shortlistGuestCreator } from 'src/api/creator';
 import { useShortlistedCreators } from '../../admin/campaign-detail-creator/hooks/shortlisted-creator';
 
@@ -55,6 +56,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const [viewOpen, setViewOpen] = useState(false);
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
   const theme = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
@@ -73,6 +76,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     (acc, creator) => acc + (creator?.ugcVideos ?? 0),
     0
   );
+  const ugcLeft = (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
   // Count pitches by display status
   const pendingReviewCount =
     pitches?.filter((pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW').length ||
@@ -163,6 +167,19 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     setSelectedPitch(pitch);
     setOpenPitchModal(true);
   };
+  // Reopen modal when returning from media kit if state indicates
+  useEffect(() => {
+    const reopen = location?.state?.reopenModal;
+    if (reopen?.isV3 && reopen?.pitchId && pitches?.length) {
+      const pitch = pitches.find((p) => p.id === reopen.pitchId);
+      if (pitch) {
+        setSelectedPitch(pitch);
+        setOpenPitchModal(true);
+        // Clear state to avoid loops
+        navigate(location.pathname + location.search, { replace: true, state: {} });
+      }
+    }
+  }, [location?.state, pitches, navigate, location?.pathname, location?.search]);
 
   const handleClosePitchModal = () => {
     setOpenPitchModal(false);
@@ -507,7 +524,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
             ) : (
               <Button
                 onClick={handleModalOpen}
-                disabled={isDisabled || totalUsedCredits === campaign?.campaignCredits}
+                disabled={isDisabled || (typeof ugcLeft === 'number' && ugcLeft <= 0)}
                 sx={{
                   bgcolor: '#ffffff',
                   border: '1px solid #e7e7e7',
@@ -747,6 +764,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         open={addCreatorOpen}
         onClose={() => setAddCreatorOpen(false)}
         onSelect={handleCreatorTypeSelect}
+        ugcLeft={ugcLeft}
       />
 
       <PlatformCreatorModal

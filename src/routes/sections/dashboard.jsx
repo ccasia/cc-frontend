@@ -20,6 +20,7 @@ const ProfilePage = lazy(() => import('src/pages/dashboard/profile'));
 const ManagersPage = lazy(() => import('src/pages/dashboard/admin'));
 const CreatorList = lazy(() => import('src/pages/dashboard/creator/list'));
 const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'));
+const ClientMediaKit = lazy(() => import('src/pages/dashboard/client/mediaKit'));
 const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCards'));
 const InvoiceCreator = lazy(() => import('src/pages/dashboard/creator/invoice'));
 const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
@@ -42,6 +43,8 @@ const AdminCampaignDetail = lazy(
 const AdminCamapaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-detail-manage')
 );
+const PostingLinkCSMView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-csm'));
+const PostingLinkSuperadminView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-superadmin'));
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
@@ -270,11 +273,24 @@ export const dashboardRoutes = [
       },
       {
         path: 'mediakit',
-        element: (
-          <RoleBasedGuard roles={['creator']} hasContent>
-            <CreatorMediaKit />
-          </RoleBasedGuard>
-        ),
+        children: [
+          {
+            element: (
+              <RoleBasedGuard roles={['creator']} hasContent>
+                <CreatorMediaKit />
+              </RoleBasedGuard>
+            ),
+            index: true,
+          },
+          {
+            path: 'client/:id',
+            element: (
+              <RoleBasedGuard roles={['client', 'admin', 'superadmin']} hasContent>
+                <ClientMediaKit />
+              </RoleBasedGuard>
+            ),
+          },
+        ],
       },
       {
         path: 'landing',
@@ -378,6 +394,22 @@ export const dashboardRoutes = [
                 element: (
                   <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
                     <AdminCamapaignView />
+                  </RoleBasedGuard>
+                ),
+              },
+              {
+                path: ':id/posting-link/csm',
+                element: (
+                  <RoleBasedGuard hasContent roles={['admin']}>
+                    <PostingLinkCSMView />
+                  </RoleBasedGuard>
+                ),
+              },
+              {
+                path: ':id/posting-link/superadmin',
+                element: (
+                  <RoleBasedGuard hasContent roles={['superadmin']}>
+                    <PostingLinkSuperadminView />
                   </RoleBasedGuard>
                 ),
               },

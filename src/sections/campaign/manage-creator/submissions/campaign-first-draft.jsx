@@ -113,6 +113,12 @@ const CampaignFirstDraft = ({
   const [photosModalOpen, setPhotosModalOpen] = useState(false);
 
   const [uploadProgress, setUploadProgress] = useState([]);
+  const [pollingSubmissions, setPollingSubmissions] = useState(false);
+  const latestSubmissionRef = React.useRef(submission);
+
+  useEffect(() => {
+    latestSubmissionRef.current = submission;
+  }, [submission]);
 
   const { deliverables } = deliverablesData;
 
@@ -308,15 +314,28 @@ const CampaignFirstDraft = ({
       // inQueue.onFalse();
       // setProgress(Math.ceil(data.progress));
 
+      // Mark processing as soon as progress events start
+      setIsProcessing(true);
+
       setUploadProgress((prev) => {
         const exists = prev.some((item) => item.fileName === data.fileName);
 
         if (exists) {
-          return prev.map((item) =>
-            item.fileName === data.fileName ? { ...item, ...data } : item
-          );
+          return prev.map((item) => {
+            if (item.fileName !== data.fileName) return item;
+            const serverP = Number(data.progress || 0);
+            // If server says done, complete immediately
+            if (serverP >= 100) {
+              return { ...item, ...data, serverProgress: 100, progressShown: 100 };
+            }
+            return { ...item, ...data, serverProgress: serverP, progressShown: Math.max(1, item.progressShown || 1) };
+          });
         }
-        return [...prev, data];
+
+        // New item starts slowly
+        const initial = Number(data.progress || 0);
+        const firstShown = initial >= 100 ? 100 : 1;
+        return [...prev, { ...data, serverProgress: initial, progressShown: firstShown }];
       });
     };
 
@@ -336,25 +355,53 @@ const CampaignFirstDraft = ({
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   const checkProgress = useCallback(() => {
-    if (uploadProgress?.length && uploadProgress?.every((x) => x.progress === 100)) {
-      const timer = setTimeout(() => {
-        setIsProcessing(false);
-        reset();
-        setPreview('');
-        localStorage.removeItem('preview');
-        setUploadProgress([]);
+    if (uploadProgress?.length && uploadProgress?.every((x) => Number(x?.serverProgress || 0) >= 100)) {
+      // Immediately refresh submissions to reflect new status
+      if (socket) {
+        mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+      }
 
-        if (socket) {
-          mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-        }
-      }, 2000);
+      // Short polling for faster status flip to review states
+      if (!pollingSubmissions) {
+        setPollingSubmissions(true);
+        let attempts = 0;
+        const poll = async () => {
+          attempts += 1;
+          await mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+          const currentStatus = latestSubmissionRef.current?.status;
+          if (
+            currentStatus === 'PENDING_REVIEW' ||
+            currentStatus === 'SENT_TO_CLIENT' ||
+            currentStatus === 'CLIENT_FEEDBACK' ||
+            currentStatus === 'APPROVED' ||
+            currentStatus === 'CLIENT_APPROVED'
+          ) {
+            setIsProcessing(false);
+            setPollingSubmissions(false);
+            reset();
+            setPreview('');
+            localStorage.removeItem('preview');
+            setUploadProgress([]);
+            return;
+          }
+          if (attempts < 20) {
+            setTimeout(poll, 500); // up to ~10s
+          } else {
+            setIsProcessing(false);
+            setPollingSubmissions(false);
+            reset();
+            setPreview('');
+            localStorage.removeItem('preview');
+            setUploadProgress([]);
+          }
+        };
+        setTimeout(poll, 300);
+      }
 
-      return () => {
-        clearTimeout(timer);
-      };
+      return undefined;
     }
     return null;
-  }, [uploadProgress, reset, campaign?.id, user?.id, socket]);
+  }, [uploadProgress, reset, campaign?.id, user?.id, socket, pollingSubmissions]);
 
   useEffect(() => {
     checkProgress();
@@ -969,14 +1016,25 @@ const CampaignFirstDraft = ({
                                 <Stack spacing={1}>
                                   <LinearProgress
                                     variant="determinate"
-                                    value={currentFile?.progress || 0}
+                                    value={(() => {
+                                      const server = Number(currentFile?.serverProgress || 0);
+                                      const shown = Number(currentFile?.progressShown || 0);
+                                      if (server >= 100) return 100;
+                                      // map server 0-90 to shown 1-90
+                                      const mapped = Math.max(1, Math.min(90, server));
+                                      // ease towards mapped
+                                      const step = Math.max(0.5, (mapped - shown) * 0.2);
+                                      const next = Math.min(mapped, shown + step);
+                                      currentFile.progressShown = next;
+                                      return next;
+                                    })()}
                                     sx={{
                                       height: 6,
                                       borderRadius: 1,
                                       bgcolor: 'background.paper',
                                       '& .MuiLinearProgress-bar': {
                                         borderRadius: 1,
-                                        bgcolor: progress === 100 ? 'success.main' : 'primary.main',
+                                        bgcolor: (Number(currentFile?.serverProgress || 0) >= 100) ? 'success.main' : 'primary.main',
                                       },
                                     }}
                                   />
@@ -986,7 +1044,7 @@ const CampaignFirstDraft = ({
                                     alignItems="center"
                                   >
                                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                      {currentFile?.progress === 100 ? (
+                                      {Number(currentFile?.serverProgress || 0) >= 100 ? (
                                         <Box
                                           component="span"
                                           sx={{ color: 'success.main', fontWeight: 600 }}
@@ -994,7 +1052,7 @@ const CampaignFirstDraft = ({
                                           Upload Complete
                                         </Box>
                                       ) : (
-                                        `${currentFile?.name || 'Uploading'}... ${currentFile?.progress || 0}%`
+                                        `${currentFile?.name || 'Uploading'}... ${Math.floor(Number(currentFile?.progressShown || 0))}%`
                                       )}
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>

@@ -70,7 +70,7 @@ const formatTotalAudience = (num) => {
 };
 
 // eslint-disable-next-line react/prop-types
-const MediaKit = ({ id, noBigScreen }) => {
+const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = false }) => {
   const theme = useTheme();
   const router = useRouter();
   const smDown = useResponsive('down', 'sm');
@@ -794,33 +794,36 @@ const MediaKit = ({ id, noBigScreen }) => {
         }}
         ref={containerRef}
       >
-        {/* Back Button */}
-        <Box sx={{ mb: 2, mt: 2 }} ref={backButtonRef}>
-          <IconButton
-            onClick={() => router.push(paths.dashboard.creator.mediaKitLists)}
-            sx={{
-              backgroundColor: 'white',
-              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-            }}
-          >
-            <Iconify icon="eva:arrow-back-fill" width={24} />
-          </IconButton>
-        </Box>
+        {/* Back Button - Only show if not hidden */}
+        {!hideBackButton && (
+          <Box sx={{ mb: 2, mt: 2 }} ref={backButtonRef}>
+            <IconButton
+              onClick={() => router.push(paths.dashboard.creator.mediaKitLists)}
+              sx={{
+                backgroundColor: 'white',
+                boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                },
+              }}
+            >
+              <Iconify icon="eva:arrow-back-fill" width={24} />
+            </IconButton>
+          </Box>
+        )}
 
-        {/* Desktop View */}
-        <Box
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            position: 'absolute',
-            top: 20,
-            right: 24,
-            zIndex: 10,
-          }}
-          ref={desktopShareButtonRef}
-        >
+        {/* Desktop View - Only show if not hidden */}
+        {!hideShareButton && (
+          <Box
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              position: 'absolute',
+              top: 20,
+              right: 24,
+              zIndex: 10,
+            }}
+            ref={desktopShareButtonRef}
+          >
           <Button
             variant="contained"
             onClick={handleMenuOpen}
@@ -919,7 +922,8 @@ const MediaKit = ({ id, noBigScreen }) => {
               Download as PDF
             </MenuItem>
           </Menu>
-        </Box>
+          </Box>
+        )}
 
         {/* Mobile View */}
         <Stack
@@ -939,8 +943,9 @@ const MediaKit = ({ id, noBigScreen }) => {
               height: { xs: 60, sm: 100, md: 120 },
             }}
           />
-          {/* Mobile Share Button */}
-          <Box sx={{ display: { xs: 'block', md: 'none' } }} ref={mobileShareButtonRef}>
+          {/* Mobile Share Button - Only show if not hidden */}
+          {!hideShareButton && (
+            <Box sx={{ display: { xs: 'block', md: 'none' } }} ref={mobileShareButtonRef}>
             <Button
               variant="contained"
               onClick={handleMenuOpen}
@@ -1039,7 +1044,8 @@ const MediaKit = ({ id, noBigScreen }) => {
                 Download as PDF
               </MenuItem>
             </Menu>
-          </Box>
+            </Box>
+          )}
         </Stack>
 
         {/* Creator Details */}

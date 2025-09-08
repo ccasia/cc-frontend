@@ -486,27 +486,29 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     mx: -1.5,
                   }}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button
-                    variant="contained"
-                    onClick={() => setOpenPostingModal(true)}
-                    sx={{
-                      bgcolor: '#203ff5',
-                      color: 'white',
-                      borderBottom: 3.5,
-                      borderBottomColor: '#112286',
-                      borderRadius: 1.5,
-                      px: 2.5,
-                      py: 1.2,
-                      '&:hover': {
+                {campaign?.origin !== 'CLIENT' && (
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      variant="contained"
+                      onClick={() => setOpenPostingModal(true)}
+                      sx={{
                         bgcolor: '#203ff5',
-                        opacity: 0.9,
-                      },
-                    }}
-                  >
-                    Submit Link
-                  </Button>
-                </Box>
+                        color: 'white',
+                        borderBottom: 3.5,
+                        borderBottomColor: '#112286',
+                        borderRadius: 1.5,
+                        px: 2.5,
+                        py: 1.2,
+                        '&:hover': {
+                          bgcolor: '#203ff5',
+                          opacity: 0.9,
+                        },
+                      }}
+                    >
+                      Submit Link
+                    </Button>
+                  </Box>
+                )}
               </Stack>
             </>
           )}

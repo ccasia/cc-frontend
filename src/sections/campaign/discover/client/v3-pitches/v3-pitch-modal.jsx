@@ -2,6 +2,7 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
@@ -34,6 +35,7 @@ import dayjs from 'dayjs';
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
+  const navigate = useNavigate();
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,12 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const displayStatus = pitch?.displayStatus || pitch?.status;
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const isClient = user?.role === 'client';
+  // Compute remaining UGC credits from campaign overview
+  const ugcLeft = (() => {
+    if (!campaign?.campaignCredits) return 0;
+    const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
+    return Math.max(0, campaign.campaignCredits - used);
+  })();
   // Normalize admin comments text so UI displays whenever present
   const adminCommentsText = ((currentPitch?.adminComments ?? pitch?.adminComments ?? '') || '')
     .toString()
@@ -151,7 +159,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
       
       // Check if the response contains updated pitch data
       if (response.data.pitch) {
-      onUpdate({ ...pitch, ...response.data.pitch });
+        onUpdate({ ...pitch, ...response.data.pitch });
       } else {
         // If no pitch data returned, create a mock update with the expected status change
         const mockUpdatedPitch = {
@@ -176,6 +184,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
 
   const handleApprove = () => {
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
+      if (ugcLeft <= 0) {
+        enqueueSnackbar('No credits left. Cannot approve or assign UGC credits.', { variant: 'warning' });
+        return;
+      }
       // For admin, open UGC credits modal instead of direct approval
       setUgCCreditsModalOpen(true);
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
@@ -381,7 +393,16 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 />
                 <Stack spacing={0.5}>
                   <Typography
-                    sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20' }}
+                    sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => {
+                      const creatorId = currentPitch?.user?.creator?.id || currentPitch?.user?.id;
+                      navigate(`/dashboard/mediakit/client/${creatorId}`, {
+                        state: {
+                          returnTo: { pathname: window.location.pathname, search: window.location.search },
+                          reopenModal: { pitchId: currentPitch?.id, isV3: true }
+                        }
+                      });
+                    }}
                   >
                     {currentPitch?.user?.name}
                   </Typography>
@@ -1206,7 +1227,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 <Button
                   variant="contained"
                   onClick={handleApprove}
-                  disabled={loading}
+                  disabled={loading || (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE') && ugcLeft <= 0)}
                   sx={{
                     textTransform: 'none',
                     minHeight: 42,
