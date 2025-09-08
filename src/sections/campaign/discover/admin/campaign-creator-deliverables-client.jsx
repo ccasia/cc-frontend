@@ -408,6 +408,11 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
         borderColor: '#8a5afe',
         tooltip: 'Sent to client for review',
       },
+      SENT_TO_SUPERADMIN: {
+        color: '#8a5afe',
+        borderColor: '#8a5afe',
+        tooltip: 'Sent to superadmin for review',
+      },
       NOT_STARTED: {
         color: '#8E8E93',
         borderColor: '#8E8E93',

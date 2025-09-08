@@ -22,10 +22,23 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
   const { enqueueSnackbar } = useSnackbar();
   const [ugcCredits, setUgCCredits] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const ugcLeft = (() => {
+    if (!campaign?.campaignCredits) return 0;
+    const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
+    return Math.max(0, campaign.campaignCredits - used);
+  })();
 
   const handleSubmit = async () => {
+    if (ugcLeft <= 0) {
+      enqueueSnackbar('No credits left. Cannot assign UGC credits.', { variant: 'warning' });
+      return;
+    }
     if (!ugcCredits || isNaN(ugcCredits) || parseInt(ugcCredits) <= 0) {
       enqueueSnackbar('Please enter a valid number of UGC credits', { variant: 'error' });
+      return;
+    }
+    if (parseInt(ugcCredits) > ugcLeft) {
+      enqueueSnackbar(`You only have ${ugcLeft} credits left. Reduce the assigned credits.`, { variant: 'error' });
       return;
     }
 
@@ -143,6 +156,24 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
           How many UGC credits would you like to assign to this creator?
         </Typography>
 
+        {/* Credits Left Indicator */}
+        <Typography
+          variant="caption"
+          sx={{
+            display: 'inline-block',
+            mb: 1,
+            fontWeight: 600,
+            color: ugcLeft > 0 ? 'text.secondary' : 'error.main',
+            border: '1px solid',
+            borderColor: '#e7e7e7',
+            px: 1,
+            py: 0.25,
+            borderRadius: 1,
+          }}
+        >
+          UGC Credits: {ugcLeft} left
+        </Typography>
+
         {/* UGC Credits Input */}
         <Box sx={{ mb: 4 }}>
           <TextField
@@ -152,7 +183,7 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
             value={ugcCredits}
             onChange={(e) => setUgCCredits(e.target.value)}
             placeholder="Enter number of credits"
-            disabled={isSubmitting}
+            disabled={isSubmitting || ugcLeft <= 0}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -196,7 +227,14 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
           <Button
             variant="contained"
             onClick={handleSubmit}
-            disabled={isSubmitting || !ugcCredits || isNaN(ugcCredits) || parseInt(ugcCredits) <= 0}
+            disabled={
+              isSubmitting ||
+              ugcLeft <= 0 ||
+              !ugcCredits ||
+              isNaN(ugcCredits) ||
+              parseInt(ugcCredits) <= 0 ||
+              parseInt(ugcCredits) > ugcLeft
+            }
             fullWidth
             sx={{
               textTransform: 'none',

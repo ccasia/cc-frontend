@@ -47,23 +47,8 @@ const Posting = ({
   const dialogApprove = useBoolean();
   const dialogReject = useBoolean();
   const { user } = useAuthContext();
-  
-  // Debug logging for Posting component (after user is defined)
-  useEffect(() => {
-    console.log('Posting component received props:', {
-      submission,
-      submissionStatus: submission?.status,
-      submissionDisplayStatus: submission?.displayStatus,
-      submissionContent: submission?.content,
-      submissionVideos: submission?.videos,
-      isV3,
-      userRole: user?.role,
-      campaignOrigin: campaign?.origin,
-      hasContent: !!(submission?.content || (submission?.videos && submission.videos.length > 0))
-    });
-  }, [submission, isV3, user, campaign]);
-  
   const [feedback, setFeedback] = useState('');
+  const [csmLink, setCsmLink] = useState('');
   const loading = useBoolean();
   const postingDate = useBoolean();
   const [date, setDate] = useState({
@@ -132,7 +117,21 @@ const Posting = ({
         dialogReject.onFalse();
       }
       mutate(
-        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+        (key) =>
+          typeof key === 'string' &&
+          key.includes(endpoints.submission.root) &&
+          key.includes(`campaignId=${campaign?.id}`),
+        undefined,
+        { revalidate: true }
+      );
+      // 2) Deliverables (if any hooks consume this)
+      mutate(
+        (key) =>
+          typeof key === 'string' &&
+          key.includes('/api/deliverables') &&
+          key.includes(`campaignId=${campaign?.id}`),
+        undefined,
+        { revalidate: true }
       );
       setFeedback('');
       enqueueSnackbar(res?.data?.message);
@@ -246,18 +245,20 @@ const Posting = ({
                   </Typography>
                 </Stack>
               </Stack>
-              <Button
-                variant="outlined"
-                onClick={postingDate.onTrue}
-                disabled={isDisabled}
-                sx={{
-                  '&:disabled': {
-                    display: 'none',
-                  },
-                }}
-              >
-                Change Posting Date
-              </Button>
+              {!(isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
+                <Button
+                  variant="outlined"
+                  onClick={postingDate.onTrue}
+                  disabled={isDisabled}
+                  sx={{
+                    '&:disabled': {
+                      display: 'none',
+                    },
+                  }}
+                >
+                  Change Posting Date
+                </Button>
+              )}
             </Stack>
           </Box>
 
@@ -326,13 +327,7 @@ const Posting = ({
                           wordBreak: 'break-all',
                         }}
                       >
-                        {console.log('Checking submission content display:', {
-                          hasVideos: !!(submission?.videos && submission.videos.length > 0),
-                          videosLength: submission?.videos?.length,
-                          videos: submission?.videos,
-                          hasContent: !!submission?.content,
-                          content: submission?.content
-                        })}
+   
                         {submission?.videos && submission.videos.length > 0 ? (
                           <Stack spacing={1.5} sx={{ mt: 1, mb: 2 }}>
                             {submission.videos.map((link, index) => (
@@ -378,7 +373,7 @@ const Posting = ({
                               </Box>
                             ))}
                           </Stack>
-                        ) : (
+                        ) : submission?.content ? (
                           <Typography
                             variant="body2"
                             component="a"
@@ -399,6 +394,33 @@ const Posting = ({
                           >
                             {submission?.content}
                           </Typography>
+                        ) : null}
+                        {isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW' && !submission?.content && (!submission?.videos || submission.videos.length === 0) && (
+                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
+                            <TextField fullWidth placeholder="Paste posting link" value={csmLink} onChange={(e) => setCsmLink(e.target.value)} />
+                            <Button
+                              variant="contained"
+                              disabled={!csmLink}
+                              onClick={async () => {
+                                try {
+                                  loading.onTrue();
+                                  await axiosInstance.post(`${endpoints.submission.root}/v3/posting/submit-link`, { submissionId: submission.id, link: csmLink });
+                                  setCsmLink('');
+                                  mutate(
+                                    (key) => typeof key === 'string' && key.includes(endpoints.submission.root) && key.includes(`campaignId=${campaign?.id}`),
+                                    undefined,
+                                    { revalidate: true }
+                                  );
+                                } catch (err) {
+                                  enqueueSnackbar('Failed to submit link', { variant: 'error' });
+                                } finally {
+                                  loading.onFalse();
+                                }
+                              }}
+                            >
+                              Submit Link
+                            </Button>
+                          </Stack>
                         )}
                       </Box>
                     </Box>
@@ -406,18 +428,7 @@ const Posting = ({
                 </Box>
               </Box>
               <Stack my={2} textAlign="end" direction="row" spacing={1.5} justifyContent="end">
-                {/* Debug the button condition */}
-                {console.log('Posting component - About to check button condition:', {
-                  isV3,
-                  userRole,
-                  displayStatus: submission?.displayStatus,
-                  submissionStatus: submission?.status,
-                  hasContent: !!(submission?.content || (submission?.videos && submission.videos.length > 0)),
-                  content: submission?.content,
-                  videosLength: submission?.videos?.length,
-                  shouldShowClientButtons: isV3 && userRole === 'client' && (submission?.displayStatus === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && submission?.status !== 'APPROVED',
-                  shouldShowAdminButtons: submission?.status !== 'APPROVED' && (submission?.content || (submission?.videos && submission.videos.length > 0))
-                })}
+
                 
 
                 
@@ -425,12 +436,7 @@ const Posting = ({
                 {isV3 && userRole === 'client' && (submission?.displayStatus === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && submission?.status !== 'APPROVED' ? (
                   // Client buttons for V3
                   <>
-                    {console.log('Posting component - Client buttons should show:', {
-                      isV3,
-                      userRole,
-                      displayStatus: submission?.displayStatus,
-                      condition: isV3 && userRole === 'client' && submission?.displayStatus === 'PENDING_REVIEW'
-                    })}
+
                     <Button
                       onClick={dialogReject.onTrue}
                       disabled={isDisabled}
@@ -491,8 +497,22 @@ const Posting = ({
                   </>
                 ) : (
                   // Admin buttons (V2 style or V3 admin) - only show if not already approved AND there's content to review
-                  submission?.status !== 'APPROVED' && (submission?.content || (submission?.videos && submission.videos.length > 0)) && (
+                  submission?.status !== 'APPROVED' && (submission?.content || (submission?.videos && submission.videos.length > 0)) && !(isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
                   <>
+                {isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN' && (
+                  <Box sx={{
+                    px: 1.25,
+                    py: 0.5,
+                    borderRadius: 1,
+                    bgcolor: 'rgba(138,90,254,0.08)',
+                    color: '#8a5afe',
+                    fontWeight: 700,
+                    border: '1px solid',
+                    borderColor: 'rgba(138,90,254,0.24)'
+                  }}>
+                    SENT_TO_SUPERADMIN
+                  </Box>
+                )}
                 <Button
                   onClick={dialogReject.onTrue}
                   disabled={isDisabled}

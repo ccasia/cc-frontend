@@ -62,9 +62,16 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
   const watchedCreators = watch('shortlistedCreators');
   const realTimeCreditsLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
-    const totalAssigned = watchedCreators?.reduce((acc, creator) => acc + (creator?.credits || 0), 0) || 0;
-    return campaign.campaignCredits - totalAssigned;
-  }, [watchedCreators, campaign?.campaignCredits]);
+    const alreadyUtilized = (campaign?.shortlisted || []).reduce(
+      (acc, item) => acc + (item?.ugcVideos || 0),
+      0
+    );
+    const newlyAssigned = watchedCreators?.reduce(
+      (acc, creator) => acc + (creator?.credits || 0),
+      0
+    ) || 0;
+    return campaign.campaignCredits - alreadyUtilized - newlyAssigned;
+  }, [watchedCreators, campaign?.campaignCredits, campaign?.shortlisted]);
 
   const { fields } = useFieldArray({
     control,
@@ -175,7 +182,7 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
                 color: realTimeCreditsLeft !== null && realTimeCreditsLeft < 0 ? 'error.main' : 'inherit',
               }}
             >
-              UGC Credits: {realTimeCreditsLeft ?? creditsLeft ?? 0} left
+              UGC Credits: {(realTimeCreditsLeft ?? creditsLeft ?? 0) < 0 ? 0 : (realTimeCreditsLeft ?? creditsLeft ?? 0)} left
             </Label>
           </Stack>
         </DialogTitle>
