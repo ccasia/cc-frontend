@@ -40,7 +40,7 @@ import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 const options_changes = [
   'Missing caption requirements',
   'Inverted logo',
-  'Inverted brand name',
+  'Incorrect brand name',
   'Audio not audible',
   'Video too dark',
   'Video too bright',
@@ -50,7 +50,7 @@ const options_changes = [
   'Voiceover not clear',
   'Audio not a good fit',
   'Audio too loud',
-  'Speling in subtitles',
+  'Spelling in subtitles',
 ];
 
 const PublicFinalDraft = ({ campaign, submission, creator }) => {

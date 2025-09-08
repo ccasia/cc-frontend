@@ -1320,9 +1320,9 @@ const RawFootages = ({
 
 
     try {
-      // Track this item as sent to creator
+      // Track this item as sent to creator (use local state already present)
       const itemKey = `rawFootage_${mediaId}`;
-      setParentSentToCreatorItems(prev => new Set([...prev, itemKey]));
+      setSentToCreatorItems(prev => new Set([...prev, itemKey]));
 
       const requestData = {
         submissionId: submission.id,

@@ -294,7 +294,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   });
 }
 
-const updatedPitch = { ...pitch, status: 'rejected' };
+const updatedPitch = { ...pitch, status: 'REJECTED' };
 setCurrentPitch(updatedPitch);
 
 if (onUpdate) {
@@ -512,7 +512,16 @@ if (onUpdate) {
                 />
                 <Stack spacing={0.5}>
                   <Typography
-                    sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20' }}
+                    sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => {
+                      const creatorId = currentPitch?.user?.creator?.id || currentPitch?.user?.id;
+                      navigate(`/dashboard/mediakit/client/${creatorId}`, {
+                        state: {
+                          returnTo: { pathname: window.location.pathname, search: window.location.search },
+                          reopenModal: { pitchId: currentPitch?.id, isV3: true }
+                        }
+                      });
+                    }}
                   >
                     {currentPitch?.user?.name}
                   </Typography>
@@ -1567,7 +1576,7 @@ if (onUpdate) {
           <Button
             onClick={
               confirmDialog.type === 'decline' && user?.role === 'client'
-                ? handleMaybeSubmit
+                ? handleDecline
                 : confirmDialog.type === 'approve'
                   ? handleApprove
                   : handleDecline

@@ -29,6 +29,14 @@ const SocketProvider = ({ children }) => {
       }
     });
 
+    // expose helpers for campaign room subscription
+    socketConnection.joinCampaign = (campaignId) => {
+      if (campaignId) socketConnection.emit('join-campaign', campaignId);
+    };
+    socketConnection.leaveCampaign = (campaignId) => {
+      if (campaignId) socketConnection.emit('leave-campaign', campaignId);
+    };
+
     // socketConnection.emit('register', user?.id);
 
     socketConnection.on('connect_error', (error) => {

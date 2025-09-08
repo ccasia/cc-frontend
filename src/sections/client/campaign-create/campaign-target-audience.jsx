@@ -51,10 +51,16 @@ const AGE_OPTIONS = [
   { value: '>40', label: '>40' },
 ];
 
-const LANGUAGE_OPTIONS = langList.sort().map((lang) => ({
-  value: lang,
-  label: lang,
-}));
+// Prefer Malay and English at the top, then list remaining languages alphabetically
+const LANGUAGE_OPTIONS = (() => {
+  const preferredLanguages = ['Malay', 'English'];
+  const remainingLanguages = [...langList]
+    .filter((language) => !preferredLanguages.includes(language))
+    .sort((a, b) => a.localeCompare(b));
+
+  const orderedLanguages = [...preferredLanguages, ...remainingLanguages];
+  return orderedLanguages.map((language) => ({ value: language, label: language }));
+})();
 
 const LOCATION_OPTIONS = [
   { value: 'KlangValley', label: 'Klang Valley' },
