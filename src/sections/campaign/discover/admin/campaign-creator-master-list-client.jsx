@@ -404,7 +404,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     );
   }
 
-  return creators.length > 0 ? (
+  return (
     <>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
@@ -945,8 +945,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
         creatorId={selectedPitch?.user?.creator?.id}
       />
     </>
-  ) : (
-    <EmptyContent title="No Creators" filled />
   );
 };
 

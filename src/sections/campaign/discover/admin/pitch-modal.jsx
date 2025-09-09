@@ -525,11 +525,15 @@ if (onUpdate) {
                   >
                     {currentPitch?.user?.name}
                   </Typography>
-                  <Typography
-                    sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}
-                  >
-                    {currentPitch?.user?.email}
-                  </Typography>
+                  {(() => {
+                    const email = currentPitch?.user?.email;
+                    const isGuest = email?.includes('@tempmail.com') || email?.startsWith('guest_');
+                    return email && !isGuest ? (
+                      <Typography sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}>
+                        {email}
+                      </Typography>
+                    ) : null;
+                  })()}
 
                   {/* Social Media Icons - Mobile */}
                   <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
@@ -664,105 +668,66 @@ if (onUpdate) {
                     {/* Left side: Languages, Age, Pronouns */}
                     <Stack direction="row" spacing={3} alignItems="center">
                       {/* Languages Section */}
-                      <Box>
-                        <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography
-                            variant="caption"
-                            color="#8e8e93"
-                            sx={{ fontWeight: 700, fontSize: '12px' }}
-                          >
-                            Languages
-                          </Typography>
-                          {derivedLanguages.length > 0 ? (
+                      {derivedLanguages.length > 0 && (
+                        <Box>
+                          <Stack spacing={0.5} alignItems="flex-start">
+                            <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 700, fontSize: '12px' }}>
+                              Languages
+                            </Typography>
                             <Stack direction="row" flexWrap="nowrap" gap={0.5} alignItems="center" sx={{ mt: 1.80 }}>
-                              {derivedLanguages
-                                  .slice(0, 2)
-                                  .map((language, index) => (
-                                    <Chip
-                                      key={index}
-                                      label={
-                                        typeof language === 'string'
-                                          ? language.toUpperCase()
-                                          : String(language).toUpperCase()
-                                      }
-                                      size="small"
-                                      sx={{
-                                        bgcolor: '#FFF',
-                                        border: '1px solid #EBEBEB',
-                                        borderRadius: 0.5,
-                                        color: '#8E8E93',
-                                      height: '30px',
-                                        boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                                        cursor: 'default',
-                                        '& .MuiChip-label': {
-                                          fontWeight: 600,
-                                        px: 1.25,
-                                          height: '100%',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          marginTop: '-2px',
-                                        fontSize: '0.8rem',
-                                        },
-                                        '&:hover': {
-                                          bgcolor: '#FFF',
-                                        },
-                                      }}
-                                    />
-                                  ))}
+                              {derivedLanguages.slice(0, 2).map((language, index) => (
+                                <Chip
+                                  key={index}
+                                  label={typeof language === 'string' ? language.toUpperCase() : String(language).toUpperCase()}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#FFF',
+                                    border: '1px solid #EBEBEB',
+                                    borderRadius: 0.5,
+                                    color: '#8E8E93',
+                                    height: '30px',
+                                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                                    cursor: 'default',
+                                  }}
+                                />
+                              ))}
                               {derivedLanguages.length > 2 && (
-                                <Typography
-                                  variant="caption"
-                                  color="#8E8E93"
-                                  sx={{ fontSize: '0.7rem', alignSelf: 'center' }}
-                                >
+                                <Typography variant="caption" color="#8E8E93" sx={{ fontSize: '0.7rem', alignSelf: 'center' }}>
                                   +{derivedLanguages.length - 2}
                                 </Typography>
                               )}
                             </Stack>
-                          ) : (
-                            <Typography
-                              variant="caption"
-                              color="#8E8E93"
-                              sx={{ fontStyle: 'italic', fontSize: '11px' }}
-                            >
-                              —
-                            </Typography>
-                          )}
-                        </Stack>
-                      </Box>
+                          </Stack>
+                        </Box>
+                      )}
 
                       {/* Age Section */}
-                      <Box>
-                        <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography
-                            variant="caption"
-                            color="#8e8e93"
-                            sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}
-                          >
-                            Age
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
-                            {derivedBirthDate ? dayjs().diff(dayjs(derivedBirthDate), 'year') : '—'}
+                      {derivedBirthDate && (
+                        <Box>
+                          <Stack spacing={0.5} alignItems="flex-start">
+                            <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}>
+                              Age
                             </Typography>
-                        </Stack>
-                      </Box>
+                            <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
+                              {dayjs().diff(dayjs(derivedBirthDate), 'year')}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      )}
 
                       {/* Pronouns Section */}
-                      <Box>
-                        <Stack spacing={0.5} alignItems="flex-start">
-                            <Typography
-                              variant="caption"
-                            color="#8e8e93"
-                            sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}
-                            >
-                            Pronouns
+                      {derivedPronouns && (
+                        <Box>
+                          <Stack spacing={0.5} alignItems="flex-start">
+                            <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}>
+                              Pronouns
                             </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
-                            {derivedPronouns || '—'}
-                          </Typography>
-                        </Stack>
-                      </Box>
+                            <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
+                              {derivedPronouns}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      )}
                     </Stack>
 
                                       {/* Right side: Stats with gap */}
