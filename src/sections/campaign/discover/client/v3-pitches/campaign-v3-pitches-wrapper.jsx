@@ -15,19 +15,25 @@ const CampaignV3PitchesWrapper = ({ campaign, campaignMutate }) => {
   const { pitches, isLoading, isError, mutate } = useGetV3Pitches(campaign?.id);
 
   const handlePitchUpdate = (updatedPitch) => {
+    // If no payload provided, revalidate from server (e.g., guest shortlist added a new pitch)
+    if (!updatedPitch) {
+      mutate();
+      campaignMutate?.();
+      return;
+    }
+
     // Update the pitches list with the updated pitch
     mutate((currentPitches) => {
       if (!currentPitches) return currentPitches;
-      
-      const updatedPitches = currentPitches.map((pitch) => 
+      const updatedPitches = currentPitches.map((pitch) =>
         pitch.id === updatedPitch.id ? updatedPitch : pitch
       );
       return updatedPitches;
     });
 
     // If the pitch was approved by client, also trigger campaign data revalidation
-    if (updatedPitch.status === 'APPROVED' && campaignMutate) {
-      campaignMutate();
+    if (updatedPitch.status === 'APPROVED') {
+      campaignMutate?.();
     }
   };
 
