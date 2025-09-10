@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import toast from 'react-hot-toast';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
@@ -9,6 +10,8 @@ import { Box, Card, Chip, Menu, Avatar, MenuItem, Typography, IconButton } from 
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import { formatText } from 'src/utils/format-test';
 
@@ -24,6 +27,9 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   // const { user } = useAuthContext();
 
   const router = useRouter();
+
+  const isCopy = useBoolean();
+
 
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -101,6 +107,20 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   const onCloseCampaignLog = (event) => {
     if (event) event.stopPropagation();
     setCampaignLogIsOpen(false);
+  };
+
+  const handleCopyLink = async () => {
+    const url = `${import.meta.env.VITE_BASE_URL}/campaign?campaign=${campaign.id}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      isCopy.onTrue();
+    } catch (error) {
+      toast.error('Failed to copy link');
+    } finally {
+      await new Promise((resolve) => setTimeout(() => resolve(), 3000));
+      isCopy.onFalse();
+    }
   };
 
   const renderImages = (
@@ -328,6 +348,28 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               }}
             >
               View Log
+            </MenuItem>
+            <MenuItem
+              onClick={(event) => {
+                event.stopPropagation();
+                handleCopyLink();
+              }}
+              sx={{
+                borderRadius: 1,
+                backgroundColor: 'white',
+                color: !isCopy.value ? 'black' : 'success.main',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                p: 1.5,
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                },
+              }}
+            >
+              {isCopy.value && (
+                <Iconify icon="charm:tick" width={20} sx={{ mr: 1 }} color="success.main" />
+              )}
+              Copy Link
             </MenuItem>
           </Menu>
         </Stack>

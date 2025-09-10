@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
+import React from 'react';
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
 
 import { Box, Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
 
@@ -8,9 +8,7 @@ import { formatCurrencyAmount } from 'src/utils/currency';
 
 import Label from 'src/components/label';
 
-const InvoiceItem = ({ invoice, selected, onSelectRow, openEditInvoice }) => {
-
-  return (
+const InvoiceItem = ({ invoice, selected, onSelectRow, openEditInvoice }) => (
     <TableRow
       key={invoice?.id}
       component={Box}
@@ -63,7 +61,6 @@ const InvoiceItem = ({ invoice, selected, onSelectRow, openEditInvoice }) => {
       </TableCell>
     </TableRow>
   );
-};
 
 export default InvoiceItem;
 

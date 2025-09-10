@@ -2,10 +2,11 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
 
-import { Chip, TableRow, TableCell, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import { Chip, Tooltip, TableRow, TableCell, IconButton } from '@mui/material';
 
 import Label from 'src/components/label';
+
 import PackageEditDialog from './package-edit-dialog';
 
 const dictionary = {

@@ -24,9 +24,7 @@ const CampaignPerformanceTable = () => {
     return pageParam ? parseInt(pageParam, 10) : 1;
   });
 
-  const [selectedCampaign, setSelectedCampaign] = useState(() => {
-    return searchParams.get('campaign') || 'all';
-  });
+  const [selectedCampaign, setSelectedCampaign] = useState(() => searchParams.get('campaign') || 'all');
 
   const itemsPerPage = 7;
 
