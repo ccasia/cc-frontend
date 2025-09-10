@@ -12,7 +12,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import axiosInstance from 'src/utils/axios';
+
 import { useSnackbar } from 'src/components/snackbar';
 
 const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {

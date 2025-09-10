@@ -327,6 +327,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { useMemo, useState, useEffect } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import { LineChart } from '@mui/x-charts';
 import { Image, Person, Schedule, ArrowForward } from '@mui/icons-material';
 import {
@@ -355,8 +356,6 @@ import {
   CircularProgress,
   ListItemSecondaryAction,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -364,7 +363,7 @@ import { useRouter } from 'src/routes/hooks';
 import useGetCreators from 'src/hooks/use-get-creators';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
-import { fetcher } from 'src/utils/axios';
+import axiosInstance, { fetcher , endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';

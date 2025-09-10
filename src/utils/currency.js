@@ -25,13 +25,9 @@ const CURRENCY_PREFIXES = {
   },
 };
 
-export const getCurrencyPrefix = (currencyCode) => {
-  return CURRENCY_PREFIXES[currencyCode]?.prefix || '';
-};
+export const getCurrencyPrefix = (currencyCode) => CURRENCY_PREFIXES[currencyCode]?.prefix || '';
 
-export const getCurrencyLabel = (currencyCode) => {
-  return CURRENCY_PREFIXES[currencyCode]?.label || currencyCode;
-};
+export const getCurrencyLabel = (currencyCode) => CURRENCY_PREFIXES[currencyCode]?.label || currencyCode;
 
 export const formatCurrencyAmount = (amount, currencyCode) => {
   const prefix = getCurrencyPrefix(currencyCode);
@@ -42,8 +38,6 @@ export const formatCurrencyAmount = (amount, currencyCode) => {
   return `${prefix} ${formattedAmount}`;
 };
 
-export const getCurrencyData = (currencyCode) => {
-  return CURRENCY_PREFIXES[currencyCode] || { prefix: '', label: currencyCode };
-};
+export const getCurrencyData = (currencyCode) => CURRENCY_PREFIXES[currencyCode] || { prefix: '', label: currencyCode };
 
 export { CURRENCY_PREFIXES };

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, CircularProgress, Stack } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { m } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+
+import { useTheme } from '@mui/material/styles';
+import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material';
+
 import Iconify from './iconify';
 
 const InstagramOAuthWarning = ({

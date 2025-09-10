@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router';
+import React, { useState, useEffect } from 'react';
 
 import { Box, Stack, Button, Typography } from '@mui/material';
 

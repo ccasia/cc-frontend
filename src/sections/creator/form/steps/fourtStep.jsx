@@ -8,7 +8,7 @@ import { langList } from 'src/contants/language';
 import { primaryFont } from 'src/theme/typography';
 import { interestsLists } from 'src/contants/interestLists';
 
-import { RHFAutocomplete, RHFTextField } from 'src/components/hook-form';
+import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 // import { interestsList } from '../creatorForm';
 

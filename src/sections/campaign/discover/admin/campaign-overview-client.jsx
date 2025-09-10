@@ -1,26 +1,25 @@
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import {
   Box,
   Grid,
+  Link,
+  Chip,
+  Zoom,
   Stack,
   Avatar,
   Button,
   Typography,
-  Link,
-  Chip,
-  Zoom,
 } from '@mui/material';
 
-import { useAuthContext } from 'src/auth/hooks';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 import { paths } from 'src/routes/paths';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
-import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchModal from './pitch-modal';
 

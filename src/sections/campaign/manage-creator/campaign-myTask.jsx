@@ -3,7 +3,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { Box, Card, Stack, Typography, CircularProgress, useMediaQuery } from '@mui/material';
+import { Box, Card, Stack, Typography, useMediaQuery, CircularProgress } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
@@ -17,10 +17,10 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import CampaignPosting from './submissions/campaign-posting';
+import MobileSubmissionLayout from './mobile-submission-layout';
 import CampaignAgreement from './submissions/campaign-agreement';
 import CampaignFirstDraft from './submissions/campaign-first-draft';
 import CampaignFinalDraft from './submissions/campaign-final-draft';
-import MobileSubmissionLayout from './mobile-submission-layout';
 
 export const defaultSubmission = [
   {

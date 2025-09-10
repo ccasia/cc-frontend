@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 // import { keyframes } from '@emotion/react';
 import { enqueueSnackbar } from 'notistack';
 
@@ -11,12 +11,13 @@ import {
   alpha,
   Button,
   useTheme,
+  CardMedia,
   Typography,
   useMediaQuery,
-  CardMedia,
 } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
+
 import axiosInstance from 'src/utils/axios';
 import { useSocialMediaData } from 'src/utils/store';
 

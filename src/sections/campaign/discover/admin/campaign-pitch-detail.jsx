@@ -1,16 +1,16 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useRef } from 'react';
-import { enqueueSnackbar } from 'notistack';
 
 import { Box, Card, Chip, Stack, Button, Typography, ListItemText } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 import { useSnackbar } from 'src/components/snackbar';
-import { useAuthContext } from 'src/auth/hooks';
 
 const CampaignPitchDetail = ({ pitch }) => {
   const { enqueueSnackbar } = useSnackbar();

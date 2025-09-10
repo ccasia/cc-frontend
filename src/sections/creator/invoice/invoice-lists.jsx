@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
+import React from 'react';
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
 
 import {
   Box,
@@ -19,8 +19,6 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
 

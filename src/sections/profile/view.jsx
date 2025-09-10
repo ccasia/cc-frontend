@@ -45,13 +45,12 @@ import CreatorProfile from 'src/sections/creator/profile/general';
 import API from './api';
 import UploadPhoto from './dropzone';
 import AccountSecurity from './security';
+import ClientProfile from './client-profile';
 import { Billing } from '../creator/profile/billing';
 import Preference from '../creator/profile/preferences';
 import AccountSocialLinks from '../creator/profile/social';
 import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
-
-import ClientProfile from './client-profile';
 
 // import x from '../creator/profile/notification';
 

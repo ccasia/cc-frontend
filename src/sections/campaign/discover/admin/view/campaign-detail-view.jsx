@@ -51,17 +51,17 @@ import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignLogistics from '../campaign-logistics';
+import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
+import CampaignOverviewClient from '../campaign-overview-client';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
-import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
-import CampaignAnalytics from '../campaign-analytics';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
-import CampaignOverviewClient from '../campaign-overview-client';
+import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
