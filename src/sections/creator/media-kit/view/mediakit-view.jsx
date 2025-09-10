@@ -137,14 +137,11 @@ const MediaKitCreator = () => {
 
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
+      const totalEngagement =
+        (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0);
       return {
         followers: instagram?.instagramUser?.followers_count || 0,
-        engagement_rate: `${
-          calculateEngagementRate(
-            (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0),
-            instagram?.instagramUser?.followers_count ?? 0
-          ) || 0
-        }%`,
+        engagement_total: totalEngagement,
         averageLikes: instagram?.instagramUser?.averageLikes || 0,
         username: instagram?.instagramUser?.username,
         averageComments: instagram?.instagramUser?.averageComments || 0,
@@ -152,13 +149,11 @@ const MediaKitCreator = () => {
     }
 
     if (currentTab === 'tiktok') {
+      const totalEngagement =
+        (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0);
       return {
         followers: tiktok?.overview?.follower_count || 0,
-        engagement_rate:
-          calculateEngagementRate(
-            (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0),
-            tiktok?.overview?.follower_count
-          ) || 0,
+        engagement_total: totalEngagement,
         averageLikes: tiktok?.medias?.averageLikes || 0,
         averageComments: tiktok?.medias?.averageComments || 0,
       };
@@ -166,7 +161,7 @@ const MediaKitCreator = () => {
 
     return {
       followers: 0,
-      engagement_rate: 0,
+      engagement_total: 0,
       averageLikes: 0,
     };
   }, [currentTab, tiktok, instagram, calculateEngagementRate]);
@@ -1437,7 +1432,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.engagement_rate}
+                        {formatNumber(socialMediaAnalytics.engagement_total)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1555,7 +1550,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.engagement_rate}
+                  {formatNumber(socialMediaAnalytics.engagement_total)}
                 </Typography>
                 <Typography
                   variant="caption"
