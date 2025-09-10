@@ -12,6 +12,7 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
+  Typography,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -21,10 +22,13 @@ import { interestsLists } from 'src/contants/interestLists';
 
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
+import { countriesCities } from 'src/contants/countries';
+import Iconify from 'src/components/iconify';
 
 export const EditRequirements = ({ open, campaign, onClose }) => {
   const methods = useForm({
     defaultValues: {
+      country: campaign?.campaignRequirement?.country || '',
       audienceGender: campaign?.campaignRequirement?.gender || [],
       audienceAge: campaign?.campaignRequirement?.age || [],
       audienceLocation: campaign?.campaignRequirement?.geoLocation || [],
@@ -37,6 +41,7 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
   const { watch, handleSubmit } = methods;
 
   const audienceLocation = watch('audienceLocation');
+  const country = watch('country');
 
   const closeDialog = () => onClose('campaignRequirements');
 
@@ -102,26 +107,77 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                 label="Audience Age"
               />
 
-              <RHFMultiSelect
-                name="audienceLocation"
-                label="Audience Geo Location"
-                checkbox
-                chip
-                options={[
-                  { value: 'KlangValley', label: 'Klang Valley' },
-                  { value: 'Selangor', label: 'Selangor' },
-                  { value: 'KualaLumpur', label: 'Kuala Lumpur' },
-                  { value: 'MainCities', label: 'Main cities in Malaysia' },
-                  { value: 'EastMalaysia', label: 'East Malaysia' },
-                  { value: 'Others', label: 'Others' },
-                ]}
+              <RHFAutocomplete
+                name="country"
+                label="Audience Country"
+                placeholder="Select country"
+                options={Object.keys(countriesCities)}
+                getOptionLabel={(option) => option}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      '& .MuiAutocomplete-listbox': {
+                        maxHeight: 300, // force scroll
+                        overflowY: 'auto',
+                        /* Scrollbar customization */
+                        '&::-webkit-scrollbar': {
+                          width: 8,
+                        },
+                        '&::-webkit-scrollbar-track': {
+                          backgroundColor: '#f1f1f1',
+                          borderRadius: 8,
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                          backgroundColor: '#888',
+                          borderRadius: 8,
+                        },
+                        '&::-webkit-scrollbar-thumb:hover': {
+                          backgroundColor: '#555',
+                        },
+                        /* Firefox */
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#888 #fff00',
+                      },
+                    },
+                  },
+                }}
+                renderOption={(props, option) => {
+                  // eslint-disable-next-line react/prop-types
+                  const { key, ...optionProps } = props;
+
+                  return (
+                    <Box key={key} {...optionProps} sx={{ display: 'flex', gap: 1 }}>
+                      <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
+                      <Typography variant="subtitle2">{option}</Typography>
+                    </Box>
+                  );
+                }}
               />
-              {audienceLocation === 'Others' && (
-                <TextField
-                  name="audienceLocation"
-                  label="Specify Other Location"
-                  variant="outlined"
-                />
+
+              {country?.toLowerCase() === 'malaysia' && (
+                <>
+                  <RHFMultiSelect
+                    name="audienceLocation"
+                    label="Audience Geo Location"
+                    checkbox
+                    chip
+                    options={[
+                      { value: 'KlangValley', label: 'Klang Valley' },
+                      { value: 'Selangor', label: 'Selangor' },
+                      { value: 'KualaLumpur', label: 'Kuala Lumpur' },
+                      { value: 'MainCities', label: 'Main cities in Malaysia' },
+                      { value: 'EastMalaysia', label: 'East Malaysia' },
+                      { value: 'Others', label: 'Others' },
+                    ]}
+                  />
+                  {audienceLocation === 'Others' && (
+                    <TextField
+                      name="audienceLocation"
+                      label="Specify Other Location"
+                      variant="outlined"
+                    />
+                  )}
+                </>
               )}
 
               <RHFAutocomplete

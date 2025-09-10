@@ -15,8 +15,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { formatText } from 'src/utils/format-test';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
@@ -26,10 +24,12 @@ import { CampaignLog } from '../../manage/list/CampaignLog';
 
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
   const theme = useTheme();
-  const { user } = useAuthContext();
+  // const { user } = useAuthContext();
 
   const router = useRouter();
+
   const isCopy = useBoolean();
+
 
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -399,6 +399,24 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         },
       }}
     >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          zIndex: 1,
+          border: 0.5,
+          borderRadius: 20,
+          display: 'inline-flex',
+          borderColor: 'gray',
+          boxShadow: '0px 0px 5px 0px #5c5c5c',
+        }}
+      >
+        <Iconify
+          icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
+          width={40}
+        />
+      </Box>
       {false && (
         <Box
           mt={4}
@@ -429,7 +447,6 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       )}
       {renderImages}
       {renderTexts}
-
       <Box onClick={(e) => e.stopPropagation()}>
         <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
       </Box>
