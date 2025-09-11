@@ -368,9 +368,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
 
   // Debug logging for staging
   console.log('TikTok View Component Debug:', {
-    tiktokData,
-    dataSource,
-    realTopContent,
+    hasTiktokData: !!tiktokData,
     hasMedias: !!dataSource?.medias,
     sortedVideosLength: realTopContent?.length,
     isArray: Array.isArray(realTopContent),
@@ -379,9 +377,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
       id: realTopContent[0].id,
       title: realTopContent[0].title,
       like: realTopContent[0].like,
-      comment: realTopContent[0].comment,
-      like_count: realTopContent[0].like_count,
-      comment_count: realTopContent[0].comment_count
+      comment: realTopContent[0].comment
     } : null
   });
 
