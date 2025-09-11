@@ -366,6 +366,17 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   const dataSource = tiktokData;
   const realTopContent = dataSource?.medias?.sortedVideos;
 
+  // Debug logging for staging
+  console.log('TikTok View Component Debug:', {
+    tiktokData,
+    dataSource,
+    realTopContent,
+    hasMedias: !!dataSource?.medias,
+    sortedVideosLength: realTopContent?.length,
+    isArray: Array.isArray(realTopContent),
+    userConnected: !!user?.creator?.isTiktokConnected
+  });
+
 
   // Check if we have real content
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
@@ -449,7 +460,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
             {isConnected 
-              ? "No videos found in your TikTok account" 
+              ? "No videos found in your TikTok account. This could be due to:\n• Account has no public videos\n• TikTok API permissions need refresh\n• Account is private" 
               : "Connect your TikTok account to see your top content"
             }
           </Typography>
@@ -464,15 +475,24 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
               Connect TikTok
             </Button>
           ) : (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Iconify icon="eva:refresh-fill" width={16} />}
-              onClick={() => window.location.reload()}
-              sx={{ mt: 1 }}
-            >
-              Refresh Data
-            </Button>
+            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Iconify icon="eva:refresh-fill" width={16} />}
+                onClick={() => window.location.reload()}
+              >
+                Refresh Data
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Iconify icon="logos:tiktok-icon" width={16} />}
+                onClick={connectTiktok}
+              >
+                Reconnect TikTok
+              </Button>
+            </Stack>
           )}
         </Box>
       )}
