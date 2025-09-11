@@ -374,7 +374,15 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
     hasMedias: !!dataSource?.medias,
     sortedVideosLength: realTopContent?.length,
     isArray: Array.isArray(realTopContent),
-    userConnected: !!user?.creator?.isTiktokConnected
+    userConnected: !!user?.creator?.isTiktokConnected,
+    firstVideo: realTopContent?.[0] ? {
+      id: realTopContent[0].id,
+      title: realTopContent[0].title,
+      like: realTopContent[0].like,
+      comment: realTopContent[0].comment,
+      like_count: realTopContent[0].like_count,
+      comment_count: realTopContent[0].comment_count
+    } : null
   });
 
 
