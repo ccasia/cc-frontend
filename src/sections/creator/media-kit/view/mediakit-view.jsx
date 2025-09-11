@@ -116,8 +116,16 @@ const MediaKitCreator = () => {
     try {
       isLoading.onTrue();
       const res = await axiosInstance.get(endpoints.creators.social.tiktokV2(user?.id));
+      console.log('TikTok API Response (Frontend):', {
+        status: res.status,
+        data: res.data,
+        hasMedias: !!res.data?.medias,
+        hasSortedVideos: !!res.data?.medias?.sortedVideos,
+        videosCount: res.data?.medias?.sortedVideos?.length || 0
+      });
       setTiktok(res.data);
     } catch (error) {
+      console.error('TikTok API Error (Frontend):', error);
       return;
     } finally {
       isLoading.onFalse();
