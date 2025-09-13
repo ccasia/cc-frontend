@@ -6,7 +6,18 @@ import toast from 'react-hot-toast';
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import { Box, Card, Chip, Menu, Avatar, MenuItem, Typography, IconButton } from '@mui/material';
+import {
+  Box,
+  Card,
+  Chip,
+  Menu,
+  Avatar,
+  Divider,
+  Tooltip,
+  MenuItem,
+  Typography,
+  IconButton,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -14,6 +25,8 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { formatText } from 'src/utils/format-test';
+
+import { countries } from 'src/assets/data';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -242,7 +255,15 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         }}
       />
       {status && (
-        <Box sx={{ position: 'absolute', top: 20, left: 20, display: 'flex', gap: 1 }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            display: 'flex',
+            gap: 1,
+          }}
+        >
           <Chip
             icon={
               campaign?.status?.toLowerCase() === 'active' ? (
@@ -257,13 +278,68 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                 />
               ) : null
             }
-            label={formatText(
-              campaign?.status === 'PENDING_CSM_REVIEW' ||
-                campaign?.status === 'SCHEDULED' ||
-                campaign?.status === 'PENDING_ADMIN_ACTIVATION'
-                ? 'PENDING'
-                : campaign?.status
-            )}
+            label={
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
+                  {formatText(
+                    campaign?.status === 'PENDING_CSM_REVIEW' ||
+                      campaign?.status === 'SCHEDULED' ||
+                      campaign?.status === 'PENDING_ADMIN_ACTIVATION'
+                      ? 'PENDING'
+                      : campaign?.status
+                  )}
+                </Typography>
+                {campaign?.campaignRequirement?.country && (
+                  <>
+                    <Divider
+                      orientation="vertical"
+                      flexItem
+                      sx={{ bgcolor: 'black', height: 14 }}
+                      variant="middle"
+                    />
+                    <Tooltip
+                      title={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Iconify
+                            icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
+                            width={15}
+                          />
+                          <Typography variant="caption">
+                            {
+                              countries.find((item) =>
+                                item.label
+                                  .toLowerCase()
+                                  .includes(campaign?.campaignRequirement?.country?.toLowerCase())
+                              ).label
+                            }
+                          </Typography>
+                        </Stack>
+                      }
+                      followCursor
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            // bgcolor: 'white',
+                            // color: 'black',
+                            borderRadius: 0.4,
+                          },
+                        },
+                      }}
+                    >
+                      <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
+                        {
+                          countries.find((item) =>
+                            item.label
+                              .toLowerCase()
+                              .includes(campaign?.campaignRequirement?.country?.toLowerCase())
+                          ).code
+                        }
+                      </Typography>
+                    </Tooltip>
+                  </>
+                )}
+              </Stack>
+            }
             sx={{
               backgroundColor: theme.palette.common.white,
               color: '#48484a',
@@ -618,43 +694,24 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         },
       }}
     >
-      {isPendingReview && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 10,
-            bgcolor: 'rgba(19, 64, 255, 0.1)',
-            p: 1,
-            display: 'flex',
-            justifyContent: 'center',
-          }}
+      {/* <Box
+        sx={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          zIndex: 1,
+          border: 0.5,
+          borderRadius: 20,
+          display: 'inline-flex',
+          borderColor: 'gray',
+          boxShadow: '0px 0px 5px 0px #5c5c5c',
+        }}
+      >
+        <Iconify
+          icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
+          width={40}
         />
-      )}
-
-      {campaign?.campaignRequirement?.country && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 10,
-            right: 10,
-            zIndex: 1,
-            border: 0.5,
-            borderRadius: 20,
-            display: 'inline-flex',
-            borderColor: 'gray',
-            boxShadow: '0px 0px 5px 0px #5c5c5c',
-          }}
-        >
-          <Iconify
-            icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
-            width={40}
-          />
-        </Box>
-      )}
-
+      </Box> */}
       {false && (
         <Box
           mt={4}
