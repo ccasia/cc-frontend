@@ -36,9 +36,10 @@ function DiscoverBrand() {
   const [search, setSearch] = useState('');
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
-  const filteredData = (!isLoading && companies) 
-    ? companies.filter((company) => company.name.toLowerCase().includes(search.toLowerCase()))
-    : [];
+  const filteredData =
+    !isLoading && companies
+      ? companies.filter((company) => company.name.toLowerCase().includes(search.toLowerCase()))
+      : [];
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -59,6 +60,7 @@ function DiscoverBrand() {
             onClick={() => setInviteDialogOpen(true)}
             sx={{
               bgcolor: 'primary.main',
+              borderRadius: 0.6,
               '&:hover': {
                 bgcolor: 'primary.dark',
               },
@@ -89,7 +91,7 @@ function DiscoverBrand() {
           )}
         </>
       )}
-      
+
       <InviteClientDialog
         open={inviteDialogOpen}
         onClose={() => setInviteDialogOpen(false)}
