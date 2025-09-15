@@ -390,45 +390,14 @@ export function useNavData() {
           },
         ],
       },
-      {
-        items: [
-          {
-            title: (
-              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
-            ),
-            path: paths.dashboard.chat.root,
-            icon: ICONS.chat,
-            msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
-          },
-          {
-            title: (
-              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-                Calendar
-              </span>
-            ),
-            path: paths.dashboard.calendar.root,
-            icon: ICONS.calendar,
-          },
-        ],
-      },
-      {
-        items: [
-          {
-            title: (
-              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-                Settings
-              </span>
-            ),
-            path: paths.dashboard.user.profile,
-            icon: ICONS.settings,
-          },
-        ],
-      },
     ],
-    [unreadMessageCount]
+    []
   );
 
-  // add finance naviagation
+  // CS Lead navigations - adminNavigations without calendar and chats
+  const csLeadNavigations = useMemo(() => adminNavigations, [adminNavigations]);
+
+  // // add finance naviagation
   const navigations = useMemo(
     // roles => "god" , "normal", "designation", "admin", "creator"
     // user?.role === 'creator' ? creatorNavigations : adminNavigations,
@@ -437,46 +406,99 @@ export function useNavData() {
       if (user?.role === 'creator') {
         return creatorNavigations;
       }
+      if (user?.role === 'client') {
+        return adminNavigations;
+      }
       if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
         return financeNavigations;
       }
-      if (user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Client') {
-        // Filter out menu items that don't apply to the Client role if needed
-        if (user?.admin?.role?.name === 'Client') {
-          return adminNavigations.map(section => ({
-            ...section,
-            items: section.items.filter(item => 
-              !item.roles || item.roles.includes('Client')
-            )
-          })).filter(section => section.items.length > 0);
-        }
+      if (user?.admin?.role?.name === 'CSM') {
         return adminNavigations;
+      }
+      if (user?.admin?.role?.name === 'CSL') {
+        return csLeadNavigations;
       }
 
       if (user?.role === 'superadmin') {
         return [
           ...adminNavigations,
-          {
-            items: [
-              {
-                title: 'Invoices',
-                path: paths.dashboard.finance.invoice,
-                icon: <Iconify icon="iconamoon:invoice" width={25} />,
-              },
-            ],
-          },
+          // {
+          //   items: [
+          //     {
+          //       title: 'Invoices',
+          //       path: paths.dashboard.finance.invoice,
+          //       icon: <Iconify icon="iconamoon:invoice" width={25} />,
+          //     },
+          //   ],
+          // },
         ];
       }
 
       return [];
     },
-    [adminNavigations, creatorNavigations, user, financeNavigations, unreadMessageCount]
+
+    [adminNavigations, creatorNavigations, user, financeNavigations, csLeadNavigations]
   );
 
-  const data = useMemo(
-    () => navigations,
-    [navigations]
-  );
+  const data = useMemo(() => {
+    const baseData = [...navigations];
+
+    // CS Lead should not have access to calendar and chats
+    if (user?.admin?.role?.name !== 'CSL') {
+      baseData.push({
+        items:
+          user?.role === 'client'
+            ? [
+                {
+                  title: (
+                    <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                      Calendar
+                    </span>
+                  ),
+                  path: paths.dashboard.calendar.root,
+                  icon: ICONS.calendar,
+                },
+              ]
+            : [
+                {
+                  title: (
+                    <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                      Chats
+                    </span>
+                  ),
+                  path: paths.dashboard.chat.root,
+                  icon: ICONS.chat,
+                  msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
+                },
+                {
+                  title: (
+                    <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                      Calendar
+                    </span>
+                  ),
+                  path: paths.dashboard.calendar.root,
+                  icon: ICONS.calendar,
+                },
+              ],
+      });
+    }
+
+    baseData.push({
+      items: [
+        {
+          title: (
+            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+              Settings
+            </span>
+          ),
+          path: paths.dashboard.user.profile,
+          icon: ICONS.settings,
+        },
+      ],
+    });
+
+    return baseData;
+  }, [navigations, unreadMessageCount, user?.admin?.role?.name, user?.role]);
 
   return data;
 }
