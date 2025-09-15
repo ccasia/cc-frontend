@@ -25,7 +25,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
+export default function ChatNavItem({ onArchive, selected, collapse, thread, onClick }) {
   const { user } = useAuthContext();
   const [anchorEl, setAnchorEl] = useState(null);
   const mdUp = useResponsive('up', 'md');
@@ -88,14 +88,14 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
           variant={user?.status}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
-          <Avatar 
-            alt={''} 
-            src={avatarURL} 
-            sx={{ 
-              width: 40, 
+          <Avatar
+            alt={''}
+            src={avatarURL}
+            sx={{
+              width: 40,
               height: 40,
-              border: '1px solid #EBEBEB'
-            }} 
+              border: '1px solid #EBEBEB',
+            }}
           />
         </Badge>
         {otherUser?.role === 'superadmin' && 'admin' && (
@@ -107,15 +107,19 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
               width: 12,
               height: 12,
               borderRadius: '50%',
-              bgcolor: '#36B37E', 
-              border: '2px solid #fff', 
+              bgcolor: '#36B37E',
+              border: '2px solid #fff',
               zIndex: 1,
             }}
           />
         )}
       </Box>
 
-      <Stack direction="column" ml={1.5} sx={{ flexGrow: 1, overflow: 'hidden', width: 'calc(100% - 80px)' }}>
+      <Stack
+        direction="column"
+        ml={1.5}
+        sx={{ flexGrow: 1, overflow: 'hidden', width: 'calc(100% - 80px)' }}
+      >
         <Stack
           direction="row"
           alignItems="center"
@@ -124,17 +128,22 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
           sx={{ width: '100%' }}
         >
           {/* Left-aligned: Title */}
-          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexGrow: 1, overflow: 'hidden' }}>
-            <Typography 
-              noWrap 
-              variant="subtitle2" 
-              sx={{ 
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={0.5}
+            sx={{ flexGrow: 1, overflow: 'hidden' }}
+          >
+            <Typography
+              noWrap
+              variant="subtitle2"
+              sx={{
                 flexShrink: 1,
                 fontSize: '16px',
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
+                gap: '4px',
               }}
             >
               {title}
@@ -142,11 +151,11 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
                 <Box
                   component="img"
                   src="/assets/icons/components/ic_chat_verified.svg"
-                  sx={{ 
+                  sx={{
                     width: 16,
                     height: 16,
                     display: 'inline',
-                    verticalAlign: 'middle'
+                    verticalAlign: 'middle',
                   }}
                 />
               )}
@@ -154,14 +163,14 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
           </Stack>
 
           {/* Right-aligned: Badge, Timestamp and Arrow */}
-          <Stack 
-            direction="row" 
-            alignItems="center" 
-            spacing={1} 
-            sx={{ 
-              flexShrink: 0, 
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{
+              flexShrink: 0,
               ml: 'auto',
-              minWidth: 'fit-content'
+              minWidth: 'fit-content',
             }}
           >
             <Badge
@@ -188,14 +197,14 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
                 : ''}
             </Typography>
 
-            <Iconify 
-              icon="eva:arrow-ios-forward-fill" 
-              sx={{ 
+            <Iconify
+              icon="eva:arrow-ios-forward-fill"
+              sx={{
                 color: '#8E8E93',
                 width: 20,
                 height: 20,
-                ml: -0.5
-              }} 
+                ml: -0.5,
+              }}
             />
           </Stack>
         </Stack>
@@ -211,7 +220,7 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
             whiteSpace: 'nowrap',
             mt: 0.25,
             pr: 2,
-            width: '100%'
+            width: '100%',
           }}
         >
           {latestMessage && (
@@ -231,7 +240,6 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
 
   const handleNav = () => {
     const threadPath = paths.dashboard.chat.thread(thread.id);
-    // console.log(threadPath);
     router.push(threadPath);
   };
 
@@ -239,7 +247,7 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
     <>
       <ListItemButton
         disableGutters
-        onClick={handleNav}
+        onClick={onClick}
         sx={{
           py: 1.5,
           px: 1.5,
@@ -261,34 +269,6 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
       >
         {renderInfo}
       </ListItemButton>
-
-      {/* Menu for Actions */}
-      {/* <IconButton onClick={handleMenuOpen}>
-      <Icon icon="bi:three-dots-vertical" />
-    </IconButton>
-    <Menu
-      anchorEl={anchorEl}
-      open={Boolean(anchorEl)}
-      onClose={handleMenuClose}
-      anchorOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
-      transformOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
-      PaperProps={{
-        style: {
-          width: 100,
-        },
-      }}
-    >
-      <MenuItem onClick={handleArchiveClick}>
-        <Iconify width={16} icon="material-symbols:archive-outline" />
-        <ListItemText> {userThreadData?.archived ? 'Unarchive' : 'Archive'} </ListItemText>
-      </MenuItem>
-    </Menu> */}
     </>
   );
 }

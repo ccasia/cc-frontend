@@ -22,11 +22,12 @@ import ChatArchiveModal from './chatArchiveModal';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { useHandleThread } from 'src/hooks/zustands/useHandleThread';
 //  import { toast } from 'react-toastify';
 
 // ----------------------------------------------------------------------
 
-export default function ChatHeaderCompose({ currentUserId, threadId }) {
+export default function ChatHeaderCompose({ currentUserId, threadId, isClient }) {
   const { user } = useAuthContext();
   const { thread, error } = useGetThreadById(threadId);
   const [archivedChats, setArchivedChats] = useState([]);
@@ -45,6 +46,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const { threads } = useGetAllThreads();
   const smDown = useResponsive('down', 'sm');
   const router = useRouter();
+  const setThreadId = useHandleThread((state) => state.setThreadId);
 
   useEffect(() => {
     if (threads) {
@@ -227,6 +229,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
           {alertMessage}
         </Alert>
       </Snackbar>
+
       <Box
         sx={{
           display: 'flex',
@@ -240,8 +243,19 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         <Box width="200px" sx={{ display: 'flex', alignItems: 'center' }}>
           {thread ? (
             <>
+              {isClient && (
+                <IconButton
+                  onClick={() => {
+                    setThreadId(null);
+                    localStorage.removeItem('threadId');
+                  }}
+                  sx={{ marginRight: 1 }}
+                >
+                  <Iconify icon="ep:arrow-left-bold" />
+                </IconButton>
+              )}
               {/* Display group chat title or single chat other user name */}
-              {smDown && (
+              {smDown && !isClient && (
                 <IconButton onClick={() => router.push(paths.dashboard.chat.root)}>
                   <Iconify icon="iconamoon:arrow-left-2-light" width={20} />
                 </IconButton>
@@ -275,10 +289,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
                     >
                       <Stack direction={'row'} alignItems={'center'} spacing={0.5}>
                         <Typography variant="subtitle1">{otherUserName}</Typography>
-                        {/* <Iconify
-                          icon="material-symbols:verified"
-                          style={{ color: '#1340FF', paddingLeft: 1 }}
-                        /> */}
                       </Stack>
                     </Typography>
                     <Typography
@@ -295,65 +305,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
             <Typography variant="h6">Thread not found</Typography>
           )}
         </Box>
-
-        {/* {isAdmin && contacts.length > 0 && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Autocomplete
-              sx={{ minWidth: 320 }}
-              popupIcon={null}
-              disablePortal
-              noOptionsText={<SearchNotFound query={contacts} />}
-              onChange={handleChange}
-              options={contacts}
-              getOptionLabel={(recipient) => recipient.name}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Search for creators"
-                  InputProps={{
-                    ...params.InputProps,
-                    startAdornment: (
-                      <>
-                        <Iconify
-                          icon="material-symbols:search-rounded"
-                          style={{ color: 'black', marginRight: '8px' }}
-                        />
-                        {params.InputProps.startAdornment}
-                      </>
-                    ),
-                  }}
-                />
-              )}
-              renderOption={(props, recipient, { selected }) => (
-                <li {...props} key={recipient.id}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Avatar
-                      alt={recipient.name}
-                      src={recipient.photoURL}
-                      sx={{ width: 32, height: 32, mr: 1 }}
-                    />
-                    <div>
-                      <Typography variant="body1">{recipient.name}</Typography>
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {recipient.email}
-                      </Typography>
-                    </div>
-                  </Box>
-                </li>
-              )}
-            />
-          </Box>
-        )} */}
         {/* Flex End: Icon buttons */}
         <Box paddingLeft={1} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {!smDown ? (
@@ -393,6 +344,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
               height: 38,
               width: 38,
               boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              display: isClient && 'none',
             }}
             onClick={handleOpenInfoModal}
           >
@@ -420,4 +372,5 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
 
 ChatHeaderCompose.propTypes = {
   currentUserId: PropTypes.string,
+  isClient: PropTypes.bool,
 };

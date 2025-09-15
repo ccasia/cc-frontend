@@ -1,10 +1,23 @@
-import React from 'react';
 import PropTypes from 'prop-types';
+import React, { useEffect } from 'react';
 
-import { Box, ClickAwayListener, Fade, Menu, MenuItem, Popover, Popper } from '@mui/material';
+import { Box, Popover } from '@mui/material';
+
+import { useHandleThread } from 'src/hooks/zustands/useHandleThread';
+
+import ChatNav from 'src/sections/chat/chat-nav';
+import ThreadMessages from 'src/sections/chat/view/threadmessages';
 
 const ChatModal = ({ open, onClose, anchorEl }) => {
-  console.log(anchorEl);
+  // const [threadId, setThreadId] = useState(null);
+  const threadId = useHandleThread((state) => state.threadId);
+  const setThreadId = useHandleThread((state) => state.setThreadId);
+
+  useEffect(() => {
+    const id = localStorage.getItem('threadId');
+    setThreadId(id);
+  }, [setThreadId]);
+
   return (
     <Popover
       anchorEl={anchorEl}
@@ -12,7 +25,6 @@ const ChatModal = ({ open, onClose, anchorEl }) => {
       onClose={onClose}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       transformOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      s
       slotProps={{
         paper: {
           sx: {
@@ -21,8 +33,12 @@ const ChatModal = ({ open, onClose, anchorEl }) => {
         },
       }}
     >
-      <Box sx={{ bgcolor: 'transparent', minWidth: 350, height: 400, p: 2 }}>
-        All chat component goes here
+      <Box sx={{ bgcolor: 'transparent', minWidth: 320, height: 500, p: 0.5 }}>
+        {threadId ? (
+          <ThreadMessages threadId={threadId} isClient />
+        ) : (
+          <ChatNav contacts={[]} isClient setThreadId={setThreadId} />
+        )}
       </Box>
     </Popover>
   );
