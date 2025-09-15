@@ -51,8 +51,6 @@ const FormField = ({ label, children, ...others }) => (
 );
 
 export default function DashboardLayout({ children }) {
-  const settings = useSettingsContext();
-
   const { user } = useAuthContext();
   const { socket, isOnline } = useSocketContext();
   const [hasSubmittedKWSP, setHasSubmittedKWSP] = useState(false);
@@ -173,7 +171,7 @@ export default function DashboardLayout({ children }) {
 
   const onKwspSubmit = handleKwspSubmit(async (data) => {
     try {
-      const response = await axiosInstance.post('/api/kwsp/submit', {
+      await axiosInstance.post('/api/kwsp/submit', {
         fullName: data.fullName,
         nricPassport: data.nricPassport,
       });
@@ -439,81 +437,36 @@ export default function DashboardLayout({ children }) {
 
   return (
     <Box
+      sx={{
+        minHeight: 1,
+        display: 'flex',
+        flexDirection: { xs: 'column', lg: 'row' },
+        pr: lgUp && 2,
+      }}
+    >
+      {renderNav}
+      <Box
         sx={{
-          minHeight: 1,
-          display: 'flex',
-          flexDirection: { xs: 'column', lg: 'row' },
-          pr: lgUp && 2,
+          width: lgUp ? 1 : '97vw',
+          mx: 'auto',
+          height: '97vh',
+          borderRadius: 2,
+          my: 'auto',
+          overflow: 'hidden',
+          position: 'relative',
+          bgcolor: (theme) => theme.palette.background.paper,
         }}
       >
-        {renderNav}
-        <Box
-          sx={{
-            width: lgUp ? 1 : '97vw',
-            mx: 'auto',
-            height: '97vh',
-            borderRadius: 2,
-            my: 'auto',
-            overflow: 'hidden',
-            position: 'relative',
-            bgcolor: (theme) => theme.palette.background.paper,
-          }}
-        >
-          <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
+        <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
+        <Main>{children}</Main>
 
-          <Main>{children}</Main>
-
-          {feedbackButton}
-          {kwspButton}
-          {feedbackForm}
-          {kwspForm}
-        </Box>
+        {feedbackButton}
+        {kwspButton}
+        {feedbackForm}
+        {kwspForm}
       </Box>
+    </Box>
   );
-
-  // return (
-  //   <Box
-  //     sx={{
-  //       minHeight: 1,
-  //       display: 'flex',
-  //       flexDirection: { xs: 'column', lg: 'row' },
-  //       pr: lgUp && 2,
-  //     }}
-  //   >
-  //     {renderNavVertical}
-
-  //     <Box
-  //       sx={{
-  //         // ...(lgUp && {
-  //         //   width: lgUp ? 1 : '90vw',
-  //         //   height: '95vh',
-  //         //   borderRadius: 2,
-  //         //   my: 'auto',
-  //         //   overflow: 'hidden',
-  //         //   position: 'relative',
-  //         //   bgcolor: (theme) => theme.palette.background.paper,
-  //         // }),
-  //         width: lgUp ? 1 : '97vw',
-  //         mx: 'auto',
-  //         height: '97vh',
-  //         borderRadius: 2,
-  //         my: 'auto',
-  //         overflow: 'hidden',
-  //         position: 'relative',
-  //         bgcolor: (theme) => theme.palette.background.paper,
-  //       }}
-  //     >
-  //       <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
-
-  //       <Main>{children}</Main>
-
-  //       {feedbackButton}
-  //       {kwspButton}
-  //       {feedbackForm}
-  //       {kwspForm}
-  //     </Box>
-  //   </Box>
-  // );
 }
 
 DashboardLayout.propTypes = {

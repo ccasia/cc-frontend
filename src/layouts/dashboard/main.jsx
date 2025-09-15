@@ -56,7 +56,6 @@ export default function Main({ children, sx, ...other }) {
         ref={mainRef}
         component="main"
         sx={{
-          // position: 'relative',
           display: 'flex',
           flexGrow: 1,
           height: 1,
