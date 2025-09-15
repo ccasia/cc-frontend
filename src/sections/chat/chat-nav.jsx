@@ -3,23 +3,9 @@ import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 
-import {
-  Box,
-  Button,
-  Stack,
-  Typography,
-  Drawer,
-  IconButton,
-  Tabs,
-  Tab,
-  Autocomplete,
-  Avatar,
-} from '@mui/material';
+import { Box, Stack, Typography, IconButton, Tabs, Tab, Autocomplete, Avatar } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import ClickAwayListener from '@mui/material/ClickAwayListener';
-import { Icon } from '@iconify/react';
 
 import { useGetAllThreads } from 'src/api/chat';
 import { paths } from 'src/routes/paths';
@@ -31,9 +17,7 @@ import Scrollbar from 'src/components/scrollbar';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useCollapseNav } from './hooks';
 import ChatNavItem from './chat-nav-item';
-import ChatNavAccount from './chat-nav-account';
 import { useAuthContext } from 'src/auth/hooks';
-import SearchNotFound from 'src/components/search-not-found';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { mutate } from 'swr';
 
@@ -43,7 +27,7 @@ const NAV_WIDTH = 400;
 
 const NAV_COLLAPSE_WIDTH = 96;
 
-export default function ChatNav({}) {
+export default function ChatNav({ isClient, setThreadId }) {
   const theme = useTheme();
   const { user } = useAuthContext();
   const router = useRouter();
@@ -65,6 +49,12 @@ export default function ChatNav({}) {
   };
 
   const handleClick = (threadId) => {
+    if (isClient) {
+      localStorage.setItem('threadId', threadId);
+      setThreadId(threadId);
+      return;
+    }
+
     setSelectedThreadId(threadId);
     const threadPath = paths.dashboard.chat.thread(threadId);
     router.push(threadPath);
@@ -188,8 +178,9 @@ export default function ChatNav({}) {
                 thread={thread}
                 selected={thread.id === id}
                 onCloseMobile={onCloseMobile}
-                onClick={() => handleClick(thread.id)}
-                // onArchive={() => handleArchive(thread.id)}
+                onClick={() => {
+                  handleClick(thread.id);
+                }}
                 latestMessage={latestMessages?.[thread.id]}
               />
             );
@@ -236,7 +227,6 @@ export default function ChatNav({}) {
       });
 
       if (existingThread) {
-        console.log('Thread already exists:', existingThread);
         router.push(`/dashboard/chat/thread/${existingThread.id}`);
       } else {
         const response = await axiosInstance.post(endpoints.threads.create, {
@@ -257,7 +247,6 @@ export default function ChatNav({}) {
   };
 
   const handleChange = (_event, newValue) => {
-    console.log(newValue);
     setSelectedContact(newValue);
     createThread(newValue);
   };
@@ -389,13 +378,10 @@ export default function ChatNav({}) {
 
   return (
     <>
-      {/* {!mdUp && renderToggleBtn} */}
-
       <Stack
         spacing={1}
         sx={{
           height: '100%',
-          // width: NAV_WIDTH,
           position: 'relative',
           overflow: 'hidden',
           flexShrink: 0,
@@ -412,44 +398,13 @@ export default function ChatNav({}) {
       >
         {renderContent}
       </Stack>
-
-      {/* {!mdUp ? (
-        <Stack
-          sx={{
-            height: 1,
-            flexShrink: 0,
-            width: NAV_WIDTH,
-            px: 0.5,
-            transition: theme.transitions.create(['width'], {
-              duration: theme.transitions.duration.shorter,
-            }),
-            ...(collapseDesktop && {
-              width: NAV_COLLAPSE_WIDTH,
-            }),
-          }}
-        >
-          {renderContent}
-        </Stack>
-      ) : (
-        <Drawer
-          open={openMobile}
-          onClose={onCloseMobile}
-          slotProps={{
-            backdrop: { invisible: true },
-          }}
-          PaperProps={{
-            sx: { width: NAV_WIDTH },
-          }}
-        >
-          {renderContent}
-        </Drawer>
-      )} */}
     </>
   );
 }
 
 ChatNav.propTypes = {
   contacts: PropTypes.array,
+  isClient: PropTypes.bool,
   // conversations: PropTypes.object,
   loading: PropTypes.bool,
   // selectedConversationId: PropTypes.string,
