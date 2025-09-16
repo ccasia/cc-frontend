@@ -68,7 +68,7 @@ function CreatorAccordion({ creator, campaign }) {
         // Admin-specific status labels
         switch (status) {
           case 'CLIENT_FEEDBACK':
-            return 'Client Feedback';
+            return 'CLIENT FEEDBACK';
           default:
             return formatStatus(status);
         }
