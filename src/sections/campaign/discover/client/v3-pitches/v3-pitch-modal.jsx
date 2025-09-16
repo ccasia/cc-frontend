@@ -2,6 +2,7 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
@@ -34,6 +35,7 @@ import dayjs from 'dayjs';
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
+  const navigate = useNavigate();
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,12 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const displayStatus = pitch?.displayStatus || pitch?.status;
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const isClient = user?.role === 'client';
+  // Compute remaining UGC credits from campaign overview
+  const ugcLeft = (() => {
+    if (!campaign?.campaignCredits) return 0;
+    const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
+    return Math.max(0, campaign.campaignCredits - used);
+  })();
   // Normalize admin comments text so UI displays whenever present
   const adminCommentsText = ((currentPitch?.adminComments ?? pitch?.adminComments ?? '') || '')
     .toString()
@@ -151,7 +159,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
       
       // Check if the response contains updated pitch data
       if (response.data.pitch) {
-      onUpdate({ ...pitch, ...response.data.pitch });
+        onUpdate({ ...pitch, ...response.data.pitch });
       } else {
         // If no pitch data returned, create a mock update with the expected status change
         const mockUpdatedPitch = {
@@ -176,6 +184,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
 
   const handleApprove = () => {
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
+      if (ugcLeft <= 0) {
+        enqueueSnackbar('No credits left. Cannot approve or assign UGC credits.', { variant: 'warning' });
+        return;
+      }
       // For admin, open UGC credits modal instead of direct approval
       setUgCCreditsModalOpen(true);
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
@@ -381,15 +393,28 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 />
                 <Stack spacing={0.5}>
                   <Typography
-                    sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20' }}
+                    sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => {
+                      const creatorId = currentPitch?.user?.creator?.id || currentPitch?.user?.id;
+                      navigate(`/dashboard/mediakit/client/${creatorId}`, {
+                        state: {
+                          returnTo: { pathname: window.location.pathname, search: window.location.search },
+                          reopenModal: { pitchId: currentPitch?.id, isV3: true }
+                        }
+                      });
+                    }}
                   >
                     {currentPitch?.user?.name}
                   </Typography>
-                  <Typography
-                    sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}
-                  >
-                    {currentPitch?.user?.email}
-                  </Typography>
+                  {(() => {
+                    const email = currentPitch?.user?.email;
+                    const isGuest = email?.includes('@tempmail.com') || email?.startsWith('guest_');
+                    return email && !isGuest ? (
+                      <Typography sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}>
+                        {email}
+                      </Typography>
+                    ) : null;
+                  })()}
 
 
 
@@ -521,99 +546,77 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                   {/* Left side: Languages, Age, Pronouns (always render labels) */}
                   <Stack direction="row" spacing={3} alignItems="center">
                     {/* Languages */}
-                  <Box>
-                      <Stack spacing={0.5} alignItems="flex-start">
-                        <Typography
-                          variant="caption"
-                          color="#8e8e93"
-                          sx={{ fontWeight: 700, fontSize: '12px' }}
-                        >
-                      Languages
-                    </Typography>
-                        {derivedLanguages.length > 0 ? (
+                    {derivedLanguages.length > 0 && (
+                      <Box>
+                        <Stack spacing={0.5} alignItems="flex-start">
+                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 700, fontSize: '12px' }}>
+                            Languages
+                          </Typography>
                           <Stack direction="row" flexWrap="nowrap" gap={0.5} alignItems="center" sx={{ mt: 1.80 }}>
-                            {derivedLanguages
-                              .slice(0, 2)
-                              .map((language, index) => (
-                        <Chip
-                          key={index}
-                                  label={
-                                    typeof language === 'string'
-                                      ? language.toUpperCase()
-                                      : String(language).toUpperCase()
-                                  }
-                                  size="small"
-                          sx={{
-                            bgcolor: '#FFF',
-                            border: '1px solid #EBEBEB',
-                                    borderRadius: 0.5,
-                            color: '#8E8E93',
-                                    height: '30px',
-                                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                            cursor: 'default',
-                            '& .MuiChip-label': {
-                              fontWeight: 600,
-                                      px: 1.25,
-                              height: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                                      marginTop: '-2px',
-                              fontSize: '0.8rem',
-                            },
-                                    '&:hover': { bgcolor: '#FFF' },
-                          }}
-                        />
-                      ))}
+                            {derivedLanguages.slice(0, 2).map((language, index) => (
+                              <Chip
+                                key={index}
+                                label={typeof language === 'string' ? language.toUpperCase() : String(language).toUpperCase()}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#FFF',
+                                  border: '1px solid #EBEBEB',
+                                  borderRadius: 0.5,
+                                  color: '#8E8E93',
+                                  height: '30px',
+                                  boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                                  cursor: 'default',
+                                  '& .MuiChip-label': {
+                                    fontWeight: 600,
+                                    px: 1.25,
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginTop: '-2px',
+                                    fontSize: '0.8rem',
+                                  },
+                                  '&:hover': { bgcolor: '#FFF' },
+                                }}
+                              />
+                            ))}
                             {derivedLanguages.length > 2 && (
-                              <Typography
-                                variant="caption"
-                                color="#8E8E93"
-                                sx={{ fontSize: '0.7rem', alignSelf: 'center' }}
-                              >
+                              <Typography variant="caption" color="#8E8E93" sx={{ fontSize: '0.7rem', alignSelf: 'center' }}>
                                 +{derivedLanguages.length - 2}
                               </Typography>
                             )}
                           </Stack>
-                        ) : (
-                          <Typography variant="caption" color="#8E8E93" sx={{ fontStyle: 'italic', fontSize: '11px' }}>
-                            —
-                          </Typography>
-                        )}
-                    </Stack>
-                  </Box>
+                        </Stack>
+                      </Box>
+                    )}
 
                     {/* Age */}
-                    <Box>
-                      <Stack spacing={0.5} alignItems="flex-start">
-                        <Typography
-                          variant="caption"
-                          color="#8e8e93"
-                          sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}
-                        >
-                          Age
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
-                          {derivedBirthDate ? dayjs().diff(dayjs(derivedBirthDate), 'year') : '—'}
-                        </Typography>
-                      </Stack>
-                    </Box>
+                    {derivedBirthDate && (
+                      <Box>
+                        <Stack spacing={0.5} alignItems="flex-start">
+                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}>
+                            Age
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
+                            {dayjs().diff(dayjs(derivedBirthDate), 'year')}
+                          </Typography>
+                        </Stack>
+                      </Box>
+                    )}
 
                     {/* Pronouns */}
-                    <Box>
-                      <Stack spacing={0.5} alignItems="flex-start">
-                        <Typography
-                          variant="caption"
-                          color="#8e8e93"
-                          sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}
-                        >
-                          Pronouns
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
-                          {derivedPronouns || '—'}
-                        </Typography>
-                      </Stack>
-                    </Box>
+                    {derivedPronouns && (
+                      <Box>
+                        <Stack spacing={0.5} alignItems="flex-start">
+                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}>
+                            Pronouns
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
+                            {derivedPronouns}
+                          </Typography>
+                        </Stack>
+                      </Box>
+                    )}
                   </Stack>
 
                   <Stack direction="row" spacing={0} width="100%" justifyContent="flex-end">
@@ -1206,7 +1209,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 <Button
                   variant="contained"
                   onClick={handleApprove}
-                  disabled={loading}
+                  disabled={loading || (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE') && ugcLeft <= 0)}
                   sx={{
                     textTransform: 'none',
                     minHeight: 42,

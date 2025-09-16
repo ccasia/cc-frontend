@@ -669,7 +669,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               },
             }}
           />
-          {!smUp ? (
+          {/* {!smUp ? (
             <IconButton
               sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
               onClick={modal.onTrue}
@@ -698,7 +698,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
             >
               Shortlist New Creators
             </Button>
-          )}
+          )} */}
         </Stack>
 
         {campaign?.shortlisted?.length > 0 ? (

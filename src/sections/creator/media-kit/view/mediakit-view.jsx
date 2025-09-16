@@ -116,8 +116,16 @@ const MediaKitCreator = () => {
     try {
       isLoading.onTrue();
       const res = await axiosInstance.get(endpoints.creators.social.tiktokV2(user?.id));
+      console.log('TikTok API Response (Frontend):', {
+        status: res.status,
+        data: res.data,
+        hasMedias: !!res.data?.medias,
+        hasSortedVideos: !!res.data?.medias?.sortedVideos,
+        videosCount: res.data?.medias?.sortedVideos?.length || 0
+      });
       setTiktok(res.data);
     } catch (error) {
+      console.error('TikTok API Error (Frontend):', error);
       return;
     } finally {
       isLoading.onFalse();
@@ -126,25 +134,21 @@ const MediaKitCreator = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setTiktok]);
 
-  const calculateEngagementRate = useCallback((totalLikes, followers) => {
-    const likes = parseInt(totalLikes, 10);
-    const followerCount = parseInt(followers, 10);
-
-    if (!likes || !followerCount) return null;
-
-    return ((likes / followerCount) * 100).toFixed(2);
+  const calculateTotalEngagement = useCallback((totalLikes, totalComments) => {
+    const likes = parseInt(totalLikes, 10) || 0;
+    const comments = parseInt(totalComments, 10) || 0;
+    
+    return likes + comments;
   }, []);
 
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
         followers: instagram?.instagramUser?.followers_count || 0,
-        engagement_rate: `${
-          calculateEngagementRate(
-            (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0),
-            instagram?.instagramUser?.followers_count ?? 0
-          ) || 0
-        }%`,
+        engagement_rate: formatNumber(calculateTotalEngagement(
+          instagram?.medias?.totalLikes ?? 0,
+          instagram?.medias?.totalComments ?? 0
+        )),
         averageLikes: instagram?.instagramUser?.averageLikes || 0,
         username: instagram?.instagramUser?.username,
         averageComments: instagram?.instagramUser?.averageComments || 0,
@@ -154,10 +158,10 @@ const MediaKitCreator = () => {
     if (currentTab === 'tiktok') {
       return {
         followers: tiktok?.overview?.follower_count || 0,
-        engagement_rate: calculateEngagementRate(
-          (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0),
-          tiktok?.overview?.follower_count
-        ) || 0,
+        engagement_rate: formatNumber(calculateTotalEngagement(
+          tiktok?.medias?.totalLikes ?? 0,
+          tiktok?.medias?.totalComments ?? 0
+        )),
         averageLikes: tiktok?.medias?.averageLikes || 0,
         averageComments: tiktok?.medias?.averageComments || 0,
       };
@@ -165,10 +169,10 @@ const MediaKitCreator = () => {
 
     return {
       followers: 0,
-      engagement_rate: 0,
+      engagement_rate: '0',
       averageLikes: 0,
     };
-  }, [currentTab, tiktok, instagram, calculateEngagementRate]);
+  }, [currentTab, tiktok, instagram, calculateTotalEngagement]);
 
   // Helper function to detect iOS Safari specifically (not other browsers on iOS)
   const isIOSSafari = useCallback(() => {

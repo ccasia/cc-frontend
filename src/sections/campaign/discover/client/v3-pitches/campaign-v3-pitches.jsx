@@ -2,8 +2,9 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { LoadingButton } from '@mui/lab';
+import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
 
 import {
@@ -33,7 +34,9 @@ import { alpha } from '@mui/material/styles';
 import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { shortlistCreator, useGetAllCreators, shortlistGuestCreator } from 'src/api/creator';
+import axiosInstance from 'src/utils/axios';
 import { useShortlistedCreators } from '../../admin/campaign-detail-creator/hooks/shortlisted-creator';
 
 import Iconify from 'src/components/iconify';
@@ -42,8 +45,10 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import V3PitchModal from './v3-pitch-modal';
 import V3PitchActions from './v3-pitch-actions';
+import BatchAssignUGCModal from './BatchAssignUGCModal';
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
+  const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -54,7 +59,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
+  const [batchCreditsOpen, setBatchCreditsOpen] = useState(false);
+  const [batchCreditCreators, setBatchCreditCreators] = useState([]); // [{id, name, credits}]
+  const [batchAdminComments, setBatchAdminComments] = useState('');
   const theme = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
@@ -73,6 +83,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     (acc, creator) => acc + (creator?.ugcVideos ?? 0),
     0
   );
+  const ugcLeft = (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
   // Count pitches by display status
   const pendingReviewCount =
     pitches?.filter((pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW').length ||
@@ -114,7 +125,20 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   };
 
   const filteredPitches = useMemo(() => {
-    let filtered = pitches;
+    // Only list pitches after credits are assigned (or already in approved/agree states)
+    const creditedUserIds = new Set(
+      (campaign?.shortlisted || [])
+        .filter((s) => (s?.ugcVideos || 0) > 0)
+        .map((s) => s.userId)
+    );
+
+    let filtered = (pitches || []).filter((pitch) => {
+      const status = (pitch.displayStatus || pitch.status) || '';
+      const userId = pitch?.user?.id;
+      const isApprovedState = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
+      const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
+      return isApprovedState || hasAssignedCredits;
+    });
 
     // Apply status filter
     if (selectedFilter === 'PENDING_REVIEW') {
@@ -163,6 +187,19 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     setSelectedPitch(pitch);
     setOpenPitchModal(true);
   };
+  // Reopen modal when returning from media kit if state indicates
+  useEffect(() => {
+    const reopen = location?.state?.reopenModal;
+    if (reopen?.isV3 && reopen?.pitchId && pitches?.length) {
+      const pitch = pitches.find((p) => p.id === reopen.pitchId);
+      if (pitch) {
+        setSelectedPitch(pitch);
+        setOpenPitchModal(true);
+        // Clear state to avoid loops
+        navigate(location.pathname + location.search, { replace: true, state: {} });
+      }
+    }
+  }, [location?.state, pitches, navigate, location?.pathname, location?.search]);
 
   const handleClosePitchModal = () => {
     setOpenPitchModal(false);
@@ -242,9 +279,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     return statusTextMap[status] || status;
   };
 
-  if (!pitches || pitches.length === 0) {
-    return <EmptyContent title="No pitches found" />;
-  }
+  // Do not early return; keep toolbar visible even when empty
 
   const handleCreatorTypeSelect = (type) => {
     setAddCreatorOpen(false);
@@ -507,7 +542,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
             ) : (
               <Button
                 onClick={handleModalOpen}
-                disabled={isDisabled || totalUsedCredits === campaign?.campaignCredits}
+                disabled={isDisabled || (typeof ugcLeft === 'number' && ugcLeft <= 0)}
                 sx={{
                   bgcolor: '#ffffff',
                   border: '1px solid #e7e7e7',
@@ -654,7 +689,16 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                         </Stack>
                       </Stack>
                     </TableCell>
-                    {smUp && <TableCell>{pitch.user?.email}</TableCell>}
+                    {smUp && (
+                      <TableCell>
+                        {(() => {
+                          const email = pitch.user?.email || '';
+                          if (!email) return '-';
+                          if (email.includes('@tempmail.com') || email.startsWith('guest_')) return '-';
+                          return email;
+                        })()}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Stack spacing={0.5} alignItems="start">
                         <Typography
@@ -712,9 +756,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                         }}
                       >
                         {getStatusText(displayStatus)}
-                        {displayStatus === 'SENT_TO_CLIENT' &&
-                          pitch?.adminComments &&
-                          pitch.adminComments.trim().length > 0 && (
+                        {pitch?.adminComments &&
+                          pitch.adminComments.trim().length > 0 &&
+                          (displayStatus === 'SENT_TO_CLIENT') && (
                             <Tooltip title="CS Comments provided" arrow>
                               <Box
                                 component="img"
@@ -747,19 +791,60 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         open={addCreatorOpen}
         onClose={() => setAddCreatorOpen(false)}
         onSelect={handleCreatorTypeSelect}
+        ugcLeft={ugcLeft}
       />
 
       <PlatformCreatorModal
         open={platformCreatorOpen}
         onClose={() => setPlatformCreatorOpen(false)}
         campaign={campaign}
+        onUpdated={(payload) => {
+          if (payload?.openBatchCredits) {
+            setBatchCreditCreators((payload.creators || []).map((c) => ({ id: c.id, name: c.name || 'Creator', credits: '' })));
+            setBatchAdminComments(payload?.adminComments || '');
+            setBatchCreditsOpen(true);
+          }
+          onUpdate?.();
+        }}
       />
 
       <NonPlatformCreatorFormDialog
         open={nonPlatformOpen}
-        onClose={handleModalClose}
+        onClose={() => setNonPlatformOpen(false)}
         campaignId={campaign.id}
+        onUpdated={(payload) => {
+          if (payload?.openBatchCredits) {
+            setBatchCreditCreators((payload.creators || []).map((c) => ({
+              id: c.id,
+              name: c.name || 'Creator',
+              profileLink: c.profileLink || '',
+              followerCount: c.followerCount || 0,
+              adminComments: c.adminComments || '',
+              credits: '',
+            })));
+            setBatchAdminComments(payload?.adminComments || '');
+            setBatchCreditsOpen(true);
+            setNonPlatformOpen(false);
+          }
+          onUpdate?.();
+        }}
       />
+
+      {/* Batch Assign UGC Credits Modal */}
+      {batchCreditsOpen ? (
+        <BatchAssignUGCModal
+          open={batchCreditsOpen}
+          onClose={() => setBatchCreditsOpen(false)}
+          creators={batchCreditCreators}
+          campaignId={campaign.id}
+          adminComments={batchAdminComments}
+          creditsLeft={(campaign?.campaignCredits ?? 0) - ((campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0))}
+          onAssigned={() => {
+            setBatchCreditsOpen(false);
+            onUpdate?.();
+          }}
+        />
+      ) : null}
 
       {/* Empty state */}
       {(!filteredPitches || filteredPitches.length === 0) && (
@@ -883,7 +968,7 @@ export function AddCreatorModal({ open, onClose, onSelect, ugcLeft }) {
   );
 }
 
-export function PlatformCreatorModal({ open, onClose, campaign }) {
+export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
   const [selected, setSelected] = useState([]);
   const [commentOpen, setCommentOpen] = useState(false);
@@ -924,13 +1009,8 @@ export function PlatformCreatorModal({ open, onClose, campaign }) {
     try {
       setSubmitting(true);
 
-      // ⤵️ Adjust payload keys to match your shortlistCreator API if needed
-      await shortlistCreator({
-        campaignId: campaign.id,
-        creatorIds: selected.map((c) => c.id),
-        comment: commentText.trim() || undefined, // optional comment
-      });
-
+      // Do NOT shortlist yet; open batch credits modal first.
+      onUpdated?.({ openBatchCredits: true, creators: selected.map((c) => ({ id: c.id, name: c.name || c.email || 'Creator' })), adminComments: commentText });
       handleCloseAll();
     } catch (e) {
       console.error('Error shortlisting creators:', e);
@@ -1065,25 +1145,63 @@ export function PlatformCreatorModal({ open, onClose, campaign }) {
             fontSize: 24,
           }}
         >
-          Add a Comment (Optional)
+          CS Comments (Optional)
         </DialogTitle>
         <DialogContent>
           <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-            This comment will be attached to this shortlist action.
+            CS Comments
           </Typography>
           <TextField
             fullWidth
             multiline
             minRows={3}
-            placeholder="Type your comment…"
+            placeholder="Input comments about the creator that your clients might find helpful"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCommentOpen(false)}>Back</Button>
-          <LoadingButton variant="contained" onClick={handleSubmitWithComment} loading={submitting}>
-            {submitting ? 'Submitting…' : 'Submit'}
+          <Button
+            onClick={() => setCommentOpen(false)}
+            sx={{
+              bgcolor: '#ffffff',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              height: 44,
+              color: '#221f20',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              px: 3,
+              textTransform: 'none',
+              '&:hover': { bgcolor: (theme) => alpha('#636366', 0.08), opacity: 0.9 },
+            }}
+          >
+            Back
+          </Button>
+          <LoadingButton
+            variant="contained"
+            onClick={handleSubmitWithComment}
+            loading={submitting}
+            sx={{
+              bgcolor: '#203ff5',
+              border: '1px solid #203ff5',
+              borderBottom: '3px solid #1933cc',
+              height: 44,
+              color: '#ffffff',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              px: 3,
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#1933cc', opacity: 0.9 },
+              '&:disabled': {
+                bgcolor: '#e7e7e7',
+                color: '#999999',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #d1d1d1',
+              },
+            }}
+          >
+            {submitting ? 'Submitting…' : 'Submit Comment'}
           </LoadingButton>
         </DialogActions>
       </Dialog>
@@ -1091,12 +1209,13 @@ export function PlatformCreatorModal({ open, onClose, campaign }) {
   );
 }
 
-export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
+export function NonPlatformCreatorFormDialog({ open, onClose, campaignId, onUpdated }) {
   const [formValues, setFormValues] = useState({
     creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
   });
 
   const loading = useBoolean();
+  const { enqueueSnackbar } = useSnackbar();
 
   const handleCreatorChange = (index, field) => (event) => {
     const updatedCreators = [...formValues.creators];
@@ -1124,26 +1243,19 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
   };
 
   const handleSubmit = async () => {
-    try {
-      loading.onTrue();
-      const res = await shortlistGuestCreator({
-        guestCreators: formValues.creators,
-        campaignId,
-      });
-
-      onClose();
-      setFormValues({
-        creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
-      });
-
-      enqueueSnackbar(res?.data?.message || 'Creators shortlisted successfully!');
-      mutate(`/campaign/creatorAgreement/${campaignId}`);
-    } catch (error) {
-      console.error('Error shortlisting guest creators:', error);
-      enqueueSnackbar('Error shortlisting guest creator', { variant: 'error' });
-    } finally {
-      loading.onFalse();
+    // Validate required guest fields before proceeding
+    const invalid = formValues.creators.find((c) => !c.name?.trim() || !c.profileLink?.trim());
+    if (invalid) {
+      enqueueSnackbar('Please fill in Creator Name and Profile Link for all entries.', { variant: 'error' });
+      return;
     }
+
+    // Do NOT shortlist yet; pass the entered creators to parent to open credits modal
+    onUpdated?.({ openBatchCredits: true, creators: formValues.creators });
+    onClose();
+    setFormValues({
+      creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
+    });
   };
 
   return (
@@ -1160,7 +1272,12 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
           '&.MuiTypography-root': { fontSize: 24 },
         }}
       >
-        Add Non-Platform Creator
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          Add Non-Platform Creator
+          <IconButton onClick={onClose} size="small">
+            <Iconify icon="eva:close-fill" />
+          </IconButton>
+        </Stack>
       </DialogTitle>
 
       <DialogContent sx={{ bgcolor: '#fff' }}>
@@ -1267,6 +1384,23 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button
+          onClick={onClose}
+          sx={{
+            bgcolor: '#ffffff',
+            border: '1px solid #e7e7e7',
+            borderBottom: '3px solid #e7e7e7',
+            height: 44,
+            color: '#221f20',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            px: 3,
+            textTransform: 'none',
+            '&:hover': { bgcolor: (theme) => theme.palette.action.hover },
+          }}
+        >
+          Cancel
+        </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"

@@ -19,16 +19,28 @@ import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
-  if (num >= 1000000000) {
-    return `${(num / 1000000000).toFixed(1)}G`;
+  // Handle undefined, null, or non-numeric values
+  if (num === undefined || num === null || isNaN(num)) {
+    return '0';
   }
-  if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
+  
+  // Convert to number if it's a string
+  const number = typeof num === 'string' ? parseFloat(num) : num;
+  
+  if (isNaN(number)) {
+    return '0';
   }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
+  
+  if (number >= 1000000000) {
+    return `${(number / 1000000000).toFixed(1)}G`;
   }
-  return num.toString();
+  if (number >= 1000000) {
+    return `${(number / 1000000).toFixed(1)}M`;
+  }
+  if (number >= 1000) {
+    return `${(number / 1000).toFixed(1)}K`;
+  }
+  return Math.floor(number).toString();
 };
 
 // const typeAnimation = keyframes`
@@ -354,8 +366,25 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   const dataSource = tiktokData;
   const realTopContent = dataSource?.medias?.sortedVideos;
 
+  // Debug logging for staging
+  console.log('TikTok View Component Debug:', {
+    hasTiktokData: !!tiktokData,
+    hasMedias: !!dataSource?.medias,
+    sortedVideosLength: realTopContent?.length,
+    isArray: Array.isArray(realTopContent),
+    userConnected: !!user?.creator?.isTiktokConnected,
+    firstVideo: realTopContent?.[0] ? {
+      id: realTopContent[0].id,
+      title: realTopContent[0].title,
+      like: realTopContent[0].like,
+      comment: realTopContent[0].comment
+    } : null
+  });
+
+
   // Check if we have real content
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
+  
   const isConnected = !!user?.creator?.isTiktokConnected;
 
   // Use real content only
@@ -432,9 +461,44 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
       {hasContent ? (
         <TopContentGrid topContents={contentToShow} />
       ) : (
-        <Typography variant="subtitle1" color="text.secondary" textAlign="center">
-          No top content data available
-        </Typography>
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
+            {isConnected 
+              ? "No videos found in your TikTok account. This could be due to:\n• Account has no public videos\n• TikTok API permissions need refresh\n• Account is private" 
+              : "Connect your TikTok account to see your top content"
+            }
+          </Typography>
+          {!isConnected ? (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Iconify icon="logos:tiktok-icon" width={16} />}
+              onClick={connectTiktok}
+              sx={{ mt: 1 }}
+            >
+              Connect TikTok
+            </Button>
+          ) : (
+            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Iconify icon="eva:refresh-fill" width={16} />}
+                onClick={() => window.location.reload()}
+              >
+                Refresh Data
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Iconify icon="logos:tiktok-icon" width={16} />}
+                onClick={connectTiktok}
+              >
+                Reconnect TikTok
+              </Button>
+            </Stack>
+          )}
+        </Box>
       )}
 
       {/* Analytics Boxes */}
@@ -825,9 +889,9 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                   return interactionsData;
                 })().map((data, index, array) => {
                   // Calculate max value for scaling - highest value in the array
-                  const maxValue = Math.max(...array.map((item) => item.value));
+                  const maxValue = Math.max(...array.map((item) => item?.value || 0), 1);
                   const maxBarHeight = isTablet ? 140 : 110; // Increased mobile bar height while leaving space for numbers
-                  const barHeight = (data.value / maxValue) * maxBarHeight;
+                  const barHeight = ((data?.value || 0) / maxValue) * maxBarHeight;
 
                   return (
                     <Box
@@ -854,7 +918,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                           mb: 0.5, // Small margin to separate from bar
                         }}
                       >
-                        {data.value.toLocaleString()}
+                        {(data?.value || 0).toLocaleString()}
                       </Typography>
 
                       {/* Bar */}
@@ -1207,8 +1271,8 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
 
                 if (monthlyInteractions.length > 0) {
                   interactionsData = monthlyInteractions.map((data) => ({
-                    month: data.month,
-                    value: data.interactions || 0,
+                    month: data?.month || 'Unknown',
+                    value: data?.interactions || 0,
                   })); // Already in ascending order from backend
                 } else {
                   // Calculate from recent posts if no analytics data
@@ -1238,8 +1302,8 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                 return interactionsData;
               })().map((data, index, array) => {
                 // Calculate max value for scaling - highest value in the array
-                const maxValue = Math.max(...array.map((item) => item.value));
-                const barHeight = (data.value / maxValue) * 160; // Scale to max 160px height
+                const maxValue = Math.max(...array.map((item) => item?.value || 0), 1);
+                const barHeight = ((data?.value || 0) / maxValue) * 160; // Scale to max 160px height
 
                 return (
                   <Box
@@ -1263,7 +1327,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
                         lineHeight: 1,
                       }}
                     >
-                      {data.value.toLocaleString()}
+                      {(data?.value || 0).toLocaleString()}
                     </Typography>
 
                     {/* Bar */}
