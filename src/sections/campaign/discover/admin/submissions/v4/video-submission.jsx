@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
 import {
@@ -35,6 +35,43 @@ import { options_changes } from './constants';
 
 // ----------------------------------------------------------------------
 
+const BUTTON_STYLES = {
+  base: {
+    borderRadius: 1,
+    border: '1px solid #E7E7E7',
+    backgroundColor: '#FFFFFF',
+    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
+    fontSize: 12,
+    fontWeight: 'bold',
+    '&:hover': {
+      backgroundColor: '#F5F5F5',
+      boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
+    },
+  },
+  success: {
+    color: '#1ABF66',
+  },
+  warning: {
+    color: '#D4321C',
+  },
+  secondary: {
+    color: '#000',
+  }
+};
+
+const STATUS_COLORS = {
+  PENDING_REVIEW: 'warning',
+  IN_PROGRESS: 'info', 
+  APPROVED: 'success',
+  POSTED: 'success',
+  REJECTED: 'error',
+  CHANGES_REQUIRED: 'warning',
+  SENT_TO_CLIENT: 'primary',
+  CLIENT_APPROVED: 'success',
+  CLIENT_FEEDBACK: 'warning',
+  SENT_TO_ADMIN: 'info',
+};
+
 export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
   const { user } = useAuthContext();
 
@@ -54,7 +91,19 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
   });
 
   // Feedback
-  const [feedback, setFeedback] = useState(isClientFeedback ? (submission.video?.[0]?.feedback || '') : '');
+  const getDefaultFeedback = () => {
+    if (isClientFeedback) {
+      return submission.video?.[0]?.feedback || '';
+    }
+    if (submission.status === 'PENDING_REVIEW') {
+      return 'This creator has submitted a video for your review. Please approve or request changes with comments below.';
+    }
+    if (submission.status === 'SENT_TO_CLIENT') {
+      return 'Great work! Thanks for the submission.';
+    }
+    return '';
+  };
+  const [feedback, setFeedback] = useState(getDefaultFeedback());
   // Caption editing
   const [caption, setCaption] = useState(submission.caption || '');
   // Due date
@@ -75,12 +124,25 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
   // Determine if client can see the actual content vs just placeholder
   const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
 
-  const video = submission.video?.[0]; // V4 has single video
+  const submissionProps = useMemo(() => {
+    const video = submission.video?.[0];
+    const editCaption = ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+    const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
+    const isPosted = submission.status === 'POSTED';
+    const hasPostingLink = Boolean(submission.content);
+    const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
+    
+    return {
+      video,
+      editCaption,
+      isApproved,
+      isPosted,
+      hasPostingLink,
+      hasPendingPostingLink
+    };
+  }, [submission.video, submission.status, submission.content]);
   
-  const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
-  const isPosted = submission.status === 'POSTED';
-  const hasPostingLink = Boolean(submission.content);
-  const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
+  const { video, editCaption, isApproved, isPosted, hasPostingLink, hasPendingPostingLink } = submissionProps;
 
 
   const handleApprove = useCallback(async () => {
@@ -224,28 +286,15 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
     }
   }, [selectedDueDate, submission.id, onUpdate]);
 
-  const getStatusColor = (status) => {
-    const statusColors = {
-      PENDING_REVIEW: 'warning',
-      IN_PROGRESS: 'info', 
-      APPROVED: 'success',
-      POSTED: 'success',
-      REJECTED: 'error',
-      CHANGES_REQUIRED: 'warning',
-      SENT_TO_CLIENT: 'primary',
-      CLIENT_APPROVED: 'success',
-      CLIENT_FEEDBACK: 'warning',
-      SENT_TO_ADMIN: 'info',
-    };
-    return statusColors[status] || 'default';
-  };
+  const getStatusColor = useCallback((status) => {
+    return STATUS_COLORS[status] || 'default';
+  }, []);
 
-  const formatStatus = (status) => {
+  const formatStatus = useCallback((status) => {
     return status?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
-  };
+  }, []);
 
-  // Map admin statuses to client-friendly labels based on the business process
-  const getClientStatusLabel = (status) => {
+  const getClientStatusLabel = useCallback((status) => {
     if (!isClient) {
       // Admin-specific status labels
       switch (status) {
@@ -278,71 +327,72 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
       default:
         return formatStatus(status);
     }
-  };
+  }, [formatStatus, isClient]);
 
-  const dueDateStatus = getDueDateStatus(submission.dueDate);
+  const dueDateStatus = useMemo(() => getDueDateStatus(submission.dueDate), [submission.dueDate]);
 
-  // Video player controls
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
+  const videoControls = useMemo(() => ({
+    togglePlay: () => {
+      if (videoRef.current) {
+        if (isPlaying) {
+          videoRef.current.pause();
+        } else {
+          videoRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
       }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration);
-    }
-  };
-
-  const handleSeek = (event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const pos = (event.clientX - rect.left) / rect.width;
-    const newTime = pos * duration;
-    if (videoRef.current) {
-      videoRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
-    }
-  };
-
-  const handleVolumeChange = (_, newValue) => {
-    const newVolume = newValue / 100;
-    setVolume(newVolume);
-    if (videoRef.current) {
-      videoRef.current.volume = newVolume;
-    }
-  };
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      if (volume === 0) {
-        // Unmute - restore to 50% volume
-        setVolume(0.5);
-        videoRef.current.volume = 0.5;
-      } else {
-        // Mute
-        setVolume(0);
-        videoRef.current.volume = 0;
+    },
+    
+    handleTimeUpdate: () => {
+      if (videoRef.current) {
+        setCurrentTime(videoRef.current.currentTime);
       }
+    },
+    
+    handleLoadedMetadata: () => {
+      if (videoRef.current) {
+        setDuration(videoRef.current.duration);
+      }
+    },
+    
+    handleSeek: (event) => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const pos = (event.clientX - rect.left) / rect.width;
+      const newTime = pos * duration;
+      if (videoRef.current) {
+        videoRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
+      }
+    },
+    
+    handleVolumeChange: (_, newValue) => {
+      const newVolume = newValue / 100;
+      setVolume(newVolume);
+      if (videoRef.current) {
+        videoRef.current.volume = newVolume;
+      }
+    },
+    
+    toggleMute: () => {
+      if (videoRef.current) {
+        if (volume === 0) {
+          setVolume(0.5);
+          videoRef.current.volume = 0.5;
+        } else {
+          setVolume(0);
+          videoRef.current.volume = 0;
+        }
+      }
+    },
+    
+    formatTime: (time) => {
+      const minutes = Math.floor(time / 60);
+      const seconds = Math.floor(time % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
-  };
-
-  const formatTime = (time) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
+  }), [isPlaying, duration, volume]);
+  
+  const { togglePlay, handleTimeUpdate, handleLoadedMetadata, handleSeek, handleVolumeChange, toggleMute, formatTime } = videoControls;
 
 
   return (
@@ -413,7 +463,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                 {/* Horizontal Layout: Caption on Left, Video on Right */}
                 <Box sx={{ 
                   display: 'flex', 
-                  gap: 3,
+                  gap: 2,
                   alignItems: 'stretch',
                   minHeight: 405
                 }}>
@@ -427,7 +477,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                     {/* Top Content - Flexible space */}
                     <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                       {/* Caption */}
-                      {!isClient ? (
+                      {!editCaption ? (
                         <Box>
                           <TextField
                             fullWidth
@@ -451,8 +501,6 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                           </Typography>
                         </Box>
                       ) : null}
-
-                      {/* Feedback History */}
                     </Box>
 
                     <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -463,9 +511,27 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                             <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start' }}>
                               <Box sx={{ flex: 1 }}>
                                 {feedback.reasons?.map((reason, reasonIndex) => (
-                                  <Chip sx={{ mr: 1, mb: 1 }} key={reasonIndex} label={reason} size="small" variant="outlined" color="warning" />
+                                  <Chip 
+                                  sx={{
+                                    border: '1px solid',
+                                    pb: 1.8,
+                                    pt: 1.6,
+                                    m: 0.3,
+                                    borderColor: '#D4321C',
+                                    borderRadius: 0.8,
+                                    boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
+                                    bgcolor: '#fff',
+                                    color: '#D4321C',
+                                    fontWeight: 'bold',
+                                    fontSize: 12
+                                  }}
+                                  key={reasonIndex} 
+                                  label={reason} 
+                                  size="small" 
+                                  variant="outlined" 
+                                  color="warning" />
                                 ))}                                  
-                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5, mt: 1.5 }}>
                                   {(feedback.content || feedback.reasons) && 
                                     <Typography variant='caption' fontWeight="bold" color={'#636366'}>
                                       {feedback.admin?.name || 'CS Comments'}
@@ -498,17 +564,8 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                                 
                                 sx={{
                                   display: action === 'request_revision' ? 'none' : 'flex',
-                                  borderRadius: 1,
-                                  border: '1px solid #E7E7E7',
-                                  backgroundColor: '#FFFFFF',
-                                  color: '#D4321C',
-                                  boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
-                                  fontSize: 12,
-                                  fontWeight: 'bold',
-                                  '&:hover': {
-                                    backgroundColor: '#F5F5F5',
-                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
-                                  },
+                                  ...BUTTON_STYLES.base,
+                                  ...BUTTON_STYLES.warning,
                                 }}
                               >
                                 {loading ? 'Processing...' : 'Request a Change'}
@@ -526,17 +583,8 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                                   disabled={loading}
                                   sx={{
                                     display: 'flex',
-                                    borderRadius: 1,
-                                    border: '1px solid #E7E7E7',
-                                    backgroundColor: '#FFFFFF',
-                                    color: '#000',
-                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
-                                    fontSize: 12,
-                                    fontWeight: 'bold',
-                                    '&:hover': {
-                                      backgroundColor: '#F5F5F5',
-                                      boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
-                                    },
+                                    ...BUTTON_STYLES.base,
+                                    ...BUTTON_STYLES.secondary,
                                   }}
                                 >
                                   Cancel Change Request
@@ -548,17 +596,8 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                                   disabled={loading}
                                   sx={{
                                     display: 'flex',
-                                    borderRadius: 1,
-                                    border: '1px solid #E7E7E7',
-                                    backgroundColor: '#FFFFFF',
-                                    color: '#1ABF66',
-                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
-                                    fontSize: 12,
-                                    fontWeight: 'bold',
-                                    '&:hover': {
-                                      backgroundColor: '#F5F5F5',
-                                      boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
-                                    },
+                                    ...BUTTON_STYLES.base,
+                                    ...BUTTON_STYLES.success,
                                   }}
                                 >
                                   {loading ? 'Processing...' : !isClient ? 'Send to Creator' : 'Request a Change'}
@@ -572,17 +611,8 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                                 disabled={loading}
                                 sx={{
                                   display: 'flex',
-                                  borderRadius: 1,
-                                  border: '1px solid #E7E7E7',
-                                  backgroundColor: '#FFFFFF',
-                                  color: '#1ABF66',
-                                  boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
-                                  fontSize: 12,
-                                  fontWeight: 'bold',
-                                  '&:hover': {
-                                    backgroundColor: '#F5F5F5',
-                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
-                                  },
+                                  ...BUTTON_STYLES.base,
+                                  ...BUTTON_STYLES.success,
                                 }}
                               >
                                 {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
@@ -599,17 +629,8 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                                   disabled={loading}
                                   sx={{
                                     display: action === 'request_revision' ? 'none' : 'flex',
-                                    borderRadius: 1,
-                                    border: '1px solid #E7E7E7',
-                                    backgroundColor: '#FFFFFF',
-                                    color: '#D4321C',
-                                    boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
-                                    fontSize: 12,
-                                    fontWeight: 'bold',
-                                    '&:hover': {
-                                      backgroundColor: '#F5F5F5',
-                                      boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
-                                    },
+                                    ...BUTTON_STYLES.base,
+                                    ...BUTTON_STYLES.warning,
                                     width: 140,
                                     alignSelf: 'flex-end'
                                   }}
@@ -672,14 +693,14 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                   {/* Video Container - Right Side */}
                   <Box 
                     sx={{ 
-                      width: 631, 
+                      width: 580, 
                       height: 405,
                       display: 'flex', 
                       flexDirection: 'column',
                       borderRadius: 1,
                       overflow: 'hidden',
                       bgcolor: 'background.paper',
-                      flexShrink: 0
+                      flexShrink: 0,
                     }}
                   >
                     {/* Video Display Area */}
@@ -690,7 +711,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                         alignItems: 'center',
                         bgcolor: 'black',
                         minHeight: 300,
-                        p: 2
+                        p: 2,
                       }}
                     >
                       <video
