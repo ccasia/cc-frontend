@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
@@ -12,7 +12,6 @@ import {
   LinearProgress,
   Alert,
   Chip,
-  Grid,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -42,16 +41,21 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
   const [postingDialog, setPostingDialog] = useState(false);
   const [postingLink, setPostingLink] = useState('');
   const [postingLoading, setPostingLoading] = useState(false);
-  const [feedbackDialog, setFeedbackDialog] = useState(false);
-  const [selectedPhotoFeedback, setSelectedPhotoFeedback] = useState(null);
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
-
   // Update caption when submission changes
   useEffect(() => {
     setCaption(submission.caption || '');
   }, [submission.caption]);
 
+  // Memoize feedback filtering to avoid recalculation
+  const relevantFeedback = useMemo(() => {
+    return submission.feedback?.filter(feedback => feedback.sentToCreator) || [];
+  }, [submission.feedback]);
+
   const handleDrop = (acceptedFiles, rejectedFiles) => {
+    console.log('📸 Photo Upload Debug:');
+    console.log('Accepted files:', acceptedFiles.length, acceptedFiles.map(f => f.name));
+    console.log('Rejected files:', rejectedFiles.length, rejectedFiles);
+
     if (rejectedFiles.length > 0) {
       rejectedFiles.forEach((rejection) => {
         rejection.errors.forEach((error) => {
@@ -67,7 +71,11 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
     }
 
     if (acceptedFiles.length > 0) {
-      setSelectedFiles(prev => [...prev, ...acceptedFiles]);
+      setSelectedFiles(prev => {
+        const newFiles = [...prev, ...acceptedFiles];
+        console.log('Total selected files after drop:', newFiles.length, newFiles.map(f => f.name));
+        return newFiles;
+      });
     }
   };
 
@@ -85,6 +93,16 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
       return;
     }
 
+    const isReupload = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
+    const existingPhotoCount = submission.photos?.length || 0;
+    
+    console.log('🚀 Starting photo upload:');
+    console.log('Selected files count:', selectedFiles.length);
+    console.log('Submission status:', submission.status);
+    console.log('Is reupload:', isReupload ? 'YES - Will replace existing photos' : 'NO - Will add to existing photos');
+    console.log('Existing photos:', existingPhotoCount);
+    console.log('Selected files:', selectedFiles.map((f, i) => `${i + 1}. ${f.name} (${f.size} bytes)}`));
+
     setUploading(true);
     setUploadProgress(0);
     
@@ -99,9 +117,15 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
       formData.append('data', JSON.stringify(requestData));
 
       // Add photo files
-      selectedFiles.forEach((file) => {
+      selectedFiles.forEach((file, index) => {
+        console.log(`Adding file ${index + 1} to FormData:`, file.name);
         formData.append('photos', file);
       });
+
+      console.log('FormData entries:');
+      for (let pair of formData.entries()) {
+        console.log(pair[0], ':', pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]);
+      }
 
       // Upload with progress tracking
       const xhr = new XMLHttpRequest();
@@ -131,7 +155,11 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
 
       await uploadPromise;
 
-      enqueueSnackbar('Photos uploaded successfully!', { variant: 'success' });
+      const successMessage = hasChangesRequired 
+        ? 'Photos updated successfully!' 
+        : 'Photos uploaded successfully!';
+        
+      enqueueSnackbar(successMessage, { variant: 'success' });
       onUpdate();
       setSelectedFiles([]);
       setCaption('');
@@ -178,21 +206,6 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
     }
   };
 
-  const handleShowPhotoFeedback = async (photoId) => {
-    try {
-      setFeedbackLoading(true);
-      setFeedbackDialog(true);
-      
-      const response = await axiosInstance.get(`/api/submissions/v4/photo/${photoId}/feedback`);
-      setSelectedPhotoFeedback(response.data);
-    } catch (error) {
-      console.error('Error fetching photo feedback:', error);
-      enqueueSnackbar('Failed to load feedback', { variant: 'error' });
-      setFeedbackDialog(false);
-    } finally {
-      setFeedbackLoading(false);
-    }
-  };
 
   const isSubmitted = submission.photos?.some(p => p.url);
   const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
@@ -202,13 +215,8 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
   const hasPostingLink = Boolean(submission.content);
   const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
   
-  // Check if any individual photos need revision
-  const hasIndividualPhotosNeedingRevision = submission.photos?.some(p => 
-    ['REVISION_REQUESTED', 'REJECTED'].includes(p.status)
-  );
-  
-  // Creator can upload if not in final states and either hasn't submitted or has photos needing revision
-  const canUpload = !isApproved && !isPosted && (!isInReview || hasIndividualPhotosNeedingRevision || hasChangesRequired);
+  // Creator can upload if not in final states and has changes required or hasn't submitted
+  const canUpload = !isApproved && !isPosted && (!isInReview || hasChangesRequired);
 
   return (
     <Stack spacing={3}>
@@ -250,12 +258,10 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
         </Alert>
       )}
 
-      {(hasChangesRequired || hasIndividualPhotosNeedingRevision) && (
+      {hasChangesRequired && (
         <Alert severity="warning">
           <Typography variant="body2">
-            📝 {hasIndividualPhotosNeedingRevision 
-              ? 'Some photos need changes. Please review the feedback for each photo and re-upload as needed.'
-              : 'Changes requested. Please review the feedback below and resubmit.'}
+            📝 Changes requested. Please review the feedback below and resubmit.
           </Typography>
         </Alert>
       )}
@@ -274,94 +280,56 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
           <Typography variant="subtitle2" gutterBottom>
             Current Submissions ({submission.photos.length} photos):
           </Typography>
-          <Grid container spacing={2}>
-            {submission.photos.map((photo, index) => (
-              <Grid item xs={12} sm={6} md={4} key={photo.id}>
-                <Card sx={{ height: '100%', overflow: 'hidden' }}>
-                  {/* Photo Preview */}
-                  {photo.url && (
-                    <Box
-                      component="img"
-                      src={photo.url}
-                      alt={`Photo ${index + 1}`}
-                      sx={{
-                        width: '100%',
-                        height: 160,
-                        objectFit: 'cover',
-                      }}
-                    />
-                  )}
-                  
-                  <Box sx={{ p: 2 }}>
-                    <Stack spacing={1}>
-                      <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Iconify icon="eva:image-outline" />
-                          <Typography variant="caption" fontWeight="medium">
-                            Photo {index + 1}
-                          </Typography>
-                        </Stack>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleShowPhotoFeedback(photo.id)}
-                          title="View feedback history"
-                        >
-                          <Iconify icon="eva:message-circle-outline" />
-                        </IconButton>
-                      </Stack>
-                      
-                      <Chip 
-                        label={getCreatorStatusLabel(photo.status)} 
-                        color={getStatusColor(photo.status)} 
-                        size="small" 
-                        variant="filled"
-                      />
-
-                      {/* Individual photo feedback */}
-                      {photo.feedback && (
-                        <Box sx={{ mt: 1, p: 1, bgcolor: 'background.neutral', borderRadius: 1 }}>
-                          <Typography variant="caption" color="text.secondary" fontWeight="medium">
-                            Feedback:
-                          </Typography>
-                          <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                            {photo.feedback}
-                          </Typography>
-                          {photo.reasons?.length > 0 && (
-                            <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ mt: 1 }}>
-                              {photo.reasons.map((reason, i) => (
-                                <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
-                              ))}
-                            </Stack>
-                          )}
-                        </Box>
-                      )}
-
-                      {/* Upload status for rejected photos */}
-                      {['REVISION_REQUESTED', 'REJECTED'].includes(photo.status) && (
-                        <Typography variant="caption" color="error" sx={{ fontStyle: 'italic' }}>
-                          ⚠️ This photo needs to be re-uploaded
-                        </Typography>
-                      )}
-                      
-                      {/* Approved status */}
-                      {['APPROVED', 'CLIENT_APPROVED'].includes(photo.status) && (
-                        <Typography variant="caption" color="success.main" sx={{ fontStyle: 'italic' }}>
-                          ✅ Approved
-                        </Typography>
-                      )}
-                      
-                      {/* In review status */}
-                      {['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(photo.status) && (
-                        <Typography variant="caption" color="info.main" sx={{ fontStyle: 'italic' }}>
-                          ⏳ In review
-                        </Typography>
-                      )}
-                    </Stack>
-                  </Box>
-                </Card>
-              </Grid>
+          
+          {/* Photo Horizontal Scroll Container */}
+          <Box 
+            sx={{ 
+              display: 'flex',
+              gap: 2,
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              bgcolor: 'background.neutral',
+              p: 2,
+              height: 385,
+              alignItems: 'center',
+              borderRadius: 1,
+              '&::-webkit-scrollbar': {
+                height: 8,
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                borderRadius: 4,
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                borderRadius: 4,
+                '&:hover': {
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                },
+              },
+            }}
+          >
+            {submission.photos.map((photo, photoIndex) => (
+              <Box
+                key={photo.id}
+                sx={{
+                  flexShrink: 0,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={photo.url}
+                  alt={`Photo ${photoIndex + 1}`}
+                  sx={{
+                    width: 250,
+                    height: 355,
+                    objectFit: 'cover',
+                    borderRadius: 1,
+                  }}
+                />
+              </Box>
             ))}
-          </Grid>
+          </Box>
           {submission.caption && (
             <Card sx={{ p: 2, mt: 2 }}>
               <Typography variant="subtitle2" gutterBottom>
@@ -375,22 +343,60 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
         </Card>
       )}
 
+      {/* Feedback */}
+      {relevantFeedback.length > 0 && (
+        <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Feedback:
+          </Typography>
+          <Stack spacing={2}>
+            {relevantFeedback.map((feedback, index) => (
+                <Stack key={index} spacing={1}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Box sx={{ 
+                      minWidth: 20, 
+                      height: 20, 
+                      borderRadius: '50%', 
+                      bgcolor: 'primary.main', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center' 
+                    }}>
+                      <Typography variant="caption" sx={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
+                        {feedback.admin?.name?.charAt(0) || 'A'}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" fontWeight="medium">
+                      {feedback.admin?.name || 'Admin'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(feedback.createdAt).toLocaleDateString()}
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary">
+                    {feedback.content}
+                  </Typography>
+                  {feedback.reasons?.length > 0 && (
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {feedback.reasons.map((reason, i) => (
+                        <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
+                      ))}
+                    </Stack>
+                  )}
+                </Stack>
+              ))
+            }
+          </Stack>
+        </Card>
+      )}
+
       {/* Upload Form */}
       {canUpload && (
         <Card sx={{ p: 3 }}>
           <Stack spacing={3}>
             <Typography variant="subtitle1">
-              {hasIndividualPhotosNeedingRevision ? 'Re-upload Photos' : 
-               isSubmitted ? 'Update Photos' : 'Upload Photos'}
+              {isSubmitted ? 'Update Photos' : 'Upload Photos'}
             </Typography>
-            
-            {hasIndividualPhotosNeedingRevision && (
-              <Alert severity="info" sx={{ mt: 1 }}>
-                <Typography variant="body2">
-                  💡 You can upload new photos to replace the ones that need changes. All photos will be reviewed together.
-                </Typography>
-              </Alert>
-            )}
 
             {/* File Upload Area */}
             <Upload
@@ -434,9 +440,7 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
                 startIcon={<Iconify icon="eva:upload-fill" />}
                 size="large"
               >
-                {uploading ? 'Uploading...' : 
-                 hasIndividualPhotosNeedingRevision ? 'Re-submit Photos' :
-                 isSubmitted ? 'Update Photos' : 'Submit Photos'}
+                {uploading ? 'Uploading...' : isSubmitted ? 'Update Photos' : 'Submit Photos'}
               </Button>
             </Box>
           </Stack>
@@ -505,7 +509,7 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
                 </Stack>
               ) : (
                 <Typography color="text.secondary">
-                  No posting link added yet. Click "Add Link" to share where you published this video.
+                  No posting link added yet. Click "Add Link" to share where you published these photos.
                 </Typography>
               )}
             </Card>
@@ -545,116 +549,6 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
         </DialogActions>
       </Dialog>
 
-      {/* Photo Feedback History Dialog */}
-      <Dialog open={feedbackDialog} onClose={() => setFeedbackDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Iconify icon="eva:message-circle-fill" />
-            <Typography variant="h6">
-              Feedback History - Photo
-            </Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          {feedbackLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <Typography>Loading feedback...</Typography>
-            </Box>
-          ) : selectedPhotoFeedback ? (
-            <Stack spacing={3}>
-              {/* Photo Info */}
-              <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  {selectedPhotoFeedback.photo.url && (
-                    <Box
-                      component="img"
-                      src={selectedPhotoFeedback.photo.url}
-                      alt="Photo"
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        objectFit: 'cover',
-                        borderRadius: 1
-                      }}
-                    />
-                  )}
-                  <Box>
-                    <Typography variant="subtitle2">
-                      Current Status
-                    </Typography>
-                    <Chip
-                      label={getCreatorStatusLabel(selectedPhotoFeedback.photo.status)}
-                      color={getStatusColor(selectedPhotoFeedback.photo.status)}
-                      size="small"
-                    />
-                  </Box>
-                </Stack>
-              </Card>
-
-              {/* Feedback History - Only show feedback that's sent to creator */}
-              {selectedPhotoFeedback.feedbackHistory.filter(f => f.sentToCreator).length > 0 ? (
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    Feedback from Review:
-                  </Typography>
-                  {selectedPhotoFeedback.feedbackHistory
-                    .filter(feedback => feedback.sentToCreator)
-                    .map((feedback) => (
-                    <Card key={feedback.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider' }}>
-                      <Stack spacing={1}>
-                        <Stack direction="row" alignItems="center" spacing={2}>
-                          <Box sx={{ 
-                            minWidth: 32, 
-                            height: 32, 
-                            borderRadius: '50%', 
-                            bgcolor: 'primary.main',
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center' 
-                          }}>
-                            <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
-                              {feedback.admin?.name?.charAt(0) || 'A'}
-                            </Typography>
-                          </Box>
-                          <Box flex={1}>
-                            <Typography variant="subtitle2">
-                              {feedback.admin?.name || 'Admin'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {new Date(feedback.createdAt).toLocaleString()}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                        
-                        <Typography variant="body2">
-                          {feedback.feedback}
-                        </Typography>
-                        
-                        {feedback.reasons?.length > 0 && (
-                          <Stack direction="row" spacing={1} flexWrap="wrap">
-                            {feedback.reasons.map((reason, i) => (
-                              <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
-                            ))}
-                          </Stack>
-                        )}
-                      </Stack>
-                    </Card>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography color="text.secondary" textAlign="center" py={2}>
-                  No feedback available for this photo yet.
-                </Typography>
-              )}
-            </Stack>
-          ) : null}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setFeedbackDialog(false)}>
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Stack>
   );
 };
