@@ -391,7 +391,7 @@ export default function AccountGeneral() {
                 </Box>
 
                 {/* Pronouns field */}
-                <Box>
+                <Box sx={{ mb: 2 }}>
                   <Typography
                     variant="body2"
                     color="#636366"
