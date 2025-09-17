@@ -459,7 +459,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
           {clientVisible ? (
             // Show actual content to admins or when sent to client
             video?.url ? (
-              <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
+              <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
                 {/* Horizontal Layout: Caption on Left, Video on Right */}
                 <Box sx={{ 
                   display: 'flex', 
@@ -880,7 +880,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                     </Box>
                   </Box>
                 </Box>
-              </Card>
+              </Box>
             ) : (
               <Box p={2}>
                 <Typography color="text.secondary">No video uploaded yet.</Typography>              

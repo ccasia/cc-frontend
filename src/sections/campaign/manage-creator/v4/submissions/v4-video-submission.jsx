@@ -24,7 +24,6 @@ import { getDueDateInfo } from 'src/utils/dueDateHelpers';
 
 import Iconify from 'src/components/iconify';
 import { Upload } from 'src/components/upload';
-import dayjs from 'dayjs';
 
 // File upload configuration for videos
 const VIDEO_UPLOAD_CONFIG = {
