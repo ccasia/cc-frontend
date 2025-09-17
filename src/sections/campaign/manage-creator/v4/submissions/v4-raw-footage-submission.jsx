@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
@@ -12,12 +12,10 @@ import {
   LinearProgress,
   Alert,
   Chip,
-  Grid,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -39,16 +37,25 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [caption, setCaption] = useState(submission.caption || '');
-  const [feedbackDialog, setFeedbackDialog] = useState(false);
-  const [selectedRawFootageFeedback, setSelectedRawFootageFeedback] = useState(null);
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [postingDialog, setPostingDialog] = useState(false);
+  const [postingLink, setPostingLink] = useState('');
+  const [postingLoading, setPostingLoading] = useState(false);
 
   // Update caption when submission changes
   useEffect(() => {
     setCaption(submission.caption || '');
   }, [submission.caption]);
 
+  // Memoize feedback filtering to avoid recalculation
+  const relevantFeedback = useMemo(() => {
+    return submission.feedback?.filter(feedback => feedback.sentToCreator) || [];
+  }, [submission.feedback]);
+
   const handleDrop = (acceptedFiles, rejectedFiles) => {
+    console.log('🎬 Raw Footage Upload Debug:');
+    console.log('Accepted files:', acceptedFiles.length, acceptedFiles.map(f => f.name));
+    console.log('Rejected files:', rejectedFiles.length, rejectedFiles);
+
     if (rejectedFiles.length > 0) {
       rejectedFiles.forEach((rejection) => {
         rejection.errors.forEach((error) => {
@@ -64,7 +71,11 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     }
 
     if (acceptedFiles.length > 0) {
-      setSelectedFiles(prev => [...prev, ...acceptedFiles]);
+      setSelectedFiles(prev => {
+        const newFiles = [...prev, ...acceptedFiles];
+        console.log('Total selected files after drop:', newFiles.length, newFiles.map(f => f.name));
+        return newFiles;
+      });
     }
   };
 
@@ -82,18 +93,10 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       return;
     }
 
-    // Check if creator needs to re-upload specific number of files
-    const rawFootageNeedingChanges = submission.rawFootages?.filter(r => 
-      ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)
-    ) || [];
-    
-    if (rawFootageNeedingChanges.length > 0 && selectedFiles.length !== rawFootageNeedingChanges.length) {
-      enqueueSnackbar(
-        `You need to upload exactly ${rawFootageNeedingChanges.length} raw footage file${rawFootageNeedingChanges.length > 1 ? 's' : ''} to replace the rejected ones. Currently selected: ${selectedFiles.length}`,
-        { variant: 'error' }
-      );
-      return;
-    }
+    console.log('🚀 Starting raw footage upload:');
+    console.log('Selected files count:', selectedFiles.length);
+    console.log('Submission status:', submission.status);
+    console.log('Selected files:', selectedFiles.map((f, i) => `${i + 1}. ${f.name} (${f.size} bytes)}`));
 
     setUploading(true);
     setUploadProgress(0);
@@ -109,9 +112,15 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       formData.append('data', JSON.stringify(requestData));
 
       // Add raw footage files
-      selectedFiles.forEach((file) => {
+      selectedFiles.forEach((file, index) => {
+        console.log(`Adding file ${index + 1} to FormData:`, file.name);
         formData.append('rawFootages', file);
       });
+
+      console.log('FormData entries:');
+      for (let pair of formData.entries()) {
+        console.log(pair[0], ':', pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]);
+      }
 
       // Upload with progress tracking
       const xhr = new XMLHttpRequest();
@@ -141,7 +150,11 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
 
       await uploadPromise;
 
-      enqueueSnackbar('Raw footage uploaded successfully!', { variant: 'success' });
+      const successMessage = hasChangesRequired 
+        ? 'Raw footage updated successfully!' 
+        : 'Raw footage uploaded successfully!';
+        
+      enqueueSnackbar(successMessage, { variant: 'success' });
       onUpdate();
       setSelectedFiles([]);
       setCaption('');
@@ -158,22 +171,35 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     }
   };
 
+  const handleAddPostingLink = () => {
+    setPostingLink(submission.content || '');
+    setPostingDialog(true);
+  };
 
-  const handleShowRawFootageFeedback = async (rawFootageId) => {
+  const handleSubmitPostingLink = async () => {
+    if (!postingLink.trim()) {
+      enqueueSnackbar('Please enter a posting link', { variant: 'error' });
+      return;
+    }
+
     try {
-      setFeedbackLoading(true);
-      setFeedbackDialog(true);
-      
-      const response = await axiosInstance.get(`/api/submissions/v4/content/feedback/rawFootage/${rawFootageId}`);
-      setSelectedRawFootageFeedback(response.data);
+      setPostingLoading(true);
+      await axiosInstance.put(endpoints.submission.creator.v4.updatePostingLink, {
+        submissionId: submission.id,
+        postingLink: postingLink.trim(),
+      });
+
+      enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
+      setPostingDialog(false);
+      onUpdate();
     } catch (error) {
-      console.error('Error fetching raw footage feedback:', error);
-      enqueueSnackbar('Failed to load feedback', { variant: 'error' });
-      setFeedbackDialog(false);
+      console.error('Error updating posting link:', error);
+      enqueueSnackbar(error.message || 'Failed to update posting link', { variant: 'error' });
     } finally {
-      setFeedbackLoading(false);
+      setPostingLoading(false);
     }
   };
+
 
   const isSubmitted = submission.rawFootages?.some(r => r.url);
   // CLIENT_FEEDBACK means client gave feedback but admin hasn't forwarded it yet - creator still sees as "in review"
@@ -181,6 +207,9 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
   const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
+  const isPosted = submission.status === 'POSTED';
+  const hasPostingLink = Boolean(submission.content);
+  const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
   
   // Check if any individual raw footage need revision (only show to creator if admin has forwarded the feedback)
   const hasIndividualRawFootageNeedingRevision = submission.rawFootages?.some(r => 
@@ -188,7 +217,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   );
   
   // Creator can upload if not in final states and either hasn't submitted or has raw footage needing revision
-  const canUpload = !isApproved && (!isInReview || hasIndividualRawFootageNeedingRevision || hasChangesRequired);
+  const canUpload = !isApproved && !isPosted && (!isInReview || hasIndividualRawFootageNeedingRevision || hasChangesRequired);
 
   return (
     <Stack spacing={3}>
@@ -206,7 +235,23 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       </Stack>
 
       {/* Status Messages */}
-      {isApproved && (
+      {isPosted && (
+        <Alert severity="success">
+          <Typography variant="body2">
+            🎉 Your raw footage has been posted! The posting link has been approved.
+          </Typography>
+        </Alert>
+      )}
+
+      {hasPendingPostingLink && (
+        <Alert severity="info">
+          <Typography variant="body2">
+            ⏳ Your posting link is pending admin approval.
+          </Typography>
+        </Alert>
+      )}
+
+      {isApproved && !isPosted && (
         <Alert severity="success">
           <Typography variant="body2">
             🎉 Your raw footage has been approved! Great work!
@@ -246,93 +291,55 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
           <Typography variant="subtitle2" gutterBottom>
             Current Submissions ({submission.rawFootages.length} files):
           </Typography>
-          <Grid container spacing={2}>
+          
+          {/* Raw Footage Horizontal Scroll Container */}
+          <Box
+            sx={{ 
+              display: 'flex',
+              gap: 2,
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              bgcolor: 'background.neutral',
+              p: 2,
+              height: 385,
+              alignItems: 'center',
+              borderRadius: 1,
+              '&::-webkit-scrollbar': {
+                height: 8,
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                borderRadius: 4,
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                borderRadius: 4,
+                '&:hover': {
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                },
+              },
+            }}
+          >
             {submission.rawFootages.map((rawFootage, index) => (
-              <Grid item xs={12} sm={6} md={4} key={rawFootage.id}>
-                <Card sx={{ height: '100%', overflow: 'hidden' }}>
-                  {/* Raw Footage Preview */}
-                  {rawFootage.url && (
-                    <Box sx={{ position: 'relative', height: 160, bgcolor: 'background.neutral' }}>
-                      <video
-                        controls
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        src={rawFootage.url}
-                      >
-                        <track kind="captions" srcLang="en" label="English" />
-                      </video>
-                    </Box>
-                  )}
-                  
-                  <Box sx={{ p: 2 }}>
-                    <Stack spacing={1}>
-                      <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Iconify icon="eva:film-outline" />
-                          <Typography variant="caption" fontWeight="medium">
-                            Footage {index + 1}
-                          </Typography>
-                        </Stack>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleShowRawFootageFeedback(rawFootage.id)}
-                          title="View feedback history"
-                        >
-                          <Iconify icon="eva:message-circle-outline" />
-                        </IconButton>
-                      </Stack>
-                      
-                      <Chip 
-                        label={getCreatorStatusLabel(rawFootage.status)} 
-                        color={getStatusColor(rawFootage.status)} 
-                        size="small" 
-                        variant="filled"
-                      />
-
-                      {/* Individual raw footage feedback - Only show if admin has forwarded it (status is CHANGES_REQUIRED) */}
-                      {rawFootage.feedback && submission.status !== 'CLIENT_FEEDBACK' && (
-                        <Box sx={{ mt: 1, p: 1, bgcolor: 'background.neutral', borderRadius: 1 }}>
-                          <Typography variant="caption" color="text.secondary" fontWeight="medium">
-                            Feedback:
-                          </Typography>
-                          <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                            {rawFootage.feedback}
-                          </Typography>
-                          {rawFootage.reasons?.length > 0 && (
-                            <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ mt: 1 }}>
-                              {rawFootage.reasons.map((reason, i) => (
-                                <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
-                              ))}
-                            </Stack>
-                          )}
-                        </Box>
-                      )}
-
-                      {/* Upload status for rejected footage */}
-                      {['REVISION_REQUESTED', 'REJECTED'].includes(rawFootage.status) && (
-                        <Typography variant="caption" color="error" sx={{ fontStyle: 'italic' }}>
-                          ⚠️ This file needs to be re-uploaded
-                        </Typography>
-                      )}
-                      
-                      {/* Approved status */}
-                      {['APPROVED', 'CLIENT_APPROVED'].includes(rawFootage.status) && (
-                        <Typography variant="caption" color="success.main" sx={{ fontStyle: 'italic' }}>
-                          ✅ Approved
-                        </Typography>
-                      )}
-                      
-                      {/* In review status */}
-                      {['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(rawFootage.status) && (
-                        <Typography variant="caption" color="info.main" sx={{ fontStyle: 'italic' }}>
-                          ⏳ In review
-                        </Typography>
-                      )}
-                    </Stack>
-                  </Box>
-                </Card>
-              </Grid>
+              <Box
+                key={rawFootage.id}
+                sx={{
+                  flexShrink: 0,
+                  position: 'relative',
+                }}
+              >
+                {rawFootage.url && (
+                  <video
+                    controls
+                    style={{ width: 250, height: 355, objectFit: 'cover', borderRadius: 8 }}
+                    src={rawFootage.url}
+                  >
+                    <track kind="captions" srcLang="en" label="English" />
+                  </video>
+                )}
+              </Box>
             ))}
-          </Grid>
+          </Box>
           {submission.caption && (
             <Card sx={{ p: 2, mt: 2 }}>
               <Typography variant="subtitle2" gutterBottom>
@@ -346,6 +353,52 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         </Card>
       )}
 
+      {/* Feedback */}
+      {relevantFeedback.length > 0 && (
+        <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Feedback:
+          </Typography>
+          <Stack spacing={2}>
+            {relevantFeedback.map((feedback, index) => (
+                <Stack key={index} spacing={1}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Box sx={{ 
+                      minWidth: 20, 
+                      height: 20, 
+                      borderRadius: '50%', 
+                      bgcolor: 'primary.main', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center' 
+                    }}>
+                      <Typography variant="caption" sx={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
+                        {feedback.admin?.name?.charAt(0) || 'A'}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" fontWeight="medium">
+                      {feedback.admin?.name || 'Admin'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(feedback.createdAt).toLocaleDateString()}
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary">
+                    {feedback.content}
+                  </Typography>
+                  {feedback.reasons?.length > 0 && (
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {feedback.reasons.map((reason, i) => (
+                        <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
+                      ))}
+                    </Stack>
+                  )}
+                </Stack>
+              ))
+            }
+          </Stack>
+        </Card>
+      )}
 
       {/* Upload Form */}
       {canUpload && (
@@ -353,17 +406,17 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
           <Stack spacing={3}>
             <Typography variant="subtitle1">
               {hasIndividualRawFootageNeedingRevision ? 
-                `Re-upload Raw Footage (${submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0} files required)` : 
+                'Re-upload Raw Footage' : 
                 isSubmitted ? 'Update Raw Footage' : 'Upload Raw Footage'}
             </Typography>
             
             {hasIndividualRawFootageNeedingRevision && (
               <Alert severity="warning" sx={{ mt: 1 }}>
                 <Typography variant="body2">
-                  ⚠️ You need to upload exactly {submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length} raw footage file{(submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0) > 1 ? 's' : ''} to replace the ones that need changes.
+                  📝 Some raw footage needs changes. Upload new files to replace all existing raw footage.
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 1 }}>
-                  📝 Files needing replacement: {submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).map((rawFootage) => `Footage ${(submission.rawFootages?.indexOf(rawFootage) || 0) + 1}`).join(', ')}
+                  Note: All new files will replace your current raw footage submission.
                 </Typography>
               </Alert>
             )}
@@ -380,23 +433,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
               disabled={uploading}
             />
 
-            {/* File count indicator for re-uploads */}
-            {hasIndividualRawFootageNeedingRevision && (
-              <Box sx={{ p: 2, bgcolor: selectedFiles.length === (submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0) ? 'success.lighter' : 'warning.lighter', borderRadius: 1 }}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Iconify 
-                    icon={selectedFiles.length === (submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0) ? 'eva:checkmark-circle-2-fill' : 'eva:alert-circle-fill'} 
-                    sx={{ color: selectedFiles.length === (submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0) ? 'success.main' : 'warning.main' }}
-                  />
-                  <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                    Files selected: {selectedFiles.length} / {submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0} required
-                  </Typography>
-                  {selectedFiles.length === (submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0) && (
-                    <Chip label="Ready to submit" color="success" size="small" />
-                  )}
-                </Stack>
-              </Box>
-            )}
 
             {/* Caption */}
             <TextField
@@ -424,12 +460,12 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
               <Button
                 variant="contained"
                 onClick={handleSubmit}
-                disabled={uploading || selectedFiles.length === 0 || (hasIndividualRawFootageNeedingRevision && selectedFiles.length !== (submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0))}
+                disabled={uploading || selectedFiles.length === 0}
                 startIcon={<Iconify icon="eva:upload-fill" />}
                 size="large"
               >
                 {uploading ? 'Uploading...' : 
-                 hasIndividualRawFootageNeedingRevision ? `Re-submit ${submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0} Raw Footage File${(submission.rawFootages?.filter(r => ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)).length || 0) > 1 ? 's' : ''}` :
+                 hasIndividualRawFootageNeedingRevision ? 'Re-submit Raw Footage' :
                  isSubmitted ? 'Update Raw Footage' : 'Submit Raw Footage'}
               </Button>
             </Box>
@@ -437,110 +473,109 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         </Card>
       )}
 
-
-
-      {/* Raw Footage Feedback History Dialog */}
-      <Dialog open={feedbackDialog} onClose={() => setFeedbackDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Iconify icon="eva:message-circle-fill" />
-            <Typography variant="h6">
-              Feedback History - Raw Footage
-            </Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          {feedbackLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <Typography>Loading feedback...</Typography>
-            </Box>
-          ) : selectedRawFootageFeedback ? (
-            <Stack spacing={3}>
-              {/* Raw Footage Info */}
-              <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  {selectedRawFootageFeedback.content.url && (
-                    <Box sx={{ width: 80, height: 60, bgcolor: 'background.paper', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Iconify icon="eva:film-fill" sx={{ color: 'text.disabled', fontSize: 24 }} />
-                    </Box>
-                  )}
-                  <Box>
-                    <Typography variant="subtitle2">
-                      Current Status
-                    </Typography>
-                    <Chip
-                      label={getCreatorStatusLabel(selectedRawFootageFeedback.content.status)}
-                      color={getStatusColor(selectedRawFootageFeedback.content.status)}
-                      size="small"
-                    />
-                  </Box>
-                </Stack>
-              </Card>
-
-              {/* Feedback History - Only show feedback that's sent to creator */}
-              {selectedRawFootageFeedback.feedbackHistory.filter(f => f.sentToCreator).length > 0 ? (
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    Feedback from Review:
-                  </Typography>
-                  {selectedRawFootageFeedback.feedbackHistory
-                    .filter(feedback => feedback.sentToCreator)
-                    .map((feedback) => (
-                    <Card key={feedback.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider' }}>
-                      <Stack spacing={1}>
-                        <Stack direction="row" alignItems="center" spacing={2}>
-                          <Box sx={{ 
-                            minWidth: 32, 
-                            height: 32, 
-                            borderRadius: '50%', 
-                            bgcolor: 'primary.main',
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center' 
-                          }}>
-                            <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
-                              {feedback.admin?.name?.charAt(0) || 'A'}
-                            </Typography>
-                          </Box>
-                          <Box flex={1}>
-                            <Typography variant="subtitle2">
-                              {feedback.admin?.name || 'Admin'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {new Date(feedback.createdAt).toLocaleString()}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                        
-                        <Typography variant="body2">
-                          {feedback.feedback}
-                        </Typography>
-                        
-                        {feedback.reasons?.length > 0 && (
-                          <Stack direction="row" spacing={1} flexWrap="wrap">
-                            {feedback.reasons.map((reason, i) => (
-                              <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
-                            ))}
-                          </Stack>
-                        )}
-                      </Stack>
-                    </Card>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography color="text.secondary" textAlign="center" py={2}>
-                  No feedback available for this raw footage yet.
-                </Typography>
+      {/* Posting Link Section */}
+      {(isApproved || isPosted) && (
+        <Card sx={{ p: 3 }}>
+          <Stack spacing={3}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography variant="subtitle1">
+                Posting Link
+                {hasPendingPostingLink && (
+                  <Chip 
+                    label="Pending Approval" 
+                    size="small" 
+                    color="warning" 
+                    sx={{ ml: 1 }} 
+                  />
+                )}
+                {isPosted && (
+                  <Chip 
+                    label="Posted" 
+                    size="small" 
+                    color="success" 
+                    sx={{ ml: 1 }} 
+                  />
+                )}
+              </Typography>
+              {!isPosted && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handleAddPostingLink}
+                  startIcon={<Iconify icon="eva:link-2-fill" />}
+                >
+                  {hasPostingLink ? 'Update Link' : 'Add Link'}
+                </Button>
               )}
             </Stack>
-          ) : null}
+            
+            <Alert severity={hasPendingPostingLink ? "warning" : "info"}>
+              <Typography variant="body2">
+                {hasPendingPostingLink 
+                  ? "⏳ Your posting link is waiting for admin approval before going live."
+                  : isPosted
+                  ? "✅ Your posting link has been approved."
+                  : "🔗 Add the social media post URL where this raw footage was published (TikTok, Instagram, YouTube, etc.)"
+                }
+              </Typography>
+            </Alert>
+
+            <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
+              {hasPostingLink ? (
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
+                    {submission.content}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => window.open(submission.content, '_blank')}
+                  >
+                    <Iconify icon="eva:external-link-fill" />
+                  </IconButton>
+                </Stack>
+              ) : (
+                <Typography color="text.secondary">
+                  No posting link added yet. Click "Add Link" to share where you published this raw footage.
+                </Typography>
+              )}
+            </Card>
+          </Stack>
+        </Card>
+      )}
+
+      {/* Posting Link Dialog */}
+      <Dialog open={postingDialog} onClose={() => setPostingDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {hasPostingLink ? 'Update Posting Link' : 'Add Posting Link'}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Posting URL"
+            value={postingLink}
+            onChange={(e) => setPostingLink(e.target.value)}
+            placeholder="https://www.tiktok.com/@username/video/123456789"
+            sx={{ mt: 1 }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            Enter the social media post URL where this raw footage was published
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setFeedbackDialog(false)}>
-            Close
+          <Button onClick={() => setPostingDialog(false)} disabled={postingLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitPostingLink}
+            variant="contained"
+            disabled={postingLoading}
+          >
+            {postingLoading ? 'Saving...' : 'Save Link'}
           </Button>
         </DialogActions>
       </Dialog>
+
+
     </Stack>
   );
 };
