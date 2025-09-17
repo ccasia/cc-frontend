@@ -170,8 +170,6 @@ const Profile = () => {
       return value !== undefined && value !== null && value !== '';
     }).length;
 
-    console.log(filledFields, totalFields);
-
     const completionPercentage = Math.round((filledFields / totalFields) * 100);
 
     return completionPercentage;
@@ -810,7 +808,7 @@ const Profile = () => {
       </Stack>
 
       {/* Left arrow indicator */}
-      <Box
+      {/* <Box
         id="creator-tabs-left-arrow"
         sx={{
           position: 'absolute',
@@ -846,10 +844,10 @@ const Profile = () => {
         >
           <Iconify icon="eva:arrow-ios-back-fill" width={16} color="#1340ff" />
         </Box>
-      </Box>
+      </Box> */}
 
       {/* Right arrow indicator */}
-      <Box
+      {/* <Box
         id="creator-tabs-right-arrow"
         sx={{
           position: 'absolute',
@@ -885,7 +883,7 @@ const Profile = () => {
         >
           <Iconify icon="eva:arrow-ios-forward-fill" width={16} color="#1340ff" />
         </Box>
-      </Box>
+      </Box> */}
     </Box>
   );
 
