@@ -368,6 +368,26 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     }, 0);
   };
 
+  // V3: Handle posting link submission for creators
+  const handleSubmitPostingLink = async (link) => {
+    try {
+      await axiosInstance.post(`${endpoints.submission.root}/v3/posting/submit-link/creator`, {
+        submissionId: submission.id,
+        link: link.trim(),
+      });
+      
+      enqueueSnackbar('Posting link submitted for review', { variant: 'success' });
+      
+      // Refresh data
+      mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+      mutate(endpoints.kanban.root);
+      mutate(endpoints.campaign.creator.getCampaign(campaign.id));
+    } catch (error) {
+      console.error('Error submitting posting link:', error);
+      enqueueSnackbar('Failed to submit posting link', { variant: 'error' });
+    }
+  };
+
   return (
     <>
       {console.log('previewSubmission status check:', {
@@ -430,44 +450,101 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
           </Stack>
 
           {submission?.status === 'PENDING_REVIEW' && (
-            <Stack justifyContent="center" alignItems="center" spacing={2}>
-              <Box
-                sx={{
-                  width: 100,
-                  height: 100,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '50%',
-                  bgcolor: '#f4b84a',
-                  fontSize: '50px',
-                  mb: -2,
-                }}
-              >
-                ⏳
-              </Box>
-              <Stack spacing={1} alignItems="center">
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontFamily: 'Instrument Serif, serif',
-                    fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                    fontWeight: 550,
-                  }}
-                >
-                  In Review
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: '#636366',
-                    mt: -1,
-                  }}
-                >
-                  Your posting link is being reviewed.
-                </Typography>
-              </Stack>
-            </Stack>
+            <>
+              {/* V3: Show submission form if no content exists */}
+              {campaign?.origin === 'CLIENT' && (!submission?.content || submission?.content.trim() === '') ? (
+                <Stack spacing={2}>
+                  <Typography variant="body1" sx={{ color: '#221f20', mb: 2 }}>
+                    Submit your posting link to complete this campaign! 🥳
+                  </Typography>
+                  <Box
+                    component="form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.target);
+                      const link = formData.get('postingLink');
+                      if (link) {
+                        handleSubmitPostingLink(link);
+                      }
+                    }}
+                  >
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <TextField
+                        name="postingLink"
+                        fullWidth
+                        placeholder="Paste your posting link here"
+                        required
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          },
+                        }}
+                      />
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        sx={{
+                          bgcolor: '#203ff5',
+                          color: 'white',
+                          borderBottom: 3.5,
+                          borderBottomColor: '#112286',
+                          borderRadius: 1.5,
+                          px: 3,
+                          py: 1.2,
+                          minWidth: 120,
+                          '&:hover': {
+                            bgcolor: '#203ff5',
+                            opacity: 0.9,
+                          },
+                        }}
+                      >
+                        Submit
+                      </Button>
+                    </Stack>
+                  </Box>
+                </Stack>
+              ) : (
+                /* Show review status for non-V3 or when content exists */
+                <Stack justifyContent="center" alignItems="center" spacing={2}>
+                  <Box
+                    sx={{
+                      width: 100,
+                      height: 100,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      bgcolor: '#f4b84a',
+                      fontSize: '50px',
+                      mb: -2,
+                    }}
+                  >
+                    ⏳
+                  </Box>
+                  <Stack spacing={1} alignItems="center">
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontFamily: 'Instrument Serif, serif',
+                        fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                        fontWeight: 550,
+                      }}
+                    >
+                      In Review
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: '#636366',
+                        mt: -1,
+                      }}
+                    >
+                      Your posting link is being reviewed.
+                    </Typography>
+                  </Stack>
+                </Stack>
+              )}
+            </>
           )}
 
           {submission?.status === 'IN_PROGRESS' && (
