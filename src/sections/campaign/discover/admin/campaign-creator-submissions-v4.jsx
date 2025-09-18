@@ -166,7 +166,7 @@ function CreatorAccordion({ creator, campaign }) {
           <Box
             sx={{ border: '2px solid', borderColor: isExpanded ? '#1340FF' : '#8E8E93', borderRadius: 20, px: 0.8, py: 0.20 }}
           >
-            <Typography fontSize={10} fontWeight={'bold'} color={isExpanded ? '#1340FF' : '#8E8E93'}>1</Typography>
+            <Typography fontSize={8} fontWeight={'bold'} color={isExpanded ? '#1340FF' : '#8E8E93'}>1</Typography>
           </Box>
           <Box
             sx={{
@@ -214,7 +214,7 @@ function CreatorAccordion({ creator, campaign }) {
           <Box
             sx={{ border: '2px solid', borderColor: isExpanded ? '#1340FF' : '#8E8E93', borderRadius: 20, px: 0.8, py: 0.20 }}
           >
-            <Typography fontSize={10} fontWeight={'bold'} color={isExpanded ? '#1340FF' : '#8E8E93'}>1</Typography>
+            <Typography fontSize={8} fontWeight={'bold'} color={isExpanded ? '#1340FF' : '#8E8E93'}>1</Typography>
           </Box>
           <Box
             sx={{
