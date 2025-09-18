@@ -120,6 +120,9 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
   const [volume, setVolume] = useState(1);
   const videoRef = useRef(null);
   
+  // Video dimensions state for responsive sizing
+  const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0, aspectRatio: 1 });
+  
   // Video Modal
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -360,6 +363,10 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
     handleLoadedMetadata: () => {
       if (videoRef.current) {
         setDuration(videoRef.current.duration);
+        // Get video dimensions for responsive sizing
+        const { videoWidth, videoHeight } = videoRef.current;
+        const aspectRatio = videoWidth / videoHeight;
+        setVideoDimensions({ width: videoWidth, height: videoHeight, aspectRatio });
       }
     },
     
@@ -726,23 +733,28 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                         justifyContent: 'center', 
                         alignItems: 'center',
                         bgcolor: 'black',
-                        minHeight: 350,
-                        p: 2,
+                        height: 350, // Fixed height instead of minHeight
+                        flex: '1 1 auto',
+                        overflow: 'hidden', // Prevent video from expanding beyond this area
                       }}
                     >
                       <Box
                         sx={{
                           position: 'relative',
-                          maxWidth: 200,
+                          width: videoDimensions.aspectRatio > 1 ? '100%' : 200, // Full width for landscape, fixed for portrait
+                          maxWidth: videoDimensions.aspectRatio > 1 ? '100%' : 200,
                           height: 'auto',
                           cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
                         }}
                         onClick={handleVideoClick}
                       >
                         <video
                           ref={videoRef}
                           style={{ 
-                            maxWidth: 200, 
+                            maxWidth: videoDimensions.aspectRatio > 1 ? '100%' : 200, // Wider for landscape
                             height: 'auto',
                             display: 'block',
                             pointerEvents: 'none'
@@ -788,24 +800,27 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                     <Box 
                       sx={{ 
                         width: '100%',
+                        height: 40,
                         bgcolor: 'rgba(0, 0, 0, 0.9)',
-                        p: 1.5,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 1.5,
-                        minHeight: 48
+                        pt: 1,
+                        pb: 1,
+                        px: 2,
                       }}
                     >
                       {/* Play/Pause Button */}
                       <IconButton 
-                        size="small" 
+                        size="small"
                         onClick={togglePlay}
                         sx={{ 
                           color: 'white',
                           bgcolor: 'rgba(255,255,255,0.1)',
                           border: '1px solid rgba(255,255,255,0.2)',
-                          minWidth: 32,
-                          minHeight: 32,
+                          minWidth: videoDimensions.aspectRatio > 1 ? 28 : 25,
+                          minHeight: videoDimensions.aspectRatio > 1 ? 28 : 25,
+                          p: 0.5,
+                          mr: 1,
                           '&:hover': {
                             bgcolor: 'rgba(255,255,255,0.2)'
                           }
@@ -813,18 +828,18 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                       >
                         {isPlaying ? (
                           <Box sx={{ 
-                            width: 8, 
-                            height: 16, 
+                            width: videoDimensions.aspectRatio > 1 ? 9 : 8, 
+                            height: videoDimensions.aspectRatio > 1 ? 10 : 9, 
                             display: 'flex', 
-                            gap: 0.5 
+                            gap: 0.4
                           }}>
                             <Box sx={{ 
-                              width: 3, 
+                              width: videoDimensions.aspectRatio > 1 ? 3.5 : 3, 
                               height: '100%', 
                               bgcolor: 'white' 
                             }} />
                             <Box sx={{ 
-                              width: 3, 
+                              width: videoDimensions.aspectRatio > 1 ? 3.5 : 3, 
                               height: '100%', 
                               bgcolor: 'white' 
                             }} />
@@ -833,16 +848,16 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                           <Box sx={{
                             width: 0,
                             height: 0,
-                            borderLeft: '8px solid white',
-                            borderTop: '6px solid transparent',
-                            borderBottom: '6px solid transparent',
-                            ml: 0.5
+                            borderLeft: videoDimensions.aspectRatio > 1 ? '9px solid white' : '8px solid white',
+                            borderTop: videoDimensions.aspectRatio > 1 ? '6px solid transparent' : '5px solid transparent',
+                            borderBottom: videoDimensions.aspectRatio > 1 ? '6px solid transparent' : '5px solid transparent',
+                            ml: 0.3
                           }} />
                         )}
                       </IconButton>
 
                       {/* Current Time */}
-                      <Typography variant="caption" sx={{ color: 'white', minWidth: '40px' }}>
+                      <Typography variant={'caption'} sx={{ color: 'white', minWidth: videoDimensions.aspectRatio > 1 ? '45px' : '40px' }}>
                         {formatTime(currentTime)}
                       </Typography>
 
@@ -854,11 +869,9 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                           bgcolor: 'rgba(255,255,255,0.3)', 
                           borderRadius: 3,
                           cursor: 'pointer',
-                          position: 'relative',
-                          mx: 1,
                           '&:hover': {
                             height: 8
-                          }
+                          },
                         }}
                         onClick={handleSeek}
                       >
@@ -874,7 +887,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                       </Box>
 
                       {/* Duration */}
-                      <Typography variant="caption" sx={{ color: 'white', minWidth: '40px' }}>
+                      <Typography variant={'caption'} sx={{ color: 'white', minWidth: videoDimensions.aspectRatio > 1 ? '45px' : '40px', ml: 2 }}>
                         {formatTime(duration)}
                       </Typography>
 
@@ -884,7 +897,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                         onClick={toggleMute}
                         sx={{ 
                           color: 'white',
-                          p: 1,
+                          p: videoDimensions.aspectRatio > 1 ? 0.8 : 0.6,
                           '&:hover': {
                             bgcolor: 'rgba(255,255,255,0.1)'
                           },
@@ -892,14 +905,14 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                       >
                         <Iconify 
                           icon={volume === 0 ? "eva:volume-mute-fill" : "eva:volume-up-fill"} 
-                          width={16}
-                          height={16}
+                          width={videoDimensions.aspectRatio > 1 ? 18 : 16}
+                          height={videoDimensions.aspectRatio > 1 ? 18 : 16}
                         />
                       </IconButton>
 
                       {/* Volume Slider */}
                       <Box sx={{ 
-                        width: 80, 
+                        width: videoDimensions.aspectRatio > 1 ? 90 : 80, 
                         display: 'flex', 
                         alignItems: 'center',
                         height: '100%',

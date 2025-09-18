@@ -116,6 +116,9 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   
+  // Video dimensions state for responsive sizing
+  const [videoDimensions, setVideoDimensions] = useState({});
+  
   // Detect client role
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
@@ -333,6 +336,39 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
     setCurrentVideoIndex(index);
     setVideoModalOpen(true);
   }, []);
+  
+  // Handle video metadata loaded to get dimensions
+  const handleVideoMetadata = useCallback((footageId, videoElement) => {
+    if (videoElement) {
+      const { videoWidth, videoHeight } = videoElement;
+      const aspectRatio = videoWidth / videoHeight;
+      setVideoDimensions(prev => ({
+        ...prev,
+        [footageId]: { width: videoWidth, height: videoHeight, aspectRatio }
+      }));
+    }
+  }, []);
+  
+  // Calculate responsive video dimensions
+  const getVideoStyles = useCallback((footageId) => {
+    const dimensions = videoDimensions[footageId];
+    if (!dimensions) {
+      return { width: 240, height: 390 }; // Default portrait dimensions
+    }
+    
+    const { aspectRatio } = dimensions;
+    
+    if (aspectRatio > 1) {
+      // Landscape video - fit within container width, maintain aspect ratio
+      const maxWidth = 520; // Fit within the 580px container with some padding
+      const height = Math.min(350, maxWidth / aspectRatio); // Max height to fit in container
+      const width = height * aspectRatio;
+      return { width, height };
+    } else {
+      // Portrait video - use default mobile dimensions
+      return { width: 240, height: 390 };
+    }
+  }, [videoDimensions]);
 
   return (
       <Box sx={{ 
@@ -679,8 +715,7 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
                               sx={{
                                 position: 'relative',
                                 cursor: 'pointer',
-                                width: 240,
-                                height: 390,
+                                ...getVideoStyles(rawFootage.id),
                                 '&:hover .overlay': {
                                   opacity: 1,
                                 },
@@ -689,12 +724,12 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
                             >
                               <video
                                 style={{ 
-                                  width: 240,
-                                  height: 390, 
+                                  ...getVideoStyles(rawFootage.id),
                                   objectFit: 'cover',
                                   display: 'block'
                                 }}
                                 src={rawFootage.url}
+                                onLoadedMetadata={(e) => handleVideoMetadata(rawFootage.id, e.target)}
                               >
                                 <track kind="captions" srcLang="en" label="English" />
                               </video>
