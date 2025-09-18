@@ -11,6 +11,7 @@ import {
 
 import Iconify from 'src/components/iconify';
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
+import { getStatusColor } from 'src/contants/statusColors';
 
 import V4VideoSubmission from './submissions/v4/video-submission';
 import V4PhotoSubmission from './submissions/v4/photo-submission';
@@ -42,25 +43,26 @@ function CreatorAccordion({ creator, campaign }) {
   const renderSubmissionPills = () => {
     const pills = [];
 
-    const getStatusColor = (status) => {
-      const statusColors = {
-        PENDING_REVIEW: '#FFC702',
-        IN_PROGRESS: '#8A5AFE', 
-        APPROVED: '#1ABF66',
-        POSTED: '#1ABF66',
-        REJECTED: '#D4321C',
-        CHANGES_REQUIRED: '#D4321C',
-        SENT_TO_CLIENT: '#8A5AFE',
-        CLIENT_APPROVED: '#1ABF66',
-        CLIENT_FEEDBACK: '#FFC702',
-        SENT_TO_ADMIN: '#8A5AFE',
-        NOT_STARTED: '#000'
-      };
-      return statusColors[status] || 'default';
-    };
 
     const formatStatus = (status) => {
       return status?.replace(/_/g, ' ') || 'Unknown';
+    };
+
+    const getClientStatusColor = (status) => {
+      if (!isClient) {
+        // Admin sees the actual status colors
+        return getStatusColor(status);
+      }
+      
+      // Client-specific color mapping
+      switch (status) {
+        case 'SENT_TO_CLIENT':
+          return getStatusColor('PENDING_REVIEW');
+        case 'PENDING_REVIEW':
+          return getStatusColor('IN_PROGRESS');
+        default:
+          return getStatusColor(status); // Use default mapping for other statuses
+      }
     };
 
     const getClientStatusLabel = (status) => {
@@ -128,14 +130,14 @@ function CreatorAccordion({ creator, campaign }) {
               px: 1.5,
               py: 0.6,
               border: '1px solid',
-              borderColor: getStatusColor(videoSubmission.status),
+              borderColor: getClientStatusColor(videoSubmission.status),
               borderRadius: 0.8,
-              boxShadow: `0px -2px 0px 0px ${getStatusColor(videoSubmission.status)} inset`,
+              boxShadow: `0px -2px 0px 0px ${getClientStatusColor(videoSubmission.status)} inset`,
               bgcolor: '#fff',
-              color: getStatusColor(videoSubmission.status),
+              color: getClientStatusColor(videoSubmission.status),
             }}
           >
-            <Typography fontWeight={'SemiBold'} pb={0.2} fontSize={12} color={getStatusColor(videoSubmission.status)}>{getClientStatusLabel(videoSubmission.status)}</Typography>
+            <Typography fontWeight={'SemiBold'} pb={0.2} fontSize={12} color={getClientStatusColor(videoSubmission.status)}>{getClientStatusLabel(videoSubmission.status)}</Typography>
           </Box>
           <Iconify 
             icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
@@ -176,14 +178,14 @@ function CreatorAccordion({ creator, campaign }) {
               px: 1.5,
               py: 0.6,
               border: '1px solid',
-              borderColor: getStatusColor(photoSubmission.status),
+              borderColor: getClientStatusColor(photoSubmission.status),
               borderRadius: 0.8,
-              boxShadow: `0px -2px 0px 0px ${getStatusColor(photoSubmission.status)} inset`,
+              boxShadow: `0px -2px 0px 0px ${getClientStatusColor(photoSubmission.status)} inset`,
               bgcolor: '#fff',
-              color: getStatusColor(photoSubmission.status),
+              color: getClientStatusColor(photoSubmission.status),
             }}
           >
-            <Typography fontWeight={'SemiBold'} pb={0.2} fontSize={12} color={getStatusColor(photoSubmission.status)}>{getClientStatusLabel(photoSubmission.status)}</Typography>
+            <Typography fontWeight={'SemiBold'} pb={0.2} fontSize={12} color={getClientStatusColor(photoSubmission.status)}>{getClientStatusLabel(photoSubmission.status)}</Typography>
           </Box>
           <Iconify 
             icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
@@ -224,14 +226,14 @@ function CreatorAccordion({ creator, campaign }) {
               px: 1.5,
               py: 0.6,
               border: '1px solid',
-              borderColor: getStatusColor(rawFootageSubmission.status),
+              borderColor: getClientStatusColor(rawFootageSubmission.status),
               borderRadius: 0.8,
-              boxShadow: `0px -2px 0px 0px ${getStatusColor(rawFootageSubmission.status)} inset`,
+              boxShadow: `0px -2px 0px 0px ${getClientStatusColor(rawFootageSubmission.status)} inset`,
               bgcolor: '#fff',
-              color: getStatusColor(rawFootageSubmission.status),
+              color: getClientStatusColor(rawFootageSubmission.status),
             }}
           >
-            <Typography fontWeight={'SemiBold'} pb={0.2} fontSize={12} color={getStatusColor(rawFootageSubmission.status)}>{getClientStatusLabel(rawFootageSubmission.status)}</Typography>
+            <Typography fontWeight={'SemiBold'} pb={0.2} fontSize={12} color={getClientStatusColor(rawFootageSubmission.status)}>{getClientStatusLabel(rawFootageSubmission.status)}</Typography>
           </Box>
           <Iconify 
             icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"}
