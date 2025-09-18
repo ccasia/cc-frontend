@@ -15,6 +15,7 @@ export default function Page() {
       <PDFViewer
         style={{
           height: '100vh',
+          width: '100vw',
         }}
       >
         <AgreementTemplate />
