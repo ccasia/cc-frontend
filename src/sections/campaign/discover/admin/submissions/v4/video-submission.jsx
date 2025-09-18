@@ -30,6 +30,7 @@ import { getDueDateStatus } from 'src/utils/dueDateHelpers';
 
 import Iconify from 'src/components/iconify';
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
+import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
 import { options_changes } from './constants';
 
@@ -75,6 +76,8 @@ const STATUS_COLORS = {
 export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
   const { user } = useAuthContext();
 
+  console.log('submission vids', submission.video)
+
   const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
 
   const [loading, setLoading] = useState(false);
@@ -116,6 +119,10 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const videoRef = useRef(null);
+  
+  // Video Modal
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
   // Detect client role
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
@@ -144,6 +151,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
   
   const { video, editCaption, isApproved, isPosted, hasPostingLink, hasPendingPostingLink } = submissionProps;
 
+  console.log(video)
 
   const handleApprove = useCallback(async () => {
     try {
@@ -391,6 +399,14 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
   }), [isPlaying, duration, volume]);
+  
+  // Video modal handler
+  const handleVideoClick = useCallback(() => {
+    if (video?.url) {
+      setCurrentVideoIndex(0);
+      setVideoModalOpen(true);
+    }
+  }, [video?.url]);
   
   const { togglePlay, handleTimeUpdate, handleLoadedMetadata, handleSeek, handleVolumeChange, toggleMute, formatTime } = videoControls;
 
@@ -710,24 +726,62 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                         justifyContent: 'center', 
                         alignItems: 'center',
                         bgcolor: 'black',
-                        minHeight: 300,
+                        minHeight: 350,
                         p: 2,
                       }}
                     >
-                      <video
-                        ref={videoRef}
-                        style={{ 
-                          maxWidth: 200, 
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          maxWidth: 200,
                           height: 'auto',
-                          display: 'block'
+                          cursor: 'pointer',
                         }}
-                        src={video.url}
-                        onTimeUpdate={handleTimeUpdate}
-                        onLoadedMetadata={handleLoadedMetadata}
-                        onPlay={() => setIsPlaying(true)}
-                        onPause={() => setIsPlaying(false)}
-                        onClick={togglePlay}
-                      />
+                        onClick={handleVideoClick}
+                      >
+                        <video
+                          ref={videoRef}
+                          style={{ 
+                            maxWidth: 200, 
+                            height: 'auto',
+                            display: 'block',
+                            pointerEvents: 'none'
+                          }}
+                          src={video.url}
+                          onTimeUpdate={handleTimeUpdate}
+                          onLoadedMetadata={handleLoadedMetadata}
+                          onPlay={() => setIsPlaying(true)}
+                          onPause={() => setIsPlaying(false)}
+                        />
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            bgcolor: 'rgba(0, 0, 0, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: 0,
+                            transition: 'opacity 0.2s ease',
+                            '&:hover': {
+                              opacity: 1,
+                            },
+                          }}
+                        >
+                          <Iconify
+                            icon="eva:expand-fill"
+                            sx={{
+                              color: 'white',
+                              width: 40,
+                              height: 40,
+                              opacity: 0.9,
+                            }}
+                          />
+                        </Box>
+                      </Box>
                     </Box>
 
                     {/* Custom Controls Bar - Full Width */}
@@ -1027,6 +1081,21 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
             </Button>
           </DialogActions>
         </Dialog>
+        
+        {/* Video Modal */}
+        {video?.url && (
+          <VideoModal
+            open={videoModalOpen}
+            onClose={() => setVideoModalOpen(false)}
+            videos={[video]}
+            currentIndex={currentVideoIndex}
+            setCurrentIndex={setCurrentVideoIndex}
+            creator={submission.user}
+            submission={submission}
+            showCaption={true}
+            title="Video Submission"
+          />
+        )}
       </Box>
     );
 };

@@ -30,6 +30,7 @@ import { getDueDateStatus } from 'src/utils/dueDateHelpers';
 
 import Iconify from 'src/components/iconify';
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
+import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
 import { options_changes } from './constants';
 
@@ -110,6 +111,10 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
   const [dueDateDialog, setDueDateDialog] = useState(false);
   const [selectedDueDate, setSelectedDueDate] = useState(null);
   const [dueDateLoading, setDueDateLoading] = useState(false);
+  
+  // Video Modal
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   
   // Detect client role
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
@@ -322,6 +327,12 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
   }, [formatStatus, isClient]);
 
   const dueDateStatus = useMemo(() => getDueDateStatus(submission.dueDate), [submission.dueDate]);
+  
+  // Video modal handler
+  const handleVideoClick = useCallback((index) => {
+    setCurrentVideoIndex(index);
+    setVideoModalOpen(true);
+  }, []);
 
   return (
       <Box sx={{ 
@@ -641,7 +652,7 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
                         height: '100%',
                         alignItems: 'center',
                         '&::-webkit-scrollbar': {
-                          height: 4,
+                          height: 5,
                         },
                         '&::-webkit-scrollbar-track': {
                           backgroundColor: 'rgba(0,0,0,0.1)',
@@ -664,13 +675,56 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
                           }}
                         >
                           {rawFootage.url ? (
-                            <video
-                              controls
-                              style={{ width: 240, objectFit: 'cover' }}
-                              src={rawFootage.url}
+                            <Box
+                              sx={{
+                                position: 'relative',
+                                cursor: 'pointer',
+                                width: 240,
+                                height: 390,
+                                '&:hover .overlay': {
+                                  opacity: 1,
+                                },
+                              }}
+                              onClick={() => handleVideoClick(footageIndex)}
                             >
-                              <track kind="captions" srcLang="en" label="English" />
-                            </video>
+                              <video
+                                style={{ 
+                                  width: 240,
+                                  height: 390, 
+                                  objectFit: 'cover',
+                                  display: 'block'
+                                }}
+                                src={rawFootage.url}
+                              >
+                                <track kind="captions" srcLang="en" label="English" />
+                              </video>
+                              <Box
+                                className="overlay"
+                                sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  bgcolor: 'rgba(0, 0, 0, 0.3)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  opacity: 0,
+                                  transition: 'opacity 0.2s ease',
+                                }}
+                              >
+                                <Iconify
+                                  icon="eva:expand-fill"
+                                  sx={{
+                                    color: 'white',
+                                    width: 40,
+                                    height: 40,
+                                    opacity: 0.9,
+                                  }}
+                                />
+                              </Box>
+                            </Box>
                           ) : (
                             <Box
                               sx={{
@@ -840,6 +894,21 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
             </Button>
           </DialogActions>
         </Dialog>
+        
+        {/* Video Modal */}
+        {rawFootages.length > 0 && (
+          <VideoModal
+            open={videoModalOpen}
+            onClose={() => setVideoModalOpen(false)}
+            videos={rawFootages}
+            currentIndex={currentVideoIndex}
+            setCurrentIndex={setCurrentVideoIndex}
+            creator={submission.user}
+            submission={submission}
+            showCaption={false}
+            title="Raw Footage"
+          />
+        )}
 
       </Box>
     );

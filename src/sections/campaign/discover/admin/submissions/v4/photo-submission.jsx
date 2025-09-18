@@ -31,6 +31,7 @@ import { getDueDateStatus } from 'src/utils/dueDateHelpers';
 
 import Iconify from 'src/components/iconify';
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
+import { PhotoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
 import { options_changes } from './constants';
 
@@ -111,6 +112,10 @@ export default function V4PhotoSubmission({ submission, index = 1, onUpdate }) {
   const [dueDateDialog, setDueDateDialog] = useState(false);
   const [selectedDueDate, setSelectedDueDate] = useState(null);
   const [dueDateLoading, setDueDateLoading] = useState(false);
+  
+  // Photo Modal
+  const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   // Detect client role
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
@@ -322,6 +327,12 @@ export default function V4PhotoSubmission({ submission, index = 1, onUpdate }) {
   }, [formatStatus, isClient]);
 
   const dueDateStatus = useMemo(() => getDueDateStatus(submission.dueDate), [submission.dueDate]);
+  
+  // Photo modal handler
+  const handlePhotoClick = useCallback((index) => {
+    setCurrentPhotoIndex(index);
+    setPhotoModalOpen(true);
+  }, []);
 
   return (
       <Box sx={{ 
@@ -641,7 +652,7 @@ export default function V4PhotoSubmission({ submission, index = 1, onUpdate }) {
                         height: '100%',
                         alignItems: 'center',
                         '&::-webkit-scrollbar': {
-                          height: 4,
+                          height: 5,
                         },
                         '&::-webkit-scrollbar-track': {
                           backgroundColor: 'rgba(0,0,0,0.1)',
@@ -664,15 +675,55 @@ export default function V4PhotoSubmission({ submission, index = 1, onUpdate }) {
                           }}
                         >
                           <Box
-                            component="img"
-                            src={photo.url}
-                            alt={`Photo ${photoIndex + 1}`}
                             sx={{
+                              position: 'relative',
+                              cursor: 'pointer',
                               width: 240,
                               height: 390,
-                              objectFit: 'cover',
+                              '&:hover .overlay': {
+                                opacity: 1,
+                              },
                             }}
-                          />
+                            onClick={() => handlePhotoClick(photoIndex)}
+                          >
+                            <Box
+                              component="img"
+                              src={photo.url}
+                              alt={`Photo ${photoIndex + 1}`}
+                              sx={{
+                                width: 240,
+                                height: 390,
+                                objectFit: 'cover',
+                                display: 'block',
+                              }}
+                            />
+                            <Box
+                              className="overlay"
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                bgcolor: 'rgba(0, 0, 0, 0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                opacity: 0,
+                                transition: 'opacity 0.2s ease',
+                              }}
+                            >
+                              <Iconify
+                                icon="eva:expand-fill"
+                                sx={{
+                                  color: 'white',
+                                  width: 40,
+                                  height: 40,
+                                  opacity: 0.9,
+                                }}
+                              />
+                            </Box>
+                          </Box>
                         </Box>
                       ))}
                     </Box>
@@ -825,6 +876,18 @@ export default function V4PhotoSubmission({ submission, index = 1, onUpdate }) {
             </Button>
           </DialogActions>
         </Dialog>
+        
+        {/* Photo Modal */}
+        {photos.length > 0 && (
+          <PhotoModal
+            open={photoModalOpen}
+            onClose={() => setPhotoModalOpen(false)}
+            photos={photos}
+            currentIndex={currentPhotoIndex}
+            setCurrentIndex={setCurrentPhotoIndex}
+            creator={submission.user}
+          />
+        )}
       </Box>
     );
 };
