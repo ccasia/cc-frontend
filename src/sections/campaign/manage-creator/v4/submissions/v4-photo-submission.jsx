@@ -209,14 +209,15 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
 
   const isSubmitted = submission.photos?.some(p => p.url);
   const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
-  const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
+  const hasChangesRequired = ['CHANGES_REQUIRED'].includes(submission.status);
+  const isPostingLinkRejected = submission.status === 'REJECTED' && isSubmitted;
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
   const isPosted = submission.status === 'POSTED';
   const hasPostingLink = Boolean(submission.content);
   const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
   
-  // Creator can upload if not in final states and has changes required or hasn't submitted
-  const canUpload = !isApproved && !isPosted && (!isInReview || hasChangesRequired);
+  // Creator can upload if not in final states and has changes required or hasn't submitted (but not for posting link rejection)
+  const canUpload = !isApproved && !isPosted && !isPostingLinkRejected && (!isInReview || hasChangesRequired);
 
   return (
     <Stack spacing={3}>
@@ -262,6 +263,14 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
         <Alert severity="warning">
           <Typography variant="body2">
             📝 Changes requested. Please review the feedback below and resubmit.
+          </Typography>
+        </Alert>
+      )}
+
+      {isPostingLinkRejected && (
+        <Alert severity="warning">
+          <Typography variant="body2">
+            🔗 Your posting link was rejected. Please update your posting link below.
           </Typography>
         </Alert>
       )}
@@ -448,7 +457,7 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
       )}
 
       {/* Posting Link Section */}
-      {(isApproved || isPosted) && (
+      {(isApproved || isPosted || isPostingLinkRejected) && (
         <Card sx={{ p: 3 }}>
           <Stack spacing={3}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">

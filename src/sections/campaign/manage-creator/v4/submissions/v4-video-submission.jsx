@@ -175,7 +175,8 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
   const statusInfo = useMemo(() => {
     const isSubmitted = submission.video?.some(v => v.url);
     const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
-    const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
+    const hasChangesRequired = ['CHANGES_REQUIRED'].includes(submission.status);
+    const isPostingLinkRejected = submission.status === 'REJECTED' && isSubmitted;
     const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
     const isPosted = submission.status === 'POSTED';
     const hasPostingLink = Boolean(submission.content);
@@ -185,6 +186,7 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
       isSubmitted,
       isInReview,
       hasChangesRequired,
+      isPostingLinkRejected,
       isApproved,
       isPosted,
       hasPostingLink,
@@ -196,6 +198,7 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
     isSubmitted, 
     isInReview, 
     hasChangesRequired, 
+    isPostingLinkRejected,
     isApproved, 
     isPosted, 
     hasPostingLink, 
@@ -281,6 +284,14 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
         <Alert severity="warning">
           <Typography variant="body2">
             📝 Changes requested. Please review the feedback below and resubmit.
+          </Typography>
+        </Alert>
+      )}
+
+      {isPostingLinkRejected && (
+        <Alert severity="warning">
+          <Typography variant="body2">
+            🔗 Your posting link was rejected. Please update your posting link below.
           </Typography>
         </Alert>
       )}
@@ -383,7 +394,7 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
       )}
 
       {/* Upload Form */}
-      {(!isInReview && !isApproved && !isPosted) && (
+      {(!isInReview && !isApproved && !isPosted && !isPostingLinkRejected) && (
         <Card sx={{ p: 3 }}>
           <Stack spacing={3}>
             <Typography variant="subtitle1">
@@ -469,7 +480,7 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
       )}
 
       {/* Posting Link Section */}
-      {(isApproved || isPosted) && (
+      {(isApproved || isPosted || isPostingLinkRejected) && (
         <Card sx={{ p: 3 }}>
           <Stack spacing={3}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
