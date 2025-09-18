@@ -136,7 +136,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
 
   const submissionProps = useMemo(() => {
     const video = submission.video?.[0];
-    const editCaption = ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
     const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
     const isPosted = submission.status === 'POSTED';
     const hasPostingLink = Boolean(submission.content);
@@ -144,7 +144,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
     
     return {
       video,
-      editCaption,
+      pendingReview,
       isApproved,
       isPosted,
       hasPostingLink,
@@ -152,9 +152,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
     };
   }, [submission.video, submission.status, submission.content]);
   
-  const { video, editCaption, isApproved, isPosted, hasPostingLink, hasPendingPostingLink } = submissionProps;
-
-  console.log(video)
+  const { video, pendingReview, isApproved, isPosted, hasPostingLink, hasPendingPostingLink } = submissionProps;
 
   const handleApprove = useCallback(async () => {
     try {
@@ -447,7 +445,7 @@ export default function V4VideoSubmission({ submission, index = 1, onUpdate }) {
                     {/* Top Content - Flexible space */}
                     <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                       {/* Caption */}
-                      {!editCaption ? (
+                      {pendingReview ? (
                         <Box>
                           <TextField
                             fullWidth
