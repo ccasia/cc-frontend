@@ -17,6 +17,7 @@ import V4VideoSubmission from './submissions/v4/video-submission';
 import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
 import { useAuthContext } from 'src/auth/hooks';
+import { bgcolor, margin, padding } from '@mui/system';
 
 // ----------------------------------------------------------------------
 
@@ -170,8 +171,8 @@ function CreatorAccordion({ creator, campaign }) {
             alignItems={'center'}
           >
             <Iconify 
-              icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
-              sx={{ width: { xs: 20, sm: 22, md: 25 }, height: { xs: 20, sm: 22, md: 25 } }}
+              icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"} 
+              sx={{ width: { xs: 24, sm: 26, md: 28 }, height: { xs: 24, sm: 26, md: 28 } }}
               color={isExpanded ? '#1340FF' : '#8E8E93'}
             />            
           </Box>
@@ -243,8 +244,8 @@ function CreatorAccordion({ creator, campaign }) {
             </Box>
           </Box>
           <Iconify 
-            icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
-            sx={{ width: { xs: 20, sm: 22, md: 25 }, height: { xs: 20, sm: 22, md: 25 } }}
+            icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"} 
+            sx={{ width: { xs: 24, sm: 26, md: 28 }, height: { xs: 24, sm: 26, md: 28 } }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
         </Box>
@@ -315,8 +316,8 @@ function CreatorAccordion({ creator, campaign }) {
             </Box>
           </Box>
           <Iconify 
-            icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"}
-            sx={{ width: { xs: 20, sm: 22, md: 25 }, height: { xs: 20, sm: 22, md: 25 } }}
+            icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"}
+            sx={{ width: { xs: 24, sm: 26, md: 28 }, height: { xs: 24, sm: 26, md: 28 } }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
         </Box>
