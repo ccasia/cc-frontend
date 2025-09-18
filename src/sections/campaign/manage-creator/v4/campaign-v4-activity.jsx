@@ -126,6 +126,34 @@ const CampaignV4Activity = ({ campaign }) => {
 
   const { grouped, progress, total, completed } = submissionsData;
 
+  // Check if creator's agreement has been approved
+  const isAgreementApproved = overviewData?.isAgreementApproved;
+  
+  // If agreement hasn't been approved, show pending message
+  if (!isAgreementApproved && overviewData?.agreementStatus) {
+    return (
+      <Box>
+        {/* Campaign Progress Header */}
+        <Card sx={{ p: 3, mb: 3 }}>
+          <Grid container spacing={3} alignItems="center">
+            <Grid item xs={12}>
+              <Stack spacing={2} alignItems="center" textAlign="center">
+                <Iconify icon="eva:clock-outline" width={64} sx={{ color: 'warning.main' }} />
+                <Typography variant="h6">Agreement Under Review</Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600 }}>
+                  Your agreement is currently being reviewed by our team. You'll be able to start working on your submissions once your agreement has been approved.
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Status: {overviewData.agreementStatus?.replace('_', ' ').toUpperCase()}
+                </Typography>
+              </Stack>
+            </Grid>
+          </Grid>
+        </Card>
+      </Box>
+    );
+  }
+
   return (
     <Box>
       {/* Campaign Progress Header */}
@@ -318,10 +346,7 @@ const CampaignV4Activity = ({ campaign }) => {
             <Card sx={{ p: 3, textAlign: 'center' }}>
               <Stack spacing={2} alignItems="center">
                 <Iconify icon="eva:checkmark-circle-2-fill" width={64} sx={{ color: 'success.main' }} />
-                <Typography variant="h6">All Submissions Complete!</Typography>
-                <Typography color="text.secondary">
-                  Congratulations! You have completed all required submissions for this campaign.
-                </Typography>
+                <Typography variant="h6">Processing Agreement</Typography>
               </Stack>
             </Card>
           )}
