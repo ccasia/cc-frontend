@@ -1,11 +1,15 @@
 import PropTypes from 'prop-types';
-import { useRef, useMemo, createContext } from 'react';
+import { useRef, useMemo, useState, createContext } from 'react';
 
 import Box from '@mui/material/Box';
+import { IconButton } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
+import Image from 'src/components/image';
 import { useSettingsContext } from 'src/components/settings';
+
+import ChatModal from 'src/sections/client/modal/chat-modal';
 
 import { HEADER } from '../config-layout';
 
@@ -19,6 +23,10 @@ export default function Main({ children, sx, ...other }) {
   const settings = useSettingsContext();
 
   const lgUp = useResponsive('up', 'lg');
+
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const isChatopen = Boolean(anchorEl);
 
   const isNavHorizontal = settings.themeLayout === 'horizontal';
 
@@ -72,6 +80,29 @@ export default function Main({ children, sx, ...other }) {
         {...other}
       >
         {children}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 15,
+            right: 45,
+            textAlign: 'right',
+          }}
+        >
+          <IconButton
+            sx={{
+              background: 'linear-gradient(231.34deg, #8A5AFE 14.73%, #3A3A3C 84.06%)',
+              width: 60,
+              height: 60,
+              ':hover': {
+                background: 'linear-gradient(231.34deg, #8A5AFE 100%, #3A3A3C 100%)',
+              },
+            }}
+            onClick={(e) => setAnchorEl(e.currentTarget)}
+          >
+            <Image src="/assets/chat.svg" alt="Chat" sx={{ width: 30 }} />
+          </IconButton>
+        </Box>
+        <ChatModal open={isChatopen} onClose={() => setAnchorEl(null)} anchorEl={anchorEl} />
       </Box>
     </mainContext.Provider>
   );
