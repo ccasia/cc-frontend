@@ -6,7 +6,18 @@ import toast from 'react-hot-toast';
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import { Box, Card, Chip, Menu, Avatar, MenuItem, Typography, IconButton } from '@mui/material';
+import {
+  Box,
+  Card,
+  Chip,
+  Menu,
+  Avatar,
+  Divider,
+  Tooltip,
+  MenuItem,
+  Typography,
+  IconButton,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -14,6 +25,8 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { formatText } from 'src/utils/format-test';
+
+import { countries } from 'src/assets/data';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
@@ -29,7 +42,6 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   const router = useRouter();
 
   const isCopy = useBoolean();
-
 
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -136,7 +148,15 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         }}
       />
       {status && (
-        <Box sx={{ position: 'absolute', top: 20, left: 20, display: 'flex', gap: 1 }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            display: 'flex',
+            gap: 1,
+          }}
+        >
           <Chip
             icon={
               campaign?.status?.toLowerCase() === 'active' ? (
@@ -151,7 +171,62 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                 />
               ) : null
             }
-            label={formatText(campaign?.status)}
+            label={
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
+                  {formatText(campaign?.status)}
+                </Typography>
+                {campaign?.campaignRequirement?.country && (
+                  <>
+                    <Divider
+                      orientation="vertical"
+                      flexItem
+                      sx={{ bgcolor: 'black', height: 14 }}
+                      variant="middle"
+                    />
+                    <Tooltip
+                      title={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Iconify
+                            icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
+                            width={15}
+                          />
+                          <Typography variant="caption">
+                            {
+                              countries.find((item) =>
+                                item.label
+                                  .toLowerCase()
+                                  .includes(campaign?.campaignRequirement?.country?.toLowerCase())
+                              ).label
+                            }
+                          </Typography>
+                        </Stack>
+                      }
+                      followCursor
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            // bgcolor: 'white',
+                            // color: 'black',
+                            borderRadius: 0.4,
+                          },
+                        },
+                      }}
+                    >
+                      <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
+                        {
+                          countries.find((item) =>
+                            item.label
+                              .toLowerCase()
+                              .includes(campaign?.campaignRequirement?.country?.toLowerCase())
+                          ).code
+                        }
+                      </Typography>
+                    </Tooltip>
+                  </>
+                )}
+              </Stack>
+            }
             sx={{
               backgroundColor: theme.palette.common.white,
               color: '#48484a',
@@ -399,7 +474,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         },
       }}
     >
-      <Box
+      {/* <Box
         sx={{
           position: 'absolute',
           top: 10,
@@ -416,7 +491,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
           icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
           width={40}
         />
-      </Box>
+      </Box> */}
       {false && (
         <Box
           mt={4}
