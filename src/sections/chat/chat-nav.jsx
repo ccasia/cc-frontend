@@ -227,7 +227,12 @@ export default function ChatNav({ isClient, setThreadId }) {
       });
 
       if (existingThread) {
-        router.push(`/dashboard/chat/thread/${existingThread.id}`);
+        if (isClient) {
+          localStorage.setItem('threadId', existingThread.id);
+          setThreadId(existingThread.id);
+        } else {
+          router.push(`/dashboard/chat/thread/${existingThread.id}`);
+        }
       } else {
         const response = await axiosInstance.post(endpoints.threads.create, {
           title: ` Chat between ${user.name} & ${recipient.name}`,
@@ -238,7 +243,12 @@ export default function ChatNav({ isClient, setThreadId }) {
 
         mutate(endpoints.threads.getAll);
 
-        router.push(`/dashboard/chat/thread/${response.data.id}`);
+        if (isClient) {
+          localStorage.setItem('threadId', response.data.id);
+          setThreadId(response.data.id);
+        } else {
+          router.push(`/dashboard/chat/thread/${response.data.id}`);
+        }
       }
       // router.push(threadPath);
     } catch (error) {
