@@ -1423,10 +1423,11 @@ const ClientDashboard = () => {
         </Grid>
       </Grid>
 
-      <Box
+      {/* <Box
         sx={{
-          position: 'sticky',
-          bottom: -50,
+          position: 'absolute',
+          bottom: 15,
+          right: 45,
           textAlign: 'right',
         }}
       >
@@ -1443,7 +1444,7 @@ const ClientDashboard = () => {
         >
           <Image src="/assets/chat.svg" alt="Chat" sx={{ width: 30 }} />
         </IconButton>
-      </Box>
+      </Box> */}
 
       <Dialog
         fullWidth
@@ -1467,6 +1468,7 @@ const ClientDashboard = () => {
       >
         <ClientCampaignCreateForm onClose={create.onFalse} mutate={mutate} />
       </Dialog>
+
       {!hasCompany ? (
         <Dialog
           open={openCompanyDialog}
@@ -1495,6 +1497,7 @@ const ClientDashboard = () => {
           </Box>
         </Dialog>
       ) : null}
+
       {/* Profile Completion Modal */}
       <ClientProfileCompletionModal
         open={showProfileCompletion}
@@ -1517,7 +1520,7 @@ const ClientDashboard = () => {
         userEmail={user?.email}
       />
 
-      <ChatModal open={isChatopen} onClose={() => setAnchorEl(null)} anchorEl={anchorEl} />
+      {/* <ChatModal open={isChatopen} onClose={() => setAnchorEl(null)} anchorEl={anchorEl} /> */}
     </Container>
   );
 };
