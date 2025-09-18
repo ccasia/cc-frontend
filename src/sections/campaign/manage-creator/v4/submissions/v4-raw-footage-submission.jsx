@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -37,9 +38,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [caption, setCaption] = useState(submission.caption || '');
-  const [postingDialog, setPostingDialog] = useState(false);
-  const [postingLink, setPostingLink] = useState('');
-  const [postingLoading, setPostingLoading] = useState(false);
 
   // Update caption when submission changes
   useEffect(() => {
@@ -171,45 +169,12 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     }
   };
 
-  const handleAddPostingLink = () => {
-    setPostingLink(submission.content || '');
-    setPostingDialog(true);
-  };
-
-  const handleSubmitPostingLink = async () => {
-    if (!postingLink.trim()) {
-      enqueueSnackbar('Please enter a posting link', { variant: 'error' });
-      return;
-    }
-
-    try {
-      setPostingLoading(true);
-      await axiosInstance.put(endpoints.submission.creator.v4.updatePostingLink, {
-        submissionId: submission.id,
-        postingLink: postingLink.trim(),
-      });
-
-      enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
-      setPostingDialog(false);
-      onUpdate();
-    } catch (error) {
-      console.error('Error updating posting link:', error);
-      enqueueSnackbar(error.message || 'Failed to update posting link', { variant: 'error' });
-    } finally {
-      setPostingLoading(false);
-    }
-  };
-
-
   const isSubmitted = submission.rawFootages?.some(r => r.url);
   // CLIENT_FEEDBACK means client gave feedback but admin hasn't forwarded it yet - creator still sees as "in review"
   // CHANGES_REQUIRED means admin has forwarded client feedback - creator can now see feedback and re-upload
   const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
   const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
-  const isPosted = submission.status === 'POSTED';
-  const hasPostingLink = Boolean(submission.content);
-  const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
   
   // Check if any individual raw footage need revision (only show to creator if admin has forwarded the feedback)
   const hasIndividualRawFootageNeedingRevision = submission.rawFootages?.some(r => 
@@ -217,7 +182,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   );
   
   // Creator can upload if not in final states and either hasn't submitted or has raw footage needing revision
-  const canUpload = !isApproved && !isPosted && (!isInReview || hasIndividualRawFootageNeedingRevision || hasChangesRequired);
+  const canUpload = !isApproved && (!isInReview || hasIndividualRawFootageNeedingRevision || hasChangesRequired);
 
   return (
     <Stack spacing={3}>
@@ -234,24 +199,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         </Stack>
       </Stack>
 
-      {/* Status Messages */}
-      {isPosted && (
-        <Alert severity="success">
-          <Typography variant="body2">
-            🎉 Your raw footage has been posted! The posting link has been approved.
-          </Typography>
-        </Alert>
-      )}
-
-      {hasPendingPostingLink && (
-        <Alert severity="info">
-          <Typography variant="body2">
-            ⏳ Your posting link is pending admin approval.
-          </Typography>
-        </Alert>
-      )}
-
-      {isApproved && !isPosted && (
+      {isApproved && (
         <Alert severity="success">
           <Typography variant="body2">
             🎉 Your raw footage has been approved! Great work!
@@ -259,12 +207,10 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         </Alert>
       )}
 
-      {(hasChangesRequired || hasIndividualRawFootageNeedingRevision) && (
+      {(hasChangesRequired) && (
         <Alert severity="warning">
           <Typography variant="body2">
-            📝 {hasIndividualRawFootageNeedingRevision 
-              ? 'Some raw footage needs changes. Please review the feedback for each file and re-upload as needed.'
-              : 'Changes requested. Please review the feedback below and resubmit.'}
+            Changes requested. Please review the feedback below and resubmit.
           </Typography>
         </Alert>
       )}
@@ -472,110 +418,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
           </Stack>
         </Card>
       )}
-
-      {/* Posting Link Section */}
-      {(isApproved || isPosted) && (
-        <Card sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="subtitle1">
-                Posting Link
-                {hasPendingPostingLink && (
-                  <Chip 
-                    label="Pending Approval" 
-                    size="small" 
-                    color="warning" 
-                    sx={{ ml: 1 }} 
-                  />
-                )}
-                {isPosted && (
-                  <Chip 
-                    label="Posted" 
-                    size="small" 
-                    color="success" 
-                    sx={{ ml: 1 }} 
-                  />
-                )}
-              </Typography>
-              {!isPosted && (
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={handleAddPostingLink}
-                  startIcon={<Iconify icon="eva:link-2-fill" />}
-                >
-                  {hasPostingLink ? 'Update Link' : 'Add Link'}
-                </Button>
-              )}
-            </Stack>
-            
-            <Alert severity={hasPendingPostingLink ? "warning" : "info"}>
-              <Typography variant="body2">
-                {hasPendingPostingLink 
-                  ? "⏳ Your posting link is waiting for admin approval before going live."
-                  : isPosted
-                  ? "✅ Your posting link has been approved."
-                  : "🔗 Add the social media post URL where this raw footage was published (TikTok, Instagram, YouTube, etc.)"
-                }
-              </Typography>
-            </Alert>
-
-            <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-              {hasPostingLink ? (
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
-                    {submission.content}
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={() => window.open(submission.content, '_blank')}
-                  >
-                    <Iconify icon="eva:external-link-fill" />
-                  </IconButton>
-                </Stack>
-              ) : (
-                <Typography color="text.secondary">
-                  No posting link added yet. Click "Add Link" to share where you published this raw footage.
-                </Typography>
-              )}
-            </Card>
-          </Stack>
-        </Card>
-      )}
-
-      {/* Posting Link Dialog */}
-      <Dialog open={postingDialog} onClose={() => setPostingDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {hasPostingLink ? 'Update Posting Link' : 'Add Posting Link'}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Posting URL"
-            value={postingLink}
-            onChange={(e) => setPostingLink(e.target.value)}
-            placeholder="https://www.tiktok.com/@username/video/123456789"
-            sx={{ mt: 1 }}
-          />
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            Enter the social media post URL where this raw footage was published
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPostingDialog(false)} disabled={postingLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmitPostingLink}
-            variant="contained"
-            disabled={postingLoading}
-          >
-            {postingLoading ? 'Saving...' : 'Save Link'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-
     </Stack>
   );
 };
