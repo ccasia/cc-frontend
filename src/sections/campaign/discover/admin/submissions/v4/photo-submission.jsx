@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
@@ -28,6 +28,7 @@ import dayjs from 'dayjs';
 import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { getDueDateStatus } from 'src/utils/dueDateHelpers';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -74,8 +75,9 @@ const STATUS_COLORS = {
   SENT_TO_ADMIN: 'info',
 };
 
-export default function V4PhotoSubmission({ submission, index = 1, onUpdate }) {
+export default function V4PhotoSubmission({ submission, campaign, index = 1, onUpdate }) {
   const { user } = useAuthContext();
+  const { socket } = useSocketContext();
 
   const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
 
@@ -333,6 +335,57 @@ export default function V4PhotoSubmission({ submission, index = 1, onUpdate }) {
     setCurrentPhotoIndex(index);
     setPhotoModalOpen(true);
   }, []);
+
+  // Socket listener for real-time submission updates
+  useEffect(() => {
+    if (!socket || !campaign?.id) return;
+
+    const handleSubmissionUpdate = (data) => {
+      // Only update if this is our submission
+      if (data.submissionId === submission.id) {
+        // Call onUpdate to refresh the submission data
+        onUpdate?.();
+        
+        // Show notification based on the action
+        const actionMessages = {
+          'approve': 'Submission approved',
+          'reject': 'Submission rejected', 
+          'request_revision': 'Changes requested',
+          'posting_link_approve': 'Posting link approved',
+          'posting_link_reject': 'Posting link rejected'
+        };
+        
+        const message = actionMessages[data.action] || 'Submission updated';
+        if (data.byClient) {
+          enqueueSnackbar(`${message} by client`, { variant: 'info' });
+        } else {
+          enqueueSnackbar(message, { variant: 'info' });
+        }
+      }
+    };
+
+    const handleContentSubmitted = (data) => {
+      // Only update if this is our submission
+      if (data.submissionId === submission.id && data.hasPhotos) {
+        onUpdate?.();
+        enqueueSnackbar('New photos submitted', { variant: 'info' });
+      }
+    };
+
+    // Join campaign room for real-time updates
+    socket.emit('join-campaign', campaign.id);
+
+    // Listen to socket events
+    socket.on('v4:submission:updated', handleSubmissionUpdate);
+    socket.on('v4:content:submitted', handleContentSubmitted);
+
+    // Cleanup
+    return () => {
+      socket.off('v4:submission:updated', handleSubmissionUpdate);
+      socket.off('v4:content:submitted', handleContentSubmitted);
+      socket.emit('leave-campaign', campaign.id);
+    };
+  }, [socket, submission?.id, campaign?.id, onUpdate]);
 
   return (
       <Box sx={{ 
