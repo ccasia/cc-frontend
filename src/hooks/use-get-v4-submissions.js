@@ -11,9 +11,9 @@ export const useGetV4Submissions = (campaignId, userId) => {
     campaignId ? URL : null,
     fetcher,
     {
-      revalidateIfStale: false,
+      revalidateIfStale: true,
       revalidateOnFocus: false,
-      revalidateOnReconnect: false,
+      revalidateOnReconnect: true,
     }
   );
 
