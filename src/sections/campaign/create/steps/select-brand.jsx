@@ -89,7 +89,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
 
     campaigns = campaigns?.filter(
       (campaign) =>
-        campaign?.subscriptionId != null && campaign?.subscriptionId === latestPackageItem.id
+        campaign?.subscriptionId != null && campaign?.subscriptionId === latestPackageItem?.id
     );
 
     return campaigns?.reduce((acc, sum) => acc + sum.campaignCredits, 0);
@@ -331,7 +331,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
                       >
                         Available Credits
                       </FormLabel>
-                   
+
                       <Tooltip title="Available Credits = Total Credits - Allocation Credits">
                         <Iconify
                           icon="material-symbols:info-outline-rounded"
