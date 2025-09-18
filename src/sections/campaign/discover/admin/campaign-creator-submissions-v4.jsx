@@ -42,7 +42,7 @@ function CreatorAccordion({ creator, campaign }) {
 
   const renderSubmissionPills = () => {
     const pills = [];
-
+    let submissionCounter = 0;
 
     const formatStatus = (status) => {
       return status?.replace(/_/g, ' ') || 'Unknown';
@@ -104,6 +104,7 @@ function CreatorAccordion({ creator, campaign }) {
     
     // Video submission pills
     grouped.videos?.forEach((videoSubmission, index) => {
+      submissionCounter++;
       const key = `video-${videoSubmission.id}`;
       const isExpanded = expandedSubmission === key;
 
@@ -127,8 +128,8 @@ function CreatorAccordion({ creator, campaign }) {
                 border: '2px solid', 
                 borderColor: isExpanded ? '#1340FF' : '#8E8E93', 
                 borderRadius: 20, 
-                px: { xs: 0.6, sm: 0.7, md: 0.8 }, 
-                py: { xs: 0.15, sm: 0.18, md: 0.20 } 
+                px: submissionCounter === 1 ? 0.9 : 0.8,
+                py: 0.3
               }}
             >
               <Typography 
@@ -136,7 +137,7 @@ function CreatorAccordion({ creator, campaign }) {
                 fontWeight={'bold'} 
                 color={isExpanded ? '#1340FF' : '#8E8E93'}
               >
-                1
+                {submissionCounter}
               </Typography>
             </Box>
             <Box
@@ -180,6 +181,7 @@ function CreatorAccordion({ creator, campaign }) {
 
     // Photo submission pills
     grouped.photos?.forEach((photoSubmission, index) => {
+      submissionCounter++;
       const key = `photo-${photoSubmission.id}`;
       const isExpanded = expandedSubmission === key;
       
@@ -202,9 +204,9 @@ function CreatorAccordion({ creator, campaign }) {
               sx={{ 
                 border: '2px solid', 
                 borderColor: isExpanded ? '#1340FF' : '#8E8E93', 
-                borderRadius: 20, 
-                px: { xs: 0.6, sm: 0.7, md: 0.8 }, 
-                py: { xs: 0.15, sm: 0.18, md: 0.20 } 
+                borderRadius: 20,
+                px: 0.8,
+                py: 0.3
               }}
             >
               <Typography 
@@ -212,7 +214,7 @@ function CreatorAccordion({ creator, campaign }) {
                 fontWeight={'bold'} 
                 color={isExpanded ? '#1340FF' : '#8E8E93'}
               >
-                1
+                {submissionCounter}
               </Typography>
             </Box>
             <Box
@@ -251,6 +253,7 @@ function CreatorAccordion({ creator, campaign }) {
 
     // Raw footage submission pills
     grouped.rawFootage?.forEach((rawFootageSubmission, index) => {
+      submissionCounter++;
       const key = `rawFootage-${rawFootageSubmission.id}`;
       const isExpanded = expandedSubmission === key;
       
@@ -274,8 +277,8 @@ function CreatorAccordion({ creator, campaign }) {
                 border: '2px solid', 
                 borderColor: isExpanded ? '#1340FF' : '#8E8E93', 
                 borderRadius: 20, 
-                px: { xs: 0.6, sm: 0.7, md: 0.8 }, 
-                py: { xs: 0.15, sm: 0.18, md: 0.20 } 
+                px: 0.8,
+                py: 0.3
               }}
             >
               <Typography 
@@ -283,7 +286,7 @@ function CreatorAccordion({ creator, campaign }) {
                 fontWeight={'bold'} 
                 color={isExpanded ? '#1340FF' : '#8E8E93'}
               >
-                1
+                {submissionCounter}
               </Typography>
             </Box>
             <Box
