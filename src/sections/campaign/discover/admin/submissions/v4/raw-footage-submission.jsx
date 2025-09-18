@@ -375,61 +375,8 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
         overflow: 'hidden',
         bgcolor: 'background.neutral'
       }}>
-        {/* Header */}
-        <Box sx={{ 
-          p: 2, 
-          bgcolor: 'background.paper',
-          borderBottom: '1px solid',
-          borderBottomColor: 'divider'
-        }}>
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%' }}>
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Iconify icon="eva:film-fill" sx={{ color: 'warning.main' }} />
-                <Typography variant="h6">
-                  Raw Footage {index}
-                </Typography>
-                <Chip
-                  label={getClientStatusLabel(submission.status)}
-                  color={getStatusColor(submission.status)}
-                  size="small"
-                />
-                {hasPostingLink && (
-                  <Chip
-                    icon={<Iconify icon="eva:link-2-fill" />}
-                    label="Has Posting Link"
-                    color="info"
-                    variant="outlined"
-                    size="small"
-                  />
-                )}
-                {/* Due Date Display/Set */}
-                {dueDateStatus && (
-                  <Chip
-                    icon={<Iconify icon="eva:calendar-fill" />}
-                    label={`Due ${dueDateStatus.formattedDate}`}
-                    color={dueDateStatus.color}
-                    variant="outlined"
-                    size="small"
-                  />
-                )}
-              </Stack>
-            </Box>
-            {!isClient && (
-              <Button
-                size="small"
-                variant="outlined"
-                color="primary"
-                onClick={handleSetDueDate}
-                startIcon={<Iconify icon="eva:calendar-fill" />}
-              >
-                {submission.dueDate ? 'Update Due Date' : 'Set Due Date'}
-              </Button>
-            )}
-          </Stack>
-        </Box>
-
         {/* Raw Footage Content */}
+        {submission.status !== 'CLIENT_APPROVED' && (
         <Box>
           {clientVisible ? (
             // Show actual content to admins or when sent to client
@@ -805,85 +752,7 @@ export default function V4RawFootageSubmission({ submission, index = 1, onUpdate
             </Card>
           )}
         </Box>
-
-        {/* Posting Link */}
-        <Box sx={{ p: 2 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Typography variant="subtitle2">
-              Posting Link
-              {hasPendingPostingLink && (
-                <Chip 
-                  label="Pending Approval" 
-                  size="small" 
-                  color="warning" 
-                  sx={{ ml: 1 }} 
-                />
-              )}
-              {isPosted && (
-                <Chip 
-                  label="Posted" 
-                  size="small" 
-                  color="success" 
-                  sx={{ ml: 1 }} 
-                />
-              )}
-            </Typography>
-          </Stack>
-          
-          <Card sx={{ p: 2, bgcolor: '#fff', mt: 1, borderRadius: 1, boxShadow: 'none', border: '1px solid #EBEBEB' }}>
-            {hasPostingLink ? (
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
-                  {submission.content}
-                </Typography>
-                <IconButton
-                  size="small"
-                  onClick={() => window.open(submission.content, '_blank')}
-                >
-                  <Iconify icon="eva:external-link-fill" />
-                </IconButton>
-              </Stack>
-            ) : (
-              <Typography color="text.secondary">
-                {isApproved ? 'Creator can add posting link' : 'Available after approved submission'}
-              </Typography>
-            )}
-          </Card>
-
-          {/* Admin Posting Link Approval */}
-          {!isClient && hasPendingPostingLink && (
-            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-              <Button
-                variant="contained"
-                color="success"
-                size="small"
-                onClick={() => handlePostingLinkApproval('approve')}
-                disabled={postingApprovalLoading}
-                startIcon={<Iconify icon="eva:checkmark-fill" />}
-              >
-                Approve Link
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                onClick={() => handlePostingLinkApproval('reject')}
-                disabled={postingApprovalLoading}
-                startIcon={<Iconify icon="eva:close-fill" />}
-              >
-                Reject Link
-              </Button>
-            </Stack>
-          )}
-        </Box>
-
-        {/* Submission Metadata */}
-        <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-          <Typography variant="caption" color="text.secondary">
-            Created: {new Date(submission.createdAt).toLocaleString()} •
-            Last updated: {new Date(submission.updatedAt).toLocaleString()}
-          </Typography>
-        </Box>
+        )}
 
         {/* Due Date Dialog */}
         <Dialog open={dueDateDialog} onClose={() => setDueDateDialog(false)} maxWidth="sm" fullWidth>
