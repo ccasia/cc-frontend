@@ -395,22 +395,39 @@ const Posting = ({
                             {submission?.content}
                           </Typography>
                         ) : null}
-                        {isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW' && !submission?.content && (!submission?.videos || submission.videos.length === 0) && (
+                        {isV3 && userRole === 'admin' && (submission?.status === 'PENDING_REVIEW' || submission?.status === 'CHANGES_REQUIRED') && (
                           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
                             <TextField fullWidth placeholder="Paste posting link" value={csmLink} onChange={(e) => setCsmLink(e.target.value)} />
                             <Button
                               variant="contained"
                               disabled={!csmLink}
+                              sx={{
+                                bgcolor: '#203ff5',
+                                color: 'white',
+                                borderBottom: 3.5,
+                                borderBottomColor: '#112286',
+                                borderRadius: 1.5,
+                                px: 3,
+                                py: 1.2,
+                                minWidth: 120,
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                '&:hover': {
+                                  bgcolor: '#203ff5',
+                                  opacity: 0.9,
+                                },
+                              }}
                               onClick={async () => {
                                 try {
                                   loading.onTrue();
-                                  await axiosInstance.post(`${endpoints.submission.root}/v3/posting/submit-link`, { submissionId: submission.id, link: csmLink });
+                                  await axiosInstance.post(`${endpoints.submission.root}v3/posting/submit-link/csm`, { submissionId: submission.id, link: csmLink });
                                   setCsmLink('');
                                   mutate(
                                     (key) => typeof key === 'string' && key.includes(endpoints.submission.root) && key.includes(`campaignId=${campaign?.id}`),
                                     undefined,
                                     { revalidate: true }
                                   );
+                                  enqueueSnackbar('Posting link submitted for superadmin review', { variant: 'success' });
                                 } catch (err) {
                                   enqueueSnackbar('Failed to submit link', { variant: 'error' });
                                 } finally {
@@ -418,7 +435,7 @@ const Posting = ({
                                 }
                               }}
                             >
-                              Submit Link
+                              Submit
                             </Button>
                           </Stack>
                         )}
@@ -496,8 +513,8 @@ const Posting = ({
                     </LoadingButton>
                   </>
                 ) : (
-                  // Admin buttons (V2 style or V3 admin) - only show if not already approved AND there's content to review
-                  submission?.status !== 'APPROVED' && (submission?.content || (submission?.videos && submission.videos.length > 0)) && !(isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
+                  // Admin buttons (V2 style or V3 admin) - hide when CHANGES_REQUIRED, show only when actionable
+                  submission?.status !== 'APPROVED' && submission?.status !== 'CHANGES_REQUIRED' && (submission?.content || (submission?.videos && submission.videos.length > 0)) && !(isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
                   <>
                 {isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN' && (
                   <Box sx={{
