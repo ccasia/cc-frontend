@@ -60,6 +60,8 @@ function CreatorAccordion({ creator, campaign }) {
           return getStatusColor('PENDING_REVIEW');
         case 'PENDING_REVIEW':
           return getStatusColor('IN_PROGRESS');
+        case 'CLIENT_FEEDBACK':
+          return getStatusColor('IN_PROGRESS');
         default:
           return getStatusColor(status); // Use default mapping for other statuses
       }
@@ -112,38 +114,66 @@ function CreatorAccordion({ creator, campaign }) {
           display={'flex'}
           flexDirection={'row'}
           alignItems={'center'}
-          gap={0.5}
+          justifyContent={'space-between'}
           sx={{ 
-            cursor: 'pointer'
+            cursor: 'pointer',
+            gap: { xs: 0.3, sm: 0.4, md: 0.5 },
+            width: { xs: 160, sm: 180, md: 180 },
           }}
         >
-          <Box
-            sx={{ border: '2px solid', borderColor: isExpanded ? '#1340FF' : '#8E8E93', borderRadius: 20, px: 0.8, py: 0.20 }}
-          >
-            <Typography fontSize={8} fontWeight={'bold'} color={isExpanded ? '#1340FF' : '#8E8E93'}>1</Typography>
+          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
+            <Box
+              sx={{ 
+                border: '2px solid', 
+                borderColor: isExpanded ? '#1340FF' : '#8E8E93', 
+                borderRadius: 20, 
+                px: { xs: 0.6, sm: 0.7, md: 0.8 }, 
+                py: { xs: 0.15, sm: 0.18, md: 0.20 } 
+              }}
+            >
+              <Typography 
+                fontSize={{ xs: 7, sm: 7.5, md: 8 }} 
+                fontWeight={'bold'} 
+                color={isExpanded ? '#1340FF' : '#8E8E93'}
+              >
+                1
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 0.5, sm: 0.8, md: 1 },
+                px: { xs: 1, sm: 1.3, md: 1.5 },
+                py: { xs: 0.4, sm: 0.5, md: 0.6 },
+                border: '1px solid',
+                borderColor: getClientStatusColor(videoSubmission.status),
+                borderRadius: 0.8,
+                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(videoSubmission.status)} inset`,
+                bgcolor: '#fff',
+                color: getClientStatusColor(videoSubmission.status),
+              }}
+            >
+              <Typography 
+                fontWeight={'SemiBold'} 
+                pb={0.2} 
+                fontSize={{ xs: 9, sm: 10, md: 11 }} 
+                color={getClientStatusColor(videoSubmission.status)}
+              >
+                {getClientStatusLabel(videoSubmission.status)}
+              </Typography>
+            </Box>
           </Box>
           <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              px: 1.5,
-              py: 0.6,
-              border: '1px solid',
-              borderColor: getClientStatusColor(videoSubmission.status),
-              borderRadius: 0.8,
-              boxShadow: `0px -2px 0px 0px ${getClientStatusColor(videoSubmission.status)} inset`,
-              bgcolor: '#fff',
-              color: getClientStatusColor(videoSubmission.status),
-            }}
+            display={'flex'}
+            alignItems={'center'}
           >
-            <Typography fontWeight={'SemiBold'} pb={0.2} fontSize={12} color={getClientStatusColor(videoSubmission.status)}>{getClientStatusLabel(videoSubmission.status)}</Typography>
+            <Iconify 
+              icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
+              sx={{ width: { xs: 20, sm: 22, md: 25 }, height: { xs: 20, sm: 22, md: 25 } }}
+              color={isExpanded ? '#1340FF' : '#8E8E93'}
+            />            
           </Box>
-          <Iconify 
-            icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
-            width={25}
-            color={isExpanded ? '#1340FF' : '#8E8E93'}
-          />
         </Box> 
       );
     });
@@ -160,36 +190,59 @@ function CreatorAccordion({ creator, campaign }) {
           display={'flex'}
           flexDirection={'row'}
           alignItems={'center'}
-          gap={0.5}
+          justifyContent={'space-between'}
           sx={{ 
-            cursor: 'pointer'
+            cursor: 'pointer',
+            gap: { xs: 0.3, sm: 0.4, md: 0.5 },
+            width: { xs: 140, sm: 155, md: 180 },
           }}
         >
-          <Box
-            sx={{ border: '2px solid', borderColor: isExpanded ? '#1340FF' : '#8E8E93', borderRadius: 20, px: 0.8, py: 0.20 }}
-          >
-            <Typography fontSize={8} fontWeight={'bold'} color={isExpanded ? '#1340FF' : '#8E8E93'}>1</Typography>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              px: 1.5,
-              py: 0.6,
-              border: '1px solid',
-              borderColor: getClientStatusColor(photoSubmission.status),
-              borderRadius: 0.8,
-              boxShadow: `0px -2px 0px 0px ${getClientStatusColor(photoSubmission.status)} inset`,
-              bgcolor: '#fff',
-              color: getClientStatusColor(photoSubmission.status),
-            }}
-          >
-            <Typography fontWeight={'SemiBold'} pb={0.2} fontSize={12} color={getClientStatusColor(photoSubmission.status)}>{getClientStatusLabel(photoSubmission.status)}</Typography>
+          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
+            <Box
+              sx={{ 
+                border: '2px solid', 
+                borderColor: isExpanded ? '#1340FF' : '#8E8E93', 
+                borderRadius: 20, 
+                px: { xs: 0.6, sm: 0.7, md: 0.8 }, 
+                py: { xs: 0.15, sm: 0.18, md: 0.20 } 
+              }}
+            >
+              <Typography 
+                fontSize={{ xs: 7, sm: 7.5, md: 8 }} 
+                fontWeight={'bold'} 
+                color={isExpanded ? '#1340FF' : '#8E8E93'}
+              >
+                1
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 0.5, sm: 0.8, md: 1 },
+                px: { xs: 1, sm: 1.3, md: 1.5 },
+                py: { xs: 0.4, sm: 0.5, md: 0.6 },
+                border: '1px solid',
+                borderColor: getClientStatusColor(photoSubmission.status),
+                borderRadius: 0.8,
+                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(photoSubmission.status)} inset`,
+                bgcolor: '#fff',
+                color: getClientStatusColor(photoSubmission.status),
+              }}
+            >
+              <Typography 
+                fontWeight={'SemiBold'} 
+                pb={0.2} 
+                fontSize={{ xs: 9, sm: 10, md: 11 }}  
+                color={getClientStatusColor(photoSubmission.status)}
+              >
+                {getClientStatusLabel(photoSubmission.status)}
+              </Typography>
+            </Box>
           </Box>
           <Iconify 
             icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
-            width={25}
+            sx={{ width: { xs: 20, sm: 22, md: 25 }, height: { xs: 20, sm: 22, md: 25 } }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
         </Box>
@@ -208,36 +261,59 @@ function CreatorAccordion({ creator, campaign }) {
           display={'flex'}
           flexDirection={'row'}
           alignItems={'center'}
-          gap={0.5}
+          justifyContent={'space-between'}
           sx={{ 
-            cursor: 'pointer'
+            cursor: 'pointer',
+            gap: { xs: 0.3, sm: 0.4, md: 0.5 },
+            width: { xs: 140, sm: 155, md: 180 },
           }}
         >
-          <Box
-            sx={{ border: '2px solid', borderColor: isExpanded ? '#1340FF' : '#8E8E93', borderRadius: 20, px: 0.8, py: 0.20 }}
-          >
-            <Typography fontSize={8} fontWeight={'bold'} color={isExpanded ? '#1340FF' : '#8E8E93'}>1</Typography>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              px: 1.5,
-              py: 0.6,
-              border: '1px solid',
-              borderColor: getClientStatusColor(rawFootageSubmission.status),
-              borderRadius: 0.8,
-              boxShadow: `0px -2px 0px 0px ${getClientStatusColor(rawFootageSubmission.status)} inset`,
-              bgcolor: '#fff',
-              color: getClientStatusColor(rawFootageSubmission.status),
-            }}
-          >
-            <Typography fontWeight={'SemiBold'} pb={0.2} fontSize={12} color={getClientStatusColor(rawFootageSubmission.status)}>{getClientStatusLabel(rawFootageSubmission.status)}</Typography>
+          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
+            <Box
+              sx={{ 
+                border: '2px solid', 
+                borderColor: isExpanded ? '#1340FF' : '#8E8E93', 
+                borderRadius: 20, 
+                px: { xs: 0.6, sm: 0.7, md: 0.8 }, 
+                py: { xs: 0.15, sm: 0.18, md: 0.20 } 
+              }}
+            >
+              <Typography 
+                fontSize={{ xs: 7, sm: 7.5, md: 8 }} 
+                fontWeight={'bold'} 
+                color={isExpanded ? '#1340FF' : '#8E8E93'}
+              >
+                1
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 0.5, sm: 0.8, md: 1 },
+                px: { xs: 1, sm: 1.3, md: 1.5 },
+                py: { xs: 0.4, sm: 0.5, md: 0.6 },
+                border: '1px solid',
+                borderColor: getClientStatusColor(rawFootageSubmission.status),
+                borderRadius: 0.8,
+                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(rawFootageSubmission.status)} inset`,
+                bgcolor: '#fff',
+                color: getClientStatusColor(rawFootageSubmission.status),
+              }}
+            >
+              <Typography 
+                fontWeight={'SemiBold'} 
+                pb={0.2} 
+                fontSize={{ xs: 9, sm: 10, md: 11 }} 
+                color={getClientStatusColor(rawFootageSubmission.status)}
+              >
+                {getClientStatusLabel(rawFootageSubmission.status)}
+              </Typography>
+            </Box>
           </Box>
           <Iconify 
             icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"}
-            width={25}
+            sx={{ width: { xs: 20, sm: 22, md: 25 }, height: { xs: 20, sm: 22, md: 25 } }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
         </Box>
@@ -305,26 +381,27 @@ function CreatorAccordion({ creator, campaign }) {
 
   return (
     <Box sx={{ 
-      border: '1px solid', 
-      borderColor: 'divider',
-      borderRadius: 1,
-      boxShadow: 1,
       mb: 1,
     }}>
       {/* Creator Info Row */}
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'center', 
-        p: 2,
-        borderBottom: expandedSubmission ? '1px solid' : 'none',
-        borderBottomColor: 'divider'
+        backgroundColor: '#F5F5F5',
+        height: 55,
+        boxShadow: '0px 4px 4px 0px #8E8E9340',
+        borderRadius: 1,
+        px: 1,
+        borderBottom: expandedSubmission ? 1 : 0,
+        borderBottomColor: expandedSubmission ? '#8E8E9340' : 0,
+        borderBottomLeftRadius: expandedSubmission ? 0 : '8px',
+        borderBottomRightRadius: expandedSubmission ? 0 : '8px',
       }}>
         {/* Creator Info Section */}
         <Box sx={{ 
           display: 'flex', 
-          alignItems: 'center', 
-          minWidth: '300px',
-          pr: 2
+          alignItems: 'center',
+          pr: 2,
         }}>
           <Avatar
             src={creator.user?.photoURL}
@@ -337,9 +414,6 @@ function CreatorAccordion({ creator, campaign }) {
             <Typography variant="subtitle1" noWrap>
               {creator.user?.name || 'Unknown Creator'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
-              {creator.user?.email}
-            </Typography>
           </Box>
         </Box>
 
@@ -347,8 +421,8 @@ function CreatorAccordion({ creator, campaign }) {
         <Box sx={{ 
           flex: 1, 
           display: 'flex', 
-          gap: 2,
-          justifyContent: 'flex-end'
+          justifyContent: 'flex-end',
+          gap: 1.5,
         }}>
           {submissionsLoading ? (
             <Typography variant="body2" color="text.secondary">
