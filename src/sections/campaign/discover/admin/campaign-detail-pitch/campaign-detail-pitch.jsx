@@ -211,7 +211,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
     }
   };
 
-  return pitches?.length > 0 ? (
+  return true ? (
     <>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
