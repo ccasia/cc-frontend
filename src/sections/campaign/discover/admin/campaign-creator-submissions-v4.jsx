@@ -120,8 +120,14 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.3, sm: 0.4, md: 0.5 },
-            width: { xs: 160, sm: 180, md: 180 },
+            width: { xs: 160, sm: 180, md: 210 },
+            borderTopRightRadius: 10,
+            borderTopLeftRadius: 10
           }}
+          bgcolor={isExpanded ? '#F5F5F5' : '#E7E7E7'}
+          py={1}
+          pl={2}
+          pr={0.5}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
             <Box
@@ -197,8 +203,14 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.3, sm: 0.4, md: 0.5 },
-            width: { xs: 140, sm: 155, md: 180 },
+            width: { xs: 160, sm: 180, md: 210 },
+            borderTopRightRadius: 10,
+            borderTopLeftRadius: 10
           }}
+          bgcolor={isExpanded ? '#F5F5F5' : '#E7E7E7'}
+          py={1}
+          pl={2}
+          pr={0.5}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
             <Box
@@ -269,8 +281,14 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.3, sm: 0.4, md: 0.5 },
-            width: { xs: 140, sm: 155, md: 180 },
+            width: { xs: 160, sm: 180, md: 210 },
+            borderTopRightRadius: 10,
+            borderTopLeftRadius: 10
           }}
+          bgcolor={isExpanded ? '#F5F5F5' : '#E7E7E7'}
+          py={1}
+          pl={2}
+          pr={0.5}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
             <Box
@@ -391,15 +409,10 @@ function CreatorAccordion({ creator, campaign }) {
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'center', 
-        backgroundColor: '#F5F5F5',
-        height: 55,
+        backgroundColor: '#E7E7E7',
         boxShadow: '0px 4px 4px 0px #8E8E9340',
         borderRadius: 1,
         px: 1,
-        borderBottom: expandedSubmission ? 1 : 0,
-        borderBottomColor: expandedSubmission ? '#8E8E9340' : 0,
-        borderBottomLeftRadius: expandedSubmission ? 0 : '8px',
-        borderBottomRightRadius: expandedSubmission ? 0 : '8px',
       }}>
         {/* Creator Info Section */}
         <Box sx={{ 
@@ -410,7 +423,7 @@ function CreatorAccordion({ creator, campaign }) {
           <Avatar
             src={creator.user?.photoURL}
             alt={creator.user?.name}
-            sx={{ width: 40, height: 40, mr: 2 }}
+            sx={{ width: 35, height: 35, mr: 2 }}
           >
             {creator.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
