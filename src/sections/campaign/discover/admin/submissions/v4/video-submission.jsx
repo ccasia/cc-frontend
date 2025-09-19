@@ -491,11 +491,13 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                     flex: 1, 
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    maxWidth: 400
                   }}>
                     {/* Top Content - Flexible space */}
-                    <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
                       {/* Caption */}
+                      <Typography variant='caption' fontWeight={'bold'} color={'#636366'} mb={0.5}>Caption</Typography>
                       {pendingReview ? (
                         <Box>
                           <TextField
@@ -515,7 +517,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                         </Box>
                       ) : submission.caption ? (
                         <Box>
-                          <Typography fontSize={14} color={'#636366'}>
+                          <Typography fontSize={14} color={'#636366'} sx={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                             {submission.caption}
                           </Typography>
                         </Box>
@@ -527,22 +529,22 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                         <Box sx={{ flex: 1, overflow: 'auto' }}>
                         <Stack spacing={1}>
                           {[submission.feedback[0]].map((feedback, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                              <Box sx={{ flex: 1 }}>
+                            <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+                              <Box>
                                 {feedback.reasons?.map((reason, reasonIndex) => (
                                   <Chip 
                                   sx={{
                                     border: '1px solid',
                                     pb: 1.8,
                                     pt: 1.6,
-                                    m: 0.3,
                                     borderColor: '#D4321C',
                                     borderRadius: 0.8,
                                     boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
                                     bgcolor: '#fff',
                                     color: '#D4321C',
                                     fontWeight: 'bold',
-                                    fontSize: 12
+                                    fontSize: 12,
+                                    mr: 0.5
                                   }}
                                   key={reasonIndex} 
                                   label={reason} 
@@ -550,7 +552,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                                   variant="outlined" 
                                   color="warning" />
                                 ))}                                  
-                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5, mt: 1.5 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5, mt: 1 }}>
                                   {(feedback.content || feedback.reasons) && 
                                     <Typography variant='caption' fontWeight="bold" color={'#636366'}>
                                       {feedback.admin?.name || 'CS Comments'}
@@ -570,7 +572,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
 
                     {/* Feedback Section */}
                     {((!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) || (isClient && submission.status === 'SENT_TO_CLIENT')) && (
-                      <Box sx={{ flex: '0 0 auto', pt: 2 }}>
+                      <Box sx={{ flex: '0 0 auto' }}>
                         <Stack spacing={1}>
                           {/* Action Buttons */}
                           <Stack direction="row" spacing={1} width="100%" justifyContent="flex-end">
