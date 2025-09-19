@@ -7,6 +7,7 @@ import {
   Avatar,
   TextField,
   Typography,
+  Tooltip,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
@@ -120,13 +121,13 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.3, sm: 0.4, md: 0.5 },
-            width: { xs: 160, sm: 180, md: 210 },
+            width: { xs: 160, sm: 180, md: 200 },
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10
           }}
           bgcolor={isExpanded ? '#F5F5F5' : '#E7E7E7'}
-          py={1}
-          pl={2}
+          py={1.5}
+          pl={1.5}
           pr={0.5}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
@@ -152,7 +153,7 @@ function CreatorAccordion({ creator, campaign }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: { xs: 0.5, sm: 0.8, md: 1 },
-                px: { xs: 1, sm: 1.3, md: 1.5 },
+                px: { xs: 1, sm: 1.3, md: 1 },
                 py: { xs: 0.4, sm: 0.5, md: 0.6 },
                 border: '1px solid',
                 borderColor: getClientStatusColor(videoSubmission.status),
@@ -165,7 +166,7 @@ function CreatorAccordion({ creator, campaign }) {
               <Typography 
                 fontWeight={'SemiBold'} 
                 pb={0.2} 
-                fontSize={{ xs: 9, sm: 10, md: 11 }} 
+                fontSize={{ xs: 9, sm: 10, md: 10.5 }} 
                 color={getClientStatusColor(videoSubmission.status)}
               >
                 {getClientStatusLabel(videoSubmission.status)}
@@ -203,13 +204,13 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.3, sm: 0.4, md: 0.5 },
-            width: { xs: 160, sm: 180, md: 210 },
+            width: { xs: 160, sm: 180, md: 200 },
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10
           }}
           bgcolor={isExpanded ? '#F5F5F5' : '#E7E7E7'}
-          py={1}
-          pl={2}
+          py={1.5}
+          pl={1.5}
           pr={0.5}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
@@ -235,7 +236,7 @@ function CreatorAccordion({ creator, campaign }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: { xs: 0.5, sm: 0.8, md: 1 },
-                px: { xs: 1, sm: 1.3, md: 1.5 },
+                px: { xs: 1, sm: 1.3, md: 1 },
                 py: { xs: 0.4, sm: 0.5, md: 0.6 },
                 border: '1px solid',
                 borderColor: getClientStatusColor(photoSubmission.status),
@@ -248,7 +249,7 @@ function CreatorAccordion({ creator, campaign }) {
               <Typography 
                 fontWeight={'SemiBold'} 
                 pb={0.2} 
-                fontSize={{ xs: 9, sm: 10, md: 11 }}  
+                fontSize={{ xs: 9, sm: 10, md: 10.5 }}  
                 color={getClientStatusColor(photoSubmission.status)}
               >
                 {getClientStatusLabel(photoSubmission.status)}
@@ -281,13 +282,13 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.3, sm: 0.4, md: 0.5 },
-            width: { xs: 160, sm: 180, md: 210 },
+            width: { xs: 160, sm: 180, md: 200 },
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10
           }}
           bgcolor={isExpanded ? '#F5F5F5' : '#E7E7E7'}
-          py={1}
-          pl={2}
+          py={1.5}
+          pl={1.5}
           pr={0.5}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
@@ -313,7 +314,7 @@ function CreatorAccordion({ creator, campaign }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: { xs: 0.5, sm: 0.8, md: 1 },
-                px: { xs: 1, sm: 1.3, md: 1.5 },
+                px: { xs: 1, sm: 1.3, md: 1 },
                 py: { xs: 0.4, sm: 0.5, md: 0.6 },
                 border: '1px solid',
                 borderColor: getClientStatusColor(rawFootageSubmission.status),
@@ -326,7 +327,7 @@ function CreatorAccordion({ creator, campaign }) {
               <Typography 
                 fontWeight={'SemiBold'} 
                 pb={0.2} 
-                fontSize={{ xs: 9, sm: 10, md: 11 }} 
+                fontSize={{ xs: 9, sm: 10, md: 10.5 }} 
                 color={getClientStatusColor(rawFootageSubmission.status)}
               >
                 {getClientStatusLabel(rawFootageSubmission.status)}
@@ -419,18 +420,29 @@ function CreatorAccordion({ creator, campaign }) {
           display: 'flex', 
           alignItems: 'center',
           pr: 2,
+          minWidth: 0,
+          maxWidth: 200,
         }}>
           <Avatar
             src={creator.user?.photoURL}
             alt={creator.user?.name}
-            sx={{ width: 35, height: 35, mr: 2 }}
+            sx={{ width: 35, height: 35, mr: 2, flexShrink: 0 }}
           >
             {creator.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Box>
-            <Typography variant="subtitle1" noWrap>
-              {creator.user?.name || 'Unknown Creator'}
-            </Typography>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Tooltip title={creator.user?.name || 'Unknown Creator'} arrow>
+              <Typography 
+                variant="subtitle1" 
+                noWrap
+                sx={{ 
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden'
+                }}
+              >
+                {creator.user?.name || 'Unknown Creator'}
+              </Typography>
+            </Tooltip>
           </Box>
         </Box>
 
