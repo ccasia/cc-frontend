@@ -7,26 +7,17 @@ import {
   Chip,
   Stack,
   Button,
-  Dialog,
   TextField,
   Typography,
-  DialogTitle,
-  DialogActions,
-  DialogContent,
   Select,
   MenuItem,
   FormControl,
   IconButton,
   Slider
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import dayjs from 'dayjs';
 
 import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
-import { getDueDateStatus } from 'src/utils/dueDateHelpers';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -61,30 +52,17 @@ const BUTTON_STYLES = {
   }
 };
 
-const STATUS_COLORS = {
-  PENDING_REVIEW: 'warning',
-  IN_PROGRESS: 'info', 
-  APPROVED: 'success',
-  POSTED: 'success',
-  REJECTED: 'error',
-  CHANGES_REQUIRED: 'warning',
-  SENT_TO_CLIENT: 'primary',
-  CLIENT_APPROVED: 'success',
-  CLIENT_FEEDBACK: 'warning',
-  SENT_TO_ADMIN: 'info',
-};
 
-export default function V4VideoSubmission({ submission, campaign, index = 1, onUpdate }) {
+export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
-
-  console.log('submission vids', submission.video)
 
   const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
 
   const [loading, setLoading] = useState(false);
   const [postingApprovalLoading, setPostingApprovalLoading] = useState(false);
   const [action, setAction] = useState('approve');
+  const [localActionInProgress, setLocalActionInProgress] = useState(false);
   const [reasons, setReasons] = useState(() => {
     if (isClientFeedback && submission.feedback && submission.feedback.length > 0) {
       // Find the most recent client feedback and use its reasons
@@ -111,10 +89,6 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
   const [feedback, setFeedback] = useState(getDefaultFeedback());
   // Caption editing
   const [caption, setCaption] = useState(submission.caption || '');
-  // Due date
-  const [dueDateDialog, setDueDateDialog] = useState(false);
-  const [selectedDueDate, setSelectedDueDate] = useState(null);
-  const [dueDateLoading, setDueDateLoading] = useState(false);
   // Video Player
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -140,25 +114,33 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
     const video = submission.video?.[0];
     const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
     const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
-    const isPosted = submission.status === 'POSTED';
     const hasPostingLink = Boolean(submission.content);
-    const hasPendingPostingLink = hasPostingLink && !isPosted;
+    const hasPendingPostingLink = hasPostingLink && submission.status !== 'POSTED';
     
     return {
       video,
       pendingReview,
       isApproved,
-      isPosted,
       hasPostingLink,
       hasPendingPostingLink
     };
   }, [submission.video, submission.status, submission.content]);
   
-  const { video, pendingReview, isApproved, isPosted, hasPostingLink, hasPendingPostingLink } = submissionProps;
+  const { video, pendingReview, isApproved, hasPostingLink, hasPendingPostingLink } = submissionProps;
 
   const handleApprove = useCallback(async () => {
     try {
+      console.log('🚀 Starting handleApprove:', {
+        isClient,
+        submissionId: submission.id,
+        currentStatus: submission.status,
+        campaignOrigin: campaign?.origin,
+        action: 'approve'
+      });
       setLoading(true);
+      setLocalActionInProgress(true);
+      
+      // Mark that this user is performing an action - will block ALL socket updates for this user
       
       if (isClient) {
         // Client-specific endpoint
@@ -172,7 +154,7 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
       } else {
         // Admin endpoint
-        await approveV4Submission({
+        const result = await approveV4Submission({
           submissionId: submission.id,
           action: 'approve',
           feedback: feedback.trim() || undefined,
@@ -180,27 +162,53 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
           caption: caption.trim() || undefined,
         });
 
+        console.log('✅ Admin approve API response:', result);
         enqueueSnackbar('Video approved successfully', { variant: 'success' });
       }
       setFeedback('');
       setReasons([]);
       setAction('approve');
-      onUpdate?.();
+      
+      // Add delay to ensure backend has committed changes before fetching
+      console.log('⏳ Waiting before onUpdate to ensure backend commit...');
+      setTimeout(() => {
+        console.log('📞 Calling onUpdate from handleApprove');
+        onUpdate?.(true); // Pass true to force cache refresh if supported
+        
+        // Re-enable socket updates after local action completes (longer delay for safety)
+        setTimeout(() => {
+          console.log('🔓 Re-enabling socket updates');
+          setLocalActionInProgress(false);
+          
+          // Socket updates will be re-enabled automatically via the flag
+        }, 500);
+      }, 200);
     } catch (error) {
       console.error('Error approving video:', error);
       enqueueSnackbar(error.message || 'Failed to approve video', { variant: 'error' });
     } finally {
       setLoading(false);
+      // Also reset flag on error
+      if (localActionInProgress) {
+        setTimeout(() => setLocalActionInProgress(false), 300);
+      }
     }
   }, [feedback, reasons, caption, submission.id, onUpdate, isClient]);
 
   const handleRequestChanges = useCallback(async () => {
+    // Capture current values immediately to avoid race conditions with socket updates
+    const currentFeedback = feedback;
+    const currentReasons = reasons;
+    
     try {
       setLoading(true);
+      setLocalActionInProgress(true);
+      
+      // Mark that this user is performing an action - will block ALL socket updates for this user
       
       // Ensure we have either feedback content or reasons
-      const hasContent = feedback.trim();
-      const hasReasons = reasons && reasons.length > 0;
+      const hasContent = currentFeedback.trim();
+      const hasReasons = currentReasons && currentReasons.length > 0;
       
       if (!hasContent && !hasReasons) {
         enqueueSnackbar('Please provide feedback or select reasons for changes', { variant: 'warning' });
@@ -213,8 +221,8 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
         await axiosInstance.post('/api/submissions/v4/approve/client', {
           submissionId: submission.id,
           action: 'request_changes',
-          feedback: hasContent ? feedback.trim() : '',
-          reasons: reasons || []
+          feedback: hasContent ? currentFeedback.trim() : '',
+          reasons: currentReasons || []
         });
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
@@ -223,8 +231,8 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
         await approveV4Submission({
           submissionId: submission.id,
           action: 'request_revision',
-          feedback: hasContent ? feedback.trim() : '',
-          reasons: reasons || [],
+          feedback: hasContent ? currentFeedback.trim() : '',
+          reasons: currentReasons || [],
           caption: caption.trim() || undefined,
         });
 
@@ -233,12 +241,25 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
       setFeedback('');
       setReasons([]);
       setAction('approve');
-      onUpdate?.();
+      
+      // Add delay to ensure backend has committed changes before fetching
+      setTimeout(() => {
+        onUpdate?.(true); // Pass true to force cache refresh if supported
+        
+        // Re-enable socket updates after local action completes (longer delay for safety)
+        setTimeout(() => {
+          setLocalActionInProgress(false);
+        }, 500);
+      }, 200);
     } catch (error) {
       console.error('Error requesting changes:', error);
       enqueueSnackbar(error.message || 'Failed to request changes', { variant: 'error' });
     } finally {
       setLoading(false);
+      // Also reset flag on error
+      if (localActionInProgress) {
+        setTimeout(() => setLocalActionInProgress(false), 300);
+      }
     }
   }, [feedback, reasons, caption, submission.id, onUpdate, isClient]);
 
@@ -267,80 +288,6 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
   }, [submission.id, onUpdate]);
 
 
-  const handleSetDueDate = useCallback(() => {
-    setSelectedDueDate(submission.dueDate ? dayjs(submission.dueDate) : null);
-    setDueDateDialog(true);
-  }, [submission.dueDate]);
-
-  const handleSubmitDueDate = useCallback(async () => {
-    if (!selectedDueDate) {
-      enqueueSnackbar('Please select a due date', { variant: 'error' });
-      return;
-    }
-
-    try {
-      setDueDateLoading(true);
-      
-      await axiosInstance.put('/api/submissions/v4/due-date', {
-        submissionId: submission.id,
-        dueDate: selectedDueDate.toISOString(),
-      });
-
-      enqueueSnackbar('Due date updated successfully', { variant: 'success' });
-      setDueDateDialog(false);
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error updating due date:', error);
-      enqueueSnackbar(error.message || 'Failed to update due date', { variant: 'error' });
-    } finally {
-      setDueDateLoading(false);
-    }
-  }, [selectedDueDate, submission.id, onUpdate]);
-
-  const getStatusColor = useCallback((status) => {
-    return STATUS_COLORS[status] || 'default';
-  }, []);
-
-  const formatStatus = useCallback((status) => {
-    return status?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
-  }, []);
-
-  const getClientStatusLabel = useCallback((status) => {
-    if (!isClient) {
-      // Admin-specific status labels
-      switch (status) {
-        case 'CLIENT_FEEDBACK':
-          return 'CLIENT FEEDBACK';
-        default:
-          return formatStatus(status);
-      }
-    }
-
-    switch (status) {
-      case 'NOT_STARTED':
-        return 'Not Started';
-      case 'IN_PROGRESS':
-        return 'In Progress';
-      case 'PENDING_REVIEW':
-        return 'In Progress'; // Creator has submitted, admin reviewing
-      case 'SENT_TO_CLIENT':
-        return 'Pending Review'; // Client should see this as pending their review
-      case 'CLIENT_APPROVED':
-      case 'APPROVED':
-        return 'Approved';
-      case 'POSTED':
-        return 'Posted';
-      case 'CLIENT_FEEDBACK':
-        return 'In Progress'; // For clients - they've submitted feedback, now admin processing it
-      case 'CHANGES_REQUIRED':
-      case 'REJECTED':
-        return 'Changes Required';
-      default:
-        return formatStatus(status);
-    }
-  }, [formatStatus, isClient]);
-
-  const dueDateStatus = useMemo(() => getDueDateStatus(submission.dueDate), [submission.dueDate]);
 
   const videoControls = useMemo(() => ({
     togglePlay: () => {
@@ -425,8 +372,35 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
     const handleSubmissionUpdate = (data) => {
       // Only update if this is our submission
       if (data.submissionId === submission.id) {
-        // Call onUpdate to refresh the submission data
-        onUpdate?.();
+        console.log('🔄 Socket event received:', {
+          action: data.action,
+          submissionId: data.submissionId,
+          loading,
+          postingApprovalLoading,
+          currentStatus: submission.status,
+          byClient: data.byClient,
+          localActionInProgress,
+          socketUserId: data.userId,
+          currentUserId: user?.id
+        });
+        
+        // Strong protection: block if local action in progress OR if this user triggered the event
+        const isOwnAction = data.userId === user?.id;
+        const shouldBlock = localActionInProgress || isOwnAction;
+        
+        if (shouldBlock) {
+          console.log('🚫 Blocked socket update:', {
+            reason: localActionInProgress ? 'local action in progress' : 'own action',
+            isOwnAction,
+            localActionInProgress
+          });
+        } else {
+          console.log('✅ Calling onUpdate from socket (delayed to avoid race conditions)');
+          // Add small delay to ensure any concurrent local updates complete first
+          setTimeout(() => {
+            onUpdate?.(true); // Force cache refresh
+          }, 100);
+        }
         
         // Show notification based on the action
         const actionMessages = {
@@ -454,20 +428,44 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
       }
     };
 
+    const handlePostingUpdated = (data) => {
+      // Only update if this is our submission
+      if (data.submissionId === submission.id) {
+        console.log('📎 Posting link updated via socket:', {
+          submissionId: data.submissionId,
+          postingLink: data.postingLink,
+          updatedAt: data.updatedAt
+        });
+        
+        // Don't trigger update if this user is performing an action
+        if (!localActionInProgress) {
+          console.log('✅ Calling onUpdate from posting link socket event');
+          setTimeout(() => {
+            onUpdate?.(true); // Force cache refresh
+          }, 100);
+          enqueueSnackbar('Posting link updated', { variant: 'info' });
+        } else {
+          console.log('🚫 Blocked posting link socket update - local action in progress');
+        }
+      }
+    };
+
     // Join campaign room for real-time updates
     socket.emit('join-campaign', campaign.id);
 
     // Listen to socket events
     socket.on('v4:submission:updated', handleSubmissionUpdate);
     socket.on('v4:content:submitted', handleContentSubmitted);
+    socket.on('v4:posting:updated', handlePostingUpdated);
 
     // Cleanup
     return () => {
       socket.off('v4:submission:updated', handleSubmissionUpdate);
       socket.off('v4:content:submitted', handleContentSubmitted);
+      socket.off('v4:posting:updated', handlePostingUpdated);
       socket.emit('leave-campaign', campaign.id);
     };
-  }, [socket, submission?.id, campaign?.id, onUpdate]);
+  }, [socket, submission?.id, campaign?.id, onUpdate, localActionInProgress, user?.id]);
 
   return (
       <Box sx={{ 
@@ -1021,51 +1019,6 @@ export default function V4VideoSubmission({ submission, campaign, index = 1, onU
             )}
           </Box>
         )}
-
-        {/* Due Date Dialog */}
-        <Dialog open={dueDateDialog} onClose={() => setDueDateDialog(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>
-            {submission.dueDate ? 'Update Due Date' : 'Set Due Date'}
-          </DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Set the due date for this video submission. The creator will be able to see this deadline.
-            </Typography>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                label="Due Date"
-                value={selectedDueDate}
-                onChange={(newValue) => setSelectedDueDate(newValue)}
-                format="DD/MM/YYYY"
-                minDate={dayjs()}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    sx: { mt: 2 }
-                  }
-                }}
-              />
-            </LocalizationProvider>
-            {selectedDueDate && (
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                Due date: {selectedDueDate.format('dddd, MMMM DD, YYYY')}
-              </Typography>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDueDateDialog(false)} disabled={dueDateLoading}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmitDueDate}
-              variant="contained"
-              disabled={dueDateLoading || !selectedDueDate}
-              startIcon={<Iconify icon="eva:calendar-fill" />}
-            >
-              {dueDateLoading ? 'Saving...' : submission.dueDate ? 'Update Due Date' : 'Set Due Date'}
-            </Button>
-          </DialogActions>
-        </Dialog>
         
         {/* Video Modal */}
         {video?.url && (
