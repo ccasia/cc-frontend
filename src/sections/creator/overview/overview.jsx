@@ -449,12 +449,13 @@ const Overview = () => {
               sx={{
                 fontFamily: 'Instrument Serif, serif',
                 fontWeight: 400,
+                fontSize: '1.9rem',
                 color: '#000',
                 lineHeight: 1,
                 textAlign: { xs: 'center', md: 'left' },
-                whiteSpace: { xs: 'normal', md: 'nowrap' },
-                order: { xs: 1, md: 2 }, // First on mobile, second on desktop
-                display: { xs: 'block', md: 'none' }, // Only show on mobile
+                whiteSpace: 'nowrap',
+                order: { xs: 1, md: 2 },
+                display: { xs: 'block', md: 'none' },
               }}
             >
               From Content to Contentpreneur
@@ -477,7 +478,7 @@ const Overview = () => {
                 rel="noopener noreferrer"
                 sx={{
                   flexShrink: 0,
-                  width: 250,
+                  width: 225,
                   height: 80,
                   borderRadius: 3,
                   overflow: 'hidden',
