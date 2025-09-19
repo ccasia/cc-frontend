@@ -13,7 +13,7 @@ export const useGetV4Submissions = (campaignId, userId) => {
     {
       revalidateIfStale: true,
       revalidateOnFocus: false,
-      revalidateOnReconnect: true,
+      revalidateOnReconnect: false,
     }
   );
 
