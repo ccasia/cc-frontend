@@ -87,6 +87,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
     return '';
   };
   const [feedback, setFeedback] = useState(getDefaultFeedback());
+  const [previousFeedback, setPreviousFeedback] = useState(getDefaultFeedback());
   // Caption editing
   const [caption, setCaption] = useState(submission.caption || '');
   // Video Player
@@ -581,7 +582,13 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                               <Button
                                 variant="contained"
                                 color="warning"
-                                onClick={() => setAction('request_revision')}
+                                onClick={() => {
+                                  // Store current feedback before changing
+                                  setPreviousFeedback(feedback);
+                                  setAction('request_revision');
+                                  // Set different feedback message based on user role
+                                  setFeedback('This submission needs to be revisited.')
+                                }}
                                 disabled={loading}
                                 
                                 sx={{
@@ -601,6 +608,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                                   onClick={() => {
                                     setAction('approve');
                                     setReasons([]);
+                                    // Revert to previous feedback message
+                                    setFeedback(previousFeedback);
                                   }}
                                   disabled={loading}
                                   sx={{
