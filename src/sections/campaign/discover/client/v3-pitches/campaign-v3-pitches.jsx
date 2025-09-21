@@ -1149,15 +1149,16 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
         </DialogTitle>
         <DialogContent>
           <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-            CS Comments
+            CS Comments (Optional)
           </Typography>
           <TextField
             fullWidth
             multiline
             minRows={3}
-            placeholder="Input comments about the creator that your clients might find helpful"
+            placeholder="Optional: Add comments about the creators that your clients might find helpful"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
+            helperText="You can skip this step and proceed without adding comments"
           />
         </DialogContent>
         <DialogActions>
@@ -1201,7 +1202,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
               },
             }}
           >
-            {submitting ? 'Submitting…' : 'Submit Comment'}
+            {submitting ? 'Adding Creators…' : 'Continue'}
           </LoadingButton>
         </DialogActions>
       </Dialog>
