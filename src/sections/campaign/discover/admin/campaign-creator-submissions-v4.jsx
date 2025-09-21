@@ -18,7 +18,6 @@ import V4VideoSubmission from './submissions/v4/video-submission';
 import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
 import { useAuthContext } from 'src/auth/hooks';
-import { bgcolor, margin, padding } from '@mui/system';
 
 // ----------------------------------------------------------------------
 
@@ -37,10 +36,21 @@ function CreatorAccordion({ creator, campaign }) {
     submissionsMutate 
   } = useGetV4Submissions(campaign?.id, creator?.userId);
 
-  const handleSubmissionToggle = useCallback((submissionType, submissionId) => {
+  const handleSubmissionToggle = useCallback(async (submissionType, submissionId) => {
     const key = `${submissionType}-${submissionId}`;
+    const isCurrentlyExpanded = expandedSubmission === key;
+    
+    if (!isCurrentlyExpanded) {
+      // If expanding, refresh the data first
+      try {
+        await submissionsMutate();
+      } catch (error) {
+        console.error('Error refreshing submission:', error);
+      }
+    }
+    
     setExpandedSubmission(prev => prev === key ? null : key);
-  }, []);
+  }, [expandedSubmission, submissionsMutate]);
 
   const renderSubmissionPills = () => {
     const pills = [];
