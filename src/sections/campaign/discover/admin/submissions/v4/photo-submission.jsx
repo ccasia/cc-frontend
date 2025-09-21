@@ -465,7 +465,8 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                                     color: '#D4321C',
                                     fontWeight: 'bold',
                                     fontSize: 12,
-                                    mr: 0.5
+                                    mr: 0.5,
+                                    mb: 0.4
                                   }}
                                   key={reasonIndex} 
                                   label={reason} 
