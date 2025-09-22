@@ -52,8 +52,8 @@ const UploadDraftVideoModal = ({
 
   const videosToUpdateCount =
     totalUGCVideos ||
-    submission?.video?.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
-    previousSubmission?.video?.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
+    submission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
+    previousSubmission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
     1;
 
   const validateFileCount = (files) => {
