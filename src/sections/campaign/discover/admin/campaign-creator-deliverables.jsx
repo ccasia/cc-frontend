@@ -139,6 +139,26 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     // First, filter out any creators without user data to prevent null reference errors
     filtered = filtered.filter((creator) => creator?.user);
 
+    // For non-platform creators, only show them if they are APPROVED by client
+    filtered = filtered.filter((creator) => {
+      const creatorStatus = creatorStatuses[creator.userId];
+      
+      // Check if this is a non-platform creator (creator without social media accounts)
+      const isNonPlatformCreator = !creator?.user?.creator?.instagram && !creator?.user?.creator?.tiktok;
+      
+      if (isNonPlatformCreator) {
+        // For non-platform creators, only show if they have been approved by client
+        return creatorStatus === 'APPROVED' || 
+               creatorStatus === 'CLIENT_APPROVED' || 
+               creatorStatus === 'IN_PROGRESS' ||
+               creatorStatus === 'CHANGES_REQUIRED' ||
+               creatorStatus === 'PENDING_REVIEW';
+      }
+      
+      // For platform creators, show all except SENT_TO_CLIENT
+      return creatorStatus !== 'SENT_TO_CLIENT';
+    });
+
     // Apply status filter
     if (selectedFilter === 'undecided') {
       filtered = filtered.filter((creator) => creator.status === 'undecided');
@@ -172,7 +192,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       }
       return nameB.localeCompare(nameA);
     });
-  }, [sortedCreators, search, sortDirection, selectedFilter]);
+  }, [sortedCreators, search, sortDirection, selectedFilter, creatorStatuses]);
 
   // Fetch all creator statuses using the existing hook
   useEffect(() => {

@@ -1161,9 +1161,11 @@ if (onUpdate) {
                         sx={{
                           fontWeight: 600,
                           color:
-                            currentPitch?.status === 'approved'
+                            currentPitch?.status === 'approved' || 
+                            (currentPitch?.status || '').toUpperCase() === 'APPROVED'
                               ? 'success.main'
-                              : currentPitch?.status === 'rejected'
+                              : currentPitch?.status === 'rejected' || 
+                                (currentPitch?.status || '').toUpperCase() === 'REJECTED'
                                 ? 'error.main'
                                 : '#FFC702',
                         }}
