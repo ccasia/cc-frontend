@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Card, Stack, Typography, useMediaQuery, CircularProgress } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
+import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 
 import { endpoints } from 'src/utils/axios';
@@ -97,17 +98,33 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     (item) => item?.campaignId === campaign?.id
   )?.isAgreementReady;
 
+  // Check if this is a V3 campaign (client-origin)
+  const isV3 = campaign?.origin === 'CLIENT';
+
+  // Get submissions for V2 campaigns
   const {
-    data: submissions,
-    mutate: submissionMutate,
-    isLoading: submissionLoading,
+    data: submissionsV2,
+    mutate: submissionMutateV2,
+    isLoading: submissionLoadingV2,
   } = useGetSubmissions(user.id, campaign?.id);
+
+  // Get submissions for V3 campaigns
+  const {
+    data: submissionsV3,
+    mutate: submissionMutateV3,
+    isLoading: submissionLoadingV3,
+  } = useGetSubmissionsV3(user.id, campaign?.id);
+
+  // Use the appropriate submissions data based on campaign type
+  const submissions = isV3 ? submissionsV3 : submissionsV2;
+  const submissionMutate = isV3 ? submissionMutateV3 : submissionMutateV2;
+  const submissionLoading = isV3 ? submissionLoadingV3 : submissionLoadingV2;
 
   const getDueDate = (name) =>
     submissions?.find((submission) => submission?.submissionType?.type === name)?.dueDate;
 
   const value = useCallback(
-    (name) => submissions?.find((item) => item.submissionType.type === name),
+    (name) => submissions?.find((item) => item?.submissionType?.type === name),
     [submissions]
   );
 
@@ -115,8 +132,8 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
 
   const getDependency = useCallback(
     (submissionId) => {
-      const isDependencyeExist = submissions?.find((item) => item.id === submissionId)
-        ?.dependentOn[0];
+      const submission = submissions?.find((item) => item.id === submissionId);
+      const isDependencyeExist = submission?.dependentOn?.[0];
       return isDependencyeExist;
     },
     [submissions]
