@@ -1294,7 +1294,7 @@ if (onUpdate) {
         </DialogContent>
 
                 {/* Action Buttons - Only show if pitch hasn't been acted upon */}
-        {currentPitch?.status === 'PENDING_REVIEW' && (
+        {(currentPitch?.status === 'PENDING_REVIEW' || currentPitch?.status === 'undecided') && (
         <DialogActions sx={{ px: 3, pb: 3, gap: -1, mt: -3 }}>
           <Button
             variant="contained"
