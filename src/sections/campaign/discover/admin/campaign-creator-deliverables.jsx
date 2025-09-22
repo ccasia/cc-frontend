@@ -155,8 +155,19 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                creatorStatus === 'PENDING_REVIEW';
       }
       
-      // For platform creators, show all except SENT_TO_CLIENT
-      return creatorStatus !== 'SENT_TO_CLIENT';
+      // For V3 campaigns, show creators who have approved agreements or are in progress
+      if (isV3) {
+        // Show creators with approved agreements or any submission status except pure SENT_TO_CLIENT
+        return creatorStatus !== 'SENT_TO_CLIENT' || 
+               creatorStatus === 'AGREEMENT_APPROVED' ||
+               creator?.agreementStatus === 'APPROVED';
+      }
+      
+      // For V2 campaigns, show all creators except pure SENT_TO_CLIENT
+      // Also show creators who have any submission (including just agreement)
+      return creatorStatus !== 'SENT_TO_CLIENT' || 
+             creatorStatus === 'NOT_STARTED' ||
+             creatorStatus === 'AGREEMENT_APPROVED';
     });
 
     // Apply status filter
@@ -244,32 +255,44 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
               continue;
             }
 
-            // Filter out agreement submissions - only consider FIRST_DRAFT, FINAL_DRAFT, and POSTING
-            const relevantSubmissions = data.filter(
+            // Include all submission types to determine creator status
+            const allSubmissions = data.filter(
+              (submission) =>
+                submission.submissionType?.type === 'AGREEMENT_FORM' ||
+                submission.submissionType?.type === 'FIRST_DRAFT' ||
+                submission.submissionType?.type === 'FINAL_DRAFT' ||
+                submission.submissionType?.type === 'POSTING'
+            );
+
+            // Filter deliverable submissions (excluding agreement for status determination)
+            const deliverableSubmissions = data.filter(
               (submission) =>
                 submission.submissionType?.type === 'FIRST_DRAFT' ||
                 submission.submissionType?.type === 'FINAL_DRAFT' ||
                 submission.submissionType?.type === 'POSTING'
             );
 
-            if (relevantSubmissions.length === 0) {
+            if (allSubmissions.length === 0) {
               statusMap[creator.userId] = 'NOT_STARTED';
               continue;
             }
 
             // Find submissions by type
-            const firstDraftSubmission = relevantSubmissions.find(
+            const agreementSubmission = allSubmissions.find(
+              (item) => item.submissionType.type === 'AGREEMENT_FORM'
+            );
+            const firstDraftSubmission = deliverableSubmissions.find(
               (item) => item.submissionType.type === 'FIRST_DRAFT'
             );
-            const finalDraftSubmission = relevantSubmissions.find(
+            const finalDraftSubmission = deliverableSubmissions.find(
               (item) => item.submissionType.type === 'FINAL_DRAFT'
             );
-            const postingSubmission = relevantSubmissions.find(
+            const postingSubmission = deliverableSubmissions.find(
               (item) => item.submissionType.type === 'POSTING'
             );
 
             // Determine the status based on the latest stage in the workflow
-            // Priority: Posting > Final Draft > First Draft
+            // Priority: Posting > Final Draft > First Draft > Agreement
             // For V3 campaigns, use displayStatus if available
             if (postingSubmission) {
               statusMap[creator.userId] = isV3 && postingSubmission.displayStatus 
@@ -283,6 +306,13 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
               statusMap[creator.userId] = isV3 && firstDraftSubmission.displayStatus 
                 ? firstDraftSubmission.displayStatus 
                 : firstDraftSubmission.status;
+            } else if (agreementSubmission) {
+              // If only agreement exists, use its status
+              // This ensures creators with approved agreements show up
+              const agreementStatus = isV3 && agreementSubmission.displayStatus 
+                ? agreementSubmission.displayStatus 
+                : agreementSubmission.status;
+              statusMap[creator.userId] = agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
             } else {
               statusMap[creator.userId] = 'NOT_STARTED';
             }
@@ -312,32 +342,44 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         // Check if this is a V3 campaign (client-origin)
         const isV3 = campaign?.origin === 'CLIENT';
 
-        // Filter out agreement submissions - only consider FIRST_DRAFT, FINAL_DRAFT, and POSTING
-        const relevantSubmissions = submissions.filter(
+        // Include all submission types to determine creator status
+        const allSubmissions = submissions.filter(
+          (submission) =>
+            submission.submissionType?.type === 'AGREEMENT_FORM' ||
+            submission.submissionType?.type === 'FIRST_DRAFT' ||
+            submission.submissionType?.type === 'FINAL_DRAFT' ||
+            submission.submissionType?.type === 'POSTING'
+        );
+
+        // Filter deliverable submissions (excluding agreement for status determination)
+        const deliverableSubmissions = submissions.filter(
           (submission) =>
             submission.submissionType?.type === 'FIRST_DRAFT' ||
             submission.submissionType?.type === 'FINAL_DRAFT' ||
             submission.submissionType?.type === 'POSTING'
         );
 
-        if (relevantSubmissions.length === 0) {
+        if (allSubmissions.length === 0) {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
           return newStatuses;
         }
 
         // Find submissions by type
-        const firstDraftSubmission = relevantSubmissions.find(
+        const agreementSubmission = allSubmissions.find(
+          (item) => item.submissionType.type === 'AGREEMENT_FORM'
+        );
+        const firstDraftSubmission = deliverableSubmissions.find(
           (item) => item.submissionType.type === 'FIRST_DRAFT'
         );
-        const finalDraftSubmission = relevantSubmissions.find(
+        const finalDraftSubmission = deliverableSubmissions.find(
           (item) => item.submissionType.type === 'FINAL_DRAFT'
         );
-        const postingSubmission = relevantSubmissions.find(
+        const postingSubmission = deliverableSubmissions.find(
           (item) => item.submissionType.type === 'POSTING'
         );
 
         // Determine the status based on the latest stage in the workflow
-        // Priority: Posting > Final Draft > First Draft
+        // Priority: Posting > Final Draft > First Draft > Agreement
         // For V3 campaigns, use displayStatus if available
         if (postingSubmission) {
           newStatuses[selectedCreator.userId] = isV3 && postingSubmission.displayStatus 
@@ -351,6 +393,12 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           newStatuses[selectedCreator.userId] = isV3 && firstDraftSubmission.displayStatus 
             ? firstDraftSubmission.displayStatus 
             : firstDraftSubmission.status;
+        } else if (agreementSubmission) {
+          // If only agreement exists, use its status
+          const agreementStatus = isV3 && agreementSubmission.displayStatus 
+            ? agreementSubmission.displayStatus 
+            : agreementSubmission.status;
+          newStatuses[selectedCreator.userId] = agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
         } else {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
         }
@@ -464,32 +512,44 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
             continue;
           }
 
-          // Filter out agreement submissions - only consider FIRST_DRAFT, FINAL_DRAFT, and POSTING
-          const relevantSubmissions = data.filter(
+          // Include all submission types to determine creator status
+          const allSubmissions = data.filter(
+            (submission) =>
+              submission.submissionType?.type === 'AGREEMENT_FORM' ||
+              submission.submissionType?.type === 'FIRST_DRAFT' ||
+              submission.submissionType?.type === 'FINAL_DRAFT' ||
+              submission.submissionType?.type === 'POSTING'
+          );
+
+          // Filter deliverable submissions (excluding agreement for status determination)
+          const deliverableSubmissions = data.filter(
             (submission) =>
               submission.submissionType?.type === 'FIRST_DRAFT' ||
               submission.submissionType?.type === 'FINAL_DRAFT' ||
               submission.submissionType?.type === 'POSTING'
           );
 
-          if (relevantSubmissions.length === 0) {
+          if (allSubmissions.length === 0) {
             statusMap[creator.userId] = 'NOT_STARTED';
             continue;
           }
 
           // Find submissions by type
-          const firstDraftSubmission = relevantSubmissions.find(
+          const agreementSubmission = allSubmissions.find(
+            (item) => item.submissionType.type === 'AGREEMENT_FORM'
+          );
+          const firstDraftSubmission = deliverableSubmissions.find(
             (item) => item.submissionType.type === 'FIRST_DRAFT'
           );
-          const finalDraftSubmission = relevantSubmissions.find(
+          const finalDraftSubmission = deliverableSubmissions.find(
             (item) => item.submissionType.type === 'FINAL_DRAFT'
           );
-          const postingSubmission = relevantSubmissions.find(
+          const postingSubmission = deliverableSubmissions.find(
             (item) => item.submissionType.type === 'POSTING'
           );
 
           // Determine the status based on the latest stage in the workflow
-          // Priority: Posting > Final Draft > First Draft
+          // Priority: Posting > Final Draft > First Draft > Agreement
           // For V3 campaigns, use displayStatus if available
           if (postingSubmission) {
             statusMap[creator.userId] = isV3 && postingSubmission.displayStatus 
@@ -503,6 +563,12 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
             statusMap[creator.userId] = isV3 && firstDraftSubmission.displayStatus 
               ? firstDraftSubmission.displayStatus 
               : firstDraftSubmission.status;
+          } else if (agreementSubmission) {
+            // If only agreement exists, use its status
+            const agreementStatus = isV3 && agreementSubmission.displayStatus 
+              ? agreementSubmission.displayStatus 
+              : agreementSubmission.status;
+            statusMap[creator.userId] = agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
           } else {
             statusMap[creator.userId] = 'NOT_STARTED';
           }
