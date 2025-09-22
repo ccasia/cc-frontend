@@ -252,14 +252,24 @@ export default function CampaignListView() {
     const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
     
     console.log('Campaign discover - Raw campaigns:', campaigns?.map(c => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin })));
-
-    return applyFilter({
-      inputData: campaigns?.filter((campaign) => campaign?.status === 'ACTIVE'),
+    console.log('Campaign discover - Total raw campaigns received:', campaigns?.length || 0);
+    
+    const activeCampaigns = campaigns?.filter((campaign) => campaign?.status === 'ACTIVE');
+    console.log('Campaign discover - Active campaigns after status filter:', activeCampaigns?.length || 0);
+    
+    const finalFiltered = applyFilter({
+      inputData: activeCampaigns,
       filter,
       user,
       sortBy,
       search,
     });
+    
+    console.log('Campaign discover - Final filtered campaigns:', finalFiltered?.length || 0);
+    console.log('Campaign discover - Filter applied:', filter);
+    console.log('Campaign discover - Search query:', search.query);
+
+    return finalFiltered;
   }, [data, filter, user, sortBy, search]);
 
   // const filteredData = useMemo(
@@ -920,34 +930,52 @@ export default function CampaignListView() {
 // ----------------------------------------------------------------------
 
 const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
+  console.log('applyFilter - Input data length:', inputData?.length || 0);
+  console.log('applyFilter - Filter type:', filter);
+  console.log('applyFilter - User ID:', user?.id);
+  
+  let resultData = inputData;
+
   if (filter === 'saved') {
-    inputData = inputData?.filter((campaign) =>
+    const beforeSavedFilter = resultData?.length || 0;
+    resultData = resultData?.filter((campaign) =>
       campaign.bookMarkCampaign.some((item) => item.userId === user.id)
     );
+    console.log('applyFilter - After saved filter:', resultData?.length || 0, 'from', beforeSavedFilter);
   }
 
   if (filter === 'draft') {
-    inputData = inputData?.filter((campaign) =>
+    const beforeDraftFilter = resultData?.length || 0;
+    resultData = resultData?.filter((campaign) =>
       campaign.pitch?.some((elem) => elem?.userId === user?.id && elem?.status === 'draft')
     );
+    console.log('applyFilter - After draft filter:', resultData?.length || 0, 'from', beforeDraftFilter);
   }
 
+  // Apply sorting
   if (sortBy === 'Most matched') {
-    inputData = orderBy(inputData, ['percentageMatch'], ['desc']);
+    resultData = orderBy(resultData, ['percentageMatch'], ['desc']);
+    console.log('applyFilter - Applied "Most matched" sorting');
   } else if (sortBy === 'Most recent') {
-    inputData = orderBy(inputData, ['createdAt'], ['desc']);
+    resultData = orderBy(resultData, ['createdAt'], ['desc']);
+    console.log('applyFilter - Applied "Most recent" sorting');
   } else {
     // Default sorting: newest first
-    inputData = orderBy(inputData, ['createdAt'], ['desc']);
+    resultData = orderBy(resultData, ['createdAt'], ['desc']);
+    console.log('applyFilter - Applied default (newest first) sorting');
   }
 
+  // Apply search filter
   if (search.query) {
-    inputData = inputData?.filter(
+    const beforeSearchFilter = resultData?.length || 0;
+    resultData = resultData?.filter(
       (item) =>
         item.name.toLowerCase().includes(search.query.toLowerCase()) ||
         item.company?.name.toLowerCase().includes(search.query.toLowerCase())
     );
+    console.log('applyFilter - After search filter:', resultData?.length || 0, 'from', beforeSearchFilter, 'for query:', search.query);
   }
 
-  return inputData;
+  console.log('applyFilter - Final result length:', resultData?.length || 0);
+  return resultData;
 };
