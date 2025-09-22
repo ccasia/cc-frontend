@@ -125,6 +125,7 @@ export const endpoints = {
   users: {
     newAdmin: '/api/user/admins',
     admins: '/api/user/admins',
+    clients: '/api/user/clients',
     updateProfileNewAdmin: '/api/user/admins',
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
@@ -243,6 +244,11 @@ export const endpoints = {
     editCampaignReference: (id) => `/api/campaign/editCampaignReference/${id}`,
     editCampaignTimeline: (id) => `/api/campaign/editCampaignTimeline/${id}`,
     editCampaignAdmins: (id) => `/api/campaign/editCampaignAdmins/${id}`,
+    editCampaignClients: (id) => `/api/campaign/editCampaignClients/${id}`,
+    convertToV3: (id) => `/api/campaign/convertToV3/${id}`,
+    fixV3Submissions: (id) => `/api/campaign/fixV3Submissions/${id}`,
+    debugV3Submissions: (id) => `/api/campaign/debugV3Submissions/${id}`,
+    activateV3Campaign: (id) => `/api/campaign/activateV3Campaign/${id}`,
     creator: {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
       getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,
