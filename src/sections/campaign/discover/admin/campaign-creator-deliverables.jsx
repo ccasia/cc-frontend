@@ -23,6 +23,8 @@ import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 
+import axiosInstance from 'src/utils/axios';
+
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
@@ -232,25 +234,39 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
             let data;
 
             if (isV3) {
-              // Use V3 API endpoint for client-origin campaigns
-              response = await fetch(
+              // Use V3 API endpoint for client-origin campaigns with proper authentication
+              console.log(`🔍 Admin fetching V3 submissions for creator ${creator.userId} in campaign ${campaign.id}`);
+              const axiosResponse = await axiosInstance.get(
                 `/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`
               );
+              data = axiosResponse.data;
+              console.log(`📡 V3 API response success, data length:`, data?.length || 0);
             } else {
               // Use legacy API endpoint for admin-origin campaigns
               response = await fetch(
                 `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
               );
+              if (!response.ok) {
+                statusMap[creator.userId] = 'NOT_STARTED';
+                continue;
+              }
+              data = await response.json();
             }
-
-            if (!response.ok) {
-              statusMap[creator.userId] = 'NOT_STARTED';
-              continue;
+            
+            if (isV3) {
+              console.log(`📊 V3 submissions data for creator ${creator.userId}:`, {
+                dataLength: data?.length || 0,
+                submissions: data?.map(s => ({
+                  id: s.id,
+                  type: s.submissionType?.type,
+                  status: s.status,
+                  displayStatus: s.displayStatus
+                })) || []
+              });
             }
-
-            data = await response.json();
 
             if (!data || data.length === 0) {
+              console.log(`⚠️ No submissions found for creator ${creator.userId}`);
               statusMap[creator.userId] = 'NOT_STARTED';
               continue;
             }
@@ -489,23 +505,24 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           let data;
 
           if (isV3) {
-            // Use V3 API endpoint for client-origin campaigns
-            response = await fetch(
+            // Use V3 API endpoint for client-origin campaigns with proper authentication
+            console.log(`🔍 Admin refresh fetching V3 submissions for creator ${creator.userId}`);
+            const axiosResponse = await axiosInstance.get(
               `/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`
             );
+            data = axiosResponse.data;
+            console.log(`📡 V3 refresh API response success, data length:`, data?.length || 0);
           } else {
             // Use legacy API endpoint for admin-origin campaigns
             response = await fetch(
               `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
             );
+            if (!response.ok) {
+              statusMap[creator.userId] = 'NOT_STARTED';
+              continue;
+            }
+            data = await response.json();
           }
-
-          if (!response.ok) {
-            statusMap[creator.userId] = 'NOT_STARTED';
-            continue;
-          }
-
-          data = await response.json();
 
           if (!data || data.length === 0) {
             statusMap[creator.userId] = 'NOT_STARTED';
