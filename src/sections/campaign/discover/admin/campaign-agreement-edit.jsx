@@ -62,13 +62,13 @@ const CURRENCY_PREFIXES = {
 
 const formatAmount = (value) => {
   if (!value || value === '') return '';
-  
+
   const cleanValue = value.toString().replace(/[^\d.]/g, '');
   if (!cleanValue) return '';
-  
+
   const parts = cleanValue.split('.');
   if (parts.length > 2) return `${parts[0]}.${parts.slice(1).join('')}`;
-  
+
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
@@ -128,6 +128,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
+    console.log(agreement);
 
     try {
       console.log('Generating PDF with values:', {
@@ -183,11 +184,13 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
       });
 
       const agreementIdToSend = res?.data?.agreement?.id || agreement?.id;
+
       const sendAgreementPayload = {
         ...agreement,
         id: agreementIdToSend,
         isNew: agreement?.isNew || false,
       };
+
       await axiosInstance.patch(endpoints.campaign.sendAgreement, sendAgreementPayload);
 
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
