@@ -699,7 +699,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               }}
               startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
             >
-              Shortlist New Creators
+              Shortlist New Creator
             </Button>
           )}
         </Stack>
