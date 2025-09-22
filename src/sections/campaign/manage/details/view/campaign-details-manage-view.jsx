@@ -56,7 +56,6 @@ import EditReferences from './EditReferences';
 import EditAttachments from './EditAttachment';
 import { EditDosAndDonts } from './EditDosAndDonts';
 import EditCampaignAdmin from './EditCampaignAdmin';
-import EditCampaignClient from './EditCampaignClient';
 import { EditCampaignInfo } from './EditCampaignInfo';
 import { EditRequirements } from './EditRequirements';
 import EditCampaignImages from './EditCampaignImages';
@@ -116,7 +115,6 @@ const CampaignDetailManageView = ({ id }) => {
     campaignAgreement: false,
     campaignImages: false,
     campaignAdmin: false,
-    campaignClient: false,
     campaignAttachments: false,
     campaignReferences: false,
   });
@@ -707,39 +705,6 @@ const CampaignDetailManageView = ({ id }) => {
     </Box>
   );
 
-  const renderClientManager = (
-    <Box component={Card} p={2}>
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <Typography variant="h5">Client Manager</Typography>
-      </Stack>
-      {isEditable && (
-        <EditButton
-          tooltip="Edit Campaign Client"
-          onClick={() =>
-            setOpen((prev) => ({
-              ...prev,
-              campaignClient: true,
-            }))
-          }
-          disabled={isDisabled}
-        />
-      )}
-      <List>
-        {campaign?.campaignClients?.map((item, index) => (
-          <ListItem key={index}>
-            <ListItemText primary={`${index + 1}. ${item?.client?.user?.name}`} />
-          </ListItem>
-        ))}
-      </List>
-
-      <EditCampaignClient
-        open={open.campaignClient}
-        onClose={() => onClose('campaignClient')}
-        campaign={campaign}
-      />
-    </Box>
-  );
-
   const confirmationModal = (
     <Dialog open={modalConfirm.value} onClose={modalConfirm.onFalse}>
       <DialogTitle>Confirm end campaign</DialogTitle>
@@ -1051,7 +1016,6 @@ const CampaignDetailManageView = ({ id }) => {
                 {renderRequirement}
                 {renderTimeline}
                 {renderAdminManager}
-                {renderClientManager}
                 {renderAttachments}
                 {renderReferenceLinks}
               </Stack>

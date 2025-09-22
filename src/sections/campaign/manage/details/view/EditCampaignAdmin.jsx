@@ -125,7 +125,7 @@ const EditCampaignAdmin = ({ open, campaign, onClose }) => {
             variant="contained"
             size="small"
             loading={isSubmitting}
-            disabled={!isDirty}
+            disabled={isDirty}
           >
             Save
           </LoadingButton>

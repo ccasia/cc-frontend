@@ -86,8 +86,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const { user, dispatch } = useAuthContext();
   const display = useBoolean();
 
-  const isV3Campaign = campaign?.origin === 'CLIENT';
-
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
   const [numPages, setNumPages] = useState(null);
@@ -126,8 +124,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
   // Use V3 agreementUrl if present, else fallback to admin logic
   const agreementUrl = myAgreement?.agreementUrl || campaign?.agreement?.agreementUrl;
-
-  // Get agreement data
 
 
 
@@ -172,25 +168,19 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   };
 
   const onSubmit = handleSubmit(async (data) => {
-    // Submit agreement form
-    
     setOpenUploadModal(false);
     setShowSubmitDialog(true);
     setSubmitStatus('submitting');
 
     // V3: Client-created campaign agreement submission
     if (campaign.origin === 'CLIENT' && myV3Pitch?.id) {
-      // V3 agreement submission
-      
       try {
         setLoading(true);
-        const response = await axiosInstance.patch(endpoints.campaign.pitch.v3.submitAgreement(myV3Pitch.id));
+        await axiosInstance.patch(endpoints.campaign.pitch.v3.submitAgreement(myV3Pitch.id));
         await new Promise((resolve) => setTimeout(resolve, 1500));
         enqueueSnackbar('Agreement submitted successfully!');
         setSubmitStatus('success');
       } catch (error) {
-        // Handle V3 submission error
-        
         await new Promise((resolve) => setTimeout(resolve, 1500));
         if (error?.message === 'Forbidden') {
           dispatch({ type: 'LOGOUT' });
@@ -206,8 +196,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     }
 
     // V2: Admin-created campaign (existing logic)
-    // V2 agreement submission
-    
     const formData = new FormData();
     formData.append('agreementForm', data.agreementForm);
     formData.append(
@@ -219,8 +207,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         submissionId: submission?.id,
       })
     );
-
-    // Create form data for V2 submission
 
     try {
       setLoading(true);
@@ -340,15 +326,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const { pitches: v3Pitches } = useGetV3Pitches(campaign?.id);
   const myV3Pitch = v3Pitches.find(p => p.userId === user?.id);
 
-  // Check V3 pitch data
-
-  // Setup endpoints
-
-  // Check if V3 agreement is already submitted
-  const isV3AgreementSubmitted = isV3Campaign && myV3Pitch?.status === 'AGREEMENT_SUBMITTED';
-  
-  // Determine UI state
-
   return (
     <Box p={1.5} sx={{ pb: 0 }}>
       {(!agreementStatus && !agreementUrl) ? (
@@ -382,39 +359,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           </Typography>
           <Typography variant="body1" color="#636366">
             Your agreement is being processed. Please check back later.
-          </Typography>
-        </Box>
-      ) : isV3AgreementSubmitted ? (
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          height="100%"
-          textAlign="center"
-          mt={10}
-          mb={10}
-        >
-          <Box
-            style={{
-              width: '80px',
-              height: '80px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '40px',
-              backgroundColor: '#e8f5e8',
-              borderRadius: '50%',
-              marginBottom: '16px',
-            }}
-          >
-            ✅
-          </Box>
-          <Typography variant="h3" style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}>
-            Agreement Submitted
-          </Typography>
-          <Typography variant="body1" color="#636366">
-            Your agreement has been submitted successfully and is under review.
           </Typography>
         </Box>
       ) : (
@@ -566,41 +510,34 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               </Box>
             </Stack>
           )}
-          
-          {/* Only show the second header if we have a submission (don't duplicate the first header) */}
-          {submission && (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 2,
-                mt: { xs: 0, sm: -2 },
-                ml: { xs: 0, sm: -1.2 },
-                textAlign: { xs: 'center', sm: 'left' },
-              }}
-            >
-              <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
-                Agreement Submission ✍
-              </Typography>
-              <Typography variant="subtitle2" color="text.secondary">
-                Due: {dayjs(submission?.dueDate).format('MMM DD, YYYY')}
-              </Typography>
-            </Box>
-          )}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+              mt: { xs: 0, sm: -2 },
+              ml: { xs: 0, sm: -1.2 },
+              textAlign: { xs: 'center', sm: 'left' },
+            }}
+          >
+            <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
+              Agreement Submission ✍
+            </Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              Due: {dayjs(submission?.dueDate).format('MMM DD, YYYY')}
+            </Typography>
+          </Box>
 
-          {/* Only show the divider if we have a submission */}
-          {submission && (
-            <Box
-              sx={{
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                mb: 3,
-                mx: -1.5,
-              }}
-            />
-          )}
+          <Box
+            sx={{
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              mb: 3,
+              mx: -1.5,
+            }}
+          />
 
           {submission?.status === 'PENDING_REVIEW' && (
             <Stack justifyContent="center" alignItems="center" spacing={2}>
