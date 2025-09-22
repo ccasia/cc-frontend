@@ -331,8 +331,8 @@ const CampaignPitchDetail = ({ pitch }) => {
       );
     }
 
-    // For admin users, show buttons when status is PENDING_REVIEW
-    if (!isClient && pitch?.status !== 'PENDING_REVIEW') {
+    // For admin users, show buttons when status is PENDING_REVIEW (V3) or undecided (V2)
+    if (!isClient && pitch?.status !== 'PENDING_REVIEW' && pitch?.status !== 'undecided') {
       return (
         <Box mt={2} p={2} sx={{ bgcolor: 'info.light', borderRadius: 1 }}>
           <Typography color="info.main" variant="subtitle1">
