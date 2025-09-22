@@ -46,7 +46,21 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   const shortlistedCreators = useMemo(() => {
     const creators = campaign?.shortlisted || [];
     
-    // Get creators from campaign data
+    // Debug logging to understand the data structure
+    if (creators.length > 0) {
+      console.log('🔍 Shortlisted creators data:', {
+        total: creators.length,
+        sample: creators.slice(0, 2).map(c => ({
+          userId: c.userId,
+          hasUser: !!c.user,
+          userData: c.user ? {
+            name: c.user.name,
+            username: c.user.username,
+            hasCreator: !!c.user.creator
+          } : null
+        }))
+      });
+    }
     
     return creators;
   }, [campaign?.shortlisted]);
@@ -57,6 +71,15 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
     // Filter out creators without user data to prevent null reference errors
     const validCreators = shortlistedCreators.filter(creator => creator?.user);
+    
+    // Debug logging for sorted creators
+    if (validCreators.length !== shortlistedCreators.length) {
+      console.warn('⚠️ Some creators were filtered out due to missing user data:', {
+        total: shortlistedCreators.length,
+        valid: validCreators.length,
+        filtered: shortlistedCreators.length - validCreators.length
+      });
+    }
 
     return validCreators.sort((a, b) => {
       const nameA = (a.user?.name || '').toLowerCase();
@@ -124,18 +147,12 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       const isNonPlatformCreator = !creator?.user?.creator?.instagram && !creator?.user?.creator?.tiktok;
       
       if (isNonPlatformCreator) {
-        // For V3 campaigns, be more permissive with non-platform creators
-        if (isV3) {
-          // For V3 non-platform creators, show all except explicitly rejected ones
-          return creatorStatus !== 'REJECTED' && creatorStatus !== 'SENT_TO_CLIENT';
-        } else {
-          // For V2 non-platform creators, only show if they have been approved by client
-          return creatorStatus === 'APPROVED' || 
-                 creatorStatus === 'CLIENT_APPROVED' || 
-                 creatorStatus === 'IN_PROGRESS' ||
-                 creatorStatus === 'CHANGES_REQUIRED' ||
-                 creatorStatus === 'PENDING_REVIEW';
-        }
+        // For non-platform creators, only show if they have been approved by client
+        return creatorStatus === 'APPROVED' || 
+               creatorStatus === 'CLIENT_APPROVED' || 
+               creatorStatus === 'IN_PROGRESS' ||
+               creatorStatus === 'CHANGES_REQUIRED' ||
+               creatorStatus === 'PENDING_REVIEW';
       }
       
       // For platform creators, show all except SENT_TO_CLIENT

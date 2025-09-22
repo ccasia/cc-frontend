@@ -33,8 +33,6 @@ export default function CampaignItem({ campaign, user }) {
   // const router = useRouter();
   const theme = useTheme();
 
-  const isV3Campaign = campaign?.origin === 'CLIENT';
-
   // const [bookMark, setBookMark] = useState(
   //   campaign?.bookMarkCampaign?.some((item) => item.userId === user?.id) || false
   // );

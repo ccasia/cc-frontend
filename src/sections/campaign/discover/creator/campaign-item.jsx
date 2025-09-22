@@ -32,7 +32,6 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
   const campaignID = localStorage.getItem('campaign');
   const campaignInfo = useBoolean(campaignID === campaign.id);
 
-  const isV3Campaign = campaign?.origin === 'CLIENT';
   const navigation = useNavigate();
 
   const { socket } = useSocketContext();
