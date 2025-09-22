@@ -89,6 +89,8 @@ const CampaignFirstDraft = ({
   setCurrentTab,
   deliverablesData,
 }) => {
+  // Component initialization
+
   // eslint-disable-next-line no-unused-vars
   const [preview, setPreview] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -166,12 +168,25 @@ const CampaignFirstDraft = ({
   );
 
   const previousSubmission = useMemo(
-    () => fullSubmission?.find((item) => item?.id === dependency?.dependentSubmissionId),
-    [fullSubmission, dependency]
+    () => {
+      const found = fullSubmission?.find((item) => item?.id === dependency?.dependentSubmissionId);
+      
+      // For V3 campaigns, if dependency approach fails, find agreement submission directly
+      const isV3 = campaign?.origin === 'CLIENT';
+      let fallbackPrevious = null;
+      
+      if (isV3 && !found) {
+        // For V3, find the AGREEMENT_FORM submission directly
+        fallbackPrevious = fullSubmission?.find((item) => item?.submissionType?.type === 'AGREEMENT_FORM');
+      }
+      
+      return found || fallbackPrevious;
+    },
+    [fullSubmission, dependency, campaign?.origin]
   );
 
   const totalUGCVideos = useMemo(
-    () => campaign.shortlisted?.find((x) => x.userId === submission.userId)?.ugcVideos || null,
+    () => campaign.shortlisted?.find((x) => x.userId === submission?.userId)?.ugcVideos || null,
     [campaign, submission]
   );
 
