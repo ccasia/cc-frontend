@@ -325,7 +325,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       localStorage.setItem('clientActiveStep', activeStep + 1);
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
     } else if (isExceed) {
-      enqueueSnackbar('Exceeds limits: please adjust Number Of Credits based on available credits', { variant: 'error' });
+      enqueueSnackbar('Please include or adjust Number Of Credits based on available credits', { variant: 'error' });
     }
   };
 

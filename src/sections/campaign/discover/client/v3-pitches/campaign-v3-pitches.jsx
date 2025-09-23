@@ -136,8 +136,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       const status = (pitch.displayStatus || pitch.status) || '';
       const userId = pitch?.user?.id;
       const isApprovedState = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
+      const isPending = ['PENDING_REVIEW'].includes(status);
+      const sentToClient = ['SENT_TO_CLIENT'].includes(status);
+      const isMaybe = ['MAYBE'].includes(status);
+      const isRejected = ['REJECTED'].includes(status);
       const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
-      return isApprovedState || hasAssignedCredits;
+      return isApprovedState || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected;
     });
 
     // Apply status filter
