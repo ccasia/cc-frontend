@@ -49,20 +49,21 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     const creators = campaign?.shortlisted || [];
     
     // Debug logging to understand the data structure
-    if (creators.length > 0) {
-      console.log('🔍 Shortlisted creators data:', {
-        total: creators.length,
-        sample: creators.slice(0, 2).map(c => ({
-          userId: c.userId,
-          hasUser: !!c.user,
-          userData: c.user ? {
-            name: c.user.name,
-            username: c.user.username,
-            hasCreator: !!c.user.creator
-          } : null
-        }))
-      });
-    }
+    console.log('🔍 Admin component - Shortlisted creators data:', {
+      total: creators.length,
+      campaignId: campaign?.id,
+      campaignOrigin: campaign?.origin,
+      isV3: campaign?.origin === 'CLIENT',
+      sample: creators.slice(0, 3).map(c => ({
+        userId: c.userId,
+        hasUser: !!c.user,
+        userData: c.user ? {
+          name: c.user.name,
+          username: c.user.username,
+          hasCreator: !!c.user.creator
+        } : null
+      }))
+    });
     
     return creators;
   }, [campaign?.shortlisted]);
@@ -141,9 +142,17 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     // First, filter out any creators without user data to prevent null reference errors
     filtered = filtered.filter((creator) => creator?.user);
 
-    // For non-platform creators, only show them if they are APPROVED by client
+    // For V3 campaigns, show all shortlisted creators - admin should see everyone
+    // Only filter out creators that are completely inactive or have missing data
     filtered = filtered.filter((creator) => {
       const creatorStatus = creatorStatuses[creator.userId];
+      
+      // For V3 campaigns, show all shortlisted creators to admin
+      if (isV3) {
+        // Only exclude creators that are completely inactive or have data issues
+        // Admin should see all creators including those with NOT_STARTED status
+        return true; // Show all creators for admin in V3 campaigns
+      }
       
       // Check if this is a non-platform creator (creator without social media accounts)
       const isNonPlatformCreator = !creator?.user?.creator?.instagram && !creator?.user?.creator?.tiktok;
@@ -155,14 +164,6 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                creatorStatus === 'IN_PROGRESS' ||
                creatorStatus === 'CHANGES_REQUIRED' ||
                creatorStatus === 'PENDING_REVIEW';
-      }
-      
-      // For V3 campaigns, show creators who have approved agreements or are in progress
-      if (isV3) {
-        // Show creators with approved agreements or any submission status except pure SENT_TO_CLIENT
-        return creatorStatus !== 'SENT_TO_CLIENT' || 
-               creatorStatus === 'AGREEMENT_APPROVED' ||
-               creator?.agreementStatus === 'APPROVED';
       }
       
       // For V2 campaigns, show all creators except pure SENT_TO_CLIENT
@@ -195,7 +196,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       );
     }
 
-    return [...filtered].sort((a, b) => {
+    const result = [...filtered].sort((a, b) => {
       // Add null checks for sorting
       const nameA = a?.user?.name?.toLowerCase() || '';
       const nameB = b?.user?.name?.toLowerCase() || '';
@@ -205,7 +206,23 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       }
       return nameB.localeCompare(nameA);
     });
-  }, [sortedCreators, search, sortDirection, selectedFilter, creatorStatuses]);
+
+    // Debug logging for filtered creators
+    console.log('🔍 Admin component - Filtered creators result:', {
+      originalCount: sortedCreators.length,
+      filteredCount: result.length,
+      isV3: isV3,
+      loadingStatuses: loadingStatuses,
+      creatorStatuses: Object.keys(creatorStatuses).length > 0 ? creatorStatuses : 'empty',
+      sampleFiltered: result.slice(0, 3).map(c => ({
+        userId: c.userId,
+        name: c.user?.name,
+        status: creatorStatuses[c.userId] || 'unknown'
+      }))
+    });
+
+    return result;
+  }, [sortedCreators, search, sortDirection, selectedFilter, creatorStatuses, isV3, loadingStatuses]);
 
   // Fetch all creator statuses using the existing hook
   useEffect(() => {
@@ -984,7 +1001,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
               borderRadius: { xs: 2, md: 0 },
             }}
           >
-            {filteredCreators.length > 0 ? (
+            {loadingStatuses ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <Typography>Loading creators...</Typography>
+              </Box>
+            ) : filteredCreators.length > 0 ? (
               filteredCreators.map((creator) => (
                 <Box
                   key={creator.userId}
