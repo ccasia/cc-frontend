@@ -247,6 +247,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     campaignAdminManagers: [],
     campaignForm: [],
     otherAttachments: [],
+    submissionVersion: 'v3',
   };
 
   const methods = useForm({
@@ -401,6 +402,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         campaignDont: Array.isArray(data.campaignDont)
           ? data.campaignDont.filter(Boolean).map(item => typeof item === 'object' ? item : { value: item }).filter(item => item.value)
           : [],
+        submissionVersion: data.submissionVersion || 'v3',
       };
       
       console.log('Client campaign data:', clientCampaignData);
