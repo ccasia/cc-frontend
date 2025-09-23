@@ -34,7 +34,7 @@ const VIDEO_UPLOAD_CONFIG = {
   multiple: true
 };
 
-const V4VideoSubmission = ({ submission, onUpdate }) => {
+const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -182,6 +182,9 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
     const hasPostingLink = Boolean(submission.content);
     const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
     
+    // Check if posting links are required for this campaign type
+    const requiresPostingLink = (campaign?.campaignType || submission.campaign?.campaignType) !== 'ugc';
+    
     return {
       isSubmitted,
       isInReview,
@@ -190,9 +193,10 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
       isApproved,
       isPosted,
       hasPostingLink,
-      hasPendingPostingLink
+      hasPendingPostingLink,
+      requiresPostingLink
     };
-  }, [submission.video, submission.status, submission.content]);
+  }, [submission.video, submission.status, submission.content, campaign?.campaignType, submission.campaign?.campaignType]);
 
   const { 
     isSubmitted, 
@@ -202,7 +206,8 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
     isApproved, 
     isPosted, 
     hasPostingLink, 
-    hasPendingPostingLink 
+    hasPendingPostingLink,
+    requiresPostingLink
   } = statusInfo;
 
   // Memoize feedback filtering to avoid recalculation
@@ -275,7 +280,10 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
       {isApproved && !isPosted && (
         <Alert severity="success">
           <Typography variant="body2">
-            🎉 Your video has been approved! Great work!
+            {requiresPostingLink 
+              ? "🎉 Your video has been approved! Great work!"
+              : "🎉 Your video has been approved and completed! Great work! No posting required for this campaign."
+            }
           </Typography>
         </Alert>
       )}
@@ -479,8 +487,8 @@ const V4VideoSubmission = ({ submission, onUpdate }) => {
         </Card>
       )}
 
-      {/* Posting Link Section */}
-      {(isApproved || isPosted || isPostingLinkRejected) && (
+      {/* Posting Link Section - Only show for campaigns that require posting */}
+      {requiresPostingLink && (isApproved || isPosted || isPostingLinkRejected) && (
         <Card sx={{ p: 3 }}>
           <Stack spacing={3}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -623,6 +631,7 @@ const getCreatorStatusLabel = (status) => {
 V4VideoSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   onUpdate: PropTypes.func.isRequired,
+  campaign: PropTypes.object,
 };
 
 export default V4VideoSubmission;

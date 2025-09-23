@@ -324,6 +324,7 @@ const CampaignV4Activity = ({ campaign }) => {
               {activeSubmission.submissionType?.type === 'VIDEO' && (
                 <V4VideoSubmission 
                   submission={activeSubmission}
+                  campaign={campaign}
                   onUpdate={() => mutate()}
                 />
               )}
@@ -331,6 +332,7 @@ const CampaignV4Activity = ({ campaign }) => {
               {activeSubmission.submissionType?.type === 'PHOTO' && (
                 <V4PhotoSubmission 
                   submission={activeSubmission}
+                  campaign={campaign}
                   onUpdate={() => mutate()}
                 />
               )}

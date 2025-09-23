@@ -33,7 +33,7 @@ const PHOTO_UPLOAD_CONFIG = {
   multiple: true
 };
 
-const V4PhotoSubmission = ({ submission, onUpdate }) => {
+const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -216,6 +216,9 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
   const hasPostingLink = Boolean(submission.content);
   const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
   
+  // Check if posting links are required for this campaign type
+  const requiresPostingLink = (campaign?.campaignType || submission.campaign?.campaignType) !== 'ugc';
+  
   // Creator can upload if not in final states and has changes required or hasn't submitted (but not for posting link rejection)
   const canUpload = !isApproved && !isPosted && !isPostingLinkRejected && (!isInReview || hasChangesRequired);
 
@@ -254,7 +257,10 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
       {isApproved && !isPosted && (
         <Alert severity="success">
           <Typography variant="body2">
-            🎉 Your photos have been approved! Great work!
+            {requiresPostingLink 
+              ? "🎉 Your photos have been approved! Great work!"
+              : "🎉 Your photos have been approved and completed! Great work! No posting required for this campaign."
+            }
           </Typography>
         </Alert>
       )}
@@ -456,8 +462,8 @@ const V4PhotoSubmission = ({ submission, onUpdate }) => {
         </Card>
       )}
 
-      {/* Posting Link Section */}
-      {(isApproved || isPosted || isPostingLinkRejected) && (
+      {/* Posting Link Section - Only show for campaigns that require posting */}
+      {requiresPostingLink && (isApproved || isPosted || isPostingLinkRejected) && (
         <Card sx={{ p: 3 }}>
           <Stack spacing={3}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -598,6 +604,7 @@ const getCreatorStatusLabel = (status) => {
 V4PhotoSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   onUpdate: PropTypes.func.isRequired,
+  campaign: PropTypes.object,
 };
 
 export default V4PhotoSubmission;
