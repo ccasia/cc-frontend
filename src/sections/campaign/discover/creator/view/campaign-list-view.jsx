@@ -72,10 +72,17 @@ export default function CampaignListView() {
     if (pageIndex === 0)
       return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}`;
 
-    // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
-    if (!previousPageData?.metaData?.lastCursor) return null;
+    // If there's no more data (check both hasNextPage and lastCursor), stop fetching
+    if (!previousPageData?.metaData?.hasNextPage || !previousPageData?.metaData?.lastCursor) {
+      console.log('🔍 Campaign infinite scroll - Stopping fetch:', {
+        hasNextPage: previousPageData?.metaData?.hasNextPage,
+        lastCursor: !!previousPageData?.metaData?.lastCursor,
+        pageIndex: pageIndex
+      });
+      return null;
+    }
 
-    // Otherwise, use the nextCursor to get the next page
+    // Otherwise, use the lastCursor to get the next page
     return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
@@ -251,11 +258,21 @@ export default function CampaignListView() {
   const filteredData = useMemo(() => {
     const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
     
-    console.log('Campaign discover - Raw campaigns:', campaigns?.map(c => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin })));
-    console.log('Campaign discover - Total raw campaigns received:', campaigns?.length || 0);
+    console.log('🔍 Campaign discover - Data pages received:', data?.length || 0);
+    console.log('🔍 Campaign discover - Raw campaigns:', campaigns?.map(c => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin })));
+    console.log('🔍 Campaign discover - Total raw campaigns received:', campaigns?.length || 0);
+    
+    // Log pagination metadata for each page
+    data?.forEach((page, index) => {
+      console.log(`🔍 Campaign discover - Page ${index + 1} metadata:`, {
+        campaignsInPage: page?.data?.campaigns?.length || 0,
+        hasNextPage: page?.metaData?.hasNextPage,
+        lastCursor: page?.metaData?.lastCursor
+      });
+    });
     
     const activeCampaigns = campaigns?.filter((campaign) => campaign?.status === 'ACTIVE');
-    console.log('Campaign discover - Active campaigns after status filter:', activeCampaigns?.length || 0);
+    console.log('🔍 Campaign discover - Active campaigns after status filter:', activeCampaigns?.length || 0);
     
     const finalFiltered = applyFilter({
       inputData: activeCampaigns,
@@ -265,9 +282,9 @@ export default function CampaignListView() {
       search,
     });
     
-    console.log('Campaign discover - Final filtered campaigns:', finalFiltered?.length || 0);
-    console.log('Campaign discover - Filter applied:', filter);
-    console.log('Campaign discover - Search query:', search.query);
+    console.log('🔍 Campaign discover - Final filtered campaigns:', finalFiltered?.length || 0);
+    console.log('🔍 Campaign discover - Filter applied:', filter);
+    console.log('🔍 Campaign discover - Search query:', search.query);
 
     return finalFiltered;
   }, [data, filter, user, sortBy, search]);
@@ -340,8 +357,14 @@ export default function CampaignListView() {
         !isValidating &&
         data &&
         data.length > 0 &&
+        data[data.length - 1]?.metaData?.hasNextPage &&
         data[data.length - 1]?.metaData?.lastCursor
       ) {
+        console.log('🔍 Campaign infinite scroll - Loading next page (desktop):', {
+          currentPages: data.length,
+          hasNextPage: data[data.length - 1]?.metaData?.hasNextPage,
+          lastCursor: data[data.length - 1]?.metaData?.lastCursor
+        });
         setSize(size + 1);
       }
     } else {
@@ -358,8 +381,14 @@ export default function CampaignListView() {
         !isValidating &&
         data &&
         data.length > 0 &&
+        data[data.length - 1]?.metaData?.hasNextPage &&
         data[data.length - 1]?.metaData?.lastCursor
       ) {
+        console.log('🔍 Campaign infinite scroll - Loading next page (mobile):', {
+          currentPages: data.length,
+          hasNextPage: data[data.length - 1]?.metaData?.hasNextPage,
+          lastCursor: data[data.length - 1]?.metaData?.lastCursor
+        });
         setSize((currentSize) => currentSize + 1);
       }
     }
