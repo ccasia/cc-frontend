@@ -268,6 +268,7 @@ export const endpoints = {
       agreement: '/api/submission/adminManageAgreementSubmission',
       draft: '/api/submission/adminManageDraft',
       posting: '/api/submission/adminManagePosting',
+      adminPostSubmission: '/api/submission/adminPostSubmission',
       v2: {
         photos: '/api/submission/v2/managePhotos',
         videos: '/api/submission/v2/manageDraftVideos',
