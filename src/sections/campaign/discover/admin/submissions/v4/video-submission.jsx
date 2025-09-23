@@ -13,12 +13,14 @@ import {
   MenuItem,
   FormControl,
   IconButton,
-  Slider
+  Slider,
+  Link
 } from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { fDate } from 'src/utils/format-time';
 
 import Iconify from 'src/components/iconify';
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
@@ -77,12 +79,6 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
   const getDefaultFeedback = () => {
     if (isClientFeedback) {
       return submission.video?.[0]?.feedback || '';
-    }
-    if (submission.status === 'PENDING_REVIEW') {
-      return 'This creator has submitted a video for your review. Please approve or request changes with comments below.';
-    }
-    if (submission.status === 'SENT_TO_CLIENT') {
-      return 'Great work! Thanks for the submission.';
     }
     return '';
   };
@@ -474,10 +470,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
         bgcolor: 'background.neutral',
       }}>
         {/* Video Content */}
-        {submission.status !== 'CLIENT_APPROVED' && !hasPostingLink && submission.status !== 'REJECTED' && (
+        {!hasPostingLink && submission.status !== 'REJECTED' && (
         <Box>
           {clientVisible ? (
-            // Show actual content to admins or when sent to client
             video?.url ? (
               <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
                 {/* Horizontal Layout: Caption on Left, Video on Right */}
@@ -487,7 +482,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                   alignItems: 'stretch',
                   minHeight: 405
                 }}>
-                  {/* Caption Section - Left Side */}
+                  {/* Left Side */}
                   <Box sx={{ 
                     flex: 1, 
                     display: 'flex',
@@ -495,9 +490,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                     justifyContent: 'space-between',
                     maxWidth: 400
                   }}>
-                    {/* Top Content - Flexible space */}
+                    {/* Caption */}
                     <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
-                      {/* Caption */}
                       <Typography variant='caption' fontWeight={'bold'} color={'#636366'} mb={0.5}>Caption</Typography>
                       {pendingReview ? (
                         <Box>
@@ -524,59 +518,55 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                         </Box>
                       ) : null}
                     </Box>
-
-                    <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                      {submission.feedback && submission.feedback.length > 0 && (
-                        <Box sx={{ flex: 1, overflow: 'auto' }}>
-                        <Stack spacing={1}>
-                          {[submission.feedback[0]].map((feedback, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                              <Box>
-                                {feedback.reasons?.map((reason, reasonIndex) => (
-                                  <Chip 
-                                  sx={{
-                                    border: '1px solid',
-                                    pb: 1.8,
-                                    pt: 1.6,
-                                    borderColor: '#D4321C',
-                                    borderRadius: 0.8,
-                                    boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
-                                    bgcolor: '#fff',
-                                    color: '#D4321C',
-                                    fontWeight: 'bold',
-                                    fontSize: 12,
-                                    mr: 0.5,
-                                    mb: 0.4
-                                  }}
-                                  key={reasonIndex} 
-                                  label={reason} 
-                                  size="small" 
-                                  variant="outlined" 
-                                  color="warning" />
-                                ))}                                  
-                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5, mt: 1 }}>
-                                  {(feedback.content || feedback.reasons) && 
-                                    <Typography variant='caption' fontWeight="bold" color={'#636366'}>
-                                      {feedback.admin?.name || 'CS Comments'}
-                                    </Typography>
-                                  }
-                                </Box>
-                                <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
-                                  {feedback.content}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          ))}
-                        </Stack>
-                        </Box>
-                      )}
-                    </Box>
+                    
 
                     {/* Feedback Section */}
+                    {submission.status !== 'CLIENT_APPROVED' && submission.status !== 'PENDING_REVIEW' && (
+                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        {submission.feedback && submission.feedback.length > 0 && (
+                          <Box sx={{ flex: 1, overflow: 'auto' }}>
+                          <Stack spacing={1}>
+                            {submission.feedback?.[0] && [submission.feedback[0]].map((feedback) => (
+                              <Box key={feedback.id || 0} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+                                <Box>
+                                  {feedback.reasons?.map((reason, reasonIndex) => (
+                                    <Chip 
+                                    sx={{
+                                      border: '1px solid',
+                                      pb: 1.8,
+                                      pt: 1.6,
+                                      borderColor: '#D4321C',
+                                      borderRadius: 0.8,
+                                      boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
+                                      bgcolor: '#fff',
+                                      color: '#D4321C',
+                                      fontWeight: 'bold',
+                                      fontSize: 12,
+                                      mr: 0.5,
+                                      mb: 0.5
+                                    }}
+                                    key={reasonIndex} 
+                                    label={reason} 
+                                    size="small" 
+                                    variant="outlined" 
+                                    color="warning" />
+                                  ))}
+                                </Box>
+                                <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
+                                  {submission.status !== 'CLIENT_FEEDBACK' ? feedback.content : ''}
+                                </Typography>
+                              </Box>
+                            ))}
+                          </Stack>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Feedback Actions */}
                     {((!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) || (isClient && submission.status === 'SENT_TO_CLIENT')) && (
                       <Box sx={{ flex: '0 0 auto' }}>
                         <Stack spacing={1}>
-                          {/* Action Buttons */}
                           <Stack direction="row" spacing={1} width="100%" justifyContent="flex-end">
                             {(clientVisible && !isClientFeedback) && (
                               <Button
@@ -586,8 +576,6 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                                   // Store current feedback before changing
                                   setPreviousFeedback(feedback);
                                   setAction('request_revision');
-                                  // Set different feedback message based on user role
-                                  setFeedback('This submission needs to be revisited.')
                                 }}
                                 disabled={loading}
                                 
@@ -700,6 +688,16 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                               </Select>
                             </FormControl>
                           }
+
+                          {submission.feedback?.[0] && [submission.feedback[0]].map((feedback) => (
+                            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              {(feedback.content || feedback.reasons) && 
+                                <Typography variant='caption' fontWeight="bold" color={'#636366'}>
+                                  {feedback.admin?.role === 'client' ? 'Client Feedback' : (feedback.admin?.name || 'CS Comments')}
+                                </Typography>
+                              }
+                            </Box>
+                          ))}
 
                           {/* Feedback Message Box */}
                           <TextField
@@ -957,8 +955,14 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                 </Box>
               </Box>
             ) : (
-              <Box p={2}>
-                <Typography color="text.secondary">No video uploaded yet.</Typography>              
+              <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
+                <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                  No deliverables found
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={4}>
+                  This submission doesn't have any deliverables to review yet.
+                </Typography>
               </Box>
             )
           ) : (
@@ -981,14 +985,35 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
         )}
 
         {/* Posting Link */}
-        {hasPendingPostingLink && (
+        {hasPendingPostingLink ? (
           <Box m={2} display={'flex'} flexDirection={'column'} width={400}>        
             <Card sx={{ p: 2, bgcolor: '#fff', mt: 1, borderRadius: 1.5, boxShadow: 'none', border: '1px solid #EBEBEB', width: 400 }}>
               {hasPostingLink ? (
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
-                    {submission.content}
-                  </Typography>
+                  <Link 
+                    href={submission.content} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    sx={{ 
+                      flex: 1, 
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        wordBreak: 'break-all',
+                        color: '#0062CD',
+                        textDecoration: 'underline',
+                        '&:hover': {
+                          textDecoration: 'underline',
+                          color: '#004A9F'
+                        }
+                      }}
+                    >
+                      {submission.content}
+                    </Typography>
+                  </Link>
                 </Stack>
               ) : (
                 <Typography color="text.secondary">
@@ -1030,6 +1055,47 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
               </Stack>
             )}
           </Box>
+        ) : (
+          hasPostingLink && submission.status === 'POSTED' && (
+            <Box mt={3} mb={4} mx={3} display={'flex'} flexDirection={'column'} width={400}>
+              <Box display={'flex'}>
+                <Typography variant="caption" fontWeight={'600'} color="text.primary" sx={{ mb: 0.5, mr: 0.5 }}>
+                  Date approved:
+                </Typography>
+                <Typography variant="caption" color="#636366" sx={{ mb: 0.5 }}>
+                  {fDate(submission.updatedAt, 'dd/MM/yyyy')}
+                </Typography>
+              </Box>
+              <Card sx={{ p: 2, bgcolor: '#fff', mt: 1, borderRadius: 1.5, boxShadow: 'none', border: '1px solid #EBEBEB', width: 400 }}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Link 
+                    href={submission.content} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    sx={{ 
+                      flex: 1, 
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        wordBreak: 'break-all',
+                        color: '#0062CD',
+                        textDecoration: 'underline',
+                        '&:hover': {
+                          textDecoration: 'underline',
+                          color: '#004A9F'
+                        }
+                      }}
+                    >
+                      {submission.content}
+                    </Typography>
+                  </Link>
+                </Stack>
+              </Card>
+            </Box>            
+          )
         )}
         
         {/* Video Modal */}

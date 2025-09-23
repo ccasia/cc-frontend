@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 import {
   Box,
@@ -20,6 +20,26 @@ import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
 import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
+
+function CreatorAccordionWithSubmissions({ creator, campaign }) {
+  // Get V4 submissions for this creator to check if they have any
+  const { 
+    submissions, 
+    submissionsLoading
+  } = useGetV4Submissions(campaign?.id, creator?.userId);
+
+  // Don't render if loading or if no submissions exist
+  if (submissionsLoading || submissions.length === 0) {
+    return null;
+  }
+
+  return (
+    <CreatorAccordion 
+      creator={creator} 
+      campaign={campaign} 
+    />
+  );
+}
 
 function CreatorAccordion({ creator, campaign }) {
   const { user } = useAuthContext();
@@ -423,7 +443,7 @@ function CreatorAccordion({ creator, campaign }) {
         backgroundColor: '#E7E7E7',
         boxShadow: '0px 4px 4px 0px #8E8E9340',
         borderRadius: 1,
-        px: 1,
+        pl: 1,
       }}>
         {/* Creator Info Section */}
         <Box sx={{ 
@@ -486,6 +506,12 @@ function CreatorAccordion({ creator, campaign }) {
     </Box>
   );
 }
+
+CreatorAccordionWithSubmissions.propTypes = {
+  creator: PropTypes.object.isRequired,
+  campaign: PropTypes.object.isRequired,
+};
+
 CreatorAccordion.propTypes = {
   creator: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
@@ -529,9 +555,6 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
   return (
     <Box sx={{ p: 0 }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Creators ({filteredCreators.length})
-        </Typography>
         <TextField
           fullWidth
           size="small"
@@ -554,7 +577,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
       ) : (
         <Stack spacing={1}>
           {filteredCreators.map((creator, index) => (
-            <CreatorAccordion
+            <CreatorAccordionWithSubmissions
               key={creator.userId || index}
               creator={creator}
               campaign={campaign}

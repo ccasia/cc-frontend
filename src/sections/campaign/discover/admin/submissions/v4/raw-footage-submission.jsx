@@ -78,12 +78,6 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
     if (isClientFeedback) {
       return submission.rawFootages?.[0]?.feedback || '';
     }
-    if (submission.status === 'PENDING_REVIEW') {
-      return 'This creator has submitted raw footage for your review. Please approve or request changes with comments below.';
-    }
-    if (submission.status === 'SENT_TO_CLIENT') {
-      return 'Great work! Thanks for the submission.';
-    }
     return '';
   };
   const [feedback, setFeedback] = useState(getDefaultFeedback());
@@ -410,7 +404,6 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
         bgcolor: 'background.neutral'
       }}>
         {/* Raw Footage Content */}
-        {submission.status !== 'CLIENT_APPROVED' && (
         <Box>
           {clientVisible ? (
             // Show actual content to admins or when sent to client
@@ -423,7 +416,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                   alignItems: 'stretch',
                   minHeight: 405
                 }}>
-                  {/* Caption Section - Left Side */}
+                  {/* Left Side */}
                   <Box sx={{ 
                     flex: 1, 
                     display: 'flex',
@@ -431,9 +424,8 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                     justifyContent: 'space-between',
                     maxWidth: 400
                   }}>
-                    {/* Top Content - Flexible space */}
+                    {/* Caption */}
                     <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
-                      {/* Caption */}
                       <Typography variant='caption' fontWeight={'bold'} color={'#636366'} mb={0.5}>Caption</Typography>
                       {pendingReview ? (
                         <Box>
@@ -460,61 +452,55 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                         </Box>
                       ) : null}
                     </Box>
-
-                    <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                      {submission.feedback && submission.feedback.length > 0 && (
-                        <Box sx={{ flex: 1, overflow: 'auto' }}>
-                        <Stack spacing={1}>
-                          {[submission.feedback[0]].map((feedback, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                              <Box sx={{ flex: 1 }}>
-                                {feedback.reasons?.map((reason, reasonIndex) => (
-                                  <Chip 
-                                  sx={{
-                                    border: '1px solid',
-                                    pb: 1.8,
-                                    pt: 1.6,
-                                    mr: 0.5,
-                                    mb: 0.4,
-                                    borderColor: '#D4321C',
-                                    borderRadius: 0.8,
-                                    boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
-                                    bgcolor: '#fff',
-                                    color: '#D4321C',
-                                    fontWeight: 'bold',
-                                    fontSize: 12,
-                                    mr: 0.5,
-                                    mb: 0.4,
-                                  }}
-                                  key={reasonIndex} 
-                                  label={reason} 
-                                  size="small" 
-                                  variant="outlined" 
-                                  color="warning" />                                  
-                                ))}                                  
-                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5, mt: 1 }}>
-                                  {(feedback.content || feedback.reasons) && 
-                                    <Typography variant='caption' fontWeight="bold" color={'#636366'}>
-                                      {feedback.admin?.name || 'CS Comments'}
-                                    </Typography>
-                                  }
-                                </Box>
-                                <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
-                                  {feedback.content}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          ))}
-                        </Stack>
-                        </Box>
-                      )}
-                    </Box>
-
+                    
                     {/* Feedback Section */}
+                    {submission.status !== 'CLIENT_APPROVED' && submission.status !== 'PENDING_REVIEW' && (
+                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        {submission.feedback && submission.feedback.length > 0 && (
+                          <Box sx={{ flex: 1, overflow: 'auto' }}>
+                          <Stack spacing={1}>
+                            {[submission.feedback[0]].map((feedback, index) => (
+                              <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                <Box sx={{ flex: 1 }}>
+                                  {feedback.reasons?.map((reason, reasonIndex) => (
+                                    <Chip 
+                                    sx={{
+                                      border: '1px solid',
+                                      pb: 1.8,
+                                      pt: 1.6,
+                                      mr: 0.5,
+                                      mb: 0.5,
+                                      borderColor: '#D4321C',
+                                      borderRadius: 0.8,
+                                      boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
+                                      bgcolor: '#fff',
+                                      color: '#D4321C',
+                                      fontWeight: 'bold',
+                                      fontSize: 12,
+                                    }}
+                                    key={reasonIndex} 
+                                    label={reason} 
+                                    size="small" 
+                                    variant="outlined" 
+                                    color="warning" />                                  
+                                  ))}
+                                  <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
+                                    {submission.status !== 'CLIENT_FEEDBACK' ? feedback.content : ''}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            ))}
+                          </Stack>
+                          </Box>
+                        )}
+                      </Box>                      
+                    )}
+
+
+                    {/* Feedback Actions */}
                     {((!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) || (isClient && submission.status === 'SENT_TO_CLIENT')) && (
                       <Box sx={{ flex: '0 0 auto' }}>
                         <Stack spacing={1}>
-                          {/* Action Buttons */}
                           <Stack direction="row" spacing={1} width="100%" justifyContent="flex-end">
                             {(clientVisible && !isClientFeedback) && (
                               <Button
@@ -524,7 +510,6 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                   // Store current feedback before changing
                                   setPreviousFeedback(feedback);
                                   setAction('request_revision');
-                                  setFeedback('This submission needs to be revisited.')
                                 }}
                                 disabled={loading}
                                 
@@ -637,6 +622,16 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                               </Select>
                             </FormControl>
                           }
+
+                          {submission.feedback?.[0] && [submission.feedback[0]].map((feedback) => (
+                            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              {(feedback.content || feedback.reasons) && 
+                                <Typography variant='caption' fontWeight="bold" color={'#636366'}>
+                                  {feedback.admin?.role === 'client' ? 'Client Feedback' : (feedback.admin?.name || 'CS Comments')}
+                                </Typography>
+                              }
+                            </Box>
+                          ))}
 
                           {/* Feedback Message Box */}
                           <TextField
@@ -776,8 +771,14 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                 </Box>
               </Box>
             ) : (
-              <Box p={2}>
-                <Typography color="text.secondary">No raw footage uploaded yet.</Typography>              
+              <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
+                <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                  No deliverables found
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={4}>
+                  This submission doesn't have any deliverables to review yet.
+                </Typography>
               </Box>
             )
           ) : (
@@ -797,7 +798,6 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
             </Card>
           )}
         </Box>
-        )}
         
         {/* Video Modal */}
         {rawFootages.length > 0 && (

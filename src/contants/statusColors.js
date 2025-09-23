@@ -10,7 +10,7 @@ export const STATUS_COLORS = {
   CLIENT_APPROVED: '#1ABF66',
   CLIENT_FEEDBACK: '#FFC702',
   SENT_TO_ADMIN: '#8A5AFE',
-  NOT_STARTED: '#000'
+  NOT_STARTED: '#8E8E93'
 };
 
 // Helper function to get status color
