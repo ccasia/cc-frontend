@@ -13,6 +13,7 @@ import Label from 'src/components/label';
 import CampaignInfo from './campaign-info';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignLogistics from './campaign-logistics';
+import CampaignV4Activity from './v4/campaign-v4-activity';
 
 const CampaignDetailItem = ({ campaign }) => {
   const location = useLocation();
@@ -32,7 +33,8 @@ const CampaignDetailItem = ({ campaign }) => {
       <Stack gap={2}>
         <Stack direction="row" spacing={2.5} sx={{ mt: 2 }}>
           {[
-            { value: 'tasks', label: 'Activity' },
+            { value: 'tasks', label: campaign?.submissionVersion === 'v4' ? 'Activity' : 'Activity' },
+            ...(campaign?.submissionVersion === 'v4' ? [{ value: 'tasks-v4', label: 'Activity (V4)' }] : []),
             { value: 'info', label: 'Campaign Details' },
             { value: 'logistics', label: 'Logistics' },
           ].map((tab) => (
@@ -96,6 +98,9 @@ const CampaignDetailItem = ({ campaign }) => {
               openLogisticTab={openLogisticTab}
               setCurrentTab={setCurrentTab}
             />
+          )}
+          {currentTab === 'tasks-v4' && (
+            <CampaignV4Activity campaign={campaign} />
           )}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
           {/* {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />} */}

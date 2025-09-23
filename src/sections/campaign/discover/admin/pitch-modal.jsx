@@ -228,7 +228,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         }
       } else {
         // Use V2 endpoint for admin-created campaigns
-        // Only send totalUGCVideos for admin-created campaigns, not client-created ones
         const requestData = {
           pitchId: pitch.id,
           status: 'approved',
@@ -1161,9 +1160,11 @@ if (onUpdate) {
                         sx={{
                           fontWeight: 600,
                           color:
-                            currentPitch?.status === 'approved'
+                            currentPitch?.status === 'approved' || 
+                            (currentPitch?.status || '').toUpperCase() === 'APPROVED'
                               ? 'success.main'
-                              : currentPitch?.status === 'rejected'
+                              : currentPitch?.status === 'rejected' || 
+                                (currentPitch?.status || '').toUpperCase() === 'REJECTED'
                                 ? 'error.main'
                                 : '#FFC702',
                         }}
@@ -1292,7 +1293,7 @@ if (onUpdate) {
         </DialogContent>
 
                 {/* Action Buttons - Only show if pitch hasn't been acted upon */}
-        {currentPitch?.status === 'PENDING_REVIEW' && (
+        {(currentPitch?.status === 'PENDING_REVIEW' || currentPitch?.status === 'undecided') && (
         <DialogActions sx={{ px: 3, pb: 3, gap: -1, mt: -3 }}>
           <Button
             variant="contained"

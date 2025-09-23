@@ -54,13 +54,13 @@ export default function UserCard({
     if (campaign?.origin !== 'CLIENT') {
       return !isSent;
     }
-    
+
     // For V3 campaigns (client-created), check if there's an APPROVED pitch
     if (campaign?.pitch && Array.isArray(campaign.pitch)) {
-      const creatorPitch = campaign.pitch.find(p => p.userId === creator?.id);
+      const creatorPitch = campaign.pitch.find((p) => p.userId === creator?.id);
       return creatorPitch?.status === 'APPROVED';
     }
-    
+
     return false;
   }, [campaign, creator, isSent]);
 
@@ -69,9 +69,9 @@ export default function UserCard({
     if (campaign?.origin !== 'CLIENT') {
       return true; // For V2, assume they're shortlisted if they appear here
     }
-    
+
     // For V3, check if there's a ShortListedCreator record
-    return campaign?.shortlisted?.some(s => s.userId === creator?.id);
+    return campaign?.shortlisted?.some((s) => s.userId === creator?.id);
   }, [campaign, creator]);
 
   const handleCardClick = () => {
@@ -370,7 +370,8 @@ export default function UserCard({
             sx={{
               mx: 'auto',
               width: '100%',
-              display: (isSent || shouldShowCompleteAgreement) && isShortlistedForV3 ? 'block' : 'none', // Show for isSent=true OR shouldShowCompleteAgreement=true, AND if shortlisted
+              display:
+                (isSent || shouldShowCompleteAgreement) && isShortlistedForV3 ? 'block' : 'none', // Show for isSent=true OR shouldShowCompleteAgreement=true, AND if shortlisted
               bgcolor: isSent ? '#3a3a3c' : '#ffffff',
               border: isSent ? 'none' : '1px solid #e7e7e7',
               borderBottom: isSent ? '3px solid #202021' : '3px solid #e7e7e7',
