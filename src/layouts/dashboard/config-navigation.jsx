@@ -222,14 +222,14 @@ export function useNavData() {
       },
       {
         items: [
-          {
-            title: (
-              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
-            ),
-            path: paths.dashboard.chat.root,
-            icon: ICONS.chat,
-            msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
-          },
+          // {
+          //   title: (
+          //     <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
+          //   ),
+          //   path: paths.dashboard.chat.root,
+          //   icon: ICONS.chat,
+          //   msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
+          // },
           {
             title: (
               <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
@@ -460,16 +460,16 @@ export function useNavData() {
                 },
               ]
             : [
-                {
-                  title: (
-                    <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-                      Chats
-                    </span>
-                  ),
-                  path: paths.dashboard.chat.root,
-                  icon: ICONS.chat,
-                  msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
-                },
+                // {
+                //   title: (
+                //     <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                //       Chats
+                //     </span>
+                //   ),
+                //   path: paths.dashboard.chat.root,
+                //   icon: ICONS.chat,
+                //   msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
+                // },
                 {
                   title: (
                     <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
