@@ -228,7 +228,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         }
       } else {
         // Use V2 endpoint for admin-created campaigns
-        // Only send totalUGCVideos for admin-created campaigns, not client-created ones
         const requestData = {
           pitchId: pitch.id,
           status: 'approved',

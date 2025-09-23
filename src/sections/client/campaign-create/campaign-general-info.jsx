@@ -4,7 +4,7 @@ import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import { DatePicker } from '@mui/x-date-pickers';
-import { Box, Grid, Stack, FormLabel, TextField, Typography } from '@mui/material';
+import { Box, Grid, Stack, FormLabel, TextField, Typography, Switch, FormControlLabel } from '@mui/material';
 
 import socket from 'src/hooks/socket';
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
@@ -296,6 +296,28 @@ const ClientCampaignGeneralInfo = () => {
               chip
               checkbox
               options={interestsLists.map((item) => ({ value: item, label: item }))}
+            />
+          </FormField>
+        </Box>
+
+        {/* Submission Version Toggle */}
+        <Box sx={{ mt: 2 }}>
+          <FormField label="Submission Version" required={false}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={watch('submissionVersion') === 'v4'}
+                  onChange={(e) => {
+                    setValue('submissionVersion', e.target.checked ? 'v4' : 'v3', { shouldValidate: true });
+                  }}
+                  color="primary"
+                />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Enable v4 submission flow
+                </Typography>
+              }
             />
           </FormField>
         </Box>
