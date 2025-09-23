@@ -29,10 +29,10 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
-import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
+import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -58,17 +58,17 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
-import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
+import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
-import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
+import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -97,6 +97,7 @@ const CampaignDetailView = ({ id }) => {
   const router = useRouter();
   // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
@@ -120,8 +121,6 @@ const CampaignDetailView = ({ id }) => {
   const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
 
   const open = Boolean(anchorEl);
-
-  console.log('campaignid', campaign);
 
   // Add this campaign to tabs and save to localStorage
   // useEffect(() => {
@@ -161,8 +160,12 @@ const CampaignDetailView = ({ id }) => {
   const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
 
   // Fetch V3 pitches for client-created campaigns to get accurate count
-  const { pitches: v3Pitches } = useGetV3Pitches(campaign?.origin === 'CLIENT' ? campaign?.id : null);
-  const { data: v3Agreements } = useGetAgreements(campaign?.origin === 'CLIENT' ? campaign?.id : null);
+  const { pitches: v3Pitches } = useGetV3Pitches(
+    campaign?.origin === 'CLIENT' ? campaign?.id : null
+  );
+  const { data: v3Agreements } = useGetAgreements(
+    campaign?.origin === 'CLIENT' ? campaign?.id : null
+  );
 
   const generateNewAgreement = useCallback(async (template) => {
     try {
@@ -200,23 +203,28 @@ const CampaignDetailView = ({ id }) => {
 
   // Check if user is client
   const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
-  
+
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
   const isSuperAdmin = user?.admin?.mode === 'god';
   const isAdmin = user?.role === 'admin';
-  const isCSM = user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
-  
+  const isCSM =
+    user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
+
   // Check if user can perform initial activation (CSL or Superadmin)
   const canInitialActivate = isCSL || isSuperAdmin;
-  
+
   // Check if user can complete activation (CSM/Admin assigned to campaign)
-  const isUserAssignedToCampaign = campaign?.campaignAdmin?.some(admin => 
-    admin.adminId === user?.id || 
-    admin.admin?.userId === user?.id ||
-    admin.admin?.user?.id === user?.id
+  const isUserAssignedToCampaign = campaign?.campaignAdmin?.some(
+    (admin) =>
+      admin.adminId === user?.id ||
+      admin.admin?.userId === user?.id ||
+      admin.admin?.user?.id === user?.id
   );
-  const canCompleteActivation = (isCSM || isAdmin) && campaign?.status === 'PENDING_ADMIN_ACTIVATION' && isUserAssignedToCampaign;
+  const canCompleteActivation =
+    (isCSM || isAdmin) &&
+    campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
+    isUserAssignedToCampaign;
 
   // Check if current tab is valid for client users
   useEffect(() => {
@@ -246,9 +254,9 @@ const CampaignDetailView = ({ id }) => {
       const targetTab = e?.detail;
       if (typeof targetTab !== 'string') return;
       if (isClient && !clientAllowedTabs.includes(targetTab)) return;
-      try {
-        localStorage.setItem('campaigndetail', targetTab);
-      } catch (err) {}
+
+      localStorage.setItem('campaigndetail', targetTab);
+
       setCurrentTab(targetTab);
     };
     window.addEventListener('switchCampaignTab', handleSwitchTab);
@@ -267,7 +275,9 @@ const CampaignDetailView = ({ id }) => {
 
     if (tab.value === 'agreement') {
       const v3Count = Array.isArray(v3Agreements) ? v3Agreements.length : 0;
-      const v2Count = Array.isArray(campaign?.creatorAgreement) ? campaign.creatorAgreement.length : 0;
+      const v2Count = Array.isArray(campaign?.creatorAgreement)
+        ? campaign.creatorAgreement.length
+        : 0;
       const count = campaign?.origin === 'CLIENT' ? v3Count : v2Count;
       return count > 0 ? <Label>{count}</Label> : null;
     }
@@ -323,14 +333,15 @@ const CampaignDetailView = ({ id }) => {
                 // { label: 'Client Info', value: 'client' },
                 {
                   label: `Creator Master List (${
-                    campaign?.origin === 'CLIENT' 
-                      ? v3Pitches?.filter((p) => 
-                          p.status === 'PENDING_REVIEW' || 
-                          p.status === 'SENT_TO_CLIENT' ||
-                          p.status === 'undecided' ||
-                          p.status === 'APPROVED' ||
-                          p.status === 'AGREEMENT_PENDING' ||
-                          p.status === 'AGREEMENT_SUBMITTED'
+                    campaign?.origin === 'CLIENT'
+                      ? v3Pitches?.filter(
+                          (p) =>
+                            p.status === 'PENDING_REVIEW' ||
+                            p.status === 'SENT_TO_CLIENT' ||
+                            p.status === 'undecided' ||
+                            p.status === 'APPROVED' ||
+                            p.status === 'AGREEMENT_PENDING' ||
+                            p.status === 'AGREEMENT_SUBMITTED'
                         ).length || 0
                       : campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0
                   })`,
@@ -341,7 +352,7 @@ const CampaignDetailView = ({ id }) => {
                   value: 'creator',
                 },
                 {
-                  label: `Agreements (${campaign?.origin === 'CLIENT' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : (campaign?.creatorAgreement?.length || 0)})`,
+                  label: `Agreements (${campaign?.origin === 'CLIENT' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : campaign?.creatorAgreement?.length || 0})`,
                   value: 'agreement',
                 },
                 {
@@ -486,7 +497,9 @@ const CampaignDetailView = ({ id }) => {
     ) : (
       <CampaignDetailContent campaign={campaign} />
     ),
-    'creator-master-list': <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />,
+    'creator-master-list': (
+      <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
+    ),
     creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
     logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />,
@@ -612,7 +625,10 @@ const CampaignDetailView = ({ id }) => {
   );
 
   const isPendingCampaign = useMemo(
-    () => campaign?.status === 'SCHEDULED' || campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'PENDING_ADMIN_ACTIVATION',
+    () =>
+      campaign?.status === 'SCHEDULED' ||
+      campaign?.status === 'PENDING_CSM_REVIEW' ||
+      campaign?.status === 'PENDING_ADMIN_ACTIVATION',
     [campaign]
   );
 
@@ -739,7 +755,11 @@ const CampaignDetailView = ({ id }) => {
                       startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
                       onClick={() => {
                         // For superadmin on pending campaigns: use initial activation (admin assignment only)
-                        if (canInitialActivate && (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')) {
+                        if (
+                          canInitialActivate &&
+                          (campaign?.status === 'PENDING_CSM_REVIEW' ||
+                            campaign?.status === 'SCHEDULED')
+                        ) {
                           console.log('Opening InitialActivateDialog (admin assignment only)');
                           setInitialActivateDialogOpen(true);
                         } else {
@@ -935,7 +955,7 @@ const CampaignDetailView = ({ id }) => {
         onClose={() => setActivateDialogOpen(false)}
         campaignId={id}
       />
-      
+
       <InitialActivateCampaignDialog
         open={initialActivateDialogOpen}
         onClose={() => setInitialActivateDialogOpen(false)}
