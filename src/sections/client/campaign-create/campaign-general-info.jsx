@@ -58,7 +58,7 @@ const ClientCampaignGeneralInfo = () => {
   // Compute exceed state and notify parent
   const numericAvailable = Number(availableCredits) || 0;
   const requestedCredits = Number(credits ?? 0);
-  const exceedOnly = requestedCredits > numericAvailable && numericAvailable > 0;
+  const exceedOnly = (numericAvailable <= 0 && requestedCredits > 0) || (numericAvailable > 0 && requestedCredits > numericAvailable);
   const blockInvalid = numericAvailable <= 0 || requestedCredits <= 0 || exceedOnly;
 
   useEffect(() => {
@@ -194,10 +194,10 @@ const ClientCampaignGeneralInfo = () => {
                   InputProps={{
                     inputProps: {
                       min: 1,
-                      max: availableCredits || 999999,
+                      max: numericAvailable > 0 ? numericAvailable : 0,
                     },
                   }}
-                  helperText={exceedOnly ? `Exceeds limits: available ${numericAvailable}` : ''}
+                  helperText={exceedOnly ? (numericAvailable <= 0 ? 'No credits available' : `Exceeds limits: available ${numericAvailable}`) : ''}
                   error={exceedOnly}
                   sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
                 />
