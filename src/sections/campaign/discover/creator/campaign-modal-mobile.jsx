@@ -85,8 +85,8 @@ const CampaignModalMobile = ({ campaign }) => {
     }
 
     try {
-      return `${new Date(startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} 
-      - ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+      return `${new Date(startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} 
+      - ${new Date(endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
     } catch (error) {
       return 'Invalid date format';
     }
@@ -164,7 +164,7 @@ const CampaignModalMobile = ({ campaign }) => {
       <Stack spacing={2}>
         <Box>
           <Typography variant="body2" sx={{ color: '#8e8e93', mb: 1, fontWeight: 600 }}>
-            Campaign Duration
+            Campaign Period
           </Typography>
           <Typography variant="body2" sx={{ color: '#231F20', fontSize: '0.9rem' }}>
             {renderCampaignPeriod()}
