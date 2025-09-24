@@ -466,7 +466,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
           borderRadius: 2,
           p: { xs: 2, sm: 4 },
           m: { xs: 1, sm: 2 },
-          height: '97vh',
+          height: '85vh',
           position: 'relative',
           overflow: 'hidden',
         },
