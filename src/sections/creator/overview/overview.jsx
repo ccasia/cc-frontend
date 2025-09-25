@@ -13,11 +13,13 @@ import {
   Typography,
   CardContent,
   ListItemText,
+  ListItemButton,
   CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
+import { useRouter } from 'src/routes/hooks';
 
 import useGetOverview from 'src/hooks/use-get-overview';
 
@@ -27,9 +29,12 @@ import resources from 'src/assets/resources/blogs.json';
 import Image from 'src/components/image';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+import { endpoints } from 'src/utils/axios';
 
 const Overview = () => {
   const { user } = useAuthContext();
+
+  const route = useRouter();
 
   const { data, isLoading } = useGetOverview();
 
@@ -40,47 +45,55 @@ const Overview = () => {
         <Grid container spacing={2}>
           <Grid item xs={6} sm={6}>
             <Box>
-              <Stack
-                direction="row"
-                alignItems="center"
-                spacing={2}
-                sx={{
-                  p: 2,
-                }}
-              >
-                <Avatar
-                  sx={{
-                    width: 50,
-                    height: 50,
-                    bgcolor: '#1340FF',
+              <Stack>
+                <ListItemButton
+                  onClick={() => {
+                    route.push(paths.dashboard.campaign.creator.manage);
                   }}
-                >
-                  <Image src="/assets/icons/overview/total_campaigns.svg" />
-                </Avatar>
-                <ListItemText
-                  primary="TOTAL CAMPAIGNS"
-                  secondary={data?.adjustedCampaigns?.length}
-                  primaryTypographyProps={{
-                    variant: 'subtitle2',
-                    color: 'text.secondary',
-                    fontWeight: 'bold',
-                    sx: {
-                      fontSize: { xs: '0.75rem', md: '0.875rem' },
+                  sx={{
+                    pointerEvents: { xs: 'auto', md: 'none' },
+                    cursor: { xs: 'pointer', md: 'default' },
+                    '&:hover': {
+                      backgroundColor: 'transparent',
                     },
                   }}
-                  secondaryTypographyProps={{
-                    variant: 'h4',
-                    fontWeight: 'bold',
-                    color: 'black',
-                    letterSpacing: -1,
-                  }}
-                />
+                >
+                  <Stack direction="row" spacing={2}>
+                    <Avatar
+                      sx={{
+                        width: 50,
+                        height: 50,
+                        bgcolor: '#1340FF',
+                      }}
+                    >
+                      <Image src="/assets/icons/overview/total_campaigns.svg" />
+                    </Avatar>
+                    <ListItemText
+                      primary="TOTAL CAMPAIGNS"
+                      secondary={data?.adjustedCampaigns?.length}
+                      primaryTypographyProps={{
+                        variant: 'subtitle2',
+                        color: 'text.secondary',
+                        fontWeight: 'bold',
+                        sx: {
+                          fontSize: { xs: '0.75rem', md: '0.875rem' },
+                        },
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'h4',
+                        fontWeight: 'bold',
+                        color: 'black',
+                        letterSpacing: -1,
+                      }}
+                    />
+                  </Stack>
+                </ListItemButton>
               </Stack>
 
               <Stack
                 spacing={1}
                 sx={{
-                  display: { xs: 'none', md: 'block' },
+                  display: { xs: 'none', md: 'flex' },
                   p: 2,
                 }}
               >
@@ -231,41 +244,49 @@ const Overview = () => {
           {/* Total Task */}
           <Grid item xs={6} sm={6}>
             <Box>
-              <Stack
-                direction="row"
-                alignItems="center"
-                spacing={2}
-                sx={{
-                  p: 2,
-                }}
-              >
-                <Avatar
-                  sx={{
-                    width: 50,
-                    height: 50,
-                    bgcolor: '#FF3500',
+              <Stack>
+                <ListItemButton
+                  onClick={() => {
+                    route.push(paths.dashboard.kanban);
                   }}
-                >
-                  <Image src="/assets/icons/overview/total_tasks.svg" />
-                </Avatar>
-                <ListItemText
-                  primary="TOTAL TASKS"
-                  secondary={data?.tasks?.length}
-                  primaryTypographyProps={{
-                    variant: 'subtitle2',
-                    color: 'text.secondary',
-                    fontWeight: 'bold',
-                    sx: {
-                      fontSize: { xs: '0.75rem', md: '0.875rem' },
+                  sx={{
+                    pointerEvents: { xs: 'auto', md: 'none' },
+                    cursor: { xs: 'pointer', md: 'default' },
+                    '&:hover': {
+                      backgroundColor: 'transparent',
                     },
                   }}
-                  secondaryTypographyProps={{
-                    variant: 'h4',
-                    fontWeight: 'bold',
-                    color: 'black',
-                    letterSpacing: -1,
-                  }}
-                />
+                >
+                  <Stack direction="row" spacing={2}>
+                    <Avatar
+                      sx={{
+                        width: 50,
+                        height: 50,
+                        bgcolor: '#FF3500',
+                      }}
+                    >
+                      <Image src="/assets/icons/overview/total_tasks.svg" />
+                    </Avatar>
+                    <ListItemText
+                      primary="TOTAL TASKS"
+                      secondary={data?.tasks?.length}
+                      primaryTypographyProps={{
+                        variant: 'subtitle2',
+                        color: 'text.secondary',
+                        fontWeight: 'bold',
+                        sx: {
+                          fontSize: { xs: '0.75rem', md: '0.875rem' },
+                        },
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'h4',
+                        fontWeight: 'bold',
+                        color: 'black',
+                        letterSpacing: -1,
+                      }}
+                    />
+                  </Stack>
+                </ListItemButton>
               </Stack>
 
               {/* <Divider /> */}
