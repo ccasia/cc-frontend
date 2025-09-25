@@ -54,6 +54,151 @@ const BUTTON_STYLES = {
   }
 };
 
+const FEEDBACK_CHIP_STYLES = {
+  border: '1px solid',
+  pb: 1.8,
+  pt: 1.6,
+  borderColor: '#D4321C',
+  borderRadius: 0.8,
+  boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
+  bgcolor: '#fff',
+  color: '#D4321C',
+  fontWeight: 'bold',
+  fontSize: 12,
+  mr: 0.5,
+  mb: 0.5
+};
+
+function FeedbackDisplay({ feedback, isClient }) {
+  if (!feedback) return null;
+
+  // Check if feedback has any content or reasons
+  const hasReasons = feedback.reasons && feedback.reasons.length > 0;
+  const hasContent = feedback.content && feedback.content.trim().length > 0;
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 1 }}>
+      {hasReasons && (
+        <Box>
+          {feedback.reasons.map((reason, reasonIndex) => (
+            <Chip 
+              sx={FEEDBACK_CHIP_STYLES}
+              key={reasonIndex} 
+              label={reason} 
+              size="small" 
+              variant="outlined" 
+              color="warning" 
+            />
+          ))}
+        </Box>
+      )}
+      {isClient && hasContent && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={0.5}>CS Comments</Typography>}
+      {hasContent && (
+        <Typography fontSize={12} sx={{ mb: 0.5 }}>
+          {feedback.content}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
+function FeedbackSection({ submission, isVisible, isClient }) {
+  if (!isVisible || !submission.feedback || submission.feedback.length === 0) {
+    return null;
+  }
+
+  // Filter feedback based on user role and feedback type
+  const filteredFeedback = submission.feedback.filter(feedback => {
+    if (isClient) {
+      // Clients should only see COMMENT type feedback (when admin sends to client)
+      return feedback.type === 'COMMENT';
+    } else {
+      // Admins should see:
+      // - REQUEST type feedback (when admin/client requests changes)
+      // - COMMENT type feedback when status is SENT_TO_CLIENT (to see what they sent to client)
+      if (submission.status === 'SENT_TO_CLIENT') {
+        return feedback.type === 'COMMENT';
+      }
+      return feedback.type === 'REQUEST';
+    }
+  });
+
+  // Always show the latest relevant feedback, even if it's empty
+  // This ensures consistent display so users know the latest action
+  if (filteredFeedback.length === 0) {
+    return null;
+  }
+
+  const latestFeedback = filteredFeedback[0];
+  const showContent = submission.status !== 'CLIENT_FEEDBACK';
+
+  return (
+    <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <Stack spacing={1}>
+        <FeedbackDisplay 
+          feedback={latestFeedback} 
+          showContent={showContent}
+          isClient={isClient}
+        />
+      </Stack>
+    </Box>
+  );
+}
+
+/*
+ * Helper function to determine visibility and permissions for feedback actions
+ * 
+ * VISIBILITY RULES:
+ * 1. Admins see feedback actions when submission is PENDING_REVIEW or CLIENT_FEEDBACK
+ * 2. Clients see feedback actions when submission is SENT_TO_CLIENT
+ * 3. Request Change button: visible when content is visible AND not in client feedback
+ * 4. Approve button: visible when NOT in client feedback AND NOT in request mode
+ * 5. Admin-only actions: only admins see client feedback response buttons
+ */
+function getFeedbackActionsVisibility({
+  isClient,
+  submission,
+  clientVisible,
+  isClientFeedback,
+  action
+}) {
+  // Main section visibility:
+  // - Admins: when submission is PENDING_REVIEW or CLIENT_FEEDBACK
+  // - Clients: when submission is SENT_TO_CLIENT
+  const showFeedbackActions = 
+    (!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) ||
+    (isClient && submission.status === 'SENT_TO_CLIENT');
+
+  // Request Change button visibility:
+  // - Visible when client can see content AND not in client feedback status
+  const showRequestChangeButton = clientVisible && !isClientFeedback && action !== 'request_revision';
+
+  // Change request form visibility:
+  // - Visible when user is in request_revision mode AND client can see content
+  const showChangeRequestForm = action === 'request_revision' && clientVisible;
+
+  // Approve button visibility:
+  // - Visible when NOT in client feedback status AND NOT in request_revision mode
+  const showApproveButton = !isClientFeedback && action !== 'request_revision';
+
+  // Admin-only client feedback actions:
+  // - Only admins can see this when submission has client feedback
+  const showAdminClientFeedbackActions = !isClient && isClientFeedback && action !== 'request_revision';
+
+  // Reasons dropdown visibility:
+  // - Visible when user is in request mode
+  const showReasonsDropdown = action === 'request_revision' || action === 'request_changes';
+
+  return {
+    showFeedbackActions,
+    showRequestChangeButton,
+    showChangeRequestForm,
+    showApproveButton,
+    showAdminClientFeedbackActions,
+    showReasonsDropdown
+  };
+}
+
 
 export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
   const { user } = useAuthContext();
@@ -67,9 +212,11 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
   const [localActionInProgress, setLocalActionInProgress] = useState(false);
   const [reasons, setReasons] = useState(() => {
     if (isClientFeedback && submission.feedback && submission.feedback.length > 0) {
-      // Find the most recent client feedback and use its reasons
-      const clientFeedbacks = submission.feedback.filter(fb => fb.admin?.role === 'client');
-      const latestClientFeedback = clientFeedbacks[0];
+      // Find the most recent REQUEST type feedback from client
+      const clientRequestFeedbacks = submission.feedback.filter(fb => 
+        fb.admin?.role === 'client' && fb.type === 'REQUEST'
+      );
+      const latestClientFeedback = clientRequestFeedbacks[0];
       return latestClientFeedback?.reasons || [];
     }
     return [];
@@ -78,7 +225,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
   // Feedback
   const getDefaultFeedback = () => {
     if (isClientFeedback) {
-      return submission.video?.[0]?.feedback || '';
+      // Get the most recent REQUEST type feedback for initialization
+      const requestFeedbacks = submission.feedback?.filter(fb => fb.type === 'REQUEST') || [];
+      const latestRequestFeedback = requestFeedbacks[0];
+      return latestRequestFeedback?.content || submission.video?.[0]?.feedback || '';
     }
     return '';
   };
@@ -99,6 +249,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
   // Video Modal
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  
+  // Caption overflow detection
+  const [captionOverflows, setCaptionOverflows] = useState(false);
+  const captionMeasureRef = useRef(null);
 
   // Detect client role
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
@@ -154,7 +308,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
         const result = await approveV4Submission({
           submissionId: submission.id,
           action: 'approve',
-          feedback: feedback.trim() || undefined,
+          feedback: feedback.trim() || '',
           reasons: reasons || [],
           caption: caption.trim() || undefined,
         });
@@ -464,6 +618,15 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
     };
   }, [socket, submission?.id, campaign?.id, onUpdate, localActionInProgress, user?.id]);
 
+  // Check if caption overflows the height limits
+  useEffect(() => {
+    if (captionMeasureRef.current && submission.caption) {
+      const element = captionMeasureRef.current;
+      const maxHeight = window.innerWidth < 600 ? 50 : window.innerWidth < 900 ? 80 : 100;
+      setCaptionOverflows(element.scrollHeight > maxHeight);
+    }
+  }, [submission.caption]);
+
   return (
       <Box sx={{ 
         overflow: 'hidden',
@@ -479,8 +642,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                 <Box sx={{ 
                   display: 'flex', 
                   gap: 2,
+                  justifyContent: 'space-between',
                   alignItems: 'stretch',
-                  minHeight: 405
+                  minHeight: 500
                 }}>
                   {/* Left Side */}
                   <Box sx={{ 
@@ -488,7 +652,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    maxWidth: 400
+                    maxWidth: { xs: 300, md: 400, lg: 600 }
                   }}>
                     {/* Caption */}
                     <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
@@ -511,76 +675,95 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                           />
                         </Box>
                       ) : submission.caption ? (
-                        <Box>
-                          <Typography fontSize={14} color={'#636366'} sx={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
-                            {submission.caption}
-                          </Typography>
-                        </Box>
+                        <>
+                          {/* Hidden element to measure caption height */}
+                          <Box
+                            ref={captionMeasureRef}
+                            sx={{
+                              visibility: 'hidden',
+                              position: 'absolute',
+                              width: '100%',
+                              maxWidth: 400,
+                              pointerEvents: 'none'
+                            }}
+                          >
+                            <Typography fontSize={14} sx={{ 
+                              wordWrap: 'break-word',
+                              overflowWrap: 'break-word',
+                              lineHeight: 1.5
+                            }}>
+                              {submission.caption}
+                            </Typography>
+                          </Box>
+                          
+                          {/* Conditional rendering based on overflow */}
+                          {captionOverflows ? (
+                            <Box sx={{ 
+                              maxHeight: { xs: 50, sm: 80, md: 100 },
+                              overflow: 'auto',
+                              border: '1px solid #E7E7E7',
+                              borderRadius: 0.5,
+                              p: 1,
+                              bgcolor: 'background.paper',
+                            }}>
+                              <Typography fontSize={14} color={'#636366'} sx={{ 
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                                lineHeight: 1.5
+                              }}>
+                                {submission.caption}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Typography fontSize={14} color={'#636366'} sx={{ 
+                              wordWrap: 'break-word',
+                              overflowWrap: 'break-word',
+                              lineHeight: 1.5
+                            }}>
+                              {submission.caption}
+                            </Typography>
+                          )}
+                        </>
                       ) : null}
                     </Box>
                     
 
                     {/* Feedback Section */}
-                    {submission.status !== 'CLIENT_APPROVED' && submission.status !== 'PENDING_REVIEW' && (
-                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        {submission.feedback && submission.feedback.length > 0 && (
-                          <Box sx={{ flex: 1, overflow: 'auto' }}>
-                          <Stack spacing={1}>
-                            {submission.feedback?.[0] && [submission.feedback[0]].map((feedback) => (
-                              <Box key={feedback.id || 0} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                                <Box>
-                                  {feedback.reasons?.map((reason, reasonIndex) => (
-                                    <Chip 
-                                    sx={{
-                                      border: '1px solid',
-                                      pb: 1.8,
-                                      pt: 1.6,
-                                      borderColor: '#D4321C',
-                                      borderRadius: 0.8,
-                                      boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
-                                      bgcolor: '#fff',
-                                      color: '#D4321C',
-                                      fontWeight: 'bold',
-                                      fontSize: 12,
-                                      mr: 0.5,
-                                      mb: 0.5
-                                    }}
-                                    key={reasonIndex} 
-                                    label={reason} 
-                                    size="small" 
-                                    variant="outlined" 
-                                    color="warning" />
-                                  ))}
-                                </Box>
-                                <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
-                                  {submission.status !== 'CLIENT_FEEDBACK' ? feedback.content : ''}
-                                </Typography>
-                              </Box>
-                            ))}
-                          </Stack>
-                          </Box>
-                        )}
-                      </Box>
-                    )}
+                    <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                      <FeedbackSection 
+                        submission={submission}
+                        isVisible={submission.status !== 'CLIENT_APPROVED' && submission.status !== 'PENDING_REVIEW'}
+                        isClient={isClient}
+                      />
+                    </Box>
 
-                    {/* Feedback Actions */}
-                    {((!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) || (isClient && submission.status === 'SENT_TO_CLIENT')) && (
+                    {/* Feedback Actions - Visibility controlled by user role and submission status */}
+                    {(() => {
+                      const visibility = getFeedbackActionsVisibility({
+                        isClient,
+                        submission,
+                        clientVisible,
+                        isClientFeedback,
+                        action
+                      });
+
+                      if (!visibility.showFeedbackActions) return null;
+
+                      return (
                       <Box sx={{ flex: '0 0 auto' }}>
                         <Stack spacing={1}>
                           <Stack direction="row" spacing={1} width="100%" justifyContent="flex-end">
-                            {(clientVisible && !isClientFeedback) && (
+                            {/* Request Change Button - Visible to both admins and clients when content is visible */}
+                            {visibility.showRequestChangeButton && (
                               <Button
                                 variant="contained"
                                 color="warning"
                                 onClick={() => {
-                                  // Store current feedback before changing
                                   setPreviousFeedback(feedback);
                                   setAction('request_revision');
                                 }}
                                 disabled={loading}
-                                
                                 sx={{
-                                  display: action === 'request_revision' ? 'none' : 'flex',
                                   ...BUTTON_STYLES.base,
                                   ...BUTTON_STYLES.warning,
                                 }}
@@ -588,7 +771,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                                 {loading ? 'Processing...' : 'Request a Change'}
                               </Button>
                             )}
-                            {(action === 'request_revision' && clientVisible) ? (
+                            {/* Change Request Form - Visible when user is in request mode */}
+                            {visibility.showChangeRequestForm && (
                               <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
                                 <Button
                                   variant="contained"
@@ -596,12 +780,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                                   onClick={() => {
                                     setAction('approve');
                                     setReasons([]);
-                                    // Revert to previous feedback message
-                                    setFeedback(previousFeedback);
                                   }}
                                   disabled={loading}
                                   sx={{
-                                    display: 'flex',
                                     ...BUTTON_STYLES.base,
                                     ...BUTTON_STYLES.secondary,
                                   }}
@@ -610,57 +791,56 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                                 </Button>
                                 <Button
                                   variant="contained"
-                                  color={!isClient ? "success" : 'warning'}
+                                  color={'warning'}
                                   onClick={handleRequestChanges}
                                   disabled={loading}
                                   sx={{
-                                    display: 'flex',
                                     ...BUTTON_STYLES.base,
-                                    ...BUTTON_STYLES.success,
+                                    ...BUTTON_STYLES.warning,
                                   }}
                                 >
                                   {loading ? 'Processing...' : !isClient ? 'Send to Creator' : 'Request a Change'}
                                 </Button>
                               </Box>
-                              ) : !isClientFeedback && (
+                            )}
+
+                            {/* Approve Button - Visible when not in client feedback and not in request mode */}
+                            {visibility.showApproveButton && (
                               <Button
                                 variant="contained"
                                 color="success"
                                 onClick={handleApprove}
                                 disabled={loading}
                                 sx={{
-                                  display: 'flex',
                                   ...BUTTON_STYLES.base,
                                   ...BUTTON_STYLES.success,
                                 }}
                               >
                                 {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
                               </Button>
-                              )
-                            }
+                            )}
 
-                            {!isClient && isClientFeedback &&
-                              <Stack spacing={1} sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                                <Button
-                                  variant="contained"
-                                  color="secondary"
-                                  onClick={handleRequestChanges}
-                                  disabled={loading}
-                                  sx={{
-                                    display: action === 'request_revision' ? 'none' : 'flex',
-                                    ...BUTTON_STYLES.base,
-                                    ...BUTTON_STYLES.warning,
-                                    width: 140,
-                                    alignSelf: 'flex-end'
-                                  }}
-                                >
-                                  {loading ? 'Processing...' : 'Send to Creator'}
-                                </Button>
-                              </Stack>
-                            }
+                            {/* Admin-only Client Feedback Actions - Only admins see this for client feedback */}
+                            {visibility.showAdminClientFeedbackActions && (
+                              <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={handleRequestChanges}
+                                disabled={loading}
+                                sx={{
+                                  ...BUTTON_STYLES.base,
+                                  ...BUTTON_STYLES.warning,
+                                  width: 140,
+                                  alignSelf: 'flex-end'
+                                }}
+                              >
+                                {loading ? 'Processing...' : 'Send to Creator'}
+                              </Button>
+                            )}
                           </Stack>
 
-                          {(action === 'request_revision' || action === 'request_changes') &&
+                          {/* Reasons Dropdown - Visible when requesting changes */}
+                          {visibility.showReasonsDropdown && (
                             <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10 }} hiddenLabel size='small'>
                               <Select
                                 multiple
@@ -687,19 +867,44 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                                 ))}
                               </Select>
                             </FormControl>
-                          }
+                          )}
 
-                          {submission.feedback?.[0] && [submission.feedback[0]].map((feedback) => (
-                            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                              {(feedback.content || feedback.reasons) && 
-                                <Typography variant='caption' fontWeight="bold" color={'#636366'}>
-                                  {feedback.admin?.role === 'client' ? 'Client Feedback' : (feedback.admin?.name || 'CS Comments')}
-                                </Typography>
+                          {/* Feedback Label - Shows who provided the feedback */}
+                          {(() => {
+                            // Filter feedback based on user role
+                            const filteredFeedback = submission.feedback?.filter(feedback => {
+                              if (isClient) {
+                                // Clients should only see COMMENT type feedback
+                                return feedback.type === 'COMMENT';
+                              } else {
+                                // Admins should see:
+                                // - REQUEST type feedback (when admin/client requests changes)
+                                // - COMMENT type feedback when status is SENT_TO_CLIENT (to see what they sent to client)
+                                if (submission.status === 'SENT_TO_CLIENT') {
+                                  return feedback.type === 'COMMENT';
+                                }
+                                return feedback.type === 'REQUEST';
                               }
-                            </Box>
-                          ))}
+                            }) || [];
+                            
+                            const latestRelevantFeedback = filteredFeedback[0];
+                            
+                            // Always show feedback label if there is relevant feedback, even if empty
+                            // This ensures consistent display so users know the latest action
+                            if (!latestRelevantFeedback) {
+                              return null;
+                            }
+                            
+                            return (
+                              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                <Typography variant='caption' fontWeight="bold" color={'#636366'}>
+                                  {!isClient && latestRelevantFeedback.type === 'REQUEST' && latestRelevantFeedback.admin?.role === 'client' && 'Client Feedback'}
+                                </Typography>
+                              </Box>
+                            );
+                          })()}
 
-                          {/* Feedback Message Box */}
+                          {/* Feedback Message Box - Available to all users when actions are visible */}
                           <TextField
                             multiline
                             rows={3}
@@ -716,14 +921,15 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                           />
                         </Stack>
                       </Box>
-                    )}
+                      );
+                    })()}
                   </Box>
 
                   {/* Video Container - Right Side */}
                   <Box 
                     sx={{ 
                       width: 580, 
-                      height: 405,
+                      height: 500,
                       display: 'flex', 
                       flexDirection: 'column',
                       borderRadius: 1,
@@ -760,7 +966,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                         <video
                           ref={videoRef}
                           style={{ 
-                            maxWidth: videoDimensions.aspectRatio > 1 ? '100%' : 200, // Wider for landscape
+                            maxWidth: videoDimensions.aspectRatio > 1 ? '100%' : 250, // Wider for landscape
                             height: 'auto',
                             display: 'block',
                             pointerEvents: 'none'
