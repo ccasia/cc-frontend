@@ -92,8 +92,8 @@ function CreatorAccordion({ creator, campaign }) {
           return getStatusColor('PENDING_REVIEW');
         case 'PENDING_REVIEW':
           return getStatusColor('IN_PROGRESS');
-        case 'CLIENT_FEEDBACK':
-          return getStatusColor('IN_PROGRESS');
+        case 'CHANGES_REQUIRED':
+          return getStatusColor('IN_PROGRESS')
         default:
           return getStatusColor(status); // Use default mapping for other statuses
       }
@@ -125,10 +125,10 @@ function CreatorAccordion({ creator, campaign }) {
         case 'POSTED':
           return 'POSTED';
         case 'CLIENT_FEEDBACK':
-          return 'IN PROGRESS'; // For clients - they've submitted feedback, now admin processing it
+          return 'IN PROGRESS'; 
         case 'CHANGES_REQUIRED':
         case 'REJECTED':
-          return 'CHANGES REQUIRED';
+          return 'IN PROGRESS';
         default:
           return formatStatus(status);
       }
@@ -155,7 +155,7 @@ function CreatorAccordion({ creator, campaign }) {
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10
           }}
-          bgcolor={isExpanded ? '#F5F5F5' : '#E7E7E7'}
+          bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
           py={1.5}
           pl={1.5}
           pr={0.5}
@@ -238,7 +238,7 @@ function CreatorAccordion({ creator, campaign }) {
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10
           }}
-          bgcolor={isExpanded ? '#F5F5F5' : '#E7E7E7'}
+          bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
           py={1.5}
           pl={1.5}
           pr={0.5}
@@ -316,7 +316,7 @@ function CreatorAccordion({ creator, campaign }) {
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10
           }}
-          bgcolor={isExpanded ? '#F5F5F5' : '#E7E7E7'}
+          bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
           py={1.5}
           pl={1.5}
           pr={0.5}
