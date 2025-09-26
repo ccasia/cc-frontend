@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
@@ -13,7 +13,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  Grid,
   Link
 } from '@mui/material';
 
@@ -26,7 +25,6 @@ import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 import { PhotoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
 import { options_changes } from './constants';
-import { fDate } from 'src/utils/format-time';
 
 // ----------------------------------------------------------------------
 
@@ -54,6 +52,388 @@ const BUTTON_STYLES = {
   }
 };
 
+const FEEDBACK_CHIP_STYLES = {
+  border: '1px solid',
+  pb: 1.8,
+  pt: 1.6,
+  borderColor: '#D4321C',
+  borderRadius: 0.8,
+  boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
+  bgcolor: '#fff',
+  color: '#D4321C',
+  fontWeight: 'bold',
+  fontSize: 12,
+  mr: 0.5,
+  mb: 0.5
+};
+
+function FeedbackDisplay({ feedback, submission, isClient }) {
+  if (!feedback) return null;
+
+  // Check if feedback has any content or reasons
+  const hasReasons = feedback.reasons && feedback.reasons.length > 0;
+  const hasContent = feedback.content && feedback.content.trim().length > 0;
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 1 }}>
+      {hasReasons && (
+        <Box>
+          {feedback.reasons.map((reason, reasonIndex) => (
+            <Chip 
+              sx={FEEDBACK_CHIP_STYLES}
+              key={reasonIndex} 
+              label={reason} 
+              size="small" 
+              variant="outlined" 
+              color="warning" 
+            />
+          ))}
+        </Box>
+      )}
+      {(isClient && hasContent && submission.status === 'SENT_TO_CLIENT') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={0.5}>CS Comments</Typography>}
+      {(!isClient && hasContent && submission.status === 'CLIENT_APPROVED') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={0.5}>Client Feedback</Typography>}
+      {hasContent && (
+        <Typography fontSize={12} sx={{ mb: 0.5 }}>
+          {feedback.content}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
+function PostingLinkSection({ submission, onUpdate }) {
+  const { user } = useAuthContext();
+  const [postingLink, setPostingLink] = useState(submission.content || '');
+  const [loading, setLoading] = useState(false);
+
+  // Determine user role hierarchy
+  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
+  const isSuperAdmin = userRole.toLowerCase() === 'superadmin';
+  
+  const handleSubmitPostingLink = useCallback(async () => {
+    if (!postingLink.trim()) {
+      enqueueSnackbar('Please enter a posting link', { variant: 'warning' });
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(postingLink.trim());
+    } catch {
+      enqueueSnackbar('Please enter a valid URL', { variant: 'error' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axiosInstance.put('/api/submissions/v4/posting-link', {
+        submissionId: submission.id,
+        postingLink: postingLink.trim()
+      });
+
+      enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error updating posting link:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to update posting link', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [postingLink, submission.id, onUpdate]);
+
+  const handleApprovePosting = useCallback(async () => {
+    try {
+      setLoading(true);
+      await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
+        submissionId: submission.id,
+        action: 'approve'
+      });
+
+      enqueueSnackbar('Posting link approved successfully', { variant: 'success' });
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error approving posting link:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to approve posting link', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [submission.id, onUpdate]);
+
+  const handleRejectPosting = useCallback(async () => {
+    try {
+      setLoading(true);
+      await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
+        submissionId: submission.id,
+        action: 'reject'
+      });
+
+      enqueueSnackbar('Posting link rejected successfully', { variant: 'success' });
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error rejecting posting link:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to reject posting link', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [submission.id, onUpdate]);
+
+  const isPosted = submission.status === 'POSTED';
+  
+  // Determine who added the posting link and show appropriate controls
+  const postingLinkAddedByAdmin = Boolean(submission.admin?.userId);
+
+  return (
+    <Box sx={{ flex: '0 0 auto' }}>
+
+        <Box>
+          {isPosted && (
+            <Box display="flex" sx={{ mb: 1 }}>
+              <Typography variant="caption" fontWeight="600" color="text.primary" sx={{ mr: 0.5 }}>
+                Date approved:
+              </Typography>
+              <Typography variant="caption" color="#636366">
+                {new Date(submission.updatedAt).toLocaleDateString('en-GB')}
+              </Typography>
+            </Box>
+          )}
+          
+          {/* Show who added the posting link if it was an admin */}
+          {!isPosted && postingLinkAddedByAdmin && submission.content && (
+            <Box display="flex" sx={{ mb: 1 }}>
+              <Typography variant="caption" color="#636366" sx={{ fontStyle: 'italic' }}>
+                Added by admin: {submission.admin?.user?.name} • Requires superadmin approval
+              </Typography>
+            </Box>
+          )}
+
+          {/* Posting link content exists */}
+          {submission.content && 
+            <Box sx={{ 
+              p: 2, 
+              border: '1px solid #E7E7E7', 
+              borderRadius: 1, 
+              bgcolor: 'background.paper',
+              mb: 2
+            }}>
+              <Link 
+                href={submission.content} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                sx={{ 
+                  wordBreak: 'break-all',
+                  color: '#0062CD',
+                  textDecoration: 'underline',
+                  fontSize: 14,
+                  '&:hover': {
+                    color: '#004A9F'
+                  }
+                }}
+              >
+                {submission.content}
+              </Link>
+            </Box>          
+          }
+          
+          {/* Posting link by creator and user is Admin/Superadmin */}
+          {!postingLinkAddedByAdmin && !isPosted && submission.content && (
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                onClick={handleRejectPosting}
+                disabled={loading}
+                sx={{
+                  ...BUTTON_STYLES.base,
+                  ...BUTTON_STYLES.warning,
+                }}
+              >
+                {loading ? 'Processing...' : 'Request a Change'}
+              </Button>
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={handleApprovePosting}
+                disabled={loading}
+                sx={{
+                  ...BUTTON_STYLES.base,
+                  ...BUTTON_STYLES.success,
+                }}
+              >
+                {loading ? 'Processing...' : 'Approve'}
+              </Button>
+            </Stack>
+          )}
+
+          {/* Posting link added by admin and user is Superadmin */}
+          {postingLinkAddedByAdmin && !isPosted && submission.content && isSuperAdmin && (
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                onClick={handleRejectPosting}
+                disabled={loading}
+                sx={{
+                  ...BUTTON_STYLES.base,
+                  ...BUTTON_STYLES.warning,
+                }}
+              >
+                {loading ? 'Processing...' : 'Request a Change'}
+              </Button>
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={handleApprovePosting}
+                disabled={loading}
+                sx={{
+                  ...BUTTON_STYLES.base,
+                  ...BUTTON_STYLES.success,
+                }}
+              >
+                {loading ? 'Processing...' : 'Approve'}
+              </Button>
+            </Stack>
+          )}
+
+          {/* Posting link content is null */}
+          {!submission.content &&
+            <Box display={'flex'} flexDirection={'column'}>
+              <Typography variant="caption" fontWeight="bold" color="#636366">
+                Posting Link
+              </Typography>
+              <TextField
+                fullWidth
+                size="medium"
+                placeholder="Enter posting link URL..."
+                value={postingLink}
+                onChange={(e) => setPostingLink(e.target.value)}
+                disabled={loading}
+                sx={{
+                  mt: 1,
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'background.paper',
+                  },
+                }}
+              />
+              <Box alignSelf={'flex-end'}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  size='small'
+                  onClick={handleSubmitPostingLink}
+                  disabled={loading}
+                  sx={{
+                    ...BUTTON_STYLES.base,
+                    ...BUTTON_STYLES.success
+                  }}
+                >
+                  {loading ? 'Saving...' : 'Approve'}
+                </Button>
+              </Box>
+            </Box>          
+          }
+
+        </Box>
+    </Box>
+  );
+}
+
+function FeedbackSection({ submission, isVisible, isClient }) {
+  if (!isVisible || !submission.feedback || submission.feedback.length === 0) {
+    return null;
+  }
+
+  // Filter feedback based on user role and feedback type
+  const filteredFeedback = submission.feedback.filter(feedback => {
+    if (isClient) {
+      // Clients should only see COMMENT type feedback (when admin sends to client)
+      return feedback.type === 'COMMENT';
+    } else {
+      return feedback.type;
+    }
+  });
+
+  // Always show the latest relevant feedback, even if it's empty
+  // This ensures consistent display so users know the latest action
+  if (filteredFeedback.length === 0) {
+    return null;
+  }
+
+  const latestFeedback = filteredFeedback[0];
+  const showContent = submission.status !== 'CLIENT_FEEDBACK';
+
+  return (
+    <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <Stack spacing={1}>
+        <FeedbackDisplay 
+          submission={submission}
+          feedback={latestFeedback} 
+          showContent={showContent}
+          isClient={isClient}
+        />
+      </Stack>
+    </Box>
+  );
+}
+
+/*
+ * Helper function to determine visibility and permissions for feedback actions
+ * 
+ * VISIBILITY RULES:
+ * 1. Admins see feedback actions when submission is PENDING_REVIEW or CLIENT_FEEDBACK
+ * 2. Clients see feedback actions when submission is SENT_TO_CLIENT
+ * 3. Request Change button: visible when content is visible AND not in client feedback
+ * 4. Approve button: visible when NOT in client feedback AND NOT in request mode
+ * 5. Admin-only actions: only admins see client feedback response buttons
+ */
+function getFeedbackActionsVisibility({
+  isClient,
+  submission,
+  clientVisible,
+  isClientFeedback,
+  action
+}) {
+  // Main section visibility:
+  // - Admins: when submission is PENDING_REVIEW or CLIENT_FEEDBACK
+  // - Clients: when submission is SENT_TO_CLIENT
+  const showFeedbackActions = 
+    (!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) ||
+    (isClient && submission.status === 'SENT_TO_CLIENT');
+
+  // Request Change button visibility:
+  // - Visible when client can see content AND not in client feedback status
+  const showRequestChangeButton = clientVisible && !isClientFeedback && action !== 'request_revision';
+
+  // Change request form visibility:
+  // - Visible when user is in request_revision mode AND client can see content
+  const showChangeRequestForm = action === 'request_revision' && clientVisible;
+
+  // Approve button visibility:
+  // - Visible when NOT in client feedback status AND NOT in request_revision mode
+  const showApproveButton = !isClientFeedback && action !== 'request_revision';
+
+  // Admin-only client feedback actions:
+  // - Only admins can see this when submission has client feedback
+  const showAdminClientFeedbackActions = !isClient && isClientFeedback && action !== 'request_revision';
+
+  // Reasons dropdown visibility:
+  // - Visible when user is in request mode
+  const showReasonsDropdown = action === 'request_revision' || action === 'request_changes';
+
+  return {
+    showFeedbackActions,
+    showRequestChangeButton,
+    showChangeRequestForm,
+    showApproveButton,
+    showAdminClientFeedbackActions,
+    showReasonsDropdown
+  };
+}
+
 
 export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   const { user } = useAuthContext();
@@ -67,9 +447,11 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   const [localActionInProgress, setLocalActionInProgress] = useState(false);
   const [reasons, setReasons] = useState(() => {
     if (isClientFeedback && submission.feedback && submission.feedback.length > 0) {
-      // Find the most recent client feedback and use its reasons
-      const clientFeedbacks = submission.feedback.filter(fb => fb.admin?.role === 'client');
-      const latestClientFeedback = clientFeedbacks[0];
+      // Find the most recent REQUEST type feedback from client
+      const clientRequestFeedbacks = submission.feedback.filter(fb => 
+        fb.admin?.role === 'client' && fb.type === 'REQUEST'
+      );
+      const latestClientFeedback = clientRequestFeedbacks[0];
       return latestClientFeedback?.reasons || [];
     }
     return [];
@@ -78,7 +460,10 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   // Feedback
   const getDefaultFeedback = () => {
     if (isClientFeedback) {
-      return submission.photos?.[0]?.feedback || '';
+      // Get the most recent REQUEST type feedback for initialization
+      const requestFeedbacks = submission.feedback?.filter(fb => fb.type === 'REQUEST') || [];
+      const latestRequestFeedback = requestFeedbacks[0];
+      return latestRequestFeedback?.content || submission.photos?.[0]?.feedback || '';
     }
     return '';
   };
@@ -90,6 +475,11 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   // Photo Modal
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  // Caption overflow detection
+  const [captionOverflows, setCaptionOverflows] = useState(false);
+  const captionMeasureRef = useRef(null);
+
   // Detect client role
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
@@ -114,7 +504,6 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   }, [submission.photos, submission.status, submission.content]);
   
   const { photos, pendingReview, isApproved, hasPostingLink, hasPendingPostingLink } = submissionProps;
-
 
   const handleApprove = useCallback(async () => {
     try {
@@ -250,30 +639,6 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
       }
     }
   }, [feedback, reasons, caption, submission.id, onUpdate, isClient]);
-
-  const handlePostingLinkApproval = useCallback(async (approvalAction) => {
-    try {
-      setPostingApprovalLoading(true);
-      await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
-        submissionId: submission.id,
-        action: approvalAction,
-      });
-
-      enqueueSnackbar(
-        `Posting link ${approvalAction}d successfully`, 
-        { variant: 'success' }
-      );
-      
-      // Posting approval completed
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error approving posting link:', error);
-      enqueueSnackbar(error.message || 'Failed to process posting link approval', { variant: 'error' });
-    } finally {
-      setPostingApprovalLoading(false);
-    }
-  }, [submission.id, onUpdate]);
-
   
   // Photo modal handler
   const handlePhotoClick = useCallback((index) => {
@@ -383,13 +748,21 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
     };
   }, [socket, submission?.id, campaign?.id, onUpdate, localActionInProgress, user?.id]);
 
+  // Check if caption overflows the height limits
+  useEffect(() => {
+    if (captionMeasureRef.current && submission.caption) {
+      const element = captionMeasureRef.current;
+      const maxHeight = window.innerWidth < 600 ? 50 : window.innerWidth < 900 ? 80 : 100;
+      setCaptionOverflows(element.scrollHeight > maxHeight);
+    }
+  }, [submission.caption]);
+
   return (
       <Box sx={{ 
         overflow: 'hidden',
         bgcolor: 'background.neutral'
       }}>
         {/* Photo Content */}
-        {!hasPostingLink && submission.status !== 'REJECTED' && (
         <Box>
           {clientVisible ? (
             // Show actual content to admins or when sent to client
@@ -398,9 +771,11 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                 {/* Horizontal Layout: Caption on Left, Photos on Right */}
                 <Box sx={{ 
                   display: 'flex', 
-                  gap: 2,
+                  gap: { xs: 1, sm: 1.5, md: 2 },
+                  justifyContent: 'space-between',
                   alignItems: 'stretch',
-                  minHeight: 405
+                  minHeight: { xs: 400, sm: 450, md: 500 },
+                  flexDirection: { xs: 'column', md: 'row' }
                 }}>
                   {/* Left Side */}
                   <Box sx={{ 
@@ -408,7 +783,8 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    maxWidth: 400
+                    maxWidth: { xs: '100%', md: 400, lg: 600 },
+                    minWidth: { xs: '100%', md: 350 },
                   }}>
                     {/* Caption */}
                     <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
@@ -431,76 +807,111 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                           />
                         </Box>
                       ) : submission.caption ? (
-                        <Box>
-                          <Typography fontSize={14} color={'#636366'} sx={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
-                            {submission.caption}
-                          </Typography>
-                        </Box>
+                        <>
+                          {/* Hidden element to measure caption height */}
+                          <Box
+                            ref={captionMeasureRef}
+                            sx={{
+                              visibility: 'hidden',
+                              position: 'absolute',
+                              width: '100%',
+                              maxWidth: 400,
+                              pointerEvents: 'none'
+                            }}
+                          >
+                            <Typography fontSize={14} sx={{ 
+                              wordWrap: 'break-word',
+                              overflowWrap: 'break-word',
+                              lineHeight: 1.5
+                            }}>
+                              {submission.caption}
+                            </Typography>
+                          </Box>
+                          
+                          {/* Conditional rendering based on overflow */}
+                          {captionOverflows ? (
+                            <Box sx={{ 
+                              maxHeight: { xs: 50, sm: 80, md: 100 },
+                              overflow: 'auto',
+                              border: '1px solid #E7E7E7',
+                              borderRadius: 0.5,
+                              p: 1,
+                              bgcolor: 'background.paper',
+                            }}>
+                              <Typography fontSize={14} color={'#636366'} sx={{ 
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                                lineHeight: 1.5
+                              }}>
+                                {submission.caption}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Typography fontSize={14} color={'#636366'} sx={{ 
+                              wordWrap: 'break-word',
+                              overflowWrap: 'break-word',
+                              lineHeight: 1.5
+                            }}>
+                              {submission.caption}
+                            </Typography>
+                          )}
+                        </>
                       ) : null}
                     </Box>
 
-                    {/* Feedback Section */}
-                    {submission.status !== 'CLIENT_APPROVED' && submission.status !== 'PENDING_REVIEW' && (
-                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        {submission.feedback && submission.feedback.length > 0 && (
-                          <Box sx={{ flex: 1, overflow: 'auto' }}>
-                          <Stack spacing={1}>
-                            {submission.feedback?.[0] && [submission.feedback[0]].map((feedback) => (
-                              <Box key={feedback.id || 0} sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                                <Box sx={{ flex: 1 }}>
-                                  {feedback.reasons?.map((reason, reasonIndex) => (
-                                    <Chip 
-                                    sx={{
-                                      border: '1px solid',
-                                      pb: 1.8,
-                                      pt: 1.6,
-                                      mr: 0.5,
-                                      mb: 0.5,
-                                      borderColor: '#D4321C',
-                                      borderRadius: 0.8,
-                                      boxShadow: `0px -1.7px 0px 0px #D4321C inset`,
-                                      bgcolor: '#fff',
-                                      color: '#D4321C',
-                                      fontWeight: 'bold',
-                                      fontSize: 12,
-                                    }}
-                                    key={reasonIndex} 
-                                    label={reason} 
-                                    size="small" 
-                                    variant="outlined" 
-                                    color="warning" />                                  
-                                  ))}                                  
-                                  <Typography fontSize={12} sx={{ mb: feedback.reasons && feedback.reasons.length > 0 ? 1 : 0 }}>
-                                    {submission.status !== 'CLIENT_FEEDBACK' ? feedback.content : ''}
-                                  </Typography>
-                                </Box>
-                              </Box>
-                            ))}
-                          </Stack>
-                          </Box>
-                        )}
-                      </Box>                      
-                    )}
+                    {/* Feedback/Posting Link Section */}
+                    <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                      {/* Show Posting Link Section for CLIENT_APPROVED or POSTED submissions in normal campaigns */}
+                      {!isClient && (submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
+                        <PostingLinkSection 
+                          submission={submission}
+                          campaign={campaign}
+                          onUpdate={onUpdate}
+                          isClient={isClient}
+                        />
+                      ) : (
+                        <FeedbackSection 
+                          submission={submission}
+                          isVisible={submission.status !== 'PENDING_REVIEW'}
+                          isClient={isClient}
+                        />
+                      )}
+                    </Box>
 
 
-                    {/* Feedback Actions */}
-                    {((!isClient && (submission.status === 'PENDING_REVIEW' || submission.status === 'CLIENT_FEEDBACK')) || (isClient && submission.status === 'SENT_TO_CLIENT')) && (
+                    {/* Feedback Actions - Visibility controlled by user role and submission status */}
+                    {(() => {
+                      // Don't show feedback actions when displaying posting link section
+                      if ((submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED') && campaign?.campaignType === 'normal') {
+                        return null;
+                      }
+
+                      const visibility = getFeedbackActionsVisibility({
+                        isClient,
+                        submission,
+                        clientVisible,
+                        isClientFeedback,
+                        action
+                      });
+
+                      if (!visibility.showFeedbackActions) return null;
+
+                      return (
                       <Box sx={{ flex: '0 0 auto' }}>
                         <Stack spacing={1}>
                           <Stack direction="row" spacing={1} width="100%" justifyContent="flex-end">
-                            {(clientVisible && !isClientFeedback) && (
+                            {/* Request Change Button - Visible to both admins and clients when content is visible */}
+                            {visibility.showRequestChangeButton && (
                               <Button
                                 variant="contained"
                                 color="warning"
+                                size='small'
                                 onClick={() => {
-                                  // Store current feedback before changing
                                   setPreviousFeedback(feedback);
                                   setAction('request_revision');
                                 }}
                                 disabled={loading}
-                                
                                 sx={{
-                                  display: action === 'request_revision' ? 'none' : 'flex',
                                   ...BUTTON_STYLES.base,
                                   ...BUTTON_STYLES.warning,
                                 }}
@@ -508,20 +919,19 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                                 {loading ? 'Processing...' : 'Request a Change'}
                               </Button>
                             )}
-                            {(action === 'request_revision' && clientVisible) ? (
+                            {/* Change Request Form - Visible when user is in request mode */}
+                            {visibility.showChangeRequestForm && (
                               <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
                                 <Button
                                   variant="contained"
                                   color="secondary"
+                                  size='small'
                                   onClick={() => {
                                     setAction('approve');
                                     setReasons([]);
-                                    // Revert to previous feedback message
-                                    setFeedback(previousFeedback);
                                   }}
                                   disabled={loading}
                                   sx={{
-                                    display: 'flex',
                                     ...BUTTON_STYLES.base,
                                     ...BUTTON_STYLES.secondary,
                                   }}
@@ -530,57 +940,59 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                                 </Button>
                                 <Button
                                   variant="contained"
-                                  color={!isClient ? "success" : 'warning'}
+                                  color={'warning'}
+                                  size='small'
                                   onClick={handleRequestChanges}
                                   disabled={loading}
                                   sx={{
-                                    display: 'flex',
                                     ...BUTTON_STYLES.base,
-                                    ...BUTTON_STYLES.success,
+                                    ...BUTTON_STYLES.warning,
                                   }}
                                 >
                                   {loading ? 'Processing...' : !isClient ? 'Send to Creator' : 'Request a Change'}
                                 </Button>
                               </Box>
-                              ) : !isClientFeedback && (
+                            )}
+
+                            {/* Approve Button - Visible when not in client feedback and not in request mode */}
+                            {visibility.showApproveButton && (
                               <Button
                                 variant="contained"
                                 color="success"
+                                size='small'
                                 onClick={handleApprove}
                                 disabled={loading}
                                 sx={{
-                                  display: 'flex',
                                   ...BUTTON_STYLES.base,
                                   ...BUTTON_STYLES.success,
                                 }}
                               >
                                 {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
                               </Button>
-                              )
-                            }
+                            )}
 
-                            {!isClient && isClientFeedback &&
-                              <Stack spacing={1} sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                                <Button
-                                  variant="contained"
-                                  color="secondary"
-                                  onClick={handleRequestChanges}
-                                  disabled={loading}
-                                  sx={{
-                                    display: action === 'request_revision' ? 'none' : 'flex',
-                                    ...BUTTON_STYLES.base,
-                                    ...BUTTON_STYLES.warning,
-                                    width: 140,
-                                    alignSelf: 'flex-end'
-                                  }}
-                                >
-                                  {loading ? 'Processing...' : 'Send to Creator'}
-                                </Button>
-                              </Stack>
-                            }
+                            {/* Admin-only Client Feedback Actions - Only admins see this for client feedback */}
+                            {visibility.showAdminClientFeedbackActions && (
+                              <Button
+                                variant="contained"
+                                color="secondary"
+                                size='small'
+                                onClick={handleRequestChanges}
+                                disabled={loading}
+                                sx={{
+                                  ...BUTTON_STYLES.base,
+                                  ...BUTTON_STYLES.warning,
+                                  width: 140,
+                                  alignSelf: 'flex-end'
+                                }}
+                              >
+                                {loading ? 'Processing...' : 'Send to Creator'}
+                              </Button>
+                            )}
                           </Stack>
 
-                          {(action === 'request_revision' || action === 'request_changes') &&
+                          {/* Reasons Dropdown - Visible when requesting changes */}
+                          {visibility.showReasonsDropdown && (
                             <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10 }} hiddenLabel size='small'>
                               <Select
                                 multiple
@@ -607,19 +1019,44 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                                 ))}
                               </Select>
                             </FormControl>
-                          }
+                          )}
 
-                          {submission.feedback?.[0] && [submission.feedback[0]].map((feedback) => (
-                            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                              {(feedback.content || feedback.reasons) && 
-                                <Typography variant='caption' fontWeight="bold" color={'#636366'}>
-                                  {feedback.admin?.role === 'client' ? 'Client Feedback' : (feedback.admin?.name || 'CS Comments')}
-                                </Typography>
+                          {/* Feedback Label - Shows who provided the feedback */}
+                          {(() => {
+                            // Filter feedback based on user role
+                            const filteredFeedback = submission.feedback?.filter(feedback => {
+                              if (isClient) {
+                                // Clients should only see COMMENT type feedback
+                                return feedback.type === 'COMMENT';
+                              } else {
+                                // Admins should see:
+                                // - REQUEST type feedback (when admin/client requests changes)
+                                // - COMMENT type feedback when status is SENT_TO_CLIENT (to see what they sent to client)
+                                if (submission.status === 'SENT_TO_CLIENT') {
+                                  return feedback.type === 'COMMENT';
+                                }
+                                return feedback.type === 'REQUEST';
                               }
-                            </Box>
-                          ))}
+                            }) || [];
+                            
+                            const latestRelevantFeedback = filteredFeedback[0];
+                            
+                            // Always show feedback label if there is relevant feedback, even if empty
+                            // This ensures consistent display so users know the latest action
+                            if (!latestRelevantFeedback) {
+                              return null;
+                            }
+                            
+                            return (
+                              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                <Typography variant='caption' fontWeight="bold" color={'#636366'}>
+                                  {!isClient && latestRelevantFeedback.type === 'REQUEST' && latestRelevantFeedback.admin?.role === 'client' && 'Client Feedback'}
+                                </Typography>
+                              </Box>
+                            );
+                          })()}
 
-                          {/* Feedback Message Box */}
+                          {/* Feedback Message Box - Available to all users when actions are visible */}
                           <TextField
                             multiline
                             rows={3}
@@ -636,32 +1073,34 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                           />
                         </Stack>
                       </Box>
-                    )}
+                      );
+                    })()}
                   </Box>
 
                   {/* Photo Container - Right Side */}
                   <Box 
                     sx={{ 
-                      width: 580, 
-                      height: 405,
+                      width: { xs: '100%', sm: 400, md: 500, lg: 580 },
+                      height: { xs: 300, sm: 400, md: 450, lg: 500 },
                       display: 'flex', 
                       flexDirection: 'column',
                       bgcolor: 'background.paper',
                       flexShrink: 0,
+                      overflow: 'hidden',
                     }}
                   >
                     {/* Photo Grid Display Area */}
                     <Box 
                       sx={{ 
                         display: 'flex',
-                        gap: 2,
+                        gap: { xs: 1, sm: 1.5, md: 2 },
                         overflowX: 'auto',
                         overflowY: 'hidden',
                         bgcolor: 'background.neutral',
                         height: '100%',
-                        alignItems: 'center',
+                        alignItems: 'stretch',
                         '&::-webkit-scrollbar': {
-                          height: 5,
+                          height: 2,
                         },
                         '&::-webkit-scrollbar-track': {
                           backgroundColor: 'rgba(0,0,0,0.1)',
@@ -676,19 +1115,35 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                         },
                       }}
                     >
-                      {photos.map((photo, photoIndex) => (
+                      {photos.map((photo, photoIndex) => {
+                        // Calculate responsive width based on container size
+                        const getPhotoWidth = () => {
+                          // Base width that adapts to container
+                          return { xs: 160, sm: 180, md: 220, lg: 240 };
+                        };
+                        
+                        const getPhotoHeight = () => {
+                          // Calculate height to fill container minus padding and scrollbar
+                          return 'calc(100% - 8px)';
+                        };
+                        
+                        return (
                         <Box
                           key={photo.id}
                           sx={{
                             flexShrink: 0,
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
                           }}
                         >
                           <Box
                             sx={{
                               position: 'relative',
                               cursor: 'pointer',
-                              width: 240,
-                              height: 390,
+                              width: getPhotoWidth(),
+                              height: getPhotoHeight(),
+                              minHeight: { xs: 350, sm: 400, md: 450, lg: 480 },
                               '&:hover .overlay': {
                                 opacity: 1,
                               },
@@ -700,12 +1155,35 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                               src={photo.url}
                               alt={`Photo ${photoIndex + 1}`}
                               sx={{
-                                width: 240,
-                                height: 390,
+                                width: '100%',
+                                height: '100%',
                                 objectFit: 'cover',
                                 display: 'block',
                               }}
                             />
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 12,
+                                right: { xs: 6, sm: 7, md: 8 },
+                                width: { xs: 18, sm: 20, md: 21 },
+                                height: { xs: 26, sm: 28, md: 31 },
+                                backgroundColor: 'white',
+                                color: 'black',
+                                borderRadius: '6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: { xs: 10, sm: 11, md: 12 },
+                                fontWeight: 'bold',
+                                zIndex: 10,
+                                border: '1px solid #EBEBEB',
+                                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                                p: { xs: 0.5, sm: 0.75, md: 1 }
+                              }}
+                            >
+                              {photoIndex + 1}
+                            </Box>
                             <Box
                               className="overlay"
                               sx={{
@@ -720,21 +1198,23 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                                 justifyContent: 'center',
                                 opacity: 0,
                                 transition: 'opacity 0.2s ease',
+                                borderRadius: 1,
                               }}
                             >
                               <Iconify
                                 icon="eva:expand-fill"
                                 sx={{
                                   color: 'white',
-                                  width: 40,
-                                  height: 40,
+                                  width: { xs: 28, sm: 32, md: 36, lg: 40 },
+                                  height: { xs: 28, sm: 32, md: 36, lg: 40 },
                                   opacity: 0.9,
                                 }}
                               />
                             </Box>
                           </Box>
                         </Box>
-                      ))}
+                        );
+                      })}
                     </Box>
                   </Box>
                 </Box>
@@ -767,121 +1247,6 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
             </Card>
           )}
         </Box>
-        )}
-
-        {/* Posting Link */}
-        {hasPendingPostingLink ? (
-          <Box m={2} display={'flex'} flexDirection={'column'} width={400}>        
-            <Card sx={{ p: 2, bgcolor: '#fff', mt: 1, borderRadius: 1.5, boxShadow: 'none', border: '1px solid #EBEBEB', width: 400 }}>
-              {hasPostingLink ? (
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Link 
-                    href={submission.content} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    sx={{ 
-                      flex: 1, 
-                      textDecoration: 'none'
-                    }}
-                  >
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        wordBreak: 'break-all',
-                        color: '#0062CD',
-                        textDecoration: 'underline',
-                        '&:hover': {
-                          textDecoration: 'underline',
-                          color: '#004A9F'
-                        }
-                      }}
-                    >
-                      {submission.content}
-                    </Typography>
-                  </Link>
-                </Stack>
-              ) : (
-                <Typography color="text.secondary">
-                  {isApproved ? 'Creator can add posting link' : 'Available after approved submission'}
-                </Typography>
-              )}
-            </Card>
-
-            {/* Admin Posting Link Approval */}
-            {!isClient && hasPendingPostingLink && (
-              <Stack direction="row" spacing={2} alignSelf={'flex-end'} sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  color="warning"
-                  onClick={() => handlePostingLinkApproval('reject')}
-                  disabled={loading}
-                  
-                  sx={{
-                    display: action === 'request_revision' ? 'none' : 'flex',
-                    ...BUTTON_STYLES.base,
-                    ...BUTTON_STYLES.warning,
-                  }}
-                >
-                  Request a Change
-                </Button>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={() => handlePostingLinkApproval('approve')}
-                  disabled={loading}
-                  sx={{
-                    display: 'flex',
-                    ...BUTTON_STYLES.base,
-                    ...BUTTON_STYLES.success,
-                  }}
-                >
-                  Approve
-                </Button>
-              </Stack>
-            )}
-          </Box>
-        ) : (
-          hasPostingLink && submission.status === 'POSTED' && (
-            <Box mt={3} mb={4} mx={3} display={'flex'} flexDirection={'column'} width={400}>
-              <Box display={'flex'}>
-                <Typography variant="caption" fontWeight={'600'} color="text.primary" sx={{ mb: 0.5, mr: 0.5 }}>
-                  Date approved:
-                </Typography>
-                <Typography variant="caption" color="#636366" sx={{ mb: 0.5 }}>
-                  {fDate(submission.updatedAt, 'dd/MM/yyyy')}
-                </Typography>
-              </Box>
-              <Card sx={{ p: 2, bgcolor: '#fff', mt: 1, borderRadius: 1.5, boxShadow: 'none', border: '1px solid #EBEBEB', width: 400 }}>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Link 
-                    href={submission.content} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    sx={{ 
-                      flex: 1, 
-                      textDecoration: 'none'
-                    }}
-                  >
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        wordBreak: 'break-all',
-                        color: '#0062CD',
-                        textDecoration: 'underline',
-                        '&:hover': {
-                          textDecoration: 'underline',
-                          color: '#004A9F'
-                        }
-                      }}
-                    >
-                      {submission.content}
-                    </Typography>
-                  </Link>
-                </Stack>
-              </Card>
-            </Box>            
-          )
-        )}
         
         {/* Photo Modal */}
         {photos.length > 0 && (
