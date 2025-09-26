@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
@@ -63,6 +63,7 @@ const Profile = () => {
   const { user } = useAuthContext();
   const location = useLocation();
   const navigate = useNavigate();
+  const scrollContainerRef = useRef(null);
 
   const [image, setImage] = useState(null);
   const { section } = useParams();
@@ -195,6 +196,22 @@ const Profile = () => {
       // toast.error('Error in updating profile');
     }
   });
+
+  const handleTabClick = (event) => {
+    if (window.innerWidth >= 900) return;
+
+    const tabElement = event.currentTarget;
+    const container = scrollContainerRef.current;
+
+    if (tabElement && container) {
+      const scrollLeft = tabElement.offsetLeft;
+
+      container.scrollTo({
+        left: scrollLeft,
+        behavior: 'smooth',
+      });
+    }
+  };
 
   const renderPicture = (
     <Grid item xs={12} md={4} lg={4}>
@@ -535,6 +552,7 @@ const Profile = () => {
       />
 
       <Stack
+        ref={scrollContainerRef}
         direction="row"
         spacing={0.5}
         sx={{
@@ -544,6 +562,15 @@ const Profile = () => {
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
           msOverflowStyle: 'none',
+          maskImage: {
+            xs: 'linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 20px), transparent 100%)',
+            md: 'none', // No mask on larger screens
+          },
+          // Don't forget the WebKit prefix for Safari
+          WebkitMaskImage: {
+            xs: 'linear-gradient(to right, transparent 0%, black 10px, black calc(100% - 80px), transparent 100%)',
+            md: 'none',
+          },
           paddingRight: { xs: '80px', sm: '100px', md: 0 },
           paddingBottom: '1px',
         }}
@@ -568,6 +595,7 @@ const Profile = () => {
         }}
       >
         <Button
+          onClick={handleTabClick}
           component={Link}
           to={paths.dashboard.user.profileTabs.account}
           disableRipple
@@ -615,6 +643,7 @@ const Profile = () => {
         </Button>
 
         <Button
+          onClick={handleTabClick}
           component={Link}
           to={paths.dashboard.user.profileTabs.preference}
           disableRipple
@@ -663,6 +692,7 @@ const Profile = () => {
         </Button>
 
         <Button
+          onClick={handleTabClick}
           component={Link}
           to={paths.dashboard.user.profileTabs.security}
           disableRipple
@@ -711,6 +741,7 @@ const Profile = () => {
         </Button>
 
         <Button
+          onClick={handleTabClick}
           component={Link}
           to={paths.dashboard.user.profileTabs.socials}
           disableRipple
@@ -759,6 +790,7 @@ const Profile = () => {
         </Button>
 
         <Button
+          onClick={handleTabClick}
           component={Link}
           to={paths.dashboard.user.profileTabs.payment}
           disableRipple
@@ -1010,7 +1042,7 @@ const Profile = () => {
       </Stack>
 
       {/* Indicator for more tabs */}
-      <Box
+      {/* <Box
         sx={{
           position: 'absolute',
           right: { xs: '15px', sm: '20px', md: 0 },
@@ -1042,16 +1074,14 @@ const Profile = () => {
         >
           <Iconify icon="eva:arrow-ios-forward-fill" width={16} color="#1340ff" />
         </Box>
-      </Box>
+      </Box> */}
     </Box>
   );
 
   // Contents
   const adminContents = (
     <>
-      {currentTab === 'security' && (
-        <AccountSecurity />
-      )}
+      {currentTab === 'security' && <AccountSecurity />}
 
       {currentTab === 'general' && (
         <Grid container spacing={3}>
@@ -1066,9 +1096,7 @@ const Profile = () => {
 
   const creatorContents = (
     <>
-      {currentTab === 'security' && (
-        <AccountSecurity />
-      )}
+      {currentTab === 'security' && <AccountSecurity />}
 
       {currentTab === 'paymentForm' && <PaymentFormProfile user={user} />}
 
@@ -1104,11 +1132,11 @@ const Profile = () => {
       >
         Settings ⚙️
       </Typography>
-      {['admin', 'superadmin'].includes(user?.role) 
-        ? Admintabs 
-        : user?.role === 'client' 
-        ? ClientTabs 
-        : CreatorTabs}
+      {['admin', 'superadmin'].includes(user?.role)
+        ? Admintabs
+        : user?.role === 'client'
+          ? ClientTabs
+          : CreatorTabs}
 
       {profileCompletion < 100 && user?.role === 'creator' ? (
         <Stack mb={2} direction="row" alignItems="center" spacing={2}>
@@ -1153,51 +1181,52 @@ const Profile = () => {
           />
         </Stack>
       ) : (
-        user?.role === 'creator' &&
-        <Stack mb={2} direction="row" alignItems="center" spacing={2}>
-          <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-            <CircularProgress
-              thickness={4}
-              value={profileCompletion}
-              variant="determinate"
-              size={60}
-              sx={{
-                color: '#2944B7',
-                strokeLinecap: 'round',
+        user?.role === 'creator' && (
+          <Stack mb={2} direction="row" alignItems="center" spacing={2}>
+            <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+              <CircularProgress
+                thickness={4}
+                value={profileCompletion}
+                variant="determinate"
+                size={60}
+                sx={{
+                  color: '#2944B7',
+                  strokeLinecap: 'round',
+                }}
+              />
+              <Box
+                sx={{
+                  top: 0,
+                  left: 0,
+                  bottom: 0,
+                  right: 0,
+                  position: 'absolute',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Typography variant="subtitle2">{`${Math.round(profileCompletion)}%`}</Typography>
+              </Box>
+            </Box>
+            <ListItemText
+              primary="Congratulations!"
+              secondary="Your account now has a higher chance to get selected for campaigns!"
+              primaryTypographyProps={{
+                fontFamily: theme.typography.fontSecondaryFamily,
+                variant: 'body1',
+                fontSize: 25,
               }}
             />
-            <Box
-              sx={{
-                top: 0,
-                left: 0,
-                bottom: 0,
-                right: 0,
-                position: 'absolute',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Typography variant="subtitle2">{`${Math.round(profileCompletion)}%`}</Typography>
-            </Box>
-          </Box>
-          <ListItemText
-            primary="Congratulations!"
-            secondary="Your account now has a higher chance to get selected for campaigns!"
-            primaryTypographyProps={{
-              fontFamily: theme.typography.fontSecondaryFamily,
-              variant: 'body1',
-              fontSize: 25,
-            }}
-          />
-        </Stack>
+          </Stack>
+        )
       )}
 
-      {['admin', 'superadmin'].includes(user?.role) 
-        ? adminContents 
-        : user?.role === 'client' 
-        ? clientContents 
-        : creatorContents}
+      {['admin', 'superadmin'].includes(user?.role)
+        ? adminContents
+        : user?.role === 'client'
+          ? clientContents
+          : creatorContents}
 
       {/* <Toaster /> */}
     </Container>
