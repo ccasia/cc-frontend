@@ -29,15 +29,25 @@ const CampaignDetailItem = ({ campaign }) => {
   };
 
   return (
-    <Stack overflow="auto" gap={2}>
+    <Stack gap={2} sx={{ overflowX: 'hidden', width: '100%' }}>
       <Stack gap={2}>
-        <Stack direction="row" spacing={2.5} sx={{ mt: 2 }}>
-          {[
-            { value: 'tasks', label: campaign?.submissionVersion === 'v4' ? 'Activity' : 'Activity' },
-            ...(campaign?.submissionVersion === 'v4' ? [{ value: 'tasks-v4', label: 'Activity (V4)' }] : []),
-            { value: 'info', label: 'Campaign Details' },
-            { value: 'logistics', label: 'Logistics' },
-          ].map((tab) => (
+        <Box sx={{ 
+          overflowX: 'auto', 
+          overflowY: 'hidden',
+          mt: 2,
+          '&::-webkit-scrollbar': { display: 'none' }, // Hide scrollbar on webkit browsers
+          scrollbarWidth: 'none', // Hide scrollbar on Firefox
+        }}>
+          <Stack direction="row" spacing={2.5} sx={{ 
+            minWidth: 'max-content', // Ensure tabs don't wrap
+            px: 2, // Add padding to prevent edge cutoff
+          }}>
+            {[
+              { value: 'tasks', label: campaign?.submissionVersion === 'v4' ? 'Activity' : 'Activity' },
+              ...(campaign?.submissionVersion === 'v4' ? [{ value: 'tasks-v4', label: 'Submissions' }] : []),
+              { value: 'info', label: 'Campaign Details' },
+              { value: 'logistics', label: 'Logistics' },
+            ].map((tab) => (
             <Button
               key={tab.value}
               disableRipple
@@ -75,7 +85,8 @@ const CampaignDetailItem = ({ campaign }) => {
               {tab.label}
             </Button>
           ))}
-        </Stack>
+          </Stack>
+        </Box>
         {/* Horizontal Line */}
         <Box
           sx={{
@@ -91,7 +102,7 @@ const CampaignDetailItem = ({ campaign }) => {
           </Label>
         )}
 
-        <Box mt={3}>
+        <Box mt={3} sx={{ overflowX: 'hidden', width: '100%' }}>
           {currentTab === 'tasks' && (
             <CampaignMyTasks
               campaign={campaign}
