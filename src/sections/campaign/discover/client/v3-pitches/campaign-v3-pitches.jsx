@@ -141,14 +141,47 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       const isMaybe = ['MAYBE'].includes(status);
       const isRejected = ['REJECTED'].includes(status);
       const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
+      
+      // Debug logging for staging issues
+      console.log('🔍 Filtering Debug:', {
+        pitchId: pitch.id,
+        userName: pitch.user?.name,
+        status: pitch.status,
+        displayStatus: pitch.displayStatus,
+        finalStatus: status,
+        isPending,
+        hasAssignedCredits,
+        creditedUserIds: Array.from(creditedUserIds),
+        userId: pitch?.user?.id,
+        willShow: isApprovedState || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected
+      });
+      
       return isApprovedState || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected;
     });
 
     // Apply status filter
+    console.log('🎯 Status Filter Debug:', {
+      selectedFilter,
+      filteredCount: filtered?.length,
+      pitchStatuses: filtered?.map(p => ({
+        id: p.id,
+        name: p.user?.name,
+        status: p.status,
+        displayStatus: p.displayStatus,
+        finalStatus: p.displayStatus || p.status
+      }))
+    });
+    
     if (selectedFilter === 'PENDING_REVIEW') {
+      const beforeFilter = filtered?.length;
       filtered = filtered?.filter(
         (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
       );
+      console.log('🎯 PENDING_REVIEW Filter:', {
+        beforeCount: beforeFilter,
+        afterCount: filtered?.length,
+        filteredOut: beforeFilter - filtered?.length
+      });
     } else if (selectedFilter === 'SENT_TO_CLIENT') {
       filtered = filtered?.filter(
         (pitch) => (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT'
