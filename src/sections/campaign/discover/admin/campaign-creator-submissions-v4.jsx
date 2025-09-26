@@ -47,7 +47,9 @@ function CreatorAccordion({ creator, campaign }) {
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
-  
+
+  const campaignType = campaign.campaignType;
+
   // Get V4 submissions for this creator
   const { 
     submissions, 
@@ -80,13 +82,23 @@ function CreatorAccordion({ creator, campaign }) {
       return status?.replace(/_/g, ' ') || 'Unknown';
     };
 
-    const getClientStatusColor = (status) => {
+    // Status color
+    const getClientStatusColor = (status, submissionType = null) => {
+      // Admin-specific
       if (!isClient) {
-        // Admin sees the actual status colors
-        return getStatusColor(status);
+        switch (status) {
+          case 'CLIENT_APPROVED':
+            // Only show PENDING_REVIEW color for video and photo submissions in normal campaigns
+            if (campaignType === 'normal' && (submissionType === 'video' || submissionType === 'photo')) {
+              return getStatusColor('PENDING_REVIEW');
+            }
+            return getStatusColor(status);
+          default:
+            return getStatusColor(status)
+        }
       }
       
-      // Client-specific color mapping
+      // Client-specific
       switch (status) {
         case 'SENT_TO_CLIENT':
           return getStatusColor('PENDING_REVIEW');
@@ -99,17 +111,25 @@ function CreatorAccordion({ creator, campaign }) {
       }
     };
 
-    const getClientStatusLabel = (status) => {
-      if (!isClient) {
-        // Admin-specific status labels
+    // Status labels
+    const getClientStatusLabel = (status, submissionType = null) => {
+      // Admin specific
+      if (!isClient && campaignType === 'normal') {
         switch (status) {
-          case 'CLIENT_FEEDBACK':
-            return 'CLIENT FEEDBACK';
+          case 'CLIENT_APPROVED':
+            // Only show PENDING POSTING for video and photo submissions, not raw footage
+            if (submissionType === 'video' || submissionType === 'photo') {
+              return 'PENDING POSTING';
+            }
+            return formatStatus(status);
           default:
             return formatStatus(status);
         }
+      } else if (!isClient) {
+        return formatStatus(status)
       }
 
+      // Client-specific
       switch (status) {
         case 'NOT_STARTED':
           return 'NOT STARTED';
@@ -186,20 +206,20 @@ function CreatorAccordion({ creator, campaign }) {
                 px: { xs: 1, sm: 1.3, md: 1 },
                 py: { xs: 0.4, sm: 0.5, md: 0.6 },
                 border: '1px solid',
-                borderColor: getClientStatusColor(videoSubmission.status),
+                borderColor: getClientStatusColor(videoSubmission.status, 'video'),
                 borderRadius: 0.8,
-                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(videoSubmission.status)} inset`,
+                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(videoSubmission.status, 'video')} inset`,
                 bgcolor: '#fff',
-                color: getClientStatusColor(videoSubmission.status),
+                color: getClientStatusColor(videoSubmission.status, 'video'),
               }}
             >
               <Typography 
                 fontWeight={'SemiBold'} 
                 pb={0.2} 
                 fontSize={{ xs: 9, sm: 10, md: 10.5 }} 
-                color={getClientStatusColor(videoSubmission.status)}
+                color={getClientStatusColor(videoSubmission.status, 'video')}
               >
-                {getClientStatusLabel(videoSubmission.status)}
+                {getClientStatusLabel(videoSubmission.status, 'video')}
               </Typography>
             </Box>
           </Box>
@@ -269,20 +289,20 @@ function CreatorAccordion({ creator, campaign }) {
                 px: { xs: 1, sm: 1.3, md: 1 },
                 py: { xs: 0.4, sm: 0.5, md: 0.6 },
                 border: '1px solid',
-                borderColor: getClientStatusColor(photoSubmission.status),
+                borderColor: getClientStatusColor(photoSubmission.status, 'photo'),
                 borderRadius: 0.8,
-                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(photoSubmission.status)} inset`,
+                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(photoSubmission.status, 'photo')} inset`,
                 bgcolor: '#fff',
-                color: getClientStatusColor(photoSubmission.status),
+                color: getClientStatusColor(photoSubmission.status, 'photo'),
               }}
             >
               <Typography 
                 fontWeight={'SemiBold'} 
                 pb={0.2} 
                 fontSize={{ xs: 9, sm: 10, md: 10.5 }}  
-                color={getClientStatusColor(photoSubmission.status)}
+                color={getClientStatusColor(photoSubmission.status, 'photo')}
               >
-                {getClientStatusLabel(photoSubmission.status)}
+                {getClientStatusLabel(photoSubmission.status, 'photo')}
               </Typography>
             </Box>
           </Box>
@@ -347,20 +367,20 @@ function CreatorAccordion({ creator, campaign }) {
                 px: { xs: 1, sm: 1.3, md: 1 },
                 py: { xs: 0.4, sm: 0.5, md: 0.6 },
                 border: '1px solid',
-                borderColor: getClientStatusColor(rawFootageSubmission.status),
+                borderColor: getClientStatusColor(rawFootageSubmission.status, 'rawFootage'),
                 borderRadius: 0.8,
-                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(rawFootageSubmission.status)} inset`,
+                boxShadow: `0px -2px 0px 0px ${getClientStatusColor(rawFootageSubmission.status, 'rawFootage')} inset`,
                 bgcolor: '#fff',
-                color: getClientStatusColor(rawFootageSubmission.status),
+                color: getClientStatusColor(rawFootageSubmission.status, 'rawFootage'),
               }}
             >
               <Typography 
                 fontWeight={'SemiBold'} 
                 pb={0.2} 
                 fontSize={{ xs: 9, sm: 10, md: 10.5 }} 
-                color={getClientStatusColor(rawFootageSubmission.status)}
+                color={getClientStatusColor(rawFootageSubmission.status, 'rawFootage')}
               >
-                {getClientStatusLabel(rawFootageSubmission.status)}
+                {getClientStatusLabel(rawFootageSubmission.status, 'rawFootage')}
               </Typography>
             </Box>
           </Box>
