@@ -13,7 +13,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  Grid,
   Link
 } from '@mui/material';
 
@@ -26,7 +25,6 @@ import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 import { PhotoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
 import { options_changes } from './constants';
-import { fDate } from 'src/utils/format-time';
 
 // ----------------------------------------------------------------------
 
@@ -98,6 +96,247 @@ function FeedbackDisplay({ feedback, isClient }) {
           {feedback.content}
         </Typography>
       )}
+    </Box>
+  );
+}
+
+function PostingLinkSection({ submission, onUpdate }) {
+  const { user } = useAuthContext();
+  const [postingLink, setPostingLink] = useState(submission.content || '');
+  const [loading, setLoading] = useState(false);
+
+  // Determine user role hierarchy
+  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
+  const isSuperAdmin = userRole.toLowerCase() === 'superadmin';
+  
+  const handleSubmitPostingLink = useCallback(async () => {
+    if (!postingLink.trim()) {
+      enqueueSnackbar('Please enter a posting link', { variant: 'warning' });
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(postingLink.trim());
+    } catch {
+      enqueueSnackbar('Please enter a valid URL', { variant: 'error' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axiosInstance.put('/api/submissions/v4/posting-link', {
+        submissionId: submission.id,
+        postingLink: postingLink.trim()
+      });
+
+      enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error updating posting link:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to update posting link', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [postingLink, submission.id, onUpdate]);
+
+  const handleApprovePosting = useCallback(async () => {
+    try {
+      setLoading(true);
+      await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
+        submissionId: submission.id,
+        action: 'approve'
+      });
+
+      enqueueSnackbar('Posting link approved successfully', { variant: 'success' });
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error approving posting link:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to approve posting link', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [submission.id, onUpdate]);
+
+  const handleRejectPosting = useCallback(async () => {
+    try {
+      setLoading(true);
+      await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
+        submissionId: submission.id,
+        action: 'reject'
+      });
+
+      enqueueSnackbar('Posting link rejected successfully', { variant: 'success' });
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error rejecting posting link:', error);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to reject posting link', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [submission.id, onUpdate]);
+
+  const isPosted = submission.status === 'POSTED';
+  
+  // Determine who added the posting link and show appropriate controls
+  const postingLinkAddedByAdmin = Boolean(submission.admin?.userId);
+
+  return (
+    <Box sx={{ flex: '0 0 auto' }}>
+
+        <Box>
+          {isPosted && (
+            <Box display="flex" sx={{ mb: 1 }}>
+              <Typography variant="caption" fontWeight="600" color="text.primary" sx={{ mr: 0.5 }}>
+                Date approved:
+              </Typography>
+              <Typography variant="caption" color="#636366">
+                {new Date(submission.updatedAt).toLocaleDateString('en-GB')}
+              </Typography>
+            </Box>
+          )}
+          
+          {/* Show who added the posting link if it was an admin */}
+          {!isPosted && postingLinkAddedByAdmin && submission.content && (
+            <Box display="flex" sx={{ mb: 1 }}>
+              <Typography variant="caption" color="#636366" sx={{ fontStyle: 'italic' }}>
+                Added by admin: {submission.admin?.user?.name} • Requires superadmin approval
+              </Typography>
+            </Box>
+          )}
+
+          {/* Posting link content exists */}
+          {submission.content && 
+            <Box sx={{ 
+              p: 2, 
+              border: '1px solid #E7E7E7', 
+              borderRadius: 1, 
+              bgcolor: 'background.paper',
+              mb: 2
+            }}>
+              <Link 
+                href={submission.content} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                sx={{ 
+                  wordBreak: 'break-all',
+                  color: '#0062CD',
+                  textDecoration: 'underline',
+                  fontSize: 14,
+                  '&:hover': {
+                    color: '#004A9F'
+                  }
+                }}
+              >
+                {submission.content}
+              </Link>
+            </Box>          
+          }
+          
+          {/* Posting link by creator and user is Admin/Superadmin */}
+          {!postingLinkAddedByAdmin && !isPosted && submission.content && (
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                onClick={handleRejectPosting}
+                disabled={loading}
+                sx={{
+                  ...BUTTON_STYLES.base,
+                  ...BUTTON_STYLES.warning,
+                }}
+              >
+                {loading ? 'Processing...' : 'Request a Change'}
+              </Button>
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={handleApprovePosting}
+                disabled={loading}
+                sx={{
+                  ...BUTTON_STYLES.base,
+                  ...BUTTON_STYLES.success,
+                }}
+              >
+                {loading ? 'Processing...' : 'Approve'}
+              </Button>
+            </Stack>
+          )}
+
+          {/* Posting link added by admin and user is Superadmin */}
+          {postingLinkAddedByAdmin && !isPosted && submission.content && isSuperAdmin && (
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                onClick={handleRejectPosting}
+                disabled={loading}
+                sx={{
+                  ...BUTTON_STYLES.base,
+                  ...BUTTON_STYLES.warning,
+                }}
+              >
+                {loading ? 'Processing...' : 'Request a Change'}
+              </Button>
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={handleApprovePosting}
+                disabled={loading}
+                sx={{
+                  ...BUTTON_STYLES.base,
+                  ...BUTTON_STYLES.success,
+                }}
+              >
+                {loading ? 'Processing...' : 'Approve'}
+              </Button>
+            </Stack>
+          )}
+
+          {/* Posting link content is null */}
+          {!submission.content &&
+            <Box display={'flex'} flexDirection={'column'}>
+              <Typography variant="caption" fontWeight="bold" color="#636366">
+                Posting Link
+              </Typography>
+              <TextField
+                fullWidth
+                size="medium"
+                placeholder="Enter posting link URL..."
+                value={postingLink}
+                onChange={(e) => setPostingLink(e.target.value)}
+                disabled={loading}
+                sx={{
+                  mt: 1,
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'background.paper',
+                  },
+                }}
+              />
+              <Box alignSelf={'flex-end'}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleSubmitPostingLink}
+                  disabled={loading}
+                  sx={{
+                    display: 'flex',
+                    ...BUTTON_STYLES.base,
+                    ...BUTTON_STYLES.success
+                  }}
+                >
+                  {loading ? 'Saving...' : 'Approve'}
+                </Button>
+              </Box>
+            </Box>          
+          }
+
+        </Box>
     </Box>
   );
 }
@@ -539,7 +778,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
         bgcolor: 'background.neutral'
       }}>
         {/* Photo Content */}
-        {!hasPostingLink && submission.status !== 'REJECTED' && (
+        {(!hasPostingLink || submission.status === 'POSTED') && submission.status !== 'REJECTED' && (
         <Box>
           {clientVisible ? (
             // Show actual content to admins or when sent to client
@@ -594,18 +833,33 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                       ) : null}
                     </Box>
 
-                    {/* Feedback Section */}
+                    {/* Feedback/Posting Link Section */}
                     <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                      <FeedbackSection 
-                        submission={submission}
-                        isVisible={submission.status !== 'CLIENT_APPROVED' && submission.status !== 'PENDING_REVIEW'}
-                        isClient={isClient}
-                      />
+                      {/* Show Posting Link Section for CLIENT_APPROVED or POSTED submissions in normal campaigns */}
+                      {(submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'PENDING_REVIEW' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
+                        <PostingLinkSection 
+                          submission={submission}
+                          campaign={campaign}
+                          onUpdate={onUpdate}
+                          isClient={isClient}
+                        />
+                      ) : (
+                        <FeedbackSection 
+                          submission={submission}
+                          isVisible={submission.status !== 'CLIENT_APPROVED' && submission.status !== 'PENDING_REVIEW'}
+                          isClient={isClient}
+                        />
+                      )}
                     </Box>
 
 
                     {/* Feedback Actions - Visibility controlled by user role and submission status */}
                     {(() => {
+                      // Don't show feedback actions when displaying posting link section
+                      if ((submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED') && campaign?.campaignType === 'normal') {
+                        return null;
+                      }
+
                       const visibility = getFeedbackActionsVisibility({
                         isClient,
                         submission,
@@ -962,120 +1216,6 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
             </Card>
           )}
         </Box>
-        )}
-
-        {/* Posting Link */}
-        {hasPendingPostingLink ? (
-          <Box m={2} display={'flex'} flexDirection={'column'} width={400}>        
-            <Card sx={{ p: 2, bgcolor: '#fff', mt: 1, borderRadius: 1.5, boxShadow: 'none', border: '1px solid #EBEBEB', width: 400 }}>
-              {hasPostingLink ? (
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Link 
-                    href={submission.content} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    sx={{ 
-                      flex: 1, 
-                      textDecoration: 'none'
-                    }}
-                  >
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        wordBreak: 'break-all',
-                        color: '#0062CD',
-                        textDecoration: 'underline',
-                        '&:hover': {
-                          textDecoration: 'underline',
-                          color: '#004A9F'
-                        }
-                      }}
-                    >
-                      {submission.content}
-                    </Typography>
-                  </Link>
-                </Stack>
-              ) : (
-                <Typography color="text.secondary">
-                  {isApproved ? 'Creator can add posting link' : 'Available after approved submission'}
-                </Typography>
-              )}
-            </Card>
-
-            {/* Admin Posting Link Approval */}
-            {!isClient && hasPendingPostingLink && (
-              <Stack direction="row" spacing={2} alignSelf={'flex-end'} sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  color="warning"
-                  onClick={() => handlePostingLinkApproval('reject')}
-                  disabled={loading}
-                  
-                  sx={{
-                    display: action === 'request_revision' ? 'none' : 'flex',
-                    ...BUTTON_STYLES.base,
-                    ...BUTTON_STYLES.warning,
-                  }}
-                >
-                  Request a Change
-                </Button>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={() => handlePostingLinkApproval('approve')}
-                  disabled={loading}
-                  sx={{
-                    display: 'flex',
-                    ...BUTTON_STYLES.base,
-                    ...BUTTON_STYLES.success,
-                  }}
-                >
-                  Approve
-                </Button>
-              </Stack>
-            )}
-          </Box>
-        ) : (
-          hasPostingLink && submission.status === 'POSTED' && (
-            <Box mt={3} mb={4} mx={3} display={'flex'} flexDirection={'column'} width={400}>
-              <Box display={'flex'}>
-                <Typography variant="caption" fontWeight={'600'} color="text.primary" sx={{ mb: 0.5, mr: 0.5 }}>
-                  Date approved:
-                </Typography>
-                <Typography variant="caption" color="#636366" sx={{ mb: 0.5 }}>
-                  {fDate(submission.updatedAt, 'dd/MM/yyyy')}
-                </Typography>
-              </Box>
-              <Card sx={{ p: 2, bgcolor: '#fff', mt: 1, borderRadius: 1.5, boxShadow: 'none', border: '1px solid #EBEBEB', width: 400 }}>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Link 
-                    href={submission.content} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    sx={{ 
-                      flex: 1, 
-                      textDecoration: 'none'
-                    }}
-                  >
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        wordBreak: 'break-all',
-                        color: '#0062CD',
-                        textDecoration: 'underline',
-                        '&:hover': {
-                          textDecoration: 'underline',
-                          color: '#004A9F'
-                        }
-                      }}
-                    >
-                      {submission.content}
-                    </Typography>
-                  </Link>
-                </Stack>
-              </Card>
-            </Box>            
-          )
         )}
         
         {/* Photo Modal */}
