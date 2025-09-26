@@ -105,7 +105,8 @@ function CreatorAccordion({ creator, campaign }) {
         case 'PENDING_REVIEW':
           return getStatusColor('IN_PROGRESS');
         case 'CHANGES_REQUIRED':
-          return getStatusColor('IN_PROGRESS')
+        case 'REJECTED':
+          return getStatusColor('IN_PROGRESS');
         default:
           return getStatusColor(status); // Use default mapping for other statuses
       }
