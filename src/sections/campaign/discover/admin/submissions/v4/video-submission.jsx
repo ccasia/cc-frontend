@@ -68,7 +68,7 @@ const FEEDBACK_CHIP_STYLES = {
   mb: 0.5
 };
 
-function FeedbackDisplay({ feedback, isClient }) {
+function FeedbackDisplay({ feedback, submission, isClient }) {
   if (!feedback) return null;
 
   // Check if feedback has any content or reasons
@@ -91,7 +91,8 @@ function FeedbackDisplay({ feedback, isClient }) {
           ))}
         </Box>
       )}
-      {isClient && hasContent && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={0.5}>CS Comments</Typography>}
+      {(isClient && hasContent && submission.status === 'SENT_TO_CLIENT') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={0.5}>CS Comments</Typography>}
+      {(!isClient && hasContent && submission.status === 'CLIENT_APPROVED') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={0.5}>Client Feedback</Typography>}
       {hasContent && (
         <Typography fontSize={12} sx={{ mb: 0.5 }}>
           {feedback.content}
@@ -323,6 +324,7 @@ function PostingLinkSection({ submission, onUpdate }) {
                 <Button
                   variant="contained"
                   color="success"
+                  size='small'
                   onClick={handleSubmitPostingLink}
                   disabled={loading}
                   sx={{
@@ -353,13 +355,7 @@ function FeedbackSection({ submission, isVisible, isClient }) {
       // Clients should only see COMMENT type feedback (when admin sends to client)
       return feedback.type === 'COMMENT';
     } else {
-      // Admins should see:
-      // - REQUEST type feedback (when admin/client requests changes)
-      // - COMMENT type feedback when status is SENT_TO_CLIENT (to see what they sent to client)
-      if (submission.status === 'SENT_TO_CLIENT') {
-        return feedback.type === 'COMMENT';
-      }
-      return feedback.type === 'REQUEST';
+      return feedback.type;
     }
   });
 
@@ -375,7 +371,8 @@ function FeedbackSection({ submission, isVisible, isClient }) {
   return (
     <Box sx={{ flex: 1, overflow: 'auto' }}>
       <Stack spacing={1}>
-        <FeedbackDisplay 
+        <FeedbackDisplay
+          submission={submission}
           feedback={latestFeedback} 
           showContent={showContent}
           isClient={isClient}
@@ -966,11 +963,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                       ) : null}
                     </Box>
                     
-
                     {/* Feedback/Posting Link Section */}
                     <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                       {/* Show Posting Link Section for CLIENT_APPROVED or POSTED submissions in normal campaigns */}
-                      {(submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'PENDING_REVIEW' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
+                      {!isClient && (submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
                         <PostingLinkSection 
                           submission={submission}
                           campaign={campaign}
@@ -980,7 +976,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                       ) : (
                         <FeedbackSection 
                           submission={submission}
-                          isVisible={submission.status !== 'CLIENT_APPROVED' && submission.status !== 'PENDING_REVIEW'}
+                          isVisible={submission.status !== 'PENDING_REVIEW'}
                           isClient={isClient}
                         />
                       )}
@@ -1012,6 +1008,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                               <Button
                                 variant="contained"
                                 color="warning"
+                                size='small'
                                 onClick={() => {
                                   setPreviousFeedback(feedback);
                                   setAction('request_revision');
@@ -1031,6 +1028,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                                 <Button
                                   variant="contained"
                                   color="secondary"
+                                  size='small'
                                   onClick={() => {
                                     setAction('approve');
                                     setReasons([]);
@@ -1046,6 +1044,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                                 <Button
                                   variant="contained"
                                   color={'warning'}
+                                  size='small'
                                   onClick={handleRequestChanges}
                                   disabled={loading}
                                   sx={{
@@ -1063,6 +1062,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                               <Button
                                 variant="contained"
                                 color="success"
+                                size='small'
                                 onClick={handleApprove}
                                 disabled={loading}
                                 sx={{
@@ -1079,6 +1079,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                               <Button
                                 variant="contained"
                                 color="secondary"
+                                size='small'
                                 onClick={handleRequestChanges}
                                 disabled={loading}
                                 sx={{
