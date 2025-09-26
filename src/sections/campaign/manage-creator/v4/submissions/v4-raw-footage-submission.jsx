@@ -10,19 +10,14 @@ import {
   TextField,
   Typography,
   LinearProgress,
-  Alert,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton
 } from '@mui/material';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import { Upload } from 'src/components/upload';
+import CustomV4Upload from 'src/components/upload/custom-v4-upload';
+import RawFootageGridDisplay from 'src/components/upload/raw-footage-grid-display';
 
 // File upload configuration for raw footage
 const RAW_FOOTAGE_UPLOAD_CONFIG = {
@@ -38,21 +33,85 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [caption, setCaption] = useState(submission.caption || '');
+  const [isReuploadMode, setIsReuploadMode] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   // Update caption when submission changes
   useEffect(() => {
     setCaption(submission.caption || '');
   }, [submission.caption]);
 
+  // Get submitted raw footages
+  const submittedRawFootages = useMemo(() => {
+    return submission.rawFootages || [];
+  }, [submission.rawFootages]);
+
+  // Determine display status
+  const isApproved = useMemo(() => {
+    return ['APPROVED', 'POSTED'].includes(submission.status);
+  }, [submission.status]);
+
+  const isPosted = useMemo(() => {
+    return submission.status === 'POSTED';
+  }, [submission.status]);
+
+  const isPostingLinkRejected = useMemo(() => {
+    return submission.status === 'POSTING_LINK_REJECTED';
+  }, [submission.status]);
+
+  const hasChangesRequired = useMemo(() => {
+    return submission.status === 'CHANGES_REQUIRED';
+  }, [submission.status]);
+
   // Memoize feedback filtering to avoid recalculation
   const relevantFeedback = useMemo(() => {
-    return submission.feedback?.filter(feedback => feedback.sentToCreator) || [];
-  }, [submission.feedback]);
+    if (!submission.feedback || submission.feedback.length === 0) {
+      return [];
+    }
+
+    // Filter feedback for this specific submission and sent to creator
+    const filteredFeedback = submission.feedback.filter(feedback => 
+      feedback.sentToCreator && feedback.submissionId === submission.id
+    );
+
+    // Sort by creation date and get the most recent one
+    const sortedFeedback = filteredFeedback.sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    const mostRecentFeedback = sortedFeedback.slice(0, 1);
+    return mostRecentFeedback;
+  }, [submission.feedback, submission.id]);
+
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleCaptionChange = useCallback((e) => {
+    setCaption(e.target.value);
+  }, []);
+
+  const handleFilesChange = useCallback((newFiles) => {
+    setSelectedFiles(newFiles);
+  }, []);
+
+  const handleRemoveVideo = useCallback((index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleAdditionalFilesChange = useCallback((newFiles) => {
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+  }, []);
+
+  // Handle reupload mode
+  const handleReuploadMode = useCallback(() => {
+    setIsReuploadMode(true);
+    // Keep submitted raw footages as selected files so they remain visible with remove buttons
+    setSelectedFiles(submittedRawFootages);
+    setHasSubmitted(false); // Reset submitted state
+  }, [submittedRawFootages]);
+
+  // Memoize selectedFiles to prevent unnecessary re-renders
+  const memoizedSelectedFiles = useMemo(() => selectedFiles, [selectedFiles]);
 
   const handleDrop = (acceptedFiles, rejectedFiles) => {
-    console.log('🎬 Raw Footage Upload Debug:');
-    console.log('Accepted files:', acceptedFiles.length, acceptedFiles.map(f => f.name));
-    console.log('Rejected files:', rejectedFiles.length, rejectedFiles);
 
     if (rejectedFiles.length > 0) {
       rejectedFiles.forEach((rejection) => {
@@ -71,18 +130,9 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     if (acceptedFiles.length > 0) {
       setSelectedFiles(prev => {
         const newFiles = [...prev, ...acceptedFiles];
-        console.log('Total selected files after drop:', newFiles.length, newFiles.map(f => f.name));
         return newFiles;
       });
     }
-  };
-
-  const handleRemoveFile = (index) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleRemoveAllFiles = () => {
-    setSelectedFiles([]);
   };
 
   const handleSubmit = async () => {
@@ -91,10 +141,28 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       return;
     }
 
-    console.log('🚀 Starting raw footage upload:');
-    console.log('Selected files count:', selectedFiles.length);
-    console.log('Submission status:', submission.status);
-    console.log('Selected files:', selectedFiles.map((f, i) => `${i + 1}. ${f.name} (${f.size} bytes)}`));
+    // For reupload mode, check if there are meaningful changes
+    if (isReuploadMode) {
+      const newFiles = selectedFiles.filter(file => file instanceof File);
+      const existingRawFootages = selectedFiles.filter(file => file && typeof file === 'object' && file.url && file.id);
+      const originalRawFootageCount = submittedRawFootages.length;
+      
+      // Check if there are any changes: new files added OR raw footages removed OR caption changed
+      const hasNewFiles = newFiles.length > 0;
+      const hasRemovedRawFootages = existingRawFootages.length < originalRawFootageCount;
+      const hasCaptionChange = caption.trim() !== (submission.caption || '').trim();
+      
+      if (!hasNewFiles && !hasRemovedRawFootages && !hasCaptionChange) {
+        enqueueSnackbar('No changes detected. Please add new raw footages, remove existing ones, or update the caption.', { variant: 'warning' });
+        return;
+      }
+    }
+
+    // Immediately mark as submitted to disable button and make caption non-editable
+    setHasSubmitted(true);
+
+    const isReupload = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
+    const existingRawFootageCount = submission.rawFootages?.length || 0;
 
     setUploading(true);
     setUploadProgress(0);
@@ -102,35 +170,38 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     try {
       const formData = new FormData();
       
-      // Add form data as JSON string (following v3 pattern)
+      // Separate existing raw footages (API objects with URLs) from new files (File objects)
+      const existingRawFootages = selectedFiles.filter(file => file && typeof file === 'object' && file.url && file.id);
+      const newFiles = selectedFiles.filter(file => file instanceof File);
+      
+      // Add form data as JSON string with selective update information
       const requestData = {
         submissionId: submission.id,
-        caption: caption.trim()
+        caption: caption.trim(),
+        isSelectiveUpdate: isReupload, // Flag for selective update vs full replacement
+        keepExistingRawFootages: existingRawFootages.map(rawFootage => ({
+          id: rawFootage.id,
+          url: rawFootage.url
+        }))
       };
       formData.append('data', JSON.stringify(requestData));
 
-      // Add raw footage files
-      selectedFiles.forEach((file, index) => {
-        console.log(`Adding file ${index + 1} to FormData:`, file.name);
+      // Add only new raw footage files (not existing ones)
+      newFiles.forEach((file) => {
         formData.append('rawFootages', file);
       });
 
-      console.log('FormData entries:');
-      for (let pair of formData.entries()) {
-        console.log(pair[0], ':', pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]);
-      }
-
-      // Upload with progress tracking
-      const xhr = new XMLHttpRequest();
-      
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = (event.loaded / event.total) * 100;
-          setUploadProgress(percentComplete);
-        }
-      });
-
+      // Create XMLHttpRequest for progress tracking
       const uploadPromise = new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(progress);
+          }
+        };
+
         xhr.onload = () => {
           if (xhr.status === 200) {
             resolve(JSON.parse(xhr.responseText));
@@ -139,28 +210,58 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
           }
         };
         
-        xhr.onerror = () => reject(new Error('Upload failed'));
-      });
+        xhr.onerror = () => reject(new Error('Network error'));
 
-      xhr.open('POST', endpoints.submission.creator.v4.submitContent, true);
-      xhr.withCredentials = true;
-      xhr.send(formData);
+        xhr.open('POST', '/api/creator/submissions/v4/submit-content');
+        xhr.withCredentials = true;
+        xhr.send(formData);
+      });
 
       await uploadPromise;
 
-      const successMessage = hasChangesRequired 
-        ? 'Raw footage updated successfully!' 
-        : 'Raw footage uploaded successfully!';
+      const isUpdate = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
+      const uploadedFiles = selectedFiles.filter(file => file instanceof File);
+      const keptRawFootages = selectedFiles.filter(file => file && typeof file === 'object' && file.url && file.id);
+      
+      let successMessage;
+      if (isUpdate) {
+        if (uploadedFiles.length > 0 && keptRawFootages.length > 0) {
+          successMessage = `Raw footages updated successfully! Added ${uploadedFiles.length} new video(s), kept ${keptRawFootages.length} existing video(s).`;
+        } else if (uploadedFiles.length > 0) {
+          successMessage = `${uploadedFiles.length} new raw footage(s) added successfully!`;
+        } else {
+          successMessage = 'Raw footages updated successfully!';
+        }
+      } else {
+        successMessage = 'Raw footages uploaded successfully!';
+      }
         
       enqueueSnackbar(successMessage, { variant: 'success' });
-      onUpdate();
-      setSelectedFiles([]);
-      setCaption('');
       
+      // Update submission status to IN REVIEW immediately after successful upload
+      try {
+        await axiosInstance.patch(`/api/creator/submissions/v4/${submission.id}/status`, {
+          status: 'PENDING_REVIEW'
+        });
+      } catch (statusError) {
+        console.error('Failed to update status to IN REVIEW:', statusError.response?.data?.message || 'Something went wrong');
+      }
+
+      // Update parent component
+      if (onUpdate) {
+        onUpdate();
+      }
+
+      // Reset states for successful submission
+      setIsReuploadMode(false);
+      // Commented out to maintain persistence like Photos
+      // setSelectedFiles([]);
+      // setCaption('');
     } catch (error) {
       console.error('Submit error:', error);
+      setHasSubmitted(false);
       enqueueSnackbar(
-        error.message || 'Failed to upload raw footage', 
+        error.message || 'Failed to upload raw footages',
         { variant: 'error' }
       );
     } finally {
@@ -169,89 +270,238 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     }
   };
 
-  const isSubmitted = submission.rawFootages?.some(r => r.url);
-  // CLIENT_FEEDBACK means client gave feedback but admin hasn't forwarded it yet - creator still sees as "in review"
-  // CHANGES_REQUIRED means admin has forwarded client feedback - creator can now see feedback and re-upload
-  const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
-  const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
-  const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
-  
-  // Check if any individual raw footage need revision (only show to creator if admin has forwarded the feedback)
-  const hasIndividualRawFootageNeedingRevision = submission.rawFootages?.some(r => 
-    ['REVISION_REQUESTED', 'REJECTED'].includes(r.status)
-  );
-  
-  // Creator can upload if not in final states and either hasn't submitted or has raw footage needing revision
-  const canUpload = !isApproved && (!isInReview || hasIndividualRawFootageNeedingRevision || hasChangesRequired);
+  // Determine what raw footages to display
+  const rawFootagesToDisplay = useMemo(() => {
+    // If actively uploading/reuploading, show selected files
+    if (isReuploadMode || selectedFiles.length > 0) {
+      return selectedFiles;
+    }
+    // Otherwise show submitted raw footages
+    return submittedRawFootages;
+  }, [isReuploadMode, selectedFiles, submittedRawFootages]);
+
+  // Determine if caption should be editable
+  const isCaptionEditable = useMemo(() => {
+    // Not editable if already submitted (unless in reupload mode or changes required)
+    if (hasSubmitted && !isReuploadMode && !hasChangesRequired) {
+      return false;
+    }
+    // Editable if: in reupload mode OR no raw footages have been submitted yet OR just uploaded locally OR changes are required
+    return isReuploadMode || submittedRawFootages.length === 0 || (!hasSubmitted && selectedFiles.length > 0) || hasChangesRequired;
+  }, [isReuploadMode, submittedRawFootages.length, hasSubmitted, selectedFiles.length, hasChangesRequired]);
+
+  // Determine if we can upload
+  const canUpload = !isApproved && !isPosted && !isPostingLinkRejected;
+
+  if (!canUpload) {
+    return (
+      <Box p={3}>
+        <Typography variant="h6" gutterBottom>
+          Raw Footages {submission.status === 'POSTED' ? 'Posted' : 'Approved'}
+        </Typography>
+        
+        {/* Display submitted raw footages */}
+        {submittedRawFootages.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <RawFootageGridDisplay
+              files={submittedRawFootages}
+              onRemoveVideo={null} // No remove button for approved/posted content
+              height={{ xs: 320, md: 480 }}
+            />
+          </Box>
+        )}
+
+        {/* Display caption if exists */}
+        {submission.caption && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Caption:
+            </Typography>
+            <Typography variant="body1">
+              {submission.caption}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+    );
+  }
 
   return (
-    <Stack spacing={3}>
-      {/* Header */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Iconify icon="eva:film-fill" width={24} />
-          <Typography variant="h6">Raw Footage Collection</Typography>
-          <Chip 
-            label={getCreatorStatusLabel(submission.status)} 
-            color={getStatusColor(submission.status)} 
-            size="small" 
-          />
-        </Stack>
-      </Stack>
-
-      {isApproved && (
-        <Alert severity="success">
-          <Typography variant="body2">
-            🎉 Your raw footage has been approved! Great work!
+    <Box>
+      {/* Upload Progress */}
+      {uploading && (
+        <Box sx={{ mb: 3 }}>
+          <LinearProgress variant="determinate" value={uploadProgress} sx={{ mb: 1 }} />
+          <Typography variant="body2" color="text.secondary" align="center">
+            Uploading... {uploadProgress}%
           </Typography>
-        </Alert>
+        </Box>
       )}
 
-      {(hasChangesRequired) && (
-        <Alert severity="warning">
-          <Typography variant="body2">
-            Changes requested. Please review the feedback below and resubmit.
-          </Typography>
-        </Alert>
-      )}
+      {/* Main Content Area */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: { xs: 2, md: 3 },
+        position: 'relative',
+        minHeight: { xs: 'auto', md: 405 },
+        maxWidth: '100%',
+        overflow: 'hidden', // Prevent overflow
+        // Ensure proper spacing on smaller screens
+        '@media (max-width: 1200px)': {
+          flexDirection: 'column',
+          gap: 2,
+        }
+      }}>
+        {/* Upload Area - Responsive width */}
+        <Box sx={{ 
+          width: { xs: '100%', md: '65%' }, // Full width on mobile, 65% on desktop
+          maxWidth: '100%', // Prevent overflow
+          order: { xs: 1, md: 1 }, // First on both mobile and desktop
+          // Adjust for smaller desktop screens
+          '@media (max-width: 1200px)': {
+            width: '100%',
+          }
+        }}>
+          {rawFootagesToDisplay.length === 0 ? (
+            <CustomV4Upload
+              files={[]}
+              onFilesChange={handleFilesChange}
+              disabled={uploading}
+              submissionId={submission.id}
+              submittedVideo={null}
+              accept="video/*"
+              maxSize={500 * 1024 * 1024}
+              fileTypes="MP4, MOV, AVI, MKV, WEBM, M4V"
+              height={{ xs: 320, md: 480 }} // Made longer to match Draft Videos
+            />
+          ) : (
+            <RawFootageGridDisplay
+              files={rawFootagesToDisplay}
+              onRemoveVideo={(isReuploadMode || selectedFiles.length > 0) && isCaptionEditable ? handleRemoveVideo : null}
+              height={{ xs: 320, md: 480 }}
+            />
+          )}
+        </Box>
 
-      {submission.status === 'CLIENT_FEEDBACK' && (
-        <Alert severity="info">
-          <Typography variant="body2">
-            ⏳ Your raw footage is under client review. We'll notify you once feedback is available.
-          </Typography>
-        </Alert>
-      )}
+        {/* Caption Area - Responsive positioning */}
+        <Box sx={{ 
+          width: { xs: '100%', md: 'min(325px, 35%)' }, // Responsive width on desktop, full width on mobile
+          maxWidth: { xs: '100%', md: '325px' }, // Ensure it doesn't exceed container
+          position: { xs: 'static', md: 'absolute' }, // Static on mobile, absolute on desktop
+          top: { xs: 'auto', md: 0 },
+          right: { xs: 'auto', md: 0 },
+          zIndex: 2,
+          order: { xs: 2, md: 2 }, // Second on both mobile and desktop
+          // Ensure it doesn't overflow on smaller desktop screens
+          '@media (max-width: 1200px)': {
+            position: 'static',
+            width: '100%',
+            maxWidth: '100%',
+          }
+        }}>
+          {/* Additional Upload Box - Shows when 1+ videos are displayed and in upload mode */}
+          {rawFootagesToDisplay.length > 0 && (isReuploadMode || selectedFiles.length > 0) && (
+            <Box sx={{ mb: 2 }}>
+              <CustomV4Upload
+                files={[]} // Empty to show upload box
+                onFilesChange={handleAdditionalFilesChange}
+                disabled={uploading}
+                submissionId={`${submission.id}-additional`}
+                accept="video/*"
+                maxSize={500 * 1024 * 1024}
+                fileTypes="MP4, MOV, AVI, MKV, WEBM, M4V"
+                height={120} // Smaller height for additional upload
+              />
+            </Box>
+          )}
 
-      {isInReview && submission.status !== 'CLIENT_FEEDBACK' && (
-        <Alert severity="info">
-          <Typography variant="body2">
-            ⏳ Your raw footage is being reviewed. We'll notify you once feedback is available.
+          {/* Caption Field */}
+          <Box sx={{ mb: 2 }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                mb: 1, 
+                fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                color: '#636366',
+                fontWeight: 500
+              }}
+            >
+              Post Caption <span style={{ color: 'red' }}>*</span>
+            </Typography>
+            {isCaptionEditable ? (
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                value={caption}
+                onChange={handleCaptionChange}
+                placeholder="Type your caption here..."
+                disabled={uploading}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.5,
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: '#9E9E9E',
+                    opacity: 1,
+                  },
+                  maxWidth: '100%', // Prevent overflow
+                  wordWrap: 'break-word',
+                }}
+              />
+            ) : (
+              // Show read-only caption text when submitted
+              <Typography
+                variant="body2"
+                sx={{
+                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  color: '#636366',
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-wrap', // Preserve line breaks
+                  minHeight: 'auto', // Allow natural height expansion
+                  p: 1.5, // Add padding to match TextField appearance
+                  border: 'none', // No border for read-only state
+                  backgroundColor: 'transparent',
+                  wordWrap: 'break-word', // Handle long words
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word', // Force long words to break
+                  maxWidth: '100%', // Prevent overflow
+                  width: '100%', // Take full width
+                  display: 'block', // Ensure block display
+                  overflow: 'visible', // Allow content to expand
+                  textOverflow: 'clip', // Don't add ellipsis
+                  WebkitLineClamp: 'unset', // Remove line clamping
+                  WebkitBoxOrient: 'unset', // Remove webkit truncation
+                  ml: -1.5, // Move caption text to the left on both mobile and desktop
+                }}
+              >
+                {caption || 'No caption provided'}
           </Typography>
-        </Alert>
-      )}
+            )}
+          </Box>
 
-      {/* Existing Content - Don't show individual feedback if CLIENT_FEEDBACK (not yet forwarded by admin) */}
-      {!isInReview && submission.rawFootages?.length > 0 && (
-        <Card sx={{ p: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Current Submissions ({submission.rawFootages.length} files):
-          </Typography>
-          
-          {/* Raw Footage Horizontal Scroll Container */}
-          <Box
-            sx={{ 
-              display: 'flex',
-              gap: 2,
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              bgcolor: 'background.neutral',
-              p: 2,
-              height: 385,
-              alignItems: 'center',
-              borderRadius: 1,
+          {/* Feedback Section - Show when changes are required */}
+          {hasChangesRequired && relevantFeedback.length > 0 && (
+            <Card sx={{
+              p: { xs: 1, md: 1 }, // Reduced padding to move content left
+              pl: { xs: 0, md: 0 }, // Remove left padding completely
+              bgcolor: 'transparent',
+              boxShadow: 'none',
+              border: 'none',
+              mt: { xs: 1, md: 2},
+              maxHeight: { xs: 'auto', md: '220px' },
+              overflowY: { xs: 'visible', md: 'auto' },
+              mb: { xs: 0, md: 8 },
+              position: { xs: 'static', md: 'relative' },
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
               '&::-webkit-scrollbar': {
-                height: 8,
+                width: 6,
               },
               '&::-webkit-scrollbar-track': {
                 backgroundColor: 'rgba(0,0,0,0.1)',
@@ -264,200 +514,121 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
                   backgroundColor: 'rgba(0,0,0,0.5)',
                 },
               },
-            }}
-          >
-            {submission.rawFootages.map((rawFootage, index) => (
-              <Box
-                key={rawFootage.id}
-                sx={{
-                  flexShrink: 0,
-                  position: 'relative',
-                }}
-              >
-                {rawFootage.url && (
-                  <video
-                    controls
-                    style={{ width: 250, height: 355, objectFit: 'cover', borderRadius: 8 }}
-                    src={rawFootage.url}
-                  >
-                    <track kind="captions" srcLang="en" label="English" />
-                  </video>
-                )}
-              </Box>
-            ))}
-          </Box>
-          {submission.caption && (
-            <Card sx={{ p: 2, mt: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Caption:
-              </Typography>
-              <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-                <Typography variant="body2">{submission.caption}</Typography>
-              </Card>
-            </Card>
-          )}
-        </Card>
-      )}
-
-      {/* Feedback */}
-      {relevantFeedback.length > 0 && (
-        <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Feedback:
-          </Typography>
-          <Stack spacing={2}>
-            {relevantFeedback.map((feedback, index) => (
-                <Stack key={index} spacing={1}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Box sx={{ 
-                      minWidth: 20, 
-                      height: 20, 
-                      borderRadius: '50%', 
-                      bgcolor: 'primary.main', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center' 
-                    }}>
-                      <Typography variant="caption" sx={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
-                        {feedback.admin?.name?.charAt(0) || 'A'}
-                      </Typography>
-                    </Box>
-                    <Typography variant="caption" fontWeight="medium">
-                      {feedback.admin?.name || 'Admin'}
+            }}>
+              {/* Change Request Reasons */}
+              {relevantFeedback[0]?.reasons && relevantFeedback[0].reasons.length > 0 && (
+                <Box sx={{ mb: 1 }}>
+                  {relevantFeedback[0].reasons.map((reason, index) => (
+                    <Typography
+                      key={index}
+                      variant="caption"
+                      sx={{
+                        display: 'inline-block',
+                        px: 1.5,
+                        py: 0.5,
+                        mr: 0.5,
+                        mb: 0.5,
+                        fontWeight: 600,
+                        border: '1px solid',
+                        borderBottom: '3px solid',
+                        borderRadius: 0.8,
+                        bgcolor: 'white',
+                        whiteSpace: 'nowrap',
+                        color: '#FF4842',
+                        borderColor: '#FF4842',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      {reason}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {new Date(feedback.createdAt).toLocaleDateString()}
-                    </Typography>
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    {feedback.content}
-                  </Typography>
-                  {feedback.reasons?.length > 0 && (
-                    <Stack direction="row" spacing={1} flexWrap="wrap">
-                      {feedback.reasons.map((reason, i) => (
-                        <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
-                      ))}
-                    </Stack>
-                  )}
-                </Stack>
-              ))
-            }
-          </Stack>
-        </Card>
-      )}
-
-      {/* Upload Form */}
-      {canUpload && (
-        <Card sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            <Typography variant="subtitle1">
-              {hasIndividualRawFootageNeedingRevision ? 
-                'Re-upload Raw Footage' : 
-                isSubmitted ? 'Update Raw Footage' : 'Upload Raw Footage'}
-            </Typography>
-            
-            {hasIndividualRawFootageNeedingRevision && (
-              <Alert severity="warning" sx={{ mt: 1 }}>
-                <Typography variant="body2">
-                  📝 Some raw footage needs changes. Upload new files to replace all existing raw footage.
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  Note: All new files will replace your current raw footage submission.
-                </Typography>
-              </Alert>
-            )}
-
-            {/* File Upload Area */}
-            <Upload
-              multiple
-              files={selectedFiles}
-              onDrop={handleDrop}
-              onRemove={handleRemoveFile}
-              onRemoveAll={handleRemoveAllFiles}
-              accept={RAW_FOOTAGE_UPLOAD_CONFIG.accept}
-              maxSize={RAW_FOOTAGE_UPLOAD_CONFIG.maxSize}
-              disabled={uploading}
-            />
-
-
-            {/* Caption */}
-            <TextField
-              label={submission.caption ? "Update Caption" : "Caption"}
-              multiline
-              rows={3}
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="Describe your raw footage: what's included, technical specs, special shots, etc..."
-              disabled={uploading}
-            />
-
-            {/* Submit Button */}
-            <Box>
-              {uploading && (
-                <Box sx={{ mb: 2 }}>
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Uploading raw footage... {Math.round(uploadProgress)}%
-                    </Typography>
-                  </Stack>
-                  <LinearProgress variant="determinate" value={uploadProgress} />
+                  ))}
                 </Box>
               )}
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                disabled={uploading || selectedFiles.length === 0}
-                startIcon={<Iconify icon="eva:upload-fill" />}
-                size="large"
-              >
-                {uploading ? 'Uploading...' : 
-                 hasIndividualRawFootageNeedingRevision ? 'Re-submit Raw Footage' :
-                 isSubmitted ? 'Update Raw Footage' : 'Submit Raw Footage'}
-              </Button>
-            </Box>
-          </Stack>
+
+              {/* CS Feedback Title and Content */}
+              <Box>
+                <Typography 
+                  variant="body2" 
+                sx={{
+                    fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    color: '#636366',
+                    fontWeight: 600,
+                    mb: 0.5
+                  }}
+                >
+                  CS Feedback
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    color: '#636366',
+                    lineHeight: 1.4,
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  {relevantFeedback[0]?.content || 'No specific feedback provided.'}
+                </Typography>
+              </Box>
         </Card>
       )}
-    </Stack>
+        </Box>
+      </Box>
+
+      {/* Submit Button - Responsive Position */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: { xs: 'center', md: 'flex-end' }, // Center on mobile, right-aligned on desktop
+        alignItems: 'center', 
+        mt: { xs: 2, md: -6 }, // Normal spacing on mobile, negative margin on desktop
+        position: 'relative', 
+        zIndex: 10 
+      }}>
+        <Typography
+          component="button"
+          onClick={hasChangesRequired && !isReuploadMode ? handleReuploadMode : handleSubmit}
+          disabled={uploading || (memoizedSelectedFiles.length === 0 && !hasChangesRequired) || (!isCaptionEditable && !hasChangesRequired && !isReuploadMode)}
+          sx={{
+            px: 2,
+            py: 1,
+            fontWeight: 600,
+            border: '1px solid',
+            borderBottom: '3px solid',
+            borderRadius: 0.8,
+            bgcolor: hasChangesRequired ? '#1340FF' : (!isCaptionEditable && !hasChangesRequired ? '#BDBDBD' : '#3a3a3c'),
+            color: 'white',
+            borderColor: hasChangesRequired ? '#1340FF' : (!isCaptionEditable && !hasChangesRequired ? '#BDBDBD' : '#3a3a3c'),
+            textTransform: 'none',
+            fontSize: '0.75rem',
+            minWidth: '80px',
+            height: '32px',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: (uploading || (memoizedSelectedFiles.length === 0 && !hasChangesRequired) || (!isCaptionEditable && !hasChangesRequired)) ? 'not-allowed' : 'pointer',
+            '&:hover': (!uploading && ((memoizedSelectedFiles.length > 0) || hasChangesRequired) && isCaptionEditable) ? {
+              bgcolor: '#1340FF',
+              borderColor: '#1340FF',
+            } : {},
+            '&:disabled': {
+              bgcolor: '#BDBDBD',
+              borderColor: '#BDBDBD',
+              color: '#9E9E9E',
+              cursor: 'not-allowed',
+            }
+          }}
+        >
+          {uploading ? 'Processing...' : (hasChangesRequired && !isReuploadMode) ? 'Reupload Raw Footages' : (!isCaptionEditable && submittedRawFootages.length > 0 && !hasChangesRequired ? 'Submitted' : 'Submit')}
+        </Typography>
+      </Box>
+    </Box>
   );
-};
-
-// Helper functions
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'IN_PROGRESS': return 'info';
-    case 'PENDING_REVIEW': return 'warning';
-    case 'APPROVED':
-    case 'CLIENT_APPROVED': return 'success';
-    case 'POSTED': return 'success';
-    case 'CHANGES_REQUIRED':
-    case 'REJECTED':
-    case 'REVISION_REQUESTED': return 'error';
-    case 'SENT_TO_CLIENT':
-    case 'CLIENT_FEEDBACK': return 'secondary';
-    default: return 'default';
-  }
-};
-
-const getCreatorStatusLabel = (status) => {
-  switch (status) {
-    case 'IN_PROGRESS': return 'In Progress';
-    case 'PENDING_REVIEW': return 'In Review';
-    case 'APPROVED':
-    case 'CLIENT_APPROVED': return 'Approved';
-    case 'POSTED': return 'Posted';
-    case 'CHANGES_REQUIRED':
-    case 'REJECTED':
-    case 'REVISION_REQUESTED': return 'Changes Required';
-    case 'SENT_TO_CLIENT': return 'In Review';
-    case 'CLIENT_FEEDBACK': return 'Client Reviewing';
-    default: return status;
-  }
 };
 
 V4RawFootageSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
-  onUpdate: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func,
 };
 
 export default V4RawFootageSubmission;

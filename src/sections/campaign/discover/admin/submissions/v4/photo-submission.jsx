@@ -494,6 +494,16 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
     const hasPostingLink = Boolean(submission.content);
     const hasPendingPostingLink = hasPostingLink && submission.status !== 'POSTED';
     
+    // Debug logging for admin photo display
+    console.log('🖼️ Admin Photo Debug:', {
+      submissionId: submission.id,
+      submissionStatus: submission.status,
+      totalPhotosInSubmission: photos.length,
+      photoIds: photos.map(p => p.id),
+      photoUrls: photos.map(p => p.url),
+      fullSubmissionData: submission
+    });
+    
     return {
       photos,
       pendingReview,
@@ -501,7 +511,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
       hasPostingLink,
       hasPendingPostingLink
     };
-  }, [submission.photos, submission.status, submission.content]);
+  }, [submission.photos, submission.status, submission.content, submission.id]);
   
   const { photos, pendingReview, isApproved, hasPostingLink, hasPendingPostingLink } = submissionProps;
 

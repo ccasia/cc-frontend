@@ -1,77 +1,131 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
-  Card,
   Stack,
   Button,
   TextField,
   Typography,
   LinearProgress,
-  Alert,
+  Card,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton
+  Alert,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import { getDueDateInfo } from 'src/utils/dueDateHelpers';
 
-import Iconify from 'src/components/iconify';
-import { Upload } from 'src/components/upload';
+import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 
-// File upload configuration for videos
-const VIDEO_UPLOAD_CONFIG = {
-  accept: {
-    'video/*': ['.mp4', '.mov', '.avi', '.mkv', '.webm']
-  },
-  maxSize: 500 * 1024 * 1024, // 500MB
-  multiple: true
-};
 
 const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [caption, setCaption] = useState(submission.caption || '');
-  const [isEditingCaption, setIsEditingCaption] = useState(false);
-  const [postingDialog, setPostingDialog] = useState(false);
-  const [postingLink, setPostingLink] = useState('');
-  const [postingLoading, setPostingLoading] = useState(false);
+  const [isReuploadMode, setIsReuploadMode] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [postingLink, setPostingLink] = useState(submission.content || '');
+  const [postingLinkLoading, setPostingLinkLoading] = useState(false);
 
+  // Check if there are existing submitted videos - memoized to prevent re-creation
+  const submittedVideo = useMemo(() => {
+    const hasSubmittedVideos = submission.video && submission.video.length > 0;
+    return hasSubmittedVideos ? submission.video[0] : null;
+  }, [submission.video]);
+  
+  // Check if changes are required
+  const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
+  
+  // Check posting link status
+  const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
+  const isPosted = submission.status === 'POSTED';
+  const needsPostingLink = isApproved && !submission.content;
+  const hasPostingLink = Boolean(submission.content);
+  const isPostingLinkRejected = submission.postingLinkStatus === 'REJECTED';
+  const isPostingLinkEditable = needsPostingLink || isPostingLinkRejected;
+  
+  // Show submitted video only if not in reupload mode - memoized to prevent blinking
+  const videoToShow = useMemo(() => {
+    return isReuploadMode ? null : submittedVideo;
+  }, [isReuploadMode, submittedVideo]);
 
-  const handleDrop = useCallback((acceptedFiles, rejectedFiles) => {
-    if (rejectedFiles.length > 0) {
-      rejectedFiles.forEach((rejection) => {
-        rejection.errors.forEach((error) => {
-          if (error.code === 'file-too-large') {
-            enqueueSnackbar('File is too large. Maximum size is 500MB', { variant: 'error' });
-          } else if (error.code === 'file-invalid-type') {
-            enqueueSnackbar('Invalid file type. Please upload video files only', { variant: 'error' });
-          } else {
-            enqueueSnackbar(error.message, { variant: 'error' });
-          }
-        });
-      });
+  // Determine if caption should be editable
+  const isCaptionEditable = useMemo(() => {
+    // Editable if: in reupload mode OR no video has been submitted yet OR just uploaded locally
+    return isReuploadMode || !submittedVideo || (!hasSubmitted && selectedFiles.length > 0);
+  }, [isReuploadMode, submittedVideo, hasSubmitted, selectedFiles.length]);
+
+  // Memoize feedback filtering to avoid recalculation - only show the most recent feedback for this submission
+  const relevantFeedback = useMemo(() => {
+    if (!submission.feedback?.length) return [];
+    
+    // Filter feedback that is sent to creator
+    const sentFeedback = submission.feedback.filter(feedback => feedback.sentToCreator);
+    
+    // If we have feedback with matching submissionId, use those
+    const matchingFeedback = sentFeedback.filter(feedback => feedback.submissionId === submission.id);
+    
+    if (matchingFeedback.length > 0) {
+      // Sort by creation date and take only the most recent one
+      const sortedFeedback = matchingFeedback.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      return [sortedFeedback[0]];
     }
-
-    if (acceptedFiles.length > 0) {
-      setSelectedFiles(prev => [...prev, ...acceptedFiles]);
+    
+    // Fallback: if no submissionId match, show only the most recent feedback overall
+    if (sentFeedback.length > 0) {
+      const sortedFeedback = sentFeedback.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      return [sortedFeedback[0]];
     }
+    
+    return [];
+  }, [submission.feedback, submission.id]);
+
+  const handleReupload = () => {
+    setIsReuploadMode(true);
+    setSelectedFiles([]);
+    setHasSubmitted(false); // Reset submitted state to allow editing
+    // Keep the existing caption for editing
+  };
+
+  // Memoized caption change handler to prevent unnecessary re-renders
+  const handleCaptionChange = useCallback((e) => {
+    setCaption(e.target.value);
   }, []);
 
-  const handleRemoveFile = useCallback((index) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  // Memoized file change handler to prevent unnecessary re-renders
+  const handleFilesChange = useCallback((files) => {
+    setSelectedFiles(files);
   }, []);
 
-  const handleRemoveAllFiles = useCallback(() => {
+  const handleReuploadMode = useCallback(() => {
+    setIsReuploadMode(true);
     setSelectedFiles([]);
   }, []);
+
+  const handleSubmitPostingLink = useCallback(async () => {
+    if (!postingLink.trim()) {
+      enqueueSnackbar('Please enter a posting link', { variant: 'error' });
+      return;
+    }
+
+    try {
+      setPostingLinkLoading(true);
+      await axiosInstance.put(endpoints.submission.creator.v4.updatePostingLink, {
+        submissionId: submission.id,
+        postingLink: postingLink.trim(),
+      });
+
+      enqueueSnackbar('Posting link submitted successfully', { variant: 'success' });
+      onUpdate();
+    } catch (error) {
+      console.error('Error submitting posting link:', error);
+      enqueueSnackbar(error.message || 'Failed to submit posting link', { variant: 'error' });
+    } finally {
+      setPostingLinkLoading(false);
+    }
+  }, [postingLink, submission.id, onUpdate, enqueueSnackbar]);
 
   const handleSubmit = async () => {
     if (selectedFiles.length === 0) {
@@ -88,7 +142,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
       // Add form data as JSON string (following v3 pattern)
       const requestData = {
         submissionId: submission.id,
-        caption: (isEditingCaption || !submission.caption) ? caption.trim() : (submission.caption || '')
+        caption: caption.trim()
       };
       formData.append('data', JSON.stringify(requestData));
 
@@ -127,8 +181,11 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
 
       enqueueSnackbar('Videos uploaded successfully and are being processed!', { variant: 'success' });
       onUpdate();
-      setSelectedFiles([]);
-      setIsEditingCaption(false);
+      setIsReuploadMode(false); // Reset reupload mode after successful submission
+      setHasSubmitted(true); // Mark as submitted to disable editing
+      // Keep selectedFiles so video preview remains visible
+      // setSelectedFiles([]);
+      // setCaption(''); // Keep caption too
       
     } catch (error) {
       console.error('Submit error:', error);
@@ -142,329 +199,308 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
     }
   };
 
-  const handleAddPostingLink = useCallback(() => {
-    setPostingLink(submission.content || '');
-    setPostingDialog(true);
-  }, [submission.content]);
-
-  const handleSubmitPostingLink = async () => {
-    if (!postingLink.trim()) {
-      enqueueSnackbar('Please enter a posting link', { variant: 'error' });
-      return;
-    }
-
-    try {
-      setPostingLoading(true);
-      await axiosInstance.put(endpoints.submission.creator.v4.updatePostingLink, {
-        submissionId: submission.id,
-        postingLink: postingLink.trim(),
-      });
-
-      enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
-      setPostingDialog(false);
-      onUpdate();
-    } catch (error) {
-      console.error('Error updating posting link:', error);
-      enqueueSnackbar(error.message || 'Failed to update posting link', { variant: 'error' });
-    } finally {
-      setPostingLoading(false);
-    }
-  };
-
-  // Memoize status calculations to avoid recalculating on each render
-  const statusInfo = useMemo(() => {
-    const isSubmitted = submission.video?.some(v => v.url);
-    const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
-    const hasChangesRequired = ['CHANGES_REQUIRED'].includes(submission.status);
-    const isPostingLinkRejected = submission.status === 'REJECTED' && isSubmitted;
-    const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
-    const isPosted = submission.status === 'POSTED';
-    const hasPostingLink = Boolean(submission.content);
-    const hasPendingPostingLink = hasPostingLink && isApproved && !isPosted;
-    
-    // Check if posting links are required for this campaign type
-    const requiresPostingLink = (campaign?.campaignType || submission.campaign?.campaignType) !== 'ugc';
-    
-    return {
-      isSubmitted,
-      isInReview,
-      hasChangesRequired,
-      isPostingLinkRejected,
-      isApproved,
-      isPosted,
-      hasPostingLink,
-      hasPendingPostingLink,
-      requiresPostingLink
-    };
-  }, [submission.video, submission.status, submission.content, campaign?.campaignType, submission.campaign?.campaignType]);
-
-  const { 
-    isSubmitted, 
-    isInReview, 
-    hasChangesRequired, 
-    isPostingLinkRejected,
-    isApproved, 
-    isPosted, 
-    hasPostingLink, 
-    hasPendingPostingLink,
-    requiresPostingLink
-  } = statusInfo;
-
-  // Memoize feedback filtering to avoid recalculation
-  const relevantFeedback = useMemo(() => {
-    return submission.feedback?.filter(feedback => feedback.sentToCreator) || [];
-  }, [submission.feedback]);
-
-  // Get due date info using helper function
-  const dueDateInfo = useMemo(() => getDueDateInfo(submission.dueDate), [submission.dueDate]);
-
   return (
-    <>
-      <Stack spacing={3}>
-      {/* Header */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Iconify icon="eva:video-fill" width={24} />
-          <Typography variant="h6">
-            Video {submission.contentOrder || 1}
-          </Typography>
-          <Chip 
-            label={getCreatorStatusLabel(submission.status)} 
-            color={getStatusColor(submission.status)} 
-            size="small" 
+    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      {/* Main Content - Responsive Layout */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' }, // Stack vertically on mobile, horizontally on desktop
+        gap: { xs: 2, md: 3 }, 
+        mb: 2, 
+        position: 'relative',
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden', // Prevent overflow
+        // Ensure proper spacing on smaller screens
+        '@media (max-width: 1200px)': {
+          flexDirection: 'column',
+          gap: 2,
+        }
+      }}>
+        {/* Upload Area - Responsive width */}
+        <Box sx={{ 
+          width: { xs: '100%', md: '65%' }, // Full width on mobile, 65% on desktop
+          maxWidth: '100%', // Prevent overflow
+          order: { xs: 1, md: 1 }, // First on both mobile and desktop
+          // Adjust for smaller desktop screens
+          '@media (max-width: 1200px)': {
+            width: '100%',
+          }
+        }}>
+          <CustomV4Upload
+            files={selectedFiles}
+            onFilesChange={handleFilesChange}
+            disabled={uploading}
+            submissionId={submission.id}
+            submittedVideo={videoToShow}
+            accept="video/*"
+            maxSize={500 * 1024 * 1024}
+            fileTypes="MP4, MOV, AVI, MKV, WEBM"
+            height={420} // Will handle responsive height in component
           />
-          {/* Due Date Display */}
-          {dueDateInfo && (
-            <Chip
-              icon={<Iconify icon="eva:calendar-fill" />}
-              label={dueDateInfo.message}
-              color={dueDateInfo.color}
-              variant="outlined"
-              size="small"
-            />
-          )}
-        </Stack>
-      </Stack>
+        </Box>
 
-      {/* Due Date Alert */}
-      {dueDateInfo && ['overdue', 'due-today', 'due-tomorrow'].includes(dueDateInfo.status) && (
-        <Alert severity={dueDateInfo.severity} sx={{ mb: 2 }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Iconify icon="eva:calendar-fill" />
-            <Typography variant="body2">
-              {dueDateInfo.status === 'overdue' && '⚠️ This submission is overdue! Please submit as soon as possible.'}
-              {dueDateInfo.status === 'due-today' && '🔔 This submission is due today! Please submit before the deadline.'}
-              {dueDateInfo.status === 'due-tomorrow' && '⏰ This submission is due tomorrow. Don\'t forget to submit!'}
+        {/* Caption and Feedback - Responsive positioning */}
+        <Box sx={{ 
+          width: { xs: '100%', md: 'min(325px, 35%)' }, // Responsive width on desktop, full width on mobile
+          maxWidth: { xs: '100%', md: '325px' }, // Ensure it doesn't exceed container
+          position: { xs: 'static', md: 'absolute' }, // Static on mobile, absolute on desktop
+          top: { xs: 'auto', md: 0 },
+          right: { xs: 'auto', md: 0 },
+          zIndex: 2,
+          order: { xs: 2, md: 2 }, // Second on both mobile and desktop
+          // Ensure it doesn't overflow on smaller desktop screens
+          '@media (max-width: 1200px)': {
+            position: 'static',
+            width: '100%',
+            mt: 2,
+          }
+        }}>
+          {/* Caption Field */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{ 
+              mb: 1, 
+              fontWeight: 500,
+              fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              color: '#636366'
+            }}>
+              Post Caption <span style={{ color: 'red' }}>*</span>
             </Typography>
-          </Stack>
-        </Alert>
-      )}
-
-      {/* Status Messages */}
-      {isPosted && (
-        <Alert severity="success">
-          <Typography variant="body2">
-            🎉 Your video has been posted! The posting link has been approved.
+            
+            {isCaptionEditable ? (
+              // Show editable TextField when caption can be edited
+              <TextField
+                fullWidth
+                multiline
+                rows={{ xs: 4, md: 3 }} // More rows on mobile for better usability
+                value={caption}
+                onChange={handleCaptionChange}
+                placeholder="Type your caption here..."
+                disabled={uploading}
+                sx={{
+                  maxWidth: '100%', // Prevent overflow
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    wordWrap: 'break-word', // Handle long words
+                    overflowWrap: 'break-word',
+                  }
+                }}
+              />
+            ) : (
+              // Show read-only caption text when submitted
+              <Typography
+                variant="body2"
+                sx={{
+                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  color: '#636366',
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-wrap', 
+                  minHeight: 'auto', 
+                  p: 1.5, 
+                  border: 'none', 
+                  backgroundColor: 'transparent',
+                  wordWrap: 'break-word', 
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word', 
+                  maxWidth: '100%', 
+                  width: '100%', 
+                  display: 'block', 
+                  overflow: 'visible', 
+                  textOverflow: 'clip', 
+                  WebkitLineClamp: 'unset', 
+                  WebkitBoxOrient: 'unset', 
+                  ml: -1.5, // Move caption text to the left on both mobile and desktop 
+                }}
+              >
+                {caption || 'No caption provided'}
           </Typography>
-        </Alert>
-      )}
+            )}
 
-      {hasPendingPostingLink && (
-        <Alert severity="info">
-          <Typography variant="body2">
-            ⏳ Your posting link is pending admin approval.
+            {/* Posting Link Field - Simple implementation */}
+            {(needsPostingLink || hasPostingLink || isPostingLinkRejected) && (
+              <>
+                <Typography variant="body2" sx={{
+                  mt: 2,
+                  mb: 1, 
+                  fontWeight: 500,
+                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  color: '#636366'
+                }}>
+                  Posting Link
           </Typography>
-        </Alert>
-      )}
-
-      {isApproved && !isPosted && (
-        <Alert severity="success">
-          <Typography variant="body2">
-            {requiresPostingLink 
-              ? "🎉 Your video has been approved! Great work!"
-              : "🎉 Your video has been approved and completed! Great work! No posting required for this campaign."
-            }
-          </Typography>
-        </Alert>
-      )}
-
-      {hasChangesRequired && (
-        <Alert severity="warning">
-          <Typography variant="body2">
-            📝 Changes requested. Please review the feedback below and resubmit.
-          </Typography>
-        </Alert>
-      )}
-
-      {isPostingLinkRejected && (
-        <Alert severity="warning">
-          <Typography variant="body2">
-            🔗 Your posting link was rejected. Please update your posting link below.
-          </Typography>
-        </Alert>
-      )}
-
-      {submission.status === 'PENDING_REVIEW' && (
-        <Alert severity="info">
-          <Typography variant="body2">
-            ⏳ Your video is being reviewed by admin. We'll notify you once feedback is available.
-          </Typography>
-        </Alert>
-      )}
-
-      {submission.status === 'SENT_TO_CLIENT' && (
-        <Alert severity="info">
-          <Typography variant="body2">
-            👨‍💼 Your video has been approved by admin and sent to client for review.
-          </Typography>
-        </Alert>
-      )}
-
-      {submission.status === 'CLIENT_FEEDBACK' && (
-        <Alert severity="info">
-          <Typography variant="body2">
-            🗣️ Client has provided feedback. Admin is reviewing the feedback before forwarding to you.
-          </Typography>
-        </Alert>
-      )}
-
-      {/* Existing Content */}
-      {submission.video?.length > 0 && (
-        <Card sx={{ p: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Current Submissions:
-          </Typography>
-          <Stack spacing={1}>
-            {submission.video.map((video) => (
-              <Stack key={video.id} direction="row" alignItems="center" spacing={2}>
-                <Iconify icon="eva:video-outline" />
-                <Box flex={1}>
-                  <Typography variant="body2" color="text.secondary" noWrap>
-                    {video.url || 'No URL provided'}
+                
+                {isPostingLinkEditable ? (
+                  <TextField
+                    fullWidth
+                    value={postingLink}
+                    onChange={(e) => setPostingLink(e.target.value)}
+                    placeholder="Posting Link"
+                    disabled={postingLinkLoading}
+                    sx={{
+                      maxWidth: '100%',
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1,
+                        backgroundColor: 'white',
+                      }
+                    }}
+                  />
+                ) : (
+                  // Show read-only posting link when submitted - clickable and styled
+                  <Typography
+                    component="a"
+                    href={submission.content}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="body2"
+                    sx={{
+                      fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      color: '#1340FF',
+                      lineHeight: 1.5,
+                      whiteSpace: 'pre-wrap',
+                      minHeight: 'auto',
+                      p: 1.5,
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'break-word',
+                      maxWidth: '100%',
+                      width: '100%',
+                      display: 'block',
+                      overflow: 'visible',
+                      textOverflow: 'clip',
+                      WebkitLineClamp: 'unset',
+                      WebkitBoxOrient: 'unset',
+                      ml: -1.5,
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.8,
+                      }
+                    }}
+                  >
+                    {submission.content || 'No posting link provided'}
                   </Typography>
+                )}
+              </>
+            )}
                 </Box>
-                <Chip 
-                  label={getCreatorStatusLabel(video.status)} 
-                  color={getStatusColor(video.status)} 
-                  size="small" 
-                />
-              </Stack>
-            ))}
-          </Stack>
-        </Card>
-      )}
 
-      {/* Feedback */}
-      {relevantFeedback.length > 0 && (
-        <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Feedback:
-          </Typography>
+          {/* Feedback Section - Responsive positioning with better overflow handling */}
+          {hasChangesRequired && relevantFeedback.length > 0 && (
+            <Card sx={{ 
+              p: { xs: 1, md: 1 }, // Reduced padding to move content left
+              pl: { xs: 0, md: 0 }, // Remove left padding completely
+              bgcolor: 'transparent', 
+              boxShadow: 'none',
+              border: 'none',
+              mt: { xs: 1, md: 2}, // Start higher on desktop to use empty space above
+              maxHeight: { xs: 'auto', md: '220px' }, // Reduced height to prevent overlap with button
+              overflowY: { xs: 'visible', md: 'auto' }, // Add scroll on desktop if needed
+              mb: { xs: 0, md: 8 }, // Add bottom margin to create space above the button
+              position: { xs: 'static', md: 'relative' },
+              // Ensure it doesn't overflow the parent container
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              // Custom scrollbar styling for better appearance
+              '&::-webkit-scrollbar': {
+                width: '6px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f1f1',
+                borderRadius: '3px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#c1c1c1',
+                borderRadius: '3px',
+                '&:hover': {
+                  background: '#a8a8a8',
+                },
+              },
+              // Removed the white shadow (::after pseudo-element)
+            }}>
           <Stack spacing={2}>
             {relevantFeedback.map((feedback, index) => (
                 <Stack key={index} spacing={1}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Box sx={{ 
-                      minWidth: 20, 
-                      height: 20, 
-                      borderRadius: '50%', 
-                      bgcolor: 'primary.main', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center' 
-                    }}>
-                      <Typography variant="caption" sx={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
-                        {feedback.admin?.name?.charAt(0) || 'A'}
+                    {/* Reasons on top */}
+                    {feedback.reasons?.length > 0 && (
+                      <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
+                        {feedback.reasons.map((reason, i) => (
+                          <Typography
+                            key={i}
+                            variant="caption"
+                            sx={{
+                              px: 1.5,
+                              py: 0.5,
+                              fontWeight: 600,
+                              border: '1px solid',
+                              borderBottom: '3px solid',
+                              borderRadius: 0.8,
+                              bgcolor: 'white',
+                              whiteSpace: 'nowrap',
+                              color: '#FF4842',
+                              borderColor: '#FF4842',
+                              fontSize: '0.75rem',
+                              fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                              // Ensure reasons wrap properly on smaller screens
+                              maxWidth: '100%',
+                              wordBreak: 'break-word'
+                            }}
+                          >
+                            {reason}
                       </Typography>
-                    </Box>
-                    <Typography variant="caption" fontWeight="medium">
-                      {feedback.admin?.name || 'Admin'}
+                        ))}
+                      </Stack>
+                    )}
+                    
+                    {/* CS Feedback title and content */}
+                    <Typography 
+                      variant="subtitle2" 
+                      sx={{
+                        fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        color: '#636366',
+                        fontWeight: 600,
+                        mt: feedback.reasons?.length > 0 ? 0.5 : 0,
+                      }}
+                    >
+                      CS Feedback
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {new Date(feedback.createdAt).toLocaleDateString()}
+                    <Typography 
+                      variant="body2" 
+                      sx={{
+                        fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        color: '#636366',
+                        lineHeight: 1.5,
+                        // Ensure text wraps properly and doesn't overflow
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        hyphens: 'auto',
+                        maxWidth: '100%'
+                      }}
+                    >
+                      {feedback.content}
                     </Typography>
                   </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    {feedback.content}
-                  </Typography>
-                  {feedback.reasons?.length > 0 && (
-                    <Stack direction="row" spacing={1} flexWrap="wrap">
-                      {feedback.reasons.map((reason, i) => (
-                        <Chip key={i} label={reason} size="small" variant="outlined" color="warning" />
-                      ))}
-                    </Stack>
-                  )}
-                </Stack>
-              ))
-            }
+                ))}
           </Stack>
         </Card>
       )}
+        </Box>
+      </Box>
 
-      {/* Upload Form */}
-      {(!isInReview && !isApproved && !isPosted && !isPostingLinkRejected) && (
-        <Card sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            <Typography variant="subtitle1">
-              {isSubmitted ? 'Update Video' : 'Upload Video'}
-            </Typography>
-
-            {/* File Upload Area */}
-            <Upload
-              multiple
-              files={selectedFiles}
-              onDrop={handleDrop}
-              onRemove={handleRemoveFile}
-              onRemoveAll={handleRemoveAllFiles}
-              accept={VIDEO_UPLOAD_CONFIG.accept}
-              maxSize={VIDEO_UPLOAD_CONFIG.maxSize}
-              disabled={uploading}
-            />
-
-            {/* Caption */}
-            <TextField
-              label="Caption/Notes (Optional)"
-              multiline
-              rows={3}
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder={
-                submission.caption && !isEditingCaption 
-                  ? "Click 'Update Caption' below to modify your existing caption"
-                  : "Add any notes or caption for your videos..."
-              }
-              disabled={uploading || (submission.caption && !isEditingCaption)}
-            />
-
-            {submission.caption && (
-              <Card sx={{ p: 2 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between">
-                  <Typography variant="subtitle2" gutterBottom>
-                    Caption:
-                  </Typography>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => {
-                      setCaption(submission.caption);
-                      setIsEditingCaption(true);
-                    }}
-                    startIcon={<Iconify icon="eva:edit-2-fill" />}
-                    disabled={uploading}
-                  >
-                    Update Caption
-                  </Button>
-                </Stack>
-                <Typography variant="body2" color="text.secondary">
-                  {submission.caption}
-                </Typography>
-              </Card>
-            )}
-
-            {/* Submit Button */}
-            <Box>
+      {/* Submit Button - Responsive Position */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: { xs: 'center', md: 'flex-end' }, // Center on mobile, right-aligned on desktop
+        alignItems: 'center', 
+        mt: { xs: 2, md: -6 }, // Normal spacing on mobile, negative margin on desktop
+        position: 'relative', 
+        zIndex: 10 
+      }}>
               {uploading && (
-                <Box sx={{ mb: 2 }}>
+          <Box sx={{ flex: 1, mr: 2 }}>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                     <Typography variant="body2" color="text.secondary">
                       Uploading videos... {Math.round(uploadProgress)}%
@@ -473,159 +509,84 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
                   <LinearProgress variant="determinate" value={uploadProgress} />
                 </Box>
               )}
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                disabled={uploading || selectedFiles.length === 0 || selectedFiles.length > 1}
-                startIcon={<Iconify icon="eva:upload-fill" />}
-                size="large"
-              >
-                {uploading ? 'Uploading...' : isSubmitted ? 'Update Videos' : 'Submit Videos'}
-              </Button>
-            </Box>
-          </Stack>
-        </Card>
-      )}
-
-      {/* Posting Link Section - Only show for campaigns that require posting */}
-      {requiresPostingLink && (isApproved || isPosted || isPostingLinkRejected) && (
-        <Card sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="subtitle1">
-                Posting Link
-                {hasPendingPostingLink && (
-                  <Chip 
-                    label="Pending Approval" 
-                    size="small" 
-                    color="warning" 
-                    sx={{ ml: 1 }} 
-                  />
-                )}
-                {isPosted && (
-                  <Chip 
-                    label="Posted" 
-                    size="small" 
-                    color="success" 
-                    sx={{ ml: 1 }} 
-                  />
-                )}
-              </Typography>
-              {!isPosted && (
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={handleAddPostingLink}
-                  startIcon={<Iconify icon="eva:link-2-fill" />}
-                >
-                  {hasPostingLink ? 'Update Link' : 'Add Link'}
-                </Button>
-              )}
-            </Stack>
-            
-            <Alert severity={hasPendingPostingLink ? "warning" : "info"}>
-              <Typography variant="body2">
-                {hasPendingPostingLink 
-                  ? "⏳ Your posting link is waiting for admin approval before going live."
-                  : isPosted
-                  ? "✅ Your posting link has been approved."
-                  : "🔗 Add the social media post URL where this video was published (TikTok, Instagram, YouTube, etc.)"
-                }
-              </Typography>
-            </Alert>
-
-            <Card sx={{ p: 2, bgcolor: 'background.neutral' }}>
-              {hasPostingLink ? (
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
-                    {submission.content}
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={() => window.open(submission.content, '_blank')}
-                  >
-                    <Iconify icon="eva:external-link-fill" />
-                  </IconButton>
-                </Stack>
-              ) : (
-                <Typography color="text.secondary">
-                  No posting link added yet. Click "Add Link" to share where you published this video.
-                </Typography>
-              )}
-            </Card>
-          </Stack>
-        </Card>
-      )}
-      </Stack>
-
-      {/* Posting Link Dialog */}
-      <Dialog open={postingDialog} onClose={() => setPostingDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {hasPostingLink ? 'Update Posting Link' : 'Add Posting Link'}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Posting URL"
-            value={postingLink}
-            onChange={(e) => setPostingLink(e.target.value)}
-            placeholder="https://www.tiktok.com/@username/video/123456789"
-            sx={{ mt: 1 }}
-          />
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            Enter the social media post URL where this video was published
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPostingDialog(false)} disabled={postingLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmitPostingLink}
-            variant="contained"
-            disabled={postingLoading}
+        {hasChangesRequired && !isReuploadMode ? (
+          // Reupload Draft Button (when changes required and not in reupload mode)
+          <Typography
+            component="button"
+            onClick={handleReupload}
+            sx={{
+              px: 2,
+              py: 0.75,
+              fontWeight: 600,
+              border: '1px solid',
+              borderBottom: '3px solid',
+              borderRadius: 0.8,
+              bgcolor: '#1340FF',
+              whiteSpace: 'nowrap',
+              color: 'white',
+              borderColor: '#1340FF',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              textTransform: 'none',
+              outline: 'none',
+              '&:hover': {
+                bgcolor: '#0F36E6',
+                borderColor: '#0F36E6',
+                color: 'white',
+              }
+            }}
           >
-            {postingLoading ? 'Saving...' : 'Save Link'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
+            Reupload Draft
+          </Typography>
+        ) : (
+          // Regular Submit Button
+          <Typography
+            component="button"
+                onClick={isPostingLinkEditable && !selectedFiles.length ? handleSubmitPostingLink : handleSubmit}
+            disabled={uploading || 
+              (!isPostingLinkEditable && selectedFiles.length === 0) || 
+              (hasSubmitted && !isReuploadMode) ||
+              (isPostingLinkEditable && !selectedFiles.length && !postingLink.trim()) ||
+              (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length)}
+            sx={{
+              px: 2,
+              py: 0.75,
+              fontWeight: 600,
+              border: '1px solid',
+              borderBottom: '3px solid',
+              borderRadius: 0.8,
+              bgcolor: (hasSubmitted && !isReuploadMode) ? '#BDBDBD' : '#3a3a3c',
+              whiteSpace: 'nowrap',
+              color: 'white',
+              borderColor: (hasSubmitted && !isReuploadMode) ? '#BDBDBD' : '#3a3a3c',
+              fontSize: '0.75rem',
+              cursor: (uploading || selectedFiles.length === 0 || (hasSubmitted && !isReuploadMode)) ? 'not-allowed' : 'pointer',
+              textTransform: 'none',
+              outline: 'none',
+              '&:hover': (!uploading && selectedFiles.length > 0 && !(hasSubmitted && !isReuploadMode)) ? {
+                bgcolor: '#1340FF',
+                borderColor: '#1340FF',
+                color: 'white',
+              } : {},
+              '&:disabled': {
+                bgcolor: '#BDBDBD',
+                borderColor: '#BDBDBD',
+                color: 'white',
+              }
+            }}
+          >
+            {uploading ? 'Uploading...' : 
+             postingLinkLoading ? 'Submitting...' :
+             (hasSubmitted && !isReuploadMode) ? 'Submitted' : 
+             (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length) ? 'Submitted' :
+             (isPostingLinkEditable && !selectedFiles.length) ? 'Submit' : 
+             'Submit'}
+          </Typography>
+        )}
+            </Box>
+
+    </Box>
   );
-};
-
-// Helper functions with v4 client feedback support
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'IN_PROGRESS': return 'info';
-    case 'PENDING_REVIEW': return 'warning';
-    case 'PENDING': return 'warning';
-    case 'APPROVED':
-    case 'CLIENT_APPROVED': return 'success';
-    case 'POSTED': return 'success';
-    case 'CHANGES_REQUIRED':
-    case 'REJECTED':
-    case 'REVISION_REQUESTED': return 'error';
-    case 'SENT_TO_CLIENT': return 'secondary';
-    case 'CLIENT_FEEDBACK': return 'warning';
-    default: return 'default';
-  }
-};
-
-const getCreatorStatusLabel = (status) => {
-  switch (status) {
-    case 'IN_PROGRESS': return 'In Progress';
-    case 'PENDING_REVIEW': return 'In Review';
-    case 'PENDING': return 'In Review';
-    case 'APPROVED': return 'Approved';
-    case 'CLIENT_APPROVED': return 'Approved';
-    case 'POSTED': return 'Posted';
-    case 'CHANGES_REQUIRED': return 'Changes Required';
-    case 'REJECTED': return 'Changes Required';
-    case 'REVISION_REQUESTED': return 'Needs Re-upload';
-    case 'SENT_TO_CLIENT': return 'Client Review';
-    case 'CLIENT_FEEDBACK': return 'Client Review';
-    default: return status;
-  }
 };
 
 V4VideoSubmission.propTypes = {
