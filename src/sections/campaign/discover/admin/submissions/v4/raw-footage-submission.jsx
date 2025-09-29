@@ -75,6 +75,8 @@ function FeedbackDisplay({ feedback, submission, isClient }) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 1 }}>
+      {(!isClient && hasContent && submission.status === 'CHANGES_REQUIRED') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={1}>CS Feedback</Typography>}
+      {(!isClient && hasContent && submission.status === 'SENT_TO_CLIENT') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={1}>CS Comments</Typography>}
       {hasReasons && (
         <Box>
           {feedback.reasons.map((reason, reasonIndex) => (
