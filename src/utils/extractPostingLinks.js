@@ -15,20 +15,26 @@ export const extractPostingSubmissions = (submissions) => {
   console.log('Processing submissions:', submissions.length);
   console.log('Each submission looks like this: ', submissions)
 
-  // Filter for POSTING submissions with APPROVED status and content
+  // Filter for submissions with posting links:
+  // V3: POSTING type submissions with APPROVED status
+  // V4: PHOTO/VIDEO submissions with POSTED status and content (posting link)
   const postings = submissions.filter(submission => {
-    const isPosting = submission.submissionType.type === 'POSTING';
-    const isApproved = submission.status === 'APPROVED';
+    const isV3Posting = submission.submissionType.type === 'POSTING' && submission.status === 'APPROVED';
+    const isV4PostedWithLink = 
+      ['PHOTO', 'VIDEO'].includes(submission.submissionType.type) && 
+      submission.status === 'POSTED' && 
+      submission.content;
     
     console.log(`Submission ${submission.id}:`, {
       type: submission.submissionType.type,
-      isPosting,
       status: submission.status,
-      isApproved,
       content: submission.content,
+      isV3Posting,
+      isV4PostedWithLink,
+      included: isV3Posting || isV4PostedWithLink,
     });
     
-    return isPosting && isApproved;
+    return isV3Posting || isV4PostedWithLink;
   });
   
   console.log('Found posting submissions:', postings.length);
@@ -61,6 +67,7 @@ export const extractPostingSubmissions = (submissions) => {
         postUrl: cleanUrl,
         campaignName: submission.campaignId || 'Unknown Campaign',
         createdAt: submission.createdAt,
+        isV4: ['PHOTO', 'VIDEO'].includes(submission.submissionType.type),
       });
     });
     
@@ -78,6 +85,7 @@ export const extractPostingSubmissions = (submissions) => {
         postUrl: cleanUrl,
         campaignName: submission.campaignId || 'Unknown Campaign',
         createdAt: submission.createdAt,
+        isV4: ['PHOTO', 'VIDEO'].includes(submission.submissionType.type),
       });
     });
   });
