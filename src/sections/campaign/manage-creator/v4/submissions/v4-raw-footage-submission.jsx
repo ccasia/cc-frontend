@@ -417,7 +417,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
           )}
 
           {/* Caption Field */}
-          <Box sx={{ mb: 2 }}>
+          {/* <Box sx={{ mb: 2 }}>
             <Typography 
               variant="body2" 
               sx={{ 
@@ -482,7 +482,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
                 {caption || 'No caption provided'}
           </Typography>
             )}
-          </Box>
+          </Box> */}
 
           {/* Feedback Section - Show when changes are required */}
           {hasChangesRequired && relevantFeedback.length > 0 && (
