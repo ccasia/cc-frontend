@@ -8,6 +8,7 @@ import {
   TextField,
   Typography,
   Tooltip,
+  SvgIcon,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
@@ -181,24 +182,51 @@ function CreatorAccordion({ creator, campaign }) {
           pl={1.5}
           pr={0.5}
         >
-          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
-            <Box
-              sx={{ 
-                border: '2px solid', 
-                borderColor: isExpanded ? '#1340FF' : '#8E8E93', 
-                borderRadius: 20, 
-                px: submissionCounter === 1 ? 0.9 : 0.8,
-                py: 0.3
+          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={0.3}>
+            <Tooltip 
+              title="Video" 
+              placement="top"
+              PopperProps={{
+                modifiers: [
+                  {
+                    name: 'offset',
+                    options: {
+                      offset: [0, -7],
+                    },
+                  },
+                ],
+              }}
+              componentsProps={{
+                tooltip: {
+                  sx: {
+                    width: 95,
+                    height: 34,
+                    opacity: 1,
+                    borderRadius: '10px',
+                    padding: '10px',
+                    bgcolor: '#FCFCFC',
+                    color: '#000',
+                    fontSize: '12px',
+                    fontWeight: 'medium',
+                    boxShadow: '0px 4px 4px 0px #00000040',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }
+                }
               }}
             >
-              <Typography 
-                fontSize={{ xs: 7, sm: 7.5, md: 8 }} 
-                fontWeight={'bold'} 
-                color={isExpanded ? '#1340FF' : '#8E8E93'}
-              >
-                {submissionCounter}
-              </Typography>
-            </Box>
+              <Box
+                component="img"
+                src="/assets/icons/components/ugc_vid.png"
+                sx={{
+                  width: 27,
+                  height: 27,
+                  filter: isExpanded ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)' : 'none',
+                  cursor: 'pointer'
+                }}
+              />
+            </Tooltip>
             <Box
               sx={{
                 display: 'flex',
@@ -264,24 +292,51 @@ function CreatorAccordion({ creator, campaign }) {
           pl={1.5}
           pr={0.5}
         >
-          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
-            <Box
-              sx={{ 
-                border: '2px solid', 
-                borderColor: isExpanded ? '#1340FF' : '#8E8E93', 
-                borderRadius: 20,
-                px: 0.8,
-                py: 0.3
+          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={0.3}>
+            <Tooltip 
+              title="Photo" 
+              placement="top"
+              PopperProps={{
+                modifiers: [
+                  {
+                    name: 'offset',
+                    options: {
+                      offset: [0, -7],
+                    },
+                  },
+                ],
+              }}
+              componentsProps={{
+                tooltip: {
+                  sx: {
+                    width: 95,
+                    height: 34,
+                    opacity: 1,
+                    borderRadius: '10px',
+                    padding: '10px',
+                    bgcolor: '#FCFCFC',
+                    color: '#000',
+                    fontSize: '12px',
+                    fontWeight: 'medium',
+                    boxShadow: '0px 4px 4px 0px #00000040',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }
+                }
               }}
             >
-              <Typography 
-                fontSize={{ xs: 7, sm: 7.5, md: 8 }} 
-                fontWeight={'bold'} 
-                color={isExpanded ? '#1340FF' : '#8E8E93'}
-              >
-                {submissionCounter}
-              </Typography>
-            </Box>
+              <Box
+                component="img"
+                src="/assets/icons/components/photo.png"
+                sx={{
+                  width: 27,
+                  height: 27,
+                  filter: isExpanded ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)' : 'none',
+                  cursor: 'pointer'
+                }}
+              />
+            </Tooltip>
             <Box
               sx={{
                 display: 'flex',
@@ -343,23 +398,50 @@ function CreatorAccordion({ creator, campaign }) {
           pr={0.5}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
-            <Box
-              sx={{ 
-                border: '2px solid', 
-                borderColor: isExpanded ? '#1340FF' : '#8E8E93', 
-                borderRadius: 20, 
-                px: 0.8,
-                py: 0.3
+            <Tooltip 
+              title="Raw Footage" 
+              placement="top"
+              PopperProps={{
+                modifiers: [
+                  {
+                    name: 'offset',
+                    options: {
+                      offset: [0, -7],
+                    },
+                  },
+                ],
+              }}
+              componentsProps={{
+                tooltip: {
+                  sx: {
+                    width: 95,
+                    height: 34,
+                    opacity: 1,
+                    borderRadius: '10px',
+                    padding: '10px',
+                    bgcolor: '#FCFCFC',
+                    color: '#000',
+                    fontSize: '12px',
+                    fontWeight: 'medium',
+                    boxShadow: '0px 4px 4px 0px #00000040',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }
+                }
               }}
             >
-              <Typography 
-                fontSize={{ xs: 7, sm: 7.5, md: 8 }} 
-                fontWeight={'bold'} 
-                color={isExpanded ? '#1340FF' : '#8E8E93'}
-              >
-                {submissionCounter}
-              </Typography>
-            </Box>
+              <Box
+                component="img"
+                src="/assets/icons/components/raw_footage.png"
+                sx={{
+                  width: 27,
+                  height: 27,
+                  filter: isExpanded ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)' : 'none',
+                  cursor: 'pointer'
+                }}
+              />
+            </Tooltip>
             <Box
               sx={{
                 display: 'flex',
