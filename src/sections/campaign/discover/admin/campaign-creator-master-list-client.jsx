@@ -67,7 +67,7 @@ const getStatusDisplay = (pitch) => {
     APPROVED: { color: '#1ABF66', label: 'APPROVED' },
     REJECTED: { color: '#FF4842', label: 'REJECTED' },
     AGREEMENT_SUBMITTED: { color: '#1ABF66', label: 'AGREEMENT SUBMITTED' },
-    AGREEMENT_PENDING: { color: '#1340FF', label: 'AGREEMENT PENDING' },
+    AGREEMENT_PENDING: { color: '#8B5CF6', label: 'AGREEMENT PENDING' },
     SENT_TO_CLIENT: { color: '#8B5CF6', label: 'SENT TO CLIENT' },
     pending: { color: '#FF9A02', label: 'PENDING' },
     filtered: { color: '#FF4842', label: 'FILTERED' },
