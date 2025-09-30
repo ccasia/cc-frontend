@@ -43,8 +43,10 @@ const CampaignDetailItem = ({ campaign }) => {
             px: 2, // Add padding to prevent edge cutoff
           }}>
             {[
-              { value: 'tasks', label: campaign?.submissionVersion === 'v4' ? 'Activity' : 'Activity' },
-              ...(campaign?.submissionVersion === 'v4' ? [{ value: 'tasks-v4', label: 'Submissions' }] : []),
+              ...(campaign?.submissionVersion === 'v4' 
+                ? [{ value: 'tasks-v4', label: 'Submissions' }] 
+                : [{ value: 'tasks', label: 'Activity' }]
+              ),
               { value: 'info', label: 'Campaign Details' },
               { value: 'logistics', label: 'Logistics' },
             ].map((tab) => (
