@@ -56,8 +56,10 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   }, [submission.status]);
 
   const isPostingLinkRejected = useMemo(() => {
-    return submission.status === 'POSTING_LINK_REJECTED';
-  }, [submission.status]);
+    // Raw footage doesn't have posting links, so this should always be false
+    // But keeping for consistency with other components
+    return submission.status === 'REJECTED' && !submission.content && submission.rawFootages?.length > 0;
+  }, [submission.status, submission.content, submission.rawFootages]);
 
   const hasChangesRequired = useMemo(() => {
     return submission.status === 'CHANGES_REQUIRED';
@@ -619,7 +621,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
             }
           }}
         >
-          {uploading ? 'Processing...' : (hasChangesRequired && !isReuploadMode) ? 'Reupload Raw Footages' : (!isCaptionEditable && submittedRawFootages.length > 0 && !hasChangesRequired ? 'Submitted' : 'Submit')}
+          {uploading ? 'Processing...' : (hasChangesRequired && !isReuploadMode) ? (isPostingLinkRejected ? 'Reupload Posting Link' : 'Reupload Raw Footages') : (!isCaptionEditable && submittedRawFootages.length > 0 && !hasChangesRequired ? 'Submitted' : 'Submit')}
         </Typography>
       </Box>
     </Box>
