@@ -243,17 +243,6 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
         
       enqueueSnackbar(successMessage, { variant: 'success' });
       
-      // Update submission status to IN REVIEW immediately after successful upload
-      try {
-        await axiosInstance.patch(endpoints.submission.creator.v4.updateStatus, {
-          submissionId: submission.id,
-          status: 'PENDING_REVIEW'
-        });
-      } catch (statusError) {
-        console.error('Failed to update status to IN REVIEW:', statusError);
-        // Don't fail the entire upload if status update fails
-      }
-      
       onUpdate();
       // Keep selectedFiles so preview remains visible
       // setSelectedFiles([]);
@@ -635,10 +624,10 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                       (isPostingLinkEditable && !selectedFiles.length) ? handleSubmitPostingLink : 
                       handleSubmit}
               disabled={uploading || 
-                       (!isPostingLinkEditable && selectedFiles.length === 0 && !hasChangesRequired) || 
+                       (!isPostingLinkEditable && selectedFiles.length === 0 && !hasChangesRequired && !isReuploadMode) || 
                        (!isCaptionEditable && !hasChangesRequired && !isReuploadMode && !isPostingLinkEditable) ||
                        (isPostingLinkEditable && !selectedFiles.length && !postingLink.trim()) ||
-                       (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length && !hasChangesRequired)}
+                       (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length && !hasChangesRequired && !isReuploadMode)}
               sx={{
                 px: 2,
                 py: 1,
