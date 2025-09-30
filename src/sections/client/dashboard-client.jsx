@@ -975,7 +975,7 @@ const ClientDashboard = () => {
                     variant="text"
                     onClick={() => handleViewCampaign(campaign.id)}
                     sx={{
-                      width: { xs: 90, sm: 110 },
+                      width: { xs: 80, sm: 110, md: 130 },
                       height: { xs: 28, sm: 30 },
                       padding: { xs: '4px 8px', sm: '6px 10px' },
                       borderRadius: '6px',
@@ -983,7 +983,7 @@ const ClientDashboard = () => {
                       boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
                       backgroundColor: '#FFFFFF',
                       color: '#1340FF',
-                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                      fontSize: { xs: 8, sm: 10, md: 12 },
                       fontWeight: 600,
                       textTransform: 'none',
                       '&:hover': {
