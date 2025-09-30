@@ -228,24 +228,44 @@ const CampaignDetailView = ({ id }) => {
 
   // Check if current tab is valid for client users
   useEffect(() => {
-    if (isClient && !clientAllowedTabs.includes(currentTab)) {
+    let allowedTabs = [...clientAllowedTabs];
+    
+    if (campaign?.submissionVersion === 'v4') {
+      // For v4: allow submissions-v4, remove deliverables
+      allowedTabs = allowedTabs.filter(tab => tab !== 'deliverables');
+    } else {
+      // For non-v4: allow deliverables, remove submissions-v4
+      allowedTabs = allowedTabs.filter(tab => tab !== 'submissions-v4');
+    }
+    
+    if (isClient && !allowedTabs.includes(currentTab)) {
       // If client user tries to access a restricted tab, redirect to overview
       setCurrentTab('overview');
       localStorage.setItem('campaigndetail', 'overview');
     }
-  }, [currentTab, isClient]);
+  }, [currentTab, isClient, campaign?.submissionVersion]);
 
   const handleChangeTab = useCallback(
     (event, newValue) => {
       // For client users, only allow specific tabs
-      if (isClient && !clientAllowedTabs.includes(newValue)) {
+      let allowedTabs = [...clientAllowedTabs];
+      
+      if (campaign?.submissionVersion === 'v4') {
+        // For v4: allow submissions-v4, remove deliverables
+        allowedTabs = allowedTabs.filter(tab => tab !== 'deliverables');
+      } else {
+        // For non-v4: allow deliverables, remove submissions-v4
+        allowedTabs = allowedTabs.filter(tab => tab !== 'submissions-v4');
+      }
+      
+      if (isClient && !allowedTabs.includes(newValue)) {
         return;
       }
 
       localStorage.setItem('campaigndetail', newValue);
       setCurrentTab(newValue);
     },
-    [isClient]
+    [isClient, campaign?.submissionVersion]
   );
 
   // Allow children to request tab switching via a window event
@@ -253,7 +273,18 @@ const CampaignDetailView = ({ id }) => {
     const handleSwitchTab = (e) => {
       const targetTab = e?.detail;
       if (typeof targetTab !== 'string') return;
-      if (isClient && !clientAllowedTabs.includes(targetTab)) return;
+      
+      let allowedTabs = [...clientAllowedTabs];
+      
+      if (campaign?.submissionVersion === 'v4') {
+        // For v4: allow submissions-v4, remove deliverables
+        allowedTabs = allowedTabs.filter(tab => tab !== 'deliverables');
+      } else {
+        // For non-v4: allow deliverables, remove submissions-v4
+        allowedTabs = allowedTabs.filter(tab => tab !== 'submissions-v4');
+      }
+      
+      if (isClient && !allowedTabs.includes(targetTab)) return;
 
       localStorage.setItem('campaigndetail', targetTab);
 
@@ -261,7 +292,7 @@ const CampaignDetailView = ({ id }) => {
     };
     window.addEventListener('switchCampaignTab', handleSwitchTab);
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
-  }, [isClient]);
+  }, [isClient, campaign?.submissionVersion]);
 
   const icons = (tab) => {
     if (tab.value === 'pitch' && campaign?.pitch?.length > 0) {
@@ -322,8 +353,10 @@ const CampaignDetailView = ({ id }) => {
                 { label: 'Overview', value: 'overview' },
                 { label: 'Campaign Details', value: 'campaign-content' },
                 { label: 'Creator Master List', value: 'creator-master-list' },
-                { label: 'Creator Deliverables', value: 'deliverables' },
-                { label: 'Creator Submissions (V4)', value: 'submissions-v4' },
+                ...(campaign?.submissionVersion === 'v4' 
+                  ? [{ label: 'Creator Submissions', value: 'submissions-v4' }] 
+                  : [{ label: 'Creator Deliverables', value: 'deliverables' }]
+                ),
                 { label: 'Campaign Analytics', value: 'analytics' },
               ]
             : // Admin/other user tabs
@@ -355,14 +388,16 @@ const CampaignDetailView = ({ id }) => {
                   label: `Agreements (${campaign?.origin === 'CLIENT' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : campaign?.creatorAgreement?.length || 0})`,
                   value: 'agreement',
                 },
-                {
-                  label: 'Creator Deliverables',
-                  value: 'deliverables',
-                },
-                {
-                  label: 'Creator Submissions (V4)',
-                  value: 'submissions-v4',
-                },
+                ...(campaign?.submissionVersion === 'v4' 
+                  ? [{
+                      label: 'Creator Submissions',
+                      value: 'submissions-v4',
+                    }] 
+                  : [{
+                      label: 'Creator Deliverables',
+                      value: 'deliverables',
+                    }]
+                ),
                 {
                   label: 'Campaign Analytics',
                   value: 'analytics',
