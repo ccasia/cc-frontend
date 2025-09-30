@@ -281,8 +281,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         tooltip: 'Pitch has been rejected',
       },
       AGREEMENT_PENDING: {
-        color: '#1340FF',
-        borderColor: '#1340FF',
+        color: '#8B5CF6',
+        borderColor: '#8B5CF6',
         tooltip: 'Agreement is pending creator submission',
       },
       AGREEMENT_SUBMITTED: {
