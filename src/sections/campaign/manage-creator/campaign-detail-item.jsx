@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { Box, Stack, Button } from '@mui/material';
@@ -17,7 +17,13 @@ import CampaignV4Activity from './v4/campaign-v4-activity';
 
 const CampaignDetailItem = ({ campaign }) => {
   const location = useLocation();
-  const [currentTab, setCurrentTab] = useState(location.state?.tab || 'tasks');
+  const [currentTab, setCurrentTab] = useState(() => {
+    if (location.state?.tab) {
+      return location.state.tab;
+    }
+    // Default to appropriate tab based on submission version
+    return campaign?.submissionVersion === 'v4' ? 'tasks-v4' : 'tasks';
+  });
   const { user } = useAuthContext();
 
   const isCampaignDone = campaign?.shortlisted?.find(
@@ -27,6 +33,14 @@ const CampaignDetailItem = ({ campaign }) => {
   const openLogisticTab = () => {
     setCurrentTab('logistics');
   };
+
+  // Handle cases where campaign data loads after component mount
+  useEffect(() => {
+    if (!location.state?.tab && campaign?.submissionVersion) {
+      const defaultTab = campaign.submissionVersion === 'v4' ? 'tasks-v4' : 'tasks';
+      setCurrentTab(defaultTab);
+    }
+  }, [campaign?.submissionVersion, location.state?.tab]);
 
   return (
     <Stack gap={2} sx={{ overflowX: 'hidden', width: '100%' }}>
@@ -43,8 +57,10 @@ const CampaignDetailItem = ({ campaign }) => {
             px: 2, // Add padding to prevent edge cutoff
           }}>
             {[
-              { value: 'tasks', label: campaign?.submissionVersion === 'v4' ? 'Activity' : 'Activity' },
-              ...(campaign?.submissionVersion === 'v4' ? [{ value: 'tasks-v4', label: 'Submissions' }] : []),
+              ...(campaign?.submissionVersion === 'v4' 
+                ? [{ value: 'tasks-v4', label: 'Submissions' }] 
+                : [{ value: 'tasks', label: 'Activity' }]
+              ),
               { value: 'info', label: 'Campaign Details' },
               { value: 'logistics', label: 'Logistics' },
             ].map((tab) => (

@@ -167,7 +167,10 @@ const CampaignModal = ({
   };
 
   const handleManageClick = (campaignId) => {
-    router.push(paths.dashboard.campaign.creator.detail(campaignId));
+    const targetTab = campaign?.submissionVersion === 'v4' ? 'tasks-v4' : 'tasks';
+    router.push(paths.dashboard.campaign.creator.detail(campaignId), {
+      state: { tab: targetTab }
+    });
   };
 
   // const handleDraftClick = () => {

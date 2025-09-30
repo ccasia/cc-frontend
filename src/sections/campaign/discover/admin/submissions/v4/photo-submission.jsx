@@ -13,7 +13,8 @@ import {
   Select,
   MenuItem,
   FormControl,
-  Link
+  Link,
+  Tooltip
 } from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
@@ -64,7 +65,6 @@ const FEEDBACK_CHIP_STYLES = {
   fontWeight: 'bold',
   fontSize: 12,
   mr: 0.5,
-  mb: 0.5
 };
 
 function FeedbackDisplay({ feedback, submission, isClient }) {
@@ -76,11 +76,13 @@ function FeedbackDisplay({ feedback, submission, isClient }) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 1 }}>
-      {hasReasons && (
+      {(!isClient && (hasContent || hasReasons) && submission.status === 'CHANGES_REQUIRED') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={1}>CS Feedback</Typography>}
+      {(!isClient && hasContent && submission.status === 'SENT_TO_CLIENT') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={1}>CS Comments</Typography>}
+      {hasReasons && submission.status !== 'CLIENT_FEEDBACK' && (
         <Box>
           {feedback.reasons.map((reason, reasonIndex) => (
             <Chip 
-              sx={FEEDBACK_CHIP_STYLES}
+              sx={{...FEEDBACK_CHIP_STYLES, mb: 0.5, }}
               key={reasonIndex} 
               label={reason} 
               size="small" 
@@ -92,7 +94,7 @@ function FeedbackDisplay({ feedback, submission, isClient }) {
       )}
       {(isClient && hasContent && submission.status === 'SENT_TO_CLIENT') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={0.5}>CS Comments</Typography>}
       {(!isClient && hasContent && submission.status === 'CLIENT_APPROVED') && <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={0.5}>Client Feedback</Typography>}
-      {hasContent && (
+      {hasContent && submission.status !== 'CLIENT_FEEDBACK' && (
         <Typography fontSize={12} sx={{ mb: 0.5 }}>
           {feedback.content}
         </Typography>
@@ -331,7 +333,7 @@ function PostingLinkSection({ submission, onUpdate }) {
                     ...BUTTON_STYLES.success
                   }}
                 >
-                  {loading ? 'Saving...' : 'Approve'}
+                  {loading ? 'Saving...' : 'Submit'}
                 </Button>
               </Box>
             </Box>          
@@ -983,21 +985,116 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
 
                             {/* Admin-only Client Feedback Actions - Only admins see this for client feedback */}
                             {visibility.showAdminClientFeedbackActions && (
-                              <Button
-                                variant="contained"
-                                color="secondary"
-                                size='small'
-                                onClick={handleRequestChanges}
-                                disabled={loading}
-                                sx={{
-                                  ...BUTTON_STYLES.base,
-                                  ...BUTTON_STYLES.warning,
-                                  width: 140,
-                                  alignSelf: 'flex-end'
-                                }}
-                              >
-                                {loading ? 'Processing...' : 'Send to Creator'}
-                              </Button>
+                              <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                {/* Display chips for latest client feedback reasons */}
+                                {(() => {
+                                  if (submission.status === 'CLIENT_FEEDBACK' && submission.feedback && submission.feedback.length > 0) {
+                                    const clientRequestFeedbacks = submission.feedback.filter(fb => 
+                                      fb.admin?.role === 'client' && fb.type === 'REQUEST'
+                                    );
+                                    const latestClientFeedback = clientRequestFeedbacks[0];
+                                    
+                                    if (latestClientFeedback?.reasons && latestClientFeedback.reasons.length > 0) {
+                                      const reasons = latestClientFeedback.reasons;
+                                      const hasMultipleReasons = reasons.length > 1;
+                                      
+                                      return (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                          {/* First reason chip */}
+                                          <Chip 
+                                            sx={FEEDBACK_CHIP_STYLES}
+                                            label={reasons[0]} 
+                                            size="small" 
+                                            variant="outlined" 
+                                            color="warning" 
+                                          />
+                                          
+                                          {/* Plus sign with tooltip for additional reasons */}
+                                          {hasMultipleReasons && (
+                                            <Tooltip 
+                                              title={
+                                                <Box sx={{ maxWidth: 500 }}>
+                                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {reasons.slice(1).map((reason, index) => (
+                                                      <Chip 
+                                                        key={index}
+                                                        sx={FEEDBACK_CHIP_STYLES}
+                                                        label={reason} 
+                                                        size="small" 
+                                                        variant="outlined" 
+                                                        color="warning" 
+                                                      />
+                                                    ))}
+                                                  </Box>
+                                                </Box>
+                                              }
+                                              placement="top"
+                                              PopperProps={{
+                                                modifiers: [
+                                                  {
+                                                    name: 'offset',
+                                                    options: {
+                                                      offset: [0, 0],
+                                                    },
+                                                  },
+                                                ],
+                                              }}
+                                              slotProps={{
+                                                tooltip: {
+                                                  sx: {
+                                                    bgcolor: '#f8f9fa',
+                                                    color: '#333',
+                                                    border: '1px solid #e0e0e0',
+                                                    borderRadius: 1.5,
+                                                    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.20)',
+                                                    p: 1,
+                                                    maxWidth: 400,
+                                                    fontSize: 12
+                                                  }
+                                                },
+                                              }}
+                                            >
+                                              <Chip 
+                                                sx={{
+                                                  ...FEEDBACK_CHIP_STYLES,
+                                                  minWidth: 28,
+                                                  height: 28,
+                                                  cursor: 'pointer',
+                                                  '& .MuiChip-label': {
+                                                    px: 0.5,
+                                                    fontSize: 14,
+                                                    fontWeight: 'bold'
+                                                  }
+                                                }}
+                                                label={`+${reasons.length - 1}`}
+                                                size="small" 
+                                                variant="outlined" 
+                                                color="warning" 
+                                              />
+                                            </Tooltip>
+                                          )}
+                                        </Box>
+                                      );
+                                    }
+                                  }
+                                  return <Box />; // Empty box to maintain layout when no chips
+                                })()}
+                                
+                                <Button
+                                  variant="contained"
+                                  color="secondary"
+                                  size='small'
+                                  onClick={handleRequestChanges}
+                                  disabled={loading}
+                                  sx={{
+                                    ...BUTTON_STYLES.base,
+                                    ...BUTTON_STYLES.warning,
+                                    width: 140,
+                                  }}
+                                >
+                                  {loading ? 'Processing...' : 'Send to Creator'}
+                                </Button>
+                              </Box>
                             )}
                           </Stack>
 
