@@ -121,7 +121,7 @@ function CreatorAccordion({ creator, campaign }) {
           case 'CLIENT_APPROVED':
             // Only show PENDING POSTING for video and photo submissions, not raw footage
             if (submissionType === 'video' || submissionType === 'photo') {
-              return 'PENDING POSTING';
+              return 'PENDING LINK';
             }
             return formatStatus(status);
           default:
@@ -179,8 +179,8 @@ function CreatorAccordion({ creator, campaign }) {
           }}
           bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
           py={1.5}
-          pl={1.5}
           pr={0.5}
+          pl={0.8}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={0.3}>
             <Tooltip 
@@ -257,7 +257,7 @@ function CreatorAccordion({ creator, campaign }) {
             alignItems={'center'}
           >
             <Iconify 
-              icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"} 
+              icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"}
               sx={{ width: { xs: 24, sm: 26, md: 28 }, height: { xs: 24, sm: 26, md: 28 } }}
               color={isExpanded ? '#1340FF' : '#8E8E93'}
             />            
@@ -289,7 +289,7 @@ function CreatorAccordion({ creator, campaign }) {
           }}
           bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
           py={1.5}
-          pl={1.5}
+          pl={0.8}
           pr={0.5}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={0.3}>
@@ -394,7 +394,7 @@ function CreatorAccordion({ creator, campaign }) {
           }}
           bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
           py={1.5}
-          pl={1.5}
+          pl={0.8}
           pr={0.5}
         >
           <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
@@ -554,7 +554,7 @@ function CreatorAccordion({ creator, campaign }) {
           alignItems: 'center',
           pr: 2,
           minWidth: 0,
-          maxWidth: 200,
+          maxWidth: 300,
         }}>
           <Avatar
             src={creator.user?.photoURL}
