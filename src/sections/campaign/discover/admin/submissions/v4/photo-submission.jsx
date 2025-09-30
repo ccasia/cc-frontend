@@ -333,7 +333,7 @@ function PostingLinkSection({ submission, onUpdate }) {
                     ...BUTTON_STYLES.success
                   }}
                 >
-                  {loading ? 'Saving...' : 'Approve'}
+                  {loading ? 'Saving...' : 'Submit'}
                 </Button>
               </Box>
             </Box>          

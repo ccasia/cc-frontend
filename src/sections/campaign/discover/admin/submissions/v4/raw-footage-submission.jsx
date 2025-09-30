@@ -1039,6 +1039,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                               onClick={() => handleVideoClick(footageIndex)}
                             >
                               <video
+                                controls
                                 style={{ 
                                   width: '100%',
                                   height: '100%',
@@ -1072,33 +1073,6 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                 }}
                               >
                                 {footageIndex + 1}
-                              </Box>
-                              <Box
-                                className="overlay"
-                                sx={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  bgcolor: 'rgba(0, 0, 0, 0.3)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  opacity: 0,
-                                  transition: 'opacity 0.2s ease',
-                                  borderRadius: 1,
-                                }}
-                              >
-                                <Iconify
-                                  icon="eva:expand-fill"
-                                  sx={{
-                                    color: 'white',
-                                    width: { xs: 28, sm: 32, md: 36, lg: 40 },
-                                    height: { xs: 28, sm: 32, md: 36, lg: 40 },
-                                    opacity: 0.9,
-                                  }}
-                                />
                               </Box>
                             </Box>
                           ) : (

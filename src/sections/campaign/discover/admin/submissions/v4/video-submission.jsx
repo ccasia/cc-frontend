@@ -335,7 +335,7 @@ function PostingLinkSection({ submission, onUpdate }) {
                     ...BUTTON_STYLES.success
                   }}
                 >
-                  {loading ? 'Saving...' : 'Approve'}
+                  {loading ? 'Saving...' : 'Submit'}
                 </Button>
               </Box>
             </Box>          
@@ -652,32 +652,6 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
       }
     }
   }, [feedback, reasons, caption, submission.id, onUpdate, isClient]);
-
-
-  const handlePostingLinkApproval = useCallback(async (approvalAction) => {
-    try {
-      setPostingApprovalLoading(true);
-      await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
-        submissionId: submission.id,
-        action: approvalAction,
-      });
-
-      enqueueSnackbar(
-        `Posting link ${approvalAction}d successfully`, 
-        { variant: 'success' }
-      );
-      
-      // Posting approval completed
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error approving posting link:', error);
-      enqueueSnackbar(error.message || 'Failed to process posting link approval', { variant: 'error' });
-    } finally {
-      setPostingApprovalLoading(false);
-    }
-  }, [submission.id, onUpdate]);
-
-
 
   const videoControls = useMemo(() => ({
     togglePlay: () => {
@@ -1305,8 +1279,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                       <Box
                         sx={{
                           position: 'relative',
-                          width: videoDimensions.aspectRatio > 1 ? '100%' : 200, // Full width for landscape, fixed for portrait
-                          maxWidth: videoDimensions.aspectRatio > 1 ? '100%' : 200,
+                          maxWidth: '100%',
                           height: 'auto',
                           cursor: 'pointer',
                           display: 'flex',
@@ -1328,6 +1301,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                           onLoadedMetadata={handleLoadedMetadata}
                           onPlay={() => setIsPlaying(true)}
                           onPause={() => setIsPlaying(false)}
+                          
                         />
                         <Box
                           sx={{
