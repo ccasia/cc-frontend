@@ -763,7 +763,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                 {filteredCreators.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      <EmptyContent title="No creators found" filled />
+                      <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
                     </TableCell>
                   </TableRow>
                 ) : (
