@@ -43,7 +43,8 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
   const isPosted = submission.status === 'POSTED';
   const needsPostingLink = isApproved && !submission.content;
   const hasPostingLink = Boolean(submission.content);
-  const isPostingLinkRejected = submission.postingLinkStatus === 'REJECTED';
+  // Check if posting link was rejected (status is REJECTED and content was cleared, but video exists)
+  const isPostingLinkRejected = submission.status === 'REJECTED' && !submission.content && submission.video?.length > 0;
   const isPostingLinkEditable = needsPostingLink || isPostingLinkRejected;
   
   // Show submitted video only if not in reupload mode - memoized to prevent blinking
@@ -83,6 +84,13 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
   }, [submission.feedback, submission.id]);
 
   const handleReupload = () => {
+    if (isPostingLinkRejected) {
+      // For posting link rejection, don't enter reupload mode - just allow posting link editing
+      // The posting link field will become editable due to isPostingLinkRejected being true
+      return;
+    }
+    
+    // For content rejection, enter full reupload mode
     setIsReuploadMode(true);
     setSelectedFiles([]);
     setHasSubmitted(false); // Reset submitted state to allow editing
@@ -509,8 +517,8 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
                   <LinearProgress variant="determinate" value={uploadProgress} />
                 </Box>
               )}
-        {hasChangesRequired && !isReuploadMode ? (
-          // Reupload Draft Button (when changes required and not in reupload mode)
+        {hasChangesRequired && !isReuploadMode && !isPostingLinkRejected ? (
+          // Reupload Button (when changes required and not in reupload mode)
           <Typography
             component="button"
             onClick={handleReupload}
@@ -536,7 +544,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
               }
             }}
           >
-            Reupload Draft
+            {isPostingLinkRejected ? 'Reupload Posting Link' : 'Reupload Draft'}
           </Typography>
         ) : (
           // Regular Submit Button
