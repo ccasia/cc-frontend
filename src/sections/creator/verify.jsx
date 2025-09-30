@@ -10,12 +10,11 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useCreator } from 'src/hooks/zustands/useCreator';
 
-
 const Verify = () => {
   const { email: creatorEmail } = useCreator();
   const router = useRouter();
   const loading = useBoolean();
-  
+
   // Get email from sessionStorage (for clients) or useCreator (for creators)
   const [email, setEmail] = useState('');
   const [userType, setUserType] = useState('creator');
@@ -24,7 +23,7 @@ const Verify = () => {
   useEffect(() => {
     const storedEmail = sessionStorage.getItem('verificationEmail');
     const storedUserType = sessionStorage.getItem('userType');
-    
+
     if (storedEmail) {
       setEmail(storedEmail);
       setUserType(storedUserType || 'creator');
@@ -32,7 +31,7 @@ const Verify = () => {
       setEmail(creatorEmail);
       setUserType('creator');
     }
-    
+
     setIsLoading(false);
   }, [creatorEmail]);
 
@@ -89,8 +88,8 @@ const Verify = () => {
                 p: 3,
                 bgcolor: '#F4F4F4',
                 borderRadius: 2,
-                width: { xs: '100%', sm: 394 },
-                maxWidth: { xs: '100%', sm: 394 },
+                width: { xs: '90%', sm: 394 },
+                maxWidth: { xs: '90%', sm: 394 },
                 mx: 'auto',
                 textAlign: 'center',
                 justifyContent: 'center',
@@ -108,8 +107,13 @@ const Verify = () => {
                 Verify your email 👀
               </Typography>
 
-              <Typography variant="body2" color="#636366" sx={{ fontSize: '16px', mb: 3, textAlign: 'left' }}>
-                We sent a verification link to <b>{email}</b>. Please click on the link to activate your account.
+              <Typography
+                variant="body2"
+                color="#636366"
+                sx={{ fontSize: '16px', mb: 3, textAlign: 'left' }}
+              >
+                We sent a verification link to <b>{email}</b>. Please click on the link to activate
+                your account.
               </Typography>
 
               <Button
@@ -139,7 +143,6 @@ const Verify = () => {
                 }}
               >
                 Didn&apos;t receive the link?
-                
                 <Button
                   variant="text"
                   disabled={loading.value}
@@ -151,7 +154,6 @@ const Verify = () => {
                     '&:hover': {
                       textDecoration: 'underline',
                     },
-                   
                   }}
                 >
                   {loading.value ? 'Sending...' : 'Send link again'}
