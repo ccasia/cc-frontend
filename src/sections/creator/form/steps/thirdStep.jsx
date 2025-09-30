@@ -24,7 +24,10 @@ const ErrorIcon = () => (
 );
 
 const ThirdStep = ({ item, setCountryCode, countryCode }) => {
-  const { watch, formState: { errors } } = useFormContext();
+  const {
+    watch,
+    formState: { errors },
+  } = useFormContext();
 
   // const nationality = watch('Nationality');
   const pronounce = watch('pronounce');
@@ -46,7 +49,7 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
     <>
       <ListItemText
         sx={{
-          mt: 4,
+          mt: 3,
           textAlign: 'center',
         }}
         primary={item.title}
@@ -67,16 +70,15 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
       />
 
       <Stack
-        gap={4}
+        gap={2}
         sx={{
           width: '100%',
           maxWidth: { xs: '100%', sm: 400 },
           mx: 'auto',
-          my: { xs: 4, sm: 5 },
+          my: { xs: 2, sm: 5 },
           px: { xs: 1, sm: 0 },
         }}
       >
-
         {/* Employment Status - no longer needed in onboarding form */}
         {/* <Stack spacing={1}>
           <FormLabel
@@ -122,7 +124,7 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
                   },
                   '&.MuiInputBase-root': {
                     fontFamily: 'monospace',
-                  }
+                  },
                 }}
                 value={countryCode}
                 onChange={(e) => handleChangeCountryCode(e.target.value)}
@@ -142,7 +144,11 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
                   },
                 }}
               >
-                <MenuItem value="" disabled sx={{ fontFamily: 'inherit', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                <MenuItem
+                  value=""
+                  disabled
+                  sx={{ fontFamily: 'inherit', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                >
                   Code
                 </MenuItem>
                 {[...new Set(countries.map((c) => c.phone).filter(Boolean))]
