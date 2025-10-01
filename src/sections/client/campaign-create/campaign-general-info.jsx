@@ -301,7 +301,7 @@ const ClientCampaignGeneralInfo = () => {
         </Box>
 
         {/* Submission Version Toggle */}
-        <Box sx={{ mt: 2 }}>
+        {/* <Box sx={{ mt: 2 }}>
           <FormField label="Submission Version" required={false}>
             <FormControlLabel
               control={
@@ -320,7 +320,7 @@ const ClientCampaignGeneralInfo = () => {
               }
             />
           </FormField>
-        </Box>
+        </Box> */}
       </Box>
     </>
   );

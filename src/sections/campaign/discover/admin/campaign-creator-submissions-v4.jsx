@@ -19,6 +19,7 @@ import V4VideoSubmission from './submissions/v4/video-submission';
 import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
 import { useAuthContext } from 'src/auth/hooks';
+import EmptyContent from 'src/components/empty-content';
 
 // ----------------------------------------------------------------------
 
@@ -673,9 +674,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
 
       {filteredCreators.length === 0 ? (
         <Box sx={{ p: 3, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            No creators found
-          </Typography>
+          <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
         </Box>
       ) : (
         <Stack spacing={1}>

@@ -13,7 +13,8 @@ import {
   Select,
   MenuItem,
   FormControl,
-  Tooltip
+  Tooltip,
+  IconButton
 } from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
@@ -252,6 +253,88 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
   // Video dimensions state for responsive sizing
   const [videoDimensions, setVideoDimensions] = useState({});
   
+  // Video control states for each raw footage
+  const [videoStates, setVideoStates] = useState({});
+  const videoRefs = useRef({});
+  
+  // Video control helper functions
+  const formatTime = useCallback((time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }, []);
+  
+  const togglePlay = useCallback((footageId) => {
+    const videoRef = videoRefs.current[footageId];
+    if (videoRef) {
+      const currentState = videoStates[footageId];
+      if (currentState?.isPlaying) {
+        videoRef.pause();
+      } else {
+        videoRef.play();
+      }
+      setVideoStates(prev => ({
+        ...prev,
+        [footageId]: {
+          ...prev[footageId],
+          isPlaying: !currentState?.isPlaying
+        }
+      }));
+    }
+  }, [videoStates]);
+  
+  const handleSeek = useCallback((event, footageId) => {
+    const videoRef = videoRefs.current[footageId];
+    if (videoRef) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const pos = (event.clientX - rect.left) / rect.width;
+      const newTime = pos * (videoStates[footageId]?.duration || 0);
+      videoRef.currentTime = newTime;
+      setVideoStates(prev => ({
+        ...prev,
+        [footageId]: {
+          ...prev[footageId],
+          currentTime: newTime
+        }
+      }));
+    }
+  }, [videoStates]);
+  
+  const handleTimeUpdate = useCallback((footageId) => {
+    const videoRef = videoRefs.current[footageId];
+    if (videoRef) {
+      setVideoStates(prev => ({
+        ...prev,
+        [footageId]: {
+          ...prev[footageId],
+          currentTime: videoRef.currentTime
+        }
+      }));
+    }
+  }, []);
+  
+  const handleVideoMetadataLoaded = useCallback((footageId, videoElement) => {
+    if (videoElement) {
+      const { videoWidth, videoHeight, duration } = videoElement;
+      const aspectRatio = videoWidth / videoHeight;
+      
+      setVideoDimensions(prev => ({
+        ...prev,
+        [footageId]: { width: videoWidth, height: videoHeight, aspectRatio }
+      }));
+      
+      setVideoStates(prev => ({
+        ...prev,
+        [footageId]: {
+          ...prev[footageId],
+          duration,
+          currentTime: 0,
+          isPlaying: false
+        }
+      }));
+    }
+  }, []);
+  
   // Detect client role
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
@@ -413,38 +496,6 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
     setVideoModalOpen(true);
   }, []);
   
-  // Handle video metadata loaded to get dimensions
-  const handleVideoMetadata = useCallback((footageId, videoElement) => {
-    if (videoElement) {
-      const { videoWidth, videoHeight } = videoElement;
-      const aspectRatio = videoWidth / videoHeight;
-      setVideoDimensions(prev => ({
-        ...prev,
-        [footageId]: { width: videoWidth, height: videoHeight, aspectRatio }
-      }));
-    }
-  }, []);
-  
-  // Calculate responsive video dimensions
-  const getVideoStyles = useCallback((footageId) => {
-    const dimensions = videoDimensions[footageId];
-    if (!dimensions) {
-      return { width: 240, height: 390 }; // Default portrait dimensions
-    }
-    
-    const { aspectRatio } = dimensions;
-    
-    if (aspectRatio > 1) {
-      // Landscape video - fit within container width, maintain aspect ratio
-      const maxWidth = 520; // Fit within the 580px container with some padding
-      const height = Math.min(350, maxWidth / aspectRatio); // Max height to fit in container
-      const width = height * aspectRatio;
-      return { width, height };
-    } else {
-      // Portrait video - use default mobile dimensions
-      return { width: 240, height: 390 };
-    }
-  }, [videoDimensions]);
 
   // Socket listener for real-time submission updates
   useEffect(() => {
@@ -1038,19 +1089,161 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                               }}
                               onClick={() => handleVideoClick(footageIndex)}
                             >
-                              <video
-                                controls
-                                style={{ 
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                  display: 'block'
-                                }}
-                                src={rawFootage.url}
-                                onLoadedMetadata={(e) => handleVideoMetadata(rawFootage.id, e.target)}
-                              >
-                                <track kind="captions" srcLang="en" label="English" />
-                              </video>
+                              <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <Box sx={{ flex: 1, position: 'relative' }}>
+                                  <video
+                                    ref={(el) => {
+                                      if (el) videoRefs.current[rawFootage.id] = el;
+                                    }}
+                                    style={{ 
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'cover',
+                                      display: 'block'
+                                    }}
+                                    src={rawFootage.url}
+                                    onLoadedMetadata={(e) => handleVideoMetadataLoaded(rawFootage.id, e.target)}
+                                    onTimeUpdate={() => handleTimeUpdate(rawFootage.id)}
+                                    onPlay={() => setVideoStates(prev => ({
+                                      ...prev,
+                                      [rawFootage.id]: { ...prev[rawFootage.id], isPlaying: true }
+                                    }))}
+                                    onPause={() => setVideoStates(prev => ({
+                                      ...prev,
+                                      [rawFootage.id]: { ...prev[rawFootage.id], isPlaying: false }
+                                    }))}
+                                  >
+                                    <track kind="captions" srcLang="en" label="English" />
+                                  </video>
+                                </Box>
+
+                                {/* Custom Controls Bar */}
+                                <Box 
+                                  sx={{ 
+                                    width: '100%',
+                                    height: 32,
+                                    bgcolor: 'rgba(0, 0, 0, 0.9)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    px: 1,
+                                    py: 0.5,
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {/* Play/Pause Button */}
+                                  <IconButton 
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      togglePlay(rawFootage.id);
+                                    }}
+                                    sx={{ 
+                                      color: 'white',
+                                      bgcolor: 'rgba(255,255,255,0.1)',
+                                      border: '1px solid rgba(255,255,255,0.2)',
+                                      minWidth: 20,
+                                      minHeight: 20,
+                                      p: 0.3,
+                                      mr: 0.5,
+                                      '&:hover': {
+                                        bgcolor: 'rgba(255,255,255,0.2)'
+                                      }
+                                    }}
+                                  >
+                                    {videoStates[rawFootage.id]?.isPlaying ? (
+                                      <Box sx={{ 
+                                        width: 6, 
+                                        height: 7, 
+                                        display: 'flex', 
+                                        gap: 0.3
+                                      }}>
+                                        <Box sx={{ 
+                                          width: 2.5, 
+                                          height: '100%', 
+                                          bgcolor: 'white' 
+                                        }} />
+                                        <Box sx={{ 
+                                          width: 2.5, 
+                                          height: '100%', 
+                                          bgcolor: 'white' 
+                                        }} />
+                                      </Box>
+                                    ) : (
+                                      <Box sx={{
+                                        width: 0,
+                                        height: 0,
+                                        borderLeft: '6px solid white',
+                                        borderTop: '4px solid transparent',
+                                        borderBottom: '4px solid transparent',
+                                        ml: 0.2
+                                      }} />
+                                    )}
+                                  </IconButton>
+
+                                  {/* Current Time */}
+                                  <Typography variant={'caption'} sx={{ color: 'white', minWidth: '30px', fontSize: 10 }}>
+                                    {formatTime(videoStates[rawFootage.id]?.currentTime || 0)}
+                                  </Typography>
+
+                                  {/* Progress Bar */}
+                                  <Box 
+                                    sx={{ 
+                                      flex: 1, 
+                                      height: 4, 
+                                      bgcolor: 'rgba(255,255,255,0.3)', 
+                                      borderRadius: 2,
+                                      cursor: 'pointer',
+                                      mx: 0.5,
+                                      '&:hover': {
+                                        height: 5
+                                      },
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSeek(e, rawFootage.id);
+                                    }}
+                                  >
+                                    <Box
+                                      sx={{
+                                        width: `${videoStates[rawFootage.id]?.duration > 0 ? (videoStates[rawFootage.id]?.currentTime / videoStates[rawFootage.id]?.duration) * 100 : 0}%`,
+                                        height: '100%',
+                                        bgcolor: 'primary.main',
+                                        borderRadius: 2,
+                                        transition: 'width 0.1s ease'
+                                      }}
+                                    />
+                                  </Box>
+
+                                  {/* Duration */}
+                                  <Typography variant={'caption'} sx={{ color: 'white', minWidth: '30px', fontSize: 10 }}>
+                                    {formatTime(videoStates[rawFootage.id]?.duration || 0)}
+                                  </Typography>
+
+                                  {/* Fullscreen Button */}
+                                  <IconButton 
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleVideoClick(footageIndex);
+                                    }}
+                                    sx={{ 
+                                      color: 'white',
+                                      p: 0.3,
+                                      ml: 0.5,
+                                      '&:hover': {
+                                        bgcolor: 'rgba(255,255,255,0.1)'
+                                      },
+                                    }}
+                                  >
+                                    <Iconify 
+                                      icon="eva:expand-fill" 
+                                      sx={{ 
+                                        fontSize: 14 
+                                      }} 
+                                    />
+                                  </IconButton>
+                                </Box>
+                              </Box>
                               <Box
                                 sx={{
                                   position: 'absolute',
