@@ -76,6 +76,8 @@ const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, o
         submission: agreement?.submission,
       });
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
+      // Also refresh V3 pitches data to update pitch status
+      mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
       // Also refresh submissions data
       if (onApprove) {
         onApprove();
@@ -102,6 +104,8 @@ const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, o
       });
 
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
+      // Also refresh V3 pitches data to update pitch status
+      mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
       // Also refresh submissions data
       if (onReject) {
         onReject();
@@ -524,6 +528,8 @@ const CampaignAgreements = ({ campaign }) => {
         submission: item?.submission,
       });
       mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
+      // Also refresh V3 pitches data to update pitch status
+      mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
       // Also refresh submissions data
       const response = await axiosInstance.get(
         `${endpoints.submission.root}?campaignId=${campaign.id}`
@@ -555,6 +561,8 @@ const CampaignAgreements = ({ campaign }) => {
       });
 
       mutate(endpoints.campaign.creatorAgreement(selectedAgreement?.campaignId));
+      // Also refresh V3 pitches data to update pitch status
+      mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
       // Also refresh submissions data
       const response = await axiosInstance.get(
         `${endpoints.submission.root}?campaignId=${campaign.id}`
@@ -1218,6 +1226,8 @@ const CampaignAgreements = ({ campaign }) => {
         agreement={selectedAgreement}
         campaign={campaign}
         onApprove={async () => {
+          // Refresh V3 pitches data to update pitch status
+          mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
           // Refresh submissions data
           const response = await axiosInstance.get(
             `${endpoints.submission.root}?campaignId=${campaign.id}`
@@ -1225,6 +1235,8 @@ const CampaignAgreements = ({ campaign }) => {
           setSubmissions(response.data);
         }}
         onReject={async () => {
+          // Refresh V3 pitches data to update pitch status
+          mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
           // Refresh submissions data
           const response = await axiosInstance.get(
             `${endpoints.submission.root}?campaignId=${campaign.id}`

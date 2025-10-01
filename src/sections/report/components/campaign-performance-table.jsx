@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
+import { useAuthContext } from 'src/auth/hooks';
+import useGetClientCredits from 'src/hooks/use-get-client-credits';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
@@ -29,6 +31,8 @@ const CampaignPerformanceTable = () => {
 
   const itemsPerPage = 7;
 
+  const { user } = useAuthContext();
+  const { company } = useGetClientCredits();
   const { data: submissionData, isLoadingSubmissions } = useGetAllSubmissions();
 
   const reportList = React.useMemo(() => {
@@ -39,15 +43,27 @@ const CampaignPerformanceTable = () => {
         if (!submission.content) return false;
 
         // More specific regex patterns for actual post links
-
         const instagramPostRegex =
           /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
         const tiktokPostRegex =
           /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
 
-        return (
-          instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content)
-        );
+        const hasValidContent = instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
+        
+        if (!hasValidContent) return false;
+
+        // Filter by company/client association
+        if (user?.role === 'client') {
+          const campaignCompanyId = submission.campaign?.company.id;
+          
+          const userCompanyId = user.client?.companyId || company?.id;
+          const submissionByCompanyId = campaignCompanyId === userCompanyId;
+          
+          return submissionByCompanyId;
+        }
+
+        // For non-client users (admin, etc.), show all submissions
+        return true;
       })
       .map((submission) => ({
         id: submission.id,
@@ -64,7 +80,7 @@ const CampaignPerformanceTable = () => {
         const campaignCompare = a.campaignName.localeCompare(b.campaignName);
         return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
       });
-  }, [submissionData]);
+  }, [submissionData, user, company]);
 
   // Get unique campaigns for filter dropdown
   const uniqueCampaigns = useMemo(() => {

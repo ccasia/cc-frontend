@@ -249,6 +249,21 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   };
 
   const getStatusInfo = (status) => {
+    // Check for AGREEMENT_PENDING status with PENDING_REVIEW agreement form
+    if (status === 'AGREEMENT_PENDING' && campaign?.submission) {
+      const agreementFormSubmission = campaign.submission.find(
+        (sub) => sub?.submissionType?.type === 'AGREEMENT_FORM'
+      );
+
+      if (agreementFormSubmission?.status === 'PENDING_REVIEW') {
+        return {
+          color: '#FFC702',
+          borderColor: '#FFC702',
+          tooltip: 'Agreement is pending approval',
+        };
+      }
+    }
+
     const statusMap = {
       PENDING_REVIEW: {
         color: '#FFC702',
@@ -281,8 +296,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         tooltip: 'Pitch has been rejected',
       },
       AGREEMENT_PENDING: {
-        color: '#1340FF',
-        borderColor: '#1340FF',
+        color: '#8B5CF6',
+        borderColor: '#8B5CF6',
         tooltip: 'Agreement is pending creator submission',
       },
       AGREEMENT_SUBMITTED: {
@@ -301,7 +316,18 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     );
   };
 
-  const getStatusText = (status) => {
+  const getStatusText = (status, pitch) => {
+    // Check for AGREEMENT_PENDING status with PENDING_REVIEW agreement form
+    if (status === 'AGREEMENT_PENDING') {
+      const agreementFormSubmission = campaign.submission.find(
+        (sub) => sub?.submissionType?.type === 'AGREEMENT_FORM'
+      );
+
+      if (agreementFormSubmission?.status === 'PENDING_REVIEW') {
+        return 'PENDING APPROVAL';
+      }
+    }
+
     const statusTextMap = {
       PENDING_REVIEW: 'PENDING REVIEW',
       SENT_TO_CLIENT: 'SENT TO CLIENT',
@@ -792,7 +818,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                           borderColor: statusInfo.borderColor,
                         }}
                       >
-                        {getStatusText(displayStatus)}
+                        {getStatusText(displayStatus, pitch)}
                         {pitch?.adminComments &&
                           pitch.adminComments.trim().length > 0 &&
                           (displayStatus === 'SENT_TO_CLIENT') && (

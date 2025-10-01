@@ -243,10 +243,10 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Instructions */}
         <Stack spacing={2} sx={{ mb: 3 }}>
-          <Typography variant="body1" sx={{ color: '#221f20', ml: -1 }}>
+          <Typography variant="body1" sx={{ color: '#221f20'}}>
             Before starting the campaign, you must sign the standard agreement submission procedure!
           </Typography>
-          <Typography variant="body1" sx={{ color: '#221f20', ml: -1 }}>
+          <Typography variant="body1" sx={{ color: '#221f20'}}>
             Download the agreement PDF from the link below, and then upload it back here to proceed to the next step.
           </Typography>
 
@@ -284,7 +284,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           <Button
             variant="contained"
             onClick={() => setOpenUploadModal(true)}
-            disabled={isAgreementSubmitted}
+            disabled={isAgreementSubmitted || !agreementUrl}
             startIcon={<Iconify icon="material-symbols:add" width={24} />}
             sx={{
               bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
