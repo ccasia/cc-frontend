@@ -93,13 +93,23 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
     setSelectedFiles(prev => [...prev, ...newFiles]);
   }, []);
 
+  // Check if posting link was rejected (status is REJECTED and content was cleared, but photos exist)
+  const isPostingLinkRejected = submission.status === 'REJECTED' && !submission.content && submission.photos?.length > 0;
+
   // Handle reupload mode
   const handleReuploadMode = useCallback(() => {
+    if (isPostingLinkRejected) {
+      // For posting link rejection, don't enter reupload mode - just allow posting link editing
+      // The posting link field will become editable due to isPostingLinkRejected being true
+      return;
+    }
+    
+    // For content rejection, enter full reupload mode
     setIsReuploadMode(true);
     // Keep submitted photos as selected files so they remain visible with X buttons
     setSelectedFiles(submittedPhotos);
     setHasSubmitted(false); // Reset submitted state
-  }, [submittedPhotos]);
+  }, [submittedPhotos, isPostingLinkRejected]);
 
   // Memoize selectedFiles to prevent unnecessary re-renders
   const memoizedSelectedFiles = useMemo(() => selectedFiles, [selectedFiles]);
@@ -233,17 +243,6 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
         
       enqueueSnackbar(successMessage, { variant: 'success' });
       
-      // Update submission status to IN REVIEW immediately after successful upload
-      try {
-        await axiosInstance.patch(endpoints.submission.creator.v4.updateStatus, {
-          submissionId: submission.id,
-          status: 'PENDING_REVIEW'
-        });
-      } catch (statusError) {
-        console.error('Failed to update status to IN REVIEW:', statusError);
-        // Don't fail the entire upload if status update fails
-      }
-      
       onUpdate();
       // Keep selectedFiles so preview remains visible
       // setSelectedFiles([]);
@@ -290,7 +289,6 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
 
   const isSubmitted = submission.photos?.some(p => p.url);
   const isInReview = ['PENDING_REVIEW', 'SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submission.status);
-  const isPostingLinkRejected = submission.postingLinkStatus === 'REJECTED';
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
   const isPosted = submission.status === 'POSTED';
   const hasPostingLink = Boolean(submission.content);
@@ -316,13 +314,6 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
 
 
 
-      {isPostingLinkRejected && (
-        <Alert severity="warning">
-          <Typography variant="body2">
-            🔗 Your posting link was rejected. Please update your posting link below.
-          </Typography>
-        </Alert>
-      )}
 
 
 
@@ -629,14 +620,14 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
             
             <Typography
               component="button"
-              onClick={hasChangesRequired && !isReuploadMode ? handleReuploadMode : 
+              onClick={hasChangesRequired && !isReuploadMode && !isPostingLinkRejected ? handleReuploadMode : 
                       (isPostingLinkEditable && !selectedFiles.length) ? handleSubmitPostingLink : 
                       handleSubmit}
               disabled={uploading || 
-                       (!isPostingLinkEditable && selectedFiles.length === 0 && !hasChangesRequired) || 
+                       (!isPostingLinkEditable && selectedFiles.length === 0 && !hasChangesRequired && !isReuploadMode) || 
                        (!isCaptionEditable && !hasChangesRequired && !isReuploadMode && !isPostingLinkEditable) ||
                        (isPostingLinkEditable && !selectedFiles.length && !postingLink.trim()) ||
-                       (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length && !hasChangesRequired)}
+                       (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length && !hasChangesRequired && !isReuploadMode)}
               sx={{
                 px: 2,
                 py: 1,
@@ -670,7 +661,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
             >
               {uploading ? 'Uploading...' : 
                postingLoading ? 'Submitting...' :
-               (hasChangesRequired && !isReuploadMode) ? 'Reupload Photos' : 
+               (hasChangesRequired && !isReuploadMode && !isPostingLinkRejected) ? 'Reupload Photos' : 
                (isPostingLinkEditable && !selectedFiles.length) ? 'Submit' :
                (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length && !hasChangesRequired) ? 'Submitted' :
                (!isCaptionEditable && submittedPhotos.length > 0 && !hasChangesRequired && !isPostingLinkEditable) ? 'Submitted' : 

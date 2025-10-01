@@ -39,7 +39,7 @@ import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 const calculateMatchPercentage = (user, campaign) => {
   if (!user?.creator || !campaign?.campaignRequirement) return 0;
 
-  const {creator} = user;
+  const { creator } = user;
   const requirements = campaign.campaignRequirement;
 
   // Calculate interest matching percentage
@@ -240,9 +240,9 @@ const MobileModalView = () => {
                   opacity: 0,
                   visibility: 'hidden',
                   position: 'absolute',
-                  top: '-75px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
+                  top: '-65px',
+                  // left: '50%',
+                  transform: 'translateY(-50%)',
                   backgroundColor: '#FCFCFC',
                   color: '#231F20',
                   padding: '8px 12px',
@@ -250,8 +250,8 @@ const MobileModalView = () => {
                   fontSize: '12px',
                   textAlign: 'center',
                   zIndex: 10,
-                  boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
-                  width: '180px',
+                  boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.15)',
+                  width: '190px',
                   transition: 'opacity 0.2s ease, visibility 0.2s ease',
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -268,7 +268,7 @@ const MobileModalView = () => {
                     color: '#1340FF',
                     fontSize: '11px',
                     fontWeight: 600,
-                    padding: '2px 8px',
+                    padding: '8px',
                     minWidth: 'auto',
                     textTransform: 'none',
                     '&:hover': {
