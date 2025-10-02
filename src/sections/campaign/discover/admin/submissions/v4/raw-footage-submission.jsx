@@ -22,6 +22,7 @@ import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-mod
 
 import FeedbackSection from './shared/feedback-section';
 import FeedbackActions from './shared/feedback-actions';
+import FeedbackLogs from './shared/feedback-logs';
 import useSubmissionSocket from './shared/use-submission-socket';
 import useCaptionOverflow from './shared/use-caption-overflow';
 import { getDefaultFeedback, getInitialReasons } from './shared/feedback-utils';
@@ -44,6 +45,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
   const [videoDimensions, setVideoDimensions] = useState({});
   const [videoStates, setVideoStates] = useState({});
   const videoRefs = useRef({});
+  const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
@@ -276,6 +278,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                 minHeight: { xs: 400, sm: 450, md: 500 },
                 flexDirection: { xs: 'column', md: 'row' }
               }}>
+                {/* Caption & Feedback - Left side */}
                 <Box sx={{
                   flex: 1,
                   display: 'flex',
@@ -283,106 +286,120 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                   justifyContent: 'space-between',
                   maxWidth: { xs: '100%', md: 400, lg: 600 },
                   minWidth: { xs: '100%', md: 350 },
+                  height: 500,
+                  overflow: 'hidden'
                 }}>
-                  <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
-                    <Typography variant='caption' fontWeight={'bold'} color={'#636366'} mb={0.5}>Caption</Typography>
-                    {pendingReview ? (
-                      <Box>
-                        <TextField
-                          fullWidth
-                          multiline
-                          rows={3}
-                          placeholder="Enter caption here..."
-                          value={caption}
-                          onChange={(e) => setCaption(e.target.value)}
-                          size="small"
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              bgcolor: 'background.paper',
-                            },
-                          }}
+                  {showFeedbackLogs ? (
+                    <FeedbackLogs
+                      submission={submission}
+                      onClose={() => setShowFeedbackLogs(false)}
+                    />
+                  ) : (
+                    <>
+                      <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant='caption' fontWeight={'bold'} color={'#636366'} mb={0.5}>Caption</Typography>
+                        {pendingReview ? (
+                          <Box>
+                            <TextField
+                              fullWidth
+                              multiline
+                              rows={3}
+                              placeholder="Enter caption here..."
+                              value={caption}
+                              onChange={(e) => setCaption(e.target.value)}
+                              size="small"
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  bgcolor: 'background.paper',
+                                },
+                              }}
+                            />
+                          </Box>
+                        ) : submission.caption ? (
+                          <>
+                            <Box
+                              ref={captionMeasureRef}
+                              sx={{
+                                visibility: 'hidden',
+                                position: 'absolute',
+                                width: '100%',
+                                maxWidth: 400,
+                                pointerEvents: 'none'
+                              }}
+                            >
+                              <Typography fontSize={14} sx={{
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                                lineHeight: 1.5
+                              }}>
+                                {submission.caption}
+                              </Typography>
+                            </Box>
+
+                            {captionOverflows ? (
+                              <Box sx={{
+                                maxHeight: { xs: 80, sm: 100, md: 120 },
+                                overflow: 'auto',
+                                border: '1px solid #E7E7E7',
+                                borderRadius: 0.5,
+                                p: 1,
+                                bgcolor: 'background.paper',
+                              }}>
+                                <Typography fontSize={14} color={'#636366'} sx={{
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  lineHeight: 1.5
+                                }}>
+                                  {submission.caption}
+                                </Typography>
+                              </Box>
+                            ) : (
+                              <Typography fontSize={14} color={'#636366'} sx={{
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                                lineHeight: 1.5
+                              }}>
+                                {submission.caption}
+                              </Typography>
+                            )}
+                          </>
+                        ) : null}
+                      </Box>
+
+                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <FeedbackSection
+                          onViewLogs={() => setShowFeedbackLogs(true)}
+                          submission={submission}
+                          isVisible={submission.status !== 'PENDING_REVIEW'}
+                          isClient={isClient}
                         />
                       </Box>
-                    ) : submission.caption ? (
-                      <>
-                        <Box
-                          ref={captionMeasureRef}
-                          sx={{
-                            visibility: 'hidden',
-                            position: 'absolute',
-                            width: '100%',
-                            maxWidth: 400,
-                            pointerEvents: 'none'
-                          }}
-                        >
-                          <Typography fontSize={14} sx={{
-                            wordWrap: 'break-word',
-                            overflowWrap: 'break-word',
-                            lineHeight: 1.5
-                          }}>
-                            {submission.caption}
-                          </Typography>
-                        </Box>
 
-                        {captionOverflows ? (
-                          <Box sx={{
-                            maxHeight: { xs: 80, sm: 100, md: 120 },
-                            overflow: 'auto',
-                            border: '1px solid #E7E7E7',
-                            borderRadius: 0.5,
-                            p: 1,
-                            bgcolor: 'background.paper',
-                          }}>
-                            <Typography fontSize={14} color={'#636366'} sx={{
-                              wordWrap: 'break-word',
-                              overflowWrap: 'break-word',
-                              lineHeight: 1.5
-                            }}>
-                              {submission.caption}
-                            </Typography>
-                          </Box>
-                        ) : (
-                          <Typography fontSize={14} color={'#636366'} sx={{
-                            wordWrap: 'break-word',
-                            overflowWrap: 'break-word',
-                            lineHeight: 1.5
-                          }}>
-                            {submission.caption}
-                          </Typography>
-                        )}
-                      </>
-                    ) : null}
-                  </Box>
-
-                  <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                    <FeedbackSection
-                      submission={submission}
-                      isVisible={submission.status !== 'PENDING_REVIEW'}
-                      isClient={isClient}
-                    />
-                  </Box>
-
-                  <FeedbackActions
-                    submission={submission}
-                    campaign={campaign}
-                    isClient={isClient}
-                    clientVisible={clientVisible}
-                    isClientFeedback={isClientFeedback}
-                    action={action}
-                    setAction={setAction}
-                    reasons={reasons}
-                    setReasons={setReasons}
-                    feedback={feedback}
-                    setFeedback={setFeedback}
-                    loading={loading}
-                    handleApprove={handleApprove}
-                    handleRequestChanges={handleRequestChanges}
-                  />
+                      <FeedbackActions
+                        submission={submission}
+                        campaign={campaign}
+                        isClient={isClient}
+                        clientVisible={clientVisible}
+                        isClientFeedback={isClientFeedback}
+                        action={action}
+                        setAction={setAction}
+                        reasons={reasons}
+                        setReasons={setReasons}
+                        feedback={feedback}
+                        setFeedback={setFeedback}
+                        loading={loading}
+                        handleApprove={handleApprove}
+                        handleRequestChanges={handleRequestChanges}
+                        onViewLogs={() => setShowFeedbackLogs(true)}
+                      />
+                    </>
+                  )}
                 </Box>
-
+                
+                {/* Content - Right side */}
                 <Box
                   sx={{
-                    width: { xs: '100%', sm: 400, md: 500, lg: 580 },
+                    width: { xs: '100%', sm: 400, md: 500, lg: 550 },
                     display: 'flex',
                     flexDirection: 'column',
                     bgcolor: 'background.paper',
