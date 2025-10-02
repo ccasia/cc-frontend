@@ -41,8 +41,12 @@ const CampaignAnalytics = ({ campaign }) => {
   // Extract posting submissions with URLs directly from campaign prop
   const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
 
-  // Get available platforms in the campaign
+  // Get available platforms in the campaign or provide defaults for empty state
   const availablePlatforms = useMemo(() => {
+    if (postingSubmissions.length === 0) {
+      // Return default platforms for empty state display
+      return ['Instagram', 'TikTok'];
+    }
     const platforms = [...new Set(postingSubmissions.map((sub) => sub.platform))];
     return platforms.filter(Boolean);
   }, [postingSubmissions]);
@@ -101,11 +105,23 @@ const CampaignAnalytics = ({ campaign }) => {
     });
   }, [insightsData, selectedPlatform, postingSubmissions]);
 
-  // Calculate summary statistics based on filtered data
-  const summaryStats = useMemo(
-    () => calculateSummaryStats(filteredInsightsData),
-    [filteredInsightsData]
-  );
+  // Calculate summary statistics based on filtered data or provide empty state
+  const summaryStats = useMemo(() => {
+    if (filteredInsightsData.length === 0) {
+      // Return placeholder data when no insights are available
+      return {
+        totalViews: 0,
+        totalLikes: 0,
+        totalComments: 0,
+        totalShares: 0,
+        totalSaved: 0,
+        totalReach: 0,
+        totalPosts: 0,
+        avgEngagementRate: 0,
+      };
+    }
+    return calculateSummaryStats(filteredInsightsData);
+  }, [filteredInsightsData]);
 
   const handleNextPage = () => {
     setCurrentPage((prev) => prev + 1);
@@ -121,8 +137,6 @@ const CampaignAnalytics = ({ campaign }) => {
     setCurrentPage(1);
   };
 
-  console.log('Summary stats: ', summaryStats);
-  console.log('Insights data: ', insightsData);
 
   // No campaign
   if (!campaign) {
@@ -1415,7 +1429,6 @@ const CampaignAnalytics = ({ campaign }) => {
 
   const UserPerformanceCard = ({ engagementRate, submission, insightData, loadingInsights }) => {
     const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
-    console.log('Creator: ', creator);
 
     return (
       <Grid item xs={12}>
@@ -1795,45 +1808,6 @@ const CampaignAnalytics = ({ campaign }) => {
         Performance Summary
       </Typography>
 
-      {/* Debug Information - only in development */}
-      {/* {process.env.NODE_ENV === 'development' && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-            <Box>
-              <Typography variant="subtitle2">Debug Info:</Typography>
-              <Typography variant="body2">
-                Campaign ID: {campaignId}<br />
-                Campaign Name: {campaign?.name}<br />
-                Total Submissions: {submissions?.length || 0}<br />
-                Posting Submissions: {postingSubmissions.length}<br />
-                Insights Loaded: {insightsData.length}<br />
-                Loading Progress: {loadingProgress?.loaded || 0}/{loadingProgress?.total || 0}
-              </Typography>
-            </Box>
-            <Stack direction="row" spacing={1}>
-              <Button 
-                size="small" 
-                variant="outlined" 
-                onClick={() => {
-                  clearCache();
-                  window.location.reload();
-                }}
-                sx={{ fontSize: '0.75rem', py: 0.5 }}
-              >
-                Clear Cache & Reload
-              </Button>
-              <Button 
-                size="small" 
-                variant="outlined" 
-                onClick={() => CacheMonitor.getStats()}
-                sx={{ fontSize: '0.75rem', py: 0.5 }}
-              >
-                Cache Stats
-              </Button>
-            </Stack>
-          </Stack>
-        </Alert>
-      )} */}
 
       {/* Loading state for insights */}
       {loadingInsights && (
@@ -1905,7 +1879,7 @@ const CampaignAnalytics = ({ campaign }) => {
       <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
 
       {/* Platform Overview and Additional Metrics Layout */}
-      {availablePlatforms.length > 0 && summaryStats && (
+      {availablePlatforms.length > 0 && (
         <PlatformOverviewLayout
           postCount={filteredSubmissions.length}
           insightsData={filteredInsightsData}
@@ -1945,6 +1919,42 @@ const CampaignAnalytics = ({ campaign }) => {
           );
         })}
 
+        {postingSubmissions.length === 0 && (
+          <Grid item xs={12}>
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: 6,
+                px: 3,
+                bgcolor: '#F8F9FA',
+                borderRadius: 2,
+                border: '1px dashed #E0E0E0',
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 1,
+                  color: '#6B7280',
+                  fontWeight: 500,
+                }}
+              >
+                No Creator Data Yet
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#9CA3AF',
+                  maxWidth: 400,
+                  mx: 'auto',
+                }}
+              >
+                Creator performance data will appear here once creators submit their posting links and content goes live.
+              </Typography>
+            </Box>
+          </Grid>
+        )}
+
         {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
           <Grid item xs={12}>
             <Alert severity="info">
@@ -1953,14 +1963,6 @@ const CampaignAnalytics = ({ campaign }) => {
           </Grid>
         )}
 
-        {postingSubmissions.length === 0 && (
-          <Grid item xs={12}>
-            <Alert severity="info">
-              No approved posting submissions with Instagram or TikTok links found for this
-              campaign.
-            </Alert>
-          </Grid>
-        )}
       </Grid>
 
       {/* Pagination Controls */}

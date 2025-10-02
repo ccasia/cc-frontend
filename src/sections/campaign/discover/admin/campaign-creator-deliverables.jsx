@@ -62,11 +62,18 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           username: c.user.username,
           hasCreator: !!c.user.creator
         } : null
-      }))
+      })),
+      fullCampaignData: {
+        id: campaign?.id,
+        name: campaign?.name,
+        origin: campaign?.origin,
+        shortlistedCount: campaign?.shortlisted?.length,
+        hasShortlisted: !!campaign?.shortlisted
+      }
     });
     
     return creators;
-  }, [campaign?.shortlisted]);
+  }, [campaign?.shortlisted, campaign?.id, campaign?.name, campaign?.origin]);
 
   // Sort creators alphabetically
   const sortedCreators = useMemo(() => {
@@ -142,35 +149,20 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     // First, filter out any creators without user data to prevent null reference errors
     filtered = filtered.filter((creator) => creator?.user);
 
-    // For V3 campaigns, show all shortlisted creators - admin should see everyone
-    // Only filter out creators that are completely inactive or have missing data
+    // For admin view, show all shortlisted creators by default
+    // Only apply minimal filtering for very specific cases
     filtered = filtered.filter((creator) => {
       const creatorStatus = creatorStatuses[creator.userId];
       
       // For V3 campaigns, show all shortlisted creators to admin
       if (isV3) {
-        // Only exclude creators that are completely inactive or have data issues
-        // Admin should see all creators including those with NOT_STARTED status
         return true; // Show all creators for admin in V3 campaigns
       }
       
-      // Check if this is a non-platform creator (creator without social media accounts)
-      const isNonPlatformCreator = !creator?.user?.creator?.instagram && !creator?.user?.creator?.tiktok;
-      
-      if (isNonPlatformCreator) {
-        // For non-platform creators, only show if they have been approved by client
-        return creatorStatus === 'APPROVED' || 
-               creatorStatus === 'CLIENT_APPROVED' || 
-               creatorStatus === 'IN_PROGRESS' ||
-               creatorStatus === 'CHANGES_REQUIRED' ||
-               creatorStatus === 'PENDING_REVIEW';
-      }
-      
-      // For V2 campaigns, show all creators except pure SENT_TO_CLIENT
-      // Also show creators who have any submission (including just agreement)
-      return creatorStatus !== 'SENT_TO_CLIENT' || 
-             creatorStatus === 'NOT_STARTED' ||
-             creatorStatus === 'AGREEMENT_APPROVED';
+      // For V2 campaigns, show all creators to admin
+      // Only exclude creators that are explicitly marked as SENT_TO_CLIENT and have no other activity
+      // This ensures admin can see all creators and their progress
+      return true; // Show all creators for admin in V2 campaigns
     });
 
     // Apply status filter
@@ -218,7 +210,10 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         userId: c.userId,
         name: c.user?.name,
         status: creatorStatuses[c.userId] || 'unknown'
-      }))
+      })),
+      campaignId: campaign?.id,
+      campaignOrigin: campaign?.origin,
+      shortlistedCount: campaign?.shortlisted?.length || 0
     });
 
     return result;

@@ -131,7 +131,14 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const myAgreement = agreements?.find((a) => a.userId === user?.id);
 
   // Use V3 agreementUrl if present, else fallback to admin logic
-  const agreementUrl = myAgreement?.agreementUrl || campaign?.agreement?.agreementUrl;
+  const originalAgreementUrl = myAgreement?.agreementUrl || campaign?.agreement?.agreementUrl;
+  
+  // Convert Google Storage URL to backend proxy URL to bypass CORS
+  const agreementUrl = originalAgreementUrl ? 
+    originalAgreementUrl.replace(
+      'https://storage.googleapis.com/cult-prod/',
+      `${window.location.origin}/api/agreement-template/`
+    ) : null;
 
   const agreement = campaign?.campaignTimeline?.find((elem) => elem?.name === 'Agreement');
 

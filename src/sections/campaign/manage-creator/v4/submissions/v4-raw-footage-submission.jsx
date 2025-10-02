@@ -589,7 +589,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         <Typography
           component="button"
           onClick={hasChangesRequired && !isReuploadMode ? handleReuploadMode : handleSubmit}
-          disabled={uploading || (memoizedSelectedFiles.length === 0 && !hasChangesRequired) || (!isCaptionEditable && !hasChangesRequired && !isReuploadMode)}
+          disabled={uploading || (memoizedSelectedFiles.length === 0 && !hasChangesRequired)}
           sx={{
             px: 2,
             py: 1,
@@ -597,9 +597,11 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
             border: '1px solid',
             borderBottom: '3px solid',
             borderRadius: 0.8,
-            bgcolor: hasChangesRequired ? '#1340FF' : (!isCaptionEditable && !hasChangesRequired ? '#BDBDBD' : '#3a3a3c'),
+            bgcolor: hasChangesRequired ? '#1340FF' : 
+                     (memoizedSelectedFiles.length === 0) ? '#BDBDBD' : '#3a3a3c',
             color: 'white',
-            borderColor: hasChangesRequired ? '#1340FF' : (!isCaptionEditable && !hasChangesRequired ? '#BDBDBD' : '#3a3a3c'),
+            borderColor: hasChangesRequired ? '#1340FF' : 
+                        (memoizedSelectedFiles.length === 0) ? '#BDBDBD' : '#3a3a3c',
             textTransform: 'none',
             fontSize: '0.75rem',
             minWidth: '80px',
@@ -608,15 +610,15 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: (uploading || (memoizedSelectedFiles.length === 0 && !hasChangesRequired) || (!isCaptionEditable && !hasChangesRequired)) ? 'not-allowed' : 'pointer',
-            '&:hover': (!uploading && ((memoizedSelectedFiles.length > 0) || hasChangesRequired) && isCaptionEditable) ? {
+            cursor: (uploading || (memoizedSelectedFiles.length === 0 && !hasChangesRequired)) ? 'not-allowed' : 'pointer',
+            '&:hover': (!uploading && (memoizedSelectedFiles.length > 0 || hasChangesRequired)) ? {
               bgcolor: '#1340FF',
               borderColor: '#1340FF',
             } : {},
             '&:disabled': {
               bgcolor: '#BDBDBD',
               borderColor: '#BDBDBD',
-              color: '#9E9E9E',
+              color: 'white',
               cursor: 'not-allowed',
             }
           }}
