@@ -62,7 +62,11 @@ const ClientDashboard = () => {
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [isCheckingCompany, setIsCheckingCompany] = useState(true);
   const [showProfileCompletion, setShowProfileCompletion] = useState(false);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+  // Load saved layout preference from localStorage, no default value
+  const [viewMode, setViewMode] = useState(() => {
+    const savedViewMode = localStorage.getItem('clientDashboardViewMode');
+    return savedViewMode || 'table'; // fallback to table if no preference saved
+  });
   const [anchorEl, setAnchorEl] = useState(null);
   const isChatopen = Boolean(anchorEl);
 
@@ -383,7 +387,11 @@ const ClientDashboard = () => {
       <Stack direction="row" spacing={1.5}>
         {/* View Mode Toggle */}
         <Box
-          onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
+          onClick={() => {
+            const newViewMode = viewMode === 'table' ? 'card' : 'table';
+            setViewMode(newViewMode);
+            localStorage.setItem('clientDashboardViewMode', newViewMode);
+          }}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -812,7 +820,7 @@ const ClientDashboard = () => {
                   }}
                 >
                   <Avatar
-                    src={campaign.brand?.logo || campaign.company?.logo || clientCompanyLogo || ''}
+                    src={campaign?.campaignBrief?.images?.[0] || campaign.brand?.logo || campaign.company?.logo || clientCompanyLogo || ''}
                     sx={{
                       width: { xs: 32, sm: 36 },
                       height: { xs: 32, sm: 36 },
@@ -1168,7 +1176,7 @@ const ClientDashboard = () => {
               {/* Campaign Content */}
               <Box sx={{ position: 'relative', pt: 1, px: 2, pb: 1.5 }}>
                 <Avatar
-                  src={campaign?.brand?.logo || campaign?.company?.logo}
+                  src={campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo || campaign?.company?.logo}
                   alt={campaign?.brand?.name || campaign?.company?.name}
                   sx={{
                     width: 40,
