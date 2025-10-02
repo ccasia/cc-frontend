@@ -146,6 +146,11 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
       return;
     }
 
+    if (!caption.trim()) {
+      enqueueSnackbar('Please enter a caption', { variant: 'error' });
+      return;
+    }
+
     // For reupload mode, check if there are meaningful changes
     if (isReuploadMode) {
       const newFiles = selectedFiles.filter(file => file instanceof File);
@@ -624,10 +629,10 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                       (isPostingLinkEditable && !selectedFiles.length) ? handleSubmitPostingLink : 
                       handleSubmit}
               disabled={uploading || 
-                       (!isPostingLinkEditable && selectedFiles.length === 0 && !hasChangesRequired && !isReuploadMode) || 
-                       (!isCaptionEditable && !hasChangesRequired && !isReuploadMode && !isPostingLinkEditable) ||
+                       (hasChangesRequired && !isReuploadMode && !isPostingLinkRejected) ? false :
                        (isPostingLinkEditable && !selectedFiles.length && !postingLink.trim()) ||
-                       (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length && !hasChangesRequired && !isReuploadMode)}
+                       (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length && !hasChangesRequired && !isReuploadMode) ||
+                       (!isPostingLinkEditable && (selectedFiles.length === 0 || !caption.trim()) && !hasChangesRequired && !isReuploadMode)}
               sx={{
                 px: 2,
                 py: 1,
@@ -635,9 +640,11 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                 border: '1px solid',
                 borderBottom: '3px solid',
                 borderRadius: 0.8,
-                bgcolor: hasChangesRequired ? '#1340FF' : (!isCaptionEditable && !hasChangesRequired ? '#BDBDBD' : '#3a3a3c'),
+                bgcolor: hasChangesRequired ? '#1340FF' : 
+                         (selectedFiles.length === 0 || !caption.trim()) ? '#BDBDBD' : '#3a3a3c',
                 color: 'white',
-                borderColor: hasChangesRequired ? '#1340FF' : (!isCaptionEditable && !hasChangesRequired ? '#BDBDBD' : '#3a3a3c'),
+                borderColor: hasChangesRequired ? '#1340FF' : 
+                            (selectedFiles.length === 0 || !caption.trim()) ? '#BDBDBD' : '#3a3a3c',
                 textTransform: 'none',
                 fontSize: '0.75rem',
                 minWidth: '80px',
@@ -646,15 +653,15 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: (uploading || (selectedFiles.length === 0 && !hasChangesRequired) || (!isCaptionEditable && !hasChangesRequired)) ? 'not-allowed' : 'pointer',
-                '&:hover': (!uploading && ((selectedFiles.length > 0) || hasChangesRequired) && isCaptionEditable) ? {
+                cursor: (uploading || (selectedFiles.length === 0 || !caption.trim()) && !hasChangesRequired) ? 'not-allowed' : 'pointer',
+                '&:hover': (!uploading && selectedFiles.length > 0 && caption.trim() && (isCaptionEditable || hasChangesRequired)) ? {
                   bgcolor: '#1340FF',
                   borderColor: '#1340FF',
                 } : {},
                 '&:disabled': {
                   bgcolor: '#BDBDBD',
                   borderColor: '#BDBDBD',
-                  color: '#9E9E9E',
+                  color: 'white',
                   cursor: 'not-allowed',
                 }
               }}

@@ -305,7 +305,19 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       const response = await axios.post(`/api/campaign/activateClientCampaign/${campaignId}`, formData);
       console.log('Activation response:', response.data);
       
-      enqueueSnackbar('Campaign activated successfully and assigned to CSM admins', { variant: 'success' });
+      // Get assigned admin names for success message
+      const assignedAdminNames = adminOptions
+        .filter(admin => adminManagers.includes(admin.userId))
+        .map(admin => admin.user?.name || admin.name)
+        .join(', ');
+      
+      const campaignName = campaignDetails?.name ? `"${campaignDetails.name}"` : 'Campaign';
+      
+      const successMessage = assignedAdminNames 
+        ? `🎉 ${campaignName} successfully activated and assigned to ${assignedAdminNames}! The campaign is now live and ready for creator submissions.`
+        : `🎉 ${campaignName} activated successfully and assigned to CSM admins! The campaign is now live and ready for creator submissions.`;
+      
+      enqueueSnackbar(successMessage, { variant: 'success' });
       onClose();
       
       // Trigger data revalidation
