@@ -47,16 +47,16 @@ const CampaignAnalytics = ({ campaign }) => {
       // Return default platforms for empty state display
       return ['Instagram', 'TikTok'];
     }
-    const platforms = [...new Set(postingSubmissions.map((sub) => sub.platform))];
-    return platforms.filter(Boolean);
+    const platforms = [...new Set(postingSubmissions.map((sub) => sub && sub.platform).filter(Boolean))];
+    return platforms.length > 0 ? platforms : ['Instagram', 'TikTok'];
   }, [postingSubmissions]);
 
   // Filter submissions based on selected platform
   const filteredSubmissions = useMemo(() => {
     if (selectedPlatform === 'ALL') {
-      return postingSubmissions;
+      return postingSubmissions.filter((sub) => sub && sub.platform);
     }
-    return postingSubmissions.filter((sub) => sub.platform === selectedPlatform);
+    return postingSubmissions.filter((sub) => sub && sub.platform === selectedPlatform);
   }, [postingSubmissions, selectedPlatform]);
 
   const paginationData = useMemo(() => {
@@ -79,8 +79,8 @@ const CampaignAnalytics = ({ campaign }) => {
   const platformCounts = useMemo(() => {
     const counts = { Instagram: 0, TikTok: 0 };
     postingSubmissions.forEach((sub) => {
-      if (sub.platform === 'Instagram') counts.Instagram++;
-      if (sub.platform === 'TikTok') counts.TikTok++;
+      if (sub && sub.platform === 'Instagram') counts.Instagram++;
+      if (sub && sub.platform === 'TikTok') counts.TikTok++;
     });
     return counts;
   }, [postingSubmissions]);
@@ -100,8 +100,12 @@ const CampaignAnalytics = ({ campaign }) => {
       return insightsData;
     }
     return insightsData.filter((data) => {
-      const submission = postingSubmissions.find((sub) => sub.id === data.submissionId);
-      return submission?.platform === selectedPlatform;
+      // Safety check: ensure data and submissionId exist
+      if (!data || !data.submissionId) {
+        return false;
+      }
+      const submission = postingSubmissions.find((sub) => sub && sub.id === data.submissionId);
+      return submission && submission.platform === selectedPlatform;
     });
   }, [insightsData, selectedPlatform, postingSubmissions]);
 
@@ -640,7 +644,7 @@ const CampaignAnalytics = ({ campaign }) => {
                 sx={{
                   width: 45,
                   height: 45,
-                  bgcolor: topEngagementCreator.platform === 'Instagram' ? '#E4405F' : '#000000',
+                  bgcolor: topEngagementCreator && topEngagementCreator.platform === 'Instagram' ? '#E4405F' : '#000000',
                   mr: 2,
                 }}
               >
@@ -958,7 +962,7 @@ const CampaignAnalytics = ({ campaign }) => {
                           : selectedPlatform === 'TikTok'
                             ? 'TikTok Posts'
                             : '')}
-                    {availablePlatforms.length < 2 && `${insightsData[0].platform} Posts`}
+                    {availablePlatforms.length < 2 && insightsData.length > 0 && `${insightsData[0].platform} Posts`}
                   </Typography>
                 </Box>
 
@@ -1056,7 +1060,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
             {/* Top Performer */}
             {(selectedPlatform !== 'ALL' ||
-              (availablePlatforms.length === 1 &&
+              (availablePlatforms.length === 1 && insightsData.length > 0 &&
                 (insightsData[0].platform === 'Instagram' ||
                   insightsData[0].platform === 'TikTok'))) && (
               <Box
@@ -1291,7 +1295,7 @@ const CampaignAnalytics = ({ campaign }) => {
                               : selectedPlatform === 'TikTok'
                                 ? 'TikTok Posts'
                                 : '')}
-                        {availablePlatforms.length < 2 && `${insightsData[0].platform} Posts`}
+                        {availablePlatforms.length < 2 && insightsData.length > 0 && `${insightsData[0].platform} Posts`}
                       </Typography>
                     </Box>
                   </Grid>
@@ -1382,7 +1386,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
           {/* Right: Top Engagement Card */}
           {(selectedPlatform !== 'ALL' ||
-            (availablePlatforms.length === 1 &&
+            (availablePlatforms.length === 1 && insightsData.length > 0 &&
               (insightsData[0].platform === 'Instagram' ||
                 insightsData[0].platform === 'TikTok'))) && (
             <Grid
@@ -1442,7 +1446,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   sx={{
                     width: 48,
                     height: 48,
-                    bgcolor: submission.platform === 'Instagram' ? '#E4405F' : '#000000',
+                    bgcolor: submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
                   }}
                 >
                   {loadingCreator ? (
@@ -1620,7 +1624,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   sx={{
                     width: 40,
                     height: 40,
-                    bgcolor: submission.platform === 'Instagram' ? '#E4405F' : '#000000',
+                    bgcolor: submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
                     mr: 2,
                   }}
                 >
