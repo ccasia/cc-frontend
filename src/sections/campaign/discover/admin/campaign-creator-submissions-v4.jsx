@@ -107,6 +107,7 @@ function CreatorAccordion({ creator, campaign }) {
         case 'PENDING_REVIEW':
           return getStatusColor('IN_PROGRESS');
         case 'CHANGES_REQUIRED':
+        case 'CLIENT_FEEDBACK':
         case 'REJECTED':
           return getStatusColor('IN_PROGRESS');
         default:
@@ -398,7 +399,7 @@ function CreatorAccordion({ creator, campaign }) {
           pl={0.8}
           pr={0.5}
         >
-          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={1}>
+          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={0.3}>
             <Tooltip 
               title="Raw Footage" 
               placement="top"
