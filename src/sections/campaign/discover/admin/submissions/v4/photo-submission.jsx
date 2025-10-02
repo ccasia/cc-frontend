@@ -297,6 +297,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                           <PostingLinkSection
                             submission={submission}
                             onUpdate={onUpdate}
+                            onViewLogs={() => setShowFeedbackLogs(true)}
                           />
                         ) : (
                           <FeedbackSection

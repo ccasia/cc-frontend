@@ -370,6 +370,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                           <PostingLinkSection
                             submission={submission}
                             onUpdate={onUpdate}
+                            onViewLogs={() => setShowFeedbackLogs(true)}
                           />
                         ) : (
                           <FeedbackSection
