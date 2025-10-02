@@ -79,10 +79,31 @@ export default function FeedbackDisplay({ feedback, submission, isClient, onView
           CS Comments
         </Typography>
       )}
-      {(!isClient && hasContent && submission.status === 'CLIENT_APPROVED') && (
-        <Typography variant='caption' fontWeight="bold" color={'#636366'} mb={0.5}>
-          Client Feedback
-        </Typography>
+      {(!isClient && submission.status === 'CLIENT_APPROVED') && (
+        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: hasContent ? 'space-between' : 'flex-end' }}>
+          {hasContent && 
+            <Typography variant='caption' fontWeight="bold" color={'#636366'}>
+              Client Feedback
+            </Typography>
+          }
+          <Button
+            size="small"
+            variant="text"
+            onClick={onViewLogs}
+            sx={{
+              fontSize: 12,
+              color: '#919191',
+              p: 0,
+              minWidth: 'auto',
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: 'transparent',
+              },
+            }}
+          >
+            view logs
+          </Button>
+        </Box>
       )}
       {hasContent && submission.status !== 'CLIENT_FEEDBACK' && (
         <Typography fontSize={12} sx={{ mb: 0.5 }}>
