@@ -4,13 +4,10 @@ import { Box, IconButton, Typography, Stack, Chip } from '@mui/material';
 import { FEEDBACK_CHIP_STYLES } from './submission-styles';
 import Iconify from 'src/components/iconify';
 
-export default function FeedbackLogs({ submission, onClose, isClient }) {
+export default function FeedbackLogs({ submission, onClose }) {
   const feedbackLogs = submission.feedback || [];
   const [activeTab, setActiveTab] = useState(0);
 
-  console.log(feedbackLogs[0].admin.role)
-
-  // Categorize feedback logs
   const captionEdits = submission.caption;
 
   const commentsAndFeedback = feedbackLogs.filter(log => 
@@ -31,7 +28,6 @@ export default function FeedbackLogs({ submission, onClose, isClient }) {
       minute: '2-digit',
       hour12: true
     });
-    // Format to match: 01/09/25, 1:16PM
     return formatted.replace(',', '').replace(' ', '');
   };
 
@@ -82,7 +78,6 @@ export default function FeedbackLogs({ submission, onClose, isClient }) {
         overflow: 'hidden',
       }}
     >
-      {/* Header with Pills */}
       <Box
         sx={{
           display: 'flex',
