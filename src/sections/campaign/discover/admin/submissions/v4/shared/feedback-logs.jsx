@@ -4,11 +4,11 @@ import { Box, IconButton, Typography, Stack, Chip } from '@mui/material';
 import { FEEDBACK_CHIP_STYLES } from './submission-styles';
 import Iconify from 'src/components/iconify';
 
-export default function FeedbackLogs({ submission, onClose }) {
+export default function FeedbackLogs({ submission, onClose, isClient }) {
   const feedbackLogs = submission.feedback || [];
   const [activeTab, setActiveTab] = useState(0);
 
-  console.log(feedbackLogs)
+  console.log(feedbackLogs[0].admin.role)
 
   // Categorize feedback logs
   const captionEdits = submission.caption;
@@ -35,26 +35,34 @@ export default function FeedbackLogs({ submission, onClose }) {
     return formatted.replace(',', '').replace(' ', '');
   };
 
-  const getFeedbackLabel = (type, sentToCreator = false) => {
+  const getFeedbackLabel = (type, sentToCreator = false, adminRole) => {
+    const isClientFeedback = adminRole === 'client';
+
     switch (type) {
-      case 'COMMENT':
-        return 'CS Comments';
       case 'APPROVAL':
         return 'Approved';
-      case (!sentToCreator && 'REQUEST'):
-        return 'CS Feedback';
       case 'REQUEST':
-        return 'Client Feedback';
+        if (sentToCreator) {
+          return 'CS Feedback';
+        }
+        if (isClientFeedback) {
+          return 'Client Feedback';
+        }
+        return 'CS Feedback'
+      case 'COMMENT':
+        return isClientFeedback ? 'Client Feedback' : 'CS Comments';
       default:
         return type;
     }
   };
 
-  const getActionLabel = (type, sentToCreator = false) => {
+  const getActionLabel = (type, sentToCreator = false, adminRole) => {
+    const isClientFeedback = adminRole === 'client';
+
     switch (type) {
       case 'COMMENT':
-        return 'Sent to Client';
-      case (!sentToCreator && 'REQUEST'):
+        return isClientFeedback ? 'Sent to Admin' : 'Sent to Client';
+      case (sentToCreator && 'REQUEST'):
         return 'Sent to Creator';
       case 'REQUEST':
         return 'Sent to Admin';
@@ -201,10 +209,10 @@ export default function FeedbackLogs({ submission, onClose }) {
                     }}
                   >
                     <Typography fontSize={12} fontWeight="bold" color="#636366">
-                      {getFeedbackLabel(log.type, log.sentToCreator)}
+                      {getFeedbackLabel(log.type, log.sentToCreator, log.admin.role)}
                     </Typography>
                     <Typography fontSize={12} fontWeight="bold" color="#636366">
-                      {getActionLabel(log.type, log.sentToCreator)} {formatDate(log.createdAt)}
+                      {getActionLabel(log.type, log.sentToCreator, log.admin.role)} {formatDate(log.createdAt)}
                     </Typography>
                   </Box>
 

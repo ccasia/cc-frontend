@@ -240,7 +240,7 @@ export default function FeedbackActions({
         }
 
         {visibility.showReasonsDropdown && (
-          <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10, marginTop: 8 }} hiddenLabel size='small'>
+          <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10, marginTop: 5, marginBottom: 1 }} hiddenLabel size='small'>
             <Select
               multiple
               value={reasons}
