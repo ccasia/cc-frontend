@@ -6,7 +6,7 @@ import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { BUTTON_STYLES } from './submission-styles';
 
-export default function PostingLinkSection({ submission, onUpdate }) {
+export default function PostingLinkSection({ submission, onUpdate, onViewLogs }) {
   const { user } = useAuthContext();
   const [postingLink, setPostingLink] = useState(submission.content || '');
   const [loading, setLoading] = useState(false);
@@ -84,13 +84,32 @@ export default function PostingLinkSection({ submission, onUpdate }) {
     <Box sx={{ flex: '0 0 auto' }}>
       <Box>
         {isPosted && (
-          <Box display="flex" sx={{ mb: 1 }}>
-            <Typography variant="caption" fontWeight="600" color="text.primary" sx={{ mr: 0.5 }}>
-              Date approved:
-            </Typography>
-            <Typography variant="caption" color="#636366">
-              {new Date(submission.updatedAt).toLocaleDateString('en-GB')}
-            </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Box display="flex">
+              <Typography variant="caption" fontWeight="600" color="text.primary" sx={{ mr: 0.5 }}>
+                Date approved:
+              </Typography>
+              <Typography variant="caption" color="#636366">
+                {new Date(submission.updatedAt).toLocaleDateString('en-GB')}
+              </Typography>
+            </Box>
+            <Button
+              size="small"
+              variant="text"
+              onClick={onViewLogs}
+              sx={{
+                fontSize: 12,
+                color: '#919191',
+                p: 0,
+                minWidth: 'auto',
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                },
+              }}
+            >
+              view logs
+            </Button>
           </Box>
         )}
 
@@ -193,9 +212,28 @@ export default function PostingLinkSection({ submission, onUpdate }) {
 
         {!submission.content && (
           <Box display={'flex'} flexDirection={'column'}>
-            <Typography variant="caption" fontWeight="bold" color="#636366">
-              Posting Link
-            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="caption" fontWeight="bold" color="#636366">
+                Posting Link
+              </Typography>
+              <Button
+                size="small"
+                variant="text"
+                onClick={onViewLogs}
+                sx={{
+                  fontSize: 12,
+                  color: '#919191',
+                  p: 0,
+                  minWidth: 'auto',
+                  textTransform: 'none',
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                  },
+                }}
+              >
+                view logs
+              </Button>
+            </Box>
             <TextField
               fullWidth
               size="medium"
