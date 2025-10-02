@@ -41,11 +41,15 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
   // Check posting link status
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
   const isPosted = submission.status === 'POSTED';
-  const needsPostingLink = isApproved && !submission.content;
+  
+  // Check if posting links are required for this campaign type
+  const requiresPostingLink = (campaign?.campaignType || submission.campaign?.campaignType) !== 'ugc';
+  
+  const needsPostingLink = isApproved && !submission.content && requiresPostingLink;
   const hasPostingLink = Boolean(submission.content);
   // Check if posting link was rejected (status is REJECTED and content was cleared, but video exists)
   const isPostingLinkRejected = submission.status === 'REJECTED' && !submission.content && submission.video?.length > 0;
-  const isPostingLinkEditable = needsPostingLink || isPostingLinkRejected;
+  const isPostingLinkEditable = (needsPostingLink || isPostingLinkRejected) && requiresPostingLink;
   
   // Show submitted video only if not in reupload mode - memoized to prevent blinking
   const videoToShow = useMemo(() => {
@@ -138,6 +142,11 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
   const handleSubmit = async () => {
     if (selectedFiles.length === 0) {
       enqueueSnackbar('Please select at least one video file', { variant: 'error' });
+      return;
+    }
+
+    if (!caption.trim()) {
+      enqueueSnackbar('Please enter a caption', { variant: 'error' });
       return;
     }
 
@@ -326,7 +335,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
             )}
 
             {/* Posting Link Field - Simple implementation */}
-            {(needsPostingLink || hasPostingLink || isPostingLinkRejected) && (
+            {requiresPostingLink && (needsPostingLink || hasPostingLink || isPostingLinkRejected) && (
               <>
                 <Typography variant="body2" sx={{
                   mt: 2,
@@ -552,10 +561,10 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
             component="button"
                 onClick={isPostingLinkEditable && !selectedFiles.length ? handleSubmitPostingLink : handleSubmit}
             disabled={uploading || 
-              (!isPostingLinkEditable && selectedFiles.length === 0) || 
               (hasSubmitted && !isReuploadMode) ||
               (isPostingLinkEditable && !selectedFiles.length && !postingLink.trim()) ||
-              (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length)}
+              (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length) ||
+              (!isPostingLinkEditable && (selectedFiles.length === 0 || !caption.trim()))}
             sx={{
               px: 2,
               py: 0.75,
@@ -563,15 +572,17 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
               border: '1px solid',
               borderBottom: '3px solid',
               borderRadius: 0.8,
-              bgcolor: (hasSubmitted && !isReuploadMode) ? '#BDBDBD' : '#3a3a3c',
+              bgcolor: (hasSubmitted && !isReuploadMode) ? '#BDBDBD' : 
+                       (selectedFiles.length === 0 || !caption.trim()) ? '#BDBDBD' : '#3a3a3c',
               whiteSpace: 'nowrap',
               color: 'white',
-              borderColor: (hasSubmitted && !isReuploadMode) ? '#BDBDBD' : '#3a3a3c',
+              borderColor: (hasSubmitted && !isReuploadMode) ? '#BDBDBD' : 
+                          (selectedFiles.length === 0 || !caption.trim()) ? '#BDBDBD' : '#3a3a3c',
               fontSize: '0.75rem',
-              cursor: (uploading || selectedFiles.length === 0 || (hasSubmitted && !isReuploadMode)) ? 'not-allowed' : 'pointer',
+              cursor: (uploading || selectedFiles.length === 0 || !caption.trim() || (hasSubmitted && !isReuploadMode)) ? 'not-allowed' : 'pointer',
               textTransform: 'none',
               outline: 'none',
-              '&:hover': (!uploading && selectedFiles.length > 0 && !(hasSubmitted && !isReuploadMode)) ? {
+              '&:hover': (!uploading && selectedFiles.length > 0 && caption.trim() && !(hasSubmitted && !isReuploadMode)) ? {
                 bgcolor: '#1340FF',
                 borderColor: '#1340FF',
                 color: 'white',

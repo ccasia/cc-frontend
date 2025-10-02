@@ -41,18 +41,22 @@ const CampaignAnalytics = ({ campaign }) => {
   // Extract posting submissions with URLs directly from campaign prop
   const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
 
-  // Get available platforms in the campaign
+  // Get available platforms in the campaign or provide defaults for empty state
   const availablePlatforms = useMemo(() => {
-    const platforms = [...new Set(postingSubmissions.map((sub) => sub.platform))];
-    return platforms.filter(Boolean);
+    if (postingSubmissions.length === 0) {
+      // Return default platforms for empty state display
+      return ['Instagram', 'TikTok'];
+    }
+    const platforms = [...new Set(postingSubmissions.map((sub) => sub && sub.platform).filter(Boolean))];
+    return platforms.length > 0 ? platforms : ['Instagram', 'TikTok'];
   }, [postingSubmissions]);
 
   // Filter submissions based on selected platform
   const filteredSubmissions = useMemo(() => {
     if (selectedPlatform === 'ALL') {
-      return postingSubmissions;
+      return postingSubmissions.filter((sub) => sub && sub.platform);
     }
-    return postingSubmissions.filter((sub) => sub.platform === selectedPlatform);
+    return postingSubmissions.filter((sub) => sub && sub.platform === selectedPlatform);
   }, [postingSubmissions, selectedPlatform]);
 
   const paginationData = useMemo(() => {
@@ -75,8 +79,8 @@ const CampaignAnalytics = ({ campaign }) => {
   const platformCounts = useMemo(() => {
     const counts = { Instagram: 0, TikTok: 0 };
     postingSubmissions.forEach((sub) => {
-      if (sub.platform === 'Instagram') counts.Instagram++;
-      if (sub.platform === 'TikTok') counts.TikTok++;
+      if (sub && sub.platform === 'Instagram') counts.Instagram++;
+      if (sub && sub.platform === 'TikTok') counts.TikTok++;
     });
     return counts;
   }, [postingSubmissions]);
@@ -85,7 +89,6 @@ const CampaignAnalytics = ({ campaign }) => {
   const {
     data: insightsData,
     isLoading: loadingInsights,
-    failedUrls,
     error: insightsError,
     loadingProgress,
   } = useSocialInsights(postingSubmissions, campaignId);
@@ -96,16 +99,32 @@ const CampaignAnalytics = ({ campaign }) => {
       return insightsData;
     }
     return insightsData.filter((data) => {
-      const submission = postingSubmissions.find((sub) => sub.id === data.submissionId);
-      return submission?.platform === selectedPlatform;
+      // Safety check: ensure data and submissionId exist
+      if (!data || !data.submissionId) {
+        return false;
+      }
+      const submission = postingSubmissions.find((sub) => sub && sub.id === data.submissionId);
+      return submission && submission.platform === selectedPlatform;
     });
   }, [insightsData, selectedPlatform, postingSubmissions]);
 
-  // Calculate summary statistics based on filtered data
-  const summaryStats = useMemo(
-    () => calculateSummaryStats(filteredInsightsData),
-    [filteredInsightsData]
-  );
+  // Calculate summary statistics based on filtered data or provide empty state
+  const summaryStats = useMemo(() => {
+    if (filteredInsightsData.length === 0) {
+      // Return placeholder data when no insights are available
+      return {
+        totalViews: 0,
+        totalLikes: 0,
+        totalComments: 0,
+        totalShares: 0,
+        totalSaved: 0,
+        totalReach: 0,
+        totalPosts: 0,
+        avgEngagementRate: 0,
+      };
+    }
+    return calculateSummaryStats(filteredInsightsData);
+  }, [filteredInsightsData]);
 
   const handleNextPage = () => {
     setCurrentPage((prev) => prev + 1);
@@ -121,8 +140,6 @@ const CampaignAnalytics = ({ campaign }) => {
     setCurrentPage(1);
   };
 
-  console.log('Summary stats: ', summaryStats);
-  console.log('Insights data: ', insightsData);
 
   // No campaign
   if (!campaign) {
@@ -626,7 +643,7 @@ const CampaignAnalytics = ({ campaign }) => {
                 sx={{
                   width: 45,
                   height: 45,
-                  bgcolor: topEngagementCreator.platform === 'Instagram' ? '#E4405F' : '#000000',
+                  bgcolor: topEngagementCreator && topEngagementCreator.platform === 'Instagram' ? '#E4405F' : '#000000',
                   mr: 2,
                 }}
               >
@@ -944,7 +961,7 @@ const CampaignAnalytics = ({ campaign }) => {
                           : selectedPlatform === 'TikTok'
                             ? 'TikTok Posts'
                             : '')}
-                    {availablePlatforms.length < 2 && `${insightsData[0].platform} Posts`}
+                    {availablePlatforms.length < 2 && insightsData.length > 0 && `${insightsData[0].platform} Posts`}
                   </Typography>
                 </Box>
 
@@ -1042,7 +1059,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
             {/* Top Performer */}
             {(selectedPlatform !== 'ALL' ||
-              (availablePlatforms.length === 1 &&
+              (availablePlatforms.length === 1 && insightsData.length > 0 &&
                 (insightsData[0].platform === 'Instagram' ||
                   insightsData[0].platform === 'TikTok'))) && (
               <Box
@@ -1277,7 +1294,7 @@ const CampaignAnalytics = ({ campaign }) => {
                               : selectedPlatform === 'TikTok'
                                 ? 'TikTok Posts'
                                 : '')}
-                        {availablePlatforms.length < 2 && `${insightsData[0].platform} Posts`}
+                        {availablePlatforms.length < 2 && insightsData.length > 0 && `${insightsData[0].platform} Posts`}
                       </Typography>
                     </Box>
                   </Grid>
@@ -1368,7 +1385,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
           {/* Right: Top Engagement Card */}
           {(selectedPlatform !== 'ALL' ||
-            (availablePlatforms.length === 1 &&
+            (availablePlatforms.length === 1 && insightsData.length > 0 &&
               (insightsData[0].platform === 'Instagram' ||
                 insightsData[0].platform === 'TikTok'))) && (
             <Grid
@@ -1415,7 +1432,6 @@ const CampaignAnalytics = ({ campaign }) => {
 
   const UserPerformanceCard = ({ engagementRate, submission, insightData, loadingInsights }) => {
     const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
-    console.log('Creator: ', creator);
 
     return (
       <Grid item xs={12}>
@@ -1429,7 +1445,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   sx={{
                     width: 48,
                     height: 48,
-                    bgcolor: submission.platform === 'Instagram' ? '#E4405F' : '#000000',
+                    bgcolor: submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
                   }}
                 >
                   {loadingCreator ? (
@@ -1607,7 +1623,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   sx={{
                     width: 40,
                     height: 40,
-                    bgcolor: submission.platform === 'Instagram' ? '#E4405F' : '#000000',
+                    bgcolor: submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
                     mr: 2,
                   }}
                 >
@@ -1795,45 +1811,6 @@ const CampaignAnalytics = ({ campaign }) => {
         Performance Summary
       </Typography>
 
-      {/* Debug Information - only in development */}
-      {/* {process.env.NODE_ENV === 'development' && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-            <Box>
-              <Typography variant="subtitle2">Debug Info:</Typography>
-              <Typography variant="body2">
-                Campaign ID: {campaignId}<br />
-                Campaign Name: {campaign?.name}<br />
-                Total Submissions: {submissions?.length || 0}<br />
-                Posting Submissions: {postingSubmissions.length}<br />
-                Insights Loaded: {insightsData.length}<br />
-                Loading Progress: {loadingProgress?.loaded || 0}/{loadingProgress?.total || 0}
-              </Typography>
-            </Box>
-            <Stack direction="row" spacing={1}>
-              <Button 
-                size="small" 
-                variant="outlined" 
-                onClick={() => {
-                  clearCache();
-                  window.location.reload();
-                }}
-                sx={{ fontSize: '0.75rem', py: 0.5 }}
-              >
-                Clear Cache & Reload
-              </Button>
-              <Button 
-                size="small" 
-                variant="outlined" 
-                onClick={() => CacheMonitor.getStats()}
-                sx={{ fontSize: '0.75rem', py: 0.5 }}
-              >
-                Cache Stats
-              </Button>
-            </Stack>
-          </Stack>
-        </Alert>
-      )} */}
 
       {/* Loading state for insights */}
       {loadingInsights && (
@@ -1884,28 +1861,12 @@ const CampaignAnalytics = ({ campaign }) => {
         </Alert>
       )}
 
-      {/* Failed URLs Alert */}
-      {failedUrls.length > 0 && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Unable to fetch analytics for {failedUrls.length} post(s):
-          </Typography>
-          {failedUrls.map((failed, index) => (
-            <Typography key={index} variant="body2" sx={{ ml: 1 }}>
-              • {failed.user?.name || 'Unknown'} ({failed.platform}): {failed.reason}
-              {failed.requiresReconnection && (
-                <Chip label="Reconnection Required" size="small" color="warning" sx={{ ml: 1 }} />
-              )}
-            </Typography>
-          ))}
-        </Alert>
-      )}
 
       {/* Core Metrics Section */}
       <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
 
       {/* Platform Overview and Additional Metrics Layout */}
-      {availablePlatforms.length > 0 && summaryStats && (
+      {availablePlatforms.length > 0 && (
         <PlatformOverviewLayout
           postCount={filteredSubmissions.length}
           insightsData={filteredInsightsData}
@@ -1945,6 +1906,42 @@ const CampaignAnalytics = ({ campaign }) => {
           );
         })}
 
+        {postingSubmissions.length === 0 && (
+          <Grid item xs={12}>
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: 6,
+                px: 3,
+                bgcolor: '#F8F9FA',
+                borderRadius: 2,
+                border: '1px dashed #E0E0E0',
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 1,
+                  color: '#6B7280',
+                  fontWeight: 500,
+                }}
+              >
+                No Creator Data Yet
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#9CA3AF',
+                  maxWidth: 400,
+                  mx: 'auto',
+                }}
+              >
+                Creator performance data will appear here once creators submit their posting links and content goes live.
+              </Typography>
+            </Box>
+          </Grid>
+        )}
+
         {filteredSubmissions.length === 0 && postingSubmissions.length > 0 && (
           <Grid item xs={12}>
             <Alert severity="info">
@@ -1953,14 +1950,6 @@ const CampaignAnalytics = ({ campaign }) => {
           </Grid>
         )}
 
-        {postingSubmissions.length === 0 && (
-          <Grid item xs={12}>
-            <Alert severity="info">
-              No approved posting submissions with Instagram or TikTok links found for this
-              campaign.
-            </Alert>
-          </Grid>
-        )}
       </Grid>
 
       {/* Pagination Controls */}
