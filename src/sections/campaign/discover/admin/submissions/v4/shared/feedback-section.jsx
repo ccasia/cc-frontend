@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { Box, Stack } from '@mui/material';
 import FeedbackDisplay from './feedback-display';
 
-export default function FeedbackSection({ submission, isVisible, isClient }) {
+export default function FeedbackSection({ submission, isVisible, isClient, onViewLogs }) {
   if (!isVisible || !submission.feedback || submission.feedback.length === 0) {
     return null;
   }
@@ -25,6 +25,7 @@ export default function FeedbackSection({ submission, isVisible, isClient }) {
     <Box sx={{ flex: 1, overflow: 'auto' }}>
       <Stack spacing={1}>
         <FeedbackDisplay
+          onViewLogs={onViewLogs}
           submission={submission}
           feedback={latestFeedback}
           showContent={showContent}

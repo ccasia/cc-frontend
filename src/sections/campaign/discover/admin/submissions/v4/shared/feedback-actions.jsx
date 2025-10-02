@@ -19,7 +19,8 @@ export default function FeedbackActions({
   handleApprove,
   handleRequestChanges,
   campaign,
-  hasPostingLink = false
+  hasPostingLink = false,
+  onViewLogs
 }) {
   if ((submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || hasPostingLink) && campaign?.campaignType === 'normal') {
     return null;
@@ -37,7 +38,7 @@ export default function FeedbackActions({
 
   return (
     <Box sx={{ flex: '0 0 auto' }}>
-      <Stack spacing={1}>
+      <Stack>
         <Stack direction="row" spacing={1} width="100%" justifyContent="flex-end">
           {visibility.showRequestChangeButton && (
             <Button
@@ -216,8 +217,30 @@ export default function FeedbackActions({
           )}
         </Stack>
 
+        {!isClient && submission.status !== 'CLIENT_FEEDBACK' &&
+          <Box display={'flex'} justifyContent={'flex-end'}>
+            <Button
+              size="small"
+              variant="text"
+              onClick={onViewLogs}
+              sx={{
+                fontSize: 12,
+                color: '#919191',
+                p:0,
+                minWidth: 'auto',
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                },
+              }}
+            >
+              view logs
+            </Button>
+          </Box>
+        }
+
         {visibility.showReasonsDropdown && (
-          <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10 }} hiddenLabel size='small'>
+          <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10, marginTop: 8 }} hiddenLabel size='small'>
             <Select
               multiple
               value={reasons}
@@ -263,10 +286,31 @@ export default function FeedbackActions({
           }
 
           return (
-            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 0.5 }}>
-              <Typography variant='caption' fontWeight="bold" color={'#636366'}>
-                {!isClient && latestRelevantFeedback.type === 'REQUEST' && latestRelevantFeedback.admin?.role === 'client' && 'Client Feedback'}
-              </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 1, mt: 1 }}>
+              {!isClient && latestRelevantFeedback.type === 'REQUEST' && latestRelevantFeedback.admin?.role === 'client' &&
+                <>
+                  <Typography variant='caption' fontWeight="bold" color={'#636366'}>
+                    Client Feedback
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={onViewLogs}
+                    sx={{
+                      fontSize: 12,
+                      color: '#919191',
+                      p: 0,
+                      minWidth: 'auto',
+                      textTransform: 'none',
+                      '&:hover': {
+                        backgroundColor: 'transparent',
+                      },
+                    }}
+                  >
+                    view logs
+                  </Button>
+                </>
+              }
             </Box>
           );
         })()}
@@ -306,4 +350,5 @@ FeedbackActions.propTypes = {
   handleApprove: PropTypes.func.isRequired,
   handleRequestChanges: PropTypes.func.isRequired,
   hasPostingLink: PropTypes.bool,
+  onViewLogs: PropTypes.func,
 };
