@@ -1,9 +1,10 @@
 import useSWR, { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Page, pdfjs, Document } from 'react-pdf';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 import { 
   Box, 
@@ -27,11 +28,13 @@ import {
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
+import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
 
 // Configure PDF.js worker
 try {
@@ -64,7 +67,7 @@ import V4VideoSubmission from './submissions/v4-video-submission';
 import V4PhotoSubmission from './submissions/v4-photo-submission';
 import V4RawFootageSubmission from './submissions/v4-raw-footage-submission';
 
-// Enhanced Agreement Submission Component with PDF Display
+// Enhanced Agreement Submission Component with PDF Display and Signing
 const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -73,10 +76,21 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState('');
   
+  // New signing functionality
+  const editor = useBoolean();
+  const [annotations, setAnnotations] = useState([]);
+  const [signURL, setSignURL] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
-  // Get agreement URL from campaign
-  const agreementUrl = campaign?.agreement?.agreementUrl;
+  // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
+  const originalAgreementUrl = campaign?.agreement?.agreementUrl;
+  const agreementUrl = originalAgreementUrl ? 
+    originalAgreementUrl.replace(
+      'https://storage.googleapis.com/cult-prod/',
+      `${window.location.origin}/api/agreement-template/`
+    ) : null;
   
   // Check if agreement has been submitted (not just pending)
   const isAgreementSubmitted = agreementSubmission?.status === 'PENDING_REVIEW' || 
@@ -184,6 +198,83 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
     }
   });
 
+  // V4 Agreement Signing Functions
+  const handleAgreementSubmit = async (signedPdfFile) => {
+    setUploading(true);
+    
+    const formData = new FormData();
+    formData.append('agreementForm', signedPdfFile);
+    formData.append(
+      'data',
+      JSON.stringify({
+        campaignId: campaign.id,
+        submissionId: agreementSubmission?.id || null,
+      })
+    );
+
+    try {
+      await fetch(endpoints.submission.creator.agreement, {
+        method: 'POST',
+        body: formData,
+      });
+
+      enqueueSnackbar('Agreement signed and submitted successfully!', { variant: 'success' });
+      onUpdate();
+    } catch (error) {
+      console.error('Agreement submission failed:', error);
+      enqueueSnackbar('Failed to submit signed agreement', { variant: 'error' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleGenerateAndSubmitPdf = async () => {
+    if (!signURL || annotations.length === 0) {
+      enqueueSnackbar('Please add your signature to the document before saving.', {
+        variant: 'warning',
+      });
+      return;
+    }
+
+    setLoading(true);
+    editor.onFalse();
+
+    try {
+      const existingPdfBytes = await fetch(agreementUrl).then((res) => res.arrayBuffer());
+      const signatureImageBytes = await fetch(signURL).then((res) => res.arrayBuffer());
+
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
+
+      for (const annotation of annotations) {
+        const page = pdfDoc.getPage(annotation.page - 1);
+        const { width, height } = page.getSize();
+        
+        page.drawImage(signatureImage, {
+          x: annotation.x,
+          y: height - annotation.y - annotation.height,
+          width: annotation.width,
+          height: annotation.height,
+        });
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const signedPdfFile = new File([pdfBlob], 'signed-agreement.pdf', {
+        type: 'application/pdf',
+      });
+
+      await handleAgreementSubmit(signedPdfFile);
+    } catch (err) {
+      console.error('Failed to generate signed PDF', err);
+      enqueueSnackbar('An error occurred while generating the signed document.', {
+        variant: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
@@ -247,7 +338,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             Before starting the campaign, you must sign the standard agreement submission procedure!
           </Typography>
           <Typography variant="body1" sx={{ color: '#221f20'}}>
-            Download the agreement PDF from the link below, and then upload it back here to proceed to the next step.
+            Review the agreement PDF below and click "Sign Agreement" to digitally sign and submit it.
           </Typography>
 
           {/* Download Agreement Button */}
@@ -279,13 +370,13 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           )}
         </Stack>
 
-        {/* Upload Button - Bottom Right */}
+        {/* Sign Agreement Button - Bottom Right */}
         <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             variant="contained"
-            onClick={() => setOpenUploadModal(true)}
+            onClick={editor.onTrue}
             disabled={isAgreementSubmitted || !agreementUrl}
-            startIcon={<Iconify icon="material-symbols:add" width={24} />}
+            startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
             sx={{
               bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
               color: 'white',
@@ -304,126 +395,37 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
               },
             }}
           >
-            {isAgreementSubmitted ? 'Submitted' : 'Upload'}
+            {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement'}
           </Button>
         </Box>
       </Box>
     </Box>
 
-      {/* Upload Modal */}
-      <Dialog
-        open={openUploadModal}
-        fullWidth
-        maxWidth="md"
-        sx={{
-          '& .MuiDialog-paper': {
-            width: { xs: 'calc(100% - 32px)', sm: '100%' },
-            m: { xs: 2, sm: 32 },
-          },
-        }}
-      >
-        <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
-          <Stack direction="row" alignItems="center" gap={2}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.8rem', sm: '2.4rem' },
-                fontWeight: 550,
-              }}
-            >
-              Upload Signed Agreement
-            </Typography>
-            <IconButton
-              onClick={() => setOpenUploadModal(false)}
-              sx={{ ml: 'auto' }}
-            >
-              <Iconify icon="hugeicons:cancel-01" />
-            </IconButton>
-          </Stack>
+      {/* Sign Agreement Dialog */}
+      <Dialog open={editor.value} onClose={editor.onFalse} fullWidth maxWidth="md">
+        <DialogTitle sx={{ p: 2 }}>
+          <Typography variant="h6">Sign Your Agreement</Typography>
         </DialogTitle>
-
-        <DialogContent sx={{ bgcolor: '#f4f4f4' }}>
-          <FormProvider methods={methods} onSubmit={onSubmit}>
-            {agreementForm ? (
-              <Box sx={{ mt: 0.5 }}>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  spacing={2}
-                  sx={{
-                    p: 2,
-                    border: '1px solid',
-                    borderColor: '#e7e7e7',
-                    borderRadius: 1.2,
-                    bgcolor: '#ffffff',
-                    flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                  }}
-                >
-                  <AvatarIcon
-                    icon="ph:file-light"
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      bgcolor: '#f5f5f5',
-                      color: '#8e8e93',
-                      borderRadius: 1.2,
-                      '& svg': { width: 24, height: 24 },
-                    }}
-                  />
-
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {agreementForm.name}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      {uploadProgress < 100
-                        ? `Uploading ${uploadProgress}%`
-                        : formatFileSize(agreementForm.size)}
-                    </Typography>
-                  </Box>
-
-                  <Stack direction="row" spacing={1}>
-                    {uploadProgress < 100 ? (
-                      <CircularProgress size={30} />
-                    ) : (
-                      <>
-                        <Button onClick={() => setPreview(URL.createObjectURL(agreementForm))} variant="outlined">
-                          Preview
-                        </Button>
-                        <Button onClick={handleRemove} variant="outlined">
-                          Remove
-                        </Button>
-                      </>
-                    )}
-                  </Stack>
-                </Stack>
-              </Box>
-            ) : (
-              <RHFUpload type="pdf" name="agreementForm" onDrop={onDrop} />
-            )}
-          </FormProvider>
+        <DialogContent sx={{ p: 0, borderTop: 1, borderBottom: 1, borderColor: 'divider' }}>
+          <PDFEditorV2
+            file={agreementUrl}
+            annotations={annotations}
+            setAnnotations={setAnnotations}
+            signURL={signURL}
+            setSignURL={setSignURL}
+          />
         </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
+        <DialogActions>
+          <Button onClick={editor.onFalse} color="inherit">
+            Cancel
+          </Button>
           <LoadingButton
-            loading={uploading}
             variant="contained"
-            disabled={!agreementForm || uploadProgress < 100}
-            onClick={onSubmit}
-            sx={{
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              bgcolor: agreementForm && uploadProgress === 100 ? '#203ff5' : '#b0b0b1 !important',
-              color: '#ffffff !important',
-              borderBottom: 3.5,
-              borderBottomColor: agreementForm && uploadProgress === 100 ? '#112286' : '#9e9e9f',
-              borderRadius: 1.5,
-              px: 2.5,
-              py: 1.2,
-            }}
+            color="primary"
+            onClick={handleGenerateAndSubmitPdf}
+            loading={loading}
           >
-            Submit
+            Save & Submit
           </LoadingButton>
         </DialogActions>
       </Dialog>
@@ -514,7 +516,18 @@ const getCreatorStatusLabel = (status) => {
 
 const CampaignV4Activity = ({ campaign }) => {
   const [expandedSections, setExpandedSections] = useState({});
+  const [numPages, setNumPages] = useState(null);
   
+  const isSmallScreen = useMediaQuery('(max-width: 600px)');
+  
+  // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
+  const originalAgreementUrl = campaign?.agreement?.agreementUrl;
+  const agreementUrl = originalAgreementUrl ? 
+    originalAgreementUrl.replace(
+      'https://storage.googleapis.com/cult-prod/',
+      `${window.location.origin}/api/agreement-template/`
+    ) : null;
+
   // Fetch creator's v4 submissions
   const { data: submissionsData, error, mutate } = useSWR(
     campaign?.id ? `${endpoints.submission.creator.v4.getMyV4Submissions}?campaignId=${campaign?.id}` : null,
@@ -531,12 +544,53 @@ const CampaignV4Activity = ({ campaign }) => {
     fetcher
   );
 
+  // Get signed agreement URL if available (for approved agreement display)
+  const signedAgreementUrl = useMemo(() => {
+    const signedContent = submissionsData?.grouped?.agreement?.content;
+    if (signedContent) {
+      return signedContent.replace(
+        'https://storage.googleapis.com/cult-prod/',
+        `${window.location.origin}/api/agreement-template/`
+      );
+    }
+    return null;
+  }, [submissionsData?.grouped?.agreement?.content]);
+
   // Handle section expand/collapse
   const handleToggleSection = (submissionId) => {
     setExpandedSections(prev => ({
       ...prev,
       [submissionId]: !prev[submissionId]
     }));
+  };
+
+  // PDF-related functions for approved agreement display
+  const onDocumentLoadSuccess = ({ numPages: pages }) => {
+    setNumPages(pages);
+  };
+
+  const onDocumentLoadError = (error) => {
+    console.error('Error loading PDF:', error);
+  };
+
+  const handleDownload = async (url) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const filename = `${campaign?.id}-${campaign?.name}-agreement.pdf`;
+
+      // Create download link
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error('Download failed:', error);
+      enqueueSnackbar('Failed to download agreement', { variant: 'error' });
+    }
   };
 
   // Auto-expand first incomplete submission
@@ -588,8 +642,11 @@ const CampaignV4Activity = ({ campaign }) => {
         return 'CHANGES REQUIRED';
       case 'APPROVED':
       case 'CLIENT_APPROVED':
-        // Check if this is a type that needs posting link (Videos and Photos, not Raw Footages)
-        const needsPostingLink = submission.video?.length > 0 || submission.photos?.length > 0;
+        // Check if campaign requires posting links and if this submission type needs one
+        const campaignRequiresPosting = campaign?.campaignType === 'normal'; // 'normal' = UGC (With Posting)
+        const hasVideoOrPhotos = submission.video?.length > 0 || submission.photos?.length > 0;
+        const needsPostingLink = campaignRequiresPosting && hasVideoOrPhotos;
+        
         if (needsPostingLink) {
           if (!submission.content) {
             return 'PENDING POSTING LINK';
@@ -801,6 +858,169 @@ const CampaignV4Activity = ({ campaign }) => {
         </Typography>{' '}
         page.
       </Typography>
+
+      {/* Approved Agreement Display */}
+      {isAgreementApproved && (
+        <Card 
+          sx={{ 
+            overflow: 'visible',
+            bgcolor: '#F5F5F5',
+            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+            borderRadius: 2,
+            border: 'none',
+            mb: 1
+          }}
+        >
+          <Stack 
+            direction="row" 
+            alignItems="center" 
+            justifyContent="space-between" 
+            sx={{ p: 2, cursor: 'pointer' }}
+            onClick={() => setExpandedSections(prev => ({ ...prev, approvedAgreement: !prev.approvedAgreement }))}
+          >
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Typography 
+                variant="subtitle1" 
+                sx={{ 
+                  fontWeight: 600, 
+                  color: 'black',
+                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                }}
+              >
+                Agreement
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  fontWeight: 600,
+                  border: '1px solid',
+                  borderBottom: '3px solid',
+                  borderRadius: 0.8,
+                  bgcolor: 'white',
+                  whiteSpace: 'nowrap',
+                  color: '#00AB55',
+                  borderColor: '#00AB55',
+                  fontSize: '0.75rem',
+                }}
+              >
+                APPROVED
+              </Typography>
+            </Stack>
+            <Iconify 
+              icon={expandedSections.approvedAgreement ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
+              width={20} 
+            />
+          </Stack>
+          
+          <Collapse in={expandedSections.approvedAgreement}>
+            <Box sx={{ p: 2, pt: 0 }}>
+              <Stack spacing={2}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: '#221f20',
+                    fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    fontWeight: 500
+                  }}
+                >
+                  ✅ Your agreement has been approved! {signedAgreementUrl ? 'Below is your signed agreement.' : ''} You can now proceed with the campaign submissions.
+                </Typography>
+                
+                {/* Agreement PDF Preview */}
+                {(signedAgreementUrl || agreementUrl) && (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', md: 'row' }, 
+                    gap: 2,
+                    mt: 1
+                  }}>
+                    {/* PDF Preview */}
+                    <Box sx={{ flex: 1 }}>
+                      <Box
+                        sx={{
+                          width: '100%',
+                          height: '300px',
+                          borderRadius: 1,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          overflow: 'auto',
+                          bgcolor: 'background.neutral',
+                          '& .react-pdf__Document': {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                          },
+                        }}
+                      >
+                        <Document
+                          file={signedAgreementUrl || agreementUrl}
+                          onLoadSuccess={onDocumentLoadSuccess}
+                          onLoadError={onDocumentLoadError}
+                        >
+                          {Array.from(new Array(numPages), (el, index) => (
+                            <Box
+                              key={index}
+                              sx={{
+                                p: 1,
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                '&:not(:last-child)': {
+                                  borderBottom: '1px solid',
+                                  borderColor: 'divider',
+                                },
+                              }}
+                            >
+                              <Page
+                                key={`page-${index + 1}`}
+                                pageNumber={index + 1}
+                                scale={isSmallScreen ? 0.3 : 0.4}
+                                renderAnnotationLayer={false}
+                                renderTextLayer={false}
+                              />
+                            </Box>
+                          ))}
+                        </Document>
+                      </Box>
+                    </Box>
+                    
+                    {/* Download Button */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: { xs: 'center', md: 'flex-start' }
+                    }}>
+                      <Button
+                        variant="contained"
+                        startIcon={<Iconify icon="material-symbols:download" width={20} />}
+                        onClick={() => handleDownload(signedAgreementUrl || agreementUrl)}
+                        sx={{
+                          bgcolor: '#203ff5',
+                          color: 'white',
+                          borderBottom: 3,
+                          borderBottomColor: '#112286',
+                          borderRadius: 1.5,
+                          px: 2.5,
+                          py: 1.2,
+                          '&:hover': {
+                            bgcolor: '#203ff5',
+                            opacity: 0.9,
+                          },
+                        }}
+                      >
+                        {signedAgreementUrl ? 'Download Signed Agreement' : 'Download Agreement'}
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </Stack>
+            </Box>
+          </Collapse>
+        </Card>
+      )}
 
       {/* Collapsible Submission Cards */}
       <Stack spacing={2} sx={{ p: 1, mx: -1 }}>

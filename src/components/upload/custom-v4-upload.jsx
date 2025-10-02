@@ -182,14 +182,14 @@ const CustomV4Upload = ({
           {/* Blue Circular Plus Icon - Smaller */}
           <Box
             sx={{
-              width: 48, // Reduced from 64
-              height: 48,
+              width: height <= 120 ? 36 : 48, // Even smaller for small upload boxes
+              height: height <= 120 ? 36 : 48,
               borderRadius: '50%',
               bgcolor: '#1340FF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              mb: 2, // Reduced from 3
+              mb: height <= 120 ? 1.5 : 2, // Less margin for small upload boxes
               '&:hover': {
                 bgcolor: '#0F36E6',
               },
@@ -197,8 +197,8 @@ const CustomV4Upload = ({
           >
             <Iconify 
               icon="eva:plus-fill" 
-              width={24} // Reduced from 32
-              height={24} 
+              width={height <= 120 ? 18 : 24} // Smaller icon for small upload boxes
+              height={height <= 120 ? 18 : 24} 
               sx={{ color: 'white' }} 
             />
           </Box>
@@ -212,7 +212,7 @@ const CustomV4Upload = ({
               fontWeight: 'bold',
               mb: 0.5, // Reduced from 1
               textAlign: 'center',
-              fontSize: '0.85rem', // Reduced from 0.95rem
+              fontSize: height <= 120 ? '0.75rem' : '0.85rem', // Smaller font for small upload boxes
             }}
           >
             Choose a file or drag and drop here
@@ -226,7 +226,7 @@ const CustomV4Upload = ({
               fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
               fontWeight: 400,
               textAlign: 'center',
-              fontSize: '0.65rem', // Reduced from 0.7rem
+              fontSize: height <= 120 ? '0.55rem' : '0.65rem', // Smaller font for small upload boxes
             }}
           >
             Acceptable files: {fileTypes} | Max file size: 1 GB

@@ -165,7 +165,19 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
       const response = await axios.post(`/api/campaign/initialActivateCampaign/${campaignId}`, formData);
       console.log('Initial activation response:', response.data);
       
-      enqueueSnackbar('Campaign assigned to admin successfully. Admin will complete the setup.', { variant: 'success' });
+      // Get assigned admin names for success message
+      const assignedAdminNames = adminOptions
+        .filter(admin => adminManagers.includes(admin.userId))
+        .map(admin => admin.name)
+        .join(', ');
+      
+      const campaignName = campaignDetails?.name ? `"${campaignDetails.name}"` : 'Campaign';
+      
+      const successMessage = assignedAdminNames 
+        ? `✅ ${campaignName} successfully assigned to ${assignedAdminNames}! They will complete the campaign setup and activation.`
+        : `✅ ${campaignName} assigned to admin successfully! Admin will complete the setup and activation.`;
+      
+      enqueueSnackbar(successMessage, { variant: 'success' });
       onClose();
       
       // Refresh the page to show updated campaign status
