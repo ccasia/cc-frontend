@@ -764,7 +764,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   useEffect(() => {
     if (captionMeasureRef.current && submission.caption) {
       const element = captionMeasureRef.current;
-      const maxHeight = window.innerWidth < 600 ? 50 : window.innerWidth < 900 ? 80 : 100;
+      const maxHeight = window.innerWidth < 600 ? 80 : window.innerWidth < 900 ? 100 : 120;
       setCaptionOverflows(element.scrollHeight > maxHeight);
     }
   }, [submission.caption]);
@@ -843,7 +843,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                           {/* Conditional rendering based on overflow */}
                           {captionOverflows ? (
                             <Box sx={{ 
-                              maxHeight: { xs: 50, sm: 80, md: 100 },
+                              maxHeight: { xs: 80, sm: 100, md: 120 },
                               overflow: 'auto',
                               border: '1px solid #E7E7E7',
                               borderRadius: 0.5,
