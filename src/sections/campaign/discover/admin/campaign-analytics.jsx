@@ -89,7 +89,6 @@ const CampaignAnalytics = ({ campaign }) => {
   const {
     data: insightsData,
     isLoading: loadingInsights,
-    failedUrls,
     error: insightsError,
     loadingProgress,
   } = useSocialInsights(postingSubmissions, campaignId);
@@ -1862,22 +1861,6 @@ const CampaignAnalytics = ({ campaign }) => {
         </Alert>
       )}
 
-      {/* Failed URLs Alert */}
-      {failedUrls.length > 0 && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Unable to fetch analytics for {failedUrls.length} post(s):
-          </Typography>
-          {failedUrls.map((failed, index) => (
-            <Typography key={index} variant="body2" sx={{ ml: 1 }}>
-              • {failed.user?.name || 'Unknown'} ({failed.platform}): {failed.reason}
-              {failed.requiresReconnection && (
-                <Chip label="Reconnection Required" size="small" color="warning" sx={{ ml: 1 }} />
-              )}
-            </Typography>
-          ))}
-        </Alert>
-      )}
 
       {/* Core Metrics Section */}
       <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
