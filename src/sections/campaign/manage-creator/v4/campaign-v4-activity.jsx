@@ -7,14 +7,12 @@ import { enqueueSnackbar } from 'notistack';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 import { 
-  Box, 
-  Grid, 
+  Box,  
   Card, 
   Stack, 
   Chip, 
   Button, 
   Typography, 
-  LinearProgress,
   CircularProgress,
   Collapse,
   IconButton,
@@ -38,7 +36,7 @@ import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
 
 // Configure PDF.js worker
 try {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 } catch (error) {
   console.warn('Failed to set CDN worker, falling back to local worker:', error);
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -707,20 +705,6 @@ const CampaignV4Activity = ({ campaign }) => {
         return 'Raw Footages';
       default:
         return 'Submission';
-    }
-  };
-
-  // Helper function to get submission icon
-  const getSubmissionIcon = (submissionType) => {
-    switch (submissionType) {
-      case 'VIDEO':
-        return 'eva:video-fill';
-      case 'PHOTO':
-        return 'eva:image-fill';
-      case 'RAW_FOOTAGE':
-        return 'eva:film-fill';
-      default:
-        return 'eva:file-fill';
     }
   };
 
