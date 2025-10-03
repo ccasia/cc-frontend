@@ -7,14 +7,12 @@ import { enqueueSnackbar } from 'notistack';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 import { 
-  Box, 
-  Grid, 
+  Box,  
   Card, 
   Stack, 
   Chip, 
   Button, 
   Typography, 
-  LinearProgress,
   CircularProgress,
   Collapse,
   IconButton,
@@ -38,7 +36,7 @@ import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
 
 // Configure PDF.js worker
 try {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 } catch (error) {
   console.warn('Failed to set CDN worker, falling back to local worker:', error);
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -46,22 +44,6 @@ try {
     import.meta.url
   ).toString();
 }
-
-// Helper component for avatar icon
-const AvatarIcon = ({ icon, ...props }) => (
-  <Avatar {...props}>
-    <Iconify icon={icon} />
-  </Avatar>
-);
-
-// File size formatter
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-};
 
 import V4VideoSubmission from './submissions/v4-video-submission';
 import V4PhotoSubmission from './submissions/v4-photo-submission';
@@ -81,6 +63,8 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   const [annotations, setAnnotations] = useState([]);
   const [signURL, setSignURL] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const [showUploadOption, setShowUploadOption] = useState(false);
   
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
@@ -338,7 +322,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             Before starting the campaign, you must sign the standard agreement submission procedure!
           </Typography>
           <Typography variant="body1" sx={{ color: '#221f20'}}>
-            Review the agreement PDF below and click "Sign Agreement" to digitally sign and submit it.
+            Review the agreement PDF below and choose your preferred method to sign and submit it.
           </Typography>
 
           {/* Download Agreement Button */}
@@ -370,8 +354,9 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           )}
         </Stack>
 
-        {/* Sign Agreement Button - Bottom Right */}
-        <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
+        {/* Action Buttons - Bottom Right */}
+        <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-end' }}>
+          {/* Digital Signing Option */}
           <Button
             variant="contained"
             onClick={editor.onTrue}
@@ -395,8 +380,88 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
               },
             }}
           >
-            {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement'}
+            {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement Digitally'}
           </Button>
+
+          {/* Upload Option Toggle */}
+          {!isAgreementSubmitted && (
+            <>
+              <Button
+                variant="outlined"
+                onClick={() => setShowUploadOption(!showUploadOption)}
+                startIcon={<Iconify icon="eva:upload-outline" width={20} />}
+                sx={{
+                  borderColor: '#203ff5',
+                  color: '#203ff5',
+                  borderWidth: 1,
+                  borderBottom: 2,
+                  borderBottomColor: '#203ff5',
+                  borderRadius: 1.5,
+                  px: 2,
+                  py: 1,
+                  '&:hover': {
+                    bgcolor: 'rgba(32, 63, 245, 0.04)',
+                    borderColor: '#203ff5',
+                  },
+                }}
+              >
+                {showUploadOption ? 'Hide Upload Option' : 'Upload Signed Agreement'}
+              </Button>
+
+              {/* Upload Section */}
+              <Collapse in={showUploadOption}>
+                <Box sx={{ mt: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1, bgcolor: '#fafafa' }}>
+                  <FormProvider methods={methods} onSubmit={onSubmit}>
+                    <Stack spacing={2}>
+                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
+                        If digital signing doesn't work, you can download the agreement, sign it manually, and upload it here:
+                      </Typography>
+                      
+                      {!agreementForm &&
+                        <RHFUpload
+                          name="agreementForm"
+                          accept={{ 'application/pdf': [] }}
+                          onDrop={onDrop}
+                          onRemove={handleRemove}
+                          helperText="Upload your signed agreement PDF file"
+                        />
+                      }
+
+                      {uploadProgress > 0 && uploadProgress < 100 && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CircularProgress size={20} />
+                          <Typography variant="body2">Uploading... {uploadProgress}%</Typography>
+                        </Box>
+                      )}
+                      
+                      {agreementForm && (
+                        <Stack direction="row" spacing={2} justifyContent="flex-end">
+                          <Button
+                            variant="outlined"
+                            onClick={() => setPreview(URL.createObjectURL(agreementForm))}
+                            startIcon={<Iconify icon="eva:eye-outline" />}
+                          >
+                            Preview
+                          </Button>
+                          <LoadingButton
+                            type="submit"
+                            variant="contained"
+                            loading={uploading}
+                            sx={{
+                              bgcolor: '#203ff5',
+                              '&:hover': { bgcolor: '#203ff5', opacity: 0.9 }
+                            }}
+                          >
+                            Submit Agreement
+                          </LoadingButton>
+                        </Stack>
+                      )}
+                    </Stack>
+                  </FormProvider>
+                </Box>
+              </Collapse>
+            </>
+          )}
         </Box>
       </Box>
     </Box>
@@ -463,55 +528,6 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       </Dialog>
     </>
   );
-};
-
-// Status color mapping for v4 with client feedback support
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'IN_PROGRESS':
-      return 'info';
-    case 'PENDING_REVIEW':
-      return 'warning';
-    case 'APPROVED':
-    case 'CLIENT_APPROVED':
-    case 'POSTED':
-      return 'success';
-    case 'CHANGES_REQUIRED':
-    case 'REJECTED':
-      return 'error';
-    case 'SENT_TO_CLIENT':
-      return 'secondary';
-    case 'CLIENT_FEEDBACK':
-      return 'warning';
-    default:
-      return 'default';
-  }
-};
-
-// Creator-friendly status labels with client feedback states
-const getCreatorStatusLabel = (status) => {
-  switch (status) {
-    case 'IN_PROGRESS':
-      return 'In Progress';
-    case 'PENDING_REVIEW':
-      return 'Admin Review';
-    case 'APPROVED':
-      return 'Approved';
-    case 'CLIENT_APPROVED':
-      return 'Approved';
-    case 'POSTED':
-      return 'Posted';
-    case 'CHANGES_REQUIRED':
-      return 'Changes Required';
-    case 'REJECTED':
-      return 'Changes Required';
-    case 'SENT_TO_CLIENT':
-      return 'Client Review';
-    case 'CLIENT_FEEDBACK':
-      return 'Client Review';
-    default:
-      return status;
-  }
 };
 
 const CampaignV4Activity = ({ campaign }) => {
@@ -707,20 +723,6 @@ const CampaignV4Activity = ({ campaign }) => {
         return 'Raw Footages';
       default:
         return 'Submission';
-    }
-  };
-
-  // Helper function to get submission icon
-  const getSubmissionIcon = (submissionType) => {
-    switch (submissionType) {
-      case 'VIDEO':
-        return 'eva:video-fill';
-      case 'PHOTO':
-        return 'eva:image-fill';
-      case 'RAW_FOOTAGE':
-        return 'eva:film-fill';
-      default:
-        return 'eva:file-fill';
     }
   };
 
