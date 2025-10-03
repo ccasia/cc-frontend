@@ -628,11 +628,18 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
               onClick={hasChangesRequired && !isReuploadMode && !isPostingLinkRejected ? handleReuploadMode : 
                       (isPostingLinkEditable && !selectedFiles.length) ? handleSubmitPostingLink : 
                       handleSubmit}
-              disabled={uploading || 
-                       (hasChangesRequired && !isReuploadMode && !isPostingLinkRejected) ? false :
-                       (isPostingLinkEditable && !selectedFiles.length && !postingLink.trim()) ||
-                       (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length && !hasChangesRequired && !isReuploadMode) ||
-                       (!isPostingLinkEditable && (selectedFiles.length === 0 || !caption.trim()) && !hasChangesRequired && !isReuploadMode)}
+              disabled={
+                uploading ||
+                postingLoading ||
+                // Always allow reupload button
+                (hasChangesRequired && !isReuploadMode && !isPostingLinkRejected) ? false :
+                // If posting link is editable and no files selected, only check posting link
+                (isPostingLinkEditable && !selectedFiles.length) ? !postingLink.trim() :
+                // If already has posting link and submitted, disable
+                (!isPostingLinkEditable && hasPostingLink && !selectedFiles.length && !hasChangesRequired && !isReuploadMode) ? true :
+                // Otherwise check for files and caption
+                (selectedFiles.length === 0 || !caption.trim())
+              }
               sx={{
                 px: 2,
                 py: 1,
@@ -640,10 +647,12 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                 border: '1px solid',
                 borderBottom: '3px solid',
                 borderRadius: 0.8,
-                bgcolor: hasChangesRequired ? '#1340FF' : 
+                bgcolor: hasChangesRequired ? '#1340FF' :
+                         (isPostingLinkEditable && !selectedFiles.length && postingLink.trim()) ? '#3a3a3c' :
                          (selectedFiles.length === 0 || !caption.trim()) ? '#BDBDBD' : '#3a3a3c',
                 color: 'white',
-                borderColor: hasChangesRequired ? '#1340FF' : 
+                borderColor: hasChangesRequired ? '#1340FF' :
+                            (isPostingLinkEditable && !selectedFiles.length && postingLink.trim()) ? '#3a3a3c' :
                             (selectedFiles.length === 0 || !caption.trim()) ? '#BDBDBD' : '#3a3a3c',
                 textTransform: 'none',
                 fontSize: '0.75rem',
@@ -653,8 +662,11 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: (uploading || (selectedFiles.length === 0 || !caption.trim()) && !hasChangesRequired) ? 'not-allowed' : 'pointer',
-                '&:hover': (!uploading && selectedFiles.length > 0 && caption.trim() && (isCaptionEditable || hasChangesRequired)) ? {
+                cursor: (uploading || postingLoading ||
+                         ((selectedFiles.length === 0 || !caption.trim()) && !hasChangesRequired && !(isPostingLinkEditable && postingLink.trim()))) ? 'not-allowed' : 'pointer',
+                '&:hover': (!uploading && !postingLoading &&
+                           ((selectedFiles.length > 0 && caption.trim()) || (isPostingLinkEditable && postingLink.trim())) &&
+                           (isCaptionEditable || hasChangesRequired || isPostingLinkEditable)) ? {
                   bgcolor: '#1340FF',
                   borderColor: '#1340FF',
                 } : {},
