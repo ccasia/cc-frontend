@@ -240,7 +240,7 @@ export default function FeedbackActions({
         }
 
         {visibility.showReasonsDropdown && (
-          <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10, marginTop: 5, marginBottom: 1 }} hiddenLabel size='small'>
+          <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10, marginTop: 5 }} hiddenLabel size='small'>
             <Select
               multiple
               value={reasons}
@@ -286,7 +286,7 @@ export default function FeedbackActions({
           }
 
           return (
-            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 1, mt: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
               {!isClient && latestRelevantFeedback.type === 'REQUEST' && latestRelevantFeedback.admin?.role === 'client' &&
                 <>
                   <Typography variant='caption' fontWeight="bold" color={'#636366'}>
@@ -316,6 +316,7 @@ export default function FeedbackActions({
         })()}
 
         <TextField
+          style={{ marginTop: 5 }}
           multiline
           rows={3}
           fullWidth

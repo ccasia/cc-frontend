@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { Box, IconButton, Typography, Stack, Chip } from '@mui/material';
 import { FEEDBACK_CHIP_STYLES } from './submission-styles';
 import Iconify from 'src/components/iconify';
+import { fDate, formatDateTime, fTime, fTimestamp } from 'src/utils/format-time';
+import { fData } from 'src/utils/format-number';
 
 export default function FeedbackLogs({ submission, onClose }) {
   const feedbackLogs = submission.feedback || [];
@@ -16,19 +18,6 @@ export default function FeedbackLogs({ submission, onClose }) {
 
   const handleTabChange = (newValue) => {
     setActiveTab(newValue);
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const formatted = date.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-    return formatted.replace(',', '').replace(' ', '');
   };
 
   const getFeedbackLabel = (type, sentToCreator = false, adminRole) => {
@@ -93,6 +82,8 @@ export default function FeedbackLogs({ submission, onClose }) {
             sx={{
               px: 2,
               py: 1,
+              minWidth: 175,
+              textAlign: 'center',
               cursor: 'pointer',
               fontSize: 12,
               fontWeight: 500,
@@ -100,7 +91,7 @@ export default function FeedbackLogs({ submission, onClose }) {
               borderBottomLeftRadius: 0,
               borderBottomRightRadius: 0,
               transition: 'all 0.2s',
-              bgcolor: activeTab === 0 && '#fff',
+              bgcolor: activeTab === 0 ? '#fff' : '#E7E7E7',
               color: activeTab === 0 ? '#000' : '#8E8E93',
 
             }}
@@ -112,6 +103,8 @@ export default function FeedbackLogs({ submission, onClose }) {
             sx={{
               px: 2,
               py: 1,
+              minWidth: 175,
+              textAlign: 'center',
               cursor: 'pointer',
               fontSize: 12,
               fontWeight: 500,
@@ -119,7 +112,7 @@ export default function FeedbackLogs({ submission, onClose }) {
               borderBottomLeftRadius: 0,
               borderBottomRightRadius: 0,
               transition: 'all 0.2s',
-              bgcolor: activeTab === 1 && '#fff',
+              bgcolor: activeTab === 1 ? '#fff' : '#E7E7E7',
               color: activeTab === 0 ? '#8E8E93' : '#000',
 
             }}
@@ -207,7 +200,7 @@ export default function FeedbackLogs({ submission, onClose }) {
                       {getFeedbackLabel(log.type, log.sentToCreator, log.admin.role)}
                     </Typography>
                     <Typography fontSize={12} fontWeight="bold" color="#636366">
-                      {getActionLabel(log.type, log.sentToCreator, log.admin.role)} {formatDate(log.createdAt)}
+                      {getActionLabel(log.type, log.sentToCreator, log.admin.role)} {formatDateTime(log.createdAt)}
                     </Typography>
                   </Box>
 
