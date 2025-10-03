@@ -29,10 +29,16 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import Iconify from '../iconify';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+try {
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
+} catch (error) {
+  // Fallback to local worker if CDN fails
+  console.warn('Failed to set CDN worker, falling back to local worker:', error);
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).toString();
+}
 
 const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL }) => {
   const theme = useTheme();
