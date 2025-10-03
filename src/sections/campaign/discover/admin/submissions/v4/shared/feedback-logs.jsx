@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Box, IconButton, Typography, Stack, Chip } from '@mui/material';
+import { Box, IconButton, Typography, Stack, Chip, Tooltip } from '@mui/material';
 import { FEEDBACK_CHIP_STYLES } from './submission-styles';
 import Iconify from 'src/components/iconify';
-import { fDate, formatDateTime, fTime, fTimestamp } from 'src/utils/format-time';
-import { fData } from 'src/utils/format-number';
+import { formatDateTime } from 'src/utils/format-time';
 import axios from 'axios';
 
 export default function FeedbackLogs({ submission, onClose }) {
@@ -16,7 +15,7 @@ export default function FeedbackLogs({ submission, onClose }) {
   const captionEdits = submission.caption;
 
   const commentsAndFeedback = feedbackLogs.filter(log =>
-    (log.type === 'REQUEST' || log.type === 'COMMENT') && log.content !== ''
+    (log.type === 'REQUEST' || log.type === 'COMMENT') && (log.content !== '' || (log.reasons && log.reasons.length > 0))
   );
 
   // Fetch caption history when component mounts or when switching to caption history tab
@@ -37,6 +36,8 @@ export default function FeedbackLogs({ submission, onClose }) {
       setLoadingHistory(false);
     }
   };
+
+  const captionByAdminOnly = captionHistory.filter(caption => caption.authorType === 'admin')
 
   const handleTabChange = (newValue) => {
     setActiveTab(newValue);
@@ -194,17 +195,78 @@ export default function FeedbackLogs({ submission, onClose }) {
                 >
                   {/* Reasons (if any) */}
                   {log.reasons && log.reasons.length > 0 && (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {log.reasons.map((reason, idx) => (
-                        <Chip
-                          key={idx}
-                          label={reason}
-                          sx={{...FEEDBACK_CHIP_STYLES, mr: 0}}
-                          size="small"
-                          variant="outlined"
-                          color="warning"
-                        />
-                      ))}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Chip
+                        sx={FEEDBACK_CHIP_STYLES}
+                        label={log.reasons[0]}
+                        size="small"
+                        variant="outlined"
+                        color="warning"
+                      />
+
+                      {log.reasons.length > 1 && (
+                        <Tooltip
+                          title={
+                            <Box sx={{ maxWidth: 500 }}>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {log.reasons.slice(1).map((reason, idx) => (
+                                  <Chip
+                                    key={idx}
+                                    sx={FEEDBACK_CHIP_STYLES}
+                                    label={reason}
+                                    size="small"
+                                    variant="outlined"
+                                    color="warning"
+                                  />
+                                ))}
+                              </Box>
+                            </Box>
+                          }
+                          placement="top"
+                          PopperProps={{
+                            modifiers: [
+                              {
+                                name: 'offset',
+                                options: {
+                                  offset: [0, 0],
+                                },
+                              },
+                            ],
+                          }}
+                          slotProps={{
+                            tooltip: {
+                              sx: {
+                                bgcolor: '#f8f9fa',
+                                color: '#333',
+                                border: '1px solid #e0e0e0',
+                                borderRadius: 1.5,
+                                boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.20)',
+                                p: 1,
+                                maxWidth: 400,
+                                fontSize: 12
+                              }
+                            },
+                          }}
+                        >
+                          <Chip
+                            sx={{
+                              ...FEEDBACK_CHIP_STYLES,
+                              minWidth: 28,
+                              height: 28,
+                              cursor: 'pointer',
+                              '& .MuiChip-label': {
+                                px: 0.5,
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                              }
+                            }}
+                            label={`+${log.reasons.length - 1}`}
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                          />
+                        </Tooltip>
+                      )}
                     </Box>
                   )}
                   
@@ -217,10 +279,10 @@ export default function FeedbackLogs({ submission, onClose }) {
                       my: 1
                     }}
                   >
-                    <Typography fontSize={12} fontWeight="bold" color="#636366">
+                    <Typography fontSize={12} fontWeight="bold" color={getFeedbackLabel(log.type, log.sentToCreator, log.admin.role) === 'CS Comments' ? '#1340FF' : '#636366'}>
                       {getFeedbackLabel(log.type, log.sentToCreator, log.admin.role)}
                     </Typography>
-                    <Typography fontSize={12} fontWeight="bold" color="#636366">
+                    <Typography fontSize={12} fontWeight="bold" color={getFeedbackLabel(log.type, log.sentToCreator, log.admin.role) === 'CS Comments' ? '#1340FF' : '#636366'}>
                       {getActionLabel(log.type, log.sentToCreator, log.admin.role)} {formatDateTime(log.createdAt)}
                     </Typography>
                   </Box>
@@ -248,55 +310,20 @@ export default function FeedbackLogs({ submission, onClose }) {
                 Loading caption history...
               </Typography>
             </Box>
-          ) : captionHistory.length > 0 || captionEdits ? (
+          ) : captionHistory.length > 0 ? (
             <Stack spacing={2} sx={{ mt: 2 }}>
-              {/* Current Caption */}
-              {captionEdits && (
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography fontSize={12} fontWeight="bold" color="#636366">
-                      Current Caption
-                    </Typography>
-                    <Typography fontSize={12} fontWeight="bold" color="#636366">
-                      {formatDateTime(submission.updatedAt)}
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      p: 2,
-                      bgcolor: '#F0F9FF',
-                      borderRadius: 1,
-                      border: '1px solid',
-                      borderColor: '#BAE6FD',
-                    }}
-                  >
-                    <Typography variant="body2" color="text.primary" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                      {captionEdits}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-
               {/* Caption History */}
               {captionHistory.map((log, index) => (
-                <Box key={log.id}>
+                <Box key={log.id} sx={{ mb: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                     <Typography fontSize={12} fontWeight="bold" color="#636366">
-                      Written by {log.authorType === 'admin' ? 'Admin' : 'Creator'}
+                      Caption
                     </Typography>
                     <Typography fontSize={12} fontWeight="bold" color="#636366">
-                      {formatDateTime(log.createdAt)}
+                      Edited by {log.authorType === 'admin' ? 'Admin' : 'Creator'} {formatDateTime(log.createdAt)}
                     </Typography>
                   </Box>
-                  <Box
-                    sx={{
-                      p: 2,
-                      bgcolor: 'background.neutral',
-                      borderRadius: 1,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
+                  <Box>
                     <Typography variant="body2" color="text.primary" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                       {log.caption || '(empty)'}
                     </Typography>
