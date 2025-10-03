@@ -589,7 +589,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         <Typography
           component="button"
           onClick={hasChangesRequired && !isReuploadMode ? handleReuploadMode : handleSubmit}
-          disabled={uploading || !hasChangesRequired}
+          disabled={uploading || (submittedRawFootages.length > 0 && !hasChangesRequired && !isReuploadMode) || (selectedFiles.length === 0 && submittedRawFootages.length === 0)}
           sx={{
             px: 2,
             py: 1,
@@ -623,7 +623,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
             }
           }}
         >
-          {uploading ? 'Processing...' : hasChangesRequired ? (isReuploadMode ? 'Submit' : 'Reupload Raw Footages') : 'Submitted'}
+          {uploading ? 'Processing...' : hasChangesRequired ? (isReuploadMode ? 'Submit' : 'Reupload Raw Footages') : (submittedRawFootages.length > 0 && !isReuploadMode) ? 'Submitted' : 'Submit'}
         </Typography>
       </Box>
     </Box>
