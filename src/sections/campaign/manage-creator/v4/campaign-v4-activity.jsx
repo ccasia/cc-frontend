@@ -1315,7 +1315,7 @@ const CampaignV4Activity = ({ campaign }) => {
                 <Divider />
                 <Box sx={{ p: 3 }}>
                 <V4RawFootageSubmission 
-                    submission={rawFootage}
+                  submission={rawFootage}
                   onUpdate={() => mutate()}
                 />
                 </Box>

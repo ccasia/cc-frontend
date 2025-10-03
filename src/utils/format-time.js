@@ -58,3 +58,16 @@ export function isAfter(startDate, endDate) {
 
   return results;
 }
+
+export function formatDateTime(dateString) {
+  const date = new Date(dateString);
+  const formatted = date.toLocaleString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: '2-digit',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+  return formatted.replace(/,\s*/, ', ').replace(/\s+(AM|PM)/, '$1');
+};
