@@ -10,7 +10,7 @@ import {
   TextField,
   Typography,
   LinearProgress,
-  IconButton
+  IconButton,
 } from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
@@ -22,10 +22,10 @@ import RawFootageGridDisplay from 'src/components/upload/raw-footage-grid-displa
 // File upload configuration for raw footage
 const RAW_FOOTAGE_UPLOAD_CONFIG = {
   accept: {
-    'video/*': ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']
+    'video/*': ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v'],
   },
   maxSize: 500 * 1024 * 1024, // 500MB
-  multiple: true
+  multiple: true,
 };
 
 const V4RawFootageSubmission = ({ submission, onUpdate }) => {
@@ -55,12 +55,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     return submission.status === 'POSTED';
   }, [submission.status]);
 
-  const isPostingLinkRejected = useMemo(() => {
-    // Raw footage doesn't have posting links, so this should always be false
-    // But keeping for consistency with other components
-    return submission.status === 'REJECTED' && !submission.content && submission.rawFootages?.length > 0;
-  }, [submission.status, submission.content, submission.rawFootages]);
-
   const hasChangesRequired = useMemo(() => {
     return submission.status === 'CHANGES_REQUIRED';
   }, [submission.status]);
@@ -72,13 +66,13 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     }
 
     // Filter feedback for this specific submission and sent to creator
-    const filteredFeedback = submission.feedback.filter(feedback => 
-      feedback.sentToCreator && feedback.submissionId === submission.id
+    const filteredFeedback = submission.feedback.filter(
+      (feedback) => feedback.sentToCreator && feedback.submissionId === submission.id
     );
 
     // Sort by creation date and get the most recent one
-    const sortedFeedback = filteredFeedback.sort((a, b) => 
-      new Date(b.createdAt) - new Date(a.createdAt)
+    const sortedFeedback = filteredFeedback.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
 
     const mostRecentFeedback = sortedFeedback.slice(0, 1);
@@ -95,11 +89,11 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   }, []);
 
   const handleRemoveVideo = useCallback((index) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const handleAdditionalFilesChange = useCallback((newFiles) => {
-    setSelectedFiles(prev => [...prev, ...newFiles]);
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
   }, []);
 
   // Handle reupload mode
@@ -113,30 +107,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   // Memoize selectedFiles to prevent unnecessary re-renders
   const memoizedSelectedFiles = useMemo(() => selectedFiles, [selectedFiles]);
 
-  const handleDrop = (acceptedFiles, rejectedFiles) => {
-
-    if (rejectedFiles.length > 0) {
-      rejectedFiles.forEach((rejection) => {
-        rejection.errors.forEach((error) => {
-          if (error.code === 'file-too-large') {
-            enqueueSnackbar('File is too large. Maximum size is 500MB', { variant: 'error' });
-          } else if (error.code === 'file-invalid-type') {
-            enqueueSnackbar('Invalid file type. Please upload video files only', { variant: 'error' });
-          } else {
-            enqueueSnackbar(error.message, { variant: 'error' });
-          }
-        });
-      });
-    }
-
-    if (acceptedFiles.length > 0) {
-      setSelectedFiles(prev => {
-        const newFiles = [...prev, ...acceptedFiles];
-        return newFiles;
-      });
-    }
-  };
-
   const handleSubmit = async () => {
     if (selectedFiles.length === 0) {
       enqueueSnackbar('Please select at least one raw footage file', { variant: 'error' });
@@ -145,17 +115,22 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
 
     // For reupload mode, check if there are meaningful changes
     if (isReuploadMode) {
-      const newFiles = selectedFiles.filter(file => file instanceof File);
-      const existingRawFootages = selectedFiles.filter(file => file && typeof file === 'object' && file.url && file.id);
+      const newFiles = selectedFiles.filter((file) => file instanceof File);
+      const existingRawFootages = selectedFiles.filter(
+        (file) => file && typeof file === 'object' && file.url && file.id
+      );
       const originalRawFootageCount = submittedRawFootages.length;
-      
+
       // Check if there are any changes: new files added OR raw footages removed OR caption changed
       const hasNewFiles = newFiles.length > 0;
       const hasRemovedRawFootages = existingRawFootages.length < originalRawFootageCount;
       const hasCaptionChange = caption.trim() !== (submission.caption || '').trim();
-      
+
       if (!hasNewFiles && !hasRemovedRawFootages && !hasCaptionChange) {
-        enqueueSnackbar('No changes detected. Please add new raw footages, remove existing ones, or update the caption.', { variant: 'warning' });
+        enqueueSnackbar(
+          'No changes detected. Please add new raw footages, remove existing ones, or update the caption.',
+          { variant: 'warning' }
+        );
         return;
       }
     }
@@ -168,23 +143,25 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
 
     setUploading(true);
     setUploadProgress(0);
-    
+
     try {
       const formData = new FormData();
-      
+
       // Separate existing raw footages (API objects with URLs) from new files (File objects)
-      const existingRawFootages = selectedFiles.filter(file => file && typeof file === 'object' && file.url && file.id);
-      const newFiles = selectedFiles.filter(file => file instanceof File);
-      
+      const existingRawFootages = selectedFiles.filter(
+        (file) => file && typeof file === 'object' && file.url && file.id
+      );
+      const newFiles = selectedFiles.filter((file) => file instanceof File);
+
       // Add form data as JSON string with selective update information
       const requestData = {
         submissionId: submission.id,
         caption: caption.trim(),
         isSelectiveUpdate: isReupload, // Flag for selective update vs full replacement
-        keepExistingRawFootages: existingRawFootages.map(rawFootage => ({
+        keepExistingRawFootages: existingRawFootages.map((rawFootage) => ({
           id: rawFootage.id,
-          url: rawFootage.url
-        }))
+          url: rawFootage.url,
+        })),
       };
       formData.append('data', JSON.stringify(requestData));
 
@@ -211,7 +188,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
             reject(new Error(xhr.responseText || 'Upload failed'));
           }
         };
-        
+
         xhr.onerror = () => reject(new Error('Network error'));
 
         xhr.open('POST', '/api/creator/submissions/v4/submit-content');
@@ -222,9 +199,11 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       await uploadPromise;
 
       const isUpdate = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
-      const uploadedFiles = selectedFiles.filter(file => file instanceof File);
-      const keptRawFootages = selectedFiles.filter(file => file && typeof file === 'object' && file.url && file.id);
-      
+      const uploadedFiles = selectedFiles.filter((file) => file instanceof File);
+      const keptRawFootages = selectedFiles.filter(
+        (file) => file && typeof file === 'object' && file.url && file.id
+      );
+
       let successMessage;
       if (isUpdate) {
         if (uploadedFiles.length > 0 && keptRawFootages.length > 0) {
@@ -237,16 +216,19 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       } else {
         successMessage = 'Raw footages uploaded successfully!';
       }
-        
+
       enqueueSnackbar(successMessage, { variant: 'success' });
-      
+
       // Update submission status to IN REVIEW immediately after successful upload
       try {
         await axiosInstance.patch(`/api/creator/submissions/v4/${submission.id}/status`, {
-          status: 'PENDING_REVIEW'
+          status: 'PENDING_REVIEW',
         });
       } catch (statusError) {
-        console.error('Failed to update status to IN REVIEW:', statusError.response?.data?.message || 'Something went wrong');
+        console.error(
+          'Failed to update status to IN REVIEW:',
+          statusError.response?.data?.message || 'Something went wrong'
+        );
       }
 
       // Update parent component
@@ -262,10 +244,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     } catch (error) {
       console.error('Submit error:', error);
       setHasSubmitted(false);
-      enqueueSnackbar(
-        error.message || 'Failed to upload raw footages',
-        { variant: 'error' }
-      );
+      enqueueSnackbar(error.message || 'Failed to upload raw footages', { variant: 'error' });
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -289,11 +268,22 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       return false;
     }
     // Editable if: in reupload mode OR no raw footages have been submitted yet OR just uploaded locally OR changes are required
-    return isReuploadMode || submittedRawFootages.length === 0 || (!hasSubmitted && selectedFiles.length > 0) || hasChangesRequired;
-  }, [isReuploadMode, submittedRawFootages.length, hasSubmitted, selectedFiles.length, hasChangesRequired]);
+    return (
+      isReuploadMode ||
+      submittedRawFootages.length === 0 ||
+      (!hasSubmitted && selectedFiles.length > 0) ||
+      hasChangesRequired
+    );
+  }, [
+    isReuploadMode,
+    submittedRawFootages.length,
+    hasSubmitted,
+    selectedFiles.length,
+    hasChangesRequired,
+  ]);
 
   // Determine if we can upload
-  const canUpload = !isApproved && !isPosted && !isPostingLinkRejected;
+  const canUpload = !isApproved && !isPosted;
 
   if (!canUpload) {
     return (
@@ -301,7 +291,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         <Typography variant="h6" gutterBottom>
           Raw Footages {submission.status === 'POSTED' ? 'Posted' : 'Approved'}
         </Typography>
-        
+
         {/* Display submitted raw footages */}
         {submittedRawFootages.length > 0 && (
           <Box sx={{ mb: 2 }}>
@@ -319,14 +309,33 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Caption:
             </Typography>
-            <Typography variant="body1">
-              {submission.caption}
-            </Typography>
+            <Typography variant="body1">{submission.caption}</Typography>
           </Box>
         )}
       </Box>
     );
   }
+
+  const isDisabled =
+    uploading ||
+    submission.status === 'PENDING_REVIEW' ||
+    submission.status === 'POSTED' ||
+    (submission.status !== 'CHANGES_REQUIRED' &&
+      submission.status !== 'NOT_STARTED') ||
+    ((submission.status === 'NOT_STARTED' || submission.status === 'CLIENT_APPROVED') &&
+      selectedFiles.length === 0);
+
+  const isReuploadButton =
+    submission.status === 'CHANGES_REQUIRED' && !isReuploadMode 
+
+  const isSubmitButton =
+    (isReuploadMode && submission.status === 'CHANGES_REQUIRED') ||
+    ((submission.status === 'NOT_STARTED' || submission.status === 'CLIENT_APPROVED') &&
+      selectedFiles.length > 0);
+
+  const buttonColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#1340FF' : '#3A3A3C';
+
+  const buttonBorderColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#00000073' : '#000';
 
   return (
     <Box>
@@ -341,30 +350,34 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       )}
 
       {/* Main Content Area */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', md: 'row' },
-        gap: { xs: 2, md: 3 },
-        position: 'relative',
-        minHeight: { xs: 'auto', md: 405 },
-        maxWidth: '100%',
-        overflow: 'hidden', // Prevent overflow
-        // Ensure proper spacing on smaller screens
-        '@media (max-width: 1200px)': {
-          flexDirection: 'column',
-          gap: 2,
-        }
-      }}>
-        {/* Upload Area - Responsive width */}
-        <Box sx={{ 
-          width: { xs: '100%', md: '65%' }, // Full width on mobile, 65% on desktop
-          maxWidth: '100%', // Prevent overflow
-          order: { xs: 1, md: 1 }, // First on both mobile and desktop
-          // Adjust for smaller desktop screens
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          gap: { xs: 2, md: 3 },
+          position: 'relative',
+          minHeight: { xs: 'auto', md: 405 },
+          maxWidth: '100%',
+          overflow: 'hidden', // Prevent overflow
+          // Ensure proper spacing on smaller screens
           '@media (max-width: 1200px)': {
-            width: '100%',
-          }
-        }}>
+            flexDirection: 'column',
+            gap: 2,
+          },
+        }}
+      >
+        {/* Upload Area - Responsive width */}
+        <Box
+          sx={{
+            width: { xs: '100%', md: '65%' }, // Full width on mobile, 65% on desktop
+            maxWidth: '100%', // Prevent overflow
+            order: { xs: 1, md: 1 }, // First on both mobile and desktop
+            // Adjust for smaller desktop screens
+            '@media (max-width: 1200px)': {
+              width: '100%',
+            },
+          }}
+        >
           {rawFootagesToDisplay.length === 0 ? (
             <CustomV4Upload
               files={[]}
@@ -380,28 +393,34 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
           ) : (
             <RawFootageGridDisplay
               files={rawFootagesToDisplay}
-              onRemoveVideo={(isReuploadMode || selectedFiles.length > 0) && isCaptionEditable ? handleRemoveVideo : null}
+              onRemoveVideo={
+                (isReuploadMode || selectedFiles.length > 0) && isCaptionEditable
+                  ? handleRemoveVideo
+                  : null
+              }
               height={{ xs: 320, md: 480 }}
             />
           )}
         </Box>
 
         {/* Caption Area - Responsive positioning */}
-        <Box sx={{ 
-          width: { xs: '100%', md: 'min(325px, 35%)' }, // Responsive width on desktop, full width on mobile
-          maxWidth: { xs: '100%', md: '325px' }, // Ensure it doesn't exceed container
-          position: { xs: 'static', md: 'absolute' }, // Static on mobile, absolute on desktop
-          top: { xs: 'auto', md: 0 },
-          right: { xs: 'auto', md: 0 },
-          zIndex: 2,
-          order: { xs: 2, md: 2 }, // Second on both mobile and desktop
-          // Ensure it doesn't overflow on smaller desktop screens
-          '@media (max-width: 1200px)': {
-            position: 'static',
-            width: '100%',
-            maxWidth: '100%',
-          }
-        }}>
+        <Box
+          sx={{
+            width: { xs: '100%', md: 'min(325px, 35%)' }, // Responsive width on desktop, full width on mobile
+            maxWidth: { xs: '100%', md: '325px' }, // Ensure it doesn't exceed container
+            position: { xs: 'static', md: 'absolute' }, // Static on mobile, absolute on desktop
+            top: { xs: 'auto', md: 0 },
+            right: { xs: 'auto', md: 0 },
+            zIndex: 2,
+            order: { xs: 2, md: 2 }, // Second on both mobile and desktop
+            // Ensure it doesn't overflow on smaller desktop screens
+            '@media (max-width: 1200px)': {
+              position: 'static',
+              width: '100%',
+              maxWidth: '100%',
+            },
+          }}
+        >
           {/* Additional Upload Box - Shows when 1+ videos are displayed and in upload mode */}
           {rawFootagesToDisplay.length > 0 && (isReuploadMode || selectedFiles.length > 0) && (
             <Box sx={{ mb: 2 }}>
@@ -488,35 +507,37 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
 
           {/* Feedback Section - Show when changes are required */}
           {hasChangesRequired && relevantFeedback.length > 0 && (
-            <Card sx={{
-              p: { xs: 1, md: 1 }, // Reduced padding to move content left
-              pl: { xs: 0, md: 0 }, // Remove left padding completely
-              bgcolor: 'transparent',
-              boxShadow: 'none',
-              border: 'none',
-              mt: { xs: 1, md: 2},
-              maxHeight: { xs: 'auto', md: '220px' },
-              overflowY: { xs: 'visible', md: 'auto' },
-              mb: { xs: 0, md: 8 },
-              position: { xs: 'static', md: 'relative' },
-              width: '100%',
-              maxWidth: '100%',
-              boxSizing: 'border-box',
-              '&::-webkit-scrollbar': {
-                width: 6,
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: 'rgba(0,0,0,0.1)',
-                borderRadius: 4,
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                borderRadius: 4,
-                '&:hover': {
-                  backgroundColor: 'rgba(0,0,0,0.5)',
+            <Card
+              sx={{
+                p: { xs: 1, md: 1 }, // Reduced padding to move content left
+                pl: { xs: 0, md: 0 }, // Remove left padding completely
+                bgcolor: 'transparent',
+                boxShadow: 'none',
+                border: 'none',
+                mt: { xs: 1, md: 2 },
+                maxHeight: { xs: 'auto', md: '220px' },
+                overflowY: { xs: 'visible', md: 'auto' },
+                mb: { xs: 0, md: 8 },
+                position: { xs: 'static', md: 'relative' },
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                '&::-webkit-scrollbar': {
+                  width: 6,
                 },
-              },
-            }}>
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: 'rgba(0,0,0,0.1)',
+                  borderRadius: 4,
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  borderRadius: 4,
+                  '&:hover': {
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                  },
+                },
+              }}
+            >
               {/* Change Request Reasons */}
               {relevantFeedback[0]?.reasons && relevantFeedback[0].reasons.length > 0 && (
                 <Box sx={{ mb: 1 }}>
@@ -549,47 +570,51 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
 
               {/* CS Feedback Title and Content */}
               <Box>
-                <Typography 
-                  variant="body2" 
-                sx={{
-                    fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily:
+                      'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     color: '#636366',
                     fontWeight: 600,
-                    mb: 0.5
+                    mb: 0.5,
                   }}
                 >
                   CS Feedback
                 </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily:
+                      'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     color: '#636366',
                     lineHeight: 1.4,
-                    fontSize: '0.875rem'
+                    fontSize: '0.875rem',
                   }}
                 >
                   {relevantFeedback[0]?.content || 'No specific feedback provided.'}
                 </Typography>
               </Box>
-        </Card>
-      )}
+            </Card>
+          )}
         </Box>
       </Box>
 
       {/* Submit Button - Responsive Position */}
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: { xs: 'center', md: 'flex-end' }, // Center on mobile, right-aligned on desktop
-        alignItems: 'center', 
-        mt: { xs: 2, md: -6 }, // Normal spacing on mobile, negative margin on desktop
-        position: 'relative', 
-        zIndex: 10 
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: { xs: 'center', md: 'flex-end' }, // Center on mobile, right-aligned on desktop
+          alignItems: 'center',
+          mt: { xs: 2, md: -6 }, // Normal spacing on mobile, negative margin on desktop
+          position: 'relative',
+          zIndex: 10,
+        }}
+      >
         <Typography
           component="button"
-          onClick={hasChangesRequired && !isReuploadMode ? handleReuploadMode : handleSubmit}
-          disabled={uploading || (memoizedSelectedFiles.length === 0 && !hasChangesRequired)}
+          onClick={ isReuploadButton ? handleReuploadMode : handleSubmit}
+          disabled={isDisabled}
           sx={{
             px: 2,
             py: 1,
@@ -597,11 +622,9 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
             border: '1px solid',
             borderBottom: '3px solid',
             borderRadius: 0.8,
-            bgcolor: hasChangesRequired ? '#1340FF' : 
-                     (memoizedSelectedFiles.length === 0) ? '#BDBDBD' : '#3a3a3c',
+            bgcolor: buttonColor,
             color: 'white',
-            borderColor: hasChangesRequired ? '#1340FF' : 
-                        (memoizedSelectedFiles.length === 0) ? '#BDBDBD' : '#3a3a3c',
+            borderColor: buttonBorderColor,
             textTransform: 'none',
             fontSize: '0.75rem',
             minWidth: '80px',
@@ -610,20 +633,23 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: (uploading || (memoizedSelectedFiles.length === 0 && !hasChangesRequired)) ? 'not-allowed' : 'pointer',
-            '&:hover': (!uploading && (memoizedSelectedFiles.length > 0 || hasChangesRequired)) ? {
-              bgcolor: '#1340FF',
-              borderColor: '#1340FF',
-            } : {},
+            cursor: isDisabled ? 'not-allowed' : 'pointer',
             '&:disabled': {
               bgcolor: '#BDBDBD',
               borderColor: '#BDBDBD',
               color: 'white',
               cursor: 'not-allowed',
-            }
+            },
+            // Remove hover effect
           }}
         >
-          {uploading ? 'Processing...' : (hasChangesRequired && !isReuploadMode) ? (isPostingLinkRejected ? 'Reupload Posting Link' : 'Reupload Raw Footages') : (!isCaptionEditable && submittedRawFootages.length > 0 && !hasChangesRequired ? 'Submitted' : 'Submit')}
+          {uploading
+            ? 'Uploading...'
+            : isReuploadButton
+                ? 'Reupload Photos' // or 'Reupload Draft'/'Reupload Raw Footages' based on component
+                : isSubmitButton
+                  ? 'Submit' 
+                  : 'Submitted'}
         </Typography>
       </Box>
     </Box>
