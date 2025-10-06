@@ -69,7 +69,7 @@ const UploadDraftVideoModal = ({
     return true;
   };
 
-  const isV3 = campaign?.origin === 'CLIENT';
+  // V3 submissions removed
 
   // Socket.io progress handling
   useEffect(() => {
@@ -158,12 +158,8 @@ const UploadDraftVideoModal = ({
         });
       }
       
-      console.log('CAMPAIGN:', campaign);
-      console.log('isV3:', isV3);
-      const endpoint = isV3
-        ? endpoints.submission.v3.submitDraft
-        : endpoints.submission.creator.draftSubmission;
-      console.log('Using endpoint:', endpoint);
+      // V3 submissions removed - using V2 endpoint only
+      const endpoint = endpoints.submission.creator.draftSubmission;
       
       await axiosInstance.post(endpoint, formData, {
         headers: {

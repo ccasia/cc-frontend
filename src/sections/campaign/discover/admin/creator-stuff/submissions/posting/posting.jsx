@@ -58,7 +58,7 @@ const Posting = ({
 
   const [dateError, setDateError] = useState({ dueDate: null });
 
-  // Get user role for V3 workflow
+  // Get user role for workflow
   const userRole = user?.role || 'admin';
 
   const onSubmit = async (type) => {
@@ -66,54 +66,20 @@ const Posting = ({
     try {
       loading.onTrue();
       if (type === 'APPROVED') {
-        if (isV3) {
-          if (userRole === 'client') {
-            // V3 client approval endpoint
-            res = await axiosInstance.patch(endpoints.submission.v3.posting.approveByClient, {
-              submissionId: submission.id,
-              feedback: 'Posting approved by client'
-            });
-          } else {
-            // V3 admin approval endpoint - sends to client
-            res = await axiosInstance.patch(endpoints.submission.v3.posting.approveByAdmin, {
-              submissionId: submission.id,
-              feedback: 'Posting approved by admin'
-            });
-          }
-        } else {
-          // Legacy endpoint - direct approval
+        // Use V2 endpoint only
         res = await axiosInstance.patch(endpoints.submission.admin.posting, {
           submissionId: submission?.id,
           status: 'APPROVED'
         });
-        }
         dialogApprove.onFalse();
       } else {
-        if (isV3) {
-          if (userRole === 'client') {
-            // V3 client rejection endpoint
-            res = await axiosInstance.patch(endpoints.submission.v3.posting.requestChangesByClient, {
-              submissionId: submission.id,
-              feedback,
-              reasons: []
-            });
-          } else {
-            // V3 admin rejection endpoint
-            res = await axiosInstance.patch(endpoints.submission.v3.posting.requestChangesByAdmin, {
-              submissionId: submission.id,
-              feedback,
-              reasons: []
-            });
-          }
-        } else {
-          // Legacy endpoint - direct rejection
+        // Use V2 endpoint only
         res = await axiosInstance.patch(endpoints.submission.admin.posting, {
           submissionId: submission?.id,
           status: 'REJECTED',
           feedback,
           feedbackId: submission?.feedback?.id,
         });
-        }
         dialogReject.onFalse();
       }
       mutate(
@@ -245,7 +211,7 @@ const Posting = ({
                   </Typography>
                 </Stack>
               </Stack>
-              {!(isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
+              {!(false && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
                 <Button
                   variant="outlined"
                   onClick={postingDate.onTrue}
@@ -395,7 +361,7 @@ const Posting = ({
                             {submission?.content}
                           </Typography>
                         ) : null}
-                        {isV3 && userRole === 'admin' && (submission?.status === 'PENDING_REVIEW' || submission?.status === 'CHANGES_REQUIRED') && (
+                        {false && userRole === 'admin' && (submission?.status === 'PENDING_REVIEW' || submission?.status === 'CHANGES_REQUIRED') && (
                           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
                             <TextField fullWidth placeholder="Paste posting link" value={csmLink} onChange={(e) => setCsmLink(e.target.value)} />
                             <Button
@@ -420,7 +386,7 @@ const Posting = ({
                               onClick={async () => {
                                 try {
                                   loading.onTrue();
-                                  await axiosInstance.post(`${endpoints.submission.root}v3/posting/submit-link/csm`, { submissionId: submission.id, link: csmLink });
+                                  await axiosInstance.post(`${endpoints.submission.root}/posting/submit-link/csm`, { submissionId: submission.id, link: csmLink });
                                   setCsmLink('');
                                   mutate(
                                     (key) => typeof key === 'string' && key.includes(endpoints.submission.root) && key.includes(`campaignId=${campaign?.id}`),
@@ -449,8 +415,8 @@ const Posting = ({
                 
 
                 
-                {/* V3: Show different buttons based on user role and submission status */}
-                {isV3 && userRole === 'client' && (submission?.displayStatus === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && submission?.status !== 'APPROVED' ? (
+                {/* Show different buttons based on user role and submission status */}
+                {false && userRole === 'client' && (submission?.displayStatus === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && submission?.status !== 'APPROVED' ? (
                   // Client buttons for V3
                   <>
 
@@ -513,10 +479,10 @@ const Posting = ({
                     </LoadingButton>
                   </>
                 ) : (
-                  // Admin buttons (V2 style or V3 admin) - hide when CHANGES_REQUIRED, show only when actionable
-                  submission?.status !== 'APPROVED' && submission?.status !== 'CHANGES_REQUIRED' && (submission?.content || (submission?.videos && submission.videos.length > 0)) && !(isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
+                  // Admin buttons (V2 style) - hide when CHANGES_REQUIRED, show only when actionable
+                  submission?.status !== 'APPROVED' && submission?.status !== 'CHANGES_REQUIRED' && (submission?.content || (submission?.videos && submission.videos.length > 0)) && !(false && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
                   <>
-                {isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN' && (
+                {false && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN' && (
                   <Box sx={{
                     px: 1.25,
                     py: 0.5,

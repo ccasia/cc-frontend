@@ -31,7 +31,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
-import useGetV3Submissions from 'src/hooks/use-get-v3-submissions';
 import useGetClientCampaigns from 'src/hooks/use-get-client-campaigns';
 
 import { fDate } from 'src/utils/format-time';
@@ -120,8 +119,6 @@ const ClientDashboard = () => {
   };
 
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
-  // Fetch V3 submissions to compute counts across all campaigns
-  const { submissions: allSubmissions, isLoading: submissionsLoading } = useGetV3Submissions();
   // Fetch V3 pitches (creator master list items)
   const { pitches: allPitches, isLoading: pitchesLoading } = useGetV3Pitches();
 
@@ -177,18 +174,7 @@ const ClientDashboard = () => {
     ).length;
   }, [allPitches, clientCampaignIds]);
 
-  const draftsToApprove = React.useMemo(() => {
-    // Count drafts that were sent to client and awaiting first action
-    if (!Array.isArray(allSubmissions) || clientCampaignIds.size === 0) return 0;
-    return allSubmissions.filter((s) => {
-      const type = s?.submissionType?.type || s?.submissionType;
-      return (
-        clientCampaignIds.has(s?.campaignId) &&
-        (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') &&
-        s?.status === 'SENT_TO_CLIENT'
-      );
-    }).length;
-  }, [allSubmissions, clientCampaignIds]);
+  const draftsToApprove = 0; // V3 submissions removed
 
   // Debug logging for counts and data shapes
   useEffect(() => {
@@ -204,50 +190,27 @@ const ClientDashboard = () => {
         );
       }
       console.log(
-        '[ClientDashboard] allSubmissions length:',
-        Array.isArray(allSubmissions) ? allSubmissions.length : 'n/a'
-      );
-      console.log(
         '[ClientDashboard] allPitches length:',
         Array.isArray(allPitches) ? allPitches.length : 'n/a'
       );
-      if (Array.isArray(allSubmissions)) {
-        const sample = allSubmissions[0] || null;
-        console.log('[ClientDashboard] submission sample:', sample);
-        const statuses = [...new Set(allSubmissions.map((s) => s?.status))];
-        console.log('[ClientDashboard] unique submission statuses:', statuses);
-        const creatorsToApproveItems = Array.isArray(allPitches)
-          ? allPitches.filter((p) => {
-              const st = p?.displayStatus || p?.status;
-              return (
-                clientCampaignIds.has(p?.campaignId) &&
-                (st === 'PENDING_REVIEW' || st === 'undecided')
-              );
-            })
-          : [];
-        const draftsToApproveItems = allSubmissions.filter((s) => {
-          const type = s?.submissionType?.type || s?.submissionType;
-          return (
-            clientCampaignIds.has(s?.campaignId) &&
-            (type === 'FIRST_DRAFT' || type === 'FINAL_DRAFT') &&
-            s?.status === 'SENT_TO_CLIENT'
-          );
-        });
-        console.log(
-          '[ClientDashboard] creatorsToApprove count/items:',
-          creatorsToApproveItems.length,
-          creatorsToApproveItems.slice(0, 5)
-        );
-        console.log(
-          '[ClientDashboard] draftsToApprove count/items:',
-          draftsToApproveItems.length,
-          draftsToApproveItems.slice(0, 5)
-        );
-      }
+      const creatorsToApproveItems = Array.isArray(allPitches)
+        ? allPitches.filter((p) => {
+            const st = p?.displayStatus || p?.status;
+            return (
+              clientCampaignIds.has(p?.campaignId) &&
+              (st === 'PENDING_REVIEW' || st === 'undecided')
+            );
+          })
+        : [];
+      console.log(
+        '[ClientDashboard] creatorsToApprove count/items:',
+        creatorsToApproveItems.length,
+        creatorsToApproveItems.slice(0, 5)
+      );
     } catch (e) {
       console.warn('[ClientDashboard] debug log error:', e);
     }
-  }, [campaigns, allSubmissions]);
+  }, [campaigns, allPitches]);
 
   const handleCompanyCreated = (newCompany) => {
     setHasCompany(true);
