@@ -36,7 +36,7 @@ export const formatNumber = (num) => {
 const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const { isMobile, theme } = useMediaKitResponsive();
 
-  const topThreeContents = (topContents || [])
+  const displayContent = (topContents || [])
     .sort((a, b) => a?.like_count > b?.like_count)
     .slice(0, 3);
 
@@ -61,7 +61,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
           pt: 1,
         }}
       >
-        {topThreeContents.map((content, index) => (
+        {displayContent.map((content, index) => (
           <Box
             key={index}
             sx={{
@@ -202,7 +202,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
       animate="show"
       initial="hidden"
     >
-      {topThreeContents.map((content, index) => (
+      {displayContent.map((content, index) => (
         <Box
           key={index}
           component={m.div}

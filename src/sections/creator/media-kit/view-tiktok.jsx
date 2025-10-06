@@ -49,7 +49,7 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
     return null;
   };
 
-  const displayContents = topFiveContents;
+  const displayContent = topFiveContents;
 
   if (isMobile) {
     return (
@@ -72,8 +72,8 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
           pt: 1,
         }}
       >
-        {displayContents.length > 0 &&
-          displayContents.map((content, index) => (
+        {displayContent.length > 0 &&
+          displayContent.map((content, index) => (
             <Box
               key={index}
               sx={{
@@ -217,8 +217,8 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
       animate="show"
       initial="hidden"
     >
-      {displayContents.length > 0 &&
-        displayContents.map((content, index) => (
+      {displayContent.length > 0 &&
+        displayContent.map((content, index) => (
           <Box
             key={index}
             component={m.div}
