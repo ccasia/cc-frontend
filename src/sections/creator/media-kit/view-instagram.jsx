@@ -202,124 +202,125 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
       animate="show"
       initial="hidden"
     >
-      {displayContent.map((content, index) => (
-        <Box
-          key={index}
-          component={m.div}
-          variants={{
-            hidden: { opacity: 0, y: 50 },
-            show: { opacity: 1, y: 0 },
-          }}
-          onClick={() => {
-            const a = document.createElement('a');
-            a.href = content?.permalink;
-            a.target = '_blank';
-            a.click();
-          }}
-          sx={{
-            width: { xs: '100%', sm: '30%', md: 350 },
-            minWidth: { xs: '280px', sm: '250px', md: '320px' },
-            maxWidth: { xs: '100%', sm: '350px' },
-            display: 'flex',
-            flexDirection: 'column',
-            borderRadius: 0,
-            overflow: 'hidden',
-            boxShadow: 'none',
-            bgcolor: 'transparent',
-            height: 'auto',
-            minHeight: { xs: 580, sm: 600, md: 650 },
-          }}
-        >
+      {displayContent.length > 0 &&
+        displayContent.map((content, index) => (
           <Box
-            component="div"
+            key={index}
+            component={m.div}
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              show: { opacity: 1, y: 0 },
+            }}
+            onClick={() => {
+              const a = document.createElement('a');
+              a.href = content?.permalink;
+              a.target = '_blank';
+              a.click();
+            }}
             sx={{
-              position: 'relative',
-              height: { xs: 420, sm: 500, md: 580 },
-              width: '100%',
+              width: { xs: '100%', sm: '30%', md: 350 },
+              minWidth: { xs: '280px', sm: '250px', md: '320px' },
+              maxWidth: { xs: '100%', sm: '350px' },
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: 0,
               overflow: 'hidden',
-              cursor: 'pointer',
-              flexShrink: 0,
-              '&:hover .image': {
-                scale: 1.05,
-              },
+              boxShadow: 'none',
+              bgcolor: 'transparent',
+              height: 'auto',
+              minHeight: { xs: 580, sm: 600, md: 650 },
             }}
           >
-            <CardMedia
-              component="Box"
-              className="image"
-              alt={`Top content ${index + 1}`}
+            <Box
+              component="div"
               sx={{
-                height: 1,
-                transition: 'all .2s linear',
-                objectFit: 'cover',
-                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.media_type === 'VIDEO' ? content?.thumbnail_url : content?.media_url}) lightgray 50% / cover no-repeat`,
+                position: 'relative',
+                height: { xs: 420, sm: 500, md: 580 },
+                width: '100%',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                flexShrink: 0,
+                '&:hover .image': {
+                  scale: 1.05,
+                },
               }}
-            />
+            >
+              <CardMedia
+                component="Box"
+                className="image"
+                alt={`Top content ${index + 1}`}
+                sx={{
+                  height: 1,
+                  transition: 'all .2s linear',
+                  objectFit: 'cover',
+                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.media_type === 'VIDEO' ? content?.thumbnail_url : content?.media_url}) lightgray 50% / cover no-repeat`,
+                }}
+              />
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  width: '100%',
+                  color: 'white',
+                  p: isMobile ? 2 : 1.5,
+                  px: 2,
+                  mb: 1,
+                  borderRadius: '0 0 24px 24px',
+                }}
+                className="media-kit-engagement-icons"
+              >
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="material-symbols:favorite-outline" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.like_count)}</Typography>
+                  </Stack>
+
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="iconamoon:comment" width={20} />
+                    <Typography variant="subtitle2">
+                      {formatNumber(content?.comments_count)}
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </Box>
+            </Box>
 
             <Box
               sx={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                width: '100%',
-                color: 'white',
-                p: isMobile ? 2 : 1.5,
-                px: 2,
-                mb: 1,
-                borderRadius: '0 0 24px 24px',
+                flex: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                pt: 1,
+                px: 0.5,
+                pb: 0.5,
+                minHeight: 'auto',
+                maxHeight: 60,
+                border: 'none',
+                boxShadow: 'none',
+                bgcolor: 'transparent',
               }}
-              className="media-kit-engagement-icons"
             >
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Iconify icon="material-symbols:favorite-outline" width={20} />
-                  <Typography variant="subtitle2">{formatNumber(content?.like_count)}</Typography>
-                </Stack>
-
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Iconify icon="iconamoon:comment" width={20} />
-                  <Typography variant="subtitle2">
-                    {formatNumber(content?.comments_count)}
-                  </Typography>
-                </Stack>
-              </Stack>
+              <Typography
+                variant="body2"
+                className="media-kit-caption"
+                sx={{
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  color: 'text.primary',
+                  lineHeight: 1.4,
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  hyphens: 'auto',
+                  flex: 1,
+                  ...getCaptionStyles(content?.caption?.length || 0, isMobile),
+                }}
+              >
+                {content?.caption}
+              </Typography>
             </Box>
           </Box>
-
-          <Box
-            sx={{
-              flex: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              pt: 1,
-              px: 0.5,
-              pb: 0.5,
-              minHeight: 'auto',
-              maxHeight: 60,
-              border: 'none',
-              boxShadow: 'none',
-              bgcolor: 'transparent',
-            }}
-          >
-            <Typography
-              variant="body2"
-              className="media-kit-caption"
-              sx={{
-                fontSize: isMobile ? '0.75rem' : '0.875rem',
-                color: 'text.primary',
-                lineHeight: 1.4,
-                wordBreak: 'break-word',
-                overflowWrap: 'break-word',
-                hyphens: 'auto',
-                flex: 1,
-                ...getCaptionStyles(content?.caption?.length || 0, isMobile),
-              }}
-            >
-              {content?.caption}
-            </Typography>
-          </Box>
-        </Box>
-      ))}
+        ))}
     </Box>
   );
 };
