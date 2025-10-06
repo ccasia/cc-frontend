@@ -67,17 +67,7 @@ const MediaKitCreator = () => {
     imageUrl: '',
   });
 
-  const initialTab = () => {
-    if (tiktok) {
-      return 'tiktok'
-    }
-    if (instagram) {
-      return 'instagram'
-    }
-    return 'instagram'
-  }
-
-  const [currentTab, setCurrentTab] = useState(initialTab());
+  const [currentTab, setCurrentTab] = useState('instagram');
 
   const desktopLayoutRef = useRef(null);
 
