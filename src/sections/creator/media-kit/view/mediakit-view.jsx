@@ -134,6 +134,8 @@ const MediaKitCreator = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setTiktok]);
 
+  console.log('Tiktok data: ', tiktok)
+
   const calculateTotalEngagement = useCallback((totalLikes, totalComments) => {
     const likes = parseInt(totalLikes, 10) || 0;
     const comments = parseInt(totalComments, 10) || 0;
@@ -150,7 +152,7 @@ const MediaKitCreator = () => {
           instagram?.medias?.totalComments ?? 0
         )),
         averageLikes: instagram?.instagramUser?.averageLikes || 0,
-        username: instagram?.instagramUser?.username,
+        username: instagram?.instagramUser?.username || 'Creator',
         averageComments: instagram?.instagramUser?.averageComments || 0,
       };
     }
@@ -163,6 +165,7 @@ const MediaKitCreator = () => {
           tiktok?.medias?.totalComments ?? 0
         )),
         averageLikes: tiktok?.medias?.averageLikes || 0,
+        username: tiktok?.tiktokUser?.display_name || 'Creator',
         averageComments: tiktok?.medias?.averageComments || 0,
       };
     }
