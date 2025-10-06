@@ -10,9 +10,7 @@ import { useMediaKitResponsive } from 'src/hooks/use-media-kit-responsive';
 
 import axiosInstance from 'src/utils/axios';
 import { useSocialMediaData } from 'src/utils/store';
-import {
-  formatNumber,
-} from 'src/utils/media-kit-utils';
+import { formatNumber } from 'src/utils/media-kit-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -21,7 +19,6 @@ import ChartContainer from 'src/components/media-kit/ChartContainer';
 import EngagementRateChart from 'src/components/media-kit/EngagementRateChart';
 import MonthlyInteractionsChart from 'src/components/media-kit/MonthlyInteractionsChart';
 import PlatformConnectionPrompt from 'src/components/media-kit/PlatformConnectionPrompt';
-
 
 const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
@@ -341,18 +338,19 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
     sortedVideosLength: realTopContent?.length,
     isArray: Array.isArray(realTopContent),
     userConnected: !!user?.creator?.isTiktokConnected,
-    firstVideo: realTopContent?.[0] ? {
-      id: realTopContent[0].id,
-      title: realTopContent[0].title,
-      like: realTopContent[0].like,
-      comment: realTopContent[0].comment
-    } : null
+    firstVideo: realTopContent?.[0]
+      ? {
+          id: realTopContent[0].id,
+          title: realTopContent[0].title,
+          like: realTopContent[0].like,
+          comment: realTopContent[0].comment,
+        }
+      : null,
   });
-
 
   // Check if we have real content
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
-  
+
   const isConnected = !!user?.creator?.isTiktokConnected;
 
   // Use real content only
@@ -370,12 +368,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
 
   // Show connect TikTok prompt if not connected (bypassed for demo)
   if (!isConnected) {
-    return (
-      <PlatformConnectionPrompt
-        platform="TikTok"
-        onConnect={connectTiktok}
-      />
-    );
+    return <PlatformConnectionPrompt platform="TikTok" onConnect={connectTiktok} />;
   }
 
   // Carousel for mobile, grid for desktop
@@ -386,10 +379,9 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
       ) : (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
-            {isConnected 
-              ? "No videos found in your TikTok account. This could be due to:\n• Account has no public videos\n• TikTok API permissions need refresh\n• Account is private" 
-              : "Connect your TikTok account to see your top content"
-            }
+            {isConnected
+              ? 'No videos found in your TikTok account. This could be due to:\n• Account has no public videos\n• TikTok API permissions need refresh\n• Account is private'
+              : 'Connect your TikTok account to see your top content'}
           </Typography>
           {!isConnected ? (
             <Button
