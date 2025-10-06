@@ -6,13 +6,13 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
-import { 
-  Box,  
-  Card, 
-  Stack, 
-  Chip, 
-  Button, 
-  Typography, 
+import {
+  Box,
+  Card,
+  Stack,
+  Chip,
+  Button,
+  Typography,
   CircularProgress,
   Collapse,
   IconButton,
@@ -22,7 +22,7 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
-  Avatar
+  Avatar,
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 
@@ -57,7 +57,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   const [openUploadModal, setOpenUploadModal] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState('');
-  
+
   // New signing functionality
   const editor = useBoolean();
   const [annotations, setAnnotations] = useState([]);
@@ -65,21 +65,23 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   const [loading, setLoading] = useState(false);
 
   const [showUploadOption, setShowUploadOption] = useState(false);
-  
+
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
   // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
   const originalAgreementUrl = campaign?.agreement?.agreementUrl;
-  const agreementUrl = originalAgreementUrl ? 
-    originalAgreementUrl.replace(
-      'https://storage.googleapis.com/cult-prod/',
-      `${window.location.origin}/api/agreement-template/`
-    ) : null;
-  
+  const agreementUrl = originalAgreementUrl
+    ? originalAgreementUrl.replace(
+        'https://storage.googleapis.com/cult-prod/',
+        `${window.location.origin}/api/agreement/agreement-template/`
+      )
+    : null;
+
   // Check if agreement has been submitted (not just pending)
-  const isAgreementSubmitted = agreementSubmission?.status === 'PENDING_REVIEW' || 
-                              agreementSubmission?.status === 'APPROVED' || 
-                              agreementSubmission?.status === 'CLIENT_APPROVED';
+  const isAgreementSubmitted =
+    agreementSubmission?.status === 'PENDING_REVIEW' ||
+    agreementSubmission?.status === 'APPROVED' ||
+    agreementSubmission?.status === 'CLIENT_APPROVED';
 
   const methods = useForm({
     defaultValues: {
@@ -185,7 +187,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   // V4 Agreement Signing Functions
   const handleAgreementSubmit = async (signedPdfFile) => {
     setUploading(true);
-    
+
     const formData = new FormData();
     formData.append('agreementForm', signedPdfFile);
     formData.append(
@@ -233,7 +235,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       for (const annotation of annotations) {
         const page = pdfDoc.getPage(annotation.page - 1);
         const { width, height } = page.getSize();
-        
+
         page.drawImage(signatureImage, {
           x: annotation.x,
           y: height - annotation.y - annotation.height,
@@ -261,210 +263,228 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 
   return (
     <>
-    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
-      {/* Left Side - PDF Preview */}
-      {agreementUrl && (
-        <Box sx={{ flex: 1 }}>
-          <Box
-            sx={{
-              width: '100%',
-              height: '500px',
-              borderRadius: 1,
-              border: '1px solid',
-              borderColor: 'divider',
-              overflow: 'auto',
-              bgcolor: 'background.neutral',
-              '& .react-pdf__Document': {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-              },
-            }}
-          >
-            <Document
-              file={agreementUrl}
-              onLoadSuccess={onDocumentLoadSuccess}
-              onLoadError={onDocumentLoadError}
-            >
-              {Array.from(new Array(numPages), (el, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    p: 2,
-                    width: '100%',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    '&:not(:last-child)': {
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
-                    },
-                  }}
-                >
-                  <Page
-                    key={`page-${index + 1}`}
-                    pageNumber={index + 1}
-                    scale={isSmallScreen ? 0.4 : 0.6}
-                    renderAnnotationLayer={false}
-                    renderTextLayer={false}
-                  />
-                </Box>
-              ))}
-            </Document>
-          </Box>
-        </Box>
-      )}
-
-      {/* Right Side - Instructions and Buttons */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Instructions */}
-        <Stack spacing={2} sx={{ mb: 3 }}>
-          <Typography variant="body1" sx={{ color: '#221f20'}}>
-            Before starting the campaign, you must sign the standard agreement submission procedure!
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#221f20'}}>
-            Review the agreement PDF below and choose your preferred method to sign and submit it.
-          </Typography>
-
-          {/* Download Agreement Button */}
-          {agreementUrl && (
-            <Button
-              variant="contained"
-              startIcon={<Iconify icon="material-symbols:download" width={20} />}
-              onClick={() => handleDownload(agreementUrl)}
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
+        {/* Left Side - PDF Preview */}
+        {agreementUrl && (
+          <Box sx={{ flex: 1 }}>
+            <Box
               sx={{
-                bgcolor: 'white',
-                border: 1,
-                borderColor: '#e7e7e7',
-                borderBottom: 3,
-                borderBottomColor: '#e7e7e7',
-                color: '#203ff5',
-                ml: -1,
-                alignSelf: 'flex-start',
-                '&:hover': {
-                  bgcolor: 'white',
-                  borderColor: '#e7e7e7',
-                },
-                '& .MuiButton-startIcon': {
-                  color: '#203ff5',
+                width: '100%',
+                height: '500px',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'divider',
+                overflow: 'auto',
+                bgcolor: 'background.neutral',
+                '& .react-pdf__Document': {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
                 },
               }}
             >
-              Download Agreement
-            </Button>
-          )}
-        </Stack>
+              <Document
+                file={agreementUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={onDocumentLoadError}
+              >
+                {Array.from(new Array(numPages), (el, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      p: 2,
+                      width: '100%',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      '&:not(:last-child)': {
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                      },
+                    }}
+                  >
+                    <Page
+                      key={`page-${index + 1}`}
+                      pageNumber={index + 1}
+                      scale={isSmallScreen ? 0.4 : 0.6}
+                      renderAnnotationLayer={false}
+                      renderTextLayer={false}
+                    />
+                  </Box>
+                ))}
+              </Document>
+            </Box>
+          </Box>
+        )}
 
-        {/* Action Buttons - Bottom Right */}
-        <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-end' }}>
-          {/* Digital Signing Option */}
-          <Button
-            variant="contained"
-            onClick={editor.onTrue}
-            disabled={isAgreementSubmitted || !agreementUrl}
-            startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
-            sx={{
-              bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
-              color: 'white',
-              borderBottom: 3.5,
-              borderBottomColor: isAgreementSubmitted ? '#9e9e9f' : '#112286',
-              borderRadius: 1.5,
-              px: 2.5,
-              py: 1.2,
-              '&:hover': {
-                bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
-                opacity: 0.9,
-              },
-              '&.Mui-disabled': {
-                color: 'white',
-                opacity: 0.6,
-              },
-            }}
-          >
-            {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement Digitally'}
-          </Button>
+        {/* Right Side - Instructions and Buttons */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {/* Instructions */}
+          <Stack spacing={2} sx={{ mb: 3 }}>
+            <Typography variant="body1" sx={{ color: '#221f20' }}>
+              Before starting the campaign, you must sign the standard agreement submission
+              procedure!
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#221f20' }}>
+              Review the agreement PDF below and choose your preferred method to sign and submit it.
+            </Typography>
 
-          {/* Upload Option Toggle */}
-          {!isAgreementSubmitted && (
-            <>
+            {/* Download Agreement Button */}
+            {agreementUrl && (
               <Button
-                variant="outlined"
-                onClick={() => setShowUploadOption(!showUploadOption)}
-                startIcon={<Iconify icon="eva:upload-outline" width={20} />}
+                variant="contained"
+                startIcon={<Iconify icon="material-symbols:download" width={20} />}
+                onClick={() => handleDownload(agreementUrl)}
                 sx={{
-                  borderColor: '#203ff5',
+                  bgcolor: 'white',
+                  border: 1,
+                  borderColor: '#e7e7e7',
+                  borderBottom: 3,
+                  borderBottomColor: '#e7e7e7',
                   color: '#203ff5',
-                  borderWidth: 1,
-                  borderBottom: 2,
-                  borderBottomColor: '#203ff5',
-                  borderRadius: 1.5,
-                  px: 2,
-                  py: 1,
+                  ml: -1,
+                  alignSelf: 'flex-start',
                   '&:hover': {
-                    bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    borderColor: '#203ff5',
+                    bgcolor: 'white',
+                    borderColor: '#e7e7e7',
+                  },
+                  '& .MuiButton-startIcon': {
+                    color: '#203ff5',
                   },
                 }}
               >
-                {showUploadOption ? 'Hide Upload Option' : 'Upload Signed Agreement'}
+                Download Agreement
               </Button>
+            )}
+          </Stack>
 
-              {/* Upload Section */}
-              <Collapse in={showUploadOption}>
-                <Box sx={{ mt: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1, bgcolor: '#fafafa' }}>
-                  <FormProvider methods={methods} onSubmit={onSubmit}>
-                    <Stack spacing={2}>
-                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                        If digital signing doesn't work, you can download the agreement, sign it manually, and upload it here:
-                      </Typography>
-                      
-                      {!agreementForm &&
-                        <RHFUpload
-                          name="agreementForm"
-                          accept={{ 'application/pdf': [] }}
-                          onDrop={onDrop}
-                          onRemove={handleRemove}
-                          helperText="Upload your signed agreement PDF file"
-                        />
-                      }
+          {/* Action Buttons - Bottom Right */}
+          <Box
+            sx={{
+              mt: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              alignItems: 'flex-end',
+            }}
+          >
+            {/* Digital Signing Option */}
+            <Button
+              variant="contained"
+              onClick={editor.onTrue}
+              disabled={isAgreementSubmitted || !agreementUrl}
+              startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
+              sx={{
+                bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
+                color: 'white',
+                borderBottom: 3.5,
+                borderBottomColor: isAgreementSubmitted ? '#9e9e9f' : '#112286',
+                borderRadius: 1.5,
+                px: 2.5,
+                py: 1.2,
+                '&:hover': {
+                  bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
+                  opacity: 0.9,
+                },
+                '&.Mui-disabled': {
+                  color: 'white',
+                  opacity: 0.6,
+                },
+              }}
+            >
+              {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement Digitally'}
+            </Button>
 
-                      {uploadProgress > 0 && uploadProgress < 100 && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <CircularProgress size={20} />
-                          <Typography variant="body2">Uploading... {uploadProgress}%</Typography>
-                        </Box>
-                      )}
-                      
-                      {agreementForm && (
-                        <Stack direction="row" spacing={2} justifyContent="flex-end">
-                          <Button
-                            variant="outlined"
-                            onClick={() => setPreview(URL.createObjectURL(agreementForm))}
-                            startIcon={<Iconify icon="eva:eye-outline" />}
-                          >
-                            Preview
-                          </Button>
-                          <LoadingButton
-                            type="submit"
-                            variant="contained"
-                            loading={uploading}
-                            sx={{
-                              bgcolor: '#203ff5',
-                              '&:hover': { bgcolor: '#203ff5', opacity: 0.9 }
-                            }}
-                          >
-                            Submit Agreement
-                          </LoadingButton>
-                        </Stack>
-                      )}
-                    </Stack>
-                  </FormProvider>
-                </Box>
-              </Collapse>
-            </>
-          )}
+            {/* Upload Option Toggle */}
+            {!isAgreementSubmitted && (
+              <>
+                <Button
+                  variant="outlined"
+                  onClick={() => setShowUploadOption(!showUploadOption)}
+                  startIcon={<Iconify icon="eva:upload-outline" width={20} />}
+                  sx={{
+                    borderColor: '#203ff5',
+                    color: '#203ff5',
+                    borderWidth: 1,
+                    borderBottom: 2,
+                    borderBottomColor: '#203ff5',
+                    borderRadius: 1.5,
+                    px: 2,
+                    py: 1,
+                    '&:hover': {
+                      bgcolor: 'rgba(32, 63, 245, 0.04)',
+                      borderColor: '#203ff5',
+                    },
+                  }}
+                >
+                  {showUploadOption ? 'Hide Upload Option' : 'Upload Signed Agreement'}
+                </Button>
+
+                {/* Upload Section */}
+                <Collapse in={showUploadOption}>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 1,
+                      bgcolor: '#fafafa',
+                    }}
+                  >
+                    <FormProvider methods={methods} onSubmit={onSubmit}>
+                      <Stack spacing={2}>
+                        <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
+                          If digital signing doesn't work, you can download the agreement, sign it
+                          manually, and upload it here:
+                        </Typography>
+
+                        {!agreementForm && (
+                          <RHFUpload
+                            name="agreementForm"
+                            accept={{ 'application/pdf': [] }}
+                            onDrop={onDrop}
+                            onRemove={handleRemove}
+                            helperText="Upload your signed agreement PDF file"
+                          />
+                        )}
+
+                        {uploadProgress > 0 && uploadProgress < 100 && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CircularProgress size={20} />
+                            <Typography variant="body2">Uploading... {uploadProgress}%</Typography>
+                          </Box>
+                        )}
+
+                        {agreementForm && (
+                          <Stack direction="row" spacing={2} justifyContent="flex-end">
+                            <Button
+                              variant="outlined"
+                              onClick={() => setPreview(URL.createObjectURL(agreementForm))}
+                              startIcon={<Iconify icon="eva:eye-outline" />}
+                            >
+                              Preview
+                            </Button>
+                            <LoadingButton
+                              type="submit"
+                              variant="contained"
+                              loading={uploading}
+                              sx={{
+                                bgcolor: '#203ff5',
+                                '&:hover': { bgcolor: '#203ff5', opacity: 0.9 },
+                              }}
+                            >
+                              Submit Agreement
+                            </LoadingButton>
+                          </Stack>
+                        )}
+                      </Stack>
+                    </FormProvider>
+                  </Box>
+                </Collapse>
+              </>
+            )}
+          </Box>
         </Box>
       </Box>
-    </Box>
 
       {/* Sign Agreement Dialog */}
       <Dialog open={editor.value} onClose={editor.onFalse} fullWidth maxWidth="md">
@@ -496,12 +516,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       </Dialog>
 
       {/* Preview Modal */}
-      <Dialog
-        open={!!preview}
-        onClose={() => setPreview('')}
-        fullWidth
-        maxWidth="md"
-      >
+      <Dialog open={!!preview} onClose={() => setPreview('')} fullWidth maxWidth="md">
         <DialogTitle>
           <Stack direction="row" alignItems="center" gap={2}>
             <Typography variant="h5">Preview Document</Typography>
@@ -533,20 +548,27 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 const CampaignV4Activity = ({ campaign }) => {
   const [expandedSections, setExpandedSections] = useState({});
   const [numPages, setNumPages] = useState(null);
-  
+
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
-  
+
   // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
   const originalAgreementUrl = campaign?.agreement?.agreementUrl;
-  const agreementUrl = originalAgreementUrl ? 
-    originalAgreementUrl.replace(
-      'https://storage.googleapis.com/cult-prod/',
-      `${window.location.origin}/api/agreement-template/`
-    ) : null;
+  const agreementUrl = originalAgreementUrl
+    ? originalAgreementUrl.replace(
+        'https://storage.googleapis.com/cult-prod/',
+        `${window.location.origin}/api/agreement/agreement-template/`
+      )
+    : null;
 
   // Fetch creator's v4 submissions
-  const { data: submissionsData, error, mutate } = useSWR(
-    campaign?.id ? `${endpoints.submission.creator.v4.getMyV4Submissions}?campaignId=${campaign?.id}` : null,
+  const {
+    data: submissionsData,
+    error,
+    mutate,
+  } = useSWR(
+    campaign?.id
+      ? `${endpoints.submission.creator.v4.getMyV4Submissions}?campaignId=${campaign?.id}`
+      : null,
     fetcher,
     {
       revalidateOnFocus: true,
@@ -556,7 +578,9 @@ const CampaignV4Activity = ({ campaign }) => {
 
   // Fetch campaign overview
   const { data: overviewData } = useSWR(
-    campaign?.id ? `${endpoints.submission.creator.v4.getMyCampaignOverview}?campaignId=${campaign?.id}` : null,
+    campaign?.id
+      ? `${endpoints.submission.creator.v4.getMyCampaignOverview}?campaignId=${campaign?.id}`
+      : null,
     fetcher
   );
 
@@ -566,7 +590,7 @@ const CampaignV4Activity = ({ campaign }) => {
     if (signedContent) {
       return signedContent.replace(
         'https://storage.googleapis.com/cult-prod/',
-        `${window.location.origin}/api/agreement-template/`
+        `${window.location.origin}/api/agreement/agreement-template/`
       );
     }
     return null;
@@ -574,9 +598,9 @@ const CampaignV4Activity = ({ campaign }) => {
 
   // Handle section expand/collapse
   const handleToggleSection = (submissionId) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [submissionId]: !prev[submissionId]
+      [submissionId]: !prev[submissionId],
     }));
   };
 
@@ -615,13 +639,13 @@ const CampaignV4Activity = ({ campaign }) => {
       const allSubmissions = [
         ...submissionsData.grouped.videos,
         ...submissionsData.grouped.photos,
-        ...submissionsData.grouped.rawFootage
+        ...submissionsData.grouped.rawFootage,
       ];
-      
-      const firstIncomplete = allSubmissions.find(s => 
-        !['APPROVED', 'CLIENT_APPROVED', 'POSTED'].includes(s.status)
+
+      const firstIncomplete = allSubmissions.find(
+        (s) => !['APPROVED', 'CLIENT_APPROVED', 'POSTED'].includes(s.status)
       );
-      
+
       if (firstIncomplete) {
         setExpandedSections({ [firstIncomplete.id]: true });
       }
@@ -630,22 +654,24 @@ const CampaignV4Activity = ({ campaign }) => {
 
   // Helper function to determine if submission is "new" (not submitted yet)
   const isNewSubmission = (submission) => {
-    const hasContent = submission.video?.length > 0 || 
-                      submission.photos?.length > 0 || 
-                      submission.rawFootages?.length > 0;
+    const hasContent =
+      submission.video?.length > 0 ||
+      submission.photos?.length > 0 ||
+      submission.rawFootages?.length > 0;
     return !hasContent && submission.status === 'IN_PROGRESS';
   };
 
   // Helper function to get submission status
   const getSubmissionStatus = (submission) => {
-    const hasContent = submission.video?.length > 0 || 
-                      submission.photos?.length > 0 || 
-                      submission.rawFootages?.length > 0;
-    
+    const hasContent =
+      submission.video?.length > 0 ||
+      submission.photos?.length > 0 ||
+      submission.rawFootages?.length > 0;
+
     if (!hasContent) {
       return 'NOT STARTED';
     }
-    
+
     switch (submission.status) {
       case 'IN_PROGRESS':
       case 'PENDING_REVIEW':
@@ -662,7 +688,7 @@ const CampaignV4Activity = ({ campaign }) => {
         const campaignRequiresPosting = campaign?.campaignType === 'normal'; // 'normal' = UGC (With Posting)
         const hasVideoOrPhotos = submission.video?.length > 0 || submission.photos?.length > 0;
         const needsPostingLink = campaignRequiresPosting && hasVideoOrPhotos;
-        
+
         if (needsPostingLink) {
           if (!submission.content) {
             return 'PENDING POSTING LINK';
@@ -699,11 +725,11 @@ const CampaignV4Activity = ({ campaign }) => {
         color: '#FFC702',
         borderColor: '#FFC702',
       },
-      'APPROVED': {
+      APPROVED: {
         color: '#00AB55',
         borderColor: '#00AB55',
       },
-      'POSTED': {
+      POSTED: {
         color: '#00AB55',
         borderColor: '#00AB55',
       },
@@ -749,41 +775,41 @@ const CampaignV4Activity = ({ campaign }) => {
 
   // Check if creator's agreement has been approved
   const isAgreementApproved = overviewData?.isAgreementApproved;
-  
+
   // If agreement hasn't been approved, show agreement submission
   if (!isAgreementApproved && overviewData?.agreementStatus) {
     return (
       <Box>
-
         {/* Agreement Submission Card */}
-        <Card 
-          sx={{ 
+        <Card
+          sx={{
             overflow: 'visible',
             bgcolor: '#F5F5F5',
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: 2
+            mb: 2,
           }}
         >
-          <Stack 
-            direction="row" 
-            alignItems="center" 
-            justifyContent="space-between" 
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
             sx={{ p: 2, cursor: 'pointer' }}
-            onClick={() => setExpandedSections(prev => ({ ...prev, agreement: !prev.agreement }))}
+            onClick={() => setExpandedSections((prev) => ({ ...prev, agreement: !prev.agreement }))}
           >
             <Stack direction="row" alignItems="center" spacing={2}>
-              <Typography 
-                variant="subtitle1" 
-                sx={{ 
-                  fontWeight: 600, 
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
                   color: 'black',
-                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 }}
               >
                 Agreement
-                </Typography>
+              </Typography>
               <Typography
                 variant="caption"
                 sx={{
@@ -796,27 +822,35 @@ const CampaignV4Activity = ({ campaign }) => {
                   bgcolor: 'white',
                   whiteSpace: 'nowrap',
                   color: overviewData.agreementStatus === 'PENDING_REVIEW' ? '#8B5CF6' : '#FFC702',
-                  borderColor: overviewData.agreementStatus === 'PENDING_REVIEW' ? '#8B5CF6' : '#FFC702',
+                  borderColor:
+                    overviewData.agreementStatus === 'PENDING_REVIEW' ? '#8B5CF6' : '#FFC702',
                   fontSize: '0.75rem',
                 }}
               >
-                {overviewData.agreementStatus === 'IN_PROGRESS' ? 'PENDING AGREEMENT' : 
-                 overviewData.agreementStatus === 'PENDING_REVIEW' ? 'IN REVIEW' :
-                 overviewData.agreementStatus?.replace('_', ' ').toUpperCase() || 'NOT STARTED'}
-                </Typography>
-              </Stack>
-            <Iconify 
-              icon={expandedSections.agreement ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
-              width={20} 
+                {overviewData.agreementStatus === 'IN_PROGRESS'
+                  ? 'PENDING AGREEMENT'
+                  : overviewData.agreementStatus === 'PENDING_REVIEW'
+                    ? 'IN REVIEW'
+                    : overviewData.agreementStatus?.replace('_', ' ').toUpperCase() ||
+                      'NOT STARTED'}
+              </Typography>
+            </Stack>
+            <Iconify
+              icon={expandedSections.agreement ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+              width={20}
             />
           </Stack>
-          
+
           <Collapse in={expandedSections.agreement}>
             <Box sx={{ p: 2, pt: 0 }}>
-              <AgreementSubmission 
-                campaign={campaign} 
+              <AgreementSubmission
+                campaign={campaign}
                 agreementSubmission={submissionsData?.grouped?.agreement}
-                onUpdate={() => mutate(`${endpoints.submission.creator.v4.getMyCampaignOverview}?campaignId=${campaign.id}`)} 
+                onUpdate={() =>
+                  mutate(
+                    `${endpoints.submission.creator.v4.getMyCampaignOverview}?campaignId=${campaign.id}`
+                  )
+                }
               />
             </Box>
           </Collapse>
@@ -828,29 +862,30 @@ const CampaignV4Activity = ({ campaign }) => {
   return (
     <Box>
       {/* Campaign Brief Message */}
-      <Typography 
-        variant="body2" 
-        gutterBottom 
-        sx={{ 
+      <Typography
+        variant="body2"
+        gutterBottom
+        sx={{
           mb: 3,
           color: 'black',
-          fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily:
+            'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           fontWeight: 400,
-          lineHeight: 1.5
+          lineHeight: 1.5,
         }}
       >
         Do ensure to read through the brief, and the do's and don't's for the creatives over at the{' '}
         <br />
-        <Typography 
-          component="span" 
-          sx={{ 
+        <Typography
+          component="span"
+          sx={{
             color: '#1340FF',
             textDecoration: 'underline',
             cursor: 'pointer',
             fontFamily: 'inherit',
             '&:hover': {
-              opacity: 0.8
-            }
+              opacity: 0.8,
+            },
           }}
           onClick={() => {
             // Add navigation logic here if needed
@@ -863,30 +898,36 @@ const CampaignV4Activity = ({ campaign }) => {
 
       {/* Approved Agreement Display */}
       {isAgreementApproved && (
-        <Card 
-          sx={{ 
+        <Card
+          sx={{
             overflow: 'visible',
             bgcolor: '#F5F5F5',
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: 1
+            mb: 1,
           }}
         >
-          <Stack 
-            direction="row" 
-            alignItems="center" 
-            justifyContent="space-between" 
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
             sx={{ p: 2, cursor: 'pointer' }}
-            onClick={() => setExpandedSections(prev => ({ ...prev, approvedAgreement: !prev.approvedAgreement }))}
+            onClick={() =>
+              setExpandedSections((prev) => ({
+                ...prev,
+                approvedAgreement: !prev.approvedAgreement,
+              }))
+            }
           >
             <Stack direction="row" alignItems="center" spacing={2}>
-              <Typography 
-                variant="subtitle1" 
-                sx={{ 
-                  fontWeight: 600, 
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
                   color: 'black',
-                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 }}
               >
                 Agreement
@@ -910,34 +951,41 @@ const CampaignV4Activity = ({ campaign }) => {
                 APPROVED
               </Typography>
             </Stack>
-            <Iconify 
-              icon={expandedSections.approvedAgreement ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
-              width={20} 
+            <Iconify
+              icon={
+                expandedSections.approvedAgreement ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'
+              }
+              width={20}
             />
           </Stack>
-          
+
           <Collapse in={expandedSections.approvedAgreement}>
             <Box sx={{ p: 2, pt: 0 }}>
               <Stack spacing={2}>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
+                <Typography
+                  variant="body2"
+                  sx={{
                     color: '#221f20',
-                    fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    fontWeight: 500
+                    fontFamily:
+                      'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    fontWeight: 500,
                   }}
                 >
-                  ✅ Your agreement has been approved! {signedAgreementUrl ? 'Below is your signed agreement.' : ''} You can now proceed with the campaign submissions.
+                  ✅ Your agreement has been approved!{' '}
+                  {signedAgreementUrl ? 'Below is your signed agreement.' : ''} You can now proceed
+                  with the campaign submissions.
                 </Typography>
-                
+
                 {/* Agreement PDF Preview */}
                 {(signedAgreementUrl || agreementUrl) && (
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: { xs: 'column', md: 'row' }, 
-                    gap: 2,
-                    mt: 1
-                  }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'column', md: 'row' },
+                      gap: 2,
+                      mt: 1,
+                    }}
+                  >
                     {/* PDF Preview */}
                     <Box sx={{ flex: 1 }}>
                       <Box
@@ -987,14 +1035,16 @@ const CampaignV4Activity = ({ campaign }) => {
                         </Document>
                       </Box>
                     </Box>
-                    
+
                     {/* Download Button */}
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      alignItems: { xs: 'center', md: 'flex-start' }
-                    }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: { xs: 'center', md: 'flex-start' },
+                      }}
+                    >
                       <Button
                         variant="contained"
                         startIcon={<Iconify icon="material-symbols:download" width={20} />}
@@ -1033,16 +1083,16 @@ const CampaignV4Activity = ({ campaign }) => {
           const title = getSubmissionTitle(video, index);
           const status = getSubmissionStatus(video);
           const statusInfo = getSubmissionStatusInfo(status);
-          
+
           return (
-            <Card 
-              key={video.id} 
-              sx={{ 
+            <Card
+              key={video.id}
+              sx={{
                 overflow: 'visible',
                 bgcolor: '#F5F5F5',
                 boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
                 borderRadius: 2,
-                border: 'none'
+                border: 'none',
               }}
             >
               {/* Header */}
@@ -1059,18 +1109,19 @@ const CampaignV4Activity = ({ campaign }) => {
                 }}
                 onClick={() => handleToggleSection(video.id)}
               >
-              <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography 
-                    variant="h6" 
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography
+                    variant="h6"
                     sx={{
-                      fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontFamily:
+                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                       fontWeight: 500,
-                      color: 'black'
+                      color: 'black',
                     }}
                   >
                     {title}
                   </Typography>
-                  
+
                   {/* Status Typography */}
                   <Typography
                     variant="caption"
@@ -1086,29 +1137,26 @@ const CampaignV4Activity = ({ campaign }) => {
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
                       fontSize: '0.75rem',
-           
                     }}
                   >
                     {status}
                   </Typography>
-                  
+
                   {isNew && (
-                    <Chip 
-                      label="NEW" 
-                      size="small" 
-                      sx={{ 
-                        bgcolor: 'error.main', 
+                    <Chip
+                      label="NEW"
+                      size="small"
+                      sx={{
+                        bgcolor: 'error.main',
                         color: 'white',
                         fontWeight: 'bold',
-                        fontSize: '0.75rem'
-                      }} 
+                        fontSize: '0.75rem',
+                      }}
                     />
                   )}
                 </Stack>
                 <IconButton size="small">
-                  <Iconify 
-                    icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
-                  />
+                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
                 </IconButton>
               </Box>
 
@@ -1116,7 +1164,7 @@ const CampaignV4Activity = ({ campaign }) => {
               <Collapse in={isExpanded}>
                 <Divider />
                 <Box sx={{ p: 3 }}>
-                  <V4VideoSubmission 
+                  <V4VideoSubmission
                     submission={video}
                     campaign={campaign}
                     onUpdate={() => mutate()}
@@ -1134,16 +1182,16 @@ const CampaignV4Activity = ({ campaign }) => {
           const title = getSubmissionTitle(photo, index);
           const status = getSubmissionStatus(photo);
           const statusInfo = getSubmissionStatusInfo(status);
-          
+
           return (
-            <Card 
-              key={photo.id} 
-              sx={{ 
+            <Card
+              key={photo.id}
+              sx={{
                 overflow: 'visible',
                 bgcolor: '#F5F5F5',
                 boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
                 borderRadius: 2,
-                border: 'none'
+                border: 'none',
               }}
             >
               {/* Header */}
@@ -1161,17 +1209,18 @@ const CampaignV4Activity = ({ campaign }) => {
                 onClick={() => handleToggleSection(photo.id)}
               >
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography 
-                    variant="h6" 
+                  <Typography
+                    variant="h6"
                     sx={{
-                      fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontFamily:
+                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                       fontWeight: 500,
-                      color: 'black'
+                      color: 'black',
                     }}
                   >
                     {title}
                   </Typography>
-                  
+
                   {/* Status Typography */}
                   <Typography
                     variant="caption"
@@ -1191,24 +1240,22 @@ const CampaignV4Activity = ({ campaign }) => {
                   >
                     {status}
                   </Typography>
-                  
+
                   {isNew && (
-                    <Chip 
-                      label="NEW" 
-                      size="small" 
-                      sx={{ 
-                        bgcolor: 'error.main', 
+                    <Chip
+                      label="NEW"
+                      size="small"
+                      sx={{
+                        bgcolor: 'error.main',
                         color: 'white',
                         fontWeight: 'bold',
-                        fontSize: '0.75rem'
-                      }} 
+                        fontSize: '0.75rem',
+                      }}
                     />
                   )}
-                  </Stack>
+                </Stack>
                 <IconButton size="small">
-                  <Iconify 
-                    icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
-                  />
+                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
                 </IconButton>
               </Box>
 
@@ -1216,7 +1263,7 @@ const CampaignV4Activity = ({ campaign }) => {
               <Collapse in={isExpanded}>
                 <Divider />
                 <Box sx={{ p: 3 }}>
-                  <V4PhotoSubmission 
+                  <V4PhotoSubmission
                     submission={photo}
                     campaign={campaign}
                     onUpdate={() => mutate()}
@@ -1234,16 +1281,16 @@ const CampaignV4Activity = ({ campaign }) => {
           const title = getSubmissionTitle(rawFootage, index);
           const status = getSubmissionStatus(rawFootage);
           const statusInfo = getSubmissionStatusInfo(status);
-          
+
           return (
-            <Card 
-              key={rawFootage.id} 
-              sx={{ 
+            <Card
+              key={rawFootage.id}
+              sx={{
                 overflow: 'visible',
                 bgcolor: '#F5F5F5',
                 boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
                 borderRadius: 2,
-                border: 'none'
+                border: 'none',
               }}
             >
               {/* Header */}
@@ -1261,21 +1308,22 @@ const CampaignV4Activity = ({ campaign }) => {
                 onClick={() => handleToggleSection(rawFootage.id)}
               >
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography 
-                    variant="h6" 
-                  sx={{ 
-                      fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily:
+                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                       fontWeight: 500,
-                      color: 'black'
+                      color: 'black',
                     }}
                   >
                     {title}
-                      </Typography>
-                  
+                  </Typography>
+
                   {/* Status Typography */}
                   <Typography
                     variant="caption"
-                  sx={{ 
+                    sx={{
                       px: 1.5,
                       py: 0.5,
                       fontWeight: 600,
@@ -1290,25 +1338,23 @@ const CampaignV4Activity = ({ campaign }) => {
                     }}
                   >
                     {status}
-                      </Typography>
-                  
+                  </Typography>
+
                   {isNew && (
-                    <Chip 
-                      label="NEW" 
-                      size="small" 
-                      sx={{ 
-                        bgcolor: 'error.main', 
+                    <Chip
+                      label="NEW"
+                      size="small"
+                      sx={{
+                        bgcolor: 'error.main',
                         color: 'white',
                         fontWeight: 'bold',
-                        fontSize: '0.75rem'
-                      }} 
+                        fontSize: '0.75rem',
+                      }}
                     />
                   )}
-                  </Stack>
+                </Stack>
                 <IconButton size="small">
-                  <Iconify 
-                    icon={isExpanded ? "eva:chevron-up-fill" : "eva:chevron-down-fill"} 
-                  />
+                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
                 </IconButton>
               </Box>
 
@@ -1316,16 +1362,13 @@ const CampaignV4Activity = ({ campaign }) => {
               <Collapse in={isExpanded}>
                 <Divider />
                 <Box sx={{ p: 3 }}>
-                <V4RawFootageSubmission 
-                  submission={rawFootage}
-                  onUpdate={() => mutate()}
-                />
+                  <V4RawFootageSubmission submission={rawFootage} onUpdate={() => mutate()} />
                 </Box>
               </Collapse>
             </Card>
           );
         })}
-              </Stack>
+      </Stack>
     </Box>
   );
 };

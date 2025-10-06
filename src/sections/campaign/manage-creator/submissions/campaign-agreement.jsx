@@ -135,7 +135,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const agreementUrl = originalAgreementUrl ? 
     originalAgreementUrl.replace(
       'https://storage.googleapis.com/cult-prod/',
-      `${window.location.origin}/api/agreement-template/`
+      `${window.location.origin}/api/agreement/agreement-template/`
     ) : null;
 
   const agreement = campaign?.campaignTimeline?.find((elem) => elem?.name === 'Agreement');
