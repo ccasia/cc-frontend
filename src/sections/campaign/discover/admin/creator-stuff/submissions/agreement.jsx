@@ -252,7 +252,7 @@ const Agreement = ({ campaign, submission, creator, isForClient }) => {
                       file={submission.content?.replace ? 
                         submission.content.replace(
                           'https://storage.googleapis.com/cult-prod/',
-                          `${window.location.origin}/api/agreement-template/`
+                          `${window.location.origin}/api/agreement/agreement-template/`
                         ) : submission.content}
                       onLoadSuccess={onDocumentLoadSuccess}
                       onLoadError={onDocumentLoadError}
