@@ -497,17 +497,11 @@ const CampaignFirstDraft = ({
     try {
       setShowSubmitDialog(true);
       setSubmitStatus('submitting');
-      const isV3 = campaign?.origin === 'CLIENT' || (campaign?.id && campaign.id.startsWith('cmd'));
-      if (isV3) {
-        await axiosInstance.patch(endpoints.submission.v3.checkStatus, {
-          submissionId: submission?.id,
-        });
-      } else {
-        await axiosInstance.patch('/api/submission/status', {
-          submissionId: submission?.id,
-          status: 'PENDING_REVIEW',
-        });
-      }
+      // V3 submissions removed - using V2 endpoint only
+      await axiosInstance.patch('/api/submission/status', {
+        submissionId: submission?.id,
+        status: 'PENDING_REVIEW',
+      });
       await new Promise((resolve) => setTimeout(resolve, 800));
       mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
       setSubmitStatus('success');

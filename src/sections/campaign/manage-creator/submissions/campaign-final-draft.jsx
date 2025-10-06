@@ -166,7 +166,7 @@ const CampaignFinalDraft = ({
   }, [previousSubmission, fullSubmission]);
 
   // Commented out: Backend endpoint doesn't exist yet
-  // const creatorFeedbackKey = submission?.id ? `/api/submission/v3/creator-feedback/${submission.id}` : null;
+  // V3 creator feedback removed
   // const { data: creatorFeedbackResp, mutate: mutateCreatorFeedback } = useSWR(creatorFeedbackKey, async (url) => {
   //   const { data } = await axiosInstance.get(url);
   //   return data;
@@ -268,7 +268,7 @@ const CampaignFinalDraft = ({
 
     // Only show feedback that's actually relevant for the current change request context
     const relevantFeedbacks = uniqueFeedbacks.filter(f => {
-      // Robust role detection (handles V2 and V3 shapes)
+      // Role detection for V2
       const roleName = f?.admin?.admin?.role?.name || f?.admin?.role || f?.role || '';
       const normalizedRole = typeof roleName === 'string' ? roleName.toLowerCase() : '';
       const isClient = normalizedRole === 'client';

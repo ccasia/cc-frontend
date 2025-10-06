@@ -20,7 +20,6 @@ import {
 } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
-import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 
 import axiosInstance from 'src/utils/axios';
@@ -99,26 +98,21 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     });
   }, [shortlistedCreators, sortDirection]);
 
-  // Check if this is a V3 campaign (client-origin)
-  const isV3 = campaign?.origin === 'CLIENT';
+  // Check if this is a V3 campaign (client-origin) - V3 removed
+  const isV3 = false;
 
-  // Get submissions for selected creator - use V3 for V3 campaigns
+  // Get submissions for selected creator - V3 submissions removed
   const {
     data: submissionsV2,
     isLoading: loadingSubmissionsV2,
     mutate: submissionMutateV2,
   } = useGetSubmissions(selectedCreator?.userId, campaign?.id);
 
-  const {
-    data: submissionsV3,
-    isLoading: loadingSubmissionsV3,
-    mutate: submissionMutateV3,
-  } = useGetSubmissionsV3(selectedCreator?.userId, campaign?.id);
 
-  // Use the appropriate submissions data based on campaign type
-  const submissions = isV3 ? submissionsV3 : submissionsV2;
-  const loadingSubmissions = isV3 ? loadingSubmissionsV3 : loadingSubmissionsV2;
-  const submissionMutate = isV3 ? submissionMutateV3 : submissionMutateV2;
+  // Use V2 submissions only
+  const submissions = submissionsV2;
+  const loadingSubmissions = loadingSubmissionsV2;
+  const submissionMutate = submissionMutateV2;
 
   // Get deliverables for selected creator
   const {
@@ -154,9 +148,9 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     filtered = filtered.filter((creator) => {
       const creatorStatus = creatorStatuses[creator.userId];
       
-      // For V3 campaigns, show all shortlisted creators to admin
+      // For campaigns, show all shortlisted creators to admin
       if (isV3) {
-        return true; // Show all creators for admin in V3 campaigns
+        return true; // Show all creators for admin in campaigns
       }
       
       // For V2 campaigns, show all creators to admin
@@ -245,37 +239,16 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
             let response;
             let data;
 
-            if (isV3) {
-              // Use V3 API endpoint for client-origin campaigns with proper authentication
-              console.log(`🔍 Admin fetching V3 submissions for creator ${creator.userId} in campaign ${campaign.id}`);
-              const axiosResponse = await axiosInstance.get(
-                `/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`
-              );
-              data = axiosResponse.data;
-              console.log(`📡 V3 API response success, data length:`, data?.length || 0);
-            } else {
-              // Use legacy API endpoint for admin-origin campaigns
-              response = await fetch(
-                `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
-              );
-              if (!response.ok) {
-                statusMap[creator.userId] = 'NOT_STARTED';
-                continue;
-              }
-              data = await response.json();
+            // Use legacy API endpoint
+            response = await fetch(
+              `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
+            );
+            if (!response.ok) {
+              statusMap[creator.userId] = 'NOT_STARTED';
+              continue;
             }
+            data = await response.json();
             
-            if (isV3) {
-              console.log(`📊 V3 submissions data for creator ${creator.userId}:`, {
-                dataLength: data?.length || 0,
-                submissions: data?.map(s => ({
-                  id: s.id,
-                  type: s.submissionType?.type,
-                  status: s.status,
-                  displayStatus: s.displayStatus
-                })) || []
-              });
-            }
 
             if (!data || data.length === 0) {
               console.log(`⚠️ No submissions found for creator ${creator.userId}`);
@@ -321,25 +294,16 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
             // Determine the status based on the latest stage in the workflow
             // Priority: Posting > Final Draft > First Draft > Agreement
-            // For V3 campaigns, use displayStatus if available
             if (postingSubmission) {
-              statusMap[creator.userId] = isV3 && postingSubmission.displayStatus 
-                ? postingSubmission.displayStatus 
-                : postingSubmission.status;
+              statusMap[creator.userId] = postingSubmission.status;
             } else if (finalDraftSubmission) {
-              statusMap[creator.userId] = isV3 && finalDraftSubmission.displayStatus 
-                ? finalDraftSubmission.displayStatus 
-                : finalDraftSubmission.status;
+              statusMap[creator.userId] = finalDraftSubmission.status;
             } else if (firstDraftSubmission) {
-              statusMap[creator.userId] = isV3 && firstDraftSubmission.displayStatus 
-                ? firstDraftSubmission.displayStatus 
-                : firstDraftSubmission.status;
+              statusMap[creator.userId] = firstDraftSubmission.status;
             } else if (agreementSubmission) {
               // If only agreement exists, use its status
               // This ensures creators with approved agreements show up
-              const agreementStatus = isV3 && agreementSubmission.displayStatus 
-                ? agreementSubmission.displayStatus 
-                : agreementSubmission.status;
+              const agreementStatus = agreementSubmission.status;
               statusMap[creator.userId] = agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
             } else {
               statusMap[creator.userId] = 'NOT_STARTED';
@@ -367,8 +331,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       setCreatorStatuses((prevStatuses) => {
         const newStatuses = { ...prevStatuses };
 
-        // Check if this is a V3 campaign (client-origin)
-        const isV3 = campaign?.origin === 'CLIENT';
+        // Check if this is a V3 campaign (client-origin) - V3 removed
+        const isV3 = false;
 
         // Include all submission types to determine creator status
         const allSubmissions = submissions.filter(
@@ -408,24 +372,15 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
         // Determine the status based on the latest stage in the workflow
         // Priority: Posting > Final Draft > First Draft > Agreement
-        // For V3 campaigns, use displayStatus if available
         if (postingSubmission) {
-          newStatuses[selectedCreator.userId] = isV3 && postingSubmission.displayStatus 
-            ? postingSubmission.displayStatus 
-            : postingSubmission.status;
+          newStatuses[selectedCreator.userId] = postingSubmission.status;
         } else if (finalDraftSubmission) {
-          newStatuses[selectedCreator.userId] = isV3 && finalDraftSubmission.displayStatus 
-            ? finalDraftSubmission.displayStatus 
-            : finalDraftSubmission.status;
+          newStatuses[selectedCreator.userId] = finalDraftSubmission.status;
         } else if (firstDraftSubmission) {
-          newStatuses[selectedCreator.userId] = isV3 && firstDraftSubmission.displayStatus 
-            ? firstDraftSubmission.displayStatus 
-            : firstDraftSubmission.status;
+          newStatuses[selectedCreator.userId] = firstDraftSubmission.status;
         } else if (agreementSubmission) {
           // If only agreement exists, use its status
-          const agreementStatus = isV3 && agreementSubmission.displayStatus 
-            ? agreementSubmission.displayStatus 
-            : agreementSubmission.status;
+          const agreementStatus = agreementSubmission.status;
           newStatuses[selectedCreator.userId] = agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
         } else {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
@@ -467,17 +422,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
             // Determine the status based on the latest stage in the workflow
             if (postingSubmission) {
-              statusMap[selectedCreator.userId] = isV3 && postingSubmission.displayStatus 
-                ? postingSubmission.displayStatus 
-                : postingSubmission.status;
+              statusMap[selectedCreator.userId] = postingSubmission.status;
             } else if (finalDraftSubmission) {
-              statusMap[selectedCreator.userId] = isV3 && finalDraftSubmission.displayStatus 
-                ? finalDraftSubmission.displayStatus 
-                : finalDraftSubmission.status;
+              statusMap[selectedCreator.userId] = finalDraftSubmission.status;
             } else if (firstDraftSubmission) {
-              statusMap[selectedCreator.userId] = isV3 && firstDraftSubmission.displayStatus 
-                ? firstDraftSubmission.displayStatus 
-                : firstDraftSubmission.status;
+              statusMap[selectedCreator.userId] = firstDraftSubmission.status;
             }
           }
 
@@ -516,25 +465,15 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           let response;
           let data;
 
-          if (isV3) {
-            // Use V3 API endpoint for client-origin campaigns with proper authentication
-            console.log(`🔍 Admin refresh fetching V3 submissions for creator ${creator.userId}`);
-            const axiosResponse = await axiosInstance.get(
-              `/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`
-            );
-            data = axiosResponse.data;
-            console.log(`📡 V3 refresh API response success, data length:`, data?.length || 0);
-          } else {
-            // Use legacy API endpoint for admin-origin campaigns
-            response = await fetch(
-              `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
-            );
-            if (!response.ok) {
-              statusMap[creator.userId] = 'NOT_STARTED';
-              continue;
-            }
-            data = await response.json();
+          // Use legacy API endpoint for admin-origin campaigns
+          response = await fetch(
+            `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
+          );
+          if (!response.ok) {
+            statusMap[creator.userId] = 'NOT_STARTED';
+            continue;
           }
+          data = await response.json();
 
           if (!data || data.length === 0) {
             statusMap[creator.userId] = 'NOT_STARTED';
@@ -579,24 +518,16 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
           // Determine the status based on the latest stage in the workflow
           // Priority: Posting > Final Draft > First Draft > Agreement
-          // For V3 campaigns, use displayStatus if available
+          // For campaigns, use status if available
           if (postingSubmission) {
-            statusMap[creator.userId] = isV3 && postingSubmission.displayStatus 
-              ? postingSubmission.displayStatus 
-              : postingSubmission.status;
+            statusMap[creator.userId] = postingSubmission.status;
           } else if (finalDraftSubmission) {
-            statusMap[creator.userId] = isV3 && finalDraftSubmission.displayStatus 
-              ? finalDraftSubmission.displayStatus 
-              : finalDraftSubmission.status;
+            statusMap[creator.userId] = finalDraftSubmission.status;
           } else if (firstDraftSubmission) {
-            statusMap[creator.userId] = isV3 && firstDraftSubmission.displayStatus 
-              ? firstDraftSubmission.displayStatus 
-              : firstDraftSubmission.status;
+            statusMap[creator.userId] = firstDraftSubmission.status;
           } else if (agreementSubmission) {
             // If only agreement exists, use its status
-            const agreementStatus = isV3 && agreementSubmission.displayStatus 
-              ? agreementSubmission.displayStatus 
-              : agreementSubmission.status;
+            const agreementStatus = agreementSubmission.status;
             statusMap[creator.userId] = agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
           } else {
             statusMap[creator.userId] = 'NOT_STARTED';
@@ -768,7 +699,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   const renderAccordionStatus = (submission) => {
     if (!submission) return null;
 
-    // Use displayStatus for V3 submissions, fallback to regular status
+    // Use status for submissions, fallback to regular status
     const status = submission.displayStatus || submission.status;
     let statusText = status ? status.replace(/_/g, ' ') : '';
 
@@ -1409,7 +1340,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                         submission={postingSubmission}
                         campaign={campaign}
                         creator={selectedCreator}
-                        isV3={campaign?.origin === 'CLIENT'}
+                        isV3={false}
                       />
                     ) : (
                       <Box sx={{ p: 3 }}>

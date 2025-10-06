@@ -114,7 +114,7 @@ const PhotoCard = ({
       const values = formMethods.getValues();
       await handleApprove(photoItem.id, values);
       // Optimistically update local status
-      setLocalStatus(userRole === 'client' ? 'APPROVED' : (isV3 ? 'SENT_TO_CLIENT' : 'APPROVED'));
+      setLocalStatus('APPROVED');
     } catch (error) {
       console.error('Error in approve handler:', error);
     }
@@ -164,7 +164,7 @@ const PhotoCard = ({
                 textTransform: 'none',
               }}
             >
-              {isV3 ? 'SENT TO CLIENT' : 'APPROVED'}
+              {'APPROVED'}
             </Box>
           </Box>
         );
@@ -279,7 +279,7 @@ const PhotoCard = ({
                     fontWeight: 600,
                   }}
                 >
-                  {userRole === 'client' ? 'Approve' : (isV3 ? 'Send to Client' : 'Approve')}
+                  {'Approve'}
                 </LoadingButton>
               </Stack>
             </Stack>

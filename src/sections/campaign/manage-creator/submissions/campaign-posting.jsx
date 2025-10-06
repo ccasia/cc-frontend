@@ -368,10 +368,10 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     }, 0);
   };
 
-  // V3: Handle posting link submission for creators
+  // V3 submissions removed - using V2 endpoint only
   const handleSubmitPostingLink = async (link) => {
     try {
-      await axiosInstance.post(`${endpoints.submission.root}/v3/posting/submit-link/creator`, {
+      await axiosInstance.post(`${endpoints.submission.root}/posting/submit-link/creator`, {
         submissionId: submission.id,
         link: link.trim(),
       });
@@ -451,7 +451,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
           {submission?.status === 'PENDING_REVIEW' && (
             <>
-              {/* V3: Show submission form if no content exists */}
+              {/* Show submission form if no content exists */}
               {campaign?.origin === 'CLIENT' && (!submission?.content || submission?.content.trim() === '') ? (
                 <Stack spacing={2}>
                   <Typography variant="body1" sx={{ color: '#221f20', mb: 2 }}>
@@ -504,7 +504,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   </Box>
                 </Stack>
               ) : (
-                /* Show review status for non-V3 or when content exists */
+                /* Show review status when content exists */
                 <Stack justifyContent="center" alignItems="center" spacing={2}>
                   <Box
                     sx={{

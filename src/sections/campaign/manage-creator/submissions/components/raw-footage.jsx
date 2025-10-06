@@ -90,9 +90,8 @@ const UploadRawFootageModal = ({
         });
       }
 
-      // Use V3 endpoint for client-created campaigns to trigger the worker
-      const isV3 = window?.location?.pathname?.includes('v3') || (campaign?.id && campaign.id.startsWith('cmd'));
-      const endpoint = isV3 ? endpoints.submission.v3.submitDraft : endpoints.submission.creator.draftSubmission;
+      // V3 submissions removed - using V2 endpoint only
+      const endpoint = endpoints.submission.creator.draftSubmission;
       await axiosInstance.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
