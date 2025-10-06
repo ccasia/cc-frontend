@@ -97,18 +97,17 @@ const RawFootageCard = ({
 
   // Use local status if available, otherwise use prop status
   const currentStatus = localStatus || rawFootageItem.status;
-  const isRawFootageApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
+  // For V2: Both admin and client approval show as APPROVED
+  const isRawFootageApprovedByAdmin = currentStatus === 'APPROVED';
   const isRawFootageApprovedByClient = currentStatus === 'APPROVED';
-  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
-  const isClientFeedback = currentStatus === 'CLIENT_FEEDBACK';
-  const isChangesRequired = currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'REVISION_REQUESTED';
+  const hasRevisionRequested = currentStatus === 'CHANGES_REQUIRED';
+  const isClientFeedback = false; // V2 doesn't have client feedback
+  const isChangesRequired = currentStatus === 'CHANGES_REQUIRED';
   
-  // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
-  const isPendingReview = userRole === 'client' ? 
-    // For clients: show approval buttons when media is SENT_TO_CLIENT or submission is PENDING_REVIEW
-    (currentStatus === 'SENT_TO_CLIENT' || (submission?.status === 'PENDING_REVIEW' && !isRawFootageApprovedByClient && !hasRevisionRequested)) :
-    // For non-clients: show approval buttons when submission is PENDING_REVIEW and media not approved
-    (submission?.status === 'PENDING_REVIEW' && !isRawFootageApprovedByAdmin && !hasRevisionRequested);
+  // For V2: Show approval buttons only when raw footage status is PENDING and not approved
+  // If raw footage was approved in first draft (status = 'APPROVED'), it should remain approved in final draft
+  const isRawFootageNotApproved = currentStatus !== 'APPROVED';
+  const isPendingReview = (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') && isRawFootageNotApproved && !hasRevisionRequested;
 
   // Get feedback for this specific raw footage
   const getRawFootageFeedback = () => {
@@ -194,8 +193,8 @@ const RawFootageCard = ({
 
   // Helper function to determine border color
   const getBorderColor = () => {
-    // For client role, SENT_TO_CLIENT status should not show green outline
-    if (isClientFeedback || hasRevisionRequested) return '#F6C000'; // yellow for CLIENT_FEEDBACK and REVISION_REQUESTED
+    // For client role, APPROVED status should not show green outline
+    if (isClientFeedback) return '#F6C000'; // yellow for CLIENT_FEEDBACK (V3 only)
     if (isChangesRequired) return '#D4321C'; // red
     if (isRawFootageApprovedByClient) return '#1ABF66'; // green for approved (by client)
     if (userRole !== 'client' && isRawFootageApprovedByAdmin) return '#1ABF66'; // green for admin approved
@@ -236,7 +235,7 @@ const RawFootageCard = ({
         const values = formMethods.getValues();
         await handleApprove(rawFootageItem.id, values);
         // Optimistically update local status for fallback handler - admin sends to client, client approves
-        setLocalStatus(userRole === 'client' ? 'APPROVED' : 'SENT_TO_CLIENT');
+        setLocalStatus('APPROVED');
       } catch (error) {
         console.error('Error in fallback approve handler:', error);
       }
@@ -296,7 +295,7 @@ const RawFootageCard = ({
           </Box>
         );
       }
-      // For client role, SENT_TO_CLIENT status should show approval buttons, not APPROVED status
+      // For client role, APPROVED status should show approval buttons, not APPROVED status
       if (isRawFootageApprovedByAdmin && userRole !== 'client') {
     return (
           <Box
@@ -327,46 +326,12 @@ const RawFootageCard = ({
                 textTransform: 'none',
               }}
             >
-              SENT TO CLIENT
+              APPROVED
           </Box>
         </Box>
         );
       }
-      if (hasRevisionRequested) {
-        return (
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              p: 2,
-            }}
-          >
-            <Box
-              sx={{
-                bgcolor: '#FFFFFF',
-                color: '#F6C000',
-                border: '1.5px solid',
-                borderColor: '#F6C000',
-                borderBottom: 3,
-                borderBottomColor: '#F6C000',
-                borderRadius: 1,
-                py: 0.8,
-                px: 1.5,
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textTransform: 'none',
-              }}
-            >
-              CLIENT FEEDBACK
-            </Box>
-          </Box>
-        );
-      }
+      // Removed hasRevisionRequested condition - it was showing yellow "CLIENT FEEDBACK" instead of red "CHANGES REQUIRED"
 
       if (isChangesRequired) {
         return (
@@ -465,11 +430,11 @@ const RawFootageCard = ({
                     {/* Check if all media items are approved */}
                     {(() => {
                       const allVideosApproved = deliverables?.videos?.length > 0 &&
-                        deliverables.videos.every(v => v.status === 'SENT_TO_CLIENT');
+                        deliverables.videos.every(v => v.status === 'APPROVED');
                       const allPhotosApproved = deliverables?.photos?.length > 0 &&
-                        deliverables.photos.every(p => p.status === 'SENT_TO_CLIENT');
+                        deliverables.photos.every(p => p.status === 'APPROVED');
                       const allRawFootagesApproved = deliverables?.rawFootages?.length > 0 &&
-                        deliverables.rawFootages.every(r => r.status === 'SENT_TO_CLIENT');
+                        deliverables.rawFootages.every(r => r.status === 'APPROVED');
                       
                       const allApproved = allVideosApproved && allPhotosApproved && allRawFootagesApproved;
                       
@@ -504,7 +469,7 @@ const RawFootageCard = ({
                       );
                     })()}
                   </>
-                ) : isV3 && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'SENT_TO_CLIENT') ? (
+                ) : false && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
                   <Stack direction="row" spacing={1.5}>
                     <Button
                       onClick={() => handleClientReject && handleClientReject(rawFootageItem.id)}
@@ -811,18 +776,7 @@ const RawFootageCard = ({
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                     {dayjs(feedback.createdAt).format('MMM D, YYYY h:mm A')}
                   </Typography>
-                  {feedback.type === 'REQUEST' && (
-                    <Chip
-                      label="Change Request"
-                      size="small"
-                      sx={{
-                        bgcolor: 'warning.lighter',
-                        color: 'warning.darker',
-                        fontSize: '0.7rem',
-                        height: '20px',
-                      }}
-                    />
-                  )}
+                  {/* Removed Change Request chip from display comments */}
                   {feedback.type === 'APPROVAL' && (
                     <Chip
                       label="Approval"
@@ -1268,7 +1222,7 @@ const RawFootages = ({
           }}
         >
           {deliverables.rawFootages.map((footage, index) => {
-            const isRawFootageApprovedByAdmin = footage.status === 'SENT_TO_CLIENT';
+            const isRawFootageApprovedByAdmin = footage.status === 'APPROVED';
             const isRawFootageApprovedByClient = footage.status === 'APPROVED';
             const hasRevisionRequested = footage.status === 'REVISION_REQUESTED';
             const isPendingReview = submission?.status === 'PENDING_REVIEW' && 
@@ -1336,7 +1290,7 @@ const RawFootages = ({
       {shouldUseGrid && (
         <Grid container spacing={2}>
           {deliverables.rawFootages.map((footage, index) => {
-            const isRawFootageApprovedByAdmin = footage.status === 'SENT_TO_CLIENT';
+            const isRawFootageApprovedByAdmin = footage.status === 'APPROVED';
             const isRawFootageApprovedByClient = footage.status === 'APPROVED';
             const hasRevisionRequested = footage.status === 'REVISION_REQUESTED';
             const isPendingReview = submission?.status === 'PENDING_REVIEW' && 
