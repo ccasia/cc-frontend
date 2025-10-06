@@ -1,7 +1,6 @@
 import React from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-// import { keyframes } from '@emotion/react';
 import { enqueueSnackbar } from 'notistack';
 
 import { Box, Stack, Button, useTheme, Typography, useMediaQuery } from '@mui/material';
@@ -26,14 +25,11 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
 
   const topFiveContents = topContents?.slice(0, 5);
 
-  // Helper function to extract TikTok video URL from embed_html
   const getTikTokVideoUrl = (content) => {
-    // Try to extract from embed_html first (most reliable)
     if (content?.embed_html) {
       try {
         const citeMatch = content.embed_html.match(/cite="([^"]*)/);
         if (citeMatch && citeMatch[1]) {
-          // Remove query parameters to get clean URL
           const cleanUrl = citeMatch[1].split('?')[0];
           console.log('Extracted TikTok URL from embed_html:', cleanUrl);
           return cleanUrl;
@@ -42,22 +38,19 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
         console.warn('Error extracting URL from embed_html:', error);
       }
     }
-    
-    // Fallback: construct URL using username and video ID
+
     if (tiktokUsername && content?.id) {
       const fallbackUrl = `https://www.tiktok.com/@${tiktokUsername}/video/${content.id}`;
       console.log('Using fallback TikTok URL construction:', fallbackUrl);
       return fallbackUrl;
     }
-    
+
     console.warn('Unable to construct TikTok URL - missing data');
     return null;
   };
 
-  // Real data
   const displayContents = topFiveContents;
 
-  // Carousel layout for mobile
   if (isMobile) {
     return (
       <Box
@@ -66,7 +59,7 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
           flexDirection: 'row',
           flexWrap: 'nowrap',
           width: '100%',
-          gap: 3, // Increased gap between cards in mobile carousel
+          gap: 3,
           justifyContent: 'flex-start',
           alignItems: 'stretch',
           overflowX: 'auto',
@@ -90,23 +83,23 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
                 scrollSnapAlign: 'center',
                 borderRadius: 0,
                 overflow: 'hidden',
-                boxShadow: 'none', // Remove visible box shadow
-                bgcolor: 'transparent', // Make background transparent
+                boxShadow: 'none',
+                bgcolor: 'transparent',
                 display: 'flex',
                 flexDirection: 'column',
                 mx: 0,
-                height: 'auto', // Allow card to expand based on content
-                minHeight: 520, // Minimum height to accommodate image + caption
+                height: 'auto',
+                minHeight: 520,
               }}
             >
               <Box
                 component="div"
                 sx={{
                   position: 'relative',
-                  height: 420, // Larger image height, smaller caption space
+                  height: 420,
                   width: '100%',
                   overflow: 'hidden',
-                  flexShrink: 0, // Prevent image from shrinking
+                  flexShrink: 0,
                 }}
                 onClick={() => {
                   const videoUrl = getTikTokVideoUrl(content);
@@ -152,41 +145,39 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
               </Box>
               <Box
                 sx={{
-                  flex: 1, // Copy Instagram caption wrapper styling
+                  flex: 1,
                   display: 'flex',
                   flexDirection: 'column',
-                  pt: 1.5, // Copy Instagram padding
-                  px: 0.5, // Copy Instagram padding
-                  pb: 0.5, // Copy Instagram padding
-                  minHeight: 0, // Copy Instagram styling
-                  maxHeight: 120, // Copy Instagram caption height limit
-                  border: 'none', // Copy Instagram styling
-                  boxShadow: 'none', // Copy Instagram styling
-                  bgcolor: 'transparent', // Copy Instagram styling
+                  pt: 1.5,
+                  px: 0.5,
+                  pb: 0.5,
+                  minHeight: 0,
+                  maxHeight: 120,
+                  border: 'none',
+                  boxShadow: 'none',
+                  bgcolor: 'transparent',
                 }}
               >
                 <Typography
                   variant="body2"
                   sx={{
-                    fontSize: '0.8rem', // Copy Instagram font size
+                    fontSize: '0.8rem',
                     color: 'text.primary',
-                    fontWeight: 500, // Copy Instagram font weight
-                    lineHeight: 1.4, // Copy Instagram line height
-                    wordBreak: 'break-word', // Copy Instagram word break
-                    overflowWrap: 'break-word', // Copy Instagram overflow wrap
-                    hyphens: 'auto', // Copy Instagram hyphens
-                    flex: 1, // Copy Instagram flex styling
+                    fontWeight: 500,
+                    lineHeight: 1.4,
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    hyphens: 'auto',
+                    flex: 1,
                     display: 'flex',
                     alignItems: 'flex-start',
                     ...((content.video_description?.length || 0) > 120
                       ? {
-                          // Copy Instagram long caption handling
-                          maxHeight: 'none', // Remove height restriction
+                          maxHeight: 'none',
                         }
                       : {
-                          // Copy Instagram short caption handling
                           display: '-webkit-box',
-                          WebkitLineClamp: 5, // Copy Instagram line clamp
+                          WebkitLineClamp: 5,
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
                         }),
@@ -201,7 +192,6 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
     );
   }
 
-  // Desktop layout
   return (
     <Box
       sx={{
@@ -220,7 +210,7 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
         show: {
           opacity: 1,
           transition: {
-            staggerChildren: 0.2, // Delay between each child
+            staggerChildren: 0.2,
           },
         },
       }}
@@ -251,21 +241,21 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
               flexDirection: 'column',
               borderRadius: 0,
               overflow: 'hidden',
-              boxShadow: 'none', // Remove visible box shadow
-              bgcolor: 'transparent', // Make background transparent
-              height: 'auto', // Allow card to expand
-              minHeight: { xs: 580, sm: 600, md: 650 }, // Reduced minimum height for desktop
+              boxShadow: 'none',
+              bgcolor: 'transparent',
+              height: 'auto',
+              minHeight: { xs: 580, sm: 600, md: 650 },
             }}
           >
             <Box
               component="div"
               sx={{
                 position: 'relative',
-                height: { xs: 420, sm: 500, md: 580 }, // Larger heights for more prominent media content
+                height: { xs: 420, sm: 500, md: 580 },
                 width: '100%',
                 overflow: 'hidden',
                 cursor: 'pointer',
-                flexShrink: 0, // Prevent image from shrinking
+                flexShrink: 0,
                 '&:hover .image': {
                   scale: 1.05,
                 },
@@ -312,17 +302,17 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
 
             <Box
               sx={{
-                flex: 0, // Don't take remaining space, only what's needed
+                flex: 0,
                 display: 'flex',
                 flexDirection: 'column',
                 pt: 1,
-                px: 0.5, // Reduced left/right padding to move caption more to the left
-                pb: 0.5, // Reduced bottom padding to bring bottom line closer
-                minHeight: 'auto', // Let content determine height
-                maxHeight: 60, // Much shorter caption area for desktop - more rectangular
-                border: 'none', // Remove any borders
-                boxShadow: 'none', // Remove any shadows
-                bgcolor: 'transparent', // Make background transparent
+                px: 0.5,
+                pb: 0.5,
+                minHeight: 'auto',
+                maxHeight: 60,
+                border: 'none',
+                boxShadow: 'none',
+                bgcolor: 'transparent',
               }}
             >
               <Typography
@@ -335,24 +325,22 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
                   wordBreak: 'break-word',
                   overflowWrap: 'break-word',
                   hyphens: 'auto',
-                  flex: 1, // Take available space
+                  flex: 1,
                   ...(() => {
                     const length = content?.video_description?.length || 0;
                     const isLongCaption = length > 120;
 
                     if (isLongCaption) {
-                      // For longer captions, limit lines for desktop
                       return {
                         display: '-webkit-box',
-                        WebkitLineClamp: isMobile ? 4 : 2, // Even fewer lines for desktop
+                        WebkitLineClamp: isMobile ? 4 : 2,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
                       };
                     }
-                    // For shorter captions, use line clamp
                     return {
                       display: '-webkit-box',
-                      WebkitLineClamp: isMobile ? 3 : 2, // Fewer lines for desktop
+                      WebkitLineClamp: isMobile ? 3 : 2,
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                     };
@@ -386,12 +374,10 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
 
   const tiktokData = useSocialMediaData((state) => state.tiktok);
 
-  // Get the real data from store - use tiktokData consistently
   const dataSource = tiktokData;
   const realTopContent = dataSource?.medias?.sortedVideos;
   const tiktokUsername = dataSource?.tiktokUser?.display_name;
 
-  // Debug logging for staging
   console.log('TikTok View Component Debug:', {
     hasTiktokData: !!tiktokData,
     hasMedias: !!dataSource?.medias,
@@ -409,12 +395,10 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
       : null,
   });
 
-  // Check if we have real content
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
 
   const isConnected = !!user?.creator?.isTiktokConnected;
 
-  // Use real content only
   const contentToShow = realTopContent;
 
   const connectTiktok = async () => {
@@ -427,12 +411,10 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
     }
   };
 
-  // Show connect TikTok prompt if not connected (bypassed for demo)
   if (!isConnected) {
     return <PlatformConnectionPrompt platform="TikTok" onConnect={connectTiktok} />;
   }
 
-  // Carousel for mobile, grid for desktop
   return (
     <Box width={1}>
       {hasContent ? (
@@ -477,16 +459,14 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
         </Box>
       )}
 
-      {/* Analytics Boxes */}
       {isMobile ? (
-        // Mobile/Tablet Carousel Layout
         <Box
           sx={{
             position: 'relative',
             width: '100%',
             px: 0,
             overflow: 'hidden',
-            mt: 0.5, // Gap between content and charts
+            mt: 0.5,
           }}
         >
           <Box
@@ -495,7 +475,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
               flexDirection: 'row',
               flexWrap: 'nowrap',
               width: '100%',
-              gap: isTablet ? 3 : 2, // Larger gap for tablet
+              gap: isTablet ? 3 : 2,
               justifyContent: 'flex-start',
               alignItems: 'stretch',
               overflowX: 'auto',
@@ -508,7 +488,6 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
               pt: 1,
             }}
           >
-            {/* Engagement Rate Chart */}
             <ChartContainer title="Engagement Rate">
               <EngagementRateChart
                 data={dataSource}
@@ -518,14 +497,12 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
               />
             </ChartContainer>
 
-            {/* Monthly Interactions Chart */}
             <ChartContainer title="Monthly Interactions">
               <MonthlyInteractionsChart data={dataSource} />
             </ChartContainer>
           </Box>
         </Box>
       ) : (
-        // Desktop Layout
         <Box
           sx={{
             display: 'flex',
@@ -538,7 +515,6 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
             alignItems: 'flex-start',
           }}
         >
-          {/* Engagement Rate Chart */}
           <ChartContainer title="Engagement Rate">
             <EngagementRateChart
               data={dataSource}
@@ -548,7 +524,6 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
             />
           </ChartContainer>
 
-          {/* Monthly Interactions Chart */}
           <ChartContainer title="Monthly Interactions">
             <MonthlyInteractionsChart data={dataSource} />
           </ChartContainer>

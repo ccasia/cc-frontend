@@ -18,7 +18,6 @@ import EngagementRateChart from 'src/components/media-kit/EngagementRateChart';
 import MonthlyInteractionsChart from 'src/components/media-kit/MonthlyInteractionsChart';
 import PlatformConnectionPrompt from 'src/components/media-kit/PlatformConnectionPrompt';
 
-// Utility function to format numbers
 export const formatNumber = (num) => {
   if (!num && num !== 0) return '0';
 
@@ -41,7 +40,6 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
     .sort((a, b) => a?.like_count > b?.like_count)
     .slice(0, 3);
 
-  // Carousel layout for mobile
   if (isMobile) {
     return (
       <Box
@@ -50,7 +48,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
           flexDirection: 'row',
           flexWrap: 'nowrap',
           width: '100%',
-          gap: 3, // Increased gap between cards in mobile carousel
+          gap: 3,
           justifyContent: 'flex-start',
           alignItems: 'stretch',
           overflowX: 'auto',
@@ -73,13 +71,13 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
               scrollSnapAlign: 'center',
               borderRadius: 0,
               overflow: 'hidden',
-              boxShadow: 'none', // Remove visible box shadow
-              bgcolor: 'transparent', // Make background transparent
+              boxShadow: 'none',
+              bgcolor: 'transparent',
               display: 'flex',
               flexDirection: 'column',
               mx: 0,
-              height: 'auto', // Allow card to expand based on content
-              minHeight: 520, // Minimum height to accommodate image + caption
+              height: 'auto',
+              minHeight: 520,
             }}
             onClick={() => {
               const a = document.createElement('a');
@@ -92,10 +90,10 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
               component="div"
               sx={{
                 position: 'relative',
-                height: 420, // Larger image height, smaller caption space
+                height: 420,
                 width: '100%',
                 overflow: 'hidden',
-                flexShrink: 0, // Prevent image from shrinking
+                flexShrink: 0,
               }}
             >
               <CardMedia
@@ -137,17 +135,17 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
             </Box>
             <Box
               sx={{
-                flex: 1, // Take remaining space in the card
+                flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 pt: 1.5,
-                px: 0.5, // Reduced left/right padding to move caption more to the left
-                pb: 0.5, // Reduced bottom padding to bring bottom line closer
-                minHeight: 0, // Allow content to shrink if needed
-                maxHeight: 120, // Limit caption area height
-                border: 'none', // Remove any borders
-                boxShadow: 'none', // Remove any shadows
-                bgcolor: 'transparent', // Make background transparent
+                px: 0.5,
+                pb: 0.5,
+                minHeight: 0,
+                maxHeight: 120,
+                border: 'none',
+                boxShadow: 'none',
+                bgcolor: 'transparent',
               }}
             >
               <Typography
@@ -160,13 +158,12 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                   wordBreak: 'break-word',
                   overflowWrap: 'break-word',
                   hyphens: 'auto',
-                  flex: 1, // Take available space
+                  flex: 1,
                   display: 'flex',
                   alignItems: 'flex-start',
                   ...(content.caption?.length > 120
                     ? {
-                        // For longer captions, allow more space
-                        maxHeight: 'none', // Remove height restriction
+                        maxHeight: 'none',
                       }
                     : getCaptionStyles(content.caption?.length || 0, true)),
                 }}
@@ -180,7 +177,6 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
     );
   }
 
-  // Desktop layout (unchanged)
   return (
     <Box
       sx={{
@@ -199,7 +195,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
         show: {
           opacity: 1,
           transition: {
-            staggerChildren: 0.2, // Delay between each child
+            staggerChildren: 0.2,
           },
         },
       }}
@@ -228,21 +224,21 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
             flexDirection: 'column',
             borderRadius: 0,
             overflow: 'hidden',
-            boxShadow: 'none', // Remove visible box shadow
-            bgcolor: 'transparent', // Make background transparent
-            height: 'auto', // Allow card to expand
-            minHeight: { xs: 580, sm: 600, md: 650 }, // Reduced minimum height for desktop
+            boxShadow: 'none',
+            bgcolor: 'transparent',
+            height: 'auto',
+            minHeight: { xs: 580, sm: 600, md: 650 },
           }}
         >
           <Box
             component="div"
             sx={{
               position: 'relative',
-              height: { xs: 420, sm: 500, md: 580 }, // Larger heights for more prominent media content
+              height: { xs: 420, sm: 500, md: 580 },
               width: '100%',
               overflow: 'hidden',
               cursor: 'pointer',
-              flexShrink: 0, // Prevent image from shrinking
+              flexShrink: 0,
               '&:hover .image': {
                 scale: 1.05,
               },
@@ -292,17 +288,17 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
 
           <Box
             sx={{
-              flex: 0, // Don't take remaining space, only what's needed
+              flex: 0,
               display: 'flex',
               flexDirection: 'column',
               pt: 1,
-              px: 0.5, // Reduced left/right padding to move caption more to the left
-              pb: 0.5, // Reduced bottom padding to bring bottom line closer
-              minHeight: 'auto', // Let content determine height
-              maxHeight: 60, // Much shorter caption area for desktop - more rectangular
-              border: 'none', // Remove any borders
-              boxShadow: 'none', // Remove any shadows
-              bgcolor: 'transparent', // Make background transparent
+              px: 0.5,
+              pb: 0.5,
+              minHeight: 'auto',
+              maxHeight: 60,
+              border: 'none',
+              boxShadow: 'none',
+              bgcolor: 'transparent',
             }}
           >
             <Typography
@@ -315,7 +311,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                 wordBreak: 'break-word',
                 overflowWrap: 'break-word',
                 hyphens: 'auto',
-                flex: 1, // Take available space
+                flex: 1,
                 ...getCaptionStyles(content?.caption?.length || 0, isMobile),
               }}
             >
@@ -342,23 +338,16 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
   const instagramData = useSocialMediaData((state) => state.instagram);
   const { isMobile, isTablet, theme } = useMediaKitResponsive(forceDesktop);
 
-  // State for Instagram OAuth warning modal
   const [showOAuthWarning, setShowOAuthWarning] = useState(false);
 
-  // IMPORTANT: Always use store data for consistency across all screen sizes
-  // This ensures analytics data is available for both mobile and desktop views
   const dataSource = instagramData || instagram || {};
 
-  // Get the real data from store (prioritize store data over props)
   const realTopContent = dataSource?.medias?.sortedVideos;
 
-  // Check if we have real content
   const isConnected = !!user?.creator?.isFacebookConnected;
 
-  // Use real content only
   const contentToShow = realTopContent;
 
-  // Show connect Instagram prompt if not connected
   if (!isConnected) {
     return (
       <>
@@ -366,7 +355,6 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
           platform="Instagram"
           onConnect={() => setShowOAuthWarning(true)}
         />
-        {/* Instagram OAuth Warning Modal */}
         {showOAuthWarning && (
           <InstagramOAuthWarning
             redirectUrl="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://app.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
@@ -397,7 +385,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
               flexDirection: 'row',
               flexWrap: 'nowrap',
               width: '100%',
-              gap: 2, // Increased gap between cards in mobile carousel
+              gap: 2,
               justifyContent: 'flex-start',
               alignItems: 'stretch',
               overflowX: 'auto',
@@ -417,16 +405,14 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
         <TopContentGrid topContents={contentToShow} />
       )}
 
-      {/* Analytics Boxes */}
       {isMobile ? (
-        // Mobile/Tablet Carousel Layout
         <Box
           sx={{
             position: 'relative',
             width: '100%',
             px: 0,
             overflow: 'hidden',
-            mt: 0.5, // Gap between content and charts
+            mt: 0.5,
           }}
         >
           <Box
@@ -435,7 +421,7 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
               flexDirection: 'row',
               flexWrap: 'nowrap',
               width: '100%',
-              gap: isTablet ? 3 : 2, // Larger gap for tablet
+              gap: isTablet ? 3 : 2,
               justifyContent: 'flex-start',
               alignItems: 'stretch',
               overflowX: 'auto',
@@ -448,19 +434,16 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
               pt: 1,
             }}
           >
-            {/* Engagement Rate Chart */}
             <ChartContainer title="Engagement Rate">
               <EngagementRateChart dataSource={dataSource} platform="instagram" />
             </ChartContainer>
 
-            {/* Monthly Interactions Chart */}
             <ChartContainer title="Monthly Interactions">
               <MonthlyInteractionsChart dataSource={dataSource} />
             </ChartContainer>
           </Box>
         </Box>
       ) : (
-        // Desktop Layout
         <Box
           sx={{
             display: 'flex',
@@ -473,12 +456,10 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
             alignItems: 'flex-start',
           }}
         >
-          {/* Engagement Rate Chart */}
           <ChartContainer title="Engagement Rate">
             <EngagementRateChart dataSource={dataSource} platform="instagram" />
           </ChartContainer>
 
-          {/* Monthly Interactions Chart */}
           <ChartContainer title="Monthly Interactions">
             <MonthlyInteractionsChart dataSource={dataSource} />
           </ChartContainer>
