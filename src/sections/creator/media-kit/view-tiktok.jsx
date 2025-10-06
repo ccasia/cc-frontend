@@ -20,13 +20,41 @@ import EngagementRateChart from 'src/components/media-kit/EngagementRateChart';
 import MonthlyInteractionsChart from 'src/components/media-kit/MonthlyInteractionsChart';
 import PlatformConnectionPrompt from 'src/components/media-kit/PlatformConnectionPrompt';
 
-const TopContentGrid = ({ topContents }) => {
+const TopContentGrid = ({ topContents, tiktokUsername }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const topFiveContents = topContents?.slice(0, 5);
 
-  // Only use real data
+  // Helper function to extract TikTok video URL from embed_html
+  const getTikTokVideoUrl = (content) => {
+    // Try to extract from embed_html first (most reliable)
+    if (content?.embed_html) {
+      try {
+        const citeMatch = content.embed_html.match(/cite="([^"]*)/);
+        if (citeMatch && citeMatch[1]) {
+          // Remove query parameters to get clean URL
+          const cleanUrl = citeMatch[1].split('?')[0];
+          console.log('Extracted TikTok URL from embed_html:', cleanUrl);
+          return cleanUrl;
+        }
+      } catch (error) {
+        console.warn('Error extracting URL from embed_html:', error);
+      }
+    }
+    
+    // Fallback: construct URL using username and video ID
+    if (tiktokUsername && content?.id) {
+      const fallbackUrl = `https://www.tiktok.com/@${tiktokUsername}/video/${content.id}`;
+      console.log('Using fallback TikTok URL construction:', fallbackUrl);
+      return fallbackUrl;
+    }
+    
+    console.warn('Unable to construct TikTok URL - missing data');
+    return null;
+  };
+
+  // Real data
   const displayContents = topFiveContents;
 
   // Carousel layout for mobile
@@ -38,7 +66,7 @@ const TopContentGrid = ({ topContents }) => {
           flexDirection: 'row',
           flexWrap: 'nowrap',
           width: '100%',
-          gap: 3, // Copy Instagram gap value for consistency
+          gap: 3, // Increased gap between cards in mobile carousel
           justifyContent: 'flex-start',
           alignItems: 'stretch',
           overflowX: 'auto',
@@ -62,34 +90,42 @@ const TopContentGrid = ({ topContents }) => {
                 scrollSnapAlign: 'center',
                 borderRadius: 0,
                 overflow: 'hidden',
-                boxShadow: 'none',
-                bgcolor: 'transparent',
+                boxShadow: 'none', // Remove visible box shadow
+                bgcolor: 'transparent', // Make background transparent
                 display: 'flex',
                 flexDirection: 'column',
                 mx: 0,
-                height: 'auto',
-                minHeight: 520,
+                height: 'auto', // Allow card to expand based on content
+                minHeight: 520, // Minimum height to accommodate image + caption
               }}
             >
               <Box
+                component="div"
                 sx={{
                   position: 'relative',
-                  height: 420,
+                  height: 420, // Larger image height, smaller caption space
                   width: '100%',
                   overflow: 'hidden',
-                  borderRadius: 0,
+                  flexShrink: 0, // Prevent image from shrinking
+                }}
+                onClick={() => {
+                  const videoUrl = getTikTokVideoUrl(content);
+                  if (videoUrl) {
+                    window.open(videoUrl, '_blank');
+                  }
                 }}
               >
-                <iframe
-                  src={content?.embed_link}
-                  title={`TikTok video ${index + 1}`}
-                  style={{
+                <Box
+                  component="img"
+                  className="image"
+                  src={content?.cover_image_url}
+                  alt={content?.title || `TikTok video ${index + 1}`}
+                  sx={{
                     height: '100%',
                     width: '100%',
-                    border: 'none',
-                    borderRadius: '0px',
+                    transition: 'all .3s ease',
+                    objectFit: 'cover',
                   }}
-                  allowFullScreen
                 />
                 <Box
                   sx={{
@@ -99,9 +135,8 @@ const TopContentGrid = ({ topContents }) => {
                     width: '100%',
                     color: 'white',
                     p: 2,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
                   }}
-                  className="media-kit-engagement-icons"
                 >
                   <Stack direction="row" alignItems="center" spacing={2}>
                     <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -201,34 +236,52 @@ const TopContentGrid = ({ topContents }) => {
               hidden: { opacity: 0, y: 50 },
               show: { opacity: 1, y: 0 },
             }}
+            onClick={() => {
+              const videoUrl = getTikTokVideoUrl(content);
+              console.log('Generated TikTok URL:', videoUrl);
+              if (videoUrl) {
+                window.open(videoUrl, '_blank');
+              }
+            }}
             sx={{
               width: { xs: '100%', sm: '30%', md: 350 },
               minWidth: { xs: '280px', sm: '250px', md: '320px' },
               maxWidth: { xs: '100%', sm: '350px' },
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: 0,
+              overflow: 'hidden',
+              boxShadow: 'none', // Remove visible box shadow
+              bgcolor: 'transparent', // Make background transparent
+              height: 'auto', // Allow card to expand
+              minHeight: { xs: 580, sm: 600, md: 650 }, // Reduced minimum height for desktop
             }}
           >
             <Box
+              component="div"
               sx={{
                 position: 'relative',
-                height: { xs: 480, sm: 550, md: 650 },
+                height: { xs: 420, sm: 500, md: 580 }, // Larger heights for more prominent media content
                 width: '100%',
                 overflow: 'hidden',
-                borderRadius: 0,
                 cursor: 'pointer',
+                flexShrink: 0, // Prevent image from shrinking
+                '&:hover .image': {
+                  scale: 1.05,
+                },
               }}
             >
-              <iframe
-                src={content?.embed_link}
-                title={`TikTok video ${index + 1}`}
-                style={{
-                  height: '100%',
-                  width: '100%',
-                  border: 'none',
-                  borderRadius: '0px',
+              <Box
+                component="img"
+                className="image"
+                src={content?.cover_image_url}
+                alt={content?.title || `TikTok video ${index + 1}`}
+                sx={{
+                  height: 1,
+                  transition: 'all .2s linear',
+                  objectFit: 'cover',
                 }}
-                allowFullScreen
               />
-
               <Box
                 sx={{
                   position: 'absolute',
@@ -239,9 +292,7 @@ const TopContentGrid = ({ topContents }) => {
                   p: isMobile ? 2 : 1.5,
                   px: 2,
                   mb: 1,
-                  borderRadius: '0 0 0px 0px',
-                  pointerEvents: 'none', // Allow clicks to pass through to iframe
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+                  borderRadius: '0 0 24px 24px',
                 }}
                 className="media-kit-engagement-icons"
               >
@@ -261,9 +312,14 @@ const TopContentGrid = ({ topContents }) => {
 
             <Box
               sx={{
-                mt: 1,
-                maxHeight: isMobile ? 120 : 50, // Much shorter caption area for desktop - more rectangular
-                overflow: 'hidden',
+                flex: 0, // Don't take remaining space, only what's needed
+                display: 'flex',
+                flexDirection: 'column',
+                pt: 1,
+                px: 0.5, // Reduced left/right padding to move caption more to the left
+                pb: 0.5, // Reduced bottom padding to bring bottom line closer
+                minHeight: 'auto', // Let content determine height
+                maxHeight: 60, // Much shorter caption area for desktop - more rectangular
                 border: 'none', // Remove any borders
                 boxShadow: 'none', // Remove any shadows
                 bgcolor: 'transparent', // Make background transparent
@@ -275,12 +331,11 @@ const TopContentGrid = ({ topContents }) => {
                 sx={{
                   fontSize: isMobile ? '0.75rem' : '0.875rem',
                   color: 'text.primary',
-                  width: '100%',
-                  maxWidth: '100%',
                   lineHeight: 1.4,
                   wordBreak: 'break-word',
                   overflowWrap: 'break-word',
                   hyphens: 'auto',
+                  flex: 1, // Take available space
                   ...(() => {
                     const length = content?.video_description?.length || 0;
                     const isLongCaption = length > 120;
@@ -316,9 +371,13 @@ const TopContentGrid = ({ topContents }) => {
 TopContentGrid.propTypes = {
   topContents: PropTypes.arrayOf(
     PropTypes.shape({
-      image_url: PropTypes.string.isRequired,
+      id: PropTypes.string.isRequired,
+      cover_image_url: PropTypes.string,
+      title: PropTypes.string,
+      video_description: PropTypes.string,
     })
   ).isRequired,
+  tiktokUsername: PropTypes.string,
 };
 
 const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
@@ -330,6 +389,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   // Get the real data from store - use tiktokData consistently
   const dataSource = tiktokData;
   const realTopContent = dataSource?.medias?.sortedVideos;
+  const tiktokUsername = dataSource?.tiktokUser?.display_name;
 
   // Debug logging for staging
   console.log('TikTok View Component Debug:', {
@@ -338,6 +398,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
     sortedVideosLength: realTopContent?.length,
     isArray: Array.isArray(realTopContent),
     userConnected: !!user?.creator?.isTiktokConnected,
+    tiktokUsername: tiktokUsername,
     firstVideo: realTopContent?.[0]
       ? {
           id: realTopContent[0].id,
@@ -375,7 +436,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   return (
     <Box width={1}>
       {hasContent ? (
-        <TopContentGrid topContents={contentToShow} />
+        <TopContentGrid topContents={contentToShow} tiktokUsername={tiktokUsername} />
       ) : (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
