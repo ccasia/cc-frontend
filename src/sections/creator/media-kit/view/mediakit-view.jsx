@@ -67,8 +67,17 @@ const MediaKitCreator = () => {
     imageUrl: '',
   });
 
-  const [currentTab, setCurrentTab] = useState('instagram');
-  const [openSetting, setOpenSetting] = useState(false);
+  const initialTab = () => {
+    if (tiktok) {
+      return 'tiktok'
+    }
+    if (instagram) {
+      return 'instagram'
+    }
+    return 'instagram'
+  }
+
+  const [currentTab, setCurrentTab] = useState(initialTab());
 
   const desktopLayoutRef = useRef(null);
 
@@ -133,8 +142,6 @@ const MediaKitCreator = () => {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setTiktok]);
-
-  console.log('Tiktok data: ', tiktok)
 
   const calculateTotalEngagement = useCallback((totalLikes, totalComments) => {
     const likes = parseInt(totalLikes, 10) || 0;
