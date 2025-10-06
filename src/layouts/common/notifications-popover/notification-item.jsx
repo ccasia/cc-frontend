@@ -32,9 +32,14 @@ export default function NotificationItem({ notification, markAsRead }) {
     // the cases are entity
     switch (entity) {
       case 'Pitch':
-        link = user.role.includes('admin')
-          ? `/dashboard/campaign/discover/detail/${campaignId}`
-          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`;
+        if (user.role.includes('admin')) {
+          link = `/dashboard/campaign/discover/detail/${campaignId}`;
+        } else if (user.role.includes('client')) {
+          link = `/dashboard/campaign/details/${campaignId}`;
+          tabToSet = 'creator-master-list';
+        } else {
+          link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`;
+        }
         break;
 
       case 'Shortlist':
@@ -49,16 +54,21 @@ export default function NotificationItem({ notification, markAsRead }) {
         break;
 
       case 'Draft':
-        link = user.role.includes('admin')
-          ? `/dashboard/campaign/discover/detail/${campaignId}`
-          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
-        tabToSet = user.role.includes('admin') ? 'deliverables' : null;
+        if (user.role.includes('admin')) {
+          link = `/dashboard/campaign/discover/detail/${campaignId}`;
+          tabToSet = 'submissions-v4';
+        } else if (user.role.includes('client')) {
+          link = `/dashboard/campaign/details/${campaignId}`;
+          tabToSet = 'submissions-v4';
+        } else {
+          link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        }
         break;
       case 'Post':
         link = user.role.includes('admin')
           ? `/dashboard/campaign/discover/detail/${campaignId}`
           : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
-        tabToSet = user.role.includes('admin') ? 'deliverables' : null;
+        tabToSet = user.role.includes('admin') ? 'submissions-v4' : null;
         break;
 
       case 'Chat':
@@ -66,13 +76,21 @@ export default function NotificationItem({ notification, markAsRead }) {
         break;
 
       case 'Campaign':
-        link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        link = user.role.includes('client')
+          ? `/dashboard/campaign/details/${campaignId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        tabToSet = user.role.includes('client') ? 'overview' : null;
         break;
 
       case 'Status':
-        link = user.role.includes('admin')
-          ? `/dashboard/campaign/manage/${campaignId}`
-          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        if (user.role.includes('admin')) {
+          link = `/dashboard/campaign/manage/${campaignId}`;
+        } else if (user.role.includes('client')) {
+          link = `/dashboard/campaign/details/${campaignId}`;
+          tabToSet = 'overview';
+        } else {
+          link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        }
         break;
 
       case 'Timeline':
@@ -99,15 +117,16 @@ export default function NotificationItem({ notification, markAsRead }) {
     // Set the appropriate tab for admin notifications
     if (tabToSet) {
       localStorage.setItem('campaigndetail', tabToSet);
-      
-      // For deliverables tab, also store the creator ID to pre-select them
-      if (tabToSet === 'deliverables' && creatorId) {
+
+      // For submissions-v4 tab, also store the creator ID to pre-select them
+      if (tabToSet === 'submissions-v4' && creatorId) {
         localStorage.setItem('targetCreatorId', creatorId);
       }
     }
 
     if (link) {
-      router.push(link);
+      router.push('/dashboard/temp');
+      setTimeout(() => router.push(link), 0);
     } else {
       console.error('No valid route found for notification entity:', entity);
     }
@@ -140,12 +159,7 @@ export default function NotificationItem({ notification, markAsRead }) {
   );
 
   const renderUnReadBadge = !notification.read && (
-    <Badge
-      badgeContent={1}
-      color="error"
-      variant="dot"
-      sx={{ marginRight: '1px' }}
-     />
+    <Badge badgeContent={1} color="error" variant="dot" sx={{ marginRight: '1px' }} />
   );
 
   const renderReadStatus = notification.read && (
