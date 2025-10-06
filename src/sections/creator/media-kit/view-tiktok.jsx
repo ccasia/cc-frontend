@@ -14,7 +14,6 @@ import { useSocialMediaData } from 'src/utils/store';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
@@ -404,16 +403,22 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   if (!isConnected) {
     // Show connect TikTok prompt
     return (
-      <Label
-        color="info"
+      <Box
+        component={m.div}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
         sx={{
-          height: 250,
-          textAlign: 'center',
-          borderStyle: 'dashed',
-          borderColor: theme.palette.divider,
-          borderWidth: 1.5,
-          bgcolor: alpha(theme.palette.warning.main, 0.16),
-          width: 1,
+          height: { xs: 450, sm: 500, md: 550 },
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100%',
+          borderRadius: 2,
+          mb: 4,
+          bgcolor: alpha(theme.palette.background.neutral, 0.4),
+          border: `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
+          boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
         }}
       >
         <Stack spacing={3} alignItems="center" sx={{ maxWidth: 320, textAlign: 'center', p: 3 }}>
@@ -421,7 +426,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
             sx={{
               width: 72,
               height: 72,
-              borderRadius: 0,
+              borderRadius: 2,
               bgcolor: '#FFFFFF',
               boxShadow: '0px 0px 15px 0px rgba(0, 0, 0, 0.1)',
               display: 'flex',
@@ -442,16 +447,29 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
           </Typography>
 
           <Button
-            variant="outlined"
-            size="medium"
-            sx={{ borderRadius: 0.5 }}
-            startIcon={<Iconify icon="logos:tiktok-icon" width={18} />}
+            variant="contained"
+            size="large"
             onClick={connectTiktok}
+            sx={{
+              borderRadius: 1.5,
+              px: 3,
+              py: 1.5,
+              mt: 2,
+              backgroundColor: '#000',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+              '&:hover': {
+                backgroundColor: '#3D3D3D',
+                boxShadow: '0 6px 15px rgba(37, 244, 238, 0.4)',
+              },
+            }}
+            startIcon={<Iconify icon="mingcute:link-line" width={22} />}
           >
             Connect TikTok
           </Button>
         </Stack>
-      </Label>
+      </Box>
     );
   }
 
