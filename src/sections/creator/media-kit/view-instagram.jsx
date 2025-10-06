@@ -409,72 +409,83 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
   if (!isConnected) {
     // Show connect Instagram prompt
     return (
-      <Box
-        component={m.div}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        sx={{
-          height: { xs: 450, sm: 500, md: 550 },
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          width: '100%',
-          borderRadius: 2,
-          mb: 4,
-          bgcolor: alpha(theme.palette.background.neutral, 0.4),
-          border: `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
-          boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
-        }}
-      >
-        <Stack spacing={3} alignItems="center" sx={{ maxWidth: 320, textAlign: 'center', p: 3 }}>
-          <Box
-            sx={{
-              width: 72,
-              height: 72,
-              borderRadius: 2,
-              bgcolor: '#FFFFFF',
-              boxShadow: '0px 0px 15px 0px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Iconify icon="skill-icons:instagram" width={42} sx={{ color: '#E1306C' }} />
-          </Box>
+      <>
+        <Box
+          component={m.div}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          sx={{
+            height: { xs: 450, sm: 500, md: 550 },
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%',
+            borderRadius: 2,
+            mb: 4,
+            bgcolor: alpha(theme.palette.background.neutral, 0.4),
+            border: `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
+            boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <Stack spacing={3} alignItems="center" sx={{ maxWidth: 320, textAlign: 'center', p: 3 }}>
+            <Box
+              sx={{
+                width: 72,
+                height: 72,
+                borderRadius: 2,
+                bgcolor: '#FFFFFF',
+                boxShadow: '0px 0px 15px 0px rgba(0, 0, 0, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Iconify icon="skill-icons:instagram" width={42} sx={{ color: '#E1306C' }} />
+            </Box>
 
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-            Connect Instagram
-          </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+              Connect Instagram
+            </Typography>
 
-          <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-            Connect your Instagram to showcase your top content and analytics.
-          </Typography>
+            <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+              Connect your Instagram to showcase your top content and analytics.
+            </Typography>
 
-          <Button
-            variant="contained"
-            size="large"
-            onClick={() => setShowOAuthWarning(true)}
-            sx={{
-              borderRadius: 1.5,
-              px: 3,
-              py: 1.5,
-              mt: 2,
-              backgroundColor: '#E1306C',
-              color: '#FFFFFF',
-              fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(225, 48, 108, 0.3)',
-              '&:hover': {
-                backgroundColor: '#C13584',
-                boxShadow: '0 6px 15px rgba(225, 48, 108, 0.4)',
-              },
-            }}
-            startIcon={<Iconify icon="mingcute:link-line" width={22} />}
-          >
-            Connect Instagram
-          </Button>
-        </Stack>
-      </Box>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => setShowOAuthWarning(true)}
+              sx={{
+                borderRadius: 1.5,
+                px: 3,
+                py: 1.5,
+                mt: 2,
+                backgroundColor: '#E1306C',
+                color: '#FFFFFF',
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(225, 48, 108, 0.3)',
+                '&:hover': {
+                  backgroundColor: '#C13584',
+                  boxShadow: '0 6px 15px rgba(225, 48, 108, 0.4)',
+                },
+              }}
+              startIcon={<Iconify icon="mingcute:link-line" width={22} />}
+            >
+              Connect Instagram
+            </Button>
+          </Stack>
+        </Box>
+        {/* Instagram OAuth Warning Modal */}
+        {showOAuthWarning && (
+          <InstagramOAuthWarning
+            redirectUrl="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://app.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
+            onCancel={() => setShowOAuthWarning(false)}
+            autoRedirect={false}
+            redirectDelay={3}
+          />
+        )}
+      </>
     );
   }
 
@@ -1377,16 +1388,6 @@ const MediaKitSocialContent = ({ instagram, forceDesktop = false }) => {
             </Box>
           </Box>
         </Box>
-      )}
-
-      {/* Instagram OAuth Warning Modal */}
-      {showOAuthWarning && (
-        <InstagramOAuthWarning
-          redirectUrl="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://app.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
-          onCancel={() => setShowOAuthWarning(false)}
-          autoRedirect={false}
-          redirectDelay={3}
-        />
       )}
     </Box>
   );
