@@ -254,17 +254,31 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
           overflow: 'auto',
           bgcolor: grey[100],
           position: 'relative',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(0,0,0,0.2)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'rgba(0,0,0,0.1)',
+          },
         }}
       >
         <Box
           sx={{
             textAlign: 'center',
-            p: { xs: 1, sm: 2 },
+            p: { xs: 0.5, sm: 2 },
             minHeight: '100%',
             minWidth: 'fit-content',
           }}
         >
-          <Box sx={{ display: 'inline-block', minWidth: { xs: '100vw', sm: 'auto' } }}>
+          <Box sx={{ 
+            display: 'inline-block', 
+            minWidth: { xs: '100%', sm: 'auto' },
+            maxWidth: { xs: '100%', sm: 'none' },
+          }}>
             <Document file={file} onLoadSuccess={onLoadSuccess} renderMode="canvas">
               <Stack spacing={{ xs: 1, sm: 2 }}>
                 {Array(totalPages)
@@ -281,6 +295,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                         bgcolor: 'white',
                         width: 'fit-content',
                         margin: '0 auto',
+                        maxWidth: { xs: '100%', sm: 'none' },
                         '&:hover': {
                           boxShadow:
                             selectedTool !== 'cursor' ? { xs: 2, sm: 4 } : { xs: 1, sm: 2 },
@@ -417,8 +432,8 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                                 </Typography>
                               )}
 
-                              {/* Delete button - larger on mobile */}
-                              <Zoom in={selectedAnnotation === annotation.id}>
+                              {/* Delete button - always visible for signatures, larger on mobile */}
+                              <Zoom in={selectedAnnotation === annotation.id || annotation.type === 'signature'}>
                                 <IconButton
                                   size={isMobile ? 'medium' : 'small'}
                                   onClick={(e) => {
@@ -435,6 +450,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                                     height: { xs: 32, sm: 28 },
                                     '&:hover': { bgcolor: 'error.dark' },
                                     boxShadow: 2,
+                                    zIndex: 10,
                                   }}
                                 >
                                   <Iconify icon="mdi:close" width={isMobile ? 20 : 16} />
@@ -459,7 +475,10 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 2,
+            borderRadius: { xs: 2, sm: 2 },
+            margin: { xs: 2, sm: 'auto' },
+            maxHeight: { xs: '90vh', sm: 'auto' },
+            height: { xs: 'auto', sm: 'auto' },
           },
         }}
       >
@@ -486,6 +505,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
               borderRadius: 1,
               overflow: 'hidden',
               bgcolor: 'grey.50',
+              touchAction: 'none', // Prevent scrolling on mobile
             }}
           >
             <ReactSignatureCanvas
@@ -494,8 +514,9 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
               canvasProps={{
                 style: {
                   width: '100%',
-                  height: 180,
+                  height: isMobile ? 200 : 180,
                   backgroundColor: 'white',
+                  touchAction: 'none', // Prevent scrolling on mobile
                 },
               }}
             />
