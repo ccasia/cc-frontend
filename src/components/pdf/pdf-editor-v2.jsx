@@ -152,12 +152,10 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
   }, []);
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box
         sx={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
+          flexShrink: 0,
           bgcolor: 'background.paper',
           borderBottom: 1,
           borderColor: 'divider',
