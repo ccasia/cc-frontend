@@ -270,7 +270,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             <Box
               sx={{
                 width: '100%',
-                height: '500px',
+                height: { xs: '400px', sm: '500px' },
                 borderRadius: 1,
                 border: '1px solid',
                 borderColor: 'divider',
@@ -280,6 +280,16 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
+                },
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: 'rgba(0,0,0,0.2)',
+                  borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: 'rgba(0,0,0,0.1)',
                 },
               }}
             >
@@ -1079,7 +1089,7 @@ const CampaignV4Activity = ({ campaign }) => {
                       <Box
                         sx={{
                           width: '100%',
-                          height: '300px',
+                          height: { xs: '250px', sm: '300px' },
                           borderRadius: 1,
                           border: '1px solid',
                           borderColor: 'divider',
@@ -1089,6 +1099,16 @@ const CampaignV4Activity = ({ campaign }) => {
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
+                          },
+                          '&::-webkit-scrollbar': {
+                            width: '8px',
+                          },
+                          '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: 'rgba(0,0,0,0.2)',
+                            borderRadius: '4px',
+                          },
+                          '&::-webkit-scrollbar-track': {
+                            backgroundColor: 'rgba(0,0,0,0.1)',
                           },
                         }}
                       >
