@@ -224,7 +224,12 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
 
   const handleCreditApproval = async () => {
     try {
-      const res = await axiosInstance.patch('/api/campaign/changeCredits', {
+      // Use V4-specific endpoint for V4 campaigns, fallback to general endpoint
+      const endpoint = campaign?.submissionVersion === 'v4' 
+        ? '/api/campaign/v4/changeCredits' 
+        : '/api/campaign/changeCredits';
+        
+      const res = await axiosInstance.patch(endpoint, {
         campaignId: campaign.id,
         newCredit: currentCredit - campaign.campaignCredits,
       });
@@ -236,7 +241,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
       setCurrentCredit(0);
       mutate();
     } catch (err) {
-      toast.error('Error', err);
+      console.error('Credit approval error:', err);
+      toast.error('Error updating credits', err?.response?.data?.message || err.message);
     }
   };
 
