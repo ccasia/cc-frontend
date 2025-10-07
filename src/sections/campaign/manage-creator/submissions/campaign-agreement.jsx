@@ -558,7 +558,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 <Box
                   sx={{
                     width: '100%',
-                    height: '400px',
+                    height: { xs: '300px', sm: '400px' },
                     mt: 1,
                     borderRadius: 1,
                     border: '1px solid',
@@ -569,6 +569,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                    },
+                    '&::-webkit-scrollbar': {
+                      width: '8px',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                      backgroundColor: 'rgba(0,0,0,0.2)',
+                      borderRadius: '4px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                      backgroundColor: 'rgba(0,0,0,0.1)',
                     },
                   }}
                 >
@@ -746,7 +756,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 <Box
                   sx={{
                     width: '100%',
-                    height: '400px',
+                    height: { xs: '300px', sm: '400px' },
                     mt: 1,
                     borderRadius: 1,
                     border: '1px solid',
@@ -757,6 +767,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                    },
+                    '&::-webkit-scrollbar': {
+                      width: '8px',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                      backgroundColor: 'rgba(0,0,0,0.2)',
+                      borderRadius: '4px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                      backgroundColor: 'rgba(0,0,0,0.1)',
                     },
                   }}
                 >
@@ -994,7 +1014,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 <Box
                   sx={{
                     width: '100%',
-                    height: '400px',
+                    height: { xs: '300px', sm: '400px' },
                     mt: 1,
                     borderRadius: 1,
                     border: '1px solid',
@@ -1005,6 +1025,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                    },
+                    '&::-webkit-scrollbar': {
+                      width: '8px',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                      backgroundColor: 'rgba(0,0,0,0.2)',
+                      borderRadius: '4px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                      backgroundColor: 'rgba(0,0,0,0.1)',
                     },
                   }}
                 >
@@ -1626,11 +1656,55 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       </Dialog>
 
       {/* New sign agreement dialog */}
-      <Dialog open={editor.value} onClose={editor.onFalse} fullWidth maxWidth="md">
-        <DialogTitle sx={{ p: 2 }}>
-          <Typography variant="h6">Sign Your Agreement</Typography>
+      <Dialog 
+        open={editor.value} 
+        onClose={editor.onFalse} 
+        fullWidth 
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            height: { xs: '90vh', md: '90vh' },
+            maxHeight: { xs: '90vh', md: '90vh' },
+            margin: { xs: '5vh auto', md: 'auto' },
+            borderRadius: { xs: 2, md: 1 },
+            width: { xs: '95vw', md: 'auto' },
+            maxWidth: { xs: '95vw', md: 'md' },
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          p: { xs: 2, md: 2 }, 
+          borderBottom: 1, 
+          borderColor: 'divider',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          bgcolor: 'background.paper',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}>
+          <Typography 
+            variant="h6"
+            sx={{
+              fontWeight: 400,
+              fontSize: { xs: '1.2rem', md: '1.25rem' },
+            }}
+          >
+            Sign Your Agreement
+          </Typography>
+          <IconButton 
+            onClick={editor.onFalse} 
+            size="small"
+            sx={{ 
+              color: 'text.secondary',
+              '&:hover': { bgcolor: 'action.hover' }
+            }}
+          >
+            <Iconify icon="eva:close-fill" width={20} />
+          </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ p: 0, borderTop: 1, borderBottom: 1, borderColor: 'divider' }}>
+        <DialogContent sx={{ p: 0, flex: 1, overflow: 'hidden' }}>
           <PDFEditorV2
             file={agreementUrl}
             annotations={annotations}
@@ -1639,15 +1713,58 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             setSignURL={setSignURL}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={editor.onFalse} color="inherit">
+        <DialogActions sx={{ 
+          p: { xs: 2, md: 2 }, 
+          borderTop: 1, 
+          borderColor: 'divider', 
+          gap: { xs: 1.5, md: 2 },
+          flexDirection: 'row',
+          bgcolor: 'background.paper',
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 10,
+        }}>
+          <Button 
+            onClick={editor.onFalse} 
+            variant="outlined"
+            sx={{
+              borderColor: '#203ff5',
+              color: '#203ff5',
+              borderWidth: 1,
+              borderBottom: 2,
+              borderBottomColor: '#203ff5',
+              borderRadius: 1.5,
+              px: { xs: 1.5, md: 2.5 },
+              py: { xs: 1, md: 1.2 },
+              fontSize: { xs: '0.875rem', md: '0.9rem' },
+              flex: 1,
+              '&:hover': {
+                bgcolor: 'rgba(32, 63, 245, 0.04)',
+                borderColor: '#203ff5',
+              },
+            }}
+          >
             Cancel
           </Button>
           <LoadingButton
             variant="contained"
-            color="primary"
             onClick={handleGenerateAndSubmitPdf}
             loading={loading}
+            sx={{
+              bgcolor: '#203ff5',
+              color: 'white',
+              borderBottom: 3.5,
+              borderBottomColor: '#112286',
+              borderRadius: 1.5,
+              px: { xs: 1.5, md: 2.5 },
+              py: { xs: 1, md: 1.2 },
+              fontSize: { xs: '0.875rem', md: '0.9rem' },
+              flex: 1,
+              '&:hover': {
+                bgcolor: '#203ff5',
+                opacity: 0.9,
+              },
+            }}
           >
             Save & Submit
           </LoadingButton>
