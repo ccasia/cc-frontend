@@ -73,7 +73,7 @@ const ManageCampaignView = () => {
             if (campaign.shortlisted && campaign.status === 'ACTIVE' && !campaign.shortlisted?.isCampaignDone) {
               return true;
             }
-            // Campaigns with approved pitches (V3: APPROVED, V2: approved) - these go to active tab
+            // Campaigns with approved pitches - these go to active tab
             if (campaign?.pitch?.status === 'APPROVED' || campaign?.pitch?.status === 'approved') {
               return true;
             }
@@ -83,8 +83,8 @@ const ManageCampaignView = () => {
       pending:
         filteredCampaigns?.filter(
           (campaign) => {
-            // For V3 campaigns: PENDING_REVIEW and SENT_TO_CLIENT should be in pending
-            if (campaign?.pitch?.status === 'PENDING_REVIEW' || campaign?.pitch?.status === 'SENT_TO_CLIENT') {
+            // For campaigns: PENDING_REVIEW should be in pending
+            if (campaign?.pitch?.status === 'PENDING_REVIEW') {
               return true;
             }
             // For V2 campaigns: undecided status should be in pending

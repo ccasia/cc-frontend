@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
+// V3 pitches hook removed
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -126,18 +126,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     }
   };
 
-  // V3: Fetch agreements for this campaign and find the one for this user
+  // Fetch agreements for this campaign and find the one for this user
   const { data: agreements } = useGetAgreements(campaign?.id);
   const myAgreement = agreements?.find((a) => a.userId === user?.id);
-
-  // Use V3 agreementUrl if present, else fallback to admin logic
   const originalAgreementUrl = myAgreement?.agreementUrl || campaign?.agreement?.agreementUrl;
   
   // Convert Google Storage URL to backend proxy URL to bypass CORS
   const agreementUrl = originalAgreementUrl ? 
     originalAgreementUrl.replace(
       'https://storage.googleapis.com/cult-prod/',
-      `${window.location.origin}/api/agreement-template/`
+      `${window.location.origin}/api/agreement/agreement-template/`
     ) : null;
 
   const agreement = campaign?.campaignTimeline?.find((elem) => elem?.name === 'Agreement');
@@ -453,8 +451,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   //   }
   // };
 
-  const { pitches: v3Pitches } = useGetV3Pitches(campaign?.id);
-  const myV3Pitch = v3Pitches.find((p) => p.userId === user?.id);
+  // V3 pitches removed
 
   return (
     <Box p={1.5} sx={{ pb: 0 }}>

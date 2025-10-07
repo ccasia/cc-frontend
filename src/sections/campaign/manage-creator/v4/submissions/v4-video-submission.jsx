@@ -165,7 +165,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
     try {
       const formData = new FormData();
 
-      // Add form data as JSON string (following v3 pattern)
+      // Add form data as JSON string
       const requestData = {
         submissionId: submission.id,
         caption: caption.trim(),

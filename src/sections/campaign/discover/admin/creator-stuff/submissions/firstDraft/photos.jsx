@@ -120,19 +120,20 @@ const PhotoCard = ({
 
   // Use local status if available, otherwise use prop status
   const currentStatus = localStatus || photoItem.status;
-  // For V3: Admin approval shows as SENT_TO_CLIENT, Client approval shows as APPROVED
-  const isPhotoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
+  // For V2: Admin approval shows as APPROVED
+  const isPhotoApprovedByAdmin = currentStatus === 'APPROVED';
   const isPhotoApprovedByClient = currentStatus === 'APPROVED';
-  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
-  const isClientFeedback = currentStatus === 'CLIENT_FEEDBACK';
-  const isChangesRequired = currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'REVISION_REQUESTED';
+  const hasRevisionRequested = currentStatus === 'CHANGES_REQUIRED';
+  const isClientFeedback = false; // V2 doesn't have client feedback
+  const isChangesRequired = currentStatus === 'CHANGES_REQUIRED';
   
-  // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
-  const isPendingReview = userRole === 'client' ? 
-    // For clients: show approval buttons when media is SENT_TO_CLIENT or submission is PENDING_REVIEW
-    (currentStatus === 'SENT_TO_CLIENT' || (submission?.status === 'PENDING_REVIEW' && !isPhotoApprovedByClient && !hasRevisionRequested)) :
-    // For non-clients: show approval buttons when submission is PENDING_REVIEW and media not approved
-    (submission?.status === 'PENDING_REVIEW' && !isPhotoApprovedByAdmin && !hasRevisionRequested);
+  // For V2: Show approval buttons when photo status is PENDING and not approved
+  // A photo is considered "not approved" if its status is not APPROVED
+  const isPhotoNotApproved = currentStatus !== 'APPROVED';
+  // Use photo's own status instead of submission status since V3 submission data is not available
+  const isPendingReview = (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') && isPhotoNotApproved && !hasRevisionRequested;
+  
+  // Debug logging removed - issue fixed
 
   // Get feedback for this specific photo
   const getPhotoFeedback = () => {
@@ -215,9 +216,9 @@ const PhotoCard = ({
 
   // Helper function to determine border color
   const getBorderColor = () => {
-    // For client role, SENT_TO_CLIENT status should not show green outline
-    if (isClientFeedback || hasRevisionRequested) return '#F6C000'; // yellow for CLIENT_FEEDBACK and REVISION_REQUESTED
-    if (isChangesRequired) return '#D4321C'; // red
+    // For client role, APPROVED status should not show green outline
+    if (isClientFeedback) return '#F6C000'; // yellow for CLIENT_FEEDBACK (V3 only)
+    if (isChangesRequired) return '#D4321C'; // red for CHANGES_REQUIRED
     if (userRole === 'client' && isPhotoApprovedByClient) return '#1ABF66';
     if (userRole !== 'client' && isPhotoApprovedByAdmin) return '#1ABF66';
     return 'divider';
@@ -231,8 +232,8 @@ const PhotoCard = ({
     try {
       const values = formMethods.getValues();
       await onIndividualApprove(photoItem.id, values.feedback);
-      // Optimistically update local status - for V3 show SENT_TO_CLIENT, for V2 show APPROVED
-      setLocalStatus(isV3 ? 'SENT_TO_CLIENT' : 'APPROVED');
+      // Optimistically update local status - for V2 show APPROVED
+      setLocalStatus('APPROVED');
       
       // SWR revalidation for immediate UI update
       if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
@@ -272,8 +273,8 @@ const PhotoCard = ({
       try {
         const values = formMethods.getValues();
         await handleApprove(photoItem.id, values);
-        // Optimistically update local status for fallback handler - for V3 show SENT_TO_CLIENT, for V2 show APPROVED
-        setLocalStatus(isV3 ? 'SENT_TO_CLIENT' : 'APPROVED');
+        // Optimistically update local status for fallback handler - for V2 show APPROVED
+        setLocalStatus('APPROVED');
       } catch (error) {
         console.error('Error in fallback approve handler:', error);
       }
@@ -281,7 +282,7 @@ const PhotoCard = ({
   };
 
   const handleRequestClick = async () => {
-    if (isV3 && userRole === 'client') {
+    if (false && userRole === 'client') { // V3 removed
       // Client requesting changes
       try {
         const values = formMethods.getValues();
@@ -311,7 +312,7 @@ const PhotoCard = ({
 
   const renderFormContent = () => {
     if (!isPendingReview) {
-      // For client role, SENT_TO_CLIENT status should show approval buttons, not APPROVED status
+      // For client role, APPROVED status should show approval buttons, not APPROVED status
       if (isPhotoApprovedByAdmin && userRole !== 'client') {
         return (
           <Box
@@ -342,46 +343,12 @@ const PhotoCard = ({
                 textTransform: 'none',
               }}
             >
-              {isV3 ? 'SENT TO CLIENT' : 'APPROVED'}
+              {'APPROVED'}
             </Box>
           </Box>
         );
       }
-      if (hasRevisionRequested) {
-        return (
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              p: 2,
-            }}
-          >
-            <Box
-              sx={{
-                bgcolor: '#FFFFFF',
-                color: '#F6C000',
-                border: '1.5px solid',
-                borderColor: '#F6C000',
-                borderBottom: 3,
-                borderBottomColor: '#F6C000',
-                borderRadius: 1,
-                py: 0.8,
-                px: 1.5,
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textTransform: 'none',
-              }}
-            >
-              CLIENT FEEDBACK
-            </Box>
-          </Box>
-        );
-      }
+      // Removed hasRevisionRequested condition - it was showing yellow "CLIENT FEEDBACK" instead of red "CHANGES REQUIRED"
 
       if (isChangesRequired) {
         return (
@@ -475,51 +442,20 @@ const PhotoCard = ({
                   </Button>
                 )}
 
-                {isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW' ? (
+                {isPendingReview ? ( // V2 logic - show approval button when pending review
                   <>
-                    {/* Check if all media items are approved */}
-                    {(() => {
-                      const allVideosApproved = deliverables?.videos?.length > 0 &&
-                        deliverables.videos.every(v => v.status === 'SENT_TO_CLIENT');
-                      const allPhotosApproved = deliverables?.photos?.length > 0 &&
-                        deliverables.photos.every(p => p.status === 'SENT_TO_CLIENT');
-                      const allRawFootagesApproved = deliverables?.rawFootages?.length > 0 &&
-                        deliverables.rawFootages.every(r => r.status === 'SENT_TO_CLIENT');
-
-                      const allApproved = allVideosApproved && allPhotosApproved && allRawFootagesApproved;
-                      
-                      return allApproved ? (
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={() => {
-                            console.log('[Send to Client Button Click] submission:', submission);
-                            if (!submission || !submission.id) {
-                              console.error('[Send to Client Button] submission or submission.id is missing!', submission);
-                              enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
-                              return;
-                            }
-                            handleSendToClient(submission.id);
-                          }}
-                          disabled={isSubmitting || isProcessing}
-                          sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
-                        >
-                          Send to Client
-                        </Button>
-                      ) : (
-                        <LoadingButton
-                          onClick={handleApproveClick}
-                          variant="contained"
-                          size="small"
-                          loading={isSubmitting || isProcessing}
-                          sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
-                        >
-                          Approve
-                        </LoadingButton>
-                      );
-                    })()}
+                    {/* V2 logic - show approval button */}
+                    <LoadingButton
+                      onClick={handleApproveClick}
+                      variant="contained"
+                      size="small"
+                      loading={isSubmitting || isProcessing}
+                      sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
+                    >
+                      Approve
+                    </LoadingButton>
                   </>
-                ) : isV3 && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'SENT_TO_CLIENT') ? (
+                ) : false && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
                   <Stack direction="row" spacing={1.5}>
                     <Button
                       onClick={() => setCardType('request')}
@@ -801,15 +737,7 @@ const PhotoCard = ({
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                     {dayjs(feedback.createdAt).format('MMM D, YYYY h:mm A')}
                   </Typography>
-                  {feedback.type === 'REQUEST' && (
-                    <Chip
-                      label="Change Request"
-                      size="small"
-                      color="warning"
-                      variant="soft"
-                      sx={{ ml: 'auto' }}
-                    />
-                  )}
+                  {/* Removed Change Request chip from display comments */}
                 </Stack>
                 {editingFeedbackId === feedback.id ? (
                   <Stack spacing={1} sx={{ mb: 1 }}>
@@ -967,7 +895,7 @@ const PhotoCard = ({
                 )}
 
                 {/* Admin buttons for client feedback */}
-                {isV3 && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (feedback.type === 'REASON' || feedback.type === 'COMMENT') && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && (
+                {false && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (feedback.type === 'REASON' || feedback.type === 'COMMENT') && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && ( // V3 removed
                   <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
                     <Button
                       variant="outlined"
@@ -1110,12 +1038,9 @@ const Photos = ({
   const { user } = useAuthContext();
   const userRole = user?.role || 'admin';
 
-  // SWR for real-time data updates
-  const { data: currentSubmission, mutate: mutateSubmission } = useSWR(
-    submission?.id ? `/api/submission/v3/${submission.id}` : null,
-    (url) => axiosInstance.get(url).then(res => res.data),
-    { refreshInterval: 0 }
-  );
+  // V3 submission data no longer available - using photo's own status instead
+  const currentSubmission = null;
+  const mutateSubmission = () => {};
 
   const [selectedPhotosForChange, setSelectedPhotosForChange] = useState([]);
   const [clientRequestModalOpen, setClientRequestModalOpen] = useState(false);
@@ -1178,7 +1103,7 @@ const Photos = ({
         feedback: formValues.feedback || '',
       };
 
-      const response = await axiosInstance.patch('/api/submission/v3/media/approve', { mediaId: photoId, mediaType: 'photo', feedback: formValues.feedback || 'Approved by admin' });
+      const response = await axiosInstance.patch('/api/submission/media/approve', { mediaId: photoId, mediaType: 'photo', feedback: formValues.feedback || 'Approved by admin' });
 
       if (response.status === 200) {
         enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
@@ -1209,7 +1134,7 @@ const Photos = ({
         feedback: formValues.feedback || '',
       };
 
-      const response = await axiosInstance.post('/api/submission/v3/draft/request-changes', payload);
+      const response = await axiosInstance.post('/api/submission/draft/request-changes', payload);
 
       if (response.status === 200) {
         enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
@@ -1229,7 +1154,7 @@ const Photos = ({
 
   const handleSendToClient = async (submissionId) => {
     try {
-      const response = await axiosInstance.post('/api/submission/v3/draft/send-to-client', {
+      const response = await axiosInstance.post('/api/submission/draft/send-to-client', {
         submissionId,
       });
 
@@ -1279,7 +1204,7 @@ const Photos = ({
         );
       }
 
-      await axiosInstance.patch('/api/submission/v3/media/approve', {
+      await axiosInstance.patch('/api/submission/media/approve', {
         mediaId,
         mediaType: 'photo',
         feedback: 'Approved by client',
@@ -1302,7 +1227,7 @@ const Photos = ({
 
   const handleClientReject = async (mediaId, feedback = 'Changes requested by client', reasons = ['Client rejection']) => {
     try {
-      await axiosInstance.patch('/api/submission/v3/media/request-changes/client', {
+      await axiosInstance.patch('/api/submission/media/request-changes/client', {
         mediaId,
         mediaType: 'photo',
         feedback,
@@ -1319,7 +1244,7 @@ const Photos = ({
 
   const handleAdminEditFeedback = async (mediaId, feedbackId, adminFeedback) => {
     try {
-      await axiosInstance.patch('/api/submission/v3/feedback/' + feedbackId, { content: adminFeedback });
+      await axiosInstance.patch('/api/submission/feedback/' + feedbackId, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
       // Non-blocking SWR revalidation
       try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}
@@ -1366,7 +1291,7 @@ const Photos = ({
 
       console.log('📤 Sending request:', requestData);
 
-      const response = await axiosInstance.patch('/api/submission/v3/draft/forward-feedback', requestData);
+      const response = await axiosInstance.patch('/api/submission/draft/forward-feedback', requestData);
 
       if (response.status === 200) {
         console.log('✅ Successfully sent to creator');
@@ -1435,7 +1360,7 @@ const Photos = ({
   const shouldUseHorizontalScroll = hasPhotos && deliverables.photos.length > 1;
   const shouldUseGrid = hasPhotos && deliverables.photos.length === 1;
 
-  const isV3 = campaign?.origin === 'CLIENT';
+  const isV3 = false; // V3 removed
   // Remove duplicate declarations - these are already declared in the main Photos component
   // const { user } = useAuthContext();
   // const userRole = user?.role || 'admin'; // Use actual user role from auth context
@@ -1493,7 +1418,7 @@ const Photos = ({
                 // V2 individual handlers
                 onIndividualApprove={onIndividualApprove}
                 onIndividualRequestChange={onIndividualRequestChange}
-                isV3={isV3}
+                isV3={false}
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers
@@ -1533,7 +1458,7 @@ const Photos = ({
                 // V2 individual handlers
                 onIndividualApprove={onIndividualApprove}
                 onIndividualRequestChange={onIndividualRequestChange}
-                isV3={isV3}
+                isV3={false}
                 userRole={userRole}
                 handleSendToClient={handleSendToClient}
                 // V3 client handlers

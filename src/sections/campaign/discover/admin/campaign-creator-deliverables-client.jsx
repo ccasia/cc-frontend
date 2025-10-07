@@ -23,7 +23,6 @@ import {
 
 import socket from 'src/hooks/socket';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
-import { useGetSubmissionsV3 } from 'src/hooks/use-get-submission-v3';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -52,8 +51,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
   const [uploadProgress, setUploadProgress] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // V3 campaign and user role constants
-  const isV3 = campaign?.origin === 'CLIENT';
+  // Campaign and user role constants
+  const isV3 = false; // V3 submissions removed
   const userRole = user?.role;
 
   // Get shortlisted creators from campaign
@@ -71,12 +70,10 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     });
   }, [shortlistedCreators, sortDirection]);
 
-  // Get V3 submissions for selected creator
-  const {
-    data: submissions,
-    isLoading: loadingSubmissions,
-    mutate: submissionMutate,
-  } = useGetSubmissionsV3(selectedCreator?.userId, campaign?.id);
+  // Submissions removed - using empty data
+  const submissions = [];
+  const loadingSubmissions = false;
+  const submissionMutate = () => {};
 
   // Debug logging for submissions
   useEffect(() => {
@@ -102,12 +99,12 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     mutate: deliverableMutate,
   } = useGetDeliverables(selectedCreator?.userId, campaign?.id);
 
-  // Socket.io progress handling for V3 campaigns
+  // Socket.io progress handling removed
   useEffect(() => {
-    if (!socket || !isV3) return;
+    if (!socket) return;
 
     const handleProgress = (data) => {
-      console.log('V3 Progress received:', data);
+      console.log('Progress received:', data);
 
       // Set processing to true when we receive the first progress event
       if (!isProcessing) {
@@ -131,7 +128,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     return () => {
       socket.off('progress', handleProgress);
     };
-  }, [socket, isV3, isProcessing]);
+  }, [socket, isProcessing]);
 
   // Check if all uploads are complete
   const checkProgress = useCallback(() => {
@@ -236,11 +233,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
         // Fetch statuses for all creators in parallel
         const statusPromises = shortlistedCreators.map(async (creator) => {
           try {
-            // For client view, we'll use the V3 submissions API
-            const response = await fetch(
-              `/api/submission/v3?campaignId=${campaign.id}&userId=${creator.userId}`
-            );
-            const submissions = await response.json();
+            // Submissions removed - using empty data
+            const submissions = [];
 
             // Get the most relevant submission status for display
             const firstDraft = submissions.find((s) => s.submissionType?.type === 'FIRST_DRAFT');
@@ -257,17 +251,17 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
               rawPosting: posting,
             });
 
-            // Determine overall status based on V3 flow
+            // Determine overall status based on V2 flow
             let overallStatus = 'NOT_STARTED';
-            if (posting?.displayStatus === 'APPROVED') {
+            if (posting?.status === 'APPROVED') {
               overallStatus = 'APPROVED';
-            } else if (finalDraft?.displayStatus === 'APPROVED') {
+            } else if (finalDraft?.status === 'APPROVED') {
               overallStatus = 'APPROVED';
-            } else if (firstDraft?.displayStatus === 'APPROVED') {
+            } else if (firstDraft?.status === 'APPROVED') {
               overallStatus = 'APPROVED';
-            } else if (firstDraft?.displayStatus === 'PENDING_REVIEW') {
+            } else if (firstDraft?.status === 'PENDING_REVIEW') {
               overallStatus = 'PENDING_REVIEW';
-            } else if (firstDraft?.displayStatus === 'NOT_STARTED') {
+            } else if (firstDraft?.status === 'NOT_STARTED') {
               overallStatus = 'NOT_STARTED';
             }
 
@@ -488,7 +482,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
   const renderAccordionStatus = (submission) => {
     if (!submission) return null;
 
-    // Use displayStatus for V3 submissions, fallback to regular status
+    // Use status for submissions, fallback to regular status
     const status = submission.displayStatus || submission.status;
     let statusText = status ? status.replace(/_/g, ' ') : '';
 
@@ -574,23 +568,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     try {
       // Assuming axiosInstance is available globally or imported elsewhere
       // For now, using fetch for simplicity, but ideally use axiosInstance
-      const response = await fetch(`/api/submission/v3/${submissionId}/approve/admin`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ feedback: 'All sections approved by admin' }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error sending to client');
-      }
-      // This sets status to SENT_TO_CLIENT
-      submissionMutate();
-      deliverableMutate();
-      // Assuming enqueueSnackbar is available globally or imported elsewhere
-      // For now, using console.log for simplicity
+      console.log('V3 submissions removed - API call disabled');
       console.log('Sent to client!');
     } catch (error) {
       // Assuming enqueueSnackbar is available globally or imported elsewhere
@@ -602,25 +580,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
   // Client approval handler for V3
   const handleClientApprove = async (submissionId) => {
     try {
-      const response = await fetch(`/api/submission/v3/${submissionId}/approve/client`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          submissionId,
-          feedback: 'Approved by client',
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error approving submission');
-      }
-
-      submissionMutate();
-      deliverableMutate();
-      enqueueSnackbar('Submission approved successfully!', { variant: 'success' });
+      console.log('V3 submissions removed - API call disabled');
+      console.log('Submission approved successfully!');
     } catch (error) {
       console.error('Error approving submission:', error);
       enqueueSnackbar(error.message || 'Error approving submission', { variant: 'error' });
@@ -630,26 +591,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
   // Client rejection handler for V3
   const handleClientReject = async (submissionId) => {
     try {
-      const response = await fetch(`/api/submission/v3/${submissionId}/request-changes/client`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          submissionId,
-          feedback: 'Changes requested by client',
-          reasons: ['Client feedback'],
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error rejecting submission');
-      }
-
-      submissionMutate();
-      deliverableMutate();
-      enqueueSnackbar('Changes requested successfully!', { variant: 'warning' });
+      console.log('V3 submissions removed - API call disabled');
+      console.log('Changes requested successfully!');
     } catch (error) {
       console.error('Error rejecting submission:', error);
       enqueueSnackbar(error.message || 'Error requesting changes', { variant: 'error' });
@@ -674,11 +617,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
 
       submissionMutate(optimisticData, false);
 
-      const response = await axiosInstance.patch('/api/submission/v3/media/approve/client', {
-        mediaId,
-        mediaType: 'video',
-        feedback: 'Approved by client',
-      });
+      console.log('V3 submissions removed - API call disabled');
 
       enqueueSnackbar('Video approved successfully!', { variant: 'success' });
       submissionMutate();
@@ -710,11 +649,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
 
       submissionMutate(optimisticData, false);
 
-      const response = await axiosInstance.patch('/api/submission/v3/media/approve/client', {
-        mediaId,
-        mediaType: 'photo',
-        feedback: 'Approved by client',
-      });
+      console.log('V3 submissions removed - API call disabled');
 
       enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
       submissionMutate();
@@ -746,11 +681,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
 
       submissionMutate(optimisticData, false);
 
-      const response = await axiosInstance.patch('/api/submission/v3/media/approve/client', {
-        mediaId,
-        mediaType: 'rawFootage',
-        feedback: 'Approved by client',
-      });
+      console.log('V3 submissions removed - API call disabled');
 
       enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
       submissionMutate();
@@ -771,15 +702,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     reasons = ['Client feedback']
   ) => {
     try {
-      const response = await axiosInstance.patch(
-        '/api/submission/v3/media/request-changes/client',
-        {
-          mediaId,
-          mediaType: 'video',
-          feedback,
-          reasons: reasons || ['Client feedback'],
-        }
-      );
+      console.log('V3 submissions removed - API call disabled');
       enqueueSnackbar('Changes requested for video!', { variant: 'warning' });
       submissionMutate();
       deliverableMutate();
@@ -797,15 +720,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     reasons = ['Client feedback']
   ) => {
     try {
-      const response = await axiosInstance.patch(
-        '/api/submission/v3/media/request-changes/client',
-        {
-          mediaId,
-          mediaType: 'photo',
-          feedback,
-          reasons: reasons || ['Client feedback'],
-        }
-      );
+      console.log('V3 submissions removed - API call disabled');
       enqueueSnackbar('Changes requested for photo!', { variant: 'warning' });
       submissionMutate();
       deliverableMutate();
@@ -823,15 +738,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     reasons = ['Client feedback']
   ) => {
     try {
-      const response = await axiosInstance.patch(
-        '/api/submission/v3/media/request-changes/client',
-        {
-          mediaId,
-          mediaType: 'rawFootage',
-          feedback,
-          reasons: reasons || ['Client feedback'],
-        }
-      );
+      console.log('V3 submissions removed - API call disabled');
       enqueueSnackbar('Changes requested for raw footage!', { variant: 'warning' });
       submissionMutate();
       deliverableMutate();
@@ -848,20 +755,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     try {
       console.log('Admin reviewing and forwarding client feedback for submission:', submissionId);
 
-      const response = await axiosInstance.patch(endpoints.submission.v3.reviewAndForwardFeedback, {
-        submissionId,
-        adminFeedback,
-      });
-
-      if (response.status === 200) {
-        enqueueSnackbar('Client feedback reviewed and forwarded to creator successfully!', {
-          variant: 'success',
-        });
-
-        // Refresh data
-        await submissionMutate();
-        await deliverableMutate();
-      }
+      console.log('V3 submissions removed - API call disabled');
+      console.log('Client feedback reviewed and forwarded to creator successfully!');
     } catch (error) {
       console.error('Error reviewing and forwarding client feedback:', error);
       enqueueSnackbar('Failed to review and forward client feedback', {
@@ -990,8 +885,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
         </Button>
       </Box>
 
-      {/* Progress Display for V3 Uploads */}
-      {isV3 && isProcessing && uploadProgress.length > 0 && (
+      {/* Progress Display for Uploads */}
+      {isProcessing && uploadProgress.length > 0 && (
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle1" sx={{ mb: 2, color: '#221f20', fontWeight: 600 }}>
             Processing Uploads...
@@ -1320,7 +1215,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                   >
                     {firstDraftSubmission ? (
                       <>
-                        {isV3 &&
+                        {false &&
                           userRole === 'admin' &&
                           firstDraftSubmission?.displayStatus === 'PENDING_REVIEW' && (
                             <Button
@@ -1349,7 +1244,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                               Send to Client
                             </Button>
                           )}
-                        {isV3 &&
+                        {false &&
                           userRole === 'admin' &&
                           firstDraftSubmission?.displayStatus === 'SENT_TO_ADMIN' && (
                             <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
@@ -1432,7 +1327,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                               deliverableMutate,
                               submissionMutate,
                             }}
-                            isV3={isV3}
+                            isV3={false}
                             // Individual client approval handlers
                             handleClientApproveVideo={handleClientApproveVideo}
                             handleClientApprovePhoto={handleClientApprovePhoto}
@@ -1544,7 +1439,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                   >
                     {finalDraftSubmission ? (
                       <>
-                        {isV3 &&
+                        {false &&
                           userRole === 'admin' &&
                           finalDraftSubmission?.displayStatus === 'PENDING_REVIEW' && (
                             <Button
@@ -1573,7 +1468,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                               Send to Client
                             </Button>
                           )}
-                        {isV3 &&
+                        {false &&
                           userRole === 'admin' &&
                           finalDraftSubmission?.displayStatus === 'CLIENT_FEEDBACK' && (
                             <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
@@ -1657,7 +1552,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                               deliverableMutate,
                               submissionMutate,
                             }}
-                            isV3={isV3}
+                            isV3={false}
                             // Individual client approval handlers
                             handleClientApproveVideo={handleClientApproveVideo}
                             handleClientApprovePhoto={handleClientApprovePhoto}
@@ -1769,7 +1664,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                   >
                     {postingSubmission ? (
                       <>
-                        {isV3 &&
+                        {false &&
                           userRole === 'admin' &&
                           postingSubmission?.displayStatus === 'PENDING_REVIEW' && (
                             <Button
@@ -1798,7 +1693,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                               Send to Client
                             </Button>
                           )}
-                        {isV3 &&
+                        {false &&
                           userRole === 'admin' &&
                           postingSubmission?.displayStatus === 'CLIENT_FEEDBACK' && (
                             <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
@@ -1874,7 +1769,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                             submission={postingSubmission}
                             campaign={campaign}
                             creator={selectedCreator}
-                            isV3={isV3}
+                            isV3={false}
                             // Individual client approval handlers
                             handleClientApproveVideo={handleClientApproveVideo}
                             handleClientApprovePhoto={handleClientApprovePhoto}

@@ -98,18 +98,17 @@ const PhotoCard = ({
 
   // Use local status if available, otherwise use prop status
   const currentStatus = localStatus || photoItem.status;
-  const isPhotoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
+  // For V2: Both admin and client approval show as APPROVED
+  const isPhotoApprovedByAdmin = currentStatus === 'APPROVED';
   const isPhotoApprovedByClient = currentStatus === 'APPROVED';
-  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'CLIENT_FEEDBACK';
-  const isClientFeedback = currentStatus === 'CLIENT_FEEDBACK';
-  const isChangesRequired = currentStatus === 'CHANGES_REQUIRED' || currentStatus === 'REVISION_REQUESTED';
+  const hasRevisionRequested = currentStatus === 'CHANGES_REQUIRED';
+  const isClientFeedback = false; // V2 doesn't have client feedback
+  const isChangesRequired = currentStatus === 'CHANGES_REQUIRED';
   
-  // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
-  const isPendingReview = userRole === 'client' ? 
-    // For clients: show approval buttons when media is SENT_TO_CLIENT or submission is PENDING_REVIEW
-    (currentStatus === 'SENT_TO_CLIENT' || (submission?.status === 'PENDING_REVIEW' && !isPhotoApprovedByClient && !hasRevisionRequested)) :
-    // For non-clients: show approval buttons when submission is PENDING_REVIEW and media not approved
-    (submission?.status === 'PENDING_REVIEW' && !isPhotoApprovedByAdmin && !hasRevisionRequested);
+  // For V2: Show approval buttons only when photo status is PENDING and not approved
+  // If photo was approved in first draft (status = 'APPROVED'), it should remain approved in final draft
+  const isPhotoNotApproved = currentStatus !== 'APPROVED';
+  const isPendingReview = (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') && isPhotoNotApproved && !hasRevisionRequested;
 
   // Get feedback for this specific photo
   const getPhotoFeedback = () => {
@@ -178,8 +177,8 @@ const PhotoCard = ({
 
   // Helper function to determine border color
   const getBorderColor = () => {
-    // For client role, SENT_TO_CLIENT status should not show green outline
-    if (isClientFeedback || hasRevisionRequested) return '#F6C000'; // yellow for CLIENT_FEEDBACK and REVISION_REQUESTED
+    // For client role, APPROVED status should not show green outline
+    if (isClientFeedback) return '#F6C000'; // yellow for CLIENT_FEEDBACK (V3 only)
     if (isChangesRequired) return '#D4321C'; // red
     if (isPhotoApprovedByClient) return '#1ABF66'; // green for approved (by client)
     if (userRole !== 'client' && isPhotoApprovedByAdmin) return '#1ABF66'; // green for admin approved
@@ -212,7 +211,7 @@ const PhotoCard = ({
         const values = formMethods.getValues();
         await handleApprove(photoItem.id, values);
         // Optimistically update local status for fallback handler - admin sends to client, client approves
-        setLocalStatus(userRole === 'client' ? 'APPROVED' : 'SENT_TO_CLIENT');
+        setLocalStatus('APPROVED');
       } catch (error) {
         console.error('Error in fallback approve handler:', error);
       }
@@ -272,7 +271,7 @@ const PhotoCard = ({
           </Box>
         );
       }
-      // For client role, SENT_TO_CLIENT status should show approval buttons, not APPROVED status
+      // For client role, APPROVED status should show approval buttons, not APPROVED status
       if (isPhotoApprovedByAdmin && userRole !== 'client') {
         return (
           <Box
@@ -303,46 +302,12 @@ const PhotoCard = ({
                 textTransform: 'none',
               }}
             >
-              SENT TO CLIENT
+              APPROVED
             </Box>
           </Box>
         );
       }
-      if (hasRevisionRequested) {
-        return (
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              p: 2,
-            }}
-          >
-            <Box
-              sx={{
-                bgcolor: '#FFFFFF',
-                color: '#F6C000',
-                border: '1.5px solid',
-                borderColor: '#F6C000',
-                borderBottom: 3,
-                borderBottomColor: '#F6C000',
-                borderRadius: 1,
-                py: 0.8,
-                px: 1.5,
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textTransform: 'none',
-              }}
-            >
-              CLIENT FEEDBACK
-            </Box>
-          </Box>
-        );
-      }
+      // Removed hasRevisionRequested condition - it was showing yellow "CLIENT FEEDBACK" instead of red "CHANGES REQUIRED"
 
       if (isChangesRequired) {
         return (
@@ -483,7 +448,7 @@ const PhotoCard = ({
                   >
                     Send to Client
                   </Button>
-                ) : isV3 && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'SENT_TO_CLIENT') ? (
+                ) : false && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
                   <Stack direction="row" spacing={1.5}>
                     <Button
                       onClick={() => handleOpenClientRequestModal(photoItem.id)}
@@ -791,18 +756,7 @@ const PhotoCard = ({
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                     {dayjs(feedback.createdAt).format('MMM D, YYYY h:mm A')}
                   </Typography>
-                  {feedback.type === 'REQUEST' && (
-                    <Chip
-                      label="Change Request"
-                      size="small"
-                      sx={{
-                        bgcolor: 'warning.lighter',
-                        color: 'warning.darker',
-                        fontSize: '0.7rem',
-                        height: '20px',
-                      }}
-                    />
-                  )}
+                  {/* Removed Change Request chip from display comments */}
                   {feedback.type === 'APPROVAL' && (
                     <Chip
                       label="Approval"
