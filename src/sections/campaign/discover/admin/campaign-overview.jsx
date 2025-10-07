@@ -462,7 +462,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                       >
                         CREDITS TRACKING
                       </Typography>
-                      {campaign?.campaignCredits && latestPackageItem && !isEditingCredit && (
+                      {campaign?.campaignCredits && latestPackageItem && !isEditingCredit && (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) && (
                         <Button
                           variant="outlined"
                           size="small"
@@ -545,9 +545,15 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                           {/* </Collapse> */}
 
                           <Typography
-                            sx={{ mt: 1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                            sx={{ 
+                              mt: 1, 
+                              fontSize: '16px', 
+                              fontWeight: 600, 
+                              color: '#636366',
+                              cursor: (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) ? 'pointer' : 'default'
+                            }}
                             style={{ display: isEditingCredit ? 'none' : 'block' }} // hide when editing
-                            onClick={() => setIsEditingCredit(true)} // optional: allow click to edit
+                            onClick={(user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) ? () => setIsEditingCredit(true) : undefined} // only allow click for superadmin
                           >
                             {campaign?.campaignCredits ?? 0} UGC Credits
                           </Typography>
