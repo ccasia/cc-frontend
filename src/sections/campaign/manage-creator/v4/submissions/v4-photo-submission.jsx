@@ -27,6 +27,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
   const [postingLoading, setPostingLoading] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isReuploadMode, setIsReuploadMode] = useState(false);
+  const [photosToRemove, setPhotosToRemove] = useState([]); // Track photos to be removed
   // Update caption when submission changes
   useEffect(() => {
     setCaption(submission.caption || '');
@@ -64,14 +65,20 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
 
   // Determine what photos to display in the upload area
   const photosToDisplay = useMemo(() => {
-    if (isReuploadMode || selectedFiles.length > 0) {
-      return selectedFiles; // Show local files when reuploading or uploading
+    if (isReuploadMode) {
+      // In reupload mode, show existing photos (excluding those marked for removal) + any new selected files
+      const existingPhotosToShow = submittedPhotos.filter(photo => !photosToRemove.includes(photo.id));
+      return [...existingPhotosToShow, ...selectedFiles];
+    }
+    if (selectedFiles.length > 0) {
+      return selectedFiles; // Show local files when uploading
     }
     if (submittedPhotos.length > 0) {
-      return submittedPhotos; // Show submitted photos always when they exist
+      // Show submitted photos excluding those marked for removal
+      return submittedPhotos.filter(photo => !photosToRemove.includes(photo.id));
     }
     return []; // Show upload box when no photos
-  }, [isReuploadMode, selectedFiles, submittedPhotos]);
+  }, [isReuploadMode, selectedFiles, submittedPhotos, photosToRemove]);
 
   // Memoize feedback filtering to avoid recalculation
   const relevantFeedback = useMemo(() => {
@@ -100,7 +107,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
   const isPostingLinkRejected =
     submission.status === 'REJECTED' && !submission.content && submission.photos?.length > 0;
 
-  // Handle reupload mode
+  // Handle reupload mode - show existing photos for reference
   const handleReuploadMode = useCallback(() => {
     if (isPostingLinkRejected) {
       // For posting link rejection, don't enter reupload mode - just allow posting link editing
@@ -108,15 +115,15 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
       return;
     }
 
-    // For content rejection, enter full reupload mode
+    // For content rejection, enter additive mode and show existing photos
     setIsReuploadMode(true);
-    // Keep submitted photos as selected files so they remain visible with X buttons
-    setSelectedFiles(submittedPhotos);
+    setSelectedFiles([]); // Start with empty selection for new uploads (existing photos shown via photosToDisplay)
     setHasSubmitted(false); // Reset submitted state
-  }, [submittedPhotos, isPostingLinkRejected]);
+  }, [isPostingLinkRejected]);
 
   const handleSubmit = async () => {
-    if (selectedFiles.length === 0) {
+    // For initial upload, require at least one photo
+    if (!isReuploadMode && selectedFiles.length === 0) {
       enqueueSnackbar('Please select at least one photo file', { variant: 'error' });
       return;
     }
@@ -126,22 +133,16 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
       return;
     }
 
-    // For reupload mode, check if there are meaningful changes
+    // For reupload mode (additive), check if there are meaningful changes
     if (isReuploadMode) {
       const newFiles = selectedFiles.filter((file) => file instanceof File);
-      const existingPhotos = selectedFiles.filter(
-        (file) => file && typeof file === 'object' && file.url && file.id
-      );
-      const originalPhotoCount = submittedPhotos.length;
-
-      // Check if there are any changes: new files added OR photos removed OR caption changed
-      const hasNewFiles = newFiles.length > 0;
-      const hasRemovedPhotos = existingPhotos.length < originalPhotoCount;
       const hasCaptionChange = caption.trim() !== (submission.caption || '').trim();
+      const hasPhotosToRemove = photosToRemove.length > 0;
 
-      if (!hasNewFiles && !hasRemovedPhotos && !hasCaptionChange) {
+      // Allow submission if: new files added OR caption changed OR photos to be removed
+      if (newFiles.length === 0 && !hasCaptionChange && !hasPhotosToRemove) {
         enqueueSnackbar(
-          'No changes detected. Please add new photos, remove existing ones, or update the caption.',
+          'No changes detected. Please add new photos, remove existing photos, or update the caption.',
           { variant: 'warning' }
         );
         return;
@@ -160,21 +161,16 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
     try {
       const formData = new FormData();
 
-      // Separate existing photos (API objects with URLs) from new files (File objects)
-      const existingPhotos = selectedFiles.filter(
-        (file) => file && typeof file === 'object' && file.url && file.id
-      );
+      // V4 Additive System: Only send new files, never replace existing photos
       const newFiles = selectedFiles.filter((file) => file instanceof File);
 
-      // Add form data as JSON string with selective update information
+
+      // Add form data as JSON string - simplified for additive system
       const requestData = {
         submissionId: submission.id,
         caption: caption.trim(),
-        isSelectiveUpdate: isReupload, // Flag for selective update vs full replacement
-        keepExistingPhotos: existingPhotos.map((photo) => ({
-          id: photo.id,
-          url: photo.url,
-        })),
+        isAdditiveUpdate: true, // Always additive in V4
+        photosToRemove: photosToRemove, // Include photos to be removed
       };
       formData.append('data', JSON.stringify(requestData));
 
@@ -213,18 +209,22 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
 
       const isUpdate = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
       const uploadedFiles = selectedFiles.filter((file) => file instanceof File);
-      const keptPhotos = selectedFiles.filter(
-        (file) => file && typeof file === 'object' && file.url && file.id
-      );
+      const existingPhotosCount = submission.photos?.length || 0;
 
       let successMessage;
       if (isUpdate) {
-        if (uploadedFiles.length > 0 && keptPhotos.length > 0) {
-          successMessage = `Photos updated successfully! Added ${uploadedFiles.length} new photo(s), kept ${keptPhotos.length} existing photo(s).`;
-        } else if (uploadedFiles.length > 0) {
-          successMessage = `${uploadedFiles.length} new photo(s) added successfully!`;
+        const newPhotosCount = uploadedFiles.length;
+        const removedPhotosCount = photosToRemove.length;
+        const finalPhotoCount = existingPhotosCount - removedPhotosCount + newPhotosCount;
+        
+        if (newPhotosCount > 0 && removedPhotosCount > 0) {
+          successMessage = `Updated photos: Added ${newPhotosCount} new, removed ${removedPhotosCount} existing. Total photos: ${finalPhotoCount}.`;
+        } else if (newPhotosCount > 0) {
+          successMessage = `Added ${newPhotosCount} new photo(s)! Total photos: ${finalPhotoCount}.`;
+        } else if (removedPhotosCount > 0) {
+          successMessage = `Removed ${removedPhotosCount} photo(s)! Total photos: ${finalPhotoCount}.`;
         } else {
-          successMessage = 'Photos updated successfully!';
+          successMessage = 'Caption updated successfully!';
         }
       } else {
         successMessage = 'Photos uploaded successfully!';
@@ -233,6 +233,10 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
       enqueueSnackbar(successMessage, { variant: 'success' });
 
       onUpdate();
+      // Clear removal state after successful submission
+      setPhotosToRemove([]);
+      // Reset submitted state to allow further changes
+      setHasSubmitted(false);
       // Keep selectedFiles so preview remains visible
       // setSelectedFiles([]);
       // setCaption(''); // Keep caption too
@@ -366,15 +370,62 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                   height={{ xs: 320, md: 480 }} // Made longer to match Draft Videos
                 />
               ) : (
-                <ImageGridDisplay
-                  files={photosToDisplay}
-                  onRemoveImage={
-                    (isReuploadMode || selectedFiles.length > 0) && isCaptionEditable
-                      ? handleRemoveImage
-                      : null
-                  }
-                  height={{ xs: 320, md: 480 }}
-                />
+                <Box>
+                  <ImageGridDisplay
+                    files={photosToDisplay}
+                    onRemoveImage={
+                      (isReuploadMode || selectedFiles.length > 0) && isCaptionEditable
+                        ? (index) => {
+                            if (isReuploadMode) {
+                              const existingPhotosToShow = submittedPhotos.filter(photo => !photosToRemove.includes(photo.id));
+                              const existingPhotosCount = existingPhotosToShow.length;
+                              
+                              if (index < existingPhotosCount) {
+                                // This is an existing photo - toggle removal status
+                                const photoToToggle = existingPhotosToShow[index];
+                                const isCurrentlyMarkedForRemoval = photosToRemove.includes(photoToToggle.id);
+                                
+                                if (isCurrentlyMarkedForRemoval) {
+                                  // Unmark for removal
+                                  setPhotosToRemove(prev => prev.filter(id => id !== photoToToggle.id));
+                                  enqueueSnackbar(`Photo unmarked for removal.`, { variant: 'info' });
+                                } else {
+                                  // Mark for removal
+                                  setPhotosToRemove(prev => [...prev, photoToToggle.id]);
+                                  enqueueSnackbar(`Photo marked for removal. Click again to unmark.`, { variant: 'info' });
+                                }
+                                return;
+                              }
+                              // This is a new photo, adjust index for removal
+                              handleRemoveImage(index - existingPhotosCount);
+                            } else {
+                              handleRemoveImage(index);
+                            }
+                          }
+                        : null
+                    }
+                    height={{ xs: 320, md: 480 }}
+                  />
+                  
+                  {/* Show photo status in reupload mode */}
+                  {isReuploadMode && submittedPhotos.length > 0 && (
+                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      <Typography variant="caption" sx={{ color: '#636366', fontSize: '0.75rem' }}>
+                        📷 {submittedPhotos.length - photosToRemove.length} existing photo(s) remaining
+                      </Typography>
+                      {photosToRemove.length > 0 && (
+                        <Typography variant="caption" sx={{ color: '#ff4444', fontSize: '0.75rem' }}>
+                          🗑️ {photosToRemove.length} photo(s) marked for removal
+                        </Typography>
+                      )}
+                      {selectedFiles.length > 0 && (
+                        <Typography variant="caption" sx={{ color: '#1340FF', fontSize: '0.75rem' }}>
+                          ➕ {selectedFiles.length} new photo(s) to add
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+                </Box>
               )}
             </Box>
 
