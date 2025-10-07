@@ -364,7 +364,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
               display: 'flex',
               flexDirection: 'column',
               gap: 2,
-              alignItems: 'flex-end',
+              alignItems: { xs: 'flex-start', md: 'flex-end' },
             }}
           >
             {/* Digital Signing Option */}
@@ -391,13 +391,13 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                 },
               }}
             >
-              {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement Digitally'}
+              {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement'}
             </Button>
 
             {/* Upload Option Toggle */}
             {!isAgreementSubmitted && (
               <>
-                <Button
+                {/* <Button
                   variant="outlined"
                   onClick={() => setShowUploadOption(!showUploadOption)}
                   startIcon={<Iconify icon="eva:upload-outline" width={20} />}
@@ -417,7 +417,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                   }}
                 >
                   {showUploadOption ? 'Hide Upload Option' : 'Upload Signed Agreement'}
-                </Button>
+                </Button> */}
 
                 {/* Upload Section */}
                 <Collapse in={showUploadOption}>
