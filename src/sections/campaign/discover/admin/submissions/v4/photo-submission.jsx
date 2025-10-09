@@ -30,8 +30,26 @@ import { getDefaultFeedback, getInitialReasons } from './shared/feedback-utils';
 export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
+  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
+  const isClient = userRole.toLowerCase() === 'client';
 
-  const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+  const submissionProps = useMemo(() => {
+    const photos = submission.photos || [];
+    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
+    const hasPostingLink = Boolean(submission.content);
+    const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+
+    return {
+      photos,
+      pendingReview,
+      hasPostingLink,
+      isClientFeedback,
+      clientVisible
+    };
+  }, [submission.photos, submission.status, submission.content]);
+
+  const { photos, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -43,28 +61,6 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const captionMeasureRef = useRef(null);
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
-
-  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
-  const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
-
-  const submissionProps = useMemo(() => {
-    const photos = submission.photos || [];
-    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
-    const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
-    const hasPostingLink = Boolean(submission.content);
-    const hasPendingPostingLink = hasPostingLink && submission.status !== 'POSTED';
-
-    return {
-      photos,
-      pendingReview,
-      isApproved,
-      hasPostingLink,
-      hasPendingPostingLink
-    };
-  }, [submission.photos, submission.status, submission.content]);
-
-  const { photos, pendingReview, hasPostingLink } = submissionProps;
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
@@ -353,7 +349,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                       height: '100%',
                       alignItems: 'stretch',
                       '&::-webkit-scrollbar': {
-                        height: 2,
+                        height: 1,
                       },
                       '&::-webkit-scrollbar-track': {
                         backgroundColor: 'rgba(0,0,0,0.1)',
@@ -366,6 +362,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                           backgroundColor: 'rgba(0,0,0,0.5)',
                         },
                       },
+                      scrollbarWidth: 'thin',
                     }}
                   >
                     {photos.map((photo, photoIndex) => {

@@ -30,8 +30,24 @@ import { getDefaultFeedback, getInitialReasons } from './shared/feedback-utils';
 export default function V4RawFootageSubmission({ submission, campaign, onUpdate }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
+  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
+  const isClient = userRole.toLowerCase() === 'client';
 
-  const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+  const submissionProps = useMemo(() => {
+    const rawFootages = submission.rawFootages || [];
+    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
+    const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+
+    return {      
+      rawFootages,
+      pendingReview,
+      isClientFeedback,
+      clientVisible,
+    };
+  }, [submission.rawFootages, submission.status]);
+
+  const { rawFootages, pendingReview, isClientFeedback, clientVisible } = submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -46,22 +62,6 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
   const [videoStates, setVideoStates] = useState({});
   const videoRefs = useRef({});
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
-
-  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
-  const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
-
-  const submissionProps = useMemo(() => {
-    const rawFootages = submission.rawFootages || [];
-    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
-
-    return {
-      rawFootages,
-      pendingReview
-    };
-  }, [submission.rawFootages, submission.status]);
-
-  const { rawFootages, pendingReview } = submissionProps;
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
@@ -430,6 +430,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                           backgroundColor: 'rgba(0,0,0,0.5)',
                         },
                       },
+                      scrollbarWidth: 'thin'
                     }}
                   >
                     {rawFootages.map((rawFootage, footageIndex) => {

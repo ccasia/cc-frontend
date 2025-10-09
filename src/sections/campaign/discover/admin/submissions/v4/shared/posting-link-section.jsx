@@ -5,11 +5,13 @@ import { Box, Stack, Button, TextField, Typography, Link } from '@mui/material';
 import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { BUTTON_STYLES } from './submission-styles';
+import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 
 export default function PostingLinkSection({ submission, onUpdate, onViewLogs }) {
   const { user } = useAuthContext();
   const [postingLink, setPostingLink] = useState(submission.content || '');
   const [loading, setLoading] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isSuperAdmin = userRole.toLowerCase() === 'superadmin';
@@ -80,6 +82,13 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
   const isPosted = submission.status === 'POSTED';
   const postingLinkAddedByAdmin = Boolean(submission.admin?.userId);
 
+  const handleConfirmApprove = () => {
+    setConfirmDialogOpen(false);
+    handleApprovePosting();
+  };
+
+  const actionText = 'Approve Posting Link?';
+
   return (
     <Box sx={{ flex: '0 0 auto' }}>
       <Box>
@@ -148,6 +157,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
           </Box>
         )}
 
+        {/* Posting link submitted by creator */}
         {!postingLinkAddedByAdmin && !isPosted && submission.content && (
           <Stack direction="row" spacing={1} justifyContent="flex-end">
             <Button
@@ -167,7 +177,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
               variant="contained"
               color="success"
               size="small"
-              onClick={handleApprovePosting}
+              onClick={() => setConfirmDialogOpen(true)}
               disabled={loading}
               sx={{
                 ...BUTTON_STYLES.base,
@@ -179,6 +189,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
           </Stack>
         )}
 
+        {/* Posting link to be approved by superadmin */}
         {postingLinkAddedByAdmin && !isPosted && submission.content && isSuperAdmin && (
           <Stack direction="row" spacing={1} justifyContent="flex-end">
             <Button
@@ -198,7 +209,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
               variant="contained"
               color="success"
               size="small"
-              onClick={handleApprovePosting}
+              onClick={() => setConfirmDialogOpen(true)}
               disabled={loading}
               sx={{
                 ...BUTTON_STYLES.base,
@@ -210,6 +221,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
           </Stack>
         )}
 
+        {/* Posting link added by admin */}
         {!submission.content && (
           <Box display={'flex'} flexDirection={'column'}>
             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -267,6 +279,25 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
             </Box>
           </Box>
         )}
+
+        <ConfirmDialogV2
+          open={confirmDialogOpen}
+          onClose={() => setConfirmDialogOpen(false)}
+          title={actionText}
+          isPosting={true}
+          emoji="🙂‍↕️"
+          content=""
+          action={
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleConfirmApprove}
+              disabled={loading}
+            >
+              {actionText}
+            </Button>
+          }
+        />
       </Box>
     </Box>
   );

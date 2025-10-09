@@ -33,7 +33,26 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
 
-  const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
+  const isClient = userRole.toLowerCase() === 'client';
+
+  const submissionProps = useMemo(() => {
+    const video = submission.video?.[0];
+    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
+    const hasPostingLink = Boolean(submission.content);
+    const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+
+    return {
+      video,
+      pendingReview,
+      hasPostingLink,
+      isClientFeedback,
+      clientVisible
+    };
+  }, [submission.video, submission.status, submission.content]);
+
+  const { video, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -51,28 +70,6 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const captionMeasureRef = useRef(null);
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
-
-  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
-  const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
-
-  const submissionProps = useMemo(() => {
-    const video = submission.video?.[0];
-    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
-    const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
-    const hasPostingLink = Boolean(submission.content);
-    const hasPendingPostingLink = hasPostingLink && submission.status !== 'POSTED';
-
-    return {
-      video,
-      pendingReview,
-      isApproved,
-      hasPostingLink,
-      hasPendingPostingLink
-    };
-  }, [submission.video, submission.status, submission.content]);
-
-  const { video, pendingReview, hasPostingLink } = submissionProps;
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 

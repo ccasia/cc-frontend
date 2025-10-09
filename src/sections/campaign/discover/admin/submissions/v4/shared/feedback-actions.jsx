@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 import { Box, Stack, Button, TextField, Select, MenuItem, FormControl, Chip, Typography, Tooltip } from '@mui/material';
 import { BUTTON_STYLES, FEEDBACK_CHIP_STYLES } from './submission-styles';
 import { options_changes } from '../constants';
 import { getFeedbackActionsVisibility } from './feedback-utils';
+import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 
 export default function FeedbackActions({
   submission,
@@ -22,6 +24,7 @@ export default function FeedbackActions({
   hasPostingLink = false,
   onViewLogs
 }) {
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   if ((submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || hasPostingLink) && campaign?.campaignType === 'normal') {
     return null;
   }
@@ -35,6 +38,13 @@ export default function FeedbackActions({
   });
 
   if (!visibility.showFeedbackActions) return null;
+
+  const handleConfirmApprove = () => {
+    setConfirmDialogOpen(false);
+    handleApprove();
+  };
+
+  const actionText = !isClient ? 'Send this Submission to Client?' : 'Approve Submission?';
 
   return (
     <Box sx={{ flex: '0 0 auto' }}>
@@ -95,7 +105,7 @@ export default function FeedbackActions({
               variant="contained"
               color="success"
               size='small'
-              onClick={handleApprove}
+              onClick={() => setConfirmDialogOpen(true)}
               disabled={loading}
               sx={{
                 ...BUTTON_STYLES.base,
@@ -329,6 +339,24 @@ export default function FeedbackActions({
             },
           }}
           size='small'
+        />
+
+        <ConfirmDialogV2
+          open={confirmDialogOpen}
+          onClose={() => setConfirmDialogOpen(false)}
+          title={actionText}
+          emoji={!isClient ? '🫩' : '🙂‍↕️'}
+          content=""
+          action={
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleConfirmApprove}
+              disabled={loading}
+            >
+              {actionText}
+            </Button>
+          }
         />
       </Stack>
     </Box>
