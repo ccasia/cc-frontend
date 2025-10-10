@@ -174,17 +174,21 @@ function CreatorAccordion({ creator, campaign }) {
           justifyContent={'space-between'}
           sx={{ 
             cursor: 'pointer',
-            gap: { xs: 0.3, sm: 0.4, md: 0.5 },
-            width: { xs: 160, sm: 180, md: 200 },
+            gap: { xs: 0.2, sm: 0.4, md: 0.5 },
+            width: { xs: 140, sm: 160, md: 180, lg: 200 },
+            minWidth: { xs: 120, sm: 140 },
             borderTopRightRadius: 10,
-            borderTopLeftRadius: 10
+            borderTopLeftRadius: 10,
+            '&:hover': {
+              bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
+            }
           }}
           bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
-          py={1.5}
-          pr={0.5}
-          pl={0.8}
+          py={{ xs: 1.2, sm: 1.5 }}
+          pr={{ xs: 0.3, sm: 0.5 }}
+          pl={{ xs: 0.5, sm: 0.8 }}
         >
-          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={0.3}>
+          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={{ xs: 0.2, sm: 0.3 }}>
             <Tooltip 
               title="Video" 
               placement="top"
@@ -201,14 +205,14 @@ function CreatorAccordion({ creator, campaign }) {
               componentsProps={{
                 tooltip: {
                   sx: {
-                    width: 95,
-                    height: 34,
+                    width: { xs: 80, sm: 95 },
+                    height: { xs: 28, sm: 34 },
                     opacity: 1,
                     borderRadius: '10px',
-                    padding: '10px',
+                    padding: { xs: '6px', sm: '10px' },
                     bgcolor: '#FCFCFC',
                     color: '#000',
-                    fontSize: '12px',
+                    fontSize: { xs: '10px', sm: '12px' },
                     fontWeight: 'medium',
                     boxShadow: '0px 4px 4px 0px #00000040',
                     display: 'flex',
@@ -222,8 +226,8 @@ function CreatorAccordion({ creator, campaign }) {
                 component="img"
                 src="/assets/icons/components/ugc_vid.png"
                 sx={{
-                  width: 27,
-                  height: 27,
+                  width: { xs: 22, sm: 25, md: 27 },
+                  height: { xs: 22, sm: 25, md: 27 },
                   filter: isExpanded ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)' : 'none',
                   cursor: 'pointer'
                 }}
@@ -233,22 +237,30 @@ function CreatorAccordion({ creator, campaign }) {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: { xs: 0.5, sm: 0.8, md: 1 },
-                px: { xs: 1, sm: 1.3, md: 1 },
-                py: { xs: 0.4, sm: 0.5, md: 0.6 },
+                gap: { xs: 0.3, sm: 0.5, md: 0.8, lg: 1 },
+                px: { xs: 0.6, sm: 0.8, md: 1.0, lg: 1.3 },
+                py: { xs: 0.3, sm: 0.4, md: 0.5, lg: 0.6 },
                 border: '1px solid',
                 borderColor: getClientStatusColor(videoSubmission.status, 'video'),
                 borderRadius: 0.8,
                 boxShadow: `0px -2px 0px 0px ${getClientStatusColor(videoSubmission.status, 'video')} inset`,
                 bgcolor: '#fff',
                 color: getClientStatusColor(videoSubmission.status, 'video'),
+                minWidth: 0,
+                flexShrink: 1,
               }}
             >
               <Typography 
                 fontWeight={'SemiBold'} 
                 pb={0.2} 
-                fontSize={{ xs: 9, sm: 10, md: 10.5 }} 
+                fontSize={{ xs: 8, sm: 9, md: 10, lg: 10.5 }} 
                 color={getClientStatusColor(videoSubmission.status, 'video')}
+                noWrap
+                sx={{ 
+                  maxWidth: { xs: 60, sm: 80, md: 100 },
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden'
+                }}
               >
                 {getClientStatusLabel(videoSubmission.status, 'video')}
               </Typography>
@@ -257,10 +269,14 @@ function CreatorAccordion({ creator, campaign }) {
           <Box
             display={'flex'}
             alignItems={'center'}
+            flexShrink={0}
           >
             <Iconify 
               icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"}
-              sx={{ width: { xs: 24, sm: 26, md: 28 }, height: { xs: 24, sm: 26, md: 28 } }}
+              sx={{ 
+                width: { xs: 20, sm: 22, md: 24, lg: 26 }, 
+                height: { xs: 20, sm: 22, md: 24, lg: 26 } 
+              }}
               color={isExpanded ? '#1340FF' : '#8E8E93'}
             />            
           </Box>
@@ -284,17 +300,21 @@ function CreatorAccordion({ creator, campaign }) {
           justifyContent={'space-between'}
           sx={{ 
             cursor: 'pointer',
-            gap: { xs: 0.3, sm: 0.4, md: 0.5 },
-            width: { xs: 160, sm: 180, md: 200 },
+            gap: { xs: 0.2, sm: 0.4, md: 0.5 },
+            width: { xs: 140, sm: 160, md: 180, lg: 200 },
+            minWidth: { xs: 120, sm: 140 },
             borderTopRightRadius: 10,
-            borderTopLeftRadius: 10
+            borderTopLeftRadius: 10,
+            '&:hover': {
+              bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
+            }
           }}
           bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
-          py={1.5}
-          pl={0.8}
-          pr={0.5}
+          py={{ xs: 1.2, sm: 1.5 }}
+          pl={{ xs: 0.5, sm: 0.8 }}
+          pr={{ xs: 0.3, sm: 0.5 }}
         >
-          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={0.3}>
+          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={{ xs: 0.2, sm: 0.3 }}>
             <Tooltip 
               title="Photo" 
               placement="top"
@@ -311,14 +331,14 @@ function CreatorAccordion({ creator, campaign }) {
               componentsProps={{
                 tooltip: {
                   sx: {
-                    width: 95,
-                    height: 34,
+                    width: { xs: 80, sm: 95 },
+                    height: { xs: 28, sm: 34 },
                     opacity: 1,
                     borderRadius: '10px',
-                    padding: '10px',
+                    padding: { xs: '6px', sm: '10px' },
                     bgcolor: '#FCFCFC',
                     color: '#000',
-                    fontSize: '12px',
+                    fontSize: { xs: '10px', sm: '12px' },
                     fontWeight: 'medium',
                     boxShadow: '0px 4px 4px 0px #00000040',
                     display: 'flex',
@@ -332,8 +352,8 @@ function CreatorAccordion({ creator, campaign }) {
                 component="img"
                 src="/assets/icons/components/photo.png"
                 sx={{
-                  width: 27,
-                  height: 27,
+                  width: { xs: 22, sm: 25, md: 27 },
+                  height: { xs: 22, sm: 25, md: 27 },
                   filter: isExpanded ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)' : 'none',
                   cursor: 'pointer'
                 }}
@@ -343,22 +363,30 @@ function CreatorAccordion({ creator, campaign }) {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: { xs: 0.5, sm: 0.8, md: 1 },
-                px: { xs: 1, sm: 1.3, md: 1 },
-                py: { xs: 0.4, sm: 0.5, md: 0.6 },
+                gap: { xs: 0.3, sm: 0.5, md: 0.8, lg: 1 },
+                px: { xs: 0.6, sm: 0.8, md: 1.0, lg: 1.3 },
+                py: { xs: 0.3, sm: 0.4, md: 0.5, lg: 0.6 },
                 border: '1px solid',
                 borderColor: getClientStatusColor(photoSubmission.status, 'photo'),
                 borderRadius: 0.8,
                 boxShadow: `0px -2px 0px 0px ${getClientStatusColor(photoSubmission.status, 'photo')} inset`,
                 bgcolor: '#fff',
                 color: getClientStatusColor(photoSubmission.status, 'photo'),
+                minWidth: 0,
+                flexShrink: 1,
               }}
             >
               <Typography 
                 fontWeight={'SemiBold'} 
                 pb={0.2} 
-                fontSize={{ xs: 9, sm: 10, md: 10.5 }}  
+                fontSize={{ xs: 8, sm: 9, md: 10, lg: 10.5 }}  
                 color={getClientStatusColor(photoSubmission.status, 'photo')}
+                noWrap
+                sx={{ 
+                  maxWidth: { xs: 60, sm: 80, md: 100 },
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden'
+                }}
               >
                 {getClientStatusLabel(photoSubmission.status, 'photo')}
               </Typography>
@@ -366,7 +394,10 @@ function CreatorAccordion({ creator, campaign }) {
           </Box>
           <Iconify 
             icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"} 
-            sx={{ width: { xs: 24, sm: 26, md: 28 }, height: { xs: 24, sm: 26, md: 28 } }}
+            sx={{ 
+              width: { xs: 20, sm: 22, md: 24, lg: 26 }, 
+              height: { xs: 20, sm: 22, md: 24, lg: 26 } 
+            }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
         </Box>
@@ -389,17 +420,21 @@ function CreatorAccordion({ creator, campaign }) {
           justifyContent={'space-between'}
           sx={{ 
             cursor: 'pointer',
-            gap: { xs: 0.3, sm: 0.4, md: 0.5 },
-            width: { xs: 160, sm: 180, md: 200 },
+            gap: { xs: 0.2, sm: 0.4, md: 0.5 },
+            width: { xs: 140, sm: 160, md: 180, lg: 200 },
+            minWidth: { xs: 120, sm: 140 },
             borderTopRightRadius: 10,
-            borderTopLeftRadius: 10
+            borderTopLeftRadius: 10,
+            '&:hover': {
+              bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
+            }
           }}
           bgcolor={isExpanded ? 'background.neutral' : '#E7E7E7'}
-          py={1.5}
-          pl={0.8}
-          pr={0.5}
+          py={{ xs: 1.2, sm: 1.5 }}
+          pl={{ xs: 0.5, sm: 0.8 }}
+          pr={{ xs: 0.3, sm: 0.5 }}
         >
-          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={0.3}>
+          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={{ xs: 0.2, sm: 0.3 }}>
             <Tooltip 
               title="Raw Footage" 
               placement="top"
@@ -416,14 +451,14 @@ function CreatorAccordion({ creator, campaign }) {
               componentsProps={{
                 tooltip: {
                   sx: {
-                    width: 95,
-                    height: 34,
+                    width: { xs: 80, sm: 95 },
+                    height: { xs: 28, sm: 34 },
                     opacity: 1,
                     borderRadius: '10px',
-                    padding: '10px',
+                    padding: { xs: '6px', sm: '10px' },
                     bgcolor: '#FCFCFC',
                     color: '#000',
-                    fontSize: '12px',
+                    fontSize: { xs: '10px', sm: '12px' },
                     fontWeight: 'medium',
                     boxShadow: '0px 4px 4px 0px #00000040',
                     display: 'flex',
@@ -437,8 +472,8 @@ function CreatorAccordion({ creator, campaign }) {
                 component="img"
                 src="/assets/icons/components/raw_footage.png"
                 sx={{
-                  width: 27,
-                  height: 27,
+                  width: { xs: 22, sm: 25, md: 27 },
+                  height: { xs: 22, sm: 25, md: 27 },
                   filter: isExpanded ? 'brightness(0) saturate(100%) invert(27%) sepia(99%) saturate(6094%) hue-rotate(227deg) brightness(100%) contrast(104%)' : 'none',
                   cursor: 'pointer'
                 }}
@@ -448,22 +483,30 @@ function CreatorAccordion({ creator, campaign }) {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: { xs: 0.5, sm: 0.8, md: 1 },
-                px: { xs: 1, sm: 1.3, md: 1 },
-                py: { xs: 0.4, sm: 0.5, md: 0.6 },
+                gap: { xs: 0.3, sm: 0.5, md: 0.8, lg: 1 },
+                px: { xs: 0.6, sm: 0.8, md: 1.0, lg: 1.3 },
+                py: { xs: 0.3, sm: 0.4, md: 0.5, lg: 0.6 },
                 border: '1px solid',
                 borderColor: getClientStatusColor(rawFootageSubmission.status, 'rawFootage'),
                 borderRadius: 0.8,
                 boxShadow: `0px -2px 0px 0px ${getClientStatusColor(rawFootageSubmission.status, 'rawFootage')} inset`,
                 bgcolor: '#fff',
                 color: getClientStatusColor(rawFootageSubmission.status, 'rawFootage'),
+                minWidth: 0,
+                flexShrink: 1,
               }}
             >
               <Typography 
                 fontWeight={'SemiBold'} 
                 pb={0.2} 
-                fontSize={{ xs: 9, sm: 10, md: 10.5 }} 
+                fontSize={{ xs: 8, sm: 9, md: 10, lg: 10.5 }} 
                 color={getClientStatusColor(rawFootageSubmission.status, 'rawFootage')}
+                noWrap
+                sx={{ 
+                  maxWidth: { xs: 60, sm: 80, md: 100 },
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden'
+                }}
               >
                 {getClientStatusLabel(rawFootageSubmission.status, 'rawFootage')}
               </Typography>
@@ -471,7 +514,10 @@ function CreatorAccordion({ creator, campaign }) {
           </Box>
           <Iconify 
             icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"}
-            sx={{ width: { xs: 24, sm: 26, md: 28 }, height: { xs: 24, sm: 26, md: 28 } }}
+            sx={{ 
+              width: { xs: 20, sm: 22, md: 24, lg: 26 }, 
+              height: { xs: 20, sm: 22, md: 24, lg: 26 } 
+            }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
         </Box>
@@ -548,20 +594,31 @@ function CreatorAccordion({ creator, campaign }) {
         backgroundColor: '#E7E7E7',
         boxShadow: '0px 4px 4px 0px #8E8E9340',
         borderRadius: 1,
-        pl: 1,
+        pl: { xs: 0.8, sm: 1 },
+        pr: { xs: 0.5, sm: 0 },
+        flexDirection: { xs: 'column', sm: 'row' },
+        py: { xs: 1, sm: 0 },
+        gap: { xs: 1, sm: 0 },
       }}>
         {/* Creator Info Section */}
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center',
-          pr: 2,
+          pr: { xs: 0, sm: 2 },
           minWidth: 0,
-          maxWidth: 300,
+          maxWidth: { xs: '100%', sm: 300 },
+          width: { xs: '100%', sm: 'auto' },
+          justifyContent: { xs: 'flex-start', sm: 'flex-start' },
         }}>
           <Avatar
             src={creator.user?.photoURL}
             alt={creator.user?.name}
-            sx={{ width: 35, height: 35, mr: 2, flexShrink: 0 }}
+            sx={{ 
+              width: { xs: 32, sm: 35 }, 
+              height: { xs: 32, sm: 35 }, 
+              mr: { xs: 1.5, sm: 2 }, 
+              flexShrink: 0 
+            }}
           >
             {creator.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
@@ -572,7 +629,8 @@ function CreatorAccordion({ creator, campaign }) {
                 noWrap
                 sx={{ 
                   textOverflow: 'ellipsis',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  fontSize: { xs: '0.9rem', sm: '1rem' }
                 }}
               >
                 {creator.user?.name || 'Unknown Creator'}
@@ -585,8 +643,22 @@ function CreatorAccordion({ creator, campaign }) {
         <Box sx={{ 
           flex: 1, 
           display: 'flex', 
-          justifyContent: 'flex-end',
-          gap: 1.5,
+          justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+          gap: { xs: 0.8, sm: 1.2, md: 1.5 },
+          flexWrap: { xs: 'wrap', sm: 'nowrap' },
+          width: { xs: '100%', sm: 'auto' },
+          overflowX: { xs: 'auto', sm: 'visible' },
+          '&::-webkit-scrollbar': {
+            height: 2,
+            display: { xs: 'block', sm: 'none' }
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(0,0,0,0.2)',
+            borderRadius: 2,
+          },
         }}>
           {submissionsLoading ? (
             <Typography variant="body2" color="text.secondary">
@@ -658,15 +730,22 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
   }
 
   return (
-    <Box sx={{ p: 0 }}>
-      <Box sx={{ mb: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 0 } }}>
+      <Box sx={{ mb: { xs: 2, sm: 3 } }}>
         <TextField
           fullWidth
           size="small"
           placeholder="Search creators..."
           value={searchTerm}
           onChange={handleSearchChange}
-          sx={{ maxWidth: 400 }}
+          sx={{ 
+            maxWidth: { xs: '100%', sm: 400 },
+            '& .MuiOutlinedInput-root': {
+              '&:hover fieldset': {
+                borderColor: 'primary.main',
+              },
+            }
+          }}
           InputProps={{
             startAdornment: <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />,
           }}
@@ -678,7 +757,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
           <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
         </Box>
       ) : (
-        <Stack spacing={1}>
+        <Stack spacing={{ xs: 0.5, sm: 1 }}>
           {filteredCreators.map((creator, index) => (
             <CreatorAccordionWithSubmissions
               key={creator.userId || index}

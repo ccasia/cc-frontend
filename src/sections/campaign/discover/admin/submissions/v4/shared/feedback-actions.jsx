@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 import { Box, Stack, Button, TextField, Select, MenuItem, FormControl, Chip, Typography, Tooltip } from '@mui/material';
 import { BUTTON_STYLES, FEEDBACK_CHIP_STYLES } from './submission-styles';
 import { options_changes } from '../constants';
 import { getFeedbackActionsVisibility } from './feedback-utils';
+import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
 
 export default function FeedbackActions({
   submission,
@@ -22,6 +24,7 @@ export default function FeedbackActions({
   hasPostingLink = false,
   onViewLogs
 }) {
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   if ((submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || hasPostingLink) && campaign?.campaignType === 'normal') {
     return null;
   }
@@ -36,10 +39,22 @@ export default function FeedbackActions({
 
   if (!visibility.showFeedbackActions) return null;
 
+  const handleConfirmApprove = () => {
+    setConfirmDialogOpen(false);
+    handleApprove();
+  };
+
+  const actionText = !isClient ? 'Send this Submission to Client?' : 'Approve Submission?';
+
   return (
     <Box sx={{ flex: '0 0 auto' }}>
-      <Stack>
-        <Stack direction="row" spacing={1} width="100%" justifyContent="flex-end">
+      <Stack spacing={{ xs: 1, sm: 0 }}>
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={{ xs: 0.8, sm: 1 }} 
+          width="100%" 
+          justifyContent="flex-end"
+        >
           {visibility.showRequestChangeButton && (
             <Button
               variant="contained"
@@ -50,6 +65,11 @@ export default function FeedbackActions({
               sx={{
                 ...BUTTON_STYLES.base,
                 ...BUTTON_STYLES.warning,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                py: { xs: 0.6, sm: 0.75 },
+                px: { xs: 1.5, sm: 2 },
+                minHeight: { xs: 32, sm: 36 },
+                width: { xs: '100%', sm: 'auto' }
               }}
             >
               {loading ? 'Processing...' : 'Request a Change'}
@@ -57,7 +77,13 @@ export default function FeedbackActions({
           )}
 
           {visibility.showChangeRequestForm && (
-            <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
+            <Box 
+              display="flex" 
+              flexDirection={{ xs: 'column', sm: 'row' }} 
+              width="100%" 
+              gap={{ xs: 0.8, sm: 1 }} 
+              justifyContent="flex-end"
+            >
               <Button
                 variant="contained"
                 color="secondary"
@@ -70,6 +96,11 @@ export default function FeedbackActions({
                 sx={{
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.secondary,
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  py: { xs: 0.6, sm: 0.75 },
+                  px: { xs: 1.5, sm: 2 },
+                  minHeight: { xs: 32, sm: 36 },
+                  width: { xs: '100%', sm: 'auto' }
                 }}
               >
                 Cancel Change Request
@@ -83,6 +114,11 @@ export default function FeedbackActions({
                 sx={{
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.warning,
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  py: { xs: 0.6, sm: 0.75 },
+                  px: { xs: 1.5, sm: 2 },
+                  minHeight: { xs: 32, sm: 36 },
+                  width: { xs: '100%', sm: 'auto' }
                 }}
               >
                 {loading ? 'Processing...' : !isClient ? 'Send to Creator' : 'Request a Change'}
@@ -95,11 +131,16 @@ export default function FeedbackActions({
               variant="contained"
               color="success"
               size='small'
-              onClick={handleApprove}
+              onClick={() => setConfirmDialogOpen(true)}
               disabled={loading}
               sx={{
                 ...BUTTON_STYLES.base,
                 ...BUTTON_STYLES.success,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                py: { xs: 0.6, sm: 0.75 },
+                px: { xs: 1.5, sm: 2 },
+                minHeight: { xs: 32, sm: 36 },
+                width: { xs: '100%', sm: 'auto' }
               }}
             >
               {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
@@ -107,7 +148,14 @@ export default function FeedbackActions({
           )}
 
           {visibility.showAdminClientFeedbackActions && (
-            <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' }, 
+              justifyContent: 'space-between', 
+              alignItems: { xs: 'stretch', sm: 'center' }, 
+              width: '100%',
+              gap: { xs: 1, sm: 0 }
+            }}>
               {(() => {
                 if (submission.status === 'CLIENT_FEEDBACK' && submission.feedback && submission.feedback.length > 0) {
                   const clientRequestFeedbacks = submission.feedback.filter(fb =>
@@ -119,17 +167,27 @@ export default function FeedbackActions({
                     const clientReasons = latestClientFeedback.reasons;
                     const hasMultipleReasons = clientReasons.length > 1;
 
-                    return (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Chip
-                          sx={FEEDBACK_CHIP_STYLES}
-                          label={clientReasons[0]}
-                          size="small"
-                          variant="outlined"
-                          color="warning"
-                        />
-
-                        {hasMultipleReasons && (
+                  return (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: { xs: 0.3, sm: 0.5 },
+                      flexWrap: 'wrap'
+                    }}>
+                      <Chip
+                        sx={{
+                          ...FEEDBACK_CHIP_STYLES,
+                          fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                          height: { xs: 24, sm: 28 },
+                          '& .MuiChip-label': {
+                            px: { xs: 0.5, sm: 1 }
+                          }
+                        }}
+                        label={clientReasons[0]}
+                        size="small"
+                        variant="outlined"
+                        color="warning"
+                      />                        {hasMultipleReasons && (
                           <Tooltip
                             title={
                               <Box sx={{ maxWidth: 500 }}>
@@ -208,7 +266,11 @@ export default function FeedbackActions({
                 sx={{
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.warning,
-                  width: 140,
+                  width: { xs: '100%', sm: 140 },
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  py: { xs: 0.6, sm: 0.75 },
+                  px: { xs: 1.5, sm: 2 },
+                  minHeight: { xs: 32, sm: 36 }
                 }}
               >
                 {loading ? 'Processing...' : 'Send to Creator'}
@@ -224,11 +286,12 @@ export default function FeedbackActions({
               variant="text"
               onClick={onViewLogs}
               sx={{
-                fontSize: 12,
+                fontSize: { xs: 11, sm: 12 },
                 color: '#919191',
-                p:0,
+                p: 0,
                 minWidth: 'auto',
                 textTransform: 'none',
+                minHeight: { xs: 28, sm: 32 },
                 '&:hover': {
                   backgroundColor: 'transparent',
                 },
@@ -240,27 +303,72 @@ export default function FeedbackActions({
         }
 
         {visibility.showReasonsDropdown && (
-          <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10, marginTop: 5 }} hiddenLabel size='small'>
+          <FormControl 
+            fullWidth 
+            style={{ 
+              backgroundColor: '#fff', 
+              borderRadius: 10, 
+              marginTop: { xs: 4, sm: 5 } 
+            }} 
+            hiddenLabel 
+            size='small'
+          >
             <Select
               multiple
               value={reasons}
               onChange={(e) => setReasons(e.target.value)}
               displayEmpty
+              sx={{
+                '& .MuiSelect-select': {
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  py: { xs: 1, sm: 1.5 },
+                }
+              }}
               renderValue={(selected) => {
                 if (selected.length === 0) {
-                  return <span style={{ color: '#999' }}>Change Request Reasons</span>;
+                  return (
+                    <span style={{ 
+                      color: '#999', 
+                      fontSize: window.innerWidth < 600 ? '0.875rem' : '1rem' 
+                    }}>
+                      Change Request Reasons
+                    </span>
+                  );
                 }
                 return (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 35 }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: { xs: 0.3, sm: 0.5 }, 
+                    maxHeight: { xs: 30, sm: 35 } 
+                  }}>
                     {selected.map((value) => (
-                      <Chip key={value} label={value} size="small" />
+                      <Chip 
+                        key={value} 
+                        label={value} 
+                        size="small"
+                        sx={{
+                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                          height: { xs: 20, sm: 24 },
+                          '& .MuiChip-label': {
+                            px: { xs: 0.5, sm: 0.75 }
+                          }
+                        }}
+                      />
                     ))}
                   </Box>
                 );
               }}
             >
               {options_changes.map((option) => (
-                <MenuItem key={option} value={option}>
+                <MenuItem 
+                  key={option} 
+                  value={option}
+                  sx={{ 
+                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                    py: { xs: 0.8, sm: 1 }
+                  }}
+                >
                   {option}
                 </MenuItem>
               ))}
@@ -286,10 +394,22 @@ export default function FeedbackActions({
           }
 
           return (
-            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'row', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              flexWrap: { xs: 'wrap', sm: 'nowrap' },
+              gap: { xs: 0.5, sm: 0 }
+            }}>
               {!isClient && latestRelevantFeedback.type === 'REQUEST' && latestRelevantFeedback.admin?.role === 'client' &&
                 <>
-                  <Typography variant='caption' fontWeight="bold" color={'#636366'}>
+                  <Typography 
+                    variant='caption' 
+                    fontWeight="bold" 
+                    color={'#636366'}
+                    sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                  >
                     Client Feedback
                   </Typography>
                   <Button
@@ -297,11 +417,12 @@ export default function FeedbackActions({
                     variant="text"
                     onClick={onViewLogs}
                     sx={{
-                      fontSize: 12,
+                      fontSize: { xs: 11, sm: 12 },
                       color: '#919191',
                       p: 0,
                       minWidth: 'auto',
                       textTransform: 'none',
+                      minHeight: { xs: 28, sm: 32 },
                       '&:hover': {
                         backgroundColor: 'transparent',
                       },
@@ -316,9 +437,9 @@ export default function FeedbackActions({
         })()}
 
         <TextField
-          style={{ marginTop: 5 }}
+          style={{ marginTop: { xs: 4, sm: 5 } }}
           multiline
-          rows={3}
+          rows={{ xs: 2, sm: 3 }}
           fullWidth
           placeholder="Insert optional comments here"
           value={feedback}
@@ -326,9 +447,31 @@ export default function FeedbackActions({
           sx={{
             '& .MuiOutlinedInput-root': {
               bgcolor: 'background.paper',
+              fontSize: { xs: '0.875rem', sm: '1rem' },
             },
+            '& .MuiInputBase-input': {
+              py: { xs: 1, sm: 1.5 },
+            }
           }}
           size='small'
+        />
+
+        <ConfirmDialogV2
+          open={confirmDialogOpen}
+          onClose={() => setConfirmDialogOpen(false)}
+          title={actionText}
+          emoji={!isClient ? '🫩' : '🙂‍↕️'}
+          content=""
+          action={
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleConfirmApprove}
+              disabled={loading}
+            >
+              {actionText}
+            </Button>
+          }
         />
       </Stack>
     </Box>

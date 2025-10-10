@@ -6,6 +6,12 @@ export const options_changes = [
   'Non-Compliance with Brief'
 ];
 
+export const posting_link_options_changes = [
+  'Invalid Link',
+  'Incorrect Post',
+];
+
 export default {
   options_changes,
+  posting_link_options_changes,
 };
