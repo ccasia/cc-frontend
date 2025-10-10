@@ -1,7 +1,7 @@
 import { Rnd } from 'react-rnd';
 import PropTypes from 'prop-types';
 import 'react-pdf/dist/Page/TextLayer.css';
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { Page, pdfjs, Document } from 'react-pdf';
 import ReactSignatureCanvas from 'react-signature-canvas';
@@ -63,6 +63,8 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
     { id: 'signature', icon: 'mdi:fountain-pen-tip', label: 'Sign', color: blue[600] },
   ];
 
+  const hasSignature = annotations.some((ann) => ann.type === 'signature');
+
   const handleToolSelect = useCallback((toolId) => {
     setSelectedTool(toolId);
     setSelectedAnnotation(null);
@@ -82,6 +84,10 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
   const startDrawing = useCallback(
     (e, pageNumber) => {
       if (selectedTool === 'cursor') return;
+
+      if (selectedTool === 'signature' && hasSignature) {
+        return;
+      }
 
       const rect = e.currentTarget.getBoundingClientRect();
 
@@ -142,6 +148,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
       setSignURL(url);
       setCurrentSignatureId(null);
       signDialog.onFalse();
+      handleToolSelect('cursor');
     }
   }, [setSignURL, currentSignatureId, signDialog, updateAnnotation]);
 
@@ -178,26 +185,32 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
               sx={{ flex: 1, justifyContent: 'center' }}
             >
               {tools.map((tool) => (
-                <Tooltip key={tool.id} title={tool.label}>
-                  <IconButton
-                    onClick={() => handleToolSelect(tool.id)}
-                    size={isMobile ? 'medium' : 'small'}
-                    sx={{
-                      bgcolor: selectedTool === tool.id ? `${tool.color}15` : 'transparent',
-                      color: selectedTool === tool.id ? tool.color : 'text.secondary',
-                      border:
-                        selectedTool === tool.id
-                          ? `2px solid ${tool.color}`
-                          : '2px solid transparent',
-                      minWidth: { xs: 44, sm: 40 },
-                      minHeight: { xs: 44, sm: 40 },
-                      '&:hover': {
-                        bgcolor: `${tool.color}10`,
-                      },
-                    }}
-                  >
-                    <Iconify icon={tool.icon} width={isMobile ? 24 : 20} />
-                  </IconButton>
+                <Tooltip
+                  key={tool.id}
+                  title={tool.id === 'signature' ? 'Only one signature allowed' : tool.label}
+                >
+                  <span>
+                    <IconButton
+                      onClick={() => handleToolSelect(tool.id)}
+                      size={isMobile ? 'medium' : 'small'}
+                      disabled={tool.id === 'signature' && hasSignature}
+                      sx={{
+                        bgcolor: selectedTool === tool.id ? `${tool.color}15` : 'transparent',
+                        color: selectedTool === tool.id ? tool.color : 'text.secondary',
+                        border:
+                          selectedTool === tool.id
+                            ? `2px solid ${tool.color}`
+                            : '2px solid transparent',
+                        minWidth: { xs: 44, sm: 40 },
+                        minHeight: { xs: 44, sm: 40 },
+                        '&:hover': {
+                          bgcolor: `${tool.color}10`,
+                        },
+                      }}
+                    >
+                      <Iconify icon={tool.icon} width={isMobile ? 24 : 20} />
+                    </IconButton>
+                  </span>
                 </Tooltip>
               ))}
             </Stack>
@@ -274,11 +287,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
             minWidth: 'fit-content',
           }}
         >
-          <Box sx={{ 
-            display: 'inline-block', 
-            minWidth: { xs: '100%', sm: 'auto' },
-            maxWidth: { xs: '100%', sm: 'none' },
-          }}>
+          <Box sx={{ display: 'inline-block', minWidth: { xs: '100vw', sm: 'auto' } }}>
             <Document file={file} onLoadSuccess={onLoadSuccess} renderMode="canvas">
               <Stack spacing={{ xs: 1, sm: 2 }}>
                 {Array(totalPages)
@@ -329,6 +338,9 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                         .map((annotation) => (
                           <Rnd
                             key={annotation.id}
+                            style={{
+                              zIndex: selectedAnnotation === annotation.id ? 100 : 10,
+                            }}
                             enableResizing={{
                               bottomRight: true,
                             }}
@@ -491,11 +503,9 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
           }}
         >
           Signature
-          {isMobile && (
-            <IconButton onClick={signDialog.onFalse} sx={{ ml: 2 }}>
-              <Iconify icon="mdi:close" />
-            </IconButton>
-          )}
+          <IconButton onClick={signDialog.onFalse} sx={{ ml: 2 }}>
+            <Iconify icon="mdi:close" />
+          </IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
           <Box

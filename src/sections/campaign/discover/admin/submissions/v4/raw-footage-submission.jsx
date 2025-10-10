@@ -30,8 +30,24 @@ import { getDefaultFeedback, getInitialReasons } from './shared/feedback-utils';
 export default function V4RawFootageSubmission({ submission, campaign, onUpdate }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
+  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
+  const isClient = userRole.toLowerCase() === 'client';
 
-  const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+  const submissionProps = useMemo(() => {
+    const rawFootages = submission.rawFootages || [];
+    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
+    const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+
+    return {      
+      rawFootages,
+      pendingReview,
+      isClientFeedback,
+      clientVisible,
+    };
+  }, [submission.rawFootages, submission.status]);
+
+  const { rawFootages, pendingReview, isClientFeedback, clientVisible } = submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -46,22 +62,6 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
   const [videoStates, setVideoStates] = useState({});
   const videoRefs = useRef({});
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
-
-  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
-  const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
-
-  const submissionProps = useMemo(() => {
-    const rawFootages = submission.rawFootages || [];
-    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
-
-    return {
-      rawFootages,
-      pendingReview
-    };
-  }, [submission.rawFootages, submission.status]);
-
-  const { rawFootages, pendingReview } = submissionProps;
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
@@ -275,8 +275,8 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                 gap: { xs: 1, sm: 1.5, md: 2 },
                 justifyContent: 'space-between',
                 alignItems: 'stretch',
-                minHeight: { xs: 400, sm: 450, md: 500 },
-                flexDirection: { xs: 'column', md: 'row' }
+                minHeight: { xs: 600, sm: 550, md: 500 },
+                flexDirection: { xs: 'column', lg: 'row' }
               }}>
                 {/* Caption & Feedback - Left side */}
                 <Box sx={{
@@ -284,9 +284,10 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  maxWidth: { xs: '100%', md: 400, lg: 600 },
-                  minWidth: { xs: '100%', md: 350 },
-                  height: 500,
+                  maxWidth: { xs: '100%', md: 420, lg: 500 },
+                  minWidth: { xs: '100%', lg: 350 },
+                  height: { xs: 'auto', lg: 500 },
+                  minHeight: { xs: 300, lg: 500 },
                   overflow: 'hidden'
                 }}>
                   {showFeedbackLogs ? (
@@ -399,7 +400,8 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                 {/* Content - Right side */}
                 <Box
                   sx={{
-                    width: { xs: '100%', sm: 400, md: 500, lg: 550 },
+                    width: { xs: '100%', sm: '100%', lg: 550 },
+                    height: { xs: 350, sm: 400, md: 450, lg: 500 },
                     display: 'flex',
                     flexDirection: 'column',
                     bgcolor: 'background.paper',
@@ -410,14 +412,15 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                   <Box
                     sx={{
                       display: 'flex',
-                      gap: { xs: 1, sm: 1.5, md: 2 },
+                      gap: { xs: 0.8, sm: 1.2, md: 1.5, lg: 2 },
                       overflowX: 'auto',
                       overflowY: 'hidden',
                       bgcolor: 'background.neutral',
                       height: '100%',
                       alignItems: 'stretch',
+                      p: { xs: 0.5, sm: 0 },
                       '&::-webkit-scrollbar': {
-                        height: 2,
+                        height: { xs: 3, sm: 2, md: 1 },
                       },
                       '&::-webkit-scrollbar-track': {
                         backgroundColor: 'rgba(0,0,0,0.1)',
@@ -430,15 +433,19 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                           backgroundColor: 'rgba(0,0,0,0.5)',
                         },
                       },
+                      scrollbarWidth: 'thin',
+                      // Improve scroll momentum on touch devices
+                      WebkitOverflowScrolling: 'touch',
+                      scrollBehavior: 'smooth',
                     }}
                   >
                     {rawFootages.map((rawFootage, footageIndex) => {
                       const getFootageWidth = () => {
-                        return { xs: 160, sm: 180, md: 200, lg: 240 };
+                        return { xs: 140, sm: 160, md: 200, lg: 240 };
                       };
 
                       const getFootageHeight = () => {
-                        return 'calc(100% - 8px)';
+                        return { xs: 'calc(100% - 4px)', sm: 'calc(100% - 6px)', md: 'calc(100% - 8px)' };
                       };
 
                       return (
@@ -458,7 +465,13 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                 cursor: 'pointer',
                                 width: getFootageWidth(),
                                 height: getFootageHeight(),
+                                borderRadius: { xs: 1, sm: 0 },
+                                overflow: 'hidden',
                                 '&:hover .overlay': {
+                                  opacity: 1,
+                                },
+                                // Add touch-friendly active state
+                                '&:active .overlay': {
                                   opacity: 1,
                                 },
                               }}
@@ -495,12 +508,12 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                 <Box
                                   sx={{
                                     width: '100%',
-                                    height: 32,
+                                    height: { xs: 28, sm: 30, md: 32 },
                                     bgcolor: 'rgba(0, 0, 0, 0.9)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    px: 1,
-                                    py: 0.5,
+                                    px: { xs: 0.8, sm: 1 },
+                                    py: { xs: 0.3, sm: 0.5 },
                                   }}
                                   onClick={(e) => e.stopPropagation()}
                                 >
@@ -514,29 +527,32 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                       color: 'white',
                                       bgcolor: 'rgba(255,255,255,0.1)',
                                       border: '1px solid rgba(255,255,255,0.2)',
-                                      minWidth: 20,
-                                      minHeight: 20,
-                                      p: 0.3,
-                                      mr: 0.5,
+                                      minWidth: { xs: 24, sm: 22, md: 20 },
+                                      minHeight: { xs: 24, sm: 22, md: 20 },
+                                      p: { xs: 0.4, sm: 0.35, md: 0.3 },
+                                      mr: { xs: 0.3, sm: 0.4, md: 0.5 },
                                       '&:hover': {
                                         bgcolor: 'rgba(255,255,255,0.2)'
+                                      },
+                                      '&:active': {
+                                        bgcolor: 'rgba(255,255,255,0.3)'
                                       }
                                     }}
                                   >
                                     {videoStates[rawFootage.id]?.isPlaying ? (
                                       <Box sx={{
-                                        width: 6,
-                                        height: 7,
+                                        width: { xs: 7, sm: 6.5, md: 6 },
+                                        height: { xs: 8, sm: 7.5, md: 7 },
                                         display: 'flex',
-                                        gap: 0.3
+                                        gap: { xs: 0.4, sm: 0.35, md: 0.3 }
                                       }}>
                                         <Box sx={{
-                                          width: 2.5,
+                                          width: { xs: 3, sm: 2.7, md: 2.5 },
                                           height: '100%',
                                           bgcolor: 'white'
                                         }} />
                                         <Box sx={{
-                                          width: 2.5,
+                                          width: { xs: 3, sm: 2.7, md: 2.5 },
                                           height: '100%',
                                           bgcolor: 'white'
                                         }} />
@@ -545,29 +561,50 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                       <Box sx={{
                                         width: 0,
                                         height: 0,
-                                        borderLeft: '6px solid white',
-                                        borderTop: '4px solid transparent',
-                                        borderBottom: '4px solid transparent',
-                                        ml: 0.2
+                                        borderLeft: { xs: '7px solid white', sm: '6.5px solid white', md: '6px solid white' },
+                                        borderTop: { xs: '4.5px solid transparent', sm: '4.2px solid transparent', md: '4px solid transparent' },
+                                        borderBottom: { xs: '4.5px solid transparent', sm: '4.2px solid transparent', md: '4px solid transparent' },
+                                        ml: { xs: 0.3, sm: 0.25, md: 0.2 }
                                       }} />
                                     )}
                                   </IconButton>
 
-                                  <Typography variant={'caption'} sx={{ color: 'white', minWidth: '30px', fontSize: 10 }}>
+                                  <Typography 
+                                    variant={'caption'} 
+                                    sx={{ 
+                                      color: 'white', 
+                                      minWidth: { xs: '25px', sm: '28px', md: '30px' }, 
+                                      fontSize: { xs: 9, sm: 9.5, md: 10 }
+                                    }}
+                                  >
                                     {formatTime(videoStates[rawFootage.id]?.currentTime || 0)}
                                   </Typography>
 
                                   <Box
                                     sx={{
                                       flex: 1,
-                                      height: 4,
+                                      height: { xs: 6, sm: 5, md: 4 },
                                       bgcolor: 'rgba(255,255,255,0.3)',
                                       borderRadius: 2,
                                       cursor: 'pointer',
-                                      mx: 0.5,
+                                      mx: { xs: 0.3, sm: 0.4, md: 0.5 },
                                       '&:hover': {
-                                        height: 5
+                                        height: { xs: 7, sm: 6, md: 5 }
                                       },
+                                      '&:active': {
+                                        height: { xs: 7, sm: 6, md: 5 }
+                                      },
+                                      // Increase touch target for mobile
+                                      position: 'relative',
+                                      '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        top: { xs: -6, sm: -4, md: -2 },
+                                        bottom: { xs: -6, sm: -4, md: -2 },
+                                        left: 0,
+                                        right: 0,
+                                        display: { xs: 'block', md: 'none' }
+                                      }
                                     }}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -585,7 +622,14 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                     />
                                   </Box>
 
-                                  <Typography variant={'caption'} sx={{ color: 'white', minWidth: '30px', fontSize: 10 }}>
+                                  <Typography 
+                                    variant={'caption'} 
+                                    sx={{ 
+                                      color: 'white', 
+                                      minWidth: { xs: '25px', sm: '28px', md: '30px' }, 
+                                      fontSize: { xs: 9, sm: 9.5, md: 10 }
+                                    }}
+                                  >
                                     {formatTime(videoStates[rawFootage.id]?.duration || 0)}
                                   </Typography>
 
@@ -597,17 +641,22 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                     }}
                                     sx={{
                                       color: 'white',
-                                      p: 0.3,
-                                      ml: 0.5,
+                                      p: { xs: 0.4, sm: 0.35, md: 0.3 },
+                                      ml: { xs: 0.3, sm: 0.4, md: 0.5 },
+                                      minWidth: { xs: 28, sm: 26, md: 24 },
+                                      minHeight: { xs: 28, sm: 26, md: 24 },
                                       '&:hover': {
                                         bgcolor: 'rgba(255,255,255,0.1)'
+                                      },
+                                      '&:active': {
+                                        bgcolor: 'rgba(255,255,255,0.2)'
                                       },
                                     }}
                                   >
                                     <Iconify
                                       icon="eva:expand-fill"
                                       sx={{
-                                        fontSize: 14
+                                        fontSize: { xs: 16, sm: 15, md: 14 }
                                       }}
                                     />
                                   </IconButton>
@@ -616,22 +665,22 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                               <Box
                                 sx={{
                                   position: 'absolute',
-                                  top: 12,
-                                  right: { xs: 6, sm: 7, md: 8 },
-                                  width: { xs: 18, sm: 20, md: 21 },
-                                  height: { xs: 26, sm: 28, md: 31 },
+                                  top: { xs: 8, sm: 10, md: 12 },
+                                  right: { xs: 4, sm: 6, md: 7, lg: 8 },
+                                  width: { xs: 20, sm: 22, md: 24, lg: 26 },
+                                  height: { xs: 28, sm: 30, md: 32, lg: 34 },
                                   backgroundColor: 'white',
                                   color: 'black',
-                                  borderRadius: '6px',
+                                  borderRadius: { xs: '4px', sm: '5px', md: '6px' },
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  fontSize: { xs: 10, sm: 11, md: 12 },
+                                  fontSize: { xs: 11, sm: 12, md: 13, lg: 14 },
                                   fontWeight: 'bold',
                                   zIndex: 10,
                                   border: '1px solid #EBEBEB',
                                   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                                  p: { xs: 0.5, sm: 0.75, md: 1 }
+                                  p: { xs: 0.3, sm: 0.5, md: 0.75, lg: 1 }
                                 }}
                               >
                                 {footageIndex + 1}
@@ -642,11 +691,12 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                               sx={{
                                 width: getFootageWidth(),
                                 height: getFootageHeight(),
-                                minHeight: { xs: 250, sm: 300, md: 350, lg: 390 },
+                                minHeight: { xs: 280, sm: 320, md: 360, lg: 390 },
                                 bgcolor: 'background.neutral',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
+                                borderRadius: { xs: 1, sm: 0 },
                               }}
                             >
                               <Stack spacing={2} alignItems="center">

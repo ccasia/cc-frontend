@@ -30,8 +30,26 @@ import { getDefaultFeedback, getInitialReasons } from './shared/feedback-utils';
 export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
+  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
+  const isClient = userRole.toLowerCase() === 'client';
 
-  const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+  const submissionProps = useMemo(() => {
+    const photos = submission.photos || [];
+    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
+    const hasPostingLink = Boolean(submission.content);
+    const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
+    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+
+    return {
+      photos,
+      pendingReview,
+      hasPostingLink,
+      isClientFeedback,
+      clientVisible
+    };
+  }, [submission.photos, submission.status, submission.content]);
+
+  const { photos, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
@@ -43,28 +61,6 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const captionMeasureRef = useRef(null);
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
-
-  const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
-  const isClient = userRole.toLowerCase() === 'client';
-  const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
-
-  const submissionProps = useMemo(() => {
-    const photos = submission.photos || [];
-    const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
-    const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
-    const hasPostingLink = Boolean(submission.content);
-    const hasPendingPostingLink = hasPostingLink && submission.status !== 'POSTED';
-
-    return {
-      photos,
-      pendingReview,
-      isApproved,
-      hasPostingLink,
-      hasPendingPostingLink
-    };
-  }, [submission.photos, submission.status, submission.content]);
-
-  const { photos, pendingReview, hasPostingLink } = submissionProps;
 
   const captionOverflows = useCaptionOverflow(captionMeasureRef, submission.caption);
 
@@ -201,8 +197,8 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                 gap: { xs: 1, sm: 1.5, md: 2 },
                 justifyContent: 'space-between',
                 alignItems: 'stretch',
-                minHeight: { xs: 400, sm: 450, md: 500 },
-                flexDirection: { xs: 'column', md: 'row' }
+                minHeight: { xs: 600, sm: 550, md: 500 },
+                flexDirection: { xs: 'column', lg: 'row' }
               }}>
                 {/* Caption & Feedback - Left side */}
                 <Box sx={{
@@ -210,9 +206,10 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  maxWidth: { xs: '100%', md: 400, lg: 600 },
-                  minWidth: { xs: '100%', md: 350 },
-                  height: 500,
+                  maxWidth: { xs: '100%', md: 420, lg: 500 },
+                  minWidth: { xs: '100%', lg: 350 },
+                  height: { xs: 'auto', lg: 500 },
+                  minHeight: { xs: 300, lg: 500 },
                   overflow: 'hidden'
                 }}>
                   {showFeedbackLogs ? (
@@ -334,8 +331,8 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                 {/* Content - Right side */}
                 <Box
                   sx={{
-                    width: { xs: '100%', sm: 400, md: 500, lg: 550 },
-                    height: { xs: 300, sm: 400, md: 450, lg: 500 },
+                    width: { xs: '100%', sm: '100%', lg: 550 },
+                    height: { xs: 350, sm: 400, md: 450, lg: 500 },
                     display: 'flex',
                     flexDirection: 'column',
                     bgcolor: 'background.paper',
@@ -346,14 +343,15 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                   <Box
                     sx={{
                       display: 'flex',
-                      gap: { xs: 1, sm: 1.5, md: 2 },
+                      gap: { xs: 0.8, sm: 1.2, md: 1.5, lg: 2 },
                       overflowX: 'auto',
                       overflowY: 'hidden',
                       bgcolor: 'background.neutral',
                       height: '100%',
                       alignItems: 'stretch',
+                      p: { xs: 0.5, sm: 0 },
                       '&::-webkit-scrollbar': {
-                        height: 2,
+                        height: { xs: 3, sm: 2, md: 1 },
                       },
                       '&::-webkit-scrollbar-track': {
                         backgroundColor: 'rgba(0,0,0,0.1)',
@@ -366,15 +364,19 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                           backgroundColor: 'rgba(0,0,0,0.5)',
                         },
                       },
+                      scrollbarWidth: 'thin',
+                      // Improve scroll momentum on touch devices
+                      WebkitOverflowScrolling: 'touch',
+                      scrollBehavior: 'smooth',
                     }}
                   >
                     {photos.map((photo, photoIndex) => {
                       const getPhotoWidth = () => {
-                        return { xs: 160, sm: 180, md: 220, lg: 240 };
+                        return { xs: 140, sm: 160, md: 200, lg: 240 };
                       };
 
                       const getPhotoHeight = () => {
-                        return 'calc(100% - 8px)';
+                        return { xs: 'calc(100% - 4px)', sm: 'calc(100% - 6px)', md: 'calc(100% - 8px)' };
                       };
 
                       return (
@@ -393,8 +395,14 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                               cursor: 'pointer',
                               width: getPhotoWidth(),
                               height: getPhotoHeight(),
-                              minHeight: { xs: 350, sm: 400, md: 450, lg: 480 },
+                              minHeight: { xs: 320, sm: 380, md: 420, lg: 450, xl: 480 },
+                              borderRadius: { xs: 1, sm: 0 },
+                              overflow: 'hidden',
                               '&:hover .overlay': {
+                                opacity: 1,
+                              },
+                              // Add touch-friendly active state
+                              '&:active .overlay': {
                                 opacity: 1,
                               },
                             }}
@@ -414,22 +422,22 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                             <Box
                               sx={{
                                 position: 'absolute',
-                                top: 12,
-                                right: { xs: 6, sm: 7, md: 8 },
-                                width: { xs: 18, sm: 20, md: 21 },
-                                height: { xs: 26, sm: 28, md: 31 },
+                                top: { xs: 8, sm: 10, md: 12 },
+                                right: { xs: 4, sm: 6, md: 7, lg: 8 },
+                                width: { xs: 20, sm: 22, md: 24, lg: 26 },
+                                height: { xs: 28, sm: 30, md: 32, lg: 34 },
                                 backgroundColor: 'white',
                                 color: 'black',
-                                borderRadius: '6px',
+                                borderRadius: { xs: '4px', sm: '5px', md: '6px' },
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: { xs: 10, sm: 11, md: 12 },
+                                fontSize: { xs: 11, sm: 12, md: 13, lg: 14 },
                                 fontWeight: 'bold',
                                 zIndex: 10,
                                 border: '1px solid #EBEBEB',
                                 boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                                p: { xs: 0.5, sm: 0.75, md: 1 }
+                                p: { xs: 0.3, sm: 0.5, md: 0.75, lg: 1 }
                               }}
                             >
                               {photoIndex + 1}
@@ -446,17 +454,17 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                opacity: 0,
+                                opacity: { xs: 0.7, md: 0 },
                                 transition: 'opacity 0.2s ease',
-                                borderRadius: 1,
+                                borderRadius: { xs: 1, sm: 0 },
                               }}
                             >
                               <Iconify
                                 icon="eva:expand-fill"
                                 sx={{
                                   color: 'white',
-                                  width: { xs: 28, sm: 32, md: 36, lg: 40 },
-                                  height: { xs: 28, sm: 32, md: 36, lg: 40 },
+                                  width: { xs: 36, sm: 38, md: 40, lg: 44 },
+                                  height: { xs: 36, sm: 38, md: 40, lg: 44 },
                                   opacity: 0.9,
                                 }}
                               />
