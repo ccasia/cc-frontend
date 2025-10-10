@@ -22,8 +22,12 @@ export default function FeedbackSection({ submission, isVisible, isClient, onVie
   const showContent = submission.status !== 'CLIENT_FEEDBACK';
 
   return (
-    <Box sx={{ flex: 1, overflow: 'auto' }}>
-      <Stack spacing={1}>
+    <Box sx={{ 
+      flex: 1, 
+      overflow: 'auto',
+      minHeight: 0
+    }}>
+      <Stack spacing={{ xs: 0.8, sm: 1 }}>
         <FeedbackDisplay
           onViewLogs={onViewLogs}
           submission={submission}
