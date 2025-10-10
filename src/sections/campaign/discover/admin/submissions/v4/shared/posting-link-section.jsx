@@ -1,15 +1,20 @@
 import { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import { Box, Stack, Button, TextField, Typography, Link } from '@mui/material';
+import { Box, Stack, Button, TextField, Typography, Link, Select, MenuItem, FormControl, Chip } from '@mui/material';
 import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { BUTTON_STYLES } from './submission-styles';
+import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
+import { posting_link_options_changes } from '../constants';
 
 export default function PostingLinkSection({ submission, onUpdate, onViewLogs }) {
   const { user } = useAuthContext();
   const [postingLink, setPostingLink] = useState(submission.content || '');
   const [loading, setLoading] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [action, setAction] = useState('approve');
+  const [reasons, setReasons] = useState([]);
 
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isSuperAdmin = userRole.toLowerCase() === 'superadmin';
@@ -65,20 +70,30 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
       setLoading(true);
       await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
         submissionId: submission.id,
-        action: 'reject'
+        action: 'reject',
+        reasons
       });
 
-      enqueueSnackbar('Posting link rejected successfully', { variant: 'success' });
+      enqueueSnackbar('Change request sent successfully', { variant: 'success' });
+      setAction('approve');
+      setReasons([]);
       onUpdate?.();
     } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Failed to reject posting link', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Failed to send change request', { variant: 'error' });
     } finally {
       setLoading(false);
     }
-  }, [submission.id, onUpdate]);
+  }, [submission.id, reasons, onUpdate]);
 
   const isPosted = submission.status === 'POSTED';
   const postingLinkAddedByAdmin = Boolean(submission.admin?.userId);
+
+  const handleConfirmApprove = () => {
+    setConfirmDialogOpen(false);
+    handleApprovePosting();
+  };
+
+  const actionText = 'Approve Posting Link?';
 
   return (
     <Box sx={{ flex: '0 0 auto' }}>
@@ -148,68 +163,205 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
           </Box>
         )}
 
+        {/* Posting link submitted by creator */}
         {!postingLinkAddedByAdmin && !isPosted && submission.content && (
-          <Stack direction="row" spacing={1} justifyContent="flex-end">
-            <Button
-              variant="contained"
-              color="warning"
-              size="small"
-              onClick={handleRejectPosting}
-              disabled={loading}
-              sx={{
-                ...BUTTON_STYLES.base,
-                ...BUTTON_STYLES.warning,
-              }}
-            >
-              {loading ? 'Processing...' : 'Request a Change'}
-            </Button>
-            <Button
-              variant="contained"
-              color="success"
-              size="small"
-              onClick={handleApprovePosting}
-              disabled={loading}
-              sx={{
-                ...BUTTON_STYLES.base,
-                ...BUTTON_STYLES.success,
-              }}
-            >
-              {loading ? 'Processing...' : 'Approve'}
-            </Button>
+          <Stack spacing={1}>
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              {action === 'approve' && (
+                <Button
+                  variant="contained"
+                  color="warning"
+                  size="small"
+                  onClick={() => setAction('request_revision')}
+                  disabled={loading}
+                  sx={{
+                    ...BUTTON_STYLES.base,
+                    ...BUTTON_STYLES.warning,
+                  }}
+                >
+                  {loading ? 'Processing...' : 'Request a Change'}
+                </Button>
+              )}
+              {action === 'request_revision' && (
+                <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    size="small"
+                    onClick={() => {
+                      setAction('approve');
+                      setReasons([]);
+                    }}
+                    disabled={loading}
+                    sx={{
+                      ...BUTTON_STYLES.base,
+                      ...BUTTON_STYLES.secondary,
+                    }}
+                  >
+                    Cancel Change Request
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="warning"
+                    size="small"
+                    onClick={handleRejectPosting}
+                    disabled={loading}
+                    sx={{
+                      ...BUTTON_STYLES.base,
+                      ...BUTTON_STYLES.warning,
+                    }}
+                  >
+                    {loading ? 'Processing...' : 'Send to Creator'}
+                  </Button>
+                </Box>
+              )}
+              {action === 'approve' && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="small"
+                  onClick={() => setConfirmDialogOpen(true)}
+                  disabled={loading}
+                  sx={{
+                    ...BUTTON_STYLES.base,
+                    ...BUTTON_STYLES.success,
+                  }}
+                >
+                  {loading ? 'Processing...' : 'Approve'}
+                </Button>
+              )}
+            </Stack>
+            {action === 'request_revision' && (
+              <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10 }} hiddenLabel size="small">
+                <Select
+                  multiple
+                  value={reasons}
+                  onChange={(e) => setReasons(e.target.value)}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    if (selected.length === 0) {
+                      return <span style={{ color: '#999' }}>Change Request Reasons</span>;
+                    }
+                    return (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 35 }}>
+                        {selected.map((value) => (
+                          <Chip key={value} label={value} size="small" />
+                        ))}
+                      </Box>
+                    );
+                  }}
+                >
+                  {posting_link_options_changes.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </Stack>
         )}
 
+        {/* Posting link to be approved by superadmin */}
         {postingLinkAddedByAdmin && !isPosted && submission.content && isSuperAdmin && (
-          <Stack direction="row" spacing={1} justifyContent="flex-end">
-            <Button
-              variant="contained"
-              color="warning"
-              size="small"
-              onClick={handleRejectPosting}
-              disabled={loading}
-              sx={{
-                ...BUTTON_STYLES.base,
-                ...BUTTON_STYLES.warning,
-              }}
-            >
-              {loading ? 'Processing...' : 'Request a Change'}
-            </Button>
-            <Button
-              variant="contained"
-              color="success"
-              size="small"
-              onClick={handleApprovePosting}
-              disabled={loading}
-              sx={{
-                ...BUTTON_STYLES.base,
-                ...BUTTON_STYLES.success,
-              }}
-            >
-              {loading ? 'Processing...' : 'Approve'}
-            </Button>
+          <Stack spacing={1}>
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              {action === 'approve' && (
+                <Button
+                  variant="contained"
+                  color="warning"
+                  size="small"
+                  onClick={() => setAction('request_revision')}
+                  disabled={loading}
+                  sx={{
+                    ...BUTTON_STYLES.base,
+                    ...BUTTON_STYLES.warning,
+                  }}
+                >
+                  {loading ? 'Processing...' : 'Request a Change'}
+                </Button>
+              )}
+              {action === 'request_revision' && (
+                <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    size="small"
+                    onClick={() => {
+                      setAction('approve');
+                      setReasons([]);
+                    }}
+                    disabled={loading}
+                    sx={{
+                      ...BUTTON_STYLES.base,
+                      ...BUTTON_STYLES.secondary,
+                    }}
+                  >
+                    Cancel Change Request
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="warning"
+                    size="small"
+                    onClick={handleRejectPosting}
+                    disabled={loading}
+                    sx={{
+                      ...BUTTON_STYLES.base,
+                      ...BUTTON_STYLES.warning,
+                    }}
+                  >
+                    {loading ? 'Processing...' : 'Send to Creator'}
+                  </Button>
+                </Box>
+              )}
+              {action === 'approve' && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="small"
+                  onClick={() => setConfirmDialogOpen(true)}
+                  disabled={loading}
+                  sx={{
+                    ...BUTTON_STYLES.base,
+                    ...BUTTON_STYLES.success,
+                  }}
+                >
+                  {loading ? 'Processing...' : 'Approve'}
+                </Button>
+              )}
+            </Stack>
+            {action === 'request_revision' && (
+              <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10 }} hiddenLabel size="small">
+                <Select
+                  multiple
+                  value={reasons}
+                  onChange={(e) => setReasons(e.target.value)}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    if (selected.length === 0) {
+                      return <span style={{ color: '#999' }}>Change Request Reasons</span>;
+                    }
+                    return (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 35 }}>
+                        {selected.map((value) => (
+                          <Chip key={value} label={value} size="small" />
+                        ))}
+                      </Box>
+                    );
+                  }}
+                >
+                  {posting_link_options_changes.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </Stack>
         )}
 
+        {/* Posting link added by admin */}
         {!submission.content && (
           <Box display={'flex'} flexDirection={'column'}>
             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -267,6 +419,25 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
             </Box>
           </Box>
         )}
+
+        <ConfirmDialogV2
+          open={confirmDialogOpen}
+          onClose={() => setConfirmDialogOpen(false)}
+          title={actionText}
+          isPosting={true}
+          emoji="🙂‍↕️"
+          content=""
+          action={
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleConfirmApprove}
+              disabled={loading}
+            >
+              {actionText}
+            </Button>
+          }
+        />
       </Box>
     </Box>
   );
