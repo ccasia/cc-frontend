@@ -2,13 +2,7 @@ import { useForm } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import {
-  Box,
-  Grid,
-  Card,
-  Typography,
-  InputAdornment,
-} from '@mui/material';
+import { Box, Grid, Card, Typography, InputAdornment } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -29,7 +23,6 @@ const ClientProfile = () => {
   const [loading, setLoading] = useState(false);
 
   const defaultValues = {
-    companyLogo: {},
     companyName: '',
     companyAddress: '',
     picEmail: '',
@@ -54,13 +47,13 @@ const ClientProfile = () => {
     const fetchCompanyData = async () => {
       try {
         setLoading(true);
-        
+
         // First try to get user data to find associated company
         const userResponse = await axiosInstance.get(`${endpoints.auth.me}`);
         const userData = userResponse.data.user;
 
-        console.log('User data: ', userData)
-        
+        console.log('User data: ', userData);
+
         // If user has client data and we need to find the company
         if (userData?.client || userData?.email) {
           // Get all companies and find the one matching user email or PIC email
@@ -68,16 +61,20 @@ const ClientProfile = () => {
           const companies = allCompanies.data;
 
           // Find company where user email matches company email or PIC email
-          const matchedCompany = companies.find(company => 
-            company.email?.toLowerCase() === userData.email?.toLowerCase() ||
-            company.pic?.some(pic => pic.email?.toLowerCase() === userData.email?.toLowerCase())
+          const matchedCompany = companies.find(
+            (company) =>
+              company.email?.toLowerCase() === userData.email?.toLowerCase() ||
+              company.pic?.some((pic) => pic.email?.toLowerCase() === userData.email?.toLowerCase())
           );
-          
+
           if (matchedCompany) {
-            console.log('Company info: ', matchedCompany)
+            console.log('Company info: ', matchedCompany);
             const company = matchedCompany;
-            const pic = company.pic?.find(p => p.email?.toLowerCase() === userData.email?.toLowerCase()) || company.pic?.[0] || {};
-            
+            const pic =
+              company.pic?.find((p) => p.email?.toLowerCase() === userData.email?.toLowerCase()) ||
+              company.pic?.[0] ||
+              {};
+
             setCompanyData(company);
             reset({
               companyLogo: company.logo || {},
@@ -173,26 +170,22 @@ const ClientProfile = () => {
   return (
     <Box sx={{ mx: 'auto' }}>
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <RHFUploadAvatar name='companyLogo' onDrop={handleDrop} />
+        <RHFUploadAvatar name="companyLogo" onDrop={handleDrop} />
         <Grid container spacing={3} mt={1}>
           {/* First Row */}
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Company Name
             </Typography>
-            <RHFTextField 
-              name="companyName" 
-              placeholder="Company Name"
-              size="small"
-            />
+            <RHFTextField name="companyName" placeholder="Company Name" size="small" />
           </Grid>
 
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               PIC (Person in Charge) Name
             </Typography>
-            <RHFTextField 
-              name="picName" 
+            <RHFTextField
+              name="picName"
               placeholder="Company PIC (Person in Charge) Name"
               size="small"
             />
@@ -203,21 +196,13 @@ const ClientProfile = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               PIC Email
             </Typography>
-            <RHFTextField 
-              name="picEmail" 
-              placeholder="PIC Email"
-              size="small"
-            />
+            <RHFTextField name="picEmail" placeholder="PIC Email" size="small" />
           </Grid>
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Designation
             </Typography>
-            <RHFTextField 
-              name="picDesignation" 
-              placeholder="Designation"
-              size="small"
-            />
+            <RHFTextField name="picDesignation" placeholder="Designation" size="small" />
           </Grid>
 
           {/* Third Row */}
@@ -225,8 +210,8 @@ const ClientProfile = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Client Registration Number
             </Typography>
-            <RHFTextField 
-              name="registrationNumber" 
+            <RHFTextField
+              name="registrationNumber"
               placeholder="Client Registration Number"
               size="small"
             />
@@ -236,11 +221,7 @@ const ClientProfile = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Company Address
             </Typography>
-            <RHFTextField 
-              name="companyAddress" 
-              placeholder="Company Address"
-              size="small"
-            />
+            <RHFTextField name="companyAddress" placeholder="Company Address" size="small" />
           </Grid>
 
           {/* Fourth Row */}
@@ -251,13 +232,12 @@ const ClientProfile = () => {
             <RHFAutocomplete
               name="country"
               type="country"
-              size='small'
+              size="small"
               placeholder="Code"
               options={countries.map((option) => option.label)}
               getOptionLabel={(option) => option}
-
             />
-          </Grid>            
+          </Grid>
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               PIC Mobile Number
@@ -269,10 +249,7 @@ const ClientProfile = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment sx={{ fontSize: 14 }} position="start">
-                    +
-                    {countries
-                      .filter((elem) => elem.label === countryValue)
-                      .map((e) => e.phone)}
+                    +{countries.filter((elem) => elem.label === countryValue).map((e) => e.phone)}
                   </InputAdornment>
                 ),
               }}
@@ -303,7 +280,6 @@ const ClientProfile = () => {
       </FormProvider>
     </Box>
   );
-
 };
 
 export default ClientProfile;

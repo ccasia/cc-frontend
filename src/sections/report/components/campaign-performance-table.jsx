@@ -13,6 +13,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useSearchParams } from 'src/routes/hooks';
+
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
 const CampaignPerformanceTable = () => {
@@ -24,7 +26,9 @@ const CampaignPerformanceTable = () => {
     return pageParam ? parseInt(pageParam, 10) : 1;
   });
 
-  const [selectedCampaign, setSelectedCampaign] = useState(() => searchParams.get('campaign') || 'all');
+  const [selectedCampaign, setSelectedCampaign] = useState(
+    () => searchParams.get('campaign') || 'all'
+  );
 
   const itemsPerPage = 7;
 
@@ -81,7 +85,7 @@ const CampaignPerformanceTable = () => {
     const params = new URLSearchParams();
     if (page > 1) params.set('page', page.toString());
     if (campaign !== 'all') params.set('campaign', campaign);
-    
+
     // Update URL without causing a page refresh
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     window.history.replaceState({}, '', `/dashboard/report${newUrl}`);

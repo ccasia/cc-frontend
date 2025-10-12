@@ -24,7 +24,6 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
-  Alert,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -33,9 +32,9 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import EmptyContent from 'src/components/empty-content/empty-content';
-import FormProvider from 'src/components/hook-form/form-provider';
 import Iconify from 'src/components/iconify';
+import FormProvider from 'src/components/hook-form/form-provider';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
 const Posting = ({ campaign, submission, creator }) => {
   const dialogApprove = useBoolean();
@@ -162,12 +161,12 @@ const Posting = ({ campaign, submission, creator }) => {
   );
 
   // Check if user is admin (not superadmin) and can submit for creator
-  const canAdminSubmit = useMemo(() => {
-    return user?.admin && 
+  const canAdminSubmit = useMemo(() => 
+     user?.admin && 
            user?.admin?.mode !== 'god' && 
            submission?.status === 'IN_PROGRESS' &&
-           true; // Note: Will add proper check when submittedByAdminId field is added to database
-  }, [user, submission]);
+           true // Note: Will add proper check when submittedByAdminId field is added to database
+  , [user, submission]);
 
   // Check if current user can approve (based on who submitted)
   const canApprove = useMemo(() => {
