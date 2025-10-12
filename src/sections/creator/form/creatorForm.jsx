@@ -202,8 +202,8 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
   useEffect(() => {
     if (nationality) {
       // First try exact match
-      let selectedCountry = countries.find(country => country.label === nationality);
-      
+      let selectedCountry = countries.find((country) => country.label === nationality);
+
       // If no exact match, try some common variations
       if (!selectedCountry) {
         const countryMappings = {
@@ -212,34 +212,34 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
           'North Korea': "Korea, Democratic People's Republic of",
           'United States': 'United States',
           'United Kingdom': 'United Kingdom',
-          'Russia': 'Russian Federation',
-          'Iran': 'Iran, Islamic Republic of',
-          'Syria': 'Syrian Arab Republic',
-          'Venezuela': 'Venezuela, Bolivarian Republic of',
-          'Bolivia': 'Bolivia, Plurinational State of',
-          'Moldova': 'Moldova, Republic of',
-          'Macedonia': 'Macedonia, the Former Yugoslav Republic of',
-          'Congo': 'Congo, Republic of the',
+          Russia: 'Russian Federation',
+          Iran: 'Iran, Islamic Republic of',
+          Syria: 'Syrian Arab Republic',
+          Venezuela: 'Venezuela, Bolivarian Republic of',
+          Bolivia: 'Bolivia, Plurinational State of',
+          Moldova: 'Moldova, Republic of',
+          Macedonia: 'Macedonia, the Former Yugoslav Republic of',
+          Congo: 'Congo, Republic of the',
           'Democratic Republic of the Congo': 'Congo, Democratic Republic of the',
-          'Tanzania': 'United Republic of Tanzania',
-          'Vietnam': 'Viet Nam',
-          'Laos': "Lao People's Democratic Republic",
-          'Brunei': 'Brunei Darussalam',
+          Tanzania: 'United Republic of Tanzania',
+          Vietnam: 'Viet Nam',
+          Laos: "Lao People's Democratic Republic",
+          Brunei: 'Brunei Darussalam',
           'Cape Verde': 'Cape Verde',
           'Ivory Coast': "Cote d'Ivoire",
-          'Swaziland': 'Swaziland',
+          Swaziland: 'Swaziland',
           'East Timor': 'Timor-Leste',
-          'Palestine': 'Palestine, State of',
+          Palestine: 'Palestine, State of',
           'Vatican City': 'Holy See (Vatican City State)',
-          'Micronesia': 'Micronesia, Federated States of',
+          Micronesia: 'Micronesia, Federated States of',
         };
-        
+
         const mappedName = countryMappings[nationality];
         if (mappedName) {
-          selectedCountry = countries.find(country => country.label === mappedName);
+          selectedCountry = countries.find((country) => country.label === mappedName);
         }
       }
-      
+
       if (selectedCountry && selectedCountry.phone) {
         setCountryCode(selectedCountry.phone);
       } else {
@@ -272,8 +272,12 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
     }
 
     // Additional step validation
-    if (!currentValues.languages?.length || currentValues.languages.length < 1 || 
-        !currentValues.interests?.length || currentValues.interests.length < 3) {
+    if (
+      !currentValues.languages?.length ||
+      currentValues.languages.length < 1 ||
+      !currentValues.interests?.length ||
+      currentValues.interests.length < 3
+    ) {
       newStepErrors[2] = true;
     } else {
       delete newStepErrors[2];
@@ -309,8 +313,12 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
     }
 
     // Additional step validation
-    if (!currentValues.languages?.length || currentValues.languages.length < 1 || 
-        !currentValues.interests?.length || currentValues.interests.length < 3) {
+    if (
+      !currentValues.languages?.length ||
+      currentValues.languages.length < 1 ||
+      !currentValues.interests?.length ||
+      currentValues.interests.length < 3
+    ) {
       newStepErrors[2] = true;
     } else {
       delete newStepErrors[2];
@@ -460,7 +468,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
           borderRadius: 2,
           p: { xs: 2, sm: 4 },
           m: { xs: 1, sm: 2 },
-          height: '97vh',
+          height: '85vh',
           position: 'relative',
           overflow: 'hidden',
         },
@@ -470,7 +478,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       <Box
         sx={{
           position: 'absolute',
-          top: { xs: 60, sm: 55 },
+          top: { xs: 80, sm: 55 },
           left: '50%',
           transform: 'translateX(-50%)',
           width: '100%',
@@ -479,14 +487,14 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
           justifyContent: 'center',
           alignItems: 'center',
           px: { xs: 2, sm: 0 },
-          mt: { xs: 2, sm: 0 }
+          mt: { xs: 2, sm: 0 },
         }}
       >
         <Stack
           direction="row"
           alignItems="center"
           justifyContent="center"
-          spacing={1}
+          // spacing={1}
           sx={{ width: '100%' }}
         >
           {/* Location Step */}
@@ -498,7 +506,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               textAlign: 'center',
               borderRadius: 1.5,
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              fontWeight: activeStep === 0 || (completedSteps[0] && activeStep > 0) ? 600 : 400,
+              fontWeight: 600,
               bgcolor: (() => {
                 if (activeStep === 0) return '#1340FF';
                 if (stepErrors[0]) return '#fff';
@@ -507,14 +515,14 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               })(),
               color: (() => {
                 if (activeStep === 0) return '#fff';
-                if (stepErrors[0]) return '#636366';
+                if (stepErrors[0]) return '#1340FF';
                 if (completedSteps[0] && activeStep > 0) return '#fff';
                 return '#636366';
               })(),
-              border: '1px solid',
+              border: '2px solid',
               borderColor: (() => {
                 if (activeStep === 0) return '#1340FF';
-                if (stepErrors[0]) return '#D4321C';
+                if (stepErrors[0]) return '#1340FF';
                 if (activeStep >= 0) return '#1340FF';
                 return '#636366';
               })(),
@@ -529,7 +537,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             }}
           >
             <Box component="span">Location</Box>
-            {stepErrors[0] && activeStep !== 0 && <ErrorIcon />}
+            {/* {stepErrors[0] && activeStep !== 0 && <ErrorIcon />} */}
           </Box>
 
           {/* Connector Line */}
@@ -537,8 +545,8 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             sx={{
               height: 2,
               flexGrow: 1,
-              maxWidth: connectorWidth,
-              bgcolor: activeStep >= 1 ? '#1340FF' : '#636366',
+              // maxWidth: connectorWidth,
+              bgcolor: '#1340FF',
             }}
           />
 
@@ -552,7 +560,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               textAlign: 'center',
               borderRadius: 1.5,
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              fontWeight: activeStep === 1 || (completedSteps[1] && activeStep > 1) ? 600 : 400,
+              fontWeight: 600,
               bgcolor: (() => {
                 if (activeStep === 1) return '#1340FF';
                 if (stepErrors[1]) return '#fff';
@@ -561,16 +569,16 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               })(),
               color: (() => {
                 if (activeStep === 1) return '#fff';
-                if (stepErrors[1]) return '#636366';
+                if (stepErrors[1]) return '#1340FF';
                 if (completedSteps[1] && activeStep > 1) return '#fff';
-                return '#636366';
+                return '#1340FF';
               })(),
-              border: '1px solid',
+              border: '2px solid',
               borderColor: (() => {
                 if (activeStep === 1) return '#1340FF';
-                if (stepErrors[1]) return '#D4321C';
+                if (stepErrors[1]) return '#1340FF';
                 if (activeStep >= 1) return '#1340FF';
-                return '#636366';
+                return '#1340FF';
               })(),
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -583,7 +591,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             }}
           >
             <Box component="span">Personal</Box>
-            {stepErrors[1] && activeStep !== 1 && <ErrorIcon />}
+            {/* {stepErrors[1] && activeStep !== 1 && <ErrorIcon />} */}
           </Box>
 
           {/* Connector Line */}
@@ -591,8 +599,8 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             sx={{
               height: 2,
               flexGrow: 1,
-              maxWidth: connectorWidth,
-              bgcolor: activeStep >= 2 ? '#1340FF' : '#636366',
+              // maxWidth: connectorWidth,
+              bgcolor: '#1340FF',
             }}
           />
 
@@ -605,7 +613,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               textAlign: 'center',
               borderRadius: 1.5,
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              fontWeight: activeStep === 2 || (completedSteps[2] && activeStep > 2) ? 600 : 400,
+              fontWeight: 600,
               bgcolor: (() => {
                 if (activeStep === 2) return '#1340FF';
                 if (stepErrors[2]) return '#fff';
@@ -614,16 +622,16 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               })(),
               color: (() => {
                 if (activeStep === 2) return '#fff';
-                if (stepErrors[2]) return '#636366';
+                if (stepErrors[2]) return '#1340FF';
                 if (completedSteps[2] && activeStep > 2) return '#fff';
-                return '#636366';
+                return '#1340FF';
               })(),
-              border: '1px solid',
+              border: '2px solid',
               borderColor: (() => {
                 if (activeStep === 2) return '#1340FF';
-                if (stepErrors[2]) return '#D4321C';
+                if (stepErrors[2]) return '#1340FF';
                 if (activeStep >= 2) return '#1340FF';
-                return '#636366';
+                return '#1340FF';
               })(),
               cursor: 'pointer',
               display: 'flex',
@@ -632,7 +640,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             }}
           >
             <Box component="span">Additional</Box>
-            {stepErrors[2] && activeStep !== 2 && <ErrorIcon />}
+            {/* {stepErrors[2] && activeStep !== 2 && <ErrorIcon />} */}
           </Box>
         </Stack>
       </Box>
@@ -670,19 +678,19 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             }}
           >
             {activeStep < steps.length - 1 && (
-              <Stack 
-                direction="row" 
-                spacing={2} 
+              <Stack
+                direction="row"
+                spacing={2}
                 justifyContent="center"
-                sx={{ 
-                  width: '100%', 
-                  maxWidth: { xs: '100%', sm: 400 }, 
+                sx={{
+                  width: '100%',
+                  maxWidth: { xs: '100%', sm: 400 },
                   mx: 'auto',
                   '& .MuiButton-root': {
                     flex: 1,
                     minHeight: { xs: 44, sm: 48 },
                     fontSize: { xs: '0.875rem', sm: '1rem' },
-                  }
+                  },
                 }}
               >
                 {activeStep > 0 && (
@@ -740,19 +748,19 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
                     }}
                   />
                 </Box>
-                <Stack 
-                  direction="row" 
-                  spacing={2} 
+                <Stack
+                  direction="row"
+                  spacing={2}
                   justifyContent="center"
-                  sx={{ 
-                    width: '100%', 
-                    maxWidth: { xs: '100%', sm: 400 }, 
+                  sx={{
+                    width: '100%',
+                    maxWidth: { xs: '100%', sm: 400 },
                     mx: 'auto',
                     '& .MuiButton-root': {
                       flex: 1,
                       minHeight: { xs: 44, sm: 48 },
                       fontSize: { xs: '0.875rem', sm: '1rem' },
-                    }
+                    },
                   }}
                 >
                   <Button

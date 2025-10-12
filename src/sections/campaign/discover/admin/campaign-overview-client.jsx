@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -12,16 +12,20 @@ import {
   Avatar,
   Button,
   Typography,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { useSocialInsights } from 'src/hooks/use-social-insights';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
 import PitchModal from './pitch-modal';
+import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
+import { calculateSummaryStats, formatNumber } from 'src/utils/socialMetricsCalculator';
 
 const BoxStyle = {
   border: '1px solid #e0e0e0',
@@ -42,11 +46,107 @@ const BoxStyle = {
   },
 };
 
-const CampaignOverviewClient = ({ campaign }) => {
+const CampaignOverviewClient = ({ campaign, onUpdate }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
+
+  // Extract posting submissions to get analytics data
+  const submissions = campaign?.submission || [];
+  const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
+
+  // Get social insights data for analytics
+  const {
+    data: insightsData,
+    isLoading: loadingInsights,
+    error: insightsError,
+  } = useSocialInsights(postingSubmissions, campaign?.id);
+
+  // Calculate summary statistics from real analytics data
+  const summaryStats = useMemo(() => {
+    if (!insightsData || insightsData.length === 0) return null;
+    return calculateSummaryStats(insightsData);
+  }, [insightsData]);
+
+  // Calculate metrics with real percentage changes based on multiple posts
+  const metrics = useMemo(() => {
+    if (!summaryStats) {
+      return {
+        views: { value: 0, change: 0, increase: true },
+        likes: { value: 0, change: 0, increase: true },
+        comments: { value: 0, change: 0, increase: true }
+      };
+    }
+
+    const views = summaryStats.totalViews || 0;
+    const likes = summaryStats.totalLikes || 0;
+    const comments = summaryStats.totalComments || 0;
+
+    // Calculate real trends by comparing with previous posts
+    const calculateRealTrend = (currentValue, metricType) => {
+      if (!insightsData || insightsData.length < 2) {
+        // If we don't have enough data for comparison, show no change
+        return { change: 0, increase: true };
+      }
+
+      // Get the metric value from insights data
+      const getMetricValue = (insight, metricName) => {
+        if (!insight || !Array.isArray(insight)) return 0;
+        const metric = insight.find(item => item.name === metricName);
+        return metric ? metric.value : 0;
+      };
+
+      // Calculate average of previous posts (excluding the latest one)
+      const previousPosts = insightsData.slice(0, -1); // All posts except the latest
+      const currentPost = insightsData[insightsData.length - 1]; // Latest post
+
+      if (previousPosts.length === 0) {
+        return { change: 0, increase: true };
+      }
+
+      // Calculate average of previous posts
+      const previousAverage = previousPosts.reduce((sum, post) => {
+        return sum + getMetricValue(post.insight, metricType);
+      }, 0) / previousPosts.length;
+
+      // Get current post value
+      const currentPostValue = getMetricValue(currentPost.insight, metricType);
+
+      // Calculate percentage change
+      let change = 0;
+      let increase = true;
+
+      if (previousAverage > 0) {
+        change = ((currentPostValue - previousAverage) / previousAverage) * 100;
+        increase = change >= 0;
+      } else if (currentPostValue > 0) {
+        // If previous average was 0 but current has value, it's a 100% increase
+        change = 100;
+        increase = true;
+      }
+
+      return { 
+        change: Math.round(change * 10) / 10, // Round to 1 decimal place
+        increase 
+      };
+    };
+
+    return {
+      views: {
+        value: views,
+        ...calculateRealTrend(views, 'views')
+      },
+      likes: {
+        value: likes,
+        ...calculateRealTrend(likes, 'likes')
+      },
+      comments: {
+        value: comments,
+        ...calculateRealTrend(comments, 'comments')
+      }
+    };
+  }, [summaryStats, insightsData]);
 
   const handleViewPitch = (pitch) => {
     setSelectedPitch(pitch);
@@ -61,27 +161,19 @@ const CampaignOverviewClient = ({ campaign }) => {
     navigate(`/dashboard/creator/profile/${creatorId}`);
   };
 
+  const handleOpenMediaKit = (creatorUser) => {
+    // Support being called with either the shortlisted item or the nested user
+    const creatorId = creatorUser?.creator?.id || creatorUser?.user?.creator?.id;
+    if (creatorId) {
+      navigate(paths.dashboard.creator.mediaKit(creatorId));
+    }
+  };
+
   // Filter pitches to only show approved ones for client users
   const approvedPitches = campaign?.pitch?.filter((pitch) => pitch.status === 'approved') || [];
   const shortlistedCreators = campaign?.shortlisted || [];
   const referenceLinks = campaign?.campaignBrief?.referencesLinks || [];
   const otherAttachments = campaign?.campaignBrief?.otherAttachments || [];
-
-  // Mock data for metrics
-  const metrics = {
-    views: {
-      change: 12.5,
-      increase: true,
-    },
-    likes: {
-      change: 8.3,
-      increase: true,
-    },
-    comments: {
-      change: -2.1,
-      increase: false,
-    }
-  };
 
   return (
     <>
@@ -162,7 +254,13 @@ const CampaignOverviewClient = ({ campaign }) => {
             
             <Button
               variant="contained"
-              onClick={() => navigate(paths.dashboard.campaign.analytics(campaign?.id))}
+              onClick={() => {
+                try {
+                  localStorage.setItem('campaigndetail', 'analytics');
+                  window.dispatchEvent(new CustomEvent('switchCampaignTab', { detail: 'analytics' }));
+                } catch (e) {}
+                // No navigation needed; campaign-detail-view listens for the event and switches tabs in-place
+              }}
               sx={{
                 textTransform: 'none',
                 bgcolor: 'white',
@@ -186,19 +284,33 @@ const CampaignOverviewClient = ({ campaign }) => {
         
         <Grid item xs={12} md={9}>
           <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                fontFamily: 'Aileron, sans-serif',
-                color: '#000000',
-                fontWeight: 600,
-                mb: 0.8,
-                fontSize: { xs: '1.1rem', sm: '1.25rem' }
-              }}
-            >
-              Performance Summary
-            </Typography>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.8 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography 
+                  variant="h4" 
+                  sx={{ 
+                    fontFamily: 'Aileron, sans-serif',
+                    color: '#000000',
+                    fontWeight: 600,
+                    fontSize: { xs: '1.1rem', sm: '1.25rem' }
+                  }}
+                >
+                  Performance Summary
+                </Typography>
+                {loadingInsights && (
+                  <CircularProgress size={16} sx={{ color: '#1340FF' }} />
+                )}
+                {insightsError && (
+                  <Typography variant="caption" sx={{ color: '#F44336', fontStyle: 'italic' }}>
+                    Analytics data unavailable
+                  </Typography>
+                )}
+              </Stack>
+              
+ 
+            </Stack>
             
+  
             <Stack 
               direction={{ xs: 'column', sm: 'row' }} 
               spacing={{ xs: 2, sm: 2.5 }}
@@ -256,17 +368,21 @@ const CampaignOverviewClient = ({ campaign }) => {
                   sx={{
                     width: 60,
                     height: 60,
-                    borderRadius: 2,
-                    bgcolor: '#3366FF',
+                    borderRadius: 1,
+                    bgcolor: '#1340FF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: 24,
-                    fontWeight: 600,
+                    fontSize: 18,
+                    fontWeight: 400,
                   }}
                 >
-                  0
+                  {loadingInsights ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    formatNumber(metrics.views.value)
+                  )}
                 </Box>
               </Box>
 
@@ -317,17 +433,21 @@ const CampaignOverviewClient = ({ campaign }) => {
                   sx={{
                     width: 60,
                     height: 60,
-                    borderRadius: 2,
-                    bgcolor: '#3366FF',
+                    borderRadius: 1,
+                    bgcolor: '#1340FF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: 24,
-                    fontWeight: 600,
+                    fontSize: 18,
+                    fontWeight: 400,
                   }}
                 >
-                  0
+                  {loadingInsights ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    formatNumber(metrics.likes.value)
+                  )}
                 </Box>
               </Box>
 
@@ -378,17 +498,21 @@ const CampaignOverviewClient = ({ campaign }) => {
                   sx={{
                     width: 60,
                     height: 60,
-                    borderRadius: 2,
-                    bgcolor: '#3366FF',
+                    borderRadius: 1,
+                    bgcolor: '#1340FF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: 24,
-                    fontWeight: 600,
+                    fontSize: 18,
+                    fontWeight: 400,
                   }}
                 >
-                  0
+                  {loadingInsights ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    formatNumber(metrics.comments.value)
+                  )}
                 </Box>
               </Box>
             </Stack>
@@ -629,7 +753,7 @@ const CampaignOverviewClient = ({ campaign }) => {
                         <Button
                           size="small"
                           variant="outlined"
-                        //   onClick={() => handleViewProfile(item.userId)}
+                          onClick={() => handleOpenMediaKit(item)}
                           sx={{
                             textTransform: 'none',
                             minHeight: { xs: 34, sm: 38 },
@@ -785,78 +909,6 @@ const CampaignOverviewClient = ({ campaign }) => {
         </Grid>
       </Grid>
 
-      {/* References & Attachments Section */}
-      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mt: { xs: 1, sm: 2 } }}>
-        {/* Left Column: References */}
-        <Grid item xs={12} md={6}>
-          <Zoom in>
-            <Box sx={{
-              ...BoxStyle,
-              minHeight: referenceLinks.length === 0 ? 'auto' : 'auto',
-            }}>
-              <Box className="header">
-                <Iconify
-                  icon="eva:link-2-fill"
-                  sx={{
-                    color: '#203ff5',
-                    width: 20,
-                    height: 20,
-                  }}
-                />
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#221f20',
-                      fontWeight: 600,
-                      fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                    }}
-                  >
-                    REFERENCES
-                  </Typography>
-                </Stack>
-              </Box>
-              
-              {referenceLinks.length === 0 ? (
-                <Typography
-                  variant="caption"
-                  sx={{ color: 'text.secondary', py: 1, textAlign: 'center', display: 'block' }}
-                >
-                  No references available
-                </Typography>
-              ) : (
-                <Scrollbar sx={{ maxHeight: 200 }}>
-                  <Stack spacing={1}>
-                    {referenceLinks.map((link, index) => (
-                      <Box
-                        key={index}
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 1,
-                          bgcolor: 'background.neutral',
-                        }}
-                      >
-                        <Link 
-                          href={link} 
-                          target="_blank" 
-                          rel="noopener" 
-                          sx={{ 
-                            color: 'primary.main',
-                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                            wordBreak: 'break-all'
-                          }}
-                        >
-                          {link}
-                        </Link>
-                      </Box>
-                    ))}
-                  </Stack>
-                </Scrollbar>
-              )}
-            </Box>
-          </Zoom>
-        </Grid>
-      </Grid>
 
       <PitchModal
         pitch={selectedPitch}
@@ -870,6 +922,7 @@ const CampaignOverviewClient = ({ campaign }) => {
 
 CampaignOverviewClient.propTypes = {
   campaign: PropTypes.object,
+  onUpdate: PropTypes.func,
 };
 
 export default CampaignOverviewClient; 

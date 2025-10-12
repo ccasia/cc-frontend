@@ -43,8 +43,20 @@ const ErrorIcon = () => (
   />
 );
 
+// Prefer Malay and English at the top, then list remaining languages alphabetically
+const LANGUAGE_OPTIONS = (() => {
+  const preferredLanguages = ['Malay', 'English'];
+  const remainingLanguages = [...langList]
+    .filter((language) => !preferredLanguages.includes(language))
+    .sort((a, b) => a.localeCompare(b));
+
+  return [...preferredLanguages, ...remainingLanguages];
+})();
+
 const FourthStep = ({ item }) => {
-  const { formState: { errors } } = useFormContext();
+  const {
+    formState: { errors },
+  } = useFormContext();
 
   return (
     <>
@@ -62,7 +74,7 @@ const FourthStep = ({ item }) => {
           color: '#231F20',
         }}
         secondaryTypographyProps={{
-          fontFamily: "InterDisplay",
+          fontFamily: 'InterDisplay',
           fontSize: { xs: '14px', sm: '16px' },
           fontWeight: 400,
           color: '#636366',
@@ -81,7 +93,10 @@ const FourthStep = ({ item }) => {
         }}
       >
         <Stack spacing={1}>
-          <FormLabel required sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}>
+          <FormLabel
+            required
+            sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}
+          >
             Languages
           </FormLabel>
           <Stack direction="row" alignItems="center">
@@ -91,7 +106,7 @@ const FourthStep = ({ item }) => {
               multiple
               freeSolo={false}
               disableCloseOnSelect
-              options={langList.sort((a, b) => a.localeCompare(b)).map((option) => option)}
+              options={LANGUAGE_OPTIONS}
               getOptionLabel={(option) => option}
               renderOption={(props, option) => (
                 <li {...props} key={option}>
@@ -107,7 +122,7 @@ const FourthStep = ({ item }) => {
                     size="small"
                     color="info"
                     variant="soft"
-                    sx={{ 
+                    sx={{
                       fontSize: { xs: '0.75rem', sm: '0.8125rem' },
                       height: { xs: 24, sm: 32 },
                       '& .MuiChip-label': {
@@ -132,7 +147,10 @@ const FourthStep = ({ item }) => {
         </Stack>
 
         <Stack spacing={1}>
-          <FormLabel required sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}>
+          <FormLabel
+            required
+            sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}
+          >
             Your interests
           </FormLabel>
           <Stack direction="row" alignItems="center">
@@ -158,7 +176,7 @@ const FourthStep = ({ item }) => {
                     size="small"
                     color="info"
                     variant="soft"
-                    sx={{ 
+                    sx={{
                       fontSize: { xs: '0.75rem', sm: '0.8125rem' },
                       height: { xs: 24, sm: 32 },
                       '& .MuiChip-label': {

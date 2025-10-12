@@ -18,20 +18,27 @@ const CampaignPitchDetail = ({ pitch }) => {
   const a = useRef(null);
   const b = useRef(null);
   
-  const isClient = user?.role === 'Client' || user?.admin?.role?.name === 'Client';
+  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'client';
 
   const approve = async ({ campaignId, creatorId, pitchId }) => {
     try {
-      const res = await axiosInstance.post(endpoints.campaign.pitch.approve, {
-        campaignId,
-        creatorId,
-        pitchId,
-      });
+      let endpoint;
+      if (isClient) {
+        // Client approving pitch
+        endpoint = endpoints.pitch.approveClient(pitchId);
+      } else {
+        // Admin approving pitch
+        endpoint = endpoints.pitch.approve(pitchId);
+      }
+      
+      const res = await axiosInstance.patch(endpoint);
       enqueueSnackbar(res?.data?.message);
+      
+      // Refresh the page to show updated status
+      window.location.reload();
     } catch (error) {
       console.log(error);
-
-      enqueueSnackbar(error?.message || 'Creator has been shortlisted', {
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to approve pitch', {
         variant: 'error',
       });
     }
@@ -39,14 +46,24 @@ const CampaignPitchDetail = ({ pitch }) => {
 
   const reject = async ({ campaignId, creatorId, pitchId }) => {
     try {
-      const res = await axiosInstance.post(endpoints.campaign.pitch.reject, {
-        campaignId,
-        creatorId,
-        pitchId,
+      let endpoint;
+      if (isClient) {
+        // Client rejecting pitch
+        endpoint = endpoints.pitch.rejectClient(pitchId);
+      } else {
+        // Admin rejecting pitch
+        endpoint = endpoints.pitch.reject(pitchId);
+      }
+      
+      const res = await axiosInstance.patch(endpoint, {
+        rejectionReason: `Rejected by ${  isClient ? 'client' : 'admin'}`
       });
       enqueueSnackbar(res?.data?.message);
+      
+      // Refresh the page to show updated status
+      window.location.reload();
     } catch (error) {
-      enqueueSnackbar(error?.message, {
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to reject pitch', {
         variant: 'error',
       });
     }
@@ -60,6 +77,23 @@ const CampaignPitchDetail = ({ pitch }) => {
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    }
+  };
+
+  const setAgreement = async ({ pitchId, amount, agreementTemplateId }) => {
+    try {
+      const res = await axiosInstance.patch(endpoints.pitch.setAgreement(pitchId), {
+        amount,
+        agreementTemplateId,
+      });
+      enqueueSnackbar(res?.data?.message);
+      
+      // Refresh the page to show updated status
+      window.location.reload();
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to set agreement', {
         variant: 'error',
       });
     }
@@ -237,46 +271,110 @@ const CampaignPitchDetail = ({ pitch }) => {
     </>
   );
 
-  const renderButton = (
-    <Stack
-      direction={{ xs: 'column', sm: 'row' }}
-      alignItems="center"
-      justifyContent="stretch"
-      mt={2}
-      gap={2}
-    >
-      <Button
-        fullWidth
-        // color="success"
-        variant="contained"
-        onClick={() => filter({ pitchId: pitch?.id })}
+  const renderButton = () => {
+    // Don't show buttons if pitch is already rejected
+    if (pitch?.status === 'REJECTED') {
+      return (
+        <Box mt={2} p={2} sx={{ bgcolor: 'error.light', borderRadius: 1 }}>
+          <Typography color="error.main" variant="subtitle1">
+            This pitch has been rejected
+          </Typography>
+        </Box>
+      );
+    }
+
+    // Don't show buttons if pitch is already approved
+    if (pitch?.status === 'APPROVED') {
+      return (
+        <Stack spacing={2} mt={2}>
+          <Box p={2} sx={{ bgcolor: 'success.light', borderRadius: 1 }}>
+            <Typography color="success.main" variant="subtitle1">
+              This pitch has been approved
+            </Typography>
+          </Box>
+          
+          {/* Show Complete Agreement button for admin users */}
+          {!isClient && (
+            <Button
+              fullWidth
+              color="primary"
+              variant="contained"
+              onClick={() => {
+                // TODO: Open modal to set agreement amount and template
+                const amount = prompt('Enter agreement amount:');
+                const agreementTemplateId = prompt('Enter agreement template ID:');
+                if (amount && agreementTemplateId) {
+                  setAgreement({ 
+                    pitchId: pitch?.id, 
+                    amount: parseInt(amount), 
+                    agreementTemplateId 
+                  });
+                }
+              }}
+              startIcon={<Iconify icon="material-symbols:assignment" />}
+            >
+              Complete Agreement
+            </Button>
+          )}
+        </Stack>
+      );
+    }
+
+    // For client users, only show buttons when status is SENT_TO_CLIENT
+    if (isClient && pitch?.status !== 'SENT_TO_CLIENT') {
+      return (
+        <Box mt={2} p={2} sx={{ bgcolor: 'info.light', borderRadius: 1 }}>
+          <Typography color="info.main" variant="subtitle1">
+            Waiting for admin review
+          </Typography>
+        </Box>
+      );
+    }
+
+    // For admin users, show buttons when status is PENDING_REVIEW (V3) or undecided (V2)
+    if (!isClient && pitch?.status !== 'PENDING_REVIEW' && pitch?.status !== 'undecided') {
+      return (
+        <Box mt={2} p={2} sx={{ bgcolor: 'info.light', borderRadius: 1 }}>
+          <Typography color="info.main" variant="subtitle1">
+            Waiting for client review
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        alignItems="center"
+        justifyContent="stretch"
+        mt={2}
+        gap={2}
       >
-        Filter this pitch
-      </Button>
-      <Button
-        fullWidth
-        // color="error"
-        variant="outlined"
-        onClick={() =>
-          reject({ campaignId: pitch?.campaignId, creatorId: pitch?.userId, pitchId: pitch?.id })
-        }
-        startIcon={<Iconify icon="oui:thumbs-down" />}
-      >
-        Reject
-      </Button>
-      <Button
-        fullWidth
-        color="success"
-        variant="contained"
-        onClick={() =>
-          approve({ campaignId: pitch?.campaignId, creatorId: pitch?.userId, pitchId: pitch?.id })
-        }
-        startIcon={<Iconify icon="oui:thumbs-up" />}
-      >
-        Accept
-      </Button>
-    </Stack>
-  );
+        <Button
+          fullWidth
+          color="error"
+          variant="outlined"
+          onClick={() =>
+            reject({ campaignId: pitch?.campaignId, creatorId: pitch?.userId, pitchId: pitch?.id })
+          }
+          startIcon={<Iconify icon="oui:thumbs-down" />}
+        >
+          Reject
+        </Button>
+        <Button
+          fullWidth
+          color="success"
+          variant="contained"
+          onClick={() =>
+            approve({ campaignId: pitch?.campaignId, creatorId: pitch?.userId, pitchId: pitch?.id })
+          }
+          startIcon={<Iconify icon="oui:thumbs-up" />}
+        >
+          {isClient ? 'Approve' : 'Send to Client'}
+        </Button>
+      </Stack>
+    );
+  };
 
   return (
     <>
@@ -284,8 +382,8 @@ const CampaignPitchDetail = ({ pitch }) => {
       {/* {renderTabs} */}
       {pitch?.content ? renderPitchContentScript : renderPitchContentVideo}
 
-      {/* Only show action buttons for admin users */}
-      {!isClient && renderButton}
+      {/* Show action buttons for both admin and client users */}
+      {renderButton()}
     </>
   );
 };

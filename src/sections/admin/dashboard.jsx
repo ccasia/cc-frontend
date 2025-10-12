@@ -12,11 +12,11 @@ const DashboardSuperadmin = lazy(() => import('./dashboard-superadmin'));
 
 const DashboardAdmin = () => {
   const settings = useSettingsContext();
-  const { user, role, permission } = useAuthContext();
+  const { user } = useAuthContext();
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      {(user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSM') && (
+      {(user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'CSL') && (
         <DashboardSuperadmin />
       )}
       {user?.admin?.designation === 'Finance' && <DashboardFinance />}

@@ -1,7 +1,7 @@
 export const options_changes = [
   'Missing caption requirements',
   'Inverted logo',
-  'Inverted brand name',
+  'Incorrect brand name',
   'Audio not audible',
   'Video too dark',
   'Video too bright',
@@ -11,7 +11,7 @@ export const options_changes = [
   'Voiceover not clear',
   'Audio not a good fit',
   'Audio too loud',
-  'Speling in subtitles',
+  'Spelling in subtitles',
 ];
 
 export default {

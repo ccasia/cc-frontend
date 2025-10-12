@@ -20,37 +20,25 @@ export default function RoleBasedGuard({ hasContent, roles, children, sx }) {
   const { user } = useAuthContext();
   const router = useRouter();
 
-  if (typeof roles !== 'undefined' && roles?.includes('god')) {
-    if (!roles?.includes(user?.admin?.mode) || !roles?.includes(user?.role)) {
-      return hasContent ? (
-        <Container component={MotionContainer} sx={{ textAlign: 'center', ...sx }}>
-          <m.div variants={varBounce().in}>
-            <Typography variant="h3" sx={{ mb: 2 }}>
-              Permission Denied
-            </Typography>
-          </m.div>
-
-          <m.div variants={varBounce().in}>
-            <Typography sx={{ color: 'text.secondary' }}>
-              You do not have permission to access this page
-            </Typography>
-          </m.div>
-
-          <m.div variants={varBounce().in}>
-            <ForbiddenIllustration
-              sx={{
-                height: 260,
-                my: { xs: 5, sm: 10 },
-              }}
-            />
-          </m.div>
-          <Button variant="outlined" onClick={() => router.push(paths.dashboard.root)}>
-            Go Home
-          </Button>
-        </Container>
-      ) : null;
+  const hasPermission = () => {
+    if (typeof roles === 'undefined') return true;
+    
+    if (roles.includes('god')) {
+      const godPermission = roles.includes(user?.admin?.mode) || roles.includes(user?.role) || roles.includes(user?.admin?.role?.name);
+      console.log('God role check result:', godPermission);
+      return godPermission;
     }
-  } else if (typeof roles !== 'undefined' && !roles?.includes(user?.role)) {
+    
+    if (roles.includes(user?.role)) return true;
+    
+    if (user?.role === 'admin' && roles.includes(user?.admin?.role?.name)) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  if (!hasPermission()) {
     return hasContent ? (
       <Container component={MotionContainer} sx={{ textAlign: 'center', ...sx }}>
         <m.div variants={varBounce().in}>

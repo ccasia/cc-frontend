@@ -1,8 +1,8 @@
 import { mutate } from 'swr';
-import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -14,8 +14,11 @@ import {
   DialogTitle,
   DialogActions,
   DialogContent,
+  LinearProgress,
   CircularProgress,
 } from '@mui/material';
+
+import socket from 'src/hooks/socket';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -41,9 +44,11 @@ const UploadDraftVideoModal = ({
 
   const { deliverableMutate } = deliverablesData;
 
-  const { handleSubmit } = methods;
+  const { handleSubmit, reset } = methods;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const videosToUpdateCount =
     totalUGCVideos ||
@@ -63,6 +68,60 @@ const UploadDraftVideoModal = ({
     }
     return true;
   };
+
+  // V3 submissions removed
+
+  // Socket.io progress handling
+  useEffect(() => {
+    if (!socket || !submissionId) return;
+
+    const handleProgress = (data) => {
+      console.log('Progress received:', data);
+      setUploadProgress((prev) => {
+        const exists = prev.some((item) => item.fileName === data.fileName);
+
+        if (exists) {
+          return prev.map((item) =>
+            item.fileName === data.fileName ? { ...item, ...data } : item
+          );
+        }
+        return [...prev, data];
+      });
+    };
+
+    socket.on('progress', handleProgress);
+
+    return () => {
+      socket.off('progress', handleProgress);
+    };
+  }, [socket, submissionId]);
+
+  // Check if all uploads are complete
+  const checkProgress = useCallback(() => {
+    if (uploadProgress?.length && uploadProgress?.every((x) => x.progress === 100)) {
+      const timer = setTimeout(() => {
+        setIsProcessing(false);
+        reset();
+        setUploadProgress([]);
+        
+        // Refresh data
+        mutate(endpoints.kanban.root);
+        deliverableMutate();
+        mutate(endpoints.campaign.creator.getCampaign(campaign?.id));
+        
+        enqueueSnackbar('Upload completed successfully!', { variant: 'success' });
+      }, 2000);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+    return null;
+  }, [uploadProgress, reset, campaign?.id, deliverableMutate]);
+
+  useEffect(() => {
+    checkProgress();
+  }, [checkProgress]);
 
   const onSubmit = handleSubmit(async (data) => {
     if (!data?.draftVideo?.length) {
@@ -85,6 +144,9 @@ const UploadDraftVideoModal = ({
 
     try {
       setIsSubmitting(true);
+      setIsProcessing(true);
+      setUploadProgress([]);
+      
       const formData = new FormData();
       const newData = { caption: data.caption, submissionId };
       formData.append('data', JSON.stringify(newData));
@@ -95,25 +157,39 @@ const UploadDraftVideoModal = ({
           formData.append('draftVideo', file);
         });
       }
-
-      await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+      
+      // V3 submissions removed - using V2 endpoint only
+      const endpoint = endpoints.submission.creator.draftSubmission;
+      
+      await axiosInstance.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
       enqueueSnackbar('Draft videos are processing');
+      // Close modal immediately so creator can see progress on main page
       onClose();
-      mutate(endpoints.kanban.root);
-      deliverableMutate();
-      mutate(endpoints.campaign.creator.getCampaign(campaign?.id));
     } catch (error) {
       console.error('Upload error:', error);
-      enqueueSnackbar('Failed to upload draft videos', { variant: 'error' });
+      const errorMessage = error.response?.data?.message || 'Failed to upload draft videos';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+      setIsProcessing(false);
     } finally {
       setIsSubmitting(false);
     }
   });
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / k**i).toFixed(2))  } ${  sizes[i]}`;
+  };
+
+  const truncateText = (text, maxLength) =>
+    text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 
   return (
     <Dialog
@@ -149,6 +225,106 @@ const UploadDraftVideoModal = ({
         </Stack>
       </DialogTitle>
       <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
+        {/* Progress Display */}
+        {isProcessing && uploadProgress.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ mb: 2, color: '#221f20' }}>
+              Processing Uploads...
+            </Typography>
+            <Stack spacing={2}>
+              {uploadProgress.map((currentFile) => (
+                <Box
+                  sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}
+                  key={currentFile.fileName}
+                >
+                  <Stack spacing={2}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      {currentFile?.type?.startsWith('video') ? (
+                        <Box
+                          sx={{
+                            width: 120,
+                            height: 68,
+                            borderRadius: 1,
+                            overflow: 'hidden',
+                            position: 'relative',
+                            bgcolor: 'background.paper',
+                            boxShadow: (theme) => theme.customShadows.z8,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              bgcolor: 'background.neutral',
+                            }}
+                          >
+                            <Iconify
+                              icon="solar:video-library-bold"
+                              width={24}
+                              sx={{ color: 'text.secondary' }}
+                            />
+                          </Box>
+                        </Box>
+                      ) : (
+                        <Box
+                          component="img"
+                          src="/assets/icons/files/ic_img.svg"
+                          sx={{ width: 40, height: 40 }}
+                        />
+                      )}
+
+                      <Stack spacing={1} flexGrow={1}>
+                        <Typography variant="subtitle2" noWrap>
+                          {truncateText(currentFile?.fileName || 'Processing file...', 50)}
+                        </Typography>
+                        <Stack spacing={1}>
+                          <LinearProgress
+                            variant="determinate"
+                            value={currentFile?.progress || 0}
+                            sx={{
+                              height: 6,
+                              borderRadius: 1,
+                              bgcolor: 'background.paper',
+                              '& .MuiLinearProgress-bar': {
+                                borderRadius: 1,
+                                bgcolor: currentFile?.progress === 100 ? 'success.main' : 'primary.main',
+                              },
+                            }}
+                          />
+                          <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="center"
+                          >
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              {currentFile?.progress === 100 ? (
+                                <Box
+                                  component="span"
+                                  sx={{ color: 'success.main', fontWeight: 600 }}
+                                >
+                                  Processing Complete
+                                </Box>
+                              ) : (
+                                `Processing... ${currentFile?.progress || 0}%`
+                              )}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              {formatFileSize(currentFile?.fileSize || 0)}
+                            </Typography>
+                          </Stack>
+                        </Stack>
+                      </Stack>
+                    </Stack>
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          </Box>
+        )}
+
         {campaign?.ads && (
           <Box sx={{ mb: 2 }}>
             <Typography
@@ -237,6 +413,7 @@ const UploadDraftVideoModal = ({
           loadingIndicator={<CircularProgress color="inherit" size={24} />}
           variant="contained"
           onClick={onSubmit}
+          disabled={isProcessing}
           sx={{
             bgcolor: '#203ff5',
             color: 'white',
@@ -251,7 +428,7 @@ const UploadDraftVideoModal = ({
             },
           }}
         >
-          Upload Videos
+          {isProcessing ? 'Processing...' : 'Upload Videos'}
         </LoadingButton>
       </DialogActions>
     </Dialog>

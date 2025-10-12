@@ -8,7 +8,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import DashboardAdmin from 'src/sections/admin/dashboard';
 import Overview from 'src/sections/creator/overview/overview';
-import DashboardClient from 'src/sections/admin/dashboard-client';
+// Removed import to avoid circular reference
 
 // ----------------------------------------------------------------------
 
@@ -18,8 +18,8 @@ export default function Page() {
 
   useEffect(() => {
     // Redirect client users to the client dashboard
-    if (user && (user.client || user.designation === 'Client')) {
-      router.push(paths.dashboard.client);
+    if (user && user.role.includes('client')) { // Check for client role directly
+      router.push(paths.dashboard.client); // Ensure this path points to the client dashboard
     }
   }, [user, router]);
 
@@ -33,7 +33,7 @@ export default function Page() {
 
       {user?.role === 'creator' && <Overview />}
 
-      {(user?.client || user?.designation === 'Client') && <DashboardClient />}
+      {/* Client dashboard is now handled by a separate route */}
     </>
   );
 }

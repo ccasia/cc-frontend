@@ -7,6 +7,7 @@ import {
   Chip,
   Stack,
   Button,
+  MenuItem,
   FormLabel,
   Typography,
   IconButton,
@@ -17,7 +18,7 @@ import { countriesCities } from 'src/contants/countries';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
-import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
 
 const videoAngle = [
   'Product Demo/Review',

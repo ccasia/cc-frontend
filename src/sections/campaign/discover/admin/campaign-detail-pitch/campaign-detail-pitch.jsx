@@ -2,10 +2,17 @@
 import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
+import { LoadingButton } from '@mui/lab';
 import React, { useMemo, useState } from 'react';
 
 import {
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  Autocomplete,
   Box,
   Stack,
   Table,
@@ -19,17 +26,23 @@ import {
   Typography,
   InputAdornment,
   TableContainer,
+  CircularProgress,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useAuthContext } from 'src/auth/hooks';
+import { shortlistCreator, useGetAllCreators, shortlistGuestCreator } from 'src/api/creator';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchModal from '../pitch-modal';
 import MediaKitModal from '../media-kit-modal';
+import { useShortlistedCreators } from '../campaign-detail-creator/hooks/shortlisted-creator';
 
 const TABLE_HEAD = [
   { id: 'creator', label: 'Creator', width: 300 },
@@ -41,12 +54,33 @@ const TABLE_HEAD = [
 ];
 
 const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
+  const { user } = useAuthContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
+  const [addCreatorOpen, setAddCreatorOpen] = useState(false);
+  const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
+  const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
   const mediaKit = useBoolean();
   const theme = useTheme();
+  const smUp = useResponsive('up', 'sm');
+  const modal = useBoolean();
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleModalOpen = () => {
+    setAddCreatorOpen(true);
+  };
+  const handleModalClose = () => setModalOpen(false);
+
+  const totalUsedCredits = campaign?.shortlisted?.reduce(
+    (acc, creator) => acc + (creator?.ugcVideos ?? 0),
+    0
+  );
 
   const undecidedCount = pitches?.filter((pitch) => pitch.status === 'undecided').length || 0;
   const approvedCount = pitches?.filter((pitch) => pitch.status === 'approved').length || 0;
@@ -162,7 +196,22 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
 
   const mdUp = useResponsive('up', 'md');
 
-  return pitches?.length > 0 ? (
+  const handleCreatorTypeSelect = (type) => {
+    setAddCreatorOpen(false);
+
+    switch (type) {
+      case 'platform':
+        setPlatformCreatorOpen(true);
+        break;
+      case 'non-platform':
+        setNonPlatformOpen(true);
+        break;
+      default:
+        console.warn(`Unknown creator type: ${type}`);
+    }
+  };
+
+  return true ? (
     <>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
@@ -233,7 +282,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
               },
             }}
           >
-            {`Undecided (${undecidedCount})`}
+            {`Pending (${undecidedCount})`}
           </Button>
 
           <Button
@@ -265,7 +314,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
           >
             {`Approved (${approvedCount})`}
           </Button>
-          
+
           <Button
             // onClick={handleToggleSort}
             // endIcon={
@@ -610,11 +659,485 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
         handleClose={mediaKit.onFalse}
         creatorId={selectedPitch?.user?.creator?.id}
       />
+
+      <AddCreatorModal
+        open={addCreatorOpen}
+        onClose={() => setAddCreatorOpen(false)}
+        onSelect={handleCreatorTypeSelect}
+      />
+
+      <PlatformCreatorModal
+        open={platformCreatorOpen}
+        onClose={() => setPlatformCreatorOpen(false)}
+        campaign={campaign}
+      />
+
+      <NonPlatformCreatorFormDialog
+        open={nonPlatformOpen}
+        onClose={handleModalClose}
+        campaignId={campaign.id}
+      />
     </>
   ) : (
     <EmptyContent title="No Pitches" filled />
   );
 };
+
+export function AddCreatorModal({ open, onClose, onSelect }) {
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>Select Creator Type</DialogTitle>
+      <Box sx={{ px: 3, pb: 3 }}>
+        <DialogActions sx={{ flexDirection: 'column', gap: 2 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            onClick={() => onSelect('platform')}
+          >
+            Platform Creator
+          </Button>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="primary"
+            onClick={() => onSelect('non-platform')}
+          >
+            Non-Platform Creator
+          </Button>
+        </DialogActions>
+      </Box>
+    </Dialog>
+  );
+}
+
+export function PlatformCreatorModal({ campaign }) {
+  const { addCreators, shortlistedCreators: creators } = useShortlistedCreators();
+  const { data, isLoading } = useGetAllCreators();
+  const ugcLeft = useMemo(() => {
+    if (!campaign?.campaignCredits) return null;
+    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
+    return campaign.campaignCredits - totalUGCs;
+  }, [campaign]);
+  const methods = useForm({
+    defaultValues: {
+      creator: [],
+    },
+  });
+
+  const {
+    handleSubmit,
+    watch,
+    reset,
+    formState: { isSubmitting },
+  } = methods;
+
+  const selectedCreator = watch('creator');
+  const loading = useBoolean();
+  const modal = useBoolean();
+  const shortlistedCreators = campaign?.shortlisted;
+  const shortlistedCreatorsId = shortlistedCreators?.map((item) => item.userId);
+
+  const ListboxComponent = React.forwardRef((props, ref) => {
+    // eslint-disable-next-line react/prop-types
+    const { children, ...other } = props;
+    const items = React.Children.toArray(children);
+
+    const itemCount = items.length;
+    const itemSize = 60; // Adjust row height
+
+    return (
+      <div ref={ref} {...other}>
+        <OuterElementContext.Provider value={other}>
+          <FixedSizeList
+            height={
+              itemCount > 8
+                ? 8 * itemSize + LISTBOX_PADDING
+                : itemCount * itemSize + LISTBOX_PADDING
+            }
+            width="100%"
+            itemSize={itemSize}
+            itemCount={itemCount}
+            overscanCount={5}
+          >
+            {({ index, style }) => (
+              <div style={{ ...style, top: style.top + LISTBOX_PADDING }}>{items[index]}</div>
+            )}
+          </FixedSizeList>
+        </OuterElementContext.Provider>
+      </div>
+    );
+  });
+
+  <Dialog
+    open={modal.value}
+    onClose={selectedCreator.length ? confirmModal.onTrue : modal.onFalse}
+    maxWidth="xs"
+    fullWidth
+    PaperProps={{
+      sx: {
+        borderRadius: 0.5,
+      },
+    }}
+  >
+    <DialogTitle
+      sx={{
+        fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+        '&.MuiTypography-root': {
+          fontSize: 25,
+        },
+      }}
+    >
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
+        Shortlist Creators
+        <Label
+          sx={{
+            fontFamily: (theme) => theme.typography.fontFamily,
+          }}
+        >
+          UGC Credits: {ugcLeft} left
+        </Label>
+      </Stack>
+    </DialogTitle>
+
+    {isLoading ? (
+      <Box
+        sx={{
+          textAlign: 'center',
+          py: 2,
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    ) : (
+      <>
+        <Box
+          sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mt: -1, mb: 2 }}
+        />
+        <DialogContent>
+          <Box py={1}>
+            <Box sx={{ mb: 2, fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem' }}>
+              Who would you like to shortlist?
+            </Box>
+
+            <Autocomplete
+              value={creators}
+              onChange={(e, val) => {
+                addCreators(val);
+              }}
+              ListboxComponent={ListboxComponent}
+              disableListWrap
+              multiple
+              disableCloseOnSelect
+              options={data?.filter(
+                (item) => item.status === 'active' && item?.creator?.isFormCompleted
+              )}
+              filterOptions={(option, state) => {
+                const options = option.filter((item) => !shortlistedCreatorsId.includes(item.id));
+                if (state?.inputValue) {
+                  return options?.filter(
+                    (item) =>
+                      item?.email?.toLowerCase()?.includes(state.inputValue.toLowerCase()) ||
+                      item?.name?.toLowerCase()?.includes(state.inputValue.toLowerCase())
+                  );
+                }
+                return options;
+              }}
+              getOptionLabel={(option) => option?.name}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              renderOption={(props, option, { selected }) => {
+                // eslint-disable-next-line react/prop-types
+                const { key, ...optionProps } = props;
+                return (
+                  <Box key={key} component="div" {...optionProps}>
+                    <Checkbox style={{ marginRight: 8 }} checked={selected} />
+                    <Avatar
+                      alt="dawd"
+                      src={option?.photoURL}
+                      variant="rounded"
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        flexShrink: 0,
+                        mr: 1.5,
+                        borderRadius: 2,
+                      }}
+                    />
+                    <ListItemText primary={option?.name} secondary={option?.email} />
+                  </Box>
+                );
+              }}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  return (
+                    <Chip
+                      variant="outlined"
+                      avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
+                      sx={{
+                        border: 1,
+                        borderColor: '#EBEBEB',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        py: 2,
+                      }}
+                      label={option?.name}
+                      key={key}
+                      {...tagProps}
+                    />
+                  );
+                })
+              }
+              renderInput={(params) => (
+                <TextField label="Select Creator to shortlist" {...params} />
+              )}
+            />
+          </Box>
+
+          {loading.value && (
+            <ClimbingBoxLoader
+              color={settings.themeMode === 'light' ? 'black' : 'white'}
+              size={18}
+              cssOverride={{
+                marginInline: 'auto',
+              }}
+            />
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={() => {
+              modal.onFalse();
+              reset();
+            }}
+            sx={{
+              bgcolor: '#ffffff',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              height: 44,
+              color: '#203ff5',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              px: 3,
+              '&:hover': {
+                bgcolor: alpha('#636366', 0.08),
+                opacity: 0.9,
+              },
+            }}
+          >
+            Cancel
+          </Button>
+
+          <LoadingButton
+            disabled={isSubmitting || !creators.length}
+            loading={loading.value}
+            onClick={() => {
+              if (campaign?.campaignCredits) {
+                ugcVidesoModal.onTrue();
+              } else {
+              }
+            }}
+            sx={{
+              bgcolor: '#203ff5',
+              border: '1px solid #203ff5',
+              borderBottom: '3px solid #1933cc',
+              height: 44,
+              color: '#ffffff',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              px: 3,
+              '&:hover': {
+                bgcolor: '#1933cc',
+                opacity: 0.9,
+              },
+              '&:disabled': {
+                bgcolor: '#e7e7e7',
+                color: '#999999',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #d1d1d1',
+              },
+            }}
+          >
+            Continue
+          </LoadingButton>
+        </DialogActions>
+      </>
+    )}
+  </Dialog>;
+}
+
+export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
+  const [formValues, setFormValues] = useState({
+    creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
+  });
+
+  const loading = useBoolean();
+
+  const handleCreatorChange = (index, field) => (event) => {
+    const updatedCreators = [...formValues.creators];
+    updatedCreators[index][field] = event.target.value;
+    setFormValues({ ...formValues, creators: updatedCreators });
+  };
+
+  const handleAddCreator = () => {
+    if (formValues.creators.length < 3) {
+      setFormValues((prev) => ({
+        ...prev,
+        creators: [
+          ...prev.creators,
+          { name: '', followerCount: '', profileLink: '', adminComments: '' },
+        ],
+      }));
+    }
+  };
+
+  const handleRemoveCreator = () => {
+    if (formValues.creators.length > 1) {
+      const updated = formValues.creators.slice(0, formValues.creators.length - 1);
+      setFormValues({ ...formValues, creators: updated });
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      loading.onTrue();
+
+      const res = await shortlistGuestCreator({
+        guestCreators: formValues.creators,
+        campaignId,
+      });
+
+      onClose();
+      setFormValues({
+        creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
+      });
+
+      enqueueSnackbar(res?.data?.message || 'Creators shortlisted successfully!');
+      mutate(`/campaign/creatorAgreement/${campaignId}`);
+    } catch (error) {
+      console.error('Error shortlisting guest creators:', error);
+      enqueueSnackbar('Error shortlisting guest creator', { variant: 'error' });
+    } finally {
+      loading.onFalse();
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      PaperProps={{
+        sx: { backgroundColor: '#fafafa' },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          fontSize: 35,
+          backgroundColor: '#fafafa',
+          mt: -1,
+          mb: 2,
+        }}
+      >
+        Add Non-Platform Creator
+      </DialogTitle>
+      <DialogContent>
+        {formValues.creators.map((creator, index) => (
+          <Box
+            key={index}
+            mb={3}
+            p={2}
+            sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider' }}
+          >
+            <Box display="flex" gap={2} mb={2}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" fontWeight="600" mb={0.5} display="block">
+                  Creator Name
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={creator.name}
+                  onChange={handleCreatorChange(index, 'name')}
+                />
+              </Box>
+
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" fontWeight="600" mb={0.5} display="block">
+                  Follower Count
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={creator.followerCount}
+                  onChange={handleCreatorChange(index, 'followerCount')}
+                />
+              </Box>
+
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" fontWeight="600" mb={0.5} display="block">
+                  Profile Link
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={creator.profileLink}
+                  onChange={handleCreatorChange(index, 'profileLink')}
+                />
+              </Box>
+            </Box>
+            <Box mb={2}>
+              <Typography variant="caption" fontWeight="600" mb={0.5} display="block">
+                CS Comments (Optional)
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                value={creator.adminComments}
+                onChange={handleCreatorChange(index, 'adminComments')}
+              />
+            </Box>
+          </Box>
+        ))}
+
+        <Box display="flex" justifyContent="flex-end" marginRight="10px" gap={1}>
+          <Button
+            variant="outlined"
+            size="small"
+            color="error"
+            disabled={formValues.creators.length <= 1}
+            onClick={handleRemoveCreator}
+          >
+            -
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            color="primary"
+            disabled={formValues.creators.length >= 3}
+            onClick={handleAddCreator}
+          >
+            +
+          </Button>
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleSubmit} variant="contained" disabled={loading.value}>
+          {loading.value ? 'Adding...' : 'Add Creator'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 export default CampaignDetailPitch;
 

@@ -30,7 +30,7 @@ export const getCurrencyPrefix = (currencyCode) => CURRENCY_PREFIXES[currencyCod
 export const getCurrencyLabel = (currencyCode) => CURRENCY_PREFIXES[currencyCode]?.label || currencyCode;
 
 export const formatCurrencyAmount = (amount, currencyCode) => {
-  const prefix = getCurrencyPrefix(currencyCode);
+  const prefix = getCurrencyLabel(currencyCode);
   const formattedAmount = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,

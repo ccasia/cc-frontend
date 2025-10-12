@@ -1,8 +1,10 @@
-import { memo } from 'react';
 import PropTypes from 'prop-types';
+import { memo, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import { Divider } from '@mui/material';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import NavList from './nav-list';
 
@@ -10,7 +12,17 @@ import NavList from './nav-list';
 
 function NavSectionMini({ data, slotProps, ...other }) {
   return (
-    <Stack component="nav" id="nav-section-mini" spacing={`${slotProps?.gap || 4}px`} {...other}>
+    <Stack
+      component="nav"
+      id="nav-section-mini"
+      spacing={`${slotProps?.gap || 4}px`}
+      sx={{
+        width: '100%',
+        alignItems: 'center',
+        ...other.sx,
+      }}
+      {...other}
+    >
       {/* <Stack component="nav" id="nav-section-vertical" {...other}> */}
       <Divider
         sx={{
@@ -36,9 +48,34 @@ export default memo(NavSectionMini);
 // ----------------------------------------------------------------------
 
 function Group({ items, slotProps }) {
+  const { user } = useAuthContext();
+
+  // Function to check if an item should be visible based on roles
+  const isItemVisible = useCallback((item) => {
+    const { roles } = item;
+    
+    if (!roles || roles.length === 0) {
+      return true; // No role restrictions
+    }
+
+    if (user?.role === 'admin') {
+      return roles.includes(user?.admin?.role?.name) || roles.includes(user?.admin?.mode);
+    }
+
+    return roles.includes(user?.role);
+  }, [user]);
+
+  // Filter items to only include visible ones
+  const visibleItems = items?.filter(isItemVisible) || [];
+
+  // Don't render the group at all if there are no visible items
+  if (visibleItems.length === 0) {
+    return null;
+  }
+
   return (
     <>
-      {items?.map((list) => (
+      {visibleItems.map((list) => (
         <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />
       ))}
       <Divider

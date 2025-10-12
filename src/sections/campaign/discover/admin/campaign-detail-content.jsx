@@ -383,7 +383,9 @@ const CampaignDetailContent = ({ campaign }) => {
             </Box>
 
             <Stack spacing={1} sx={{ pl: 0.5 }}>
-              {campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
+              {campaign?.campaignBrief?.campaigns_do?.length > 0 &&
+              campaign?.campaignBrief?.campaigns_do?.some(item => item.value) ? (
+                campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
                 <Stack key={index} direction="row" spacing={1} alignItems="center">
                   {item.value && (
                     <Iconify
@@ -400,7 +402,12 @@ const CampaignDetailContent = ({ campaign }) => {
                     {item?.value || 'No campaign do.'}
                   </Typography>
                 </Stack>
-              ))}
+                ))
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  No data found.
+                </Typography>
+              )}
             </Stack>
           </Box>
 
@@ -427,7 +434,8 @@ const CampaignDetailContent = ({ campaign }) => {
               </Typography>
             </Box>
 
-            {campaign?.campaignBrief?.campaigns_dont?.length > 0 ? (
+            {campaign?.campaignBrief?.campaigns_dont?.length > 0 &&
+            campaign?.campaignBrief?.campaigns_dont?.some(item => item.value) ? (
               <Stack spacing={1} sx={{ pl: 0.5 }}>
                 {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
                   <Stack key={index} direction="row" spacing={1} alignItems="center">

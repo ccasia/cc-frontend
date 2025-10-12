@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { m } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 
@@ -48,6 +49,8 @@ const InstagramOAuthWarning = ({
       a.href = redirectUrl;
       a.target = '_blank';
       a.click();
+      // window.open(redirectUrl);
+      // window.location.href = redirectUrl;
     } else if (onProceed) {
       onProceed();
     }

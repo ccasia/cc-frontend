@@ -109,20 +109,20 @@ export function useNavData() {
             title: 'Overview',
             path: paths.dashboard.root,
             icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
-            roles: ['superadmin', 'CSM', 'Growth', 'BD'], // Exclude Client role
+            roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
           },
           {
             title: 'Dashboard',
             path: paths.dashboard.client,
             icon: ICONS.mycampaigns,
-            roles: ['Client', 'client'], // Only for Client role
+            roles: ['client'],
           },
         ],
       },
       {
         items: [
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'CSL'],
             title: 'Analytics',
             path: paths.dashboard.analytics,
             icon: <Iconify icon="icon-park-outline:chart-histogram" width={25} />,
@@ -133,7 +133,7 @@ export function useNavData() {
         // subheader: 'Management',
         items: [
           {
-            roles: ['superadmin', 'CSM', 'Growth', 'BD'],
+            roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
             title: 'Campaigns',
             path: paths.dashboard.campaign.root,
             icon: ICONS.mycampaigns,
@@ -144,7 +144,7 @@ export function useNavData() {
                 path: paths.dashboard.campaign.view,
               },
               {
-                roles: ['superadmin'],
+                roles: ['superadmin', 'CSL'],
                 title: 'Settings',
                 path: paths.dashboard.campaign.settings,
               },
@@ -179,7 +179,7 @@ export function useNavData() {
             ],
           },
           {
-            roles: ['superadmin', 'CSM', 'god'],
+            roles: ['superadmin', 'CSM', 'god', 'CSL'],
             title: 'Clients',
             path: paths.dashboard.company.root,
             icon: ICONS.clients,
@@ -201,59 +201,36 @@ export function useNavData() {
             roles: ['superadmin', 'CSM', 'Growth', 'BD'], // Exclude Client role
           },
           {
-            roles: ['superadmin', 'Client', 'client'],
+            roles: ['superadmin', 'client'],
             title: 'Content Performance Report',
             path: paths.dashboard.report.root,
             icon: ICONS.report,
           },
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'god'],
             title: 'Roles',
             path: paths.dashboard.roles.root,
             icon: ICONS.roles,
           },
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'god'],
             title: 'Packages',
             path: paths.dashboard.packages.root,
             icon: <Iconify icon="carbon:package" width={25} />,
           },
         ],
       },
-      // {
-      //   items: [
-      //     // {
-      //     //   title: (
-      //     //     <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
-      //     //   ),
-      //     //   path: paths.dashboard.chat.root,
-      //     //   icon: ICONS.chat,
-      //     //   msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
-      //     // },
-      //     // {
-      //     //   title: (
-      //     //     <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-      //     //       Calendar
-      //     //     </span>
-      //     //   ),
-      //     //   path: paths.dashboard.calendar.root,
-      //     //   icon: ICONS.calendar,
-      //     // },
-      //   ],
-      // },
-      // {
-      //   items: [
-      //     {
-      //       title: (
-      //         <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-      //           Settings
-      //         </span>
-      //       ),
-      //       path: paths.dashboard.user.profile,
-      //       icon: ICONS.settings,
-      //     },
-      //   ],
-      // },
+
+      {
+        items: [
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Invoices',
+            path: paths.dashboard.finance.invoice,
+            icon: <Iconify icon="iconamoon:invoice" width={25} />,
+          },
+        ],
+      },
     ],
     [unreadMessageCount]
   );
@@ -320,49 +297,12 @@ export function useNavData() {
             path: paths.dashboard.creator.invoiceCreator,
             icon: ICONS.invoice,
           },
-          // {
-          //   title: 'Inbox',
-          //   path: paths.dashboard.creator.inbox,
-          //   icon: <Iconify icon="material-symbols:inbox" width={25} />,
-          // },
+
+          ,
         ],
       },
-      // {
-      //   items: [
-      //     {
-      //       title: (
-      //         <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
-      //       ),
-      //       path: paths.dashboard.chat.root,
-      //       icon: ICONS.chat,
-      //       msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
-      //     },
-      //     {
-      //       title: (
-      //         <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-      //           Calendar
-      //         </span>
-      //       ),
-      //       path: paths.dashboard.calendar.root,
-      //       icon: ICONS.calendar,
-      //     },
-      //   ],
-      // },
-      // {
-      //   items: [
-      //     {
-      //       title: (
-      //         <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-      //           Settings
-      //         </span>
-      //       ),
-      //       path: paths.dashboard.user.profile,
-      //       icon: ICONS.settings,
-      //     },
-      //   ],
-      // },
     ],
-    [unreadMessageCount]
+    []
   );
 
   const financeNavigations = useMemo(

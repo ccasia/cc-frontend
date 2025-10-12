@@ -36,11 +36,24 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-const Posting = ({ campaign, submission, creator }) => {
+const Posting = ({ 
+  campaign, 
+  submission, 
+  creator, 
+  isV3 = false,
+  // Individual client approval handlers (for consistency, but posting doesn't have individual media)
+  handleClientApproveVideo,
+  handleClientApprovePhoto,
+  handleClientApproveRawFootage,
+  handleClientRejectVideo,
+  handleClientRejectPhoto,
+  handleClientRejectRawFootage,
+}) => {
   const dialogApprove = useBoolean();
   const dialogReject = useBoolean();
   const { user } = useAuthContext();
   const [feedback, setFeedback] = useState('');
+  const [csmLink, setCsmLink] = useState('');
   const loading = useBoolean();
   const adminSubmissionLoading = useBoolean();
   const postingDate = useBoolean();
@@ -50,6 +63,9 @@ const Posting = ({ campaign, submission, creator }) => {
   const loadingDate = useBoolean();
 
   const [dateError, setDateError] = useState({ dueDate: null });
+
+  // Get user role for workflow
+  const userRole = user?.role || 'admin';
   const [adminSubmittedThisSession, setAdminSubmittedThisSession] = useState(false);
 
   // Form schema for admin submission
@@ -72,12 +88,14 @@ const Posting = ({ campaign, submission, creator }) => {
     try {
       loading.onTrue();
       if (type === 'APPROVED') {
+        // Use V2 endpoint only
         res = await axiosInstance.patch(endpoints.submission.admin.posting, {
           submissionId: submission?.id,
-          status: 'APPROVED',
+          status: 'APPROVED'
         });
         dialogApprove.onFalse();
       } else {
+        // Use V2 endpoint only
         res = await axiosInstance.patch(endpoints.submission.admin.posting, {
           submissionId: submission?.id,
           status: 'REJECTED',
@@ -87,7 +105,21 @@ const Posting = ({ campaign, submission, creator }) => {
         dialogReject.onFalse();
       }
       mutate(
-        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+        (key) =>
+          typeof key === 'string' &&
+          key.includes(endpoints.submission.root) &&
+          key.includes(`campaignId=${campaign?.id}`),
+        undefined,
+        { revalidate: true }
+      );
+      // 2) Deliverables (if any hooks consume this)
+      mutate(
+        (key) =>
+          typeof key === 'string' &&
+          key.includes('/api/deliverables') &&
+          key.includes(`campaignId=${campaign?.id}`),
+        undefined,
+        { revalidate: true }
       );
       setFeedback('');
       enqueueSnackbar(res?.data?.message);
@@ -156,8 +188,8 @@ const Posting = ({ campaign, submission, creator }) => {
   }, [date]);
 
   const isDisabled = useMemo(
-    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
-    [user]
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced' || submission?.status === 'APPROVED',
+    [user, submission?.status]
   );
 
   // Check if user is admin (not superadmin) and can submit for creator
@@ -239,29 +271,33 @@ const Posting = ({ campaign, submission, creator }) => {
                     variant="caption"
                     sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
                   >
-                    {submission?.isReview
+                    {submission?.completedAt
+                      ? dayjs(submission?.completedAt).format('ddd, D MMM YYYY')
+                      : submission?.isReview
                       ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
                       : '-'}
                   </Typography>
                 </Stack>
               </Stack>
-              <Button
-                variant="outlined"
-                onClick={postingDate.onTrue}
-                disabled={isDisabled}
-                sx={{
-                  '&:disabled': {
-                    display: 'none',
-                  },
-                }}
-              >
-                Change Posting Date
-              </Button>
+              {!(false && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
+                <Button
+                  variant="outlined"
+                  onClick={postingDate.onTrue}
+                  disabled={isDisabled}
+                  sx={{
+                    '&:disabled': {
+                      display: 'none',
+                    },
+                  }}
+                >
+                  Change Posting Date
+                </Button>
+              )}
             </Stack>
           </Box>
 
-          {submission?.status === 'NOT_STARTED' && <EmptyContent title="No submission." />}
-          {submission?.status === 'REJECTED' && (
+          {submission?.status === 'NOT_STARTED' && !submission?.content && !(submission?.videos && submission.videos.length > 0) && <EmptyContent title="No submission." />}
+          {submission?.status === 'REJECTED' && !submission?.content && !(submission?.videos && submission.videos.length > 0) && (
             <EmptyContent title="Waiting for another submission." />
           )}
           {submission?.status === 'IN_PROGRESS' && canAdminSubmit && (
@@ -382,98 +418,277 @@ const Posting = ({ campaign, submission, creator }) => {
                         overflow: 'visible',
                       }}
                     >
-                        <Box
-                          sx={{
-                            mt: 2,
-                            maxWidth: '100%',
-                            wordBreak: 'break-all',
-                          }}
-                        >
-                        <Typography
-                          variant="body2"
-                          component="a"
-                          href={submission?.content}
-                          target="_blank"
-                          rel="noopener"
-                          sx={{
-                            wordBreak: 'break-all',
-                            overflowWrap: 'break-word',
-                            color: 'primary.main',
-                            textDecoration: 'none',
-                            '&:hover': {
-                              textDecoration: 'underline',
-                            },
-                            maxWidth: '100%',
-                            display: 'inline-block',
-                          }}
-                        >
-                          {submission?.content}
-                        </Typography>
+                      <Box
+                        sx={{
+                          mt: -4.5,
+                          maxWidth: '100%',
+                          wordBreak: 'break-all',
+                        }}
+                      >
+   
+                        {submission?.videos && submission.videos.length > 0 ? (
+                          <Stack spacing={1.5} sx={{ mt: 1, mb: 2 }}>
+                            {submission.videos.map((link, index) => (
+                              <Box 
+                                key={index} 
+                                sx={{
+                                  padding: '8px 12px',
+                                  backgroundColor: '#f8f9fa',
+                                  borderRadius: '8px',
+                                  border: '1px solid #e9ecef',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    backgroundColor: '#e3f2fd',
+                                    borderColor: '#2196f3',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                  }
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  component="a"
+                                  href={link}
+                                  target="_blank"
+                                  rel="noopener"
+                                  sx={{
+                                    wordBreak: 'break-all',
+                                    overflowWrap: 'break-word',
+                                    color: 'primary.main',
+                                    textDecoration: 'none',
+                                    fontWeight: 500,
+                                    fontSize: 14,
+                                    '&:hover': {
+                                      textDecoration: 'underline',
+                                      color: 'primary.dark',
+                                    },
+                                    maxWidth: '100%',
+                                    display: 'inline-block',
+                                  }}
+                                >
+                                  {link}
+                                </Typography>
+                              </Box>
+                            ))}
+                          </Stack>
+                        ) : submission?.content ? (
+                          <Typography
+                            variant="body2"
+                            component="a"
+                            href={submission?.content}
+                            target="_blank"
+                            rel="noopener"
+                            sx={{
+                              wordBreak: 'break-all',
+                              overflowWrap: 'break-word',
+                              color: 'primary.main',
+                              textDecoration: 'none',
+                              '&:hover': {
+                                textDecoration: 'underline',
+                              },
+                              maxWidth: '100%',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {submission?.content}
+                          </Typography>
+                        ) : null}
+                        {false && userRole === 'admin' && (submission?.status === 'PENDING_REVIEW' || submission?.status === 'CHANGES_REQUIRED') && (
+                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
+                            <TextField fullWidth placeholder="Paste posting link" value={csmLink} onChange={(e) => setCsmLink(e.target.value)} />
+                            <Button
+                              variant="contained"
+                              disabled={!csmLink}
+                              sx={{
+                                bgcolor: '#203ff5',
+                                color: 'white',
+                                borderBottom: 3.5,
+                                borderBottomColor: '#112286',
+                                borderRadius: 1.5,
+                                px: 3,
+                                py: 1.2,
+                                minWidth: 120,
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                '&:hover': {
+                                  bgcolor: '#203ff5',
+                                  opacity: 0.9,
+                                },
+                              }}
+                              onClick={async () => {
+                                try {
+                                  loading.onTrue();
+                                  await axiosInstance.post(`${endpoints.submission.root}/posting/submit-link/csm`, { submissionId: submission.id, link: csmLink });
+                                  setCsmLink('');
+                                  mutate(
+                                    (key) => typeof key === 'string' && key.includes(endpoints.submission.root) && key.includes(`campaignId=${campaign?.id}`),
+                                    undefined,
+                                    { revalidate: true }
+                                  );
+                                  enqueueSnackbar('Posting link submitted for superadmin review', { variant: 'success' });
+                                } catch (err) {
+                                  enqueueSnackbar('Failed to submit link', { variant: 'error' });
+                                } finally {
+                                  loading.onFalse();
+                                }
+                              }}
+                            >
+                              Submit
+                            </Button>
+                          </Stack>
+                        )}
                       </Box>
                     </Box>
                   </Box>
                 </Box>
               </Box>
-              {canApprove && (
-                <Stack my={2} textAlign="end" direction="row" spacing={1.5} justifyContent="end">
-                  <Button
-                    onClick={dialogReject.onTrue}
-                    size="small"
-                    variant="contained"
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      border: 1.5,
-                      borderRadius: 1.15,
-                      borderColor: '#e7e7e7',
-                      borderBottom: 3,
-                      borderBottomColor: '#e7e7e7',
-                      color: '#D4321C',
-                      '&:hover': {
-                        bgcolor: '#f5f5f5',
-                        borderColor: '#D4321C',
-                      },
-                      textTransform: 'none',
-                      px: 2.5,
-                      py: 1.2,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      minWidth: '80px',
-                      height: '45px',
-                    }}
-                  >
-                    Reject
-                  </Button>
-                  <LoadingButton
-                    size="small"
-                    onClick={dialogApprove.onTrue}
-                    variant="contained"
-                    loading={loading.value}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      color: '#1ABF66',
-                      border: '1.5px solid',
-                      borderColor: '#e7e7e7',
-                      borderBottom: 3,
-                      borderBottomColor: '#e7e7e7',
-                      borderRadius: 1.15,
-                      px: 2.5,
-                      py: 1.2,
-                      fontWeight: 600,
-                      '&:hover': {
-                        bgcolor: '#f5f5f5',
-                        borderColor: '#1ABF66',
-                      },
-                      fontSize: '1rem',
-                      minWidth: '80px',
-                      height: '45px',
-                      textTransform: 'none',
-                    }}
-                  >
-                    Approve
-                  </LoadingButton>
-                </Stack>
-              )}
-              {/* Temporarily disabled for testing */}
+              <Stack my={2} textAlign="end" direction="row" spacing={1.5} justifyContent="end">
+
+                
+
+                
+                {/* Show different buttons based on user role and submission status */}
+                {false && userRole === 'client' && (submission?.displayStatus === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT') && submission?.status !== 'APPROVED' ? (
+                  // Client buttons for V3
+                  <>
+
+                    <Button
+                      onClick={dialogReject.onTrue}
+                      disabled={isDisabled}
+                      size="small"
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        border: 1.5,
+                        borderRadius: 1.15,
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        color: '#D4321C',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#D4321C',
+                        },
+                        textTransform: 'none',
+                        px: 2.5,
+                        py: 1.2,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        minWidth: '80px',
+                        height: '45px',
+                      }}
+                    >
+                      Request a change
+                    </Button>
+                    <LoadingButton
+                      size="small"
+                      onClick={dialogApprove.onTrue}
+                      disabled={isDisabled}
+                      variant="contained"
+                      loading={loading.value}
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        color: '#1ABF66',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1.15,
+                        px: 2.5,
+                        py: 1.2,
+                        fontWeight: 600,
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#1ABF66',
+                        },
+                        fontSize: '1rem',
+                        minWidth: '80px',
+                        height: '45px',
+                        textTransform: 'none',
+                      }}
+                    >
+                      Approve
+                    </LoadingButton>
+                  </>
+                ) : (
+                  // Admin buttons (V2 style) - hide when CHANGES_REQUIRED, show only when actionable
+                  submission?.status !== 'APPROVED' && submission?.status !== 'CHANGES_REQUIRED' && (submission?.content || (submission?.videos && submission.videos.length > 0)) && !(false && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN') && (
+                  <>
+                {false && userRole === 'admin' && submission?.status === 'SENT_TO_SUPERADMIN' && (
+                  <Box sx={{
+                    px: 1.25,
+                    py: 0.5,
+                    borderRadius: 1,
+                    bgcolor: 'rgba(138,90,254,0.08)',
+                    color: '#8a5afe',
+                    fontWeight: 700,
+                    border: '1px solid',
+                    borderColor: 'rgba(138,90,254,0.24)'
+                  }}>
+                    SENT_TO_SUPERADMIN
+                  </Box>
+                )}
+                <Button
+                  onClick={dialogReject.onTrue}
+                  disabled={isDisabled}
+                  size="small"
+                  variant="contained"
+                  sx={{
+                    bgcolor: '#FFFFFF',
+                    border: 1.5,
+                    borderRadius: 1.15,
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderBottomColor: '#e7e7e7',
+                    color: '#D4321C',
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#D4321C',
+                    },
+                    textTransform: 'none',
+                    px: 2.5,
+                    py: 1.2,
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    minWidth: '80px',
+                    height: '45px',
+                  }}
+                >
+                  Reject
+                </Button>
+                <LoadingButton
+                  size="small"
+                  onClick={dialogApprove.onTrue}
+                  disabled={isDisabled}
+                  variant="contained"
+                  loading={loading.value}
+                  sx={{
+                    bgcolor: '#FFFFFF',
+                    color: '#1ABF66',
+                    border: '1.5px solid',
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderBottomColor: '#e7e7e7',
+                    borderRadius: 1.15,
+                    px: 2.5,
+                    py: 1.2,
+                    fontWeight: 600,
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#1ABF66',
+                    },
+                    fontSize: '1rem',
+                    minWidth: '80px',
+                    height: '45px',
+                    textTransform: 'none',
+                  }}
+                >
+                  Approve
+                </LoadingButton>
+                  </>
+                )
+                )}
+              </Stack>
             </>
           )}
           {submission?.isReview && submission?.status === 'APPROVED' && (
@@ -579,23 +794,67 @@ const Posting = ({ campaign, submission, creator }) => {
                 borderColor: 'divider',
               }}
             >
-              <Typography
-                variant="body2"
-                component="a"
-                href={submission?.content}
-                target="_blank"
-                rel="noopener"
-                sx={{
-                  wordBreak: 'break-word',
-                  color: 'primary.main',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                {submission?.content}
-              </Typography>
+              {submission?.videos && submission.videos.length > 0 ? (
+                <Stack spacing={1.5}>
+                  {submission.videos.map((link, index) => (
+                    <Box 
+                      key={index}
+                      sx={{
+                        padding: '10px 14px',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px solid #e9ecef',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          backgroundColor: '#e3f2fd',
+                          borderColor: '#2196f3',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        }
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        component="a"
+                        href={link}
+                        target="_blank"
+                        rel="noopener"
+                        sx={{
+                          wordBreak: 'break-word',
+                          color: 'primary.main',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                          fontSize: 14,
+                          '&:hover': {
+                            textDecoration: 'underline',
+                            color: 'primary.dark',
+                          },
+                        }}
+                      >
+                        {link}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              ) : (
+                <Typography
+                  variant="body2"
+                  component="a"
+                  href={submission?.content}
+                  target="_blank"
+                  rel="noopener"
+                  sx={{
+                    wordBreak: 'break-word',
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  {submission?.content}
+                </Typography>
+              )}
             </Box>
           </Stack>
         </DialogContent>
@@ -812,7 +1071,15 @@ const Posting = ({ campaign, submission, creator }) => {
 export default Posting;
 
 Posting.propTypes = {
-  campaign: PropTypes.object,
-  submission: PropTypes.object,
-  creator: PropTypes.object,
+  campaign: PropTypes.object.isRequired,
+  submission: PropTypes.object.isRequired,
+  creator: PropTypes.object.isRequired,
+  isV3: PropTypes.bool,
+  // Individual client approval handlers
+  handleClientApproveVideo: PropTypes.func,
+  handleClientApprovePhoto: PropTypes.func,
+  handleClientApproveRawFootage: PropTypes.func,
+  handleClientRejectVideo: PropTypes.func,
+  handleClientRejectPhoto: PropTypes.func,
+  handleClientRejectRawFootage: PropTypes.func,
 };

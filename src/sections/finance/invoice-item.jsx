@@ -7,8 +7,16 @@ import { Box, Button, TableRow, Checkbox, TableCell, Typography } from '@mui/mat
 import { formatCurrencyAmount } from 'src/utils/currency';
 
 import Label from 'src/components/label';
+import { formatCurrencyAmount } from 'src/utils/currency';
 
-const InvoiceItem = ({ invoice, selected, onSelectRow, openEditInvoice }) => (
+const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
+  const [value, setValue] = useState(invoice?.status);
+
+  useEffect(() => {
+    setValue(invoice?.status);
+  }, [setValue, invoice]);
+
+  return (
     <TableRow
       key={invoice?.id}
       component={Box}
@@ -55,13 +63,18 @@ const InvoiceItem = ({ invoice, selected, onSelectRow, openEditInvoice }) => (
         </Label>
       </TableCell>
       <TableCell>
-        <Button size="small" variant="contained" onClick={openEditInvoice}>
+        <Button
+          size="small"
+          variant="contained"
+          // onClick={openEditInvoice}
+          sx={{ borderRadius: 1 / 2 }}
+        >
           View
         </Button>
       </TableCell>
     </TableRow>
   );
-
+};
 export default InvoiceItem;
 
 InvoiceItem.propTypes = {

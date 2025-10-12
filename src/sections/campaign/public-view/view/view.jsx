@@ -2,8 +2,8 @@ import { m } from 'framer-motion';
 import { useTheme } from '@emotion/react';
 import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
-import { orderBy, debounce, throttle } from 'lodash';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { orderBy, debounce, throttle, get } from 'lodash';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 
 import {
   Box,
@@ -28,7 +28,7 @@ import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
-import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
+// import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -41,7 +41,7 @@ const PublicCampaignView = () => {
 
   const [filter, setFilter] = useState('all');
 
-  const ref = useMainContext();
+  const ref = useRef(null);
 
   const lgUp = useResponsive('up', 'lg');
 
@@ -58,16 +58,40 @@ const PublicCampaignView = () => {
     []
   );
 
+  const campaignId = localStorage.getItem('campaign');
+
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
-    if (pageIndex === 0)
-      return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}`;
+    if (pageIndex === 0) {
+      const params = new URLSearchParams({
+        search: debouncedQuery,
+        take: '10',
+      });
+
+      if (campaignId) {
+        params.append('campaignId', campaignId);
+      }
+
+      // return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}${campaignId ? `&campaignId=${campaignId}` : ""}`;
+      return `/api/campaign/public?${params.toString()}`;
+    }
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
+    const params = new URLSearchParams({
+      search: debouncedQuery,
+      take: '10',
+      cursor: previousPageData?.metaData?.lastCursor,
+    });
+
+    if (campaignId) {
+      params.append('campaignId', campaignId);
+    }
+
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+    // return `/api/campaign/public?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}${campaignId ? `&campaignId=${campaignId}` : ""}`;
+    return `/api/campaign/public?${params.toString()}`;
   };
 
   const { data, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(getKey, fetcher, {
@@ -217,47 +241,27 @@ const PublicCampaignView = () => {
   }, [data, filter, user, sortBy, search]);
 
   const handleScroll = useCallback(() => {
-    if (lgUp) {
-      // Desktop view handler
-      if (!ref?.mainRef?.current) return; // Early return if ref not available
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.body.scrollHeight;
+    const scrolled = window.scrollY;
 
-      const scrollContainer = ref?.mainRef.current;
-      const bottom =
-        scrollContainer.scrollHeight <=
-        scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
+    // checks if user has scrolled to bottom
+    const isAtBottom = windowHeight + scrolled + 50 >= documentHeight;
 
-      if (
-        bottom &&
-        !isValidating &&
-        data &&
-        data.length > 0 &&
-        data[data.length - 1]?.metaData?.lastCursor
-      ) {
-        setSize(size + 1);
-      }
-    } else {
-      // Mobile view handler
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.body.scrollHeight;
-      const scrolled = window.scrollY;
-
-      // checks if user has scrolled to bottom
-      const isAtBottom = windowHeight + scrolled + 50 >= documentHeight;
-
-      if (
-        isAtBottom &&
-        !isValidating &&
-        data &&
-        data.length > 0 &&
-        data[data.length - 1]?.metaData?.lastCursor
-      ) {
-        setSize((currentSize) => currentSize + 1);
-      }
+    if (
+      isAtBottom &&
+      !isValidating &&
+      data &&
+      data.length > 0 &&
+      data[data.length - 1]?.metaData?.lastCursor
+    ) {
+      setSize((currentSize) => currentSize + 1);
     }
-  }, [data, isValidating, setSize, size, ref, lgUp]);
+  }, [isValidating, data, setSize]);
 
   useEffect(() => {
-    const scrollElement = lgUp ? ref?.mainRef?.current : window;
+    // const scrollElement = lgUp ? ref?.current : window;
+    const scrollElement = window;
 
     if (!scrollElement) {
       return undefined;
@@ -277,19 +281,13 @@ const PublicCampaignView = () => {
   }, [handleScroll, ref, lgUp]);
 
   useEffect(() => {
-    
     (async () => {
-      console.log('SAD');
-    })();
-
-    const test = async () => {
       const url = new URL(window.location.href);
 
       if (url.searchParams.get('campaign')) {
         localStorage.setItem('campaign', url.searchParams.get('campaign'));
       }
-    };
-    test();
+    })();
   }, []);
 
   return (
@@ -297,19 +295,23 @@ const PublicCampaignView = () => {
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
         px: { xs: 2, sm: 3, md: 4 },
+        py: { lg: 2, xs: 2, sm: 2 },
+        // bgcolor: 'beige',
+        // overflow: 'hidden',
       }}
     >
       <Typography
         variant="h2"
         sx={{
           mb: 0.2,
-          mt: { lg: 2, xs: 2, sm: 2 },
+          // mt: { lg: 2, xs: 2, sm: 2 },
           fontFamily: theme.typography.fontSecondaryFamily,
           fontWeight: 'normal',
         }}
       >
         Discover Campaigns ✨
       </Typography>
+
       <Typography
         variant="body1"
         sx={{ fontFamily: theme.typography.fontFamily, color: '#636366', mb: 3 }}
@@ -730,7 +732,7 @@ const PublicCampaignView = () => {
 
       {!isLoading &&
         (filteredData?.length > 0 ? (
-          <Box>
+          <Box ref={ref}>
             <CampaignLists
               campaigns={filteredData}
               totalCampaigns={filteredData?.length}

@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -19,10 +19,13 @@ import {
   Typography,
   InputAdornment,
   TableContainer,
+  CircularProgress,
+  Tooltip,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
@@ -33,14 +36,53 @@ import MediaKitModal from './media-kit-modal';
 
 const TABLE_HEAD = [
   { id: 'creator', label: 'Creator', width: 300 },
-  { id: 'username', label: 'Username', width: 350 },
-  { id: 'instagram', label: 'Engagement Rate', width: 120 },
-  { id: 'engagement', label: 'Follower Count', width: 100 },
+  { id: 'username', label: 'Username (Media Kit)', width: 350 },
+  { id: 'instagram', label: 'Engagement Rate (Media Kit)', width: 120 },
+  { id: 'engagement', label: 'Follower Count (Media Kit)', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
   { id: 'actions', label: 'Actions', width: 80 },
 ];
 
-const CampaignCreatorMasterListClient = ({ campaign }) => {
+// Helper function to get normalized status for filtering
+const getNormalizedStatus = (pitch) => {
+  if (pitch.isShortlisted) return 'APPROVED';
+
+  const status = pitch.isV3 ? pitch.displayStatus || pitch.status : pitch.status;
+
+  // Normalize legacy statuses to new format
+  if (status === 'undecided') return 'PENDING_REVIEW';
+  if (status === 'approved') return 'APPROVED';
+  if (status === 'rejected') return 'REJECTED';
+
+  return status;
+};
+
+// Status mapping function for consistent colors and labels
+const getStatusDisplay = (pitch) => {
+  const status = getNormalizedStatus(pitch);
+
+  const statusMap = {
+    PENDING_REVIEW: { color: '#FF9A02', label: 'PENDING REVIEW' },
+    MAYBE: { color: '#FFC702', label: 'Maybe' },
+    APPROVED: { color: '#1ABF66', label: 'APPROVED' },
+    REJECTED: { color: '#FF4842', label: 'REJECTED' },
+    AGREEMENT_SUBMITTED: { color: '#1ABF66', label: 'AGREEMENT SUBMITTED' },
+    AGREEMENT_PENDING: { color: '#8B5CF6', label: 'AGREEMENT PENDING' },
+    SENT_TO_CLIENT: { color: '#8B5CF6', label: 'SENT TO CLIENT' },
+    pending: { color: '#FF9A02', label: 'PENDING' },
+    filtered: { color: '#FF4842', label: 'FILTERED' },
+    draft: { color: '#637381', label: 'DRAFT' },
+  };
+
+  // Special case for pitch approved vs regular approved
+  if (status === 'APPROVED' && !pitch.isShortlisted && !pitch.isV3) {
+    return { color: '#1ABF66', label: 'PITCH APPROVED' };
+  }
+
+  return statusMap[status] || { color: '#637381', label: status?.toUpperCase() || 'UNKNOWN' };
+};
+
+const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
@@ -49,71 +91,161 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
   const mediaKit = useBoolean();
   const theme = useTheme();
 
+  // Fetch V3 pitches for client-created campaigns
+  const {
+    pitches: v3Pitches,
+    isLoading: v3PitchesLoading,
+    isError: v3PitchesError,
+    mutate: v3PitchesMutate,
+  } = useGetV3Pitches(campaign?.origin === 'CLIENT' ? campaign?.id : null);
+
+
+
+
+
   // Create a list of creators from the shortlisted array and pitches
   const creators = useMemo(() => {
     if (!campaign) return [];
-    
+
+    // For client-created campaigns, use V3 pitches
+    if (campaign.origin === 'CLIENT' && v3Pitches) {
+      return (
+        v3Pitches
+          .map((pitch) => {
+
+            return {
+              id: pitch.userId || pitch.id,
+              user: {
+                id: pitch.userId || pitch.user?.id,
+                name: pitch.user?.name,
+                username: pitch.user?.instagramUser?.username,
+                photoURL: pitch.user?.photoURL,
+                status: pitch.user?.status || 'active',
+                creator: pitch.user?.creator,
+                engagementRate: pitch.user?.instagramUser?.engagement_rate,
+                followerCount: pitch.user?.instagramUser?.followers_count,
+              },
+              status: pitch.displayStatus || pitch.status || 'undecided',
+              displayStatus: pitch.displayStatus || pitch.status || 'undecided',
+              createdAt: pitch.createdAt || new Date().toISOString(),
+              type: pitch.type || 'text',
+              content: pitch.content || pitch.user?.creator?.about || 'No content available',
+              isShortlisted: false,
+              pitchId: pitch.id,
+              isV3: true,
+              adminComments: pitch.adminComments,
+              // Include rejection reason fields for CLIENT REASON display
+              rejectionReason: pitch.rejectionReason,
+              customRejectionText: pitch.customRejectionText,
+            };
+          })
+          // FIX: Only require user to exist, not user.creator
+          .filter((creator) => !!creator.user && !!creator.user.id)
+      );
+    }
+
+    // For admin-created campaigns, use V2 approach
     // Get creators from shortlisted
-    const shortlistedCreators = campaign.shortlisted 
+    const shortlistedCreators = campaign.shortlisted
       ? campaign.shortlisted
-        .map((item) => ({
-          id: item.userId,
-          user: {
+          .map((item) => ({
             id: item.userId,
-            name: item.user?.name,
-            username: item.user?.instagramUser?.username,
-            photoURL: item.user?.photoURL,
-            status: item.user?.status || 'active',
-            creator: item.user?.creator,
-            engagementRate: item.user?.instagramUser?.engagement_rate,
-            followerCount: item.user?.instagramUser?.followers_count,
-          },
-          status: 'approved', // Shortlisted creators are approved
-          createdAt: item.shortlisted_date || new Date().toISOString(),
-          type: 'text',
-          content: item.user?.creator?.about || 'No content available',
-          isShortlisted: true,
-        }))
-        .filter((creator) => creator.user && creator.user.creator)
+            user: {
+              id: item.userId,
+              name: item.user?.name,
+              username: item.user?.instagramUser?.username,
+              photoURL: item.user?.photoURL,
+              status: item.user?.status || 'active',
+              creator: item.user?.creator,
+              engagementRate: item.user?.instagramUser?.engagement_rate,
+              followerCount: item.user?.instagramUser?.followers_count,
+            },
+            status: 'approved', // Shortlisted creators are approved
+            createdAt: item.shortlisted_date || new Date().toISOString(),
+            type: 'text',
+            content: item.user?.creator?.about || 'No content available',
+            isShortlisted: true,
+            isV3: false,
+          }))
+          .filter((creator) => creator.user && creator.user.creator)
       : [];
 
     // Get creators from pitches
-    const pitchCreators = campaign.pitches 
+    const pitchCreators = campaign.pitches
       ? campaign.pitches
-        .filter(pitch => 
-          // Only include pitches that aren't already in shortlisted
-          !shortlistedCreators.some(sc => sc.id === pitch.userId)
-        )
-        .map((pitch) => ({
-          id: pitch.userId || pitch.id,
-          user: {
-            id: pitch.userId || pitch.user?.id,
-            name: pitch.user?.name,
-            username: pitch.user?.instagramUser?.username,
-            photoURL: pitch.user?.photoURL,
-            status: pitch.user?.status || 'active',
-            creator: pitch.user?.creator,
-            engagementRate: pitch.user?.instagramUser?.engagement_rate,
-            followerCount: pitch.user?.instagramUser?.followers_count,
-          },
-          status: pitch.status || 'undecided',
-          createdAt: pitch.createdAt || new Date().toISOString(),
-          type: pitch.type || 'text',
-          content: pitch.content || pitch.user?.creator?.about || 'No content available',
-          isShortlisted: false,
-          pitchId: pitch.id,
-        }))
-        .filter((creator) => creator.user && creator.user.creator)
+          .filter(
+            (pitch) =>
+              // Only include pitches that aren't already in shortlisted
+              !shortlistedCreators.some((sc) => sc.id === pitch.userId)
+          )
+          .map((pitch) => ({
+            id: pitch.userId || pitch.id,
+            user: {
+              id: pitch.userId || pitch.user?.id,
+              name: pitch.user?.name,
+              username: pitch.user?.instagramUser?.username,
+              photoURL: pitch.user?.photoURL,
+              status: pitch.user?.status || 'active',
+              creator: pitch.user?.creator,
+              engagementRate: pitch.user?.instagramUser?.engagement_rate,
+              followerCount: pitch.user?.instagramUser?.followers_count,
+            },
+            status: pitch.status || 'undecided',
+            createdAt: pitch.createdAt || new Date().toISOString(),
+            type: pitch.type || 'text',
+            content: pitch.content || pitch.user?.creator?.about || 'No content available',
+            isShortlisted: false,
+            pitchId: pitch.id,
+            isV3: false,
+          }))
+          .filter((creator) => creator.user && creator.user.creator)
       : [];
-    
+
     // Combine both lists
     return [...shortlistedCreators, ...pitchCreators];
-  }, [campaign]);
+  }, [campaign, v3Pitches]);
+
+  // Enhanced data extraction from existing pitch data
+  const enhancedCreators = useMemo(() => {
+    if (!creators || creators.length === 0) return [];
+
+    return creators.map(creator => {
+      // Extract media kit data from the existing pitch/user data
+      const mediaKitData = {
+        username: creator.user?.instagramUser?.username || 
+                  creator.user?.creator?.instagram?.username ||
+                  creator.user?.username,
+        engagementRate: creator.user?.instagramUser?.engagement_rate || 
+                       creator.user?.creator?.instagram?.engagement_rate ||
+                       creator.user?.engagementRate,
+        followerCount: creator.user?.instagramUser?.followers_count || 
+                      creator.user?.creator?.instagram?.followers_count ||
+                      creator.user?.followerCount,
+      };
+
+      return {
+        ...creator,
+        mediaKitData
+      };
+    });
+  }, [creators]);
+
+  // Use enhanced creators with media kit data
+  const creatorsWithMediaKit = enhancedCreators;
+
+
 
   const activeCount = creators.length || 0;
-  const pendingCount = creators.filter(creator => !creator.isShortlisted && creator.status === 'undecided').length || 0;
-  const approvedPitchCount = creators.filter(creator => !creator.isShortlisted && creator.status === 'approved').length || 0;
-  const shortlistedCount = creators.filter(creator => creator.isShortlisted).length || 0;
+  const pendingCount =
+    creators.filter((creator) => getNormalizedStatus(creator) === 'PENDING_REVIEW').length || 0;
+  const approvedPitchCount =
+    creators.filter(
+      (creator) => getNormalizedStatus(creator) === 'APPROVED' && !creator.isShortlisted
+    ).length || 0;
+  const shortlistedCount = creators.filter((creator) => creator.isShortlisted).length || 0;
+  const rejectedCount = creators.filter(
+    (creator) => getNormalizedStatus(creator) === 'REJECTED'
+  ).length || 0;
 
   // Handle toggling sort direction
   const handleToggleSort = () => {
@@ -121,23 +253,28 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
   };
 
   const filteredCreators = useMemo(() => {
-    let filtered = creators;
+    let filtered = creatorsWithMediaKit;
 
     // Apply status filter
     if (selectedFilter === 'pending') {
-      filtered = filtered.filter((creator) => !creator.isShortlisted && creator.status === 'undecided');
+      filtered = filtered.filter((creator) => getNormalizedStatus(creator) === 'PENDING_REVIEW');
     } else if (selectedFilter === 'approved_pitch') {
-      filtered = filtered.filter((creator) => !creator.isShortlisted && creator.status === 'approved');
+      filtered = filtered.filter(
+        (creator) => getNormalizedStatus(creator) === 'APPROVED' && !creator.isShortlisted
+      );
     } else if (selectedFilter === 'shortlisted') {
       filtered = filtered.filter((creator) => creator.isShortlisted);
+    } else if (selectedFilter === 'rejected') {
+      filtered = filtered.filter((creator) => getNormalizedStatus(creator) === 'REJECTED');
     }
 
     // Apply search filter
     if (search) {
-      filtered = filtered.filter((elem) =>
-        elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
-        (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
-        (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
+      filtered = filtered.filter(
+        (elem) =>
+          elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
+          (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
+          (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
       );
     }
 
@@ -145,13 +282,15 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
     return [...filtered].sort((a, b) => {
       const nameA = a.user.name?.toLowerCase() || '';
       const nameB = b.user.name?.toLowerCase() || '';
-      
+
       if (sortDirection === 'asc') {
         return nameA.localeCompare(nameB);
       }
       return nameB.localeCompare(nameA);
     });
   }, [creators, search, sortDirection, selectedFilter]);
+
+
 
   const matchCampaignPercentage = (pitch) => {
     if (!pitch) return null;
@@ -225,7 +364,7 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
   const handleViewPitch = (pitch) => {
     // Calculate matching percentage
     const data = matchCampaignPercentage(pitch);
-    
+
     // Set the selected pitch with matching percentage
     setSelectedPitch({ ...pitch, matchingPercentage: data });
     setOpenPitchModal(true);
@@ -235,6 +374,18 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
     setOpenPitchModal(false);
   };
 
+  const handlePitchUpdate = (updatedPitch) => {
+    // Refresh V3 pitches data when a pitch is updated (approved/rejected)
+    if (campaign?.origin === 'CLIENT') {
+      v3PitchesMutate();
+    }
+    
+    // Also refresh campaign data to update shortlisted creators
+    if (campaignMutate) {
+      campaignMutate();
+    }
+  };
+
   const handleOpenMediaKit = (creatorId) => {
     setSelectedPitch({ user: { creator: { id: creatorId } } });
     mediaKit.onTrue();
@@ -242,7 +393,18 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
 
   const mdUp = useResponsive('up', 'md');
 
-  return creators.length > 0 ? (
+  // Show loading state for V3 pitches
+  if (campaign?.origin === 'CLIENT' && v3PitchesLoading) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="body1" color="text.secondary">
+          Loading pitches...
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
     <>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
@@ -339,7 +501,8 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                     bgcolor: 'transparent',
                   }),
               '&:hover': {
-                bgcolor: selectedFilter === 'approved_pitch' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                bgcolor:
+                  selectedFilter === 'approved_pitch' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
             }}
           >
@@ -369,11 +532,43 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                     bgcolor: 'transparent',
                   }),
               '&:hover': {
-                bgcolor: selectedFilter === 'shortlisted' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                bgcolor:
+                  selectedFilter === 'shortlisted' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
             }}
           >
             {`Shortlisted (${shortlistedCount})`}
+          </Button>
+
+          <Button
+            fullWidth={!mdUp}
+            onClick={() => setSelectedFilter('rejected')}
+            sx={{
+              px: 1.5,
+              py: 2.5,
+              height: '42px',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              ...(selectedFilter === 'rejected'
+                ? {
+                    color: '#203ff5',
+                    bgcolor: 'rgba(32, 63, 245, 0.04)',
+                  }
+                : {
+                    color: '#637381',
+                    bgcolor: 'transparent',
+                  }),
+              '&:hover': {
+                bgcolor:
+                  selectedFilter === 'rejected' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+              },
+            }}
+          >
+            {`Rejected (${rejectedCount})`}
           </Button>
 
           <Button
@@ -568,7 +763,7 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                 {filteredCreators.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      <EmptyContent title="No creators found" filled />
+                      <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -602,24 +797,31 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                           <Typography variant="body2">{pitch.user?.name}</Typography>
                         </Stack>
                       </TableCell>
-                      <TableCell>{pitch.user?.username || '-'}</TableCell>
                       <TableCell>
-                        {pitch.user?.engagementRate 
+                        {pitch.mediaKitData?.username || pitch.user?.username || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {pitch.mediaKitData?.engagementRate
+                          ? `${(Number(pitch.mediaKitData.engagementRate) * 100).toFixed(2)}%`
+                          : pitch.user?.engagementRate
                           ? `${(pitch.user.engagementRate * 100).toFixed(2)}%`
                           : '-'}
                       </TableCell>
                       <TableCell>
-                        {pitch.user?.followerCount 
+                        {pitch.mediaKitData?.followerCount
+                          ? Number(pitch.mediaKitData.followerCount).toLocaleString()
+                          : pitch.user?.followerCount
                           ? pitch.user.followerCount.toLocaleString()
                           : '-'}
                       </TableCell>
                       <TableCell>
-                        <Typography
-                          variant="body2"
+                        <Box
                           sx={{
                             textTransform: 'uppercase',
                             fontWeight: 700,
-                            display: 'inline-block',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.25,
                             px: 1.5,
                             py: 0.5,
                             fontSize: '0.75rem',
@@ -632,13 +834,33 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                               color: '#1ABF66',
                               borderColor: '#1ABF66',
                             }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW' && {
+                              color: '#FF9A02',
+                              borderColor: '#FF9A02',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'MAYBE' && {
+                              color: '#FFC702',
+                              borderColor: '#FFC702',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'APPROVED' && {
+                              color: '#1ABF66',
+                              borderColor: '#1ABF66',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'REJECTED' && {
+                              color: '#FF4842',
+                              borderColor: '#FF4842',
+                            }),
+                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT' && {
+                              color: '#8B5CF6',
+                              borderColor: '#8B5CF6',
+                            }),
                             ...(!pitch.isShortlisted && pitch.status === 'undecided' && {
                               color: '#FF9A02',
                               borderColor: '#FF9A02',
                             }),
                             ...(!pitch.isShortlisted && pitch.status === 'approved' && {
-                              color: '#8A5AFE',
-                              borderColor: '#8A5AFE',
+                              color: '#1ABF66',
+                              borderColor: '#1ABF66',
                             }),
                             ...(!pitch.isShortlisted && pitch.status === 'rejected' && {
                               color: '#FF4842',
@@ -648,12 +870,26 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
                         >
                           {pitch.isShortlisted 
                             ? 'APPROVED' 
+                            : pitch.isV3
+                              ? (pitch.displayStatus || pitch.status).toUpperCase()
                             : pitch.status === 'undecided' 
                               ? 'PENDING REVIEW' 
                               : pitch.status === 'approved'
                                 ? 'PITCH APPROVED'
                                 : pitch.status.toUpperCase()}
-                        </Typography>
+                          {((pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT' || pitch.status === 'SENT_TO_CLIENT') && 
+                           pitch.adminComments && 
+                           pitch.adminComments.trim().length > 0 && (
+                            <Tooltip title="CS Comments provided" arrow>
+                              <Box
+                                component="img"
+                                src="/assets/icons/components/ic-comments.svg"
+                                alt="Comments"
+                                sx={{ width: 16, height: 16 }}
+                              />
+                            </Tooltip>
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Button
@@ -699,6 +935,7 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
         pitch={selectedPitch}
         open={openPitchModal}
         onClose={handleClosePitchModal}
+        onUpdate={handlePitchUpdate}
         campaign={campaign}
       />
 
@@ -708,8 +945,6 @@ const CampaignCreatorMasterListClient = ({ campaign }) => {
         creatorId={selectedPitch?.user?.creator?.id}
       />
     </>
-  ) : (
-    <EmptyContent title="No Creators" filled />
   );
 };
 
@@ -717,4 +952,5 @@ export default CampaignCreatorMasterListClient;
 
 CampaignCreatorMasterListClient.propTypes = {
   campaign: PropTypes.object,
-}; 
+  campaignMutate: PropTypes.func,
+};

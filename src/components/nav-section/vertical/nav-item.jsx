@@ -116,15 +116,18 @@ const NavItem = forwardRef(
       </StyledNavItem>
     );
 
-    if (user?.role === 'admin' && roles && !roles?.includes(user?.admin?.role?.name)) {
+    if (
+      user?.role === 'admin' &&
+      roles?.length &&
+      !roles?.includes(user?.admin?.role?.name) &&
+      !roles?.includes(user?.admin?.mode)
+    ) {
       return null;
     }
 
-    if (user?.role !== 'admin' && roles && !roles.includes(user?.role)) {
+    if (user?.role !== 'admin' && roles?.length && !roles.includes(user?.role)) {
       return null;
     }
-
-    // if (title === 'Clients' && user?.admin?.mode !== 'god') return null;
 
     if (hasChild) {
       return renderContent;

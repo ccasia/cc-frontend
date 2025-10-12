@@ -224,7 +224,12 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
 
   const handleCreditApproval = async () => {
     try {
-      const res = await axiosInstance.patch('/api/campaign/changeCredits', {
+      // Use V4-specific endpoint for V4 campaigns, fallback to general endpoint
+      const endpoint = campaign?.submissionVersion === 'v4' 
+        ? '/api/campaign/v4/changeCredits' 
+        : '/api/campaign/changeCredits';
+        
+      const res = await axiosInstance.patch(endpoint, {
         campaignId: campaign.id,
         newCredit: currentCredit - campaign.campaignCredits,
       });
@@ -236,7 +241,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
       setCurrentCredit(0);
       mutate();
     } catch (err) {
-      toast.error('Error', err);
+      console.error('Credit approval error:', err);
+      toast.error('Error updating credits', err?.response?.data?.message || err.message);
     }
   };
 
@@ -362,6 +368,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Box>
         </Zoom>
       </Grid>
+
       <Grid item xs={12} sm={6} md={3}>
         <Zoom in>
           <Box component={Card} p={3} sx={cardStyle}>
@@ -392,6 +399,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Box>
         </Zoom>
       </Grid>
+
       <Grid item xs={12} sm={6} md={3}>
         <Zoom in>
           <Box component={Card} p={3} sx={cardStyle}>
@@ -454,7 +462,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                       >
                         CREDITS TRACKING
                       </Typography>
-                      {campaign?.campaignCredits && latestPackageItem && !isEditingCredit && (
+                      {campaign?.campaignCredits && latestPackageItem && !isEditingCredit && (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) && (
                         <Button
                           variant="outlined"
                           size="small"
@@ -537,9 +545,15 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                           {/* </Collapse> */}
 
                           <Typography
-                            sx={{ mt: 1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                            sx={{ 
+                              mt: 1, 
+                              fontSize: '16px', 
+                              fontWeight: 600, 
+                              color: '#636366',
+                              cursor: (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) ? 'pointer' : 'default'
+                            }}
                             style={{ display: isEditingCredit ? 'none' : 'block' }} // hide when editing
-                            onClick={() => setIsEditingCredit(true)} // optional: allow click to edit
+                            onClick={(user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) ? () => setIsEditingCredit(true) : undefined} // only allow click for superadmin
                           >
                             {campaign?.campaignCredits ?? 0} UGC Credits
                           </Typography>

@@ -4,6 +4,8 @@ import { memo, useState, useCallback } from 'react';
 import Stack from '@mui/material/Stack';
 import { Divider, Collapse, ListSubheader } from '@mui/material';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import NavList from './nav-list';
 
 // ----------------------------------------------------------------------
@@ -35,14 +37,38 @@ export default memo(NavSectionVertical);
 
 function Group({ subheader, items, slotProps, whoCanSee }) {
   const [open, setOpen] = useState(true);
+  const { user } = useAuthContext();
 
   const handleToggle = useCallback(() => {
     setOpen((prev) => !prev);
   }, []);
 
-  const renderContent = items?.map((list) => (
+  // Function to check if an item should be visible based on roles
+  const isItemVisible = useCallback((item) => {
+    const { roles } = item;
+    
+    if (!roles || roles.length === 0) {
+      return true; // No role restrictions
+    }
+
+    if (user?.role === 'admin') {
+      return roles.includes(user?.admin?.role?.name) || roles.includes(user?.admin?.mode);
+    }
+
+    return roles.includes(user?.role);
+  }, [user]);
+
+  // Filter items to only include visible ones
+  const visibleItems = items?.filter(isItemVisible) || [];
+
+  const renderContent = visibleItems.map((list) => (
     <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />
   ));
+
+  // Don't render the group at all if there are no visible items
+  if (visibleItems.length === 0) {
+    return null;
+  }
 
   return (
     <Stack sx={{ px: 2 }}>

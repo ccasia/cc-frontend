@@ -97,7 +97,11 @@ const CompanyEditView = ({ id }) => {
   const packageDialog = useBoolean();
   const [activeTab, setActiveTab] = useState('package');
 
-  console.log('Company edit info: ', company)
+  console.log('Company info: ', company)
+  console.log('Has active client: ', company?.clients?.some(client => client.companyId === company.id))
+
+  // Check if client is activated: if inviteToken is null/empty, the client has activated
+  const hasActiveClient = company?.clients?.some(client => client.companyId === company.id) || false;
 
   const campaigns = useMemo(() => {
     if (company?.type === 'agency' || company?.brand?.length) {
@@ -263,26 +267,27 @@ const CompanyEditView = ({ id }) => {
           <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
 
           <Box textAlign="end" mt={2}>
-            {user?.role === 'superadmin' && (
+            {(user?.role === 'superadmin' || user?.role === 'admin') && (
               <Button
                 variant="contained"
                 color="primary"
                 onClick={() => setActivateDialogOpen(true)}
+                disabled={hasActiveClient}
                 sx={{
-                  bgcolor: '#203ff5',
+                  bgcolor: hasActiveClient ? '#ccc' : '#203ff5',
                   color: 'white',
-                  borderBottom: '3px solid #102387',
+                  borderBottom: hasActiveClient ? '3px solid #999' : '3px solid #102387',
                   borderRadius: '8px',
                   p: '4px 20px',
                   fontSize: '0.9rem',
-                  cursor: 'pointer',
+                  cursor: hasActiveClient ? 'not-allowed' : 'pointer',
                   '&:hover': {
-                    bgcolor: '#203ff5',
-                    opacity: 0.9,
+                    bgcolor: hasActiveClient ? '#ccc' : '#203ff5',
+                    opacity: hasActiveClient ? 1 : 0.9,
                   },
                 }}
               >
-                Activate Account
+                {hasActiveClient ? 'Account Activated' : 'Activate Account'}
               </Button>
             )}
             <LoadingButton

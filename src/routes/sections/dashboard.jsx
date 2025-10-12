@@ -10,6 +10,9 @@ import { ChatView } from 'src/sections/chat/view';
 import { CalendarView } from 'src/sections/calendar/view';
 import ReportingView from 'src/sections/report/view/reporting-view';
 
+// Import the client dashboard directly without lazy loading to avoid issues
+import ClientDashboard from '../../sections/client/dashboard-client';
+
 // ----------------------------------------------------------------------
 
 const IndexPage = lazy(() => import('src/pages/dashboard/one'));
@@ -17,10 +20,10 @@ const ProfilePage = lazy(() => import('src/pages/dashboard/profile'));
 const ManagersPage = lazy(() => import('src/pages/dashboard/admin'));
 const CreatorList = lazy(() => import('src/pages/dashboard/creator/list'));
 const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'));
+const ClientMediaKit = lazy(() => import('src/pages/dashboard/client/mediaKit'));
 const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCards'));
 const InvoiceCreator = lazy(() => import('src/pages/dashboard/creator/invoice'));
 const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
-const ClientDashboard = lazy(() => import('src/sections/admin/dashboard-client'));
 
 // APP
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
@@ -40,6 +43,8 @@ const AdminCampaignDetail = lazy(
 const AdminCamapaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-detail-manage')
 );
+const PostingLinkCSMView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-csm'));
+const PostingLinkSuperadminView = lazy(() => import('src/pages/dashboard/campaign/admin/posting-link-superadmin'));
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
@@ -126,7 +131,7 @@ export const dashboardRoutes = [
       {
         path: 'client',
         element: (
-          <RoleBasedGuard roles={['admin', 'Client', 'client']} hasContent>
+          <RoleBasedGuard roles={['admin', 'client']} hasContent>
             <ClientDashboard />
           </RoleBasedGuard>
         ),
@@ -268,11 +273,24 @@ export const dashboardRoutes = [
       },
       {
         path: 'mediakit',
-        element: (
-          <RoleBasedGuard roles={['creator']} hasContent>
-            <CreatorMediaKit />
-          </RoleBasedGuard>
-        ),
+        children: [
+          {
+            element: (
+              <RoleBasedGuard roles={['creator']} hasContent>
+                <CreatorMediaKit />
+              </RoleBasedGuard>
+            ),
+            index: true,
+          },
+          {
+            path: 'client/:id',
+            element: (
+              <RoleBasedGuard roles={['client', 'admin', 'superadmin']} hasContent>
+                <ClientMediaKit />
+              </RoleBasedGuard>
+            ),
+          },
+        ],
       },
       {
         path: 'landing',
@@ -380,6 +398,22 @@ export const dashboardRoutes = [
                 ),
               },
               {
+                path: ':id/posting-link/csm',
+                element: (
+                  <RoleBasedGuard hasContent roles={['admin']}>
+                    <PostingLinkCSMView />
+                  </RoleBasedGuard>
+                ),
+              },
+              {
+                path: ':id/posting-link/superadmin',
+                element: (
+                  <RoleBasedGuard hasContent roles={['superadmin']}>
+                    <PostingLinkSuperadminView />
+                  </RoleBasedGuard>
+                ),
+              },
+              {
                 path: 'edit/:id',
                 element: (
                   <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
@@ -442,7 +476,7 @@ export const dashboardRoutes = [
           {
             path: 'settings',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'CSL']}>
                 <CampaignSetting />
               </RoleBasedGuard>
             ),
@@ -502,7 +536,7 @@ export const dashboardRoutes = [
       {
         path: 'analytics',
         element: (
-          <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+          <RoleBasedGuard hasContent roles={['superadmin', 'god', 'CSL']}>
             <AnalyticsView />
           </RoleBasedGuard>
         ),

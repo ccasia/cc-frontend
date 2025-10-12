@@ -34,8 +34,9 @@ import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form'
 
 import Main from './main';
 import Header from './header';
-import NavMini from './nav-mini';
-import NavVertical from './nav-vertical';
+// import NavMini from './nav-mini';
+// import NavVertical from './nav-vertical';
+import Nav from './nav-unified';
 
 // ----------------------------------------------------------------------
 
@@ -50,8 +51,6 @@ const FormField = ({ label, children, ...others }) => (
 );
 
 export default function DashboardLayout({ children }) {
-  const settings = useSettingsContext();
-
   const { user } = useAuthContext();
   const { socket, isOnline } = useSocketContext();
   const [hasSubmittedKWSP, setHasSubmittedKWSP] = useState(false);
@@ -126,11 +125,13 @@ export default function DashboardLayout({ children }) {
 
   const nav = useBoolean();
 
-  const isMini = settings.themeLayout === 'mini';
+  // const isMini = settings.themeLayout === 'mini';
 
-  const renderNavMini = <NavMini />;
+  // const renderNavMini = <NavMini />;
 
-  const renderNavVertical = <NavVertical openNav={nav.value} onCloseNav={nav.onFalse} />;
+  // const renderNavVertical = <NavVertical openNav={nav.value} onCloseNav={nav.onFalse} />;
+
+  const renderNav = <Nav openNav={nav.value} onCloseNav={nav.onFalse} />;
 
   const onDrop = useCallback(
     (e) => {
@@ -170,7 +171,7 @@ export default function DashboardLayout({ children }) {
 
   const onKwspSubmit = handleKwspSubmit(async (data) => {
     try {
-      const response = await axiosInstance.post('/api/kwsp/submit', {
+      await axiosInstance.post('/api/kwsp/submit', {
         fullName: data.fullName,
         nricPassport: data.nricPassport,
       });
@@ -434,44 +435,6 @@ export default function DashboardLayout({ children }) {
     </Dialog>
   );
 
-  if (isMini) {
-    return (
-      <Box
-        sx={{
-          minHeight: 1,
-          display: 'flex',
-          flexDirection: { xs: 'column', lg: 'row' },
-          pr: lgUp && 2,
-        }}
-      >
-        {lgUp ? renderNavMini : renderNavVertical}
-
-        <Box
-          sx={{
-            // position: 'relative',
-            ...(lgUp && {
-              width: 1,
-              height: '95vh',
-              borderRadius: 2,
-              my: 'auto',
-              overflow: 'hidden',
-              position: 'relative',
-              bgcolor: (theme) => theme.palette.background.paper,
-            }),
-          }}
-        >
-          <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
-
-          <Main>{children}</Main>
-          {feedbackButton}
-          {kwspButton}
-          {feedbackForm}
-          {kwspForm}
-        </Box>
-      </Box>
-    );
-  }
-
   return (
     <Box
       sx={{
@@ -481,19 +444,9 @@ export default function DashboardLayout({ children }) {
         pr: lgUp && 2,
       }}
     >
-      {renderNavVertical}
-
+      {renderNav}
       <Box
         sx={{
-          // ...(lgUp && {
-          //   width: lgUp ? 1 : '90vw',
-          //   height: '95vh',
-          //   borderRadius: 2,
-          //   my: 'auto',
-          //   overflow: 'hidden',
-          //   position: 'relative',
-          //   bgcolor: (theme) => theme.palette.background.paper,
-          // }),
           width: lgUp ? 1 : '97vw',
           mx: 'auto',
           height: '97vh',
@@ -505,7 +458,6 @@ export default function DashboardLayout({ children }) {
         }}
       >
         <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
-
         <Main>{children}</Main>
 
         {feedbackButton}

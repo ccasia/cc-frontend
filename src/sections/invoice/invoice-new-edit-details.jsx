@@ -26,7 +26,7 @@ export default function InvoiceNewEditDetails() {
 
   const totalOnRow = values.items.map((item) => item?.price);
 
-  const currency = values.items.map((item) => item?.currency);
+  const currency = values.items.map((item) => item?.currency)
 
   const subTotal = sum(totalOnRow);
 

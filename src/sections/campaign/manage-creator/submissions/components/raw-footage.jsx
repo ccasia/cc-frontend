@@ -56,7 +56,7 @@ const UploadRawFootageModal = ({
 
   const rawFootageToUpdateCount = deliverables?.rawFootages?.filter(
     (x) => x.status === 'REVISION_REQUESTED'
-  );
+  )?.length || 0;
 
   const validateFileCount = (files) => {
     if (previewSubmission?.status === 'CHANGES_REQUIRED') {
@@ -90,7 +90,9 @@ const UploadRawFootageModal = ({
         });
       }
 
-      await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+      // V3 submissions removed - using V2 endpoint only
+      const endpoint = endpoints.submission.creator.draftSubmission;
+      await axiosInstance.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -103,7 +105,9 @@ const UploadRawFootageModal = ({
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
     } catch (error) {
-      enqueueSnackbar('Failed to upload raw footage', { variant: 'error' });
+      console.error('Raw footage upload error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to upload raw footage';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       loading.onFalse();
     }

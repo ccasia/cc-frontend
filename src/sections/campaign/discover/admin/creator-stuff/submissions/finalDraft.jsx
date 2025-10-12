@@ -20,13 +20,57 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import EmptyContent from 'src/components/empty-content/empty-content';
 
+// V3 Client Components removed
 import Photos from './finalDraft/photos';
 import RawFootages from './finalDraft/raw-footage';
 import DraftVideos from './finalDraft/draft-videos';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
-const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraftSubmission }) => {
+const FinalDraft = ({ 
+  campaign, 
+  submission, 
+  creator, 
+  deliverablesData, 
+  firstDraftSubmission, 
+  // Individual client approval handlers
+  handleClientApproveVideo,
+  handleClientApprovePhoto,
+  handleClientApproveRawFootage,
+  handleClientRejectVideo,
+  handleClientRejectPhoto,
+  handleClientRejectRawFootage,
+}) => {
+  // Create wrapper functions that call SWR mutations after client actions
+  const handleClientApproveVideoWithMutation = async (...args) => {
+    await handleClientApproveVideo(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientApprovePhotoWithMutation = async (...args) => {
+    await handleClientApprovePhoto(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientApproveRawFootageWithMutation = async (...args) => {
+    await handleClientApproveRawFootage(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientRejectVideoWithMutation = async (...args) => {
+    await handleClientRejectVideo(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientRejectPhotoWithMutation = async (...args) => {
+    await handleClientRejectPhoto(...args);
+    await onClientActionCompleted();
+  };
+
+  const handleClientRejectRawFootageWithMutation = async (...args) => {
+    await handleClientRejectRawFootage(...args);
+    await onClientActionCompleted();
+  };
   const { deliverables, deliverableMutate, submissionMutate } = deliverablesData;
   const { user } = useAuthContext();
 
@@ -50,6 +94,43 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [currentSectionType, setCurrentSectionType] = useState('video');
 
+  // Track which media items have been sent to creator
+  const [sentToCreatorItems, setSentToCreatorItems] = useState(new Set());
+
+  // Check if all client feedback has been sent to creator
+  const allFeedbackSentToCreator = useMemo(() => {
+    if (!deliverables) return true;
+    
+    const itemsWithClientFeedback = new Set();
+    
+    // Check videos
+    deliverables.videos?.forEach(video => {
+      if (video.status === 'CLIENT_FEEDBACK' || video.status === 'SENT_TO_ADMIN') {
+        itemsWithClientFeedback.add(`video_${video.id}`);
+      }
+    });
+    
+    // Check photos
+    deliverables.photos?.forEach(photo => {
+      if (photo.status === 'CLIENT_FEEDBACK' || photo.status === 'SENT_TO_ADMIN') {
+        itemsWithClientFeedback.add(`photo_${photo.id}`);
+      }
+    });
+    
+    // Check raw footage
+    deliverables.rawFootages?.forEach(footage => {
+      if (footage.status === 'CLIENT_FEEDBACK' || footage.status === 'SENT_TO_ADMIN') {
+        itemsWithClientFeedback.add(`rawFootage_${footage.id}`);
+      }
+    });
+    
+    // If no items have client feedback, consider it all sent
+    if (itemsWithClientFeedback.size === 0) return true;
+    
+    // Check if all items with client feedback have been sent to creator
+    return Array.from(itemsWithClientFeedback).every(itemKey => sentToCreatorItems.has(itemKey));
+  }, [deliverables, sentToCreatorItems]);
+
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
@@ -57,7 +138,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
   const checkSubmissionReadiness = async () => {
     try {
-      // Check if all sections are approved for final draft
+      // V2 Flow: Original logic for backward compatibility
       const videosApproved = deliverables?.videos?.every(
         (video) => video.status === 'APPROVED'
       );
@@ -71,9 +152,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
 
       if (allSectionsApproved && submission.status === 'PENDING_REVIEW') {
-        // Update submission to approved
+        // Legacy endpoint - direct approval
         await axiosInstance.patch(`/api/submission/status`, {
-        submissionId: submission.id,
+          submissionId: submission.id,
           status: 'APPROVED',
           feedback: 'All sections have been approved',
           dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
@@ -92,7 +173,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           await axiosInstance.patch(`/api/submission/status`, {
             submissionId: postingSubmission.id,
             status: 'IN_PROGRESS',
-          dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
+            dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
             sectionOnly: true
           });
         }
@@ -130,9 +211,23 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
     }
   };
 
+  // Client action completion callback for SWR mutations
+  const onClientActionCompleted = async () => {
+    try {
+      await Promise.all([
+        deliverableMutate(),
+        submissionMutate && submissionMutate()
+      ].filter(Boolean));
+    } catch (error) {
+      console.error('Error updating after client action:', error);
+    }
+  };
+
   // Check if all sections are approved and activate posting if needed
   const checkAndActivatePosting = async (selectedDueDate) => {
     try {
+      console.log('🔍 checkAndActivatePosting called');
+      
       // Wait a moment for the data to be refreshed
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -145,7 +240,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       );
       const currentDeliverables = freshDeliverablesResponse.data;
       
-      // Check if all sections are approved
+      // V2 Flow: Original logic for backward compatibility
       const videosApproved = !currentDeliverables?.videos?.length || 
         currentDeliverables.videos.every(video => video.status === 'APPROVED');
       const rawFootagesApproved = !currentDeliverables?.rawFootages?.length || 
@@ -204,6 +299,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
   // V2 Individual Media Management Functions
   const handleIndividualPhotoApprove = async (mediaId, feedback) => {
     try {
+      // V2 flow: Use V2 endpoint
       const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
         mediaId,
         status: 'APPROVED',
@@ -226,6 +322,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
   const handleIndividualPhotoRequestChange = async (mediaId, feedback, reasons) => {
     try {
+      // V2 flow: Use V2 endpoint
       const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
         mediaId,
         status: 'CHANGES_REQUIRED',
@@ -248,6 +345,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
   const handleIndividualVideoApprove = async (mediaId, feedback, dueDate) => {
     try {
+      console.log('🔍 Admin approving video:', { mediaId, feedback, dueDate, user: user?.role, adminMode: user?.admin?.mode });
+      
+      // V2 flow: Use V2 endpoint
       const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
         mediaId,
         status: 'APPROVED',
@@ -260,7 +360,10 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       enqueueSnackbar('Video approved successfully!', { variant: 'success' });
       return response.data;
     } catch (error) {
-      console.error('Error approving video:', error);
+      console.error('❌ Error approving video:', error);
+      console.error('❌ Error response:', error?.response);
+      console.error('❌ Error status:', error?.response?.status);
+      console.error('❌ Error data:', error?.response?.data);
       enqueueSnackbar(error?.response?.data?.message || 'Error approving video', { 
         variant: 'error' 
       });
@@ -270,6 +373,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
   const handleIndividualVideoRequestChange = async (mediaId, feedback, reasons) => {
     try {
+      console.log('🔍 Admin requesting video changes:', { mediaId, feedback, reasons, user: user?.role, adminMode: user?.admin?.mode });
+      
+      // V2 flow: Use V2 endpoint
       const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
         mediaId,
         status: 'CHANGES_REQUIRED',
@@ -282,7 +388,10 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       enqueueSnackbar('Changes requested for video', { variant: 'warning' });
       return response.data;
     } catch (error) {
-      console.error('Error requesting video changes:', error);
+      console.error('❌ Error requesting video changes:', error);
+      console.error('❌ Error response:', error?.response);
+      console.error('❌ Error status:', error?.response?.status);
+      console.error('❌ Error data:', error?.response?.data);
       enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
         variant: 'error' 
       });
@@ -292,6 +401,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
   const handleIndividualRawFootageApprove = async (mediaId, feedback) => {
     try {
+      // V2 flow: Use V2 endpoint
       const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
         mediaId,
         status: 'APPROVED',
@@ -334,6 +444,19 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
     }
   };
 
+  // Admin feedback handlers - V3 submissions removed
+  const handleAdminEditFeedback = async (mediaId, feedbackId, adminFeedback) => {
+    console.log('V3 submissions removed - API call disabled');
+    enqueueSnackbar('V3 submissions removed - functionality disabled', { variant: 'info' });
+    return false;
+  };
+
+  const handleAdminSendToCreator = async (mediaId, feedbackId, onStatusUpdate, mediaType = 'video') => {
+    console.log('V3 submissions removed - API call disabled');
+    enqueueSnackbar('V3 submissions removed - functionality disabled', { variant: 'info' });
+    return false;
+  };
+
   // Modal handlers
   const handleImageClick = (index) => {
     setCurrentImageIndex(index);
@@ -372,9 +495,10 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
   const availableTabs = useMemo(() => {
     const tabs = [];
     
-    // Show content if firstDraft has changes required OR if final draft is pending review
+    // Show content if firstDraft has changes required OR if final draft is pending review OR if final draft has changes required
     const shouldShowContent = firstDraftSubmission?.status === 'CHANGES_REQUIRED' || 
-                             submission?.status === 'PENDING_REVIEW';
+                             submission?.status === 'PENDING_REVIEW' ||
+                             submission?.status === 'CHANGES_REQUIRED';
     
     if (!shouldShowContent) {
       return tabs; // Return empty tabs if conditions are not met
@@ -431,34 +555,46 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
     deliverables.photos.every(photo => photo.status === 'APPROVED');
 
   // Helper functions to check if any item has changes required
-  const hasVideosChangesRequired = () => 
-    deliverables?.videos?.length > 0 && 
-    deliverables.videos.some(video => video.status === 'REVISION_REQUESTED');
+  const hasVideosChangesRequired = () => {
+    return deliverables?.videos?.length > 0 && 
+      deliverables.videos.some(video => video.status === 'CHANGES_REQUIRED');
+  };
 
-  const hasRawFootagesChangesRequired = () => 
-    deliverables?.rawFootages?.length > 0 && 
-    deliverables.rawFootages.some(footage => footage.status === 'REVISION_REQUESTED');
+  const hasRawFootagesChangesRequired = () => {
+    return deliverables?.rawFootages?.length > 0 && 
+      deliverables.rawFootages.some(footage => footage.status === 'CHANGES_REQUIRED');
+  };
 
-  const hasPhotosChangesRequired = () => 
-    deliverables?.photos?.length > 0 && 
-    deliverables.photos.some(photo => photo.status === 'REVISION_REQUESTED');
+  const hasPhotosChangesRequired = () => {
+    return deliverables?.photos?.length > 0 && 
+      deliverables.photos.some(photo => photo.status === 'CHANGES_REQUIRED');
+  };
 
   const getTabBorderColor = (tabType) => {
-    if (submission?.status === 'PENDING_REVIEW') return '#FFC702';
-    
+    const status = submission.displayStatus || submission.status;
+    const userRole = user?.admin?.role?.name;
+
+    // Check for changes required first (highest priority)
     switch (tabType) {
       case 'videos':
         if (hasVideosChangesRequired()) return '#D4321C'; // Red for changes required
-        return isVideosApproved() ? '#1ABF66' : 'divider'; // Green for all approved, gray for pending
+        if (isVideosApproved()) return '#1ABF66'; // Green for all approved
+        break;
       case 'rawFootages':
         if (hasRawFootagesChangesRequired()) return '#D4321C'; // Red for changes required
-        return isRawFootagesApproved() ? '#1ABF66' : 'divider'; // Green for all approved, gray for pending
+        if (isRawFootagesApproved()) return '#1ABF66'; // Green for all approved
+        break;
       case 'photos':
         if (hasPhotosChangesRequired()) return '#D4321C'; // Red for changes required
-        return isPhotosApproved() ? '#1ABF66' : 'divider'; // Green for all approved, gray for pending
-      default:
-        return 'divider';
+        if (isPhotosApproved()) return '#1ABF66'; // Green for all approved
+        break;
     }
+
+    // If submission is pending review and no items are approved, show yellow
+    if (submission?.status === 'PENDING_REVIEW') return '#FFC702';
+    
+    // Default to gray border
+    return 'divider';
   };
 
   const renderTabContent = () => {
@@ -470,47 +606,79 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       photos: deliverables?.photos || [],
     };
 
+    // Common props for V2 components
+    const commonProps = {
+      campaign,
+      submission,
+      deliverables: filteredDeliverables,
+      isDisabled,
+      // Add mutation functions for SWR updates
+      deliverableMutate,
+      submissionMutate,
+    };
+
     switch (selectedTab) {
       case 'videos':
-      return (
+        return (
           <DraftVideos
-            campaign={campaign}
-            submission={submission}
-            deliverables={filteredDeliverables}
+            {...commonProps}
             onVideoClick={handleDraftVideoClick}
             onSubmit={onSubmitDraftVideo}
-            isDisabled={isDisabled}
             // V2 individual handlers
             onIndividualApprove={handleIndividualVideoApprove}
             onIndividualRequestChange={handleIndividualVideoRequestChange}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
+            // Admin feedback handlers
+            handleAdminEditFeedback={handleAdminEditFeedback}
+            handleAdminSendToCreator={handleAdminSendToCreator}
           />
         );
       case 'rawFootages':
-      return (
+        return (
           <RawFootages
-            campaign={campaign}
-            submission={submission}
-            deliverables={filteredDeliverables}
+            {...commonProps}
             onVideoClick={handleVideoClick}
             onSubmit={onSubmitRawFootage}
-            isDisabled={isDisabled}
             // V2 individual handlers
             onIndividualApprove={handleIndividualRawFootageApprove}
             onIndividualRequestChange={handleIndividualRawFootageRequestChange}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
+            // Admin feedback handlers
+            handleAdminEditFeedback={handleAdminEditFeedback}
+            handleAdminSendToCreator={handleAdminSendToCreator}
           />
         );
       case 'photos':
         return (
           <Photos
-            campaign={campaign}
-            submission={submission}
-            deliverables={filteredDeliverables}
+            {...commonProps}
             onImageClick={handleImageClick}
             onSubmit={onSubmitPhotos}
-            isDisabled={isDisabled}
             // V2 individual handlers
             onIndividualApprove={handleIndividualPhotoApprove}
             onIndividualRequestChange={handleIndividualPhotoRequestChange}
+            // Individual client approval handlers
+            handleClientApproveVideo={handleClientApproveVideo}
+            handleClientApprovePhoto={handleClientApprovePhoto}
+            handleClientApproveRawFootage={handleClientApproveRawFootage}
+            handleClientRejectVideo={handleClientRejectVideo}
+            handleClientRejectPhoto={handleClientRejectPhoto}
+            handleClientRejectRawFootage={handleClientRejectRawFootage}
+            // Admin feedback handlers
+            handleAdminEditFeedback={handleAdminEditFeedback}
+            handleAdminSendToCreator={handleAdminSendToCreator}
           />
         );
       default:
@@ -532,8 +700,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
   // Draft Video submission handler
   const onSubmitDraftVideo = async (payload) => {
     try {
+      // V2 endpoint for admin-created campaigns
       await axiosInstance.patch('/api/submission/manageVideos', {
-          submissionId: submission.id,
+        submissionId: submission.id,
         videos: payload.videos || deliverables?.videos?.map(video => video.id) || [],
         type: payload.type,
         feedback: payload.feedback,
@@ -551,13 +720,15 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           : 'Changes requested for draft videos.',
         { variant: payload.type === 'approve' ? 'success' : 'warning' }
       );
-        
-        return true;
+      
+      return true;
     } catch (error) {
       console.error('Error submitting draft video review:', error);
+      
       enqueueSnackbar(error?.response?.data?.message || error?.message || 'Error submitting review', {
         variant: 'error',
       });
+      
       return false;
     }
   };
@@ -565,6 +736,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
   // Raw Footage submission handler
   const onSubmitRawFootage = async (payload) => {
     try {
+      // V2 endpoint for admin-created campaigns
       await axiosInstance.patch('/api/submission/manageRawFootages', {
         submissionId: submission.id,
         rawFootages: payload.rawFootages || deliverables?.rawFootages?.map(footage => footage.id) || [],
@@ -583,13 +755,15 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           : 'Changes requested for raw footages.',
         { variant: payload.type === 'approve' ? 'success' : 'warning' }
       );
-        
-        return true;
+      
+      return true;
     } catch (error) {
       console.error('Error submitting raw footage review:', error);
+      
       enqueueSnackbar(error?.message || 'Error submitting review', {
         variant: 'error',
       });
+      
       return false;
     }
   };
@@ -597,6 +771,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
   // Photos submission handler
   const onSubmitPhotos = async (payload) => {
     try {
+      // V2 endpoint for admin-created campaigns
       await axiosInstance.patch('/api/submission/managePhotos', {
         submissionId: submission.id,
         photos: payload.photos || deliverables?.photos?.map(photo => photo.id) || [],
@@ -614,12 +789,14 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
         { variant: payload.type === 'approve' ? 'success' : 'warning' }
       );
 
-        return true;
+      return true;
     } catch (error) {
       console.error('Error submitting photo review:', error);
+      
       enqueueSnackbar(error?.message || 'Error submitting review', {
         variant: 'error',
       });
+      
       return false;
     }
   };
@@ -836,6 +1013,13 @@ FinalDraft.propTypes = {
   creator: PropTypes.object.isRequired,
   deliverablesData: PropTypes.object.isRequired,
   firstDraftSubmission: PropTypes.object,
+  // Individual client approval handlers
+  handleClientApproveVideo: PropTypes.func,
+  handleClientApprovePhoto: PropTypes.func,
+  handleClientApproveRawFootage: PropTypes.func,
+  handleClientRejectVideo: PropTypes.func,
+  handleClientRejectPhoto: PropTypes.func,
+  handleClientRejectRawFootage: PropTypes.func,
 };
 
 export default FinalDraft;

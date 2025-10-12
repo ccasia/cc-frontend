@@ -91,6 +91,7 @@ export const endpoints = {
     checkToken: (token) => `/api/user/forget-password-token/${token}`,
     resendVerificationLink: `/api/auth/resendVerificationLinkCreator`,
     resendVerificationLinkClient: `/api/auth/resendVerificationLinkClient`,
+    inviteClient: '/api/auth/invite-client',
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',
@@ -113,10 +114,10 @@ export const endpoints = {
       tiktokV2: (id) => `/api/social/v2/tiktokMediaKit/${id}`,
       instagram: (id) => `/api/social/instagram/overview/${id}`,
       instagramV2: (id) => `/api/social/v2/instagramOverview/${id}`,
-      getInstagramMediaInsight: (userId, postUrl, id) => 
+      getInstagramMediaInsight: (userId, postUrl, id) =>
         `/api/social/v2/mediaInsight/${userId}?url=${postUrl}&campaignId=${id}`,
-      getTikTokMediaInsight: (userId, postUrl, id) => 
-      `/api/social/v2/tiktokMediaInsight/${userId}?url=${postUrl}&campaignId=${id}`,
+      getTikTokMediaInsight: (userId, postUrl, id) =>
+        `/api/social/v2/tiktokMediaInsight/${userId}?url=${postUrl}&campaignId=${id}`,
     },
     updatePreference: (id) => `/api/creator/updatePreference/${id}`,
     exportCreators: '/api/creator/exportCreators',
@@ -191,6 +192,8 @@ export const endpoints = {
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
     getCampaignPitchById: (id) => `/api/campaign/getClientByCampID/${id}`,
     shortlistCreator: '/api/campaign/shortlistCreator',
+    guestShortListCreator: '/api/campaign/v3/shortlistCreator/guest',
+    activateClientCampaign: (id) => `/api/campaign/activateClientCampaign/${id}`,
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
@@ -207,6 +210,17 @@ export const endpoints = {
       detail: (id) => `/api/campaign/pitch/${id}`,
       changeStatus: '/api/campaign/changePitchStatus',
       getCampaign: `/api/campaign/getCampaignPitch`,
+      // V3 endpoints for client-created campaigns
+      v3: {
+        approve: (pitchId) => `/api/pitch/v3/${pitchId}/approve`,
+        reject: (pitchId) => `/api/pitch/v3/${pitchId}/reject`,
+        approveClient: (pitchId) => `/api/pitch/v3/${pitchId}/approve/client`,
+        rejectClient: (pitchId) => `/api/pitch/v3/${pitchId}/reject/client`,
+        maybeClient: (pitchId) => `/api/pitch/v3/${pitchId}/maybe/client`,
+        agreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
+        setAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
+        submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
+      },
     },
     draft: {
       getAllDraftInfo: (id) => `/api/draft/getAllDraftInfo/${id}`,
@@ -259,10 +273,27 @@ export const endpoints = {
   submission: {
     root: '/api/submission/',
     all: '/api/submission/getAllsubmission',
+    // V3 endpoints removed
+    // V4 endpoints for content-type based submissions
+    v4: {
+      create: '/api/submissions/v4/create',
+      getSubmissions: '/api/submissions/v4/submissions',
+      getById: '/api/submissions/v4/submission',
+      submitContent: '/api/submissions/v4/submit-content',
+      approve: '/api/submissions/v4/approve',
+      postingLink: '/api/submissions/v4/posting-link',
+      approvePostingLink: '/api/submissions/v4/posting-link/approve',
+    },
     creator: {
       agreement: '/api/submission/submitAgreement',
       draftSubmission: '/api/submission/draftSubmission',
       postSubmission: '/api/submission/postSubmission',
+      v4: {
+        getMyV4Submissions: '/api/creator/submissions/v4',
+        getMyCampaignOverview: '/api/creator/submissions/v4/campaign-overview',
+        submitContent: '/api/creator/submissions/v4/submit-content',
+        updatePostingLink: '/api/creator/submissions/v4/posting-link',
+      },
     },
     admin: {
       agreement: '/api/submission/adminManageAgreementSubmission',
@@ -272,8 +303,8 @@ export const endpoints = {
       v2: {
         photos: '/api/submission/v2/managePhotos',
         videos: '/api/submission/v2/manageDraftVideos',
-        rawFootages: '/api/submission/v2/manageRawFootages'
-      }
+        rawFootages: '/api/submission/v2/manageRawFootages',
+      },
     },
   },
   notification: {
@@ -307,7 +338,7 @@ export const endpoints = {
     updateInvoiceStatus: '/api/invoice/updateStatus',
     getInvoicesByCreator: '/api/invoice/creator',
     ConnectToXero: '/api/invoice/ConnectXero',
-    xero: '/api/invoice/zeroConnect',
+    xero: '/api/invoice/xeroConnect',
     xeroCallback: `/api/invoice/xeroCallback`,
     xeroGetContacts: '/api/invoice/getXeroContacts',
     xeroCheckRefreshToken: '/api/invoice/checkRefreshToken',
@@ -332,5 +363,6 @@ export const endpoints = {
     updateClient: '/api/client/updateClient',
     checkCompany: '/api/client/checkCompany',
     createCompany: '/api/client/createCompany',
+    createCampaign: '/api/client/createClientCampaign',
   },
 };

@@ -91,6 +91,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
 
   const shortlistedCreators = campaign?.shortlisted;
   const shortlistedCreatorsId = shortlistedCreators?.map((item) => item.userId);
+
   const modal = useBoolean();
   const confirmModal = useBoolean();
   const editDialog = useBoolean();
@@ -98,7 +99,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const loading = useBoolean();
   const [selectedAgreement, setSelectedAgreement] = useState(null);
   // const [selectedCreators, setSelectedCreators] = useState(null);
-  const ugcVidesoModal = useBoolean();
+  const ugcVideosModal = useBoolean();
   const { addCreators, shortlistedCreators: creators } = useShortlistedCreators();
 
   const totalUsedCredits = campaign?.shortlisted?.reduce(
@@ -148,6 +149,8 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     }));
   }, [agreements, campaign]);
 
+  console.log(creatorsWithAgreements);
+
   const filteredCreators = useMemo(
     () =>
       query
@@ -187,6 +190,34 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   });
 
   const handleEditAgreement = (creator) => {
+    // For V3 campaigns (client-created), we need to create a new agreement
+
+    if (campaign?.origin === 'CLIENT') {
+      // Check if there's an APPROVED pitch for this creator
+      const creatorPitch = campaign?.pitch?.find((p) => p.userId === creator.userId);
+
+      if (creatorPitch?.status === 'APPROVED') {
+        // Create a new agreement object for V3
+        const newAgreement = {
+          userId: creator.userId,
+          campaignId: campaign.id,
+          user: creator.user,
+          shortlistedCreator: {
+            amount: null,
+            currency: 'MYR',
+          },
+          isNew: true, // Flag to indicate this is a new agreement for V3
+        };
+
+        setSelectedAgreement(newAgreement);
+        editDialog.onTrue();
+        return;
+      }
+      enqueueSnackbar('Pitch must be approved before setting agreement', { variant: 'info' });
+      return;
+    }
+
+    // For V2 campaigns (admin-created), use existing logic
     const agreement = agreements.find((a) => a.userId === creator.userId);
 
     if (!loadingAgreements && (!agreement || agreement.isSent)) {
@@ -370,7 +401,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               loading={loading.value}
               onClick={() => {
                 if (campaign?.campaignCredits) {
-                  ugcVidesoModal.onTrue();
+                  ugcVideosModal.onTrue();
                 } else {
                   console.log('ASDS');
                 }
@@ -718,12 +749,14 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         : renderShortlistFormModalWithoutCampaignCredits}
 
       <AssignUGCVideoModal
-        dialog={ugcVidesoModal.value}
-        onClose={ugcVidesoModal.onFalse}
+        dialog={ugcVideosModal.value}
+        onClose={ugcVideosModal.onFalse}
         credits={campaign?.campaignCredits ?? 0}
         campaignId={campaign.id}
         modalClose={modal.onFalse}
         creditsLeft={ugcLeft}
+        campaign={campaign}
+        campaignMutate={campaignMutate}
       />
 
       <CampaignAgreementEdit

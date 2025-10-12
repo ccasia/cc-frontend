@@ -19,7 +19,6 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-
 import { formatCurrencyAmount } from 'src/utils/currency';
 
 import NewLabel from 'src/components/styleLabel/styleLabel';
@@ -76,7 +75,10 @@ const InvoiceLists = ({ invoices }) => {
                 </TableCell>
                 <TableCell>{dayjs(invoice.issued).format('LL')}</TableCell>
                 <TableCell>
-                  {formatCurrencyAmount(invoice.amount, invoice.campaign?.creatorAgreement?.[0]?.currency || 'MYR')}
+                  {formatCurrencyAmount(
+                    invoice.amount,
+                    invoice.campaign?.creatorAgreement?.[0]?.currency || 'MYR'
+                  )}
                 </TableCell>
                 <TableCell>
                   <NewLabel

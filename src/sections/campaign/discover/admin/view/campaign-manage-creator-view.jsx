@@ -623,6 +623,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                                       ? '#D4321C'
                                       : status === 'PENDING_REVIEW'
                                         ? '#FFC702'
+                                        : status === 'SENT_TO_ADMIN'
+                                          ? '#F6C000'
                                         : status === 'IN_PROGRESS'
                                           ? '#8A5AFE'
                                           : '#8E8E93',
@@ -635,6 +637,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                                       ? '#D4321C'
                                       : status === 'PENDING_REVIEW'
                                         ? '#FFC702'
+                                        : status === 'SENT_TO_ADMIN'
+                                          ? '#F6C000'
                                         : status === 'IN_PROGRESS'
                                           ? '#8A5AFE'
                                           : '#8E8E93'
@@ -648,6 +652,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                                       ? '#D4321C'
                                       : status === 'PENDING_REVIEW'
                                         ? '#FFC702'
+                                        : status === 'SENT_TO_ADMIN'
+                                          ? '#F6C000'
                                         : status === 'IN_PROGRESS'
                                           ? '#8A5AFE'
                                           : '#8E8E93'
@@ -655,7 +661,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                               fontWeight: 600,
                             }}
                           >
-                            {status === 'NOT_STARTED' ? 'NOT STARTED' : status.replace(/_/g, ' ')}
+                            {status === 'NOT_STARTED' ? 'NOT STARTED' : 
+                             status === 'SENT_TO_ADMIN' ? 'CLIENT FEEDBACK' : 
+                             status.replace(/_/g, ' ')}
                           </Typography>
                         </Box>
                       </Box>

@@ -93,7 +93,9 @@ const UploadPhotoModal = ({
         });
       }
 
-      await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+      // V3 submissions removed - using V2 endpoint only
+      const endpoint = endpoints.submission.creator.draftSubmission;
+      await axiosInstance.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -106,7 +108,9 @@ const UploadPhotoModal = ({
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaignId));
     } catch (error) {
-      enqueueSnackbar('Failed to upload photos', { variant: 'error' });
+      console.error('Photo upload error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to upload photos';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
     }
   });
 

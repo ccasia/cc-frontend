@@ -7,16 +7,14 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { pink, deepOrange } from '@mui/material/colors';
+import { deepOrange } from '@mui/material/colors';
 import {
   Box,
   Menu,
   Stack,
-  Alert,
   Radio,
   Button,
   Dialog,
-  Avatar,
   MenuItem,
   Container,
   Typography,
@@ -31,6 +29,8 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
@@ -57,11 +57,18 @@ import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
+import ActivateCampaignDialog from '../activate-campaign-dialog';
+// import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
+import CampaignDetailContentClient from '../campaign-detail-content-client';
+import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
+import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
+import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
+import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -76,11 +83,21 @@ if (typeof window !== 'undefined') {
   }
 }
 
+const clientAllowedTabs = [
+  'overview',
+  'campaign-content',
+  'creator-master-list',
+  'deliverables',
+  'submissions-v4',
+  'analytics',
+];
+
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
   // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
@@ -93,7 +110,6 @@ const CampaignDetailView = ({ id }) => {
   const [password, setPassword] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const { user } = useAuthContext();
-  const [openDialog, setOpenDialog] = useState(false);
   const [pages, setPages] = useState(0);
   const lgUp = useResponsive('up', 'lg');
   const templateModal = useBoolean();
@@ -101,10 +117,10 @@ const CampaignDetailView = ({ id }) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const menuOpen = Boolean(menuAnchorEl);
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
+  const [activateDialogOpen, setActivateDialogOpen] = useState(false);
+  const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
 
   const open = Boolean(anchorEl);
-
-  console.log('campaignid', campaign);
 
   // Add this campaign to tabs and save to localStorage
   // useEffect(() => {
@@ -141,17 +157,15 @@ const CampaignDetailView = ({ id }) => {
   //   }
   // }, [id, campaign]);
 
-  useEffect(() => {
-    if (!campaignLoading && campaign) {
-      if (!campaign?.agreementTemplate) {
-        setOpenDialog(true);
-      } else {
-        setOpenDialog(false);
-      }
-    }
-  }, [campaign, campaignLoading]);
-
   const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
+
+  // Fetch V3 pitches for client-created campaigns to get accurate count
+  const { pitches: v3Pitches } = useGetV3Pitches(
+    campaign?.origin === 'CLIENT' ? campaign?.id : null
+  );
+  const { data: v3Agreements } = useGetAgreements(
+    campaign?.origin === 'CLIENT' ? campaign?.id : null
+  );
 
   const generateNewAgreement = useCallback(async (template) => {
     try {
@@ -187,30 +201,98 @@ const CampaignDetailView = ({ id }) => {
     localStorage.getItem('campaigndetail') || 'campaign-content'
   );
 
-  // Define allowed tabs for client users
-  const clientAllowedTabs = ['overview', 'campaign-content', 'creator-master-list', 'deliverables', 'analytics'];
-  
   // Check if user is client
-  const isClient = user?.role === 'Client' || user?.admin?.role?.name === 'Client';
+  const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
+
+  // Check user roles for activation
+  const isCSL = user?.admin?.role?.name === 'CSL';
+  const isSuperAdmin = user?.admin?.mode === 'god';
+  const isAdmin = user?.role === 'admin';
+  const isCSM =
+    user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
+
+  // Check if user can perform initial activation (CSL or Superadmin)
+  const canInitialActivate = isCSL || isSuperAdmin;
+
+  // Check if user can complete activation (CSM/Admin assigned to campaign)
+  const isUserAssignedToCampaign = campaign?.campaignAdmin?.some(
+    (admin) =>
+      admin.adminId === user?.id ||
+      admin.admin?.userId === user?.id ||
+      admin.admin?.user?.id === user?.id
+  );
+  const canCompleteActivation =
+    (isCSM || isAdmin) &&
+    campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
+    isUserAssignedToCampaign;
 
   // Check if current tab is valid for client users
   useEffect(() => {
-    if (isClient && !clientAllowedTabs.includes(currentTab)) {
+    let allowedTabs = [...clientAllowedTabs];
+    
+    if (campaign?.submissionVersion === 'v4') {
+      // For v4: allow submissions-v4, remove deliverables
+      allowedTabs = allowedTabs.filter(tab => tab !== 'deliverables');
+    } else {
+      // For non-v4: allow deliverables, remove submissions-v4
+      allowedTabs = allowedTabs.filter(tab => tab !== 'submissions-v4');
+    }
+    
+    if (isClient && !allowedTabs.includes(currentTab)) {
       // If client user tries to access a restricted tab, redirect to overview
       setCurrentTab('overview');
       localStorage.setItem('campaigndetail', 'overview');
     }
-  }, [currentTab, isClient]);
+  }, [currentTab, isClient, campaign?.submissionVersion]);
 
-  const handleChangeTab = useCallback((event, newValue) => {
-    // For client users, only allow specific tabs
-    if (isClient && !clientAllowedTabs.includes(newValue)) {
-      return;
-    }
-    
-    localStorage.setItem('campaigndetail', newValue);
-    setCurrentTab(newValue);
-  }, [isClient, clientAllowedTabs]);
+  const handleChangeTab = useCallback(
+    (event, newValue) => {
+      // For client users, only allow specific tabs
+      let allowedTabs = [...clientAllowedTabs];
+      
+      if (campaign?.submissionVersion === 'v4') {
+        // For v4: allow submissions-v4, remove deliverables
+        allowedTabs = allowedTabs.filter(tab => tab !== 'deliverables');
+      } else {
+        // For non-v4: allow deliverables, remove submissions-v4
+        allowedTabs = allowedTabs.filter(tab => tab !== 'submissions-v4');
+      }
+      
+      if (isClient && !allowedTabs.includes(newValue)) {
+        return;
+      }
+
+      localStorage.setItem('campaigndetail', newValue);
+      setCurrentTab(newValue);
+    },
+    [isClient, campaign?.submissionVersion]
+  );
+
+  // Allow children to request tab switching via a window event
+  useEffect(() => {
+    const handleSwitchTab = (e) => {
+      const targetTab = e?.detail;
+      if (typeof targetTab !== 'string') return;
+      
+      let allowedTabs = [...clientAllowedTabs];
+      
+      if (campaign?.submissionVersion === 'v4') {
+        // For v4: allow submissions-v4, remove deliverables
+        allowedTabs = allowedTabs.filter(tab => tab !== 'deliverables');
+      } else {
+        // For non-v4: allow deliverables, remove submissions-v4
+        allowedTabs = allowedTabs.filter(tab => tab !== 'submissions-v4');
+      }
+      
+      if (isClient && !allowedTabs.includes(targetTab)) return;
+
+      localStorage.setItem('campaigndetail', targetTab);
+
+      setCurrentTab(targetTab);
+    };
+    window.addEventListener('switchCampaignTab', handleSwitchTab);
+    return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
+  }, [isClient, campaign?.submissionVersion]);
 
   const icons = (tab) => {
     if (tab.value === 'pitch' && campaign?.pitch?.length > 0) {
@@ -222,8 +304,13 @@ const CampaignDetailView = ({ id }) => {
       return <Label>{campaign?.shortlisted?.length}</Label>;
     }
 
-    if (tab.value === 'agreement' && campaign?.creatorAgreement?.length) {
-      return <Label>{campaign?.creatorAgreement?.length}</Label>;
+    if (tab.value === 'agreement') {
+      const v3Count = Array.isArray(v3Agreements) ? v3Agreements.length : 0;
+      const v2Count = Array.isArray(campaign?.creatorAgreement)
+        ? campaign.creatorAgreement.length
+        : 0;
+      const count = campaign?.origin === 'CLIENT' ? v3Count : v2Count;
+      return count > 0 ? <Label>{count}</Label> : null;
     }
 
     return '';
@@ -260,50 +347,70 @@ const CampaignDetailView = ({ id }) => {
           }}
         >
           {/* Show different tabs based on user role */}
-          {(user?.role === 'Client' || user?.admin?.role?.name === 'Client' ? 
-            // Client user tabs (no Pitches tab)
-            [
-              { label: 'Overview', value: 'overview' },
-              { label: 'Campaign Details', value: 'campaign-content' },
-              { label: 'Creator Master List', value: 'creator-master-list' },
-              { label: 'Creator Deliverables', value: 'deliverables' },
-              { label: 'Campaign Analytics', value: 'analytics' },
-            ] 
-            : 
-            // Admin/other user tabs
-            [
-            { label: 'Overview', value: 'overview' },
-            { label: 'Campaign Details', value: 'campaign-content' },
-            // { label: 'Client Info', value: 'client' },
-            {
-              label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
-              value: 'pitch',
-            },
-            {
-              label: `Shortlisted Creators (${campaign?.shortlisted?.length || 0})`,
-              value: 'creator',
-            },
-            {
-              label: `Agreements (${campaign?.creatorAgreement?.length || 0})`,
-              value: 'agreement',
-            },
-            {
-                label: 'Creator Deliverables',
-              value: 'deliverables',
-            },
-            {
-              label: 'Campaign Analytics',
-              value: 'analytics'
-            },
-            {
-              label: `Invoices (${campaignInvoices?.length || 0})`,
-              value: 'invoices',
-            },
-            // {
-            //   label: `Logistics (${campaign?.logistic?.length || 0})`,
-            //   value: 'logistics',
-            // },
-            ]
+          {(user?.role === 'client' || user?.admin?.role?.name === 'client'
+            ? // Client user tabs (no Pitches tab)
+              [
+                { label: 'Overview', value: 'overview' },
+                { label: 'Campaign Details', value: 'campaign-content' },
+                { label: 'Creator Master List', value: 'creator-master-list' },
+                ...(campaign?.submissionVersion === 'v4' 
+                  ? [{ label: 'Creator Submissions', value: 'submissions-v4' }] 
+                  : [{ label: 'Creator Deliverables', value: 'deliverables' }]
+                ),
+                { label: 'Campaign Analytics', value: 'analytics' },
+              ]
+            : // Admin/other user tabs
+              [
+                { label: 'Overview', value: 'overview' },
+                { label: 'Campaign Details', value: 'campaign-content' },
+                // { label: 'Client Info', value: 'client' },
+                {
+                  label: `Creator Master List (${
+                    campaign?.origin === 'CLIENT'
+                      ? v3Pitches?.filter(
+                          (p) =>
+                            p.status === 'PENDING_REVIEW' ||
+                            p.status === 'SENT_TO_CLIENT' ||
+                            p.status === 'undecided' ||
+                            p.status === 'APPROVED' ||
+                            p.status === 'AGREEMENT_PENDING' ||
+                            p.status === 'AGREEMENT_SUBMITTED'
+                        ).length || 0
+                      : campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0
+                  })`,
+                  value: 'pitch',
+                },
+                {
+                  label: `Confirmed Creators (${campaign?.shortlisted?.length || 0})`,
+                  value: 'creator',
+                },
+                {
+                  label: `Agreements (${campaign?.origin === 'CLIENT' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : campaign?.creatorAgreement?.length || 0})`,
+                  value: 'agreement',
+                },
+                ...(campaign?.submissionVersion === 'v4' 
+                  ? [{
+                      label: 'Creator Submissions',
+                      value: 'submissions-v4',
+                    }] 
+                  : [{
+                      label: 'Creator Deliverables',
+                      value: 'deliverables',
+                    }]
+                ),
+                {
+                  label: 'Campaign Analytics',
+                  value: 'analytics',
+                },
+                {
+                  label: `Invoices (${campaignInvoices?.length || 0})`,
+                  value: 'invoices',
+                },
+                // {
+                //   label: `Logistics (${campaign?.logistic?.length || 0})`,
+                //   value: 'logistics',
+                // },
+              ]
           ).map((tab) => (
             <Button
               key={tab.value}
@@ -415,35 +522,49 @@ const CampaignDetailView = ({ id }) => {
   }, [loading, copyDialog, campaignMutate, campaign]);
 
   const renderTabContent = {
-    overview: isClient 
-      ? <CampaignOverviewClient campaign={campaign} />
-      : <CampaignOverview campaign={campaign} />,
-    'campaign-content': isClient 
-      ? <CampaignDetailContentClient campaign={campaign} />
-      : <CampaignDetailContent campaign={campaign} />, 
-    'creator-master-list': <CampaignCreatorMasterListClient campaign={campaign} />, 
-    creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />, 
-    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />, 
-    logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />, 
-    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />, 
+    overview: isClient ? (
+      <CampaignOverviewClient campaign={campaign} onUpdate={campaignMutate} />
+    ) : (
+      <CampaignOverview campaign={campaign} onUpdate={campaignMutate} />
+    ),
+    'campaign-content': isClient ? (
+      <CampaignDetailContentClient campaign={campaign} />
+    ) : (
+      <CampaignDetailContent campaign={campaign} />
+    ),
+    'creator-master-list': (
+      <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
+    ),
+    creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
+    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
+    logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />,
+    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
-    pitch: (
-      <CampaignDetailPitch
-        pitches={campaign?.pitch}
-        timeline={campaign?.campaignTimeline?.find((elem) => elem.name === 'Open For Pitch')}
-        timelines={campaign?.campaignTimeline?.filter(
-          (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
-        )}
-        shortlisted={campaign?.shortlisted}
-        campaignMutate={campaignMutate}
-        campaign={campaign}
-      />
+    pitch:
+      campaign?.origin === 'CLIENT' ? (
+        <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} />
+      ) : (
+        <CampaignDetailPitch
+          pitches={campaign?.pitch}
+          timeline={campaign?.campaignTimeline?.find((elem) => elem.name === 'Open For Pitch')}
+          timelines={campaign?.campaignTimeline?.filter(
+            (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
+          )}
+          shortlisted={campaign?.shortlisted}
+          campaignMutate={campaignMutate}
+          campaign={campaign}
+        />
+      ),
+    submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
+    deliverables: isClient ? (
+      <CampaignCreatorDeliverablesClient campaign={campaign} campaignMutate={campaignMutate} />
+    ) : (
+      <CampaignCreatorDeliverables campaign={campaign} />
     ),
-    submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />, 
-    deliverables: <CampaignCreatorDeliverables campaign={campaign} />, 
-    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />
+    'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} />,
+    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />,
   };
 
   const formatDate = (dateString) => {
@@ -525,64 +646,6 @@ const CampaignDetailView = ({ id }) => {
     </Dialog>
   );
 
-  const agreementDialogContainer = (
-    <Dialog
-      maxWidth="sm"
-      fullWidth
-      sx={{
-        '& .MuiDialog-paper': {
-          p: 2,
-        },
-      }}
-      open={openDialog}
-    >
-      <Alert variant="outlined" severity="warning">
-        Agreement missing
-      </Alert>
-      <Box
-        sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: 'repeat(2,1fr)' } }}
-        gap={2}
-        mt={2}
-        minHeight={200}
-      >
-        <Button
-          sx={{
-            border: 1,
-            borderColor: '#EBEBEB',
-            borderRadius: 2,
-            p: 2,
-            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-          }}
-          onClick={pdfModal.onTrue}
-        >
-          <Stack alignItems="center" spacing={1}>
-            <Avatar sx={{ bgcolor: deepOrange[500] }}>
-              <Iconify icon="mingcute:file-new-fill" width={20} />
-            </Avatar>
-            Create new template
-          </Stack>
-        </Button>
-        <Button
-          sx={{
-            border: 1,
-            borderColor: '#EBEBEB',
-            borderRadius: 2,
-            p: 2,
-            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-          }}
-          onClick={templateModal.onTrue}
-        >
-          <Stack alignItems="center" spacing={1}>
-            <Avatar sx={{ bgcolor: pink[500] }}>
-              <Iconify icon="ooui:reference-existing-ltr" width={20} />
-            </Avatar>
-            Link to an existing template
-          </Stack>
-        </Button>
-      </Box>
-    </Dialog>
-  );
-
   const handleMenuOpen = (event) => {
     setMenuAnchorEl(event.currentTarget);
   };
@@ -594,6 +657,14 @@ const CampaignDetailView = ({ id }) => {
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
+  );
+
+  const isPendingCampaign = useMemo(
+    () =>
+      campaign?.status === 'SCHEDULED' ||
+      campaign?.status === 'PENDING_CSM_REVIEW' ||
+      campaign?.status === 'PENDING_ADMIN_ACTIVATION',
+    [campaign]
   );
 
   return (
@@ -712,65 +783,108 @@ const CampaignDetailView = ({ id }) => {
               {/* Only show action buttons for non-client users */}
               {!isClient && (
                 <>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={
-                  <img
-                    src="/assets/icons/overview/editButton.svg"
-                    alt="edit"
-                    style={{
-                      width: 20,
-                      height: 20,
-                      opacity: isDisabled ? 0.3 : 1,
-                    }}
-                  />
-                }
-                onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
-                disabled={isDisabled}
-                sx={{
-                  height: 42,
-                  borderRadius: 1,
-                  color: '#221f20',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid #e7e7e7',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  px: 2,
-                  whiteSpace: 'nowrap',
-                  '&:hover': {
-                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                  },
-                }}
-              >
-                Edit Details
-              </Button>
+                  {isPendingCampaign ? (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
+                      onClick={() => {
+                        // For superadmin on pending campaigns: use initial activation (admin assignment only)
+                        if (
+                          canInitialActivate &&
+                          (campaign?.status === 'PENDING_CSM_REVIEW' ||
+                            campaign?.status === 'SCHEDULED')
+                        ) {
+                          console.log('Opening InitialActivateDialog (admin assignment only)');
+                          setInitialActivateDialogOpen(true);
+                        } else {
+                          // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
+                          console.log('Opening ActivateDialog (full setup)');
+                          setActivateDialogOpen(true);
+                        }
+                      }}
+                      disabled={isDisabled}
+                      sx={{
+                        height: 42,
+                        borderRadius: 1,
+                        color: 'white',
+                        backgroundColor: '#1340ff',
+                        border: '1px solid #1340ff',
+                        borderBottom: '4px solid #0e2fd6',
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                        px: 2,
+                        whiteSpace: 'nowrap',
+                        '&:hover': {
+                          backgroundColor: '#0e2fd6',
+                        },
+                      }}
+                    >
+                      Activate Campaign
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={
+                        <img
+                          src="/assets/icons/overview/editButton.svg"
+                          alt="edit"
+                          style={{
+                            width: 20,
+                            height: 20,
+                            opacity: isDisabled ? 0.3 : 1,
+                          }}
+                        />
+                      }
+                      onClick={() =>
+                        router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))
+                      }
+                      disabled={isDisabled}
+                      sx={{
+                        height: 42,
+                        borderRadius: 1,
+                        color: '#221f20',
+                        border: '1px solid #e7e7e7',
+                        borderBottom: '4px solid #e7e7e7',
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                        px: 2,
+                        whiteSpace: 'nowrap',
+                        '&:hover': {
+                          backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                        },
+                      }}
+                    >
+                      Edit Details
+                    </Button>
+                  )}
 
-              <Box
-                onClick={handleMenuOpen}
-                component="button"
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: 42,
-                  width: 42,
-                  borderRadius: 1,
-                  color: '#221f20',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid #e7e7e7',
-                  padding: 0,
-                  backgroundColor: 'transparent',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                    border: '1px solid #231F20',
-                    borderBottom: '4px solid #231F20',
-                  },
-                }}
-              >
-                <Iconify icon="eva:more-horizontal-fill" width={24} />
-              </Box>
+                  <Box
+                    onClick={handleMenuOpen}
+                    component="button"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: 42,
+                      width: 42,
+                      borderRadius: 1,
+                      color: '#221f20',
+                      border: '1px solid #e7e7e7',
+                      borderBottom: '4px solid #e7e7e7',
+                      padding: 0,
+                      backgroundColor: 'transparent',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                        border: '1px solid #231F20',
+                        borderBottom: '4px solid #231F20',
+                      },
+                    }}
+                  >
+                    <Iconify icon="eva:more-horizontal-fill" width={24} />
+                  </Box>
                 </>
               )}
 
@@ -851,8 +965,6 @@ const CampaignDetailView = ({ id }) => {
 
       {copyDialogContainer}
 
-      {!isDisabled && agreementDialogContainer}
-
       <PDFEditorModal
         open={pdfModal.value}
         onClose={pdfModal.onFalse}
@@ -871,6 +983,18 @@ const CampaignDetailView = ({ id }) => {
         open={campaignLogIsOpen}
         campaign={campaign}
         onClose={() => setCampaignLogIsOpen(false)}
+      />
+
+      <ActivateCampaignDialog
+        open={activateDialogOpen}
+        onClose={() => setActivateDialogOpen(false)}
+        campaignId={id}
+      />
+
+      <InitialActivateCampaignDialog
+        open={initialActivateDialogOpen}
+        onClose={() => setInitialActivateDialogOpen(false)}
+        campaignId={id}
       />
 
       <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>

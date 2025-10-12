@@ -76,6 +76,8 @@ const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, o
         submission: agreement?.submission,
       });
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
+      // Also refresh V3 pitches data to update pitch status
+      mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
       // Also refresh submissions data
       if (onApprove) {
         onApprove();
@@ -102,6 +104,8 @@ const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, o
       });
 
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
+      // Also refresh V3 pitches data to update pitch status
+      mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
       // Also refresh submissions data
       if (onReject) {
         onReject();
@@ -229,11 +233,7 @@ const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, o
         </DialogTitle>
         <DialogContent>
           <iframe
-            src={
-              isPendingReview && agreement?.submission?.content
-                ? agreement?.submission?.content
-                : url
-            }
+            src={agreement?.submission?.content || url}
             title="Agreement"
             style={{ width: '100%', height: '600px', border: 'none' }}
           />
@@ -412,10 +412,6 @@ const CampaignAgreements = ({ campaign }) => {
   const { user } = useAuthContext();
 
   const smUp = useResponsive('up', 'sm');
-  const mdUp = useResponsive('up', 'md');
-
-  const pendingCount = data?.filter((item) => !item.isSent).length || 0;
-  const sentCount = data?.filter((item) => item.isSent).length || 0;
 
   // Toggle sort direction
   const handleToggleSort = () => {
@@ -506,13 +502,13 @@ const CampaignAgreements = ({ campaign }) => {
   const handleSendAgreement = async (item) => {
     try {
       // Use different endpoints based on whether it's a resend or initial send
-      const endpoint = item.isSent ? endpoints.campaign.resendAgreement : endpoints.campaign.sendAgreement;
-      
+      const endpoint = item.isSent
+        ? endpoints.campaign.resendAgreement
+        : endpoints.campaign.sendAgreement;
+
       // For resend, use different payload format
-      const payload = item.isSent 
-        ? { userId: item.userId, campaignId: item.campaignId }
-        : item;
-      
+      const payload = item.isSent ? { userId: item.userId, campaignId: item.campaignId } : item;
+
       const res = await axiosInstance.patch(endpoint, payload);
       mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
       enqueueSnackbar(res?.data?.message);
@@ -532,6 +528,8 @@ const CampaignAgreements = ({ campaign }) => {
         submission: item?.submission,
       });
       mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
+      // Also refresh V3 pitches data to update pitch status
+      mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
       // Also refresh submissions data
       const response = await axiosInstance.get(
         `${endpoints.submission.root}?campaignId=${campaign.id}`
@@ -563,6 +561,8 @@ const CampaignAgreements = ({ campaign }) => {
       });
 
       mutate(endpoints.campaign.creatorAgreement(selectedAgreement?.campaignId));
+      // Also refresh V3 pitches data to update pitch status
+      mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
       // Also refresh submissions data
       const response = await axiosInstance.get(
         `${endpoints.submission.root}?campaignId=${campaign.id}`
@@ -972,17 +972,11 @@ const CampaignAgreements = ({ campaign }) => {
                         <>
                           {item?.user?.shortlisted[0]?.currency ? (
                             <>
-                              {item?.user?.shortlisted[0]?.currency === 'SGD' && '$ '}
-                              {item?.user?.shortlisted[0]?.currency === 'MYR' && 'RM '}
-                              {item?.user?.shortlisted[0]?.currency === 'AUD' && '$ '}
-                              {item?.user?.shortlisted[0]?.currency === 'JPY' && '¥ '}
-                              {item?.user?.shortlisted[0]?.currency === 'IDR' && 'Rp '}
-                              {item?.user?.shortlisted[0]?.currency === 'USD' && '$ '}
-                              {parseFloat(item?.amount?.toString()) ||
-                                parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}
+                              {`${item?.user?.shortlisted[0]?.currency} 
+                              ${parseFloat(item?.amount?.toString()) || parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}`}
                             </>
                           ) : (
-                            <>{`RM ${parseFloat(item?.amount?.toString())}`}</>
+                            <>{`${item?.user?.shortlisted[0]?.currency} ${parseFloat(item?.amount?.toString())}`}</>
                           )}
                         </>
                       ) : (
@@ -1232,6 +1226,8 @@ const CampaignAgreements = ({ campaign }) => {
         agreement={selectedAgreement}
         campaign={campaign}
         onApprove={async () => {
+          // Refresh V3 pitches data to update pitch status
+          mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
           // Refresh submissions data
           const response = await axiosInstance.get(
             `${endpoints.submission.root}?campaignId=${campaign.id}`
@@ -1239,6 +1235,8 @@ const CampaignAgreements = ({ campaign }) => {
           setSubmissions(response.data);
         }}
         onReject={async () => {
+          // Refresh V3 pitches data to update pitch status
+          mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
           // Refresh submissions data
           const response = await axiosInstance.get(
             `${endpoints.submission.root}?campaignId=${campaign.id}`
