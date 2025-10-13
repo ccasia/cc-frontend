@@ -1,20 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
-import {
-  Box,
-  Grid,
-  Stack,
-  alpha,
-  Button,
-  useTheme,
-  CardMedia,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Stack, Button, useTheme, Typography, useMediaQuery, CardMedia } from '@mui/material';
 
 import { useMediaKitResponsive } from 'src/hooks/use-media-kit-responsive';
 
@@ -367,6 +356,123 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
   );
 };
 
+TopContentGrid.propTypes = {
+  topContents: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      cover_image_url: PropTypes.string,
+      title: PropTypes.string,
+      video_description: PropTypes.string,
+    })
+  ).isRequired,
+  tiktokUsername: PropTypes.string,
+};
+
+const TikTokVideoCard = ({ content, index }) => {
+  const [embedFailed, setEmbedFailed] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const handleEmbedError = () => {
+    console.log('Embed failed for video:', content?.id);
+    setEmbedFailed(true);
+  };
+
+  if (embedFailed || !content?.embed_link) {
+    // Fallback to cover image display
+    return (
+      <Box
+        sx={{
+          position: 'relative',
+          height: 600,
+          overflow: 'hidden',
+          borderRadius: 3,
+          cursor: 'pointer',
+          '&:hover .image': {
+            scale: 1.05,
+          },
+        }}
+      >
+        <CardMedia
+          component="Box"
+          className="image"
+          alt={`Top content ${index + 1}`}
+          sx={{
+            height: 1,
+            transition: 'all .2s linear',
+            objectFit: 'cover',
+            background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.cover_image_url}) lightgray 50% / cover no-repeat`,
+          }}
+        />
+
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '100%',
+            color: 'white',
+            p: isMobile ? 2 : 1.5,
+            px: 3,
+            borderRadius: '0 0 24px 24px',
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 5,
+              WebkitBoxOrient: 'vertical',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              mb: 1,
+            }}
+          >
+            {content?.title || content?.video_description || 'TikTok Video'}
+          </Typography>
+
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Iconify icon="material-symbols:favorite-outline" width={20} />
+              <Typography variant="subtitle2">{formatNumber(content?.like_count)}</Typography>
+            </Stack>
+
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Iconify icon="iconamoon:comment" width={20} />
+              <Typography variant="subtitle2">{formatNumber(content?.comment_count)}</Typography>
+            </Stack>
+          </Stack>
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box height={600} borderRadius={2} overflow="hidden">
+      <iframe
+        src={content?.embed_link}
+        title="tiktok"
+        style={{ height: '100%', width: '100%' }}
+        onError={handleEmbedError}
+        onLoad={(e) => {
+          // Additional check for TikTok embed errors
+          const iframe = e.target;
+          setTimeout(() => {
+            try {
+              // If iframe has no content or shows TikTok error, fallback
+              if (!iframe.contentDocument) {
+                handleEmbedError();
+              }
+            } catch (error) {
+              // Cross-origin restrictions - expected
+            }
+          }, 2000);
+        }}
+      />
+    </Box>
+  );
+};
+
 TikTokVideoCard.propTypes = {
   content: PropTypes.shape({
     id: PropTypes.string,
@@ -378,18 +484,6 @@ TikTokVideoCard.propTypes = {
     comment_count: PropTypes.number,
   }),
   index: PropTypes.number.isRequired,
-};
-
-TopContentGrid.propTypes = {
-  topContents: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      cover_image_url: PropTypes.string,
-      title: PropTypes.string,
-      video_description: PropTypes.string,
-    })
-  ).isRequired,
-  tiktokUsername: PropTypes.string,
 };
 
 const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
@@ -408,7 +502,7 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
     sortedVideosLength: realTopContent?.length,
     isArray: Array.isArray(realTopContent),
     userConnected: !!user?.creator?.isTiktokConnected,
-    tiktokUsername: tiktokUsername,
+    tiktokUsername,
     firstVideo: realTopContent?.[0]
       ? {
           id: realTopContent[0].id,
