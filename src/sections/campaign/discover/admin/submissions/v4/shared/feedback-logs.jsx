@@ -218,8 +218,7 @@ export default function FeedbackLogs({ submission, onClose }) {
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: { xs: 0.3, sm: 0.5 },
+                      flexWrap: 'wrap',  
                       mb: { xs: 0.5, sm: 1 }
                     }}>
                       <Chip
@@ -282,7 +281,7 @@ export default function FeedbackLogs({ submission, onClose }) {
                               cursor: 'pointer',
                               '& .MuiChip-label': {
                                 px: 0.5,
-                                fontSize: 14,
+                                fontSize: 12,
                                 fontWeight: 'bold'
                               }
                             }}

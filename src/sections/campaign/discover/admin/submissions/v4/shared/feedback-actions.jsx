@@ -65,11 +65,7 @@ export default function FeedbackActions({
               sx={{
                 ...BUTTON_STYLES.base,
                 ...BUTTON_STYLES.warning,
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                py: { xs: 0.6, sm: 0.75 },
-                px: { xs: 1.5, sm: 2 },
-                minHeight: { xs: 32, sm: 36 },
-                width: { xs: '100%', sm: 'auto' }
+                mt: { xs: 1, sm: 0 }
               }}
             >
               {loading ? 'Processing...' : 'Request a Change'}
@@ -80,8 +76,9 @@ export default function FeedbackActions({
             <Box 
               display="flex" 
               flexDirection={{ xs: 'column', sm: 'row' }} 
-              width="100%" 
-              gap={{ xs: 0.8, sm: 1 }} 
+              width="100%"
+              gap={{ xs: 0.8, sm: 1 }}
+              mb={1}
               justifyContent="flex-end"
             >
               <Button
@@ -96,11 +93,6 @@ export default function FeedbackActions({
                 sx={{
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.secondary,
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  py: { xs: 0.6, sm: 0.75 },
-                  px: { xs: 1.5, sm: 2 },
-                  minHeight: { xs: 32, sm: 36 },
-                  width: { xs: '100%', sm: 'auto' }
                 }}
               >
                 Cancel Change Request
@@ -114,11 +106,6 @@ export default function FeedbackActions({
                 sx={{
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.warning,
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  py: { xs: 0.6, sm: 0.75 },
-                  px: { xs: 1.5, sm: 2 },
-                  minHeight: { xs: 32, sm: 36 },
-                  width: { xs: '100%', sm: 'auto' }
                 }}
               >
                 {loading ? 'Processing...' : !isClient ? 'Send to Creator' : 'Request a Change'}
@@ -136,11 +123,6 @@ export default function FeedbackActions({
               sx={{
                 ...BUTTON_STYLES.base,
                 ...BUTTON_STYLES.success,
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                py: { xs: 0.6, sm: 0.75 },
-                px: { xs: 1.5, sm: 2 },
-                minHeight: { xs: 32, sm: 36 },
-                width: { xs: '100%', sm: 'auto' }
               }}
             >
               {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
@@ -171,7 +153,6 @@ export default function FeedbackActions({
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center', 
-                      gap: { xs: 0.3, sm: 0.5 },
                       flexWrap: 'wrap'
                     }}>
                       <Chip
@@ -187,7 +168,8 @@ export default function FeedbackActions({
                         size="small"
                         variant="outlined"
                         color="warning"
-                      />                        {hasMultipleReasons && (
+                      />                        
+                      {hasMultipleReasons && (
                           <Tooltip
                             title={
                               <Box sx={{ maxWidth: 500 }}>
@@ -239,7 +221,7 @@ export default function FeedbackActions({
                                 cursor: 'pointer',
                                 '& .MuiChip-label': {
                                   px: 0.5,
-                                  fontSize: 14,
+                                  fontSize: 12,
                                   fontWeight: 'bold'
                                 }
                               }}
@@ -267,10 +249,6 @@ export default function FeedbackActions({
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.warning,
                   width: { xs: '100%', sm: 140 },
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  py: { xs: 0.6, sm: 0.75 },
-                  px: { xs: 1.5, sm: 2 },
-                  minHeight: { xs: 32, sm: 36 }
                 }}
               >
                 {loading ? 'Processing...' : 'Send to Creator'}
@@ -308,7 +286,7 @@ export default function FeedbackActions({
             style={{ 
               backgroundColor: '#fff', 
               borderRadius: 10, 
-              marginTop: { xs: 4, sm: 5 } 
+              marginTop: { xs: 4, sm: 5 }
             }} 
             hiddenLabel 
             size='small'
@@ -318,18 +296,12 @@ export default function FeedbackActions({
               value={reasons}
               onChange={(e) => setReasons(e.target.value)}
               displayEmpty
-              sx={{
-                '& .MuiSelect-select': {
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  py: { xs: 1, sm: 1.5 },
-                }
-              }}
               renderValue={(selected) => {
                 if (selected.length === 0) {
                   return (
                     <span style={{ 
                       color: '#999', 
-                      fontSize: window.innerWidth < 600 ? '0.875rem' : '1rem' 
+                      fontSize: 14,
                     }}>
                       Change Request Reasons
                     </span>
@@ -339,21 +311,14 @@ export default function FeedbackActions({
                   <Box sx={{ 
                     display: 'flex', 
                     flexWrap: 'wrap', 
-                    gap: { xs: 0.3, sm: 0.5 }, 
-                    maxHeight: { xs: 30, sm: 35 } 
+                    maxHeight: 35,
+                    gap: { xs: 0.3, sm: 0.5 },
                   }}>
                     {selected.map((value) => (
                       <Chip 
                         key={value} 
                         label={value} 
                         size="small"
-                        sx={{
-                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                          height: { xs: 20, sm: 24 },
-                          '& .MuiChip-label': {
-                            px: { xs: 0.5, sm: 0.75 }
-                          }
-                        }}
                       />
                     ))}
                   </Box>
@@ -364,10 +329,6 @@ export default function FeedbackActions({
                 <MenuItem 
                   key={option} 
                   value={option}
-                  sx={{ 
-                    fontSize: { xs: '0.875rem', sm: '1rem' },
-                    py: { xs: 0.8, sm: 1 }
-                  }}
                 >
                   {option}
                 </MenuItem>
@@ -437,9 +398,9 @@ export default function FeedbackActions({
         })()}
 
         <TextField
-          style={{ marginTop: { xs: 4, sm: 5 } }}
+          style={{ marginTop: !isClient ? 4 : 8 }}
           multiline
-          rows={{ xs: 2, sm: 3 }}
+          rows={3}
           fullWidth
           placeholder="Insert optional comments here"
           value={feedback}
@@ -447,13 +408,9 @@ export default function FeedbackActions({
           sx={{
             '& .MuiOutlinedInput-root': {
               bgcolor: 'background.paper',
-              fontSize: { xs: '0.875rem', sm: '1rem' },
             },
-            '& .MuiInputBase-input': {
-              py: { xs: 1, sm: 1.5 },
-            }
           }}
-          size='small'
+          size='large'
         />
 
         <ConfirmDialogV2
