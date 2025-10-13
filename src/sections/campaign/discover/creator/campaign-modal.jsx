@@ -241,20 +241,6 @@ const CampaignModal = ({
     };
   }, [campaign?.name]);
 
-  console.log('--- CAMPAIGN MODAL DEBUG ---');
-  console.log('Campaign ID:', campaign?.id);
-  console.log('User Pitches Array:', user?.pitch);
-  console.log('Found existingPitch:', existingPitch);
-  console.log('Value of hasPitched:', hasPitched);
-  console.log('Value of hasDraft:', hasDraft);
-
-  if (existingPitch) {
-    console.log(
-      'Status of existingPitch:',
-      existingPitch.status,
-      `(Is it === 'approved'? ${existingPitch.status === 'approved'})`
-    );
-  }
   return (
     <Dialog
       open={open}
