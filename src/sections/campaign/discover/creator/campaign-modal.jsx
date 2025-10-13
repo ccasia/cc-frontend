@@ -241,6 +241,20 @@ const CampaignModal = ({
     };
   }, [campaign?.name]);
 
+  console.log('--- CAMPAIGN MODAL DEBUG ---');
+  console.log('Campaign ID:', campaign?.id);
+  console.log('User Pitches Array:', user?.pitch);
+  console.log('Found existingPitch:', existingPitch);
+  console.log('Value of hasPitched:', hasPitched);
+  console.log('Value of hasDraft:', hasDraft);
+
+  if (existingPitch) {
+    console.log(
+      'Status of existingPitch:',
+      existingPitch.status,
+      `(Is it === 'approved'? ${existingPitch.status === 'approved'})`
+    );
+  }
   return (
     <Dialog
       open={open}
@@ -580,72 +594,74 @@ const CampaignModal = ({
                       Pitch Now
                     </Button>
                   </Stack>
-                ) : (hasPitched && existingPitch.status === 'approved') || isShortlisted ? (
-                  <Button
-                    variant="contained"
-                    onClick={() => handleManageClick(campaign.id)}
-                    sx={{
-                      backgroundColor: '#203ff5',
-                      color: 'white',
-                      borderBottom: '4px solid #102387 !important',
-                      border: 'none',
-                      '&:hover': {
-                        backgroundColor: '#1935dd',
-                        borderBottom: '4px solid #102387 !important',
-                      },
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      padding: { xs: '4px 12px', sm: '6px 18px' },
-                      minWidth: '100px',
-                      height: '42px',
-                      boxShadow: 'none',
-                      textTransform: 'none',
-                    }}
-                  >
-                    Manage
-                  </Button>
-                ) : hasPitched && existingPitch.status === 'rejected' ? (
-                  <Chip
-                    icon={<Iconify icon="mdi:close-circle" />}
-                    label="Rejected"
-                    sx={{
-                      bgcolor: 'error.light',
-                      color: 'error.dark',
-                      fontWeight: 700,
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      height: '42px',
-                      minWidth: '100px',
-                      '& .MuiChip-icon': {
-                        fontSize: 20,
-                        color: 'error.dark',
-                      },
-                      '&:hover': { bgcolor: 'error.light' },
-                      px: 2,
-                    }}
-                  />
                 ) : hasPitched ? (
-                  <Chip
-                    icon={<Iconify icon="mdi:clock" />}
-                    label="In Review"
-                    sx={{
-                      bgcolor: 'background.paper',
-                      color: 'text.primary',
-                      fontWeight: 600,
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      height: '42px',
-                      minWidth: '100px',
-                      border: '1px solid',
-                      borderBottom: '4px solid',
-                      borderColor: 'divider',
-                      '& .MuiChip-icon': {
-                        fontSize: 18,
-                        color: '#f7c945',
-                      },
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                      px: 1,
-                    }}
-                  />
+                  existingPitch.status === 'APPROVED' ? (
+                    <Button
+                      variant="contained"
+                      onClick={() => handleManageClick(campaign.id)}
+                      sx={{
+                        backgroundColor: '#203ff5',
+                        color: 'white',
+                        borderBottom: '4px solid #102387 !important',
+                        border: 'none',
+                        '&:hover': {
+                          backgroundColor: '#1935dd',
+                          borderBottom: '4px solid #102387 !important',
+                        },
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        padding: { xs: '4px 12px', sm: '6px 18px' },
+                        minWidth: '100px',
+                        height: '42px',
+                        boxShadow: 'none',
+                        textTransform: 'none',
+                      }}
+                    >
+                      Manage
+                    </Button>
+                  ) : existingPitch.status === 'REJECTED' ? (
+                    <Chip
+                      icon={<Iconify icon="mdi:close-circle" />}
+                      label="Rejected"
+                      sx={{
+                        bgcolor: 'error.light',
+                        color: 'error.dark',
+                        fontWeight: 700,
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        height: '42px',
+                        minWidth: '100px',
+                        '& .MuiChip-icon': {
+                          fontSize: 20,
+                          color: 'error.dark',
+                        },
+                        '&:hover': { bgcolor: 'error.light' },
+                        px: 2,
+                      }}
+                    />
+                  ) : (
+                    <Chip
+                      icon={<Iconify icon="mdi:clock" />}
+                      label="In Review"
+                      sx={{
+                        bgcolor: 'background.paper',
+                        color: 'text.primary',
+                        fontWeight: 600,
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        height: '42px',
+                        minWidth: '100px',
+                        border: '1px solid',
+                        borderBottom: '4px solid',
+                        borderColor: 'divider',
+                        '& .MuiChip-icon': {
+                          fontSize: 18,
+                          color: '#f7c945',
+                        },
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
+                        px: 1,
+                      }}
+                    />
+                  )
                 ) : hasDraft ? (
                   <Button
                     variant="contained"
