@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 import { useForm } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -77,9 +78,10 @@ const ClientProfile = () => {
             designation: pic.designation || override?.designation || '',
           };
           setCompanyData(company);
-          try { localStorage.setItem('client_company_logo', company.logo || ''); } catch {}
+          try {
+            localStorage.setItem('client_company_logo', company.logo || '');
+          } catch {}
           reset({
-            companyLogo: company.logo || {},
             companyName: company.name || '',
             companyAddress: company.address || '',
             picEmail: mergedPic.email,
@@ -98,12 +100,18 @@ const ClientProfile = () => {
         const userData = userResponse.data.user;
         const allCompanies = await axiosInstance.get(`${endpoints.company.getAll}`);
         const companies = allCompanies.data;
-        const matchedCompany = companies.find((co) =>
-          co.email?.toLowerCase() === userData.email?.toLowerCase() ||
-          co.pic?.some((p) => p.email?.toLowerCase() === userData.email?.toLowerCase())
+        const matchedCompany = companies.find(
+          (co) =>
+            co.email?.toLowerCase() === userData.email?.toLowerCase() ||
+            co.pic?.some((p) => p.email?.toLowerCase() === userData.email?.toLowerCase())
         );
         if (matchedCompany) {
-          const pic = matchedCompany.pic?.find((p) => p.email?.toLowerCase() === userData.email?.toLowerCase()) || matchedCompany.pic?.[0] || {};
+          const pic =
+            matchedCompany.pic?.find(
+              (p) => p.email?.toLowerCase() === userData.email?.toLowerCase()
+            ) ||
+            matchedCompany.pic?.[0] ||
+            {};
           const override = loadPicOverride();
           const mergedPic = {
             name: pic.name || override?.name || '',
@@ -111,9 +119,10 @@ const ClientProfile = () => {
             designation: pic.designation || override?.designation || '',
           };
           setCompanyData(matchedCompany);
-          try { localStorage.setItem('client_company_logo', matchedCompany.logo || ''); } catch {}
+          try {
+            localStorage.setItem('client_company_logo', matchedCompany.logo || '');
+          } catch {}
           reset({
-            companyLogo: matchedCompany.logo || {},
             companyName: matchedCompany.name || '',
             companyAddress: matchedCompany.address || '',
             picEmail: mergedPic.email,
@@ -139,7 +148,6 @@ const ClientProfile = () => {
               picDesignation: override.designation || '',
               picMobile: user?.phoneNumber || '',
               country: user?.country || '',
-              companyLogo: null,
             });
           }
         }
@@ -215,7 +223,11 @@ const ClientProfile = () => {
       };
       reset(submittedValues);
       // Persist PIC fields locally so they show after reopening
-      savePicOverride({ name: submittedValues.picName, email: submittedValues.picEmail, designation: submittedValues.picDesignation });
+      savePicOverride({
+        name: submittedValues.picName,
+        email: submittedValues.picEmail,
+        designation: submittedValues.picDesignation,
+      });
 
       // Background refresh to sync with server without wiping PIC fields
       try {
@@ -224,7 +236,9 @@ const ClientProfile = () => {
           const company = check.data.company;
           const pic = company.pic?.[0] || {};
           setCompanyData(company);
-          try { localStorage.setItem('client_company_logo', company.logo || ''); } catch {}
+          try {
+            localStorage.setItem('client_company_logo', company.logo || '');
+          } catch {}
           reset({
             companyLogo: company.logo || submittedValues.companyLogo,
             companyName: company.name || submittedValues.companyName,
@@ -236,7 +250,6 @@ const ClientProfile = () => {
             picDesignation: submittedValues.picDesignation || pic.designation || '',
             picMobile: submittedValues.picMobile || user?.phoneNumber || '',
             country: company.country || submittedValues.country,
-            companyLogo: company.logo || submittedValues.companyLogo,
           });
         }
       } catch {}
