@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   Box,
@@ -11,6 +11,7 @@ import {
   Table,
   Button,
   Avatar,
+  Tooltip,
   TableRow,
   TextField,
   TableBody,
@@ -19,8 +20,6 @@ import {
   Typography,
   InputAdornment,
   TableContainer,
-  CircularProgress,
-  Tooltip,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -111,9 +110,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     if (campaign.origin === 'CLIENT' && v3Pitches) {
       return (
         v3Pitches
-          .map((pitch) => {
-
-            return {
+          .map((pitch) => ({
               id: pitch.userId || pitch.id,
               user: {
                 id: pitch.userId || pitch.user?.id,
@@ -137,8 +134,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               // Include rejection reason fields for CLIENT REASON display
               rejectionReason: pitch.rejectionReason,
               customRejectionText: pitch.customRejectionText,
-            };
-          })
+            }))
           // FIX: Only require user to exist, not user.creator
           .filter((creator) => !!creator.user && !!creator.user.id)
       );

@@ -1,13 +1,12 @@
 import dayjs from 'dayjs';
-import React from 'react';
 import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
 
 import { Box, Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
 
 import Label from 'src/components/label';
-import { formatCurrencyAmount } from 'src/utils/currency';
 
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
   const [value, setValue] = useState(invoice?.status);

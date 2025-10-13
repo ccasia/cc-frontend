@@ -18,8 +18,8 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
-import { RouterLink } from 'src/routes/components';
 import { useRouter } from 'src/routes/hooks';
+import { RouterLink } from 'src/routes/components';
 
 import useGetOverview from 'src/hooks/use-get-overview';
 
@@ -29,7 +29,6 @@ import resources from 'src/assets/resources/blogs.json';
 import Image from 'src/components/image';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import { endpoints } from 'src/utils/axios';
 
 const Overview = () => {
   const { user } = useAuthContext();

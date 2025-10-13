@@ -1,11 +1,16 @@
-import { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import { Box, Stack, Button, TextField, Typography, Link, Select, MenuItem, FormControl, Chip } from '@mui/material';
+import { useState, useCallback } from 'react';
+
+import { Box, Link, Chip, Stack, Button, Select, MenuItem, TextField, Typography, FormControl } from '@mui/material';
+
 import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
-import { BUTTON_STYLES } from './submission-styles';
+
 import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
+
+import { BUTTON_STYLES } from './submission-styles';
 import { posting_link_options_changes } from '../constants';
 
 export default function PostingLinkSection({ submission, onUpdate, onViewLogs }) {
@@ -363,7 +368,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
 
         {/* Posting link added by admin */}
         {!submission.content && (
-          <Box display={'flex'} flexDirection={'column'}>
+          <Box display="flex" flexDirection="column">
             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography variant="caption" fontWeight="bold" color="#636366">
                 Posting Link
@@ -401,7 +406,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                 },
               }}
             />
-            <Box alignSelf={'flex-end'}>
+            <Box alignSelf="flex-end">
               <Button
                 variant="contained"
                 color="success"
@@ -424,7 +429,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
           open={confirmDialogOpen}
           onClose={() => setConfirmDialogOpen(false)}
           title={actionText}
-          isPosting={true}
+          isPosting
           emoji="🙂‍↕️"
           content=""
           action={

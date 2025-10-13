@@ -1,11 +1,11 @@
-import useSWR, { mutate } from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect, useMemo } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -13,15 +13,13 @@ import {
   Grid,
   Link,
   Card,
-  Chip,
   Stack,
   Button,
   Avatar,
+  TextField,
   Typography,
   CardContent,
-  Tooltip,
 } from '@mui/material';
-import { TextField } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -35,12 +33,12 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 
-const RawFootageCard = ({ 
-  rawFootageItem, 
-  index, 
-  submission, 
-  onRawFootageClick, 
-  handleApprove, 
+const RawFootageCard = ({
+  rawFootageItem,
+  index,
+  submission,
+  onRawFootageClick,
+  handleApprove,
   handleRequestChange,
   selectedRawFootagesForChange,
   handleRawFootageSelection,
@@ -68,15 +66,32 @@ const RawFootageCard = ({
   const [editingFeedbackId, setEditingFeedbackId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
   const [localFeedbackUpdates, setLocalFeedbackUpdates] = useState({});
-  const getFeedbackLocalKey = (fb) => (fb?.id ? fb.id : `${fb?.displayContent || fb?.content || ''}|${fb?.createdAt || ''}`);
-  const getRawFeedbackLocalKey = (raw, fb) => `${raw?.id || 'no-raw-id'}|${getFeedbackLocalKey(fb)}`;
+  const getFeedbackLocalKey = (fb) =>
+    fb?.id ? fb.id : `${fb?.displayContent || fb?.content || ''}|${fb?.createdAt || ''}`;
+  const getRawFeedbackLocalKey = (raw, fb) =>
+    `${raw?.id || 'no-raw-id'}|${getFeedbackLocalKey(fb)}`;
   const [lastEdited, setLastEdited] = useState(null); // { rawId, feedbackId, content, at }
 
   // Persist overrides across remounts
   const STORAGE_KEY = 'cc_raw_feedback_overrides_v1';
-  const loadOverrides = () => { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; } catch { return {}; } };
-  const saveOverrides = (overrides) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); } catch {} };
-  useEffect(() => { const stored = loadOverrides(); if (stored && Object.keys(stored).length) setLocalFeedbackUpdates((prev) => ({ ...stored, ...prev })); }, []);
+  const loadOverrides = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  };
+  const saveOverrides = (overrides) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+    } catch {}
+  };
+  useEffect(() => {
+    const stored = loadOverrides();
+    if (stored && Object.keys(stored).length)
+      setLocalFeedbackUpdates((prev) => ({ ...stored, ...prev }));
+  }, []);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -93,7 +108,10 @@ const RawFootageCard = ({
     },
   });
 
-  const { formState: { isSubmitting }, reset } = formMethods;
+  const {
+    formState: { isSubmitting },
+    reset,
+  } = formMethods;
 
   // Reset form when cardType changes
   useEffect(() => {
@@ -115,12 +133,15 @@ const RawFootageCard = ({
   const hasRevisionRequested = currentStatus === 'CHANGES_REQUIRED';
   const isClientFeedback = false; // V2 doesn't have client feedback
   const isChangesRequired = currentStatus === 'CHANGES_REQUIRED';
-  
+
   // For V2: Show approval buttons when raw footage status is PENDING and not approved
   // A raw footage is considered "not approved" if its status is not APPROVED
   const isRawFootageNotApproved = currentStatus !== 'APPROVED';
   // Use raw footage's own status instead of submission status since V3 submission data is not available
-  const isPendingReview = (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') && isRawFootageNotApproved && !hasRevisionRequested;
+  const isPendingReview =
+    (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') &&
+    isRawFootageNotApproved &&
+    !hasRevisionRequested;
 
   // Get feedback for this specific raw footage
   const getRawFootageFeedback = () => {
@@ -129,13 +150,15 @@ const RawFootageCard = ({
     if (Array.isArray(rawFootageItem.individualFeedback)) {
       combined.push(...rawFootageItem.individualFeedback);
     }
-    
+
     const allFeedbacks = [
       ...(deliverables?.submissions?.flatMap((sub) => sub.feedback) || []),
       ...(submission?.feedback || []),
     ];
 
-    const rawFootageSpecificFeedback = allFeedbacks.filter((fb) => fb?.rawFootageToUpdate?.includes(rawFootageItem.id));
+    const rawFootageSpecificFeedback = allFeedbacks.filter((fb) =>
+      fb?.rawFootageToUpdate?.includes(rawFootageItem.id)
+    );
     combined.push(...rawFootageSpecificFeedback);
 
     // If we have a last edited feedback for this raw footage, update or inject it before normalization
@@ -144,7 +167,15 @@ const RawFootageCard = ({
       if (idx !== -1) {
         combined[idx] = { ...combined[idx], content: lastEdited.content };
       } else {
-        combined.unshift({ id: lastEdited.feedbackId, content: lastEdited.content, createdAt: new Date().toISOString(), admin: { name: 'Admin' }, type: 'COMMENT', rawFootageToUpdate: [rawFootageItem.id], reasons: [] });
+        combined.unshift({
+          id: lastEdited.feedbackId,
+          content: lastEdited.content,
+          createdAt: new Date().toISOString(),
+          admin: { name: 'Admin' },
+          type: 'COMMENT',
+          rawFootageToUpdate: [rawFootageItem.id],
+          reasons: [],
+        });
       }
     }
 
@@ -156,10 +187,18 @@ const RawFootageCard = ({
         const override = localFeedbackUpdates[fb.id] ?? localFeedbackUpdates[compositeKey];
         const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
         const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
-        const fallbackDisplay = hasText ? fb.content : (hasReasons ? `Reasons: ${fb.reasons.join(', ')}` : '');
-        return { ...fb, displayContent: override ?? fallbackDisplay, isOverridden: Boolean(override) };
+        const fallbackDisplay = hasText
+          ? fb.content
+          : hasReasons
+            ? `Reasons: ${fb.reasons.join(', ')}`
+            : '';
+        return {
+          ...fb,
+          displayContent: override ?? fallbackDisplay,
+          isOverridden: Boolean(override),
+        };
       })
-      .filter((fb) => fb && (fb.displayContent.trim().length > 0));
+      .filter((fb) => fb && fb.displayContent.trim().length > 0);
 
     const seen = new Set();
     const deduped = [];
@@ -189,14 +228,14 @@ const RawFootageCard = ({
   // V2 Individual handlers
   const handleIndividualApproveClick = async () => {
     if (!onIndividualApprove) return;
-    
+
     setIsProcessing(true);
     try {
       const values = formMethods.getValues();
       await onIndividualApprove(rawFootageItem.id, values.feedback);
       // Optimistically update local status - for V2 show APPROVED
       setLocalStatus('APPROVED');
-      
+
       // SWR revalidation for immediate UI update
       if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
       if (deliverables?.submissionMutate) await deliverables.submissionMutate();
@@ -209,14 +248,14 @@ const RawFootageCard = ({
 
   const handleIndividualRequestClick = async () => {
     if (!onIndividualRequestChange) return;
-    
+
     setIsProcessing(true);
     try {
       const values = formMethods.getValues();
       await onIndividualRequestChange(rawFootageItem.id, values.feedback);
       // Optimistically update local status
       setLocalStatus('CHANGES_REQUIRED');
-      
+
       // SWR revalidation for immediate UI update
       if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
       if (deliverables?.submissionMutate) await deliverables.submissionMutate();
@@ -291,7 +330,7 @@ const RawFootageCard = ({
                 textTransform: 'none',
               }}
             >
-              {'APPROVED'}
+              APPROVED
             </Box>
           </Box>
         );
@@ -398,12 +437,28 @@ const RawFootageCard = ({
                       variant="contained"
                       size="small"
                       loading={isSubmitting || isProcessing}
-                      sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
+                      sx={{
+                        bgcolor: '#FFFFFF',
+                        color: '#1ABF66',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1.15,
+                        py: 1.2,
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        height: '40px',
+                        textTransform: 'none',
+                        flex: 1,
+                      }}
                     >
                       Approve
                     </LoadingButton>
                   </>
-                ) : false && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
+                ) : false &&
+                  userRole === 'client' &&
+                  (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
                   <Stack direction="row" spacing={1.5}>
                     <Button
                       onClick={() => handleClientReject && handleClientReject(rawFootageItem.id)}
@@ -466,7 +521,21 @@ const RawFootageCard = ({
                     variant="contained"
                     size="small"
                     loading={isSubmitting || isProcessing}
-                    sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
+                    sx={{
+                      bgcolor: '#FFFFFF',
+                      color: '#1ABF66',
+                      border: '1.5px solid',
+                      borderColor: '#e7e7e7',
+                      borderBottom: 3,
+                      borderBottomColor: '#e7e7e7',
+                      borderRadius: 1.15,
+                      py: 1.2,
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      height: '40px',
+                      textTransform: 'none',
+                      flex: 1,
+                    }}
                   >
                     Approve
                   </LoadingButton>
@@ -615,8 +684,6 @@ const RawFootageCard = ({
             }}
           />
 
-
-
           {isChangesRequired && (
             <Box
               sx={{
@@ -626,11 +693,7 @@ const RawFootageCard = ({
                 zIndex: 1,
               }}
             >
-              <Iconify
-                icon="si:warning-fill"
-                width={20}
-                color="warning.main"
-              />
+              <Iconify icon="si:warning-fill" width={20} color="warning.main" />
             </Box>
           )}
 
@@ -643,11 +706,7 @@ const RawFootageCard = ({
                 zIndex: 1,
               }}
             >
-              <Iconify
-                icon="lets-icons:check-fill"
-                width={20}
-                color="success.main"
-              />
+              <Iconify icon="lets-icons:check-fill" width={20} color="success.main" />
             </Box>
           )}
 
@@ -679,9 +738,7 @@ const RawFootageCard = ({
       </Box>
 
       {/* Form Section */}
-      <CardContent sx={{ pt: 0 }}>
-        {renderFormContent()}
-      </CardContent>
+      <CardContent sx={{ pt: 0 }}>{renderFormContent()}</CardContent>
 
       {/* Feedback History */}
       {rawFootageFeedback.length > 0 && (
@@ -702,10 +759,7 @@ const RawFootageCard = ({
                 }}
               >
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                  <Avatar
-                    src={feedback.admin?.photoURL}
-                    sx={{ width: 20, height: 20 }}
-                  />
+                  <Avatar src={feedback.admin?.photoURL} sx={{ width: 20, height: 20 }} />
                   <Typography variant="caption" sx={{ fontWeight: 600 }}>
                     {feedback.admin?.name || 'Admin'}
                   </Typography>
@@ -714,7 +768,7 @@ const RawFootageCard = ({
                   </Typography>
                   {/* Removed Change Request chip from display comments */}
                 </Stack>
-                
+
                 {editingFeedbackId === feedback.id ? (
                   <Stack spacing={1} sx={{ mb: 1 }}>
                     <TextField
@@ -729,22 +783,40 @@ const RawFootageCard = ({
                         size="small"
                         variant="outlined"
                         onClick={async () => {
-                          const ok = await handleAdminEditFeedback(rawFootageItem.id, feedback.id, editingContent);
+                          const ok = await handleAdminEditFeedback(
+                            rawFootageItem.id,
+                            feedback.id,
+                            editingContent
+                          );
                           if (ok) {
                             const compositeKey = getRawFeedbackLocalKey(rawFootageItem, feedback);
                             const idKey = feedback?.id;
                             setLocalFeedbackUpdates((prev) => {
-                              const next = { ...prev, ...(idKey ? { [idKey]: editingContent } : {}), [compositeKey]: editingContent };
+                              const next = {
+                                ...prev,
+                                ...(idKey ? { [idKey]: editingContent } : {}),
+                                [compositeKey]: editingContent,
+                              };
                               const stored = loadOverrides();
                               saveOverrides({ ...stored, ...next });
                               return next;
                             });
-                            setLastEdited({ rawId: rawFootageItem.id, feedbackId: feedback.id, content: editingContent, at: Date.now() });
-                            
+                            setLastEdited({
+                              rawId: rawFootageItem.id,
+                              feedbackId: feedback.id,
+                              content: editingContent,
+                              at: Date.now(),
+                            });
+
                             // Defer SWR revalidation slightly to avoid UI jump
                             setTimeout(() => {
-                              try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}
-                              try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch {}
+                              try {
+                                if (deliverables?.deliverableMutate)
+                                  deliverables.deliverableMutate();
+                              } catch {}
+                              try {
+                                if (deliverables?.submissionMutate) deliverables.submissionMutate();
+                              } catch {}
                             }, 500);
                           }
                           setEditingFeedbackId(null);
@@ -808,13 +880,15 @@ const RawFootageCard = ({
                     </Stack>
                   </Stack>
                 ) : (
-                <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-                  {(lastEdited && lastEdited.rawId === rawFootageItem.id && lastEdited.feedbackId === feedback.id)
-                    ? lastEdited.content
-                    : (localFeedbackUpdates[feedback.id]
-                        ?? localFeedbackUpdates[getRawFeedbackLocalKey(rawFootageItem, feedback)]
-                        ?? (feedback.displayContent || feedback.content))}
-                </Typography>
+                  <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
+                    {lastEdited &&
+                    lastEdited.rawId === rawFootageItem.id &&
+                    lastEdited.feedbackId === feedback.id
+                      ? lastEdited.content
+                      : (localFeedbackUpdates[feedback.id] ??
+                        localFeedbackUpdates[getRawFeedbackLocalKey(rawFootageItem, feedback)] ??
+                        (feedback.displayContent || feedback.content))}
+                  </Typography>
                 )}
 
                 {feedback.reasons && feedback.reasons.length > 0 && (
@@ -850,72 +924,82 @@ const RawFootageCard = ({
                 )}
 
                 {/* Admin buttons for client feedback */}
-                {false && userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (feedback.type === 'REASON' || feedback.type === 'COMMENT') && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && ( // V3 removed
-                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => {
-                        setEditingFeedbackId(feedback.id);
-                        setEditingContent(feedback.content || '');
-                      }}
-                      sx={{
-                        fontSize: '0.75rem',
-                        py: 0.8,
-                        px: 1.5,
-                        minWidth: 'auto',
-                        border: '1.5px solid #e0e0e0',
-                        borderBottom: '3px solid #e0e0e0',
-                        color: '#000000',
-                        fontWeight: 600,
-                        borderRadius: '8px',
-                        textTransform: 'none',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
+                {false &&
+                  userRole === 'admin' &&
+                  (feedback.admin?.admin?.role?.name === 'client' ||
+                    feedback.admin?.admin?.role?.name === 'Client') &&
+                  (feedback.type === 'REASON' || feedback.type === 'COMMENT') &&
+                  (submission?.status === 'SENT_TO_ADMIN' ||
+                    submission?.status === 'CLIENT_FEEDBACK') && ( // V3 removed
+                    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          setEditingFeedbackId(feedback.id);
+                          setEditingContent(feedback.content || '');
+                        }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          border: '1.5px solid #e0e0e0',
+                          borderBottom: '3px solid #e0e0e0',
                           color: '#000000',
-                          borderColor: '#d0d0d0',
-                          transform: 'translateY(-1px)',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                        },
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                                              onClick={async () => {
-                        if (handleAdminSendToCreator) {
-                            await handleAdminSendToCreator(rawFootageItem.id, feedback.id, setLocalStatus);
-                        }
-                      }}
-                      sx={{
-                        fontSize: '0.75rem',
-                        py: 0.8,
-                        px: 1.5,
-                        minWidth: 'auto',
-                        bgcolor: '#ffffff',
-                        border: '1.5px solid #e0e0e0',
-                        borderBottom: '3px solid #e0e0e0',
-                        color: '#1ABF66',
-                        fontWeight: 600,
-                        borderRadius: '8px',
-                        textTransform: 'none',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          bgcolor: '#f0f9f0',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                            color: '#000000',
+                            borderColor: '#d0d0d0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          },
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={async () => {
+                          if (handleAdminSendToCreator) {
+                            await handleAdminSendToCreator(
+                              rawFootageItem.id,
+                              feedback.id,
+                              setLocalStatus
+                            );
+                          }
+                        }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          bgcolor: '#ffffff',
+                          border: '1.5px solid #e0e0e0',
+                          borderBottom: '3px solid #e0e0e0',
                           color: '#1ABF66',
-                          borderColor: '#169c52',
-                          transform: 'translateY(-1px)',
-                          boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
-                        },
-                      }}
-                    >
-                      Send to Creator
-                    </Button>
-                  </Stack>
-                )}
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f0f9f0',
+                            color: '#1ABF66',
+                            borderColor: '#169c52',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                          },
+                        }}
+                      >
+                        Send to Creator
+                      </Button>
+                    </Stack>
+                  )}
               </Box>
             ))}
           </Stack>
@@ -958,12 +1042,12 @@ RawFootageCard.propTypes = {
   setParentSentToCreatorItems: PropTypes.func,
 };
 
-const RawFootages = ({ 
-  campaign, 
-  submission, 
-  deliverables, 
-  onVideoClick, 
-  onSubmit, 
+const RawFootages = ({
+  campaign,
+  submission,
+  deliverables,
+  onVideoClick,
+  onSubmit,
   isDisabled,
   // V2 individual handlers
   onIndividualApprove,
@@ -996,21 +1080,21 @@ const RawFootages = ({
   // Check if all client feedback has been sent to creator
   const allFeedbackSentToCreator = useMemo(() => {
     if (!deliverables?.rawFootages) return true;
-    
+
     const itemsWithClientFeedback = new Set();
-    
+
     // Check raw footage
-    deliverables.rawFootages?.forEach(footage => {
+    deliverables.rawFootages?.forEach((footage) => {
       if (footage.status === 'CLIENT_FEEDBACK' || footage.status === 'SENT_TO_ADMIN') {
         itemsWithClientFeedback.add(`rawFootage_${footage.id}`);
       }
     });
-    
+
     // If no items have client feedback, consider it all sent
     if (itemsWithClientFeedback.size === 0) return true;
-    
+
     // Check if all items with client feedback have been sent to creator
-    return Array.from(itemsWithClientFeedback).every(itemKey => sentToCreatorItems.has(itemKey));
+    return Array.from(itemsWithClientFeedback).every((itemKey) => sentToCreatorItems.has(itemKey));
   }, [deliverables, sentToCreatorItems]);
 
   const clientRequestForm = useForm({
@@ -1118,12 +1202,16 @@ const RawFootages = ({
 
   const handleClientApprove = async (mediaId, clientFeedback) => {
     try {
-      console.log(`🔍 handleClientApprove called with mediaId: ${mediaId}, clientFeedback: "${clientFeedback}", type: ${typeof clientFeedback}`);
-      
+      console.log(
+        `🔍 handleClientApprove called with mediaId: ${mediaId}, clientFeedback: "${clientFeedback}", type: ${typeof clientFeedback}`
+      );
+
       // If clientFeedback is provided (including empty string), it means the client already made the API call
       // So we don't need to make another API call, just refresh the data
       if (clientFeedback !== undefined) {
-        console.log(`🔍 Client already approved with feedback: "${clientFeedback}", just refreshing data - NO SECOND API CALL`);
+        console.log(
+          `🔍 Client already approved with feedback: "${clientFeedback}", just refreshing data - NO SECOND API CALL`
+        );
         // Revalidate with server data
         await mutateSubmission();
         if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
@@ -1132,13 +1220,15 @@ const RawFootages = ({
       }
 
       // This is admin simulation (no client feedback provided)
-      console.log(`🔍 Admin simulating client approval with hardcoded feedback: "Approved by client"`);
-      
+      console.log(
+        `🔍 Admin simulating client approval with hardcoded feedback: "Approved by client"`
+      );
+
       // Optimistic update - immediately update the UI
-      const optimisticData = deliverables?.rawFootages?.map(rawFootage => 
+      const optimisticData = deliverables?.rawFootages?.map((rawFootage) =>
         rawFootage.id === mediaId ? { ...rawFootage, status: 'APPROVED' } : rawFootage
       );
-      
+
       if (deliverables?.deliverableMutate) {
         deliverables.deliverableMutate(
           { ...deliverables, rawFootages: optimisticData },
@@ -1147,9 +1237,9 @@ const RawFootages = ({
       }
 
       console.log('V3 submissions removed - API call disabled');
-      
+
       enqueueSnackbar('Client approved successfully!', { variant: 'success' });
-      
+
       // Revalidate with server data
       await mutateSubmission();
       if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
@@ -1162,7 +1252,11 @@ const RawFootages = ({
     }
   };
 
-  const handleClientReject = async (mediaId, feedback = 'Changes requested by client', reasons = ['Client rejection']) => {
+  const handleClientReject = async (
+    mediaId,
+    feedback = 'Changes requested by client',
+    reasons = ['Client rejection']
+  ) => {
     try {
       console.log('V3 submissions removed - API call disabled');
       enqueueSnackbar('Client rejected successfully!', { variant: 'warning' });
@@ -1174,8 +1268,9 @@ const RawFootages = ({
   };
 
   // Check if all raw footages are already approved
-  const allRawFootagesApproved = deliverables?.rawFootages?.length > 0 && 
-    deliverables.rawFootages.every(f => f.status === 'APPROVED');
+  const allRawFootagesApproved =
+    deliverables?.rawFootages?.length > 0 &&
+    deliverables.rawFootages.every((f) => f.status === 'APPROVED');
 
   // Determine layout type
   const hasRawFootages = deliverables?.rawFootages?.length > 0;
@@ -1194,16 +1289,22 @@ const RawFootages = ({
       console.log('V3 submissions removed - API call disabled');
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
       // Non-blocking SWR revalidation
-      try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}
-      try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch {}
-      try { if (mutateSubmission) mutateSubmission(); } catch {}
+      try {
+        if (deliverables?.deliverableMutate) deliverables.deliverableMutate();
+      } catch {}
+      try {
+        if (deliverables?.submissionMutate) deliverables.submissionMutate();
+      } catch {}
+      try {
+        if (mutateSubmission) mutateSubmission();
+      } catch {}
       try {
         mutate(
-          (key) => typeof key === 'string' && (
-            key.includes('feedback') || 
-            key.includes('submission') || 
-            key.includes('deliverables')
-          ),
+          (key) =>
+            typeof key === 'string' &&
+            (key.includes('feedback') ||
+              key.includes('submission') ||
+              key.includes('deliverables')),
           undefined,
           { revalidate: true }
         );
@@ -1217,12 +1318,10 @@ const RawFootages = ({
   };
 
   const handleAdminSendToCreator = async (mediaId, feedbackId, onStatusUpdate) => {
-
-
     try {
       // Track this item as sent to creator (use local state already present)
       const itemKey = `rawFootage_${mediaId}`;
-      setSentToCreatorItems(prev => new Set([...prev, itemKey]));
+      setSentToCreatorItems((prev) => new Set([...prev, itemKey]));
 
       const requestData = {
         submissionId: submission.id,
@@ -1237,53 +1336,58 @@ const RawFootages = ({
       console.log('V3 submissions removed - API call disabled');
       console.log('✅ Successfully sent to creator');
       console.log('Feedback sent to creator successfully!');
-        
-        // Check if all feedback has been sent (including the current item)
-        const itemsWithClientFeedback = new Set();
-        deliverables.rawFootages?.forEach(footage => {
-          if (footage.status === 'CLIENT_FEEDBACK' || footage.status === 'SENT_TO_ADMIN') {
-            itemsWithClientFeedback.add(`rawFootage_${footage.id}`);
-          }
-        });
-        
-        const allItemsSent = itemsWithClientFeedback.size === 0 || 
-          Array.from(itemsWithClientFeedback).every(itemKey => 
-            sentToCreatorItems.has(itemKey) || itemKey === `rawFootage_${mediaId}`
-          );
-        
-        // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
-        const allClientFeedbackProcessed = checkAllClientFeedbackProcessed();
-        
-        // Only update submission status to CHANGES_REQUIRED if all feedback has been sent AND all CLIENT_FEEDBACK items processed
-        if (allItemsSent && allClientFeedbackProcessed) {
-          console.log('✅ All feedback sent to creator and all CLIENT_FEEDBACK items processed - updating submission status to CHANGES_REQUIRED');
-          if (onStatusUpdate) {
-            onStatusUpdate('CHANGES_REQUIRED');
-          }
-        } else {
-          console.log('⏳ Not all feedback sent or CLIENT_FEEDBACK items still exist - keeping current submission status');
-        }
 
-        // Refresh data
-        if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
-        if (deliverables?.submissionMutate) await deliverables.submissionMutate();
-        
-        // Additional SWR invalidation to ensure all related data is refreshed
-        try {
-          await mutate(
-            (key) => typeof key === 'string' && (
-              key.includes('feedback') || 
-              key.includes('submission') || 
-              key.includes('deliverables')
-            ),
-            undefined,
-            { revalidate: true }
-          );
-        } catch (mutateError) {
-          console.log('SWR mutate error (non-critical):', mutateError);
+      // Check if all feedback has been sent (including the current item)
+      const itemsWithClientFeedback = new Set();
+      deliverables.rawFootages?.forEach((footage) => {
+        if (footage.status === 'CLIENT_FEEDBACK' || footage.status === 'SENT_TO_ADMIN') {
+          itemsWithClientFeedback.add(`rawFootage_${footage.id}`);
         }
-        
-        return true;
+      });
+
+      const allItemsSent =
+        itemsWithClientFeedback.size === 0 ||
+        Array.from(itemsWithClientFeedback).every(
+          (itemKey) => sentToCreatorItems.has(itemKey) || itemKey === `rawFootage_${mediaId}`
+        );
+
+      // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
+      const allClientFeedbackProcessed = checkAllClientFeedbackProcessed();
+
+      // Only update submission status to CHANGES_REQUIRED if all feedback has been sent AND all CLIENT_FEEDBACK items processed
+      if (allItemsSent && allClientFeedbackProcessed) {
+        console.log(
+          '✅ All feedback sent to creator and all CLIENT_FEEDBACK items processed - updating submission status to CHANGES_REQUIRED'
+        );
+        if (onStatusUpdate) {
+          onStatusUpdate('CHANGES_REQUIRED');
+        }
+      } else {
+        console.log(
+          '⏳ Not all feedback sent or CLIENT_FEEDBACK items still exist - keeping current submission status'
+        );
+      }
+
+      // Refresh data
+      if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
+      if (deliverables?.submissionMutate) await deliverables.submissionMutate();
+
+      // Additional SWR invalidation to ensure all related data is refreshed
+      try {
+        await mutate(
+          (key) =>
+            typeof key === 'string' &&
+            (key.includes('feedback') ||
+              key.includes('submission') ||
+              key.includes('deliverables')),
+          undefined,
+          { revalidate: true }
+        );
+      } catch (mutateError) {
+        console.log('SWR mutate error (non-critical):', mutateError);
+      }
+
+      return true;
     } catch (error) {
       console.error('❌ Error sending to creator:', error);
       enqueueSnackbar('Failed to send to creator', { variant: 'error' });
@@ -1294,9 +1398,7 @@ const RawFootages = ({
   return (
     <>
       {/* Raw Footage Horizontal Scroll */}
-      {!hasRawFootages && (
-        <Typography>No raw footage uploaded yet.</Typography>
-      )}
+      {!hasRawFootages && <Typography>No raw footage uploaded yet.</Typography>}
 
       {shouldUseHorizontalScroll && (
         <Box
@@ -1327,11 +1429,11 @@ const RawFootages = ({
             const isRawFootageApprovedByAdmin = footage.status === 'APPROVED';
             const isRawFootageApprovedByClient = footage.status === 'APPROVED';
             const hasRevisionRequested = footage.status === 'REVISION_REQUESTED';
-            const isPendingReview = submission?.status === 'PENDING_REVIEW' && 
-              (userRole === 'client' ? 
-                (!isRawFootageApprovedByClient && !hasRevisionRequested) : 
-                (!isRawFootageApprovedByAdmin && !hasRevisionRequested)
-              );
+            const isPendingReview =
+              submission?.status === 'PENDING_REVIEW' &&
+              (userRole === 'client'
+                ? !isRawFootageApprovedByClient && !hasRevisionRequested
+                : !isRawFootageApprovedByAdmin && !hasRevisionRequested);
 
             // Get feedback for this specific raw footage
             const getRawFootageFeedback = () => {
@@ -1339,14 +1441,12 @@ const RawFootages = ({
               if (footage.individualFeedback && footage.individualFeedback.length > 0) {
                 return footage.individualFeedback;
               }
-              
+
               // Fallback to submission-level feedback
-              const allFeedbacks = [
-                ...(submission?.feedback || [])
-              ];
+              const allFeedbacks = [...(submission?.feedback || [])];
 
               return allFeedbacks
-                .filter(feedback => feedback.rawFootageToUpdate?.includes(footage.id))
+                .filter((feedback) => feedback.rawFootageToUpdate?.includes(footage.id))
                 .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
             };
 
@@ -1361,8 +1461,8 @@ const RawFootages = ({
                   flexShrink: 0,
                 }}
               >
-                <RawFootageCard 
-                  rawFootageItem={footage} 
+                <RawFootageCard
+                  rawFootageItem={footage}
                   index={index}
                   submission={submission}
                   onRawFootageClick={onVideoClick}
@@ -1397,11 +1497,11 @@ const RawFootages = ({
             const isRawFootageApprovedByAdmin = footage.status === 'APPROVED';
             const isRawFootageApprovedByClient = footage.status === 'APPROVED';
             const hasRevisionRequested = footage.status === 'REVISION_REQUESTED';
-            const isPendingReview = submission?.status === 'PENDING_REVIEW' && 
-              (userRole === 'client' ? 
-                (!isRawFootageApprovedByClient && !hasRevisionRequested) : 
-                (!isRawFootageApprovedByAdmin && !hasRevisionRequested)
-              );
+            const isPendingReview =
+              submission?.status === 'PENDING_REVIEW' &&
+              (userRole === 'client'
+                ? !isRawFootageApprovedByClient && !hasRevisionRequested
+                : !isRawFootageApprovedByAdmin && !hasRevisionRequested);
 
             // Get feedback for this specific raw footage
             const getRawFootageFeedback = () => {
@@ -1409,28 +1509,21 @@ const RawFootages = ({
               if (footage.individualFeedback && footage.individualFeedback.length > 0) {
                 return footage.individualFeedback;
               }
-              
+
               // Fallback to submission-level feedback
-              const allFeedbacks = [
-                ...(submission?.feedback || [])
-              ];
+              const allFeedbacks = [...(submission?.feedback || [])];
 
               return allFeedbacks
-                .filter(feedback => feedback.rawFootageToUpdate?.includes(footage.id))
+                .filter((feedback) => feedback.rawFootageToUpdate?.includes(footage.id))
                 .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
             };
 
             const rawFootageFeedback = getRawFootageFeedback();
 
             return (
-              <Grid 
-                item 
-                xs={12} 
-                md={7} 
-                key={footage.id || index}
-              >
-                <RawFootageCard 
-                  rawFootageItem={footage} 
+              <Grid item xs={12} md={7} key={footage.id || index}>
+                <RawFootageCard
+                  rawFootageItem={footage}
                   index={index}
                   submission={submission}
                   onRawFootageClick={onVideoClick}
@@ -1564,9 +1657,7 @@ const RawFootages = ({
           }}
         >
           <Iconify icon="solar:check-circle-bold" color="success.main" />
-          <Typography color="success.darker">
-            All raw footage has been approved
-          </Typography>
+          <Typography color="success.darker">All raw footage has been approved</Typography>
         </Box>
       )}
 
@@ -1621,4 +1712,4 @@ const fetchSubmission = async (url) => {
   return data;
 };
 
-export default RawFootages; 
+export default RawFootages;

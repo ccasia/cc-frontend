@@ -1,21 +1,19 @@
 /* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
 import { useTheme } from '@emotion/react';
 import React, { useMemo, useState, useEffect } from 'react';
-import { LoadingButton } from '@mui/lab';
-import { useSnackbar } from 'notistack';
-import { useForm } from 'react-hook-form';
+import { useLocation, useNavigate } from 'react-router-dom';
 
+import { LoadingButton } from '@mui/lab';
+import Tooltip from '@mui/material/Tooltip';
+import { alpha } from '@mui/material/styles';
 import {
-  Dialog,
-  DialogTitle,
-  DialogActions,
-  DialogContent,
-  Autocomplete,
   Box,
   Stack,
   Table,
+  Dialog,
   Button,
   Avatar,
   TableRow,
@@ -25,22 +23,22 @@ import {
   TableHead,
   Typography,
   IconButton,
+  DialogTitle,
+  Autocomplete,
+  DialogActions,
+  DialogContent,
   TableContainer,
   CircularProgress,
 } from '@mui/material';
-import Tooltip from '@mui/material/Tooltip';
-import { alpha } from '@mui/material/styles';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { shortlistCreator, useGetAllCreators, shortlistGuestCreator } from 'src/api/creator';
-import axiosInstance from 'src/utils/axios';
-import { useShortlistedCreators } from '../../admin/campaign-detail-creator/hooks/shortlisted-creator';
 
-import Iconify from 'src/components/iconify';
+import { useAuthContext } from 'src/auth/hooks';
+import { useGetAllCreators } from 'src/api/creator';
+
 import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import V3PitchModal from './v3-pitch-modal';

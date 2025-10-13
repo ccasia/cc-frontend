@@ -1,4 +1,5 @@
 /* eslint-disable no-unsafe-optional-chaining */
+import dayjs from 'dayjs';
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
@@ -30,7 +31,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 
 import UGCCreditsModal from './ugc-credits-modal';
-import dayjs from 'dayjs';
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();

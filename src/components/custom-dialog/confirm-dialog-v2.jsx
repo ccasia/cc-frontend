@@ -2,11 +2,8 @@ import PropTypes from 'prop-types';
 
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogActions from '@mui/material/DialogActions';
+import { Box, Typography } from '@mui/material';
 import DialogContent from '@mui/material/DialogContent';
-import { Box, Avatar, Typography } from '@mui/material';
-import { bgcolor } from '@mui/system';
 
 // ----------------------------------------------------------------------
 

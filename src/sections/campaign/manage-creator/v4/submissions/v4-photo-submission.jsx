@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Card, Stack, TextField, Typography, LinearProgress, Alert } from '@mui/material';
+import { Box, Stack, TextField, Typography, LinearProgress } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -81,9 +81,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
   }, [isReuploadMode, selectedFiles, submittedPhotos, photosToRemove]);
 
   // Memoize feedback filtering to avoid recalculation
-  const relevantFeedback = useMemo(() => {
-    return submission.feedback?.filter((feedback) => feedback.sentToCreator) || [];
-  }, [submission.feedback]);
+  const relevantFeedback = useMemo(() => submission.feedback?.filter((feedback) => feedback.sentToCreator) || [], [submission.feedback]);
 
   // Memoized caption change handler to prevent image re-renders
   const handleCaptionChange = useCallback((e) => {
@@ -170,7 +168,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
         submissionId: submission.id,
         caption: caption.trim(),
         isAdditiveUpdate: true, // Always additive in V4
-        photosToRemove: photosToRemove, // Include photos to be removed
+        photosToRemove, // Include photos to be removed
       };
       formData.append('data', JSON.stringify(requestData));
 

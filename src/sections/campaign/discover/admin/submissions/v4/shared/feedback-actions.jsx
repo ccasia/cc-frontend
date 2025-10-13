@@ -1,10 +1,13 @@
-import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Box, Stack, Button, TextField, Select, MenuItem, FormControl, Chip, Typography, Tooltip } from '@mui/material';
-import { BUTTON_STYLES, FEEDBACK_CHIP_STYLES } from './submission-styles';
+import PropTypes from 'prop-types';
+
+import { Box, Chip, Stack, Button, Select, Tooltip, MenuItem, TextField, Typography, FormControl } from '@mui/material';
+
+import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
+
 import { options_changes } from '../constants';
 import { getFeedbackActionsVisibility } from './feedback-utils';
-import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
+import { BUTTON_STYLES, FEEDBACK_CHIP_STYLES } from './submission-styles';
 
 export default function FeedbackActions({
   submission,
@@ -99,7 +102,7 @@ export default function FeedbackActions({
               </Button>
               <Button
                 variant="contained"
-                color={'warning'}
+                color="warning"
                 size='small'
                 onClick={handleRequestChanges}
                 disabled={loading}
@@ -258,7 +261,7 @@ export default function FeedbackActions({
         </Stack>
 
         {!isClient && submission.status !== 'CLIENT_FEEDBACK' &&
-          <Box display={'flex'} justifyContent={'flex-end'}>
+          <Box display="flex" justifyContent="flex-end">
             <Button
               size="small"
               variant="text"
@@ -368,7 +371,7 @@ export default function FeedbackActions({
                   <Typography 
                     variant='caption' 
                     fontWeight="bold" 
-                    color={'#636366'}
+                    color="#636366"
                     sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                   >
                     Client Feedback

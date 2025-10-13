@@ -1,25 +1,26 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 
 import {
   Box,
   Stack,
   Avatar,
+  Tooltip,
   TextField,
   Typography,
-  Tooltip,
-  SvgIcon,
 } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
+
+import { useAuthContext } from 'src/auth/hooks';
 import { getStatusColor } from 'src/contants/statusColors';
+
+import Iconify from 'src/components/iconify';
+import EmptyContent from 'src/components/empty-content';
 
 import V4VideoSubmission from './submissions/v4/video-submission';
 import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
-import { useAuthContext } from 'src/auth/hooks';
-import EmptyContent from 'src/components/empty-content';
 
 // ----------------------------------------------------------------------
 
@@ -50,7 +51,7 @@ function CreatorAccordion({ creator, campaign }) {
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
 
-  const campaignType = campaign.campaignType;
+  const {campaignType} = campaign;
 
   // Get V4 submissions for this creator
   const { 
@@ -80,9 +81,7 @@ function CreatorAccordion({ creator, campaign }) {
     const pills = [];
     let submissionCounter = 0;
 
-    const formatStatus = (status) => {
-      return status?.replace(/_/g, ' ') || 'Unknown';
-    };
+    const formatStatus = (status) => status?.replace(/_/g, ' ') || 'Unknown';
 
     // Status color
     const getClientStatusColor = (status, submissionType = null) => {
@@ -168,10 +167,10 @@ function CreatorAccordion({ creator, campaign }) {
         <Box
           key={key}
           onClick={() => handleSubmissionToggle('video', videoSubmission.id)}
-          display={'flex'}
-          flexDirection={'row'}
-          alignItems={'center'}
-          justifyContent={'space-between'}
+          display="flex"
+          flexDirection="row"
+          alignItems="center"
+          justifyContent="space-between"
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
@@ -188,7 +187,7 @@ function CreatorAccordion({ creator, campaign }) {
           pr={{ xs: 0.3, sm: 0.5 }}
           pl={{ xs: 0.5, sm: 0.8 }}
         >
-          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={{ xs: 0.2, sm: 0.3 }}>
+          <Box display="flex" alignItems="center" justifyContent="center" gap={{ xs: 0.2, sm: 0.3 }}>
             <Tooltip 
               title="Video" 
               placement="top"
@@ -251,7 +250,7 @@ function CreatorAccordion({ creator, campaign }) {
               }}
             >
               <Typography 
-                fontWeight={'SemiBold'} 
+                fontWeight="SemiBold" 
                 pb={0.2} 
                 fontSize={{ xs: 8, sm: 9, md: 10, lg: 10.5 }} 
                 color={getClientStatusColor(videoSubmission.status, 'video')}
@@ -267,8 +266,8 @@ function CreatorAccordion({ creator, campaign }) {
             </Box>
           </Box>
           <Box
-            display={'flex'}
-            alignItems={'center'}
+            display="flex"
+            alignItems="center"
             flexShrink={0}
           >
             <Iconify 
@@ -294,10 +293,10 @@ function CreatorAccordion({ creator, campaign }) {
         <Box
           key={key}
           onClick={() => handleSubmissionToggle('photo', photoSubmission.id)}
-          display={'flex'}
-          flexDirection={'row'}
-          alignItems={'center'}
-          justifyContent={'space-between'}
+          display="flex"
+          flexDirection="row"
+          alignItems="center"
+          justifyContent="space-between"
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
@@ -314,7 +313,7 @@ function CreatorAccordion({ creator, campaign }) {
           pl={{ xs: 0.5, sm: 0.8 }}
           pr={{ xs: 0.3, sm: 0.5 }}
         >
-          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={{ xs: 0.2, sm: 0.3 }}>
+          <Box display="flex" alignItems="center" justifyContent="center" gap={{ xs: 0.2, sm: 0.3 }}>
             <Tooltip 
               title="Photo" 
               placement="top"
@@ -377,7 +376,7 @@ function CreatorAccordion({ creator, campaign }) {
               }}
             >
               <Typography 
-                fontWeight={'SemiBold'} 
+                fontWeight="SemiBold" 
                 pb={0.2} 
                 fontSize={{ xs: 8, sm: 9, md: 10, lg: 10.5 }}  
                 color={getClientStatusColor(photoSubmission.status, 'photo')}
@@ -414,10 +413,10 @@ function CreatorAccordion({ creator, campaign }) {
         <Box
           key={key}
           onClick={() => handleSubmissionToggle('rawFootage', rawFootageSubmission.id)}
-          display={'flex'}
-          flexDirection={'row'}
-          alignItems={'center'}
-          justifyContent={'space-between'}
+          display="flex"
+          flexDirection="row"
+          alignItems="center"
+          justifyContent="space-between"
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
@@ -434,7 +433,7 @@ function CreatorAccordion({ creator, campaign }) {
           pl={{ xs: 0.5, sm: 0.8 }}
           pr={{ xs: 0.3, sm: 0.5 }}
         >
-          <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={{ xs: 0.2, sm: 0.3 }}>
+          <Box display="flex" alignItems="center" justifyContent="center" gap={{ xs: 0.2, sm: 0.3 }}>
             <Tooltip 
               title="Raw Footage" 
               placement="top"
@@ -497,7 +496,7 @@ function CreatorAccordion({ creator, campaign }) {
               }}
             >
               <Typography 
-                fontWeight={'SemiBold'} 
+                fontWeight="SemiBold" 
                 pb={0.2} 
                 fontSize={{ xs: 8, sm: 9, md: 10, lg: 10.5 }} 
                 color={getClientStatusColor(rawFootageSubmission.status, 'rawFootage')}
@@ -542,7 +541,7 @@ function CreatorAccordion({ creator, campaign }) {
             campaign={campaign}
             index={grouped.videos.findIndex(v => v.id === id) + 1}
             onUpdate={submissionsMutate}
-            expanded={true}
+            expanded
           />
         );
       }
@@ -558,7 +557,7 @@ function CreatorAccordion({ creator, campaign }) {
             campaign={campaign}
             index={grouped.photos.findIndex(p => p.id === id) + 1}
             onUpdate={submissionsMutate}
-            expanded={true}
+            expanded
           />
         );
       }
@@ -574,7 +573,7 @@ function CreatorAccordion({ creator, campaign }) {
             campaign={campaign}
             index={grouped.rawFootage.findIndex(rf => rf.id === id) + 1}
             onUpdate={submissionsMutate}
-            expanded={true}
+            expanded
           />
         );
       }

@@ -2,8 +2,8 @@ import { m } from 'framer-motion';
 import { useTheme } from '@emotion/react';
 import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
-import { orderBy, debounce, throttle, get } from 'lodash';
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { orderBy, debounce, throttle } from 'lodash';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,

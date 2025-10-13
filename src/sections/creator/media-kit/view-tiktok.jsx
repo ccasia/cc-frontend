@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
-import { Box, Stack, Button, useTheme, Typography, useMediaQuery, CardMedia } from '@mui/material';
+import { Box, Stack, Button, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
 
 import { useMediaKitResponsive } from 'src/hooks/use-media-kit-responsive';
 

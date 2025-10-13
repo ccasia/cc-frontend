@@ -280,7 +280,7 @@ const CampaignFirstDraft = ({
         rawFootageToUpdate: f.rawFootageToUpdate?.length || 0,
         createdAt: f.createdAt
       })),
-      result: result
+      result
     });
 
     return result;

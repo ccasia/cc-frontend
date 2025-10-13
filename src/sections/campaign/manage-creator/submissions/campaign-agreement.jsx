@@ -1,11 +1,10 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { useForm } from 'react-hook-form';
+import { PDFDocument } from 'pdf-lib';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
 import React, { useState, useEffect } from 'react';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -22,7 +21,6 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
-  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -88,7 +86,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const { user, dispatch } = useAuthContext();
   const display = useBoolean();
 
-  //New editor for pdfs
+  // New editor for pdfs
   const editor = useBoolean();
   const [annotations, setAnnotations] = useState([]);
   const [signURL, setSignURL] = useState(null);

@@ -1,21 +1,16 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
   Card,
-  Stack,
-  Button,
-  TextField,
   Typography,
   LinearProgress,
-  IconButton,
 } from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
 
-import Iconify from 'src/components/iconify';
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 import RawFootageGridDisplay from 'src/components/upload/raw-footage-grid-display';
 
@@ -42,22 +37,14 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   }, [submission.caption]);
 
   // Get submitted raw footages
-  const submittedRawFootages = useMemo(() => {
-    return submission.rawFootages || [];
-  }, [submission.rawFootages]);
+  const submittedRawFootages = useMemo(() => submission.rawFootages || [], [submission.rawFootages]);
 
   // Determine display status
-  const isApproved = useMemo(() => {
-    return ['APPROVED', 'POSTED'].includes(submission.status);
-  }, [submission.status]);
+  const isApproved = useMemo(() => ['APPROVED', 'POSTED'].includes(submission.status), [submission.status]);
 
-  const isPosted = useMemo(() => {
-    return submission.status === 'POSTED';
-  }, [submission.status]);
+  const isPosted = useMemo(() => submission.status === 'POSTED', [submission.status]);
 
-  const hasChangesRequired = useMemo(() => {
-    return submission.status === 'CHANGES_REQUIRED';
-  }, [submission.status]);
+  const hasChangesRequired = useMemo(() => submission.status === 'CHANGES_REQUIRED', [submission.status]);
 
   // Memoize feedback filtering to avoid recalculation
   const relevantFeedback = useMemo(() => {

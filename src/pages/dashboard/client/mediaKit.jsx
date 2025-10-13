@@ -1,8 +1,11 @@
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import MediaKit from 'src/sections/creator/media-kit-public/view/mediakit-view';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+
 import { Box, IconButton } from '@mui/material';
+
 import Iconify from 'src/components/iconify';
+
+import MediaKit from 'src/sections/creator/media-kit-public/view/mediakit-view';
 
 export default function ClientMediaKitPage() {
   const params = useParams();
@@ -42,7 +45,7 @@ export default function ClientMediaKitPage() {
           <Iconify icon="eva:arrow-back-fill" width={24} />
         </IconButton>
       </Box>
-      {id ? <MediaKit id={id} hideBackButton={true} hideShareButton={true} /> : <div>Creator ID not found</div>}
+      {id ? <MediaKit id={id} hideBackButton hideShareButton /> : <div>Creator ID not found</div>}
     </>
   );
 }

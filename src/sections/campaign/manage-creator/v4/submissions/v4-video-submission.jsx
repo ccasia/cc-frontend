@@ -1,17 +1,14 @@
-import React, { useState, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
+  Card,
   Stack,
-  Button,
   TextField,
   Typography,
   LinearProgress,
-  Card,
-  Chip,
-  Alert,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -55,15 +52,13 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
   const isPostingLinkEditable = (needsPostingLink || isPostingLinkRejected) && requiresPostingLink;
 
   // Show submitted video only if not in reupload mode - memoized to prevent blinking
-  const videoToShow = useMemo(() => {
-    return isReuploadMode ? null : submittedVideo;
-  }, [isReuploadMode, submittedVideo]);
+  const videoToShow = useMemo(() => isReuploadMode ? null : submittedVideo, [isReuploadMode, submittedVideo]);
 
   // Determine if caption should be editable
-  const isCaptionEditable = useMemo(() => {
+  const isCaptionEditable = useMemo(() => 
     // Editable if: in reupload mode OR no video has been submitted yet OR just uploaded locally
-    return isReuploadMode || !submittedVideo || (!hasSubmitted && selectedFiles.length > 0);
-  }, [isReuploadMode, submittedVideo, hasSubmitted, selectedFiles.length]);
+     isReuploadMode || !submittedVideo || (!hasSubmitted && selectedFiles.length > 0)
+  , [isReuploadMode, submittedVideo, hasSubmitted, selectedFiles.length]);
 
   // Memoize feedback filtering to avoid recalculation - only show the most recent feedback for this submission
   const relevantFeedback = useMemo(() => {

@@ -233,7 +233,7 @@ const ClientProfile = () => {
       try {
         const check = await axiosInstance.get(endpoints.client.checkCompany);
         if (check?.data?.company) {
-          const company = check.data.company;
+          const {company} = check.data;
           const pic = company.pic?.[0] || {};
           setCompanyData(company);
           try {

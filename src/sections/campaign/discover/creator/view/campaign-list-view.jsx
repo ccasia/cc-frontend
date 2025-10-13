@@ -77,7 +77,7 @@ export default function CampaignListView() {
       console.log('🔍 Campaign infinite scroll - Stopping fetch:', {
         hasNextPage: previousPageData?.metaData?.hasNextPage,
         lastCursor: !!previousPageData?.metaData?.lastCursor,
-        pageIndex: pageIndex
+        pageIndex
       });
       return null;
     }

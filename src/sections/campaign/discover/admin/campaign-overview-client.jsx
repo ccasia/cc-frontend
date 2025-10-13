@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
 
 import {
   Box,
@@ -17,15 +17,17 @@ import {
 
 import { paths } from 'src/routes/paths';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
+
+import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
+import { formatNumber, calculateSummaryStats } from 'src/utils/socialMetricsCalculator';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
 import PitchModal from './pitch-modal';
-import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
-import { calculateSummaryStats, formatNumber } from 'src/utils/socialMetricsCalculator';
 
 const BoxStyle = {
   border: '1px solid #e0e0e0',
@@ -106,9 +108,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
       }
 
       // Calculate average of previous posts
-      const previousAverage = previousPosts.reduce((sum, post) => {
-        return sum + getMetricValue(post.insight, metricType);
-      }, 0) / previousPosts.length;
+      const previousAverage = previousPosts.reduce((sum, post) => sum + getMetricValue(post.insight, metricType), 0) / previousPosts.length;
 
       // Get current post value
       const currentPostValue = getMetricValue(currentPost.insight, metricType);

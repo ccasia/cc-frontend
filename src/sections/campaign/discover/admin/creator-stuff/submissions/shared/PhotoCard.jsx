@@ -164,7 +164,7 @@ const PhotoCard = ({
                 textTransform: 'none',
               }}
             >
-              {'APPROVED'}
+              APPROVED
             </Box>
           </Box>
         );
@@ -279,7 +279,7 @@ const PhotoCard = ({
                     fontWeight: 600,
                   }}
                 >
-                  {'Approve'}
+                  Approve
                 </LoadingButton>
               </Stack>
             </Stack>

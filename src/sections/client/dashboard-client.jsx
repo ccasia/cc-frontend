@@ -16,12 +16,10 @@ import {
   Tooltip,
   Container,
   Typography,
-  IconButton,
   DialogContent,
   DialogActions,
   LinearProgress,
   CircularProgress,
-  ClickAwayListener,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -43,7 +41,6 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import ChatModal from './modal/chat-modal';
 import CompanyCreationForm from './company-creation-form';
 import ClientCampaignCreateForm from './campaign-create/campaign-create-form';
 import ClientProfileCompletionModal from '../auth/client-profile-completion-modal';
