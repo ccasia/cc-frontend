@@ -13,7 +13,6 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  Typography,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -25,8 +24,6 @@ import { interestsLists } from 'src/contants/interestLists';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
-import { countriesCities } from 'src/contants/countries';
-import Iconify from 'src/components/iconify';
 
 export const EditRequirements = ({ open, campaign, onClose }) => {
   const methods = useForm({
