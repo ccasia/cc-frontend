@@ -308,7 +308,7 @@ const ClientCampaignGeneralInfo = () => {
                 <Switch
                   checked={watch('submissionVersion') === 'v4'}
                   onChange={(e) => {
-                    setValue('submissionVersion', e.target.checked ? 'v4' : 'v3', { shouldValidate: true });
+                    setValue('submissionVersion', e.target.checked ? 'v4' : '', { shouldValidate: true });
                   }}
                   color="primary"
                 />
