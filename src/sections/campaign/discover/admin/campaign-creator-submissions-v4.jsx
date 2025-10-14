@@ -722,7 +722,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
           This tab is only available for V4 campaigns with content-type based submissions.
         </Typography>
         <Typography variant="caption" color="text.secondary" textAlign="center" display="block" sx={{ mt: 1 }}>
-          Current campaign version: {campaign?.submissionVersion || 'v3'}
+          Current campaign version: {campaign?.submissionVersion || 'Not set'}
         </Typography>
       </Box>
     );
