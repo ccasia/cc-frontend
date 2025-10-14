@@ -585,7 +585,7 @@ function CreateCampaignForm({ onClose, mutate }) {
               <Button
                 variant="contained"
                 sx={{
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                   py: 1,
                 }}
                 onClick={handleBack}
