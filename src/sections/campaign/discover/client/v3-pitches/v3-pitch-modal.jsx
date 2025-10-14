@@ -31,6 +31,7 @@ import Iconify from 'src/components/iconify';
 
 import UGCCreditsModal from './ugc-credits-modal';
 import dayjs from 'dayjs';
+import SwapCreatorModal from '../../admin/campaign-detail-pitch/swap-creator-modal';
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -41,6 +42,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const [ugcCreditsModalOpen, setUgCCreditsModalOpen] = useState(false);
+  const [swapCreatorModalOpen, setSwapCreatorModalOpen] = useState(false);
   const [comments, setComments] = useState('');
   const [creatorProfileFull, setCreatorProfileFull] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram', 'tiktok', or 'both'
@@ -96,16 +98,24 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   // Derive creator profile data from multiple possible sources
   const creatorProfile = creatorProfileFull?.creator || currentPitch?.user?.creator || {};
   const accountUser = creatorProfileFull || currentPitch?.user || {};
-  const derivedLanguages = (Array.isArray(creatorProfile.languages) && creatorProfile.languages.length
-    ? creatorProfile.languages
-    : Array.isArray(accountUser.languages)
-      ? accountUser.languages
-      : [])
-    .filter(Boolean);
+  const derivedLanguages = (
+    Array.isArray(creatorProfile.languages) && creatorProfile.languages.length
+      ? creatorProfile.languages
+      : Array.isArray(accountUser.languages)
+        ? accountUser.languages
+        : []
+  ).filter(Boolean);
   const derivedBirthDate = creatorProfile.birthDate || accountUser.birthDate || null;
-  const derivedPronouns = creatorProfile.pronounce || accountUser.pronounce || accountUser.pronouns || null;
+  const derivedPronouns =
+    creatorProfile.pronounce || accountUser.pronounce || accountUser.pronouns || null;
 
-
+  // Check if creator is a guest
+  const isGuestCreator = React.useMemo(() => {
+    const email = currentPitch?.user?.email;
+    const isGuestByEmail = email?.includes('@tempmail.com') || email?.startsWith('guest_');
+    const isGuestByFlag = currentPitch?.user?.creator?.isGuest === true;
+    return isGuestByEmail || isGuestByFlag;
+  }, [currentPitch]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -156,7 +166,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
       enqueueSnackbar(response.data.message || 'Action completed successfully', {
         variant: 'success',
       });
-      
+
       // Check if the response contains updated pitch data
       if (response.data.pitch) {
         onUpdate({ ...pitch, ...response.data.pitch });
@@ -164,11 +174,16 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
         // If no pitch data returned, create a mock update with the expected status change
         const mockUpdatedPitch = {
           ...pitch,
-          status: action === 'reject' ? 'REJECTED' : (action === 'approve' ? 'SENT_TO_CLIENT' : pitch.status)
+          status:
+            action === 'reject'
+              ? 'REJECTED'
+              : action === 'approve'
+                ? 'SENT_TO_CLIENT'
+                : pitch.status,
         };
         onUpdate(mockUpdatedPitch);
       }
-      
+
       onClose();
     } catch (error) {
       console.error('Error performing action:', error);
@@ -185,7 +200,9 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const handleApprove = () => {
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
       if (ugcLeft <= 0) {
-        enqueueSnackbar('No credits left. Cannot approve or assign UGC credits.', { variant: 'warning' });
+        enqueueSnackbar('No credits left. Cannot approve or assign UGC credits.', {
+          variant: 'warning',
+        });
         return;
       }
       // For admin, open UGC credits modal instead of direct approval
@@ -198,9 +215,9 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const handleReject = () => {
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
       // For admin rejecting from MAYBE status, include the current status for context
-      const actionData = { 
+      const actionData = {
         rejectionReason,
-        previousStatus: displayStatus === 'MAYBE' ? 'MAYBE' : 'PENDING_REVIEW'
+        previousStatus: displayStatus === 'MAYBE' ? 'MAYBE' : 'PENDING_REVIEW',
       };
       handleAction('reject', 'reject', actionData);
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
@@ -215,6 +232,19 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const handleUGCCreditsSuccess = (updatedPitch) => {
     onUpdate(updatedPitch);
     setUgCCreditsModalOpen(false);
+  };
+
+  const handleSwapSuccess = () => {
+    // Close the swap modal
+    setSwapCreatorModalOpen(false);
+
+    // Refresh the campaign data via parent's onUpdate
+    if (onUpdate) {
+      onUpdate(pitch);
+    }
+
+    // Close the pitch modal to show updated list
+    onClose();
   };
 
   const getAvailableActions = () => {
@@ -281,7 +311,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
           sx={{
             position: 'absolute',
             right: 18,
-            top: 16,
+            top: 10,
             zIndex: 9,
             padding: 1,
             color: '#636366',
@@ -299,65 +329,89 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
             display: { xs: 'none', sm: 'flex' },
             position: 'absolute',
             right: 14,
-            top: 60,
+            top: 65,
             zIndex: 9,
             flexDirection: 'row',
             gap: 1,
           }}
         >
-                                         <Tooltip title="Instagram Stats">
-             <IconButton
-               onClick={() => setSelectedPlatform('instagram')}
-               size="small"
-               disabled={selectedPlatform === 'instagram'}
-               sx={{
-                 p: 0.8,
-                 color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
-                 bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
-                 border: '1px solid #ebebeb',
-                 borderBottom: '3px solid #ebebeb',
-                 borderRadius: '10px',
-                 height: '42px',
-                 width: '42px',
-                 '&:hover': { 
-                   bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5' 
-                 },
-                 '&.Mui-disabled': {
-                   bgcolor: '#F2F2F7',
-                   color: '#8E8E93',
-                 },
-               }}
-             >
-               <Iconify icon="mdi:instagram" width={22} />
-             </IconButton>
-           </Tooltip>
-           <Tooltip title="TikTok Stats">
-             <IconButton
-               onClick={() => setSelectedPlatform('tiktok')}
-               size="small"
-               disabled={selectedPlatform === 'tiktok'}
-               sx={{
-                 p: 0.8,
-                 color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#231F20',
-                 bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
-                 border: '1px solid #ebebeb',
-                 borderBottom: '3px solid #ebebeb',
-                 borderRadius: '10px',
-                 height: '42px',
-                 width: '42px',
-                 '&:hover': { 
-                   bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5' 
-                 },
-                 '&.Mui-disabled': {
-                   bgcolor: '#F2F2F7',
-                   color: '#8E8E93',
-                 },
-               }}
-             >
-               <Iconify icon="ic:baseline-tiktok" width={22} />
-             </IconButton>
-           </Tooltip>
-
+          {/* Show Swap Creator button only for guest creators and admin users */}
+          {isGuestCreator && isAdmin && (
+            <Tooltip title="Link Creator">
+              <IconButton
+                onClick={() => setSwapCreatorModalOpen(true)}
+                size="small"
+                sx={{
+                  p: 0.8,
+                  mr: 1,
+                  color: '#FF9A02',
+                  bgcolor: '#FFF',
+                  border: '1px solid #ebebeb',
+                  borderBottom: '3px solid #ebebeb',
+                  borderRadius: '10px',
+                  height: '42px',
+                  width: '42px',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 154, 2, 0.08)',
+                  },
+                }}
+              >
+                <Iconify icon="heroicons:user-plus-solid" width={22} />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title="Instagram Stats">
+            <IconButton
+              onClick={() => setSelectedPlatform('instagram')}
+              size="small"
+              disabled={selectedPlatform === 'instagram'}
+              sx={{
+                p: 0.8,
+                color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
+                bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
+                border: '1px solid #ebebeb',
+                borderBottom: '3px solid #ebebeb',
+                borderRadius: '10px',
+                height: '42px',
+                width: '42px',
+                '&:hover': {
+                  bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5',
+                },
+                '&.Mui-disabled': {
+                  bgcolor: '#F2F2F7',
+                  color: '#8E8E93',
+                },
+              }}
+            >
+              <Iconify icon="mdi:instagram" width={22} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="TikTok Stats">
+            <IconButton
+              onClick={() => setSelectedPlatform('tiktok')}
+              size="small"
+              disabled={selectedPlatform === 'tiktok'}
+              sx={{
+                p: 0.8,
+                color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#231F20',
+                bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
+                border: '1px solid #ebebeb',
+                borderBottom: '3px solid #ebebeb',
+                borderRadius: '10px',
+                height: '42px',
+                width: '42px',
+                '&:hover': {
+                  bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5',
+                },
+                '&.Mui-disabled': {
+                  bgcolor: '#F2F2F7',
+                  color: '#8E8E93',
+                },
+              }}
+            >
+              <Iconify icon="ic:baseline-tiktok" width={22} />
+            </IconButton>
+          </Tooltip>
         </Box>
 
         {/* Fixed User Info Section */}
@@ -393,14 +447,24 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 />
                 <Stack spacing={0.5}>
                   <Typography
-                    sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20', cursor: 'pointer', textDecoration: 'underline' }}
+                    sx={{
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      lineHeight: '18px',
+                      color: '#231F20',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
                     onClick={() => {
                       const creatorId = currentPitch?.user?.creator?.id || currentPitch?.user?.id;
                       navigate(`/dashboard/mediakit/client/${creatorId}`, {
                         state: {
-                          returnTo: { pathname: window.location.pathname, search: window.location.search },
-                          reopenModal: { pitchId: currentPitch?.id, isV3: true }
-                        }
+                          returnTo: {
+                            pathname: window.location.pathname,
+                            search: window.location.search,
+                          },
+                          reopenModal: { pitchId: currentPitch?.id, isV3: true },
+                        },
                       });
                     }}
                   >
@@ -410,13 +474,18 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                     const email = currentPitch?.user?.email;
                     const isGuest = email?.includes('@tempmail.com') || email?.startsWith('guest_');
                     return email && !isGuest ? (
-                      <Typography sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}>
+                      <Typography
+                        sx={{
+                          fontSize: '14px',
+                          fontWeight: 400,
+                          lineHeight: '16px',
+                          color: '#8E8E93',
+                        }}
+                      >
                         {email}
                       </Typography>
                     ) : null;
                   })()}
-
-
 
                   {/* Social Media Icons - Mobile */}
                   <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
@@ -549,14 +618,28 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                     {derivedLanguages.length > 0 && (
                       <Box>
                         <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 700, fontSize: '12px' }}>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{ fontWeight: 700, fontSize: '12px' }}
+                          >
                             Languages
                           </Typography>
-                          <Stack direction="row" flexWrap="nowrap" gap={0.5} alignItems="center" sx={{ mt: 1.80 }}>
+                          <Stack
+                            direction="row"
+                            flexWrap="nowrap"
+                            gap={0.5}
+                            alignItems="center"
+                            sx={{ mt: 1.8 }}
+                          >
                             {derivedLanguages.slice(0, 2).map((language, index) => (
                               <Chip
                                 key={index}
-                                label={typeof language === 'string' ? language.toUpperCase() : String(language).toUpperCase()}
+                                label={
+                                  typeof language === 'string'
+                                    ? language.toUpperCase()
+                                    : String(language).toUpperCase()
+                                }
                                 size="small"
                                 sx={{
                                   bgcolor: '#FFF',
@@ -581,7 +664,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                               />
                             ))}
                             {derivedLanguages.length > 2 && (
-                              <Typography variant="caption" color="#8E8E93" sx={{ fontSize: '0.7rem', alignSelf: 'center' }}>
+                              <Typography
+                                variant="caption"
+                                color="#8E8E93"
+                                sx={{ fontSize: '0.7rem', alignSelf: 'center' }}
+                              >
                                 +{derivedLanguages.length - 2}
                               </Typography>
                             )}
@@ -594,10 +681,22 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                     {derivedBirthDate && (
                       <Box>
                         <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: '12px',
+                              position: 'relative',
+                              top: 25,
+                            }}
+                          >
                             Age
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}
+                          >
                             {dayjs().diff(dayjs(derivedBirthDate), 'year')}
                           </Typography>
                         </Stack>
@@ -608,10 +707,22 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                     {derivedPronouns && (
                       <Box>
                         <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography variant="caption" color="#8e8e93" sx={{ fontWeight: 700, fontSize: '12px', position: 'relative', top: 25 }}>
+                          <Typography
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: '12px',
+                              position: 'relative',
+                              top: 25,
+                            }}
+                          >
                             Pronouns
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 400, fontSize: '14px', mt: 2.8 }}
+                          >
                             {derivedPronouns}
                           </Typography>
                         </Stack>
@@ -640,9 +751,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
                                 // Try multiple possible sources for media kit data
-                                const followers = currentPitch?.user?.creator?.instagramUser?.followers_count ||
-                                               creatorProfileFull?.creator?.instagramUser?.followers_count ||
-                                               creatorProfileFull?.instagramUser?.followers_count;
+                                const followers =
+                                  currentPitch?.user?.creator?.instagramUser?.followers_count ||
+                                  creatorProfileFull?.creator?.instagramUser?.followers_count ||
+                                  creatorProfileFull?.instagramUser?.followers_count;
                                 if (!followers) return 'N/A';
                                 if (followers >= 1000) {
                                   const k = followers / 1000;
@@ -688,9 +800,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
                                 // Try multiple possible sources for media kit data
-                                const engagementRate = currentPitch?.user?.creator?.instagramUser?.engagement_rate ||
-                                                     creatorProfileFull?.creator?.instagramUser?.engagement_rate ||
-                                                     creatorProfileFull?.instagramUser?.engagement_rate;
+                                const engagementRate =
+                                  currentPitch?.user?.creator?.instagramUser?.engagement_rate ||
+                                  creatorProfileFull?.creator?.instagramUser?.engagement_rate ||
+                                  creatorProfileFull?.instagramUser?.engagement_rate;
                                 if (!engagementRate) return 'N/A';
                                 return `${Math.round(engagementRate)}%`;
                               })()}
@@ -732,9 +845,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
                                 // Try multiple possible sources for media kit data
-                                const likes = currentPitch?.user?.creator?.instagramUser?.averageLikes ||
-                                            creatorProfileFull?.creator?.instagramUser?.averageLikes ||
-                                            creatorProfileFull?.instagramUser?.averageLikes;
+                                const likes =
+                                  currentPitch?.user?.creator?.instagramUser?.averageLikes ||
+                                  creatorProfileFull?.creator?.instagramUser?.averageLikes ||
+                                  creatorProfileFull?.instagramUser?.averageLikes;
                                 if (!likes) return 'N/A';
                                 if (likes >= 1000) {
                                   const k = likes / 1000;
@@ -765,11 +879,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                     {/* TikTok Stats */}
                     {selectedPlatform === 'tiktok' && (
                       <>
-                <Box
-                  sx={{
+                        <Box
+                          sx={{
                             flex: 0,
-                    display: 'flex',
-                    justifyContent: 'flex-end',
+                            display: 'flex',
+                            justifyContent: 'flex-end',
                             minWidth: '80px',
                           }}
                         >
@@ -782,9 +896,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
                                 // Try multiple possible sources for media kit data
-                                const followers = currentPitch?.user?.creator?.tiktokUser?.follower_count ||
-                                               creatorProfileFull?.creator?.tiktokUser?.follower_count ||
-                                               creatorProfileFull?.tiktokUser?.follower_count;
+                                const followers =
+                                  currentPitch?.user?.creator?.tiktokUser?.follower_count ||
+                                  creatorProfileFull?.creator?.tiktokUser?.follower_count ||
+                                  creatorProfileFull?.tiktokUser?.follower_count;
                                 if (!followers) return 'N/A';
                                 if (followers >= 1000) {
                                   const k = followers / 1000;
@@ -800,7 +915,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                                 whiteSpace: 'nowrap',
                                 fontWeight: 500,
                                 overflow: 'visible',
-                    width: '100%',
+                                width: '100%',
                                 fontSize: '12px',
                                 textAlign: 'right',
                               }}
@@ -830,9 +945,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
                                 // Try multiple possible sources for media kit data
-                                const engagementRate = currentPitch?.user?.creator?.tiktokUser?.engagement_rate ||
-                                                     creatorProfileFull?.creator?.tiktokUser?.engagement_rate ||
-                                                     creatorProfileFull?.tiktokUser?.engagement_rate;
+                                const engagementRate =
+                                  currentPitch?.user?.creator?.tiktokUser?.engagement_rate ||
+                                  creatorProfileFull?.creator?.tiktokUser?.engagement_rate ||
+                                  creatorProfileFull?.tiktokUser?.engagement_rate;
                                 if (!engagementRate) return 'N/A';
                                 return `${Math.round(engagementRate)}%`;
                               })()}
@@ -874,9 +990,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
                               {(() => {
                                 // Try multiple possible sources for media kit data
-                                const likes = currentPitch?.user?.creator?.tiktokUser?.averageLikes ||
-                                            creatorProfileFull?.creator?.tiktokUser?.averageLikes ||
-                                            creatorProfileFull?.tiktokUser?.averageLikes;
+                                const likes =
+                                  currentPitch?.user?.creator?.tiktokUser?.averageLikes ||
+                                  creatorProfileFull?.creator?.tiktokUser?.averageLikes ||
+                                  creatorProfileFull?.tiktokUser?.averageLikes;
                                 if (!likes) return 'N/A';
                                 if (likes >= 1000) {
                                   const k = likes / 1000;
@@ -903,10 +1020,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                         </Box>
                       </>
                     )}
-
-
-
-
                   </Stack>
                 </Box>
               </Grid>
@@ -1026,11 +1139,17 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                     justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
                     sx={{ width: '100%' }}
                   >
-                    <Stack alignItems={{ xs: 'flex-start', md: 'flex-start' }} sx={{ mr: { md: 8 } }}>
+                    <Stack
+                      alignItems={{ xs: 'flex-start', md: 'flex-start' }}
+                      sx={{ mr: { md: 8 } }}
+                    >
                       <Typography variant="caption" color="text.secondary">
                         SUBMITTED ON
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'left', width: '100%' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 600, textAlign: 'left', width: '100%' }}
+                      >
                         {new Date(currentPitch?.createdAt).toLocaleDateString('en-US', {
                           day: 'numeric',
                           month: 'short',
@@ -1053,12 +1172,20 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                       </Typography>
                     </Stack>
                   </Stack>
-                  {(currentPitch?.customRejectionText || currentPitch?.rejectionReason || (currentPitch?.status || '').toUpperCase() === 'MAYBE' || (currentPitch?.displayStatus || '').toUpperCase() === 'MAYBE') && (
+                  {(currentPitch?.customRejectionText ||
+                    currentPitch?.rejectionReason ||
+                    (currentPitch?.status || '').toUpperCase() === 'MAYBE' ||
+                    (currentPitch?.displayStatus || '').toUpperCase() === 'MAYBE') && (
                     <Box sx={{ mt: 1.5, width: { xs: '100%', md: 220 }, ml: { md: 'auto' } }}>
                       <Stack spacing={0.25} alignItems="flex-start">
                         <Typography
                           variant="caption"
-                          sx={{ color: '#FFC702', fontWeight: 700, letterSpacing: 0.5, textAlign: 'left' }}
+                          sx={{
+                            color: '#FFC702',
+                            fontWeight: 700,
+                            letterSpacing: 0.5,
+                            textAlign: 'left',
+                          }}
                         >
                           CLIENT REASON
                         </Typography>
@@ -1074,7 +1201,9 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                             fontSize: { xs: '0.75rem', md: '0.75rem' },
                           }}
                         >
-                          {currentPitch?.customRejectionText || currentPitch?.rejectionReason || '—'}
+                          {currentPitch?.customRejectionText ||
+                            currentPitch?.rejectionReason ||
+                            '—'}
                         </Typography>
                       </Stack>
                     </Box>
@@ -1111,7 +1240,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 </Typography>
               </Box>
             </Box>
-            
+
             {/* Display CS Comments if they exist */}
             {adminCommentsText.length > 0 && (
               <Box>
@@ -1148,7 +1277,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 </Box>
               </Box>
             )}
-            
+
             {user?.role !== 'client' && displayStatus === 'PENDING_REVIEW' && (
               <Box mb={2}>
                 <Typography
@@ -1209,7 +1338,12 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 <Button
                   variant="contained"
                   onClick={handleApprove}
-                  disabled={loading || (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE') && ugcLeft <= 0)}
+                  disabled={
+                    loading ||
+                    (isAdmin &&
+                      (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE') &&
+                      ugcLeft <= 0)
+                  }
                   sx={{
                     textTransform: 'none',
                     minHeight: 42,
@@ -1415,6 +1549,23 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
         comments={comments}
         onSuccess={handleUGCCreditsSuccess}
       />
+
+      {/* Swap Creator Modal - Only for guest creators */}
+      {isGuestCreator && (
+        <SwapCreatorModal
+          open={swapCreatorModalOpen}
+          onClose={() => setSwapCreatorModalOpen(false)}
+          guestCreator={{
+            userId: currentPitch?.user?.id,
+            user: currentPitch?.user,
+            adminComments: currentPitch?.adminComments,
+            ugcVideos: campaign?.shortlisted?.find((s) => s.userId === currentPitch?.user?.id)
+              ?.ugcVideos,
+          }}
+          campaign={campaign}
+          onSwapped={handleSwapSuccess}
+        />
+      )}
     </>
   );
 };
