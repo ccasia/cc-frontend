@@ -34,6 +34,7 @@ export default function NotificationItem({ notification, markAsRead }) {
       case 'Pitch':
         if (user.role.includes('admin')) {
           link = `/dashboard/campaign/discover/detail/${campaignId}`;
+          tabToSet = 'creator-master-list';
         } else if (user.role.includes('client')) {
           link = `/dashboard/campaign/details/${campaignId}`;
           tabToSet = 'creator-master-list';
