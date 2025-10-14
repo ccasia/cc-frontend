@@ -159,12 +159,12 @@ const CampaignDetailView = ({ id }) => {
 
   const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
 
-  // Fetch V3 pitches for client-created campaigns to get accurate count
+  // Fetch V3 pitches for client-created campaigns OR v4 campaigns to get accurate count
   const { pitches: v3Pitches } = useGetV3Pitches(
-    campaign?.origin === 'CLIENT' ? campaign?.id : null
+    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? campaign?.id : null
   );
   const { data: v3Agreements } = useGetAgreements(
-    campaign?.origin === 'CLIENT' ? campaign?.id : null
+    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? campaign?.id : null
   );
 
   const generateNewAgreement = useCallback(async (template) => {
@@ -366,7 +366,7 @@ const CampaignDetailView = ({ id }) => {
                 // { label: 'Client Info', value: 'client' },
                 {
                   label: `Creator Master List (${
-                    campaign?.origin === 'CLIENT'
+                    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4'
                       ? v3Pitches?.filter(
                           (p) =>
                             p.status === 'PENDING_REVIEW' ||
@@ -385,7 +385,7 @@ const CampaignDetailView = ({ id }) => {
                   value: 'creator',
                 },
                 {
-                  label: `Agreements (${campaign?.origin === 'CLIENT' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : campaign?.creatorAgreement?.length || 0})`,
+                  label: `Agreements (${campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : campaign?.creatorAgreement?.length || 0})`,
                   value: 'agreement',
                 },
                 ...(campaign?.submissionVersion === 'v4' 
@@ -543,7 +543,7 @@ const CampaignDetailView = ({ id }) => {
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
     pitch:
-      campaign?.origin === 'CLIENT' ? (
+      campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? (
         <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} />
       ) : (
         <CampaignDetailPitch
