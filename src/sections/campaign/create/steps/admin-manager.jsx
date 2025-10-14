@@ -1,9 +1,11 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useEffect } from 'react';
+import { useFormContext } from 'react-hook-form';
 
-import { Box, Chip, Stack, Avatar, FormLabel, CircularProgress } from '@mui/material';
+import { Box, Chip, Stack, Avatar, FormLabel, CircularProgress, Alert } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
 import { RHFAutocomplete } from 'src/components/hook-form';
 
 import { useGetAdmins } from '../hooks/get-am';
@@ -11,11 +13,29 @@ import { useGetAdmins } from '../hooks/get-am';
 const CampaignAdminManager = () => {
   const { data: admins, isLoading } = useGetAdmins('active');
   const { user } = useAuthContext();
+  const { watch, setValue } = useFormContext();
+
+  const selectedAdminManagers = watch('adminManager') || [];
 
   const filteredAdmins = useMemo(
-    () => !isLoading && admins.filter((item) => item.admin?.role?.name === 'CSM'),
+    () => !isLoading && admins.filter((item) => item.admin?.role?.name === 'CSM' || item.admin?.role?.name === 'Client'),
     [admins, isLoading]
   );
+
+  // Check if any selected admin has the 'Client' role
+  const hasClientUser = useMemo(() => {
+    return selectedAdminManagers.some((manager) => manager?.role === 'Client');
+  }, [selectedAdminManagers]);
+
+  // Automatically set submissionVersion to 'v4' when a client user is added
+  useEffect(() => {
+    if (hasClientUser) {
+      setValue('submissionVersion', 'v4', { shouldValidate: true });
+    } else {
+      // Reset to default (v2) when no client users
+      setValue('submissionVersion', undefined, { shouldValidate: true });
+    }
+  }, [hasClientUser, setValue]);
 
   return (
     <>
@@ -93,6 +113,17 @@ const CampaignAdminManager = () => {
                 ))
               }
             />
+
+            {/* V4 Submission Mode Indicator */}
+            {hasClientUser && (
+              <Alert
+                severity="info"
+                icon={<Iconify icon="mdi:information-outline" />}
+                sx={{ alignItems: 'center' }}
+              >
+                This campaign will be managed with clients following our new submission flow.
+              </Alert>
+            )}
           </Stack>
         </Box>
       )}

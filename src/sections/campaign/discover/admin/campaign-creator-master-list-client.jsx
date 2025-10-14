@@ -19,7 +19,6 @@ import {
   Typography,
   InputAdornment,
   TableContainer,
-  CircularProgress,
   Tooltip,
 } from '@mui/material';
 
@@ -91,24 +90,21 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const mediaKit = useBoolean();
   const theme = useTheme();
 
-  // Fetch V3 pitches for client-created campaigns
+  // Fetch V3 pitches for client-created campaigns OR admin-created v4 campaigns
+  const shouldFetchV3Pitches = campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
   const {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
     isError: v3PitchesError,
     mutate: v3PitchesMutate,
-  } = useGetV3Pitches(campaign?.origin === 'CLIENT' ? campaign?.id : null);
-
-
-
-
+  } = useGetV3Pitches(shouldFetchV3Pitches ? campaign?.id : null);
 
   // Create a list of creators from the shortlisted array and pitches
   const creators = useMemo(() => {
     if (!campaign) return [];
 
-    // For client-created campaigns, use V3 pitches
-    if (campaign.origin === 'CLIENT' && v3Pitches) {
+    // For client-created campaigns OR v4 campaigns, use V3 pitches
+    if ((campaign.origin === 'CLIENT' || campaign.submissionVersion === 'v4') && v3Pitches) {
       return (
         v3Pitches
           .map((pitch) => {
