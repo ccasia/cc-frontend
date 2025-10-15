@@ -125,6 +125,91 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   };
 
   const filteredPitches = useMemo(() => {
+    // For v4 campaigns, show all pitches regardless of credit assignment
+    // The credit assignment happens via admin shortlisting, not client approval
+    if (campaign?.submissionVersion === 'v4') {
+      console.log('🔍 V4 Campaign Pitches Debug:', {
+        campaignId: campaign?.id,
+        submissionVersion: campaign?.submissionVersion,
+        totalPitches: pitches?.length,
+        selectedFilter,
+        pitches: pitches?.map(p => ({ 
+          id: p.id, 
+          status: p.status, 
+          displayStatus: p.displayStatus, 
+          userName: p.user?.name,
+          ugcCredits: p.ugcCredits
+        }))
+      });
+
+      let filtered = (pitches || []).filter((pitch) => {
+        const status = (pitch.displayStatus || pitch.status) || '';
+        
+        // For v4: Show all pitches in the approval flow
+        const isPending = ['PENDING_REVIEW'].includes(status);
+        const sentToClient = ['SENT_TO_CLIENT'].includes(status);
+        const isMaybe = ['MAYBE'].includes(status);
+        const isApproved = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
+        const isRejected = ['REJECTED'].includes(status);
+
+        const shouldShow = isPending || sentToClient || isMaybe || isApproved || isRejected;
+        
+        console.log('🔍 Pitch Filter Debug:', {
+          pitchId: pitch.id,
+          userName: pitch.user?.name,
+          status: pitch.status,
+          displayStatus: pitch.displayStatus,
+          finalStatus: status,
+          shouldShow
+        });
+
+        return shouldShow;
+      });
+
+      // Apply status filter for v4
+      if (selectedFilter === 'PENDING_REVIEW') {
+        filtered = filtered?.filter(
+          (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
+        );
+      } else if (selectedFilter === 'SENT_TO_CLIENT') {
+        filtered = filtered?.filter(
+          (pitch) => (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT'
+        );
+      } else if (selectedFilter === 'MAYBE') {
+        filtered = filtered?.filter((pitch) => {
+          const status = pitch.displayStatus || pitch.status;
+          const isMaybe = status?.toUpperCase() === 'MAYBE';
+          return isMaybe;
+        });
+      } else if (selectedFilter === 'APPROVED') {
+        filtered = filtered?.filter(
+          (pitch) =>
+            (pitch.displayStatus || pitch.status) === 'APPROVED' ||
+            (pitch.displayStatus || pitch.status) === 'AGREEMENT_PENDING' ||
+            (pitch.displayStatus || pitch.status) === 'AGREEMENT_SUBMITTED'
+        );
+      }
+
+      // Apply search filter for v4
+      if (search) {
+        filtered = filtered?.filter((elem) =>
+          elem.user.name.toLowerCase().includes(search.toLowerCase())
+        );
+      }
+
+      // Apply sorting for v4
+      return [...(filtered || [])].sort((a, b) => {
+        const nameA = (a.user?.name || '').toLowerCase();
+        const nameB = (b.user?.name || '').toLowerCase();
+
+        if (sortDirection === 'asc') {
+          return nameA.localeCompare(nameB);
+        }
+        return nameB.localeCompare(nameA);
+      });
+    }
+
+    // Original V3 logic for client-created campaigns
     // Only list pitches after credits are assigned (or already in approved/agree states)
     const creditedUserIds = new Set(
       (campaign?.shortlisted || [])
@@ -141,47 +226,16 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       const isMaybe = ['MAYBE'].includes(status);
       const isRejected = ['REJECTED'].includes(status);
       const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
-      
-      // Debug logging for staging issues
-      console.log('🔍 Filtering Debug:', {
-        pitchId: pitch.id,
-        userName: pitch.user?.name,
-        status: pitch.status,
-        displayStatus: pitch.displayStatus,
-        finalStatus: status,
-        isPending,
-        hasAssignedCredits,
-        creditedUserIds: Array.from(creditedUserIds),
-        userId: pitch?.user?.id,
-        willShow: isApprovedState || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected
-      });
-      
+
+      // For CLIENT origin campaigns: only show if credits assigned or already approved
       return isApprovedState || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected;
     });
 
     // Apply status filter
-    console.log('🎯 Status Filter Debug:', {
-      selectedFilter,
-      filteredCount: filtered?.length,
-      pitchStatuses: filtered?.map(p => ({
-        id: p.id,
-        name: p.user?.name,
-        status: p.status,
-        displayStatus: p.displayStatus,
-        finalStatus: p.displayStatus || p.status
-      }))
-    });
-    
     if (selectedFilter === 'PENDING_REVIEW') {
-      const beforeFilter = filtered?.length;
       filtered = filtered?.filter(
         (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
       );
-      console.log('🎯 PENDING_REVIEW Filter:', {
-        beforeCount: beforeFilter,
-        afterCount: filtered?.length,
-        filteredOut: beforeFilter - filtered?.length
-      });
     } else if (selectedFilter === 'SENT_TO_CLIENT') {
       filtered = filtered?.filter(
         (pitch) => (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT'
@@ -218,7 +272,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       }
       return nameB.localeCompare(nameA);
     });
-  }, [pitches, selectedFilter, search, sortDirection]);
+  }, [pitches, selectedFilter, search, sortDirection, campaign]);
 
   const handleViewPitch = (pitch) => {
     setSelectedPitch(pitch);
