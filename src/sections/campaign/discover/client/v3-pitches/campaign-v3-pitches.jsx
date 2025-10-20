@@ -77,7 +77,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const handleModalOpen = () => {
     setAddCreatorOpen(true);
   };
-  const handleModalClose = () => setModalOpen(false);
 
   const totalUsedCredits = campaign?.shortlisted?.reduce(
     (acc, creator) => acc + (creator?.ugcVideos ?? 0),
@@ -148,11 +147,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         // For v4: Show all pitches in the approval flow
         const isPending = ['PENDING_REVIEW'].includes(status);
         const sentToClient = ['SENT_TO_CLIENT'].includes(status);
+        const sentToClientWithComments = ['SENT_TO_CLIENT_WITH_COMMENTS'].includes(status);
         const isMaybe = ['MAYBE'].includes(status);
         const isApproved = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
         const isRejected = ['REJECTED'].includes(status);
 
-        const shouldShow = isPending || sentToClient || isMaybe || isApproved || isRejected;
+        const shouldShow = isPending || sentToClient || sentToClientWithComments || isMaybe || isApproved || isRejected;
         
         console.log('🔍 Pitch Filter Debug:', {
           pitchId: pitch.id,
@@ -160,6 +160,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           status: pitch.status,
           displayStatus: pitch.displayStatus,
           finalStatus: status,
+          followerCount: pitch.followerCount,
           shouldShow
         });
 
@@ -173,7 +174,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         );
       } else if (selectedFilter === 'SENT_TO_CLIENT') {
         filtered = filtered?.filter(
-          (pitch) => (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT'
+          (pitch) => ((pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT') || ((pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT_WITH_COMMENTS')
         );
       } else if (selectedFilter === 'MAYBE') {
         filtered = filtered?.filter((pitch) => {
@@ -339,6 +340,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         borderColor: '#8A5AFE',
         tooltip: 'Pitch has been sent to client for review',
       },
+      SENT_TO_CLIENT_WITH_COMMENTS: {
+        color: '#8A5AFE',
+        borderColor: '#8A5AFE',
+        tooltip: 'Pitch has been sent to client for review',
+      },
       APPROVED: {
         color: '#1ABF66',
         borderColor: '#1ABF66',
@@ -393,10 +399,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       AGREEMENT_SUBMITTED: 'AGREEMENT SUBMITTED',
     };
 
+    if (status === 'SENT_TO_CLIENT_WITH_COMMENTS') {
+      return statusTextMap.SENT_TO_CLIENT
+    }
+
     return statusTextMap[status] || status;
   };
-
-  // Do not early return; keep toolbar visible even when empty
 
   const handleCreatorTypeSelect = (type) => {
     setAddCreatorOpen(false);
@@ -935,7 +943,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
               id: c.id,
               name: c.name || 'Creator',
               profileLink: c.profileLink || '',
-              followerCount: c.followerCount || 0,
+              followerCount: c.followerCount === undefined || c.followerCount === null ? '' : String(c.followerCount).trim(),
               adminComments: c.adminComments || '',
               credits: '',
             })));
@@ -1508,7 +1516,6 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId, onUpda
             bgcolor: '#ffffff',
             border: '1px solid #e7e7e7',
             borderBottom: '3px solid #e7e7e7',
-            height: 44,
             color: '#221f20',
             fontSize: '0.875rem',
             fontWeight: 600,
@@ -1524,13 +1531,15 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId, onUpda
           variant="contained"
           disabled={loading.value}
           sx={{
-            bgcolor: '#d1d1d1',
+            bgcolor: '#3A3A3C',
+            borderBottom: '3px solid #000',
             color: '#fff',
             textTransform: 'none',
             fontWeight: 600,
             px: 3,
             '&:hover': {
-              bgcolor: '#a8a8a8',
+              bgcolor: '#525151',
+              borderBottom: '3px solid #000'
             },
           }}
         >

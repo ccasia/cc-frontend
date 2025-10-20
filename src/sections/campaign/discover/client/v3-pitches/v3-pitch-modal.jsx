@@ -21,17 +21,20 @@ import {
   Typography,
   DialogContent,
   DialogActions,
+  DialogTitle,
+  Autocomplete,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { useGetAllCreators } from 'src/api/creator';
 
 import Iconify from 'src/components/iconify';
 
 import UGCCreditsModal from './ugc-credits-modal';
 import dayjs from 'dayjs';
-import SwapCreatorModal from '../../admin/campaign-detail-pitch/swap-creator-modal';
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -234,19 +237,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
     setUgCCreditsModalOpen(false);
   };
 
-  const handleSwapSuccess = () => {
-    // Close the swap modal
-    setSwapCreatorModalOpen(false);
-
-    // Refresh the campaign data via parent's onUpdate
-    if (onUpdate) {
-      onUpdate(pitch);
-    }
-
-    // Close the pitch modal to show updated list
-    onClose();
-  };
-
   const getAvailableActions = () => {
     const actions = [];
 
@@ -290,6 +280,21 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
 
   if (!pitch) return null;
 
+  // Guest creator modal
+  if (isGuestCreator) {
+    return (
+      <ViewGuestCreatorModal
+        open={open}
+        onClose={onClose}
+        pitch={currentPitch}
+        isAdmin={isAdmin}
+        campaign={campaign}
+        onSwapped={onUpdate}
+      />
+    );
+  }
+
+  // Regular creator modal
   return (
     <>
       <Dialog
@@ -335,31 +340,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
             gap: 1,
           }}
         >
-          {/* Show Swap Creator button only for guest creators and admin users */}
-          {isGuestCreator && isAdmin && (
-            <Tooltip title="Link Creator">
-              <IconButton
-                onClick={() => setSwapCreatorModalOpen(true)}
-                size="small"
-                sx={{
-                  p: 0.8,
-                  mr: 1,
-                  color: '#FF9A02',
-                  bgcolor: '#FFF',
-                  border: '1px solid #ebebeb',
-                  borderBottom: '3px solid #ebebeb',
-                  borderRadius: '10px',
-                  height: '42px',
-                  width: '42px',
-                  '&:hover': {
-                    bgcolor: 'rgba(255, 154, 2, 0.08)',
-                  },
-                }}
-              >
-                <Iconify icon="heroicons:user-plus-solid" width={22} />
-              </IconButton>
-            </Tooltip>
-          )}
           <Tooltip title="Instagram Stats">
             <IconButton
               onClick={() => setSelectedPlatform('instagram')}
@@ -1079,7 +1059,12 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                       <Chip
                         icon={
                           <Box
-                            sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}
+                            sx={{
+                              position: 'relative',
+                              display: 'inline-flex',
+                              mr: 2,
+                              ml: -0.5,
+                            }}
                           >
                             <CircularProgress
                               variant="determinate"
@@ -1549,25 +1534,525 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
         comments={comments}
         onSuccess={handleUGCCreditsSuccess}
       />
-
-      {/* Swap Creator Modal - Only for guest creators */}
-      {isGuestCreator && (
-        <SwapCreatorModal
-          open={swapCreatorModalOpen}
-          onClose={() => setSwapCreatorModalOpen(false)}
-          guestCreator={{
-            userId: currentPitch?.user?.id,
-            user: currentPitch?.user,
-            adminComments: currentPitch?.adminComments,
-            ugcVideos: campaign?.shortlisted?.find((s) => s.userId === currentPitch?.user?.id)
-              ?.ugcVideos,
-          }}
-          campaign={campaign}
-          onSwapped={handleSwapSuccess}
-        />
-      )}
     </>
   );
+};
+
+// Modal for Guest Creator
+export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign, onSwapped }) {
+  const { enqueueSnackbar } = useSnackbar();
+  const { data: allCreators, isLoading: creatorsLoading } = useGetAllCreators();
+
+  const [selectedPlatformCreator, setSelectedPlatformCreator] = React.useState(null);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [showCreatorSelection, setShowCreatorSelection] = React.useState(false);
+
+  // Form state for editable fields
+  const [formValues, setFormValues] = React.useState({
+    name: pitch?.user?.name || '',
+    followerCount: pitch?.followerCount || '',
+    profileLink: pitch?.user?.guestProfileLink || '',
+    adminComments: pitch?.adminComments || '',
+  });
+
+  // Update form values when pitch changes
+  React.useEffect(() => {
+    if (pitch) {
+      setFormValues({
+        name: pitch?.user?.name || '',
+        followerCount: pitch?.followerCount || '',
+        profileLink: pitch?.user?.guestProfileLink || '',
+        adminComments: pitch?.adminComments || '',
+      });
+    }
+  }, [pitch]);
+
+  const handleFieldChange = (field) => (event) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [field]: event.target.value,
+    }));
+  };
+
+  // Filter out inactive creators and already shortlisted creators
+  const availableCreators = React.useMemo(() => {
+    if (!allCreators || !campaign) return [];
+
+    const shortlistedIds = new Set((campaign?.shortlisted || []).map((s) => s.userId));
+
+    return allCreators.filter(
+      (creator) =>
+        creator.status === 'active' &&
+        creator.creator?.isFormCompleted &&
+        !creator.creator?.isGuest &&
+        !shortlistedIds.has(creator.id)
+    );
+  }, [allCreators, campaign]);
+
+  const handleUpdateGuestCreator = async () => {
+    // Validate required fields
+    if (!formValues.name?.trim() || !formValues.profileLink?.trim()) {
+      enqueueSnackbar('Please fill in Creator Name and Profile Link', { variant: 'error' });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // Update guest creator information
+      const response = await axiosInstance.patch(`/api/pitch/v3/${pitch.id}/updateGuest`, {
+        name: formValues.name,
+        followerCount: formValues.followerCount,
+        profileLink: formValues.profileLink,
+        adminComments: formValues.adminComments,
+      });
+
+      enqueueSnackbar(response.data.message || 'Successfully updated guest creator!', {
+        variant: 'success',
+      });
+
+      // Close modal
+      onClose();
+
+      // Callback to refresh data
+      if (onSwapped) {
+        onSwapped();
+      }
+    } catch (error) {
+      console.error('Error updating guest creator:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to update guest creator', {
+        variant: 'error',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleLinkCreator = async () => {
+    if (!selectedPlatformCreator) {
+      enqueueSnackbar('Please select a platform creator', { variant: 'warning' });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const response = await axiosInstance.post('/api/campaign/swapCreator', {
+        campaignId: campaign.id,
+        guestUserId: pitch?.user?.id,
+        platformUserId: selectedPlatformCreator.id,
+      });
+
+      enqueueSnackbar(response.data.message || 'Successfully linked creator!', {
+        variant: 'success',
+      });
+
+      // Reset selection
+      setSelectedPlatformCreator(null);
+      setShowCreatorSelection(false);
+
+      // Close modal
+      onClose();
+
+      // Callback to refresh data
+      if (onSwapped) {
+        onSwapped();
+      }
+    } catch (error) {
+      console.error('Error linking creator:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to link creator', {
+        variant: 'error',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      PaperProps={{ sx: { borderRadius: 2, backgroundColor: '#F4F4F4' } }}
+    >
+      <DialogTitle
+        sx={{
+          fontFamily: 'Instrument Serif',
+          fontWeight: 500,
+          '&.MuiTypography-root': { fontSize: 36 },
+        }}
+      >
+        {!showCreatorSelection ? 'Non-Platform Creator' : 'Link Non-Platform Creator'}
+      </DialogTitle>
+
+      <DialogContent sx={{ bgcolor: '#F4F4F4' }}>
+        <Box sx={{ pb: 2 }}>
+          <Box display="flex" gap={2} mb={2}>
+            {/* Creator Name */}
+            <Box flex={1}>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+              >
+                Creator Name
+              </Typography>
+              {isAdmin ? (
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Creator Name"
+                  value={formValues.name}
+                  onChange={handleFieldChange('name')}
+                  disabled={submitting}
+                  sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                />
+              ) : (
+                <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                  {formValues.name || '—'}
+                </Typography>
+              )}
+            </Box>
+
+            {/* Follower Count */}
+            <Box flex={1}>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+              >
+                Follower Count
+              </Typography>
+              {isAdmin ? (
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Follower Count"
+                  value={formValues.followerCount}
+                  onChange={handleFieldChange('followerCount')}
+                  disabled={submitting}
+                  sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                />
+              ) : (
+                <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                  {formValues.followerCount || '—'}
+                </Typography>
+              )}
+            </Box>
+
+            {/* Profile Link */}
+            <Box flex={1}>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+              >
+                Profile Link
+              </Typography>
+              {isAdmin ? (
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Profile Link"
+                  value={formValues.profileLink}
+                  onChange={handleFieldChange('profileLink')}
+                  disabled={submitting}
+                  sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                />
+              ) : formValues.profileLink ? (
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#1340FF', textDecoration: 'underline', wordBreak: 'break-all' }}
+                  component="a"
+                  href={formValues.profileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {formValues.profileLink}
+                </Typography>
+              ) : (
+                <Typography variant="body2">—</Typography>
+              )}
+            </Box>
+          </Box>
+
+          {/* CS Comments */}
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+            >
+              CS Comments (Optional)
+            </Typography>
+            {isAdmin ? (
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Input comments about the creator that your clients might find helpful"
+                value={formValues.adminComments}
+                onChange={handleFieldChange('adminComments')}
+                disabled={submitting}
+                sx={{ bgcolor: '#fff', borderRadius: 1 }}
+              />
+            ) : (
+              <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
+                {formValues.adminComments || '—'}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* Platform Creator Selection - Only show for admins when Link Creator button is clicked */}
+        {isAdmin && showCreatorSelection && (
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+            >
+              Select Platform Creator to Link
+            </Typography>
+
+            {creatorsLoading ? (
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <CircularProgress thickness={6} size={28} />
+              </Box>
+            ) : (
+              <Autocomplete
+                value={selectedPlatformCreator}
+                onChange={(_, val) => setSelectedPlatformCreator(val)}
+                options={availableCreators}
+                getOptionLabel={(opt) => opt?.name || ''}
+                isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                filterOptions={(options, state) => {
+                  if (!state.inputValue) return options;
+
+                  const lowercaseInput = state.inputValue.toLowerCase();
+                  return options.filter(
+                    (option) =>
+                      option?.name?.toLowerCase().includes(lowercaseInput) ||
+                      option?.email?.toLowerCase().includes(lowercaseInput) ||
+                      option?.creator?.instagram?.toLowerCase().includes(lowercaseInput)
+                  );
+                }}
+                slotProps={{
+                  popper: {
+                    placement: 'bottom-start',
+                    modifiers: [
+                      {
+                        name: 'flip',
+                        enabled: false,
+                      },
+                    ],
+                    sx: {
+                      zIndex: (theme) => theme.zIndex.modal + 1,
+                    },
+                  },
+                }}
+                renderOption={(props, option) => (
+                  <Box
+                    component="li"
+                    {...props}
+                    key={option.id}
+                    sx={{ display: 'flex', gap: 1.5, py: 1 }}
+                  >
+                    <Avatar
+                      src={option?.photoURL}
+                      sx={{ width: 30, height: 30, borderRadius: 2, flexShrink: 0 }}
+                    >
+                      {option?.name?.[0]?.toUpperCase()}
+                    </Avatar>
+                    <Stack spacing={0}>
+                      <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 500 }}>
+                        {option?.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                        {option?.email}
+                      </Typography>
+                      {option?.creator?.instagram && (
+                        <Typography variant="caption" color="primary.main" sx={{ lineHeight: 1.2 }}>
+                          @{option.creator.instagram}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Search by name, email, or Instagram handle"
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <Box sx={{ pl: 1, display: 'flex', alignItems: 'center' }}>
+                          <Iconify icon="eva:search-fill" width={16} sx={{ color: '#8E8E93' }} />
+                        </Box>
+                      ),
+                    }}
+                    sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                  />
+                )}
+              />
+            )}
+
+            {selectedPlatformCreator && (
+              <Box
+                sx={{
+                  mt: 2,
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
+                  border: '1px solid',
+                  borderColor: (theme) => alpha(theme.palette.success.main, 0.24),
+                }}
+              >
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Avatar
+                    src={selectedPlatformCreator?.photoURL}
+                    sx={{ width: 48, height: 48, borderRadius: 2 }}
+                  >
+                    {selectedPlatformCreator?.name?.[0]?.toUpperCase()}
+                  </Avatar>
+                  <Box flex={1}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {selectedPlatformCreator?.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {selectedPlatformCreator?.email}
+                    </Typography>
+                  </Box>
+                  <Iconify
+                    icon="eva:checkmark-circle-2-fill"
+                    width={24}
+                    sx={{ color: 'success.main' }}
+                  />
+                </Stack>
+              </Box>
+            )}
+          </Box>
+        )}
+      </DialogContent>
+
+      <DialogActions>
+        {isAdmin && !showCreatorSelection && (
+          <>
+            <Button
+              onClick={() => setShowCreatorSelection(true)}
+              disabled={submitting}
+              sx={{
+                bgcolor: '#ffffff',
+                color: 'text.primary',
+                border: '1px solid',
+                borderColor: '#e7e7e7',
+                borderBottom: '3px solid',
+                borderBottomColor: '#e7e7e7',
+                borderRadius: 1,
+                px: 2,
+                '&:hover': {
+                  bgcolor: '#F7F7F7',
+                },
+              }}
+              startIcon={
+                <Iconify
+                  icon="mdi:account-plus-outline"
+                  width={24}
+                  sx={{ color: 'text.primary' }}
+                />
+              }
+            >
+              Link Creator
+            </Button>
+            <Button
+              onClick={handleUpdateGuestCreator}
+              disabled={submitting}
+              sx={{
+                bgcolor: '#203ff5',
+                color: '#fff',
+                fontWeight: 600,
+                px: 2,
+                borderBottom: '3px solid #000',
+                textTransform: 'none',
+                '&:hover': { bgcolor: '#1a32c4' },
+                '&.Mui-disabled': {
+                  bgcolor: '#C7C7CC',
+                  color: '#fff',
+                },
+              }}
+            >
+              {submitting ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Update'}
+            </Button>
+          </>
+        )}
+        {isAdmin && showCreatorSelection && (
+          <>
+            <Button
+              onClick={() => {
+                setShowCreatorSelection(false);
+                setSelectedPlatformCreator(null);
+              }}
+              disabled={submitting}
+              sx={{
+                bgcolor: '#ffffff',
+                color: 'text.primary',
+                border: '1px solid',
+                borderColor: '#e7e7e7',
+                borderBottom: '3px solid',
+                borderBottomColor: '#e7e7e7',
+                borderRadius: 1,
+                px: 2,
+                '&:hover': {
+                  bgcolor: '#F7F7F7',
+                },
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleLinkCreator}
+              disabled={submitting || !selectedPlatformCreator}
+              sx={{
+                bgcolor: '#3A3A3C',
+                borderBottom: '3px solid #000',
+                color: '#fff',
+                textTransform: 'none',
+                fontWeight: 600,
+                '&:hover': {
+                  bgcolor: '#525151',
+                  borderBottom: '3px solid #000',
+                },
+                '&.Mui-disabled': {
+                  bgcolor: '#C7C7CC',
+                  color: '#fff',
+                  borderBottom: '3px solid #0000001A',
+                },
+              }}
+            >
+              {submitting ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Link'}
+            </Button>
+          </>
+        )}
+        {!isAdmin && (
+          <Button
+            onClick={onClose}
+            sx={{
+              color: '#203ff5',
+              fontWeight: 600,
+              textTransform: 'none',
+              '&:hover': { bgcolor: 'rgba(32,63,245,0.08)' },
+            }}
+          >
+            Close
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+ViewGuestCreatorModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  pitch: PropTypes.object,
+  isAdmin: PropTypes.bool,
+  campaign: PropTypes.object,
+  onSwapped: PropTypes.func,
 };
 
 export default V3PitchModal;
