@@ -5,7 +5,7 @@ import { useTheme } from '@emotion/react';
 import React, { useMemo, useState, useEffect } from 'react';
 import { LoadingButton } from '@mui/lab';
 import { useSnackbar } from 'notistack';
-import { useForm } from 'react-hook-form';
+
 
 import {
   Dialog,
@@ -35,9 +35,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { shortlistCreator, useGetAllCreators, shortlistGuestCreator } from 'src/api/creator';
-import axiosInstance from 'src/utils/axios';
-import { useShortlistedCreators } from '../../admin/campaign-detail-creator/hooks/shortlisted-creator';
+import { useGetAllCreators } from 'src/api/creator';
 
 import Iconify from 'src/components/iconify';
 import Label from 'src/components/label';
@@ -47,22 +45,40 @@ import V3PitchModal from './v3-pitch-modal';
 import V3PitchActions from './v3-pitch-actions';
 import BatchAssignUGCModal from './BatchAssignUGCModal';
 
+const TYPE_LABELS = {
+  video: 'Pitch (Video)',
+  text: 'Pitch (Letter)',
+  shortlisted: 'Shortlisted',
+};
+
+const PitchTypeCell = React.memo(function PitchTypeCell({ type, isGuestCreator }) {
+  const label = TYPE_LABELS[type] ?? (type || '—');
+  const subtitle =
+    type === 'shortlisted' ? (isGuestCreator ? '(Non-platform)' : '(On Platform)') : null;
+
+  return (
+    <Stack>
+      <Typography variant="body2" noWrap>{label}</Typography>
+      {subtitle && (
+        <Typography variant="body2" noWrap>{subtitle}</Typography>
+      )}
+    </Stack>
+  );
+});
+
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
-  const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
-  const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
+  const [sortDirection, setSortDirection] = useState('asc');
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
-  const [viewOpen, setViewOpen] = useState(false);
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
   const [batchCreditsOpen, setBatchCreditsOpen] = useState(false);
-  const [batchCreditCreators, setBatchCreditCreators] = useState([]); // [{id, name, credits}]
+  const [batchCreditCreators, setBatchCreditCreators] = useState([]);
   const [batchAdminComments, setBatchAdminComments] = useState('');
-  const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const isDisabled = useMemo(
@@ -71,8 +87,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   );
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
-
-  const [modalOpen, setModalOpen] = useState(false);
 
   const handleModalOpen = () => {
     setAddCreatorOpen(true);
@@ -83,6 +97,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     0
   );
   const ugcLeft = (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
+
   // Count pitches by display status
   const pendingReviewCount =
     pitches?.filter((pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW').length ||
@@ -123,157 +138,90 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  const filteredPitches = useMemo(() => {
-    // For v4 campaigns, show all pitches regardless of credit assignment
-    // The credit assignment happens via admin shortlisting, not client approval
-    if (campaign?.submissionVersion === 'v4') {
-      console.log('🔍 V4 Campaign Pitches Debug:', {
-        campaignId: campaign?.id,
-        submissionVersion: campaign?.submissionVersion,
-        totalPitches: pitches?.length,
-        selectedFilter,
-        pitches: pitches?.map(p => ({ 
-          id: p.id, 
-          status: p.status, 
-          displayStatus: p.displayStatus, 
-          userName: p.user?.name,
-          ugcCredits: p.ugcCredits
-        }))
-      });
+const filteredPitches = useMemo(() => {
+  const isV4 = campaign?.submissionVersion === 'v4';
 
-      let filtered = (pitches || []).filter((pitch) => {
-        const status = (pitch.displayStatus || pitch.status) || '';
-        
-        // For v4: Show all pitches in the approval flow
-        const isPending = ['PENDING_REVIEW'].includes(status);
-        const sentToClient = ['SENT_TO_CLIENT'].includes(status);
-        const sentToClientWithComments = ['SENT_TO_CLIENT_WITH_COMMENTS'].includes(status);
-        const isMaybe = ['MAYBE'].includes(status);
-        const isApproved = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
-        const isRejected = ['REJECTED'].includes(status);
+  if (isV4) {
+    console.log('🔍 V4 Campaign Pitches Debug:', {
+      campaignId: campaign?.id,
+      submissionVersion: campaign?.submissionVersion,
+      totalPitches: pitches?.length,
+      selectedFilter,
+      pitches: pitches?.map(p => ({ 
+        id: p.id, 
+        status: p.status, 
+        displayStatus: p.displayStatus, 
+        userName: p.user?.name,
+        ugcCredits: p.ugcCredits,
+        isGuestCreator: p.user?.creator?.isGuest,
+      }))
+    });
+  }
 
-        const shouldShow = isPending || sentToClient || sentToClientWithComments || isMaybe || isApproved || isRejected;
-        
-        console.log('🔍 Pitch Filter Debug:', {
-          pitchId: pitch.id,
-          userName: pitch.user?.name,
-          status: pitch.status,
-          displayStatus: pitch.displayStatus,
-          finalStatus: status,
-          followerCount: pitch.followerCount,
-          shouldShow
-        });
+  // Determine which pitches to show based on version
+  let filtered = (pitches || []).filter((pitch) => {
+    const status = (pitch.displayStatus || pitch.status) || '';
+    const userId = pitch?.user?.id;
 
-        return shouldShow;
-      });
+    // Define status checks
+    const isPending = ['PENDING_REVIEW'].includes(status);
+    const sentToClient = ['SENT_TO_CLIENT'].includes(status);
+    const sentToClientWithComments = ['SENT_TO_CLIENT_WITH_COMMENTS'].includes(status);
+    const isMaybe = ['MAYBE'].includes(status);
+    const isApproved = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
+    const isRejected = ['REJECTED'].includes(status);
 
-      // Apply status filter for v4
-      if (selectedFilter === 'PENDING_REVIEW') {
-        filtered = filtered?.filter(
-          (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
-        );
-      } else if (selectedFilter === 'SENT_TO_CLIENT') {
-        filtered = filtered?.filter(
-          (pitch) => ((pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT') || ((pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT_WITH_COMMENTS')
-        );
-      } else if (selectedFilter === 'MAYBE') {
-        filtered = filtered?.filter((pitch) => {
-          const status = pitch.displayStatus || pitch.status;
-          const isMaybe = status?.toUpperCase() === 'MAYBE';
-          return isMaybe;
-        });
-      } else if (selectedFilter === 'APPROVED') {
-        filtered = filtered?.filter(
-          (pitch) =>
-            (pitch.displayStatus || pitch.status) === 'APPROVED' ||
-            (pitch.displayStatus || pitch.status) === 'AGREEMENT_PENDING' ||
-            (pitch.displayStatus || pitch.status) === 'AGREEMENT_SUBMITTED'
-        );
-      }
-
-      // Apply search filter for v4
-      if (search) {
-        filtered = filtered?.filter((elem) =>
-          elem.user.name.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-
-      // Apply sorting for v4
-      return [...(filtered || [])].sort((a, b) => {
-        const nameA = (a.user?.name || '').toLowerCase();
-        const nameB = (b.user?.name || '').toLowerCase();
-
-        if (sortDirection === 'asc') {
-          return nameA.localeCompare(nameB);
-        }
-        return nameB.localeCompare(nameA);
-      });
+    // V4: Show all pitches in approval flow
+    if (isV4) {
+      return isPending || sentToClient || sentToClientWithComments || isMaybe || isApproved || isRejected;
     }
 
-    // Original V3 logic for client-created campaigns
-    // Only list pitches after credits are assigned (or already in approved/agree states)
+    // V3: Only show if credits assigned or already approved
     const creditedUserIds = new Set(
       (campaign?.shortlisted || [])
         .filter((s) => (s?.ugcVideos || 0) > 0)
         .map((s) => s.userId)
     );
+    const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
+    return isApproved || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected;
+  });
 
-    let filtered = (pitches || []).filter((pitch) => {
-      const status = (pitch.displayStatus || pitch.status) || '';
-      const userId = pitch?.user?.id;
-      const isApprovedState = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
-      const isPending = ['PENDING_REVIEW'].includes(status);
-      const sentToClient = ['SENT_TO_CLIENT'].includes(status);
-      const isMaybe = ['MAYBE'].includes(status);
-      const isRejected = ['REJECTED'].includes(status);
-      const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
+  if (selectedFilter === 'PENDING_REVIEW') {
+    filtered = filtered?.filter(
+      (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
+    );
+  } else if (selectedFilter === 'SENT_TO_CLIENT') {
+    const sentToClientStatuses = ['SENT_TO_CLIENT'];
+    if (isV4) sentToClientStatuses.push('SENT_TO_CLIENT_WITH_COMMENTS');
+    
+    filtered = filtered?.filter(
+      (pitch) => sentToClientStatuses.includes(pitch.displayStatus || pitch.status)
+    );
+  } else if (selectedFilter === 'MAYBE') {
+    filtered = filtered?.filter(
+      (pitch) => (pitch.displayStatus || pitch.status) === 'MAYBE'
+    );
+  } else if (selectedFilter === 'APPROVED') {
+    filtered = filtered?.filter(
+      (pitch) =>
+        ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(
+          pitch.displayStatus || pitch.status
+        )
+    );
+  }
 
-      // For CLIENT origin campaigns: only show if credits assigned or already approved
-      return isApprovedState || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected;
-    });
+  if (search) {
+    filtered = filtered?.filter((elem) =>
+      elem.user.name.toLowerCase().includes(search.toLowerCase())
+    );
+  }
 
-    // Apply status filter
-    if (selectedFilter === 'PENDING_REVIEW') {
-      filtered = filtered?.filter(
-        (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
-      );
-    } else if (selectedFilter === 'SENT_TO_CLIENT') {
-      filtered = filtered?.filter(
-        (pitch) => (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT'
-      );
-    } else if (selectedFilter === 'MAYBE') {
-      filtered = filtered?.filter((pitch) => {
-        const status = pitch.displayStatus || pitch.status;
-        const isMaybe = status?.toUpperCase() === 'MAYBE';
-        return isMaybe;
-      });
-    } else if (selectedFilter === 'APPROVED') {
-      filtered = filtered?.filter(
-        (pitch) =>
-          (pitch.displayStatus || pitch.status) === 'APPROVED' ||
-          (pitch.displayStatus || pitch.status) === 'AGREEMENT_PENDING' ||
-          (pitch.displayStatus || pitch.status) === 'AGREEMENT_SUBMITTED'
-      );
-    }
-
-    // Apply search filter
-    if (search) {
-      filtered = filtered?.filter((elem) =>
-        elem.user.name.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    // Apply sorting
-    return [...(filtered || [])].sort((a, b) => {
-      const nameA = (a.user?.name || '').toLowerCase();
-      const nameB = (b.user?.name || '').toLowerCase();
-
-      if (sortDirection === 'asc') {
-        return nameA.localeCompare(nameB);
-      }
-      return nameB.localeCompare(nameA);
-    });
-  }, [pitches, selectedFilter, search, sortDirection, campaign]);
+  return [...(filtered || [])].sort((a, b) => {
+    const nameA = (a.user?.name || '').toLowerCase();
+    const nameB = (b.user?.name || '').toLowerCase();
+    return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+  });
+}, [pitches, selectedFilter, search, sortDirection, campaign]);
 
   const handleViewPitch = (pitch) => {
     setSelectedPitch(pitch);
@@ -424,6 +372,71 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   return (
     <Box sx={{ overflowX: 'auto' }}>
       <Stack direction="column" spacing={2}>
+        <Button
+          onClick={handleToggleSort}
+          endIcon={
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              {sortDirection === 'asc' ? (
+                <Stack direction="column" alignItems="center" spacing={0}>
+                  <Typography
+                    variant="caption"
+                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                  >
+                    A
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                  >
+                    Z
+                  </Typography>
+                </Stack>
+              ) : (
+                <Stack direction="column" alignItems="center" spacing={0}>
+                  <Typography
+                    variant="caption"
+                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                  >
+                    Z
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                  >
+                    A
+                  </Typography>
+                </Stack>
+              )}
+              <Iconify
+                icon={
+                  sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+                }
+                width={12}
+              />
+            </Stack>
+          }
+          sx={{
+            px: 1.5,
+            py: 0.75,
+            height: '42px',
+            color: '#637381',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            backgroundColor: 'transparent',
+            border: 'none',
+            borderRadius: 1,
+            textTransform: 'none',
+            whiteSpace: 'nowrap',
+            boxShadow: 'none',
+            '&:hover': {
+              backgroundColor: 'transparent',
+              color: '#221f20',
+            },
+            alignSelf: 'self-start'
+          }}
+        >
+          Alphabetical
+        </Button>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           spacing={2}
@@ -431,72 +444,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           alignItems={{ xs: 'flex-start', md: 'center' }}
           sx={{ mb: 1 }}
         >
-          {/* Alphabetical Sort Button */}
-          <Button
-            onClick={handleToggleSort}
-            endIcon={
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {sortDirection === 'asc' ? (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                  </Stack>
-                )}
-                <Iconify
-                  icon={
-                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                  }
-                  width={12}
-                />
-              </Stack>
-            }
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              height: '42px',
-              color: '#637381',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: 1,
-              textTransform: 'none',
-              whiteSpace: 'nowrap',
-              boxShadow: 'none',
-              '&:hover': {
-                backgroundColor: 'transparent',
-                color: '#221f20',
-              },
-            }}
-          >
-            Alphabetical
-          </Button>
-
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1}
@@ -709,7 +656,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                     px: { xs: 1, sm: 2 },
                     color: '#221f20',
                     fontWeight: 600,
-                    width: 220,
+                    width: '100%',
                     borderRadius: '10px 0 0 10px',
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
@@ -717,20 +664,30 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 >
                   Creator
                 </TableCell>
-                {smUp && (
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 220,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Creator&apos;s Email
-                  </TableCell>
-                )}
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
+                    fontWeight: 600,
+                    width: 80,
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Engagement Rate
+                </TableCell>
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
+                    fontWeight: 600,
+                    width: 80,
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Follower Count
+                </TableCell>
                 <TableCell
                   sx={{
                     py: 1,
@@ -741,7 +698,19 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  Pitch Submitted
+                  Date Submitted
+                </TableCell>
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
+                    fontWeight: 600,
+                    width: 150,
+                    bgcolor: '#f5f5f5',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Type
                 </TableCell>
                 <TableCell
                   sx={{
@@ -753,18 +722,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  Format
-                </TableCell>
-                <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 120,
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
                   Status
                 </TableCell>
                 <TableCell
@@ -772,20 +729,19 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                     py: 1,
                     color: '#221f20',
                     fontWeight: 600,
-                    width: 120,
+                    width: 100,
                     borderRadius: '0 10px 10px 0',
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
                   }}
-                >
-                  Actions
-                </TableCell>
+                />
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredPitches?.map((pitch) => {
                 const displayStatus = pitch.displayStatus || pitch.status;
                 const statusInfo = getStatusInfo(displayStatus);
+                const isGuestCreator = pitch.user?.creator?.isGuest;
 
                 return (
                   <TableRow key={pitch.id} hover>
@@ -806,31 +762,20 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                         </Avatar>
                         <Stack spacing={0.5}>
                           <Typography variant="body2">{pitch.user?.name}</Typography>
-                          {!smUp && (
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              {pitch.user?.email}
-                            </Typography>
-                          )}
                         </Stack>
                       </Stack>
                     </TableCell>
-                    {smUp && (
-                      <TableCell>
-                        {(() => {
-                          const email = pitch.user?.email || '';
-                          if (!email) return '-';
-                          if (email.includes('@tempmail.com') || email.startsWith('guest_')) return '-';
-                          return email;
-                        })()}
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      <Typography variant='body2'>0%</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant='body2'>0K</Typography>
+                    </TableCell>
                     <TableCell>
                       <Stack spacing={0.5} alignItems="start">
                         <Typography
                           variant="body2"
-                          sx={{
-                            fontSize: '0.875rem',
-                          }}
+                          whiteSpace={'nowrap'}
                         >
                           {dayjs(pitch.createdAt).format('LL')}
                         </Typography>
@@ -839,7 +784,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                           sx={{
                             color: '#8e8e93',
                             display: 'block',
-                            fontSize: '0.875rem',
                             mt: '-2px',
                           }}
                         >
@@ -848,17 +792,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                       </Stack>
                     </TableCell>
                     <TableCell>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          textTransform: 'uppercase',
-                          fontWeight: 600,
-                          fontSize: '0.75rem',
-                          color: pitch.type === 'video' ? '#1340FF' : '#8E8E93',
-                        }}
-                      >
-                        {pitch.type === 'video' ? 'Video' : 'Text'}
-                      </Typography>
+                      <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} />
                     </TableCell>
                     <TableCell>
                       <Box
@@ -867,9 +801,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                           fontWeight: 700,
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: 0.25,
-                          px: 1.5,
+                          gap: 0.5,
                           py: 0.5,
+                          pl: 1,
+                          pr: displayStatus === 'SENT_TO_CLIENT_WITH_COMMENTS' ? 2.5 : 1,
                           fontSize: '0.75rem',
                           border: '1px solid',
                           borderBottom: '3px solid',
@@ -881,21 +816,19 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                         }}
                       >
                         {getStatusText(displayStatus, pitch)}
-                        {pitch?.adminComments &&
-                          pitch.adminComments.trim().length > 0 &&
-                          (displayStatus === 'SENT_TO_CLIENT') && (
-                            <Tooltip title="CS Comments provided" arrow>
-                              <Box
-                                component="img"
-                                src="/assets/icons/components/ic-comments.svg"
-                                alt="Comments"
-                                sx={{ width: 16, height: 16 }}
-                              />
-                            </Tooltip>
-                          )}
+                        {pitch?.adminComments && displayStatus === 'SENT_TO_CLIENT_WITH_COMMENTS' &&
+                          <Tooltip title="CS Comments provided" arrow>
+                            <Box
+                              component="img"
+                              src="/assets/icons/components/ic-comments.svg"
+                              alt="Comments"
+                              sx={{ width: 16, height: 16 }}
+                            />
+                          </Tooltip>
+                        }
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ padding: 0, paddingRight: 1 }}>
                       {smUp ? (
                         <V3PitchActions pitch={pitch} onViewPitch={handleViewPitch} />
                       ) : (
