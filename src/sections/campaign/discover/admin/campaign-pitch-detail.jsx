@@ -20,7 +20,7 @@ const CampaignPitchDetail = ({ pitch }) => {
   
   const isClient = user?.role === 'client' || user?.admin?.role?.name === 'client';
 
-  const approve = async ({ campaignId, creatorId, pitchId }) => {
+  const approve = async ({ pitchId }) => {
     try {
       let endpoint;
       if (isClient) {
@@ -44,7 +44,7 @@ const CampaignPitchDetail = ({ pitch }) => {
     }
   };
 
-  const reject = async ({ campaignId, creatorId, pitchId }) => {
+  const reject = async ({ pitchId }) => {
     try {
       let endpoint;
       if (isClient) {
@@ -64,19 +64,6 @@ const CampaignPitchDetail = ({ pitch }) => {
       window.location.reload();
     } catch (error) {
       enqueueSnackbar(error?.response?.data?.message || 'Failed to reject pitch', {
-        variant: 'error',
-      });
-    }
-  };
-
-  const filter = async ({ pitchId }) => {
-    try {
-      const res = await axiosInstance.post(endpoints.campaign.pitch.filter, {
-        pitchId,
-      });
-      enqueueSnackbar(res?.data?.message);
-    } catch (error) {
-      enqueueSnackbar(error?.message, {
         variant: 'error',
       });
     }
