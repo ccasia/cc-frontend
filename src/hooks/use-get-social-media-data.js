@@ -15,6 +15,10 @@ export function useCreatorSocialMediaData(creatorId, options = {}) {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
+      revalidateIfStale: false,        // do not revalidate just because cache is stale
+      shouldRetryOnError: false,       // stop retrying on 4xx/any error
+      errorRetryCount: 0,              // hard stop retries
+      dedupingInterval: 300000,        // 5 min dedupe window (tune as needed)
       ...options,
     }
   );
@@ -25,6 +29,10 @@ export function useCreatorSocialMediaData(creatorId, options = {}) {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
+      revalidateIfStale: false,        // do not revalidate just because cache is stale
+      shouldRetryOnError: false,       // stop retrying on 4xx/any error
+      errorRetryCount: 0,              // hard stop retries
+      dedupingInterval: 300000,        // 5 min dedupe window (tune as needed)
       ...options,
     }
   );
