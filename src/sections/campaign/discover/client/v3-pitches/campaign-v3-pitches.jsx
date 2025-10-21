@@ -1,7 +1,5 @@
 /* eslint-disable no-nested-ternary */
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { useTheme } from '@emotion/react';
 import React, { useMemo, useState, useEffect } from 'react';
 import { LoadingButton } from '@mui/lab';
 import { useSnackbar } from 'notistack';
@@ -28,7 +26,6 @@ import {
   TableContainer,
   CircularProgress,
 } from '@mui/material';
-import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -42,29 +39,15 @@ import Label from 'src/components/label';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import V3PitchModal from './v3-pitch-modal';
-import V3PitchActions from './v3-pitch-actions';
+import PitchRow from './v3-pitch-row';
 import BatchAssignUGCModal from './BatchAssignUGCModal';
 
-const TYPE_LABELS = {
-  video: 'Pitch (Video)',
-  text: 'Pitch (Letter)',
-  shortlisted: 'Shortlisted',
+const countPitchesByStatus = (pitches, statusList) => {
+  return pitches?.filter((pitch) => {
+    const status = pitch.displayStatus || pitch.status;
+    return statusList.includes(status);
+  }).length || 0;
 };
-
-const PitchTypeCell = React.memo(function PitchTypeCell({ type, isGuestCreator }) {
-  const label = TYPE_LABELS[type] ?? (type || '—');
-  const subtitle =
-    type === 'shortlisted' ? (isGuestCreator ? '(Non-platform)' : '(On Platform)') : null;
-
-  return (
-    <Stack>
-      <Typography variant="body2" noWrap>{label}</Typography>
-      {subtitle && (
-        <Typography variant="body2" noWrap>{subtitle}</Typography>
-      )}
-    </Stack>
-  );
-});
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const { user } = useAuthContext();
@@ -88,10 +71,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
 
-  const handleModalOpen = () => {
-    setAddCreatorOpen(true);
-  };
-
   const totalUsedCredits = campaign?.shortlisted?.reduce(
     (acc, creator) => acc + (creator?.ugcVideos ?? 0),
     0
@@ -99,134 +78,104 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const ugcLeft = (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
 
   // Count pitches by display status
-  const pendingReviewCount =
-    pitches?.filter((pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW').length ||
-    0;
+  const pendingReviewCount = countPitchesByStatus(pitches, ['PENDING_REVIEW']);
 
-  const sentToClientCount =
-    pitches?.filter((pitch) => (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT').length ||
-    0;
+  const sentToClientCount = countPitchesByStatus(pitches, ['SENT_TO_CLIENT', 'SENT_TO_CLIENT_WITH_COMMENTS']);
 
-  const maybeCount = (() => {
-    const maybePitches = pitches?.filter((pitch) => {
-      const status = pitch.displayStatus || pitch.status;
-      const isMaybe = status?.toUpperCase() === 'MAYBE';
-      if (isMaybe) {
-        console.log('📊 Found MAYBE pitch:', {
-          id: pitch.id,
-          status: pitch.status,
-          displayStatus: pitch.displayStatus,
-          finalStatus: status
-        });
-      }
-      return isMaybe;
-    }) || [];
+  const maybeCount = countPitchesByStatus(pitches, ['MAYBE']);
 
-    return maybePitches.length;
-  })();
-
-  const approvedCount =
-    pitches?.filter(
-      (pitch) =>
-        (pitch.displayStatus || pitch.status) === 'APPROVED' ||
-        (pitch.displayStatus || pitch.status) === 'AGREEMENT_PENDING' ||
-        (pitch.displayStatus || pitch.status) === 'AGREEMENT_SUBMITTED'
-    ).length || 0;
+  const approvedCount = countPitchesByStatus(pitches, ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED']);
 
   // Toggle sort direction
   const handleToggleSort = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-const filteredPitches = useMemo(() => {
-  const isV4 = campaign?.submissionVersion === 'v4';
+  const filteredPitches = useMemo(() => {
+    const isV4 = campaign?.submissionVersion === 'v4';
 
-  if (isV4) {
-    console.log('🔍 V4 Campaign Pitches Debug:', {
-      campaignId: campaign?.id,
-      submissionVersion: campaign?.submissionVersion,
-      totalPitches: pitches?.length,
-      selectedFilter,
-      pitches: pitches?.map(p => ({ 
-        id: p.id, 
-        status: p.status, 
-        displayStatus: p.displayStatus, 
-        userName: p.user?.name,
-        ugcCredits: p.ugcCredits,
-        isGuestCreator: p.user?.creator?.isGuest,
-      }))
-    });
-  }
-
-  // Determine which pitches to show based on version
-  let filtered = (pitches || []).filter((pitch) => {
-    const status = (pitch.displayStatus || pitch.status) || '';
-    const userId = pitch?.user?.id;
-
-    // Define status checks
-    const isPending = ['PENDING_REVIEW'].includes(status);
-    const sentToClient = ['SENT_TO_CLIENT'].includes(status);
-    const sentToClientWithComments = ['SENT_TO_CLIENT_WITH_COMMENTS'].includes(status);
-    const isMaybe = ['MAYBE'].includes(status);
-    const isApproved = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
-    const isRejected = ['REJECTED'].includes(status);
-
-    // V4: Show all pitches in approval flow
     if (isV4) {
-      return isPending || sentToClient || sentToClientWithComments || isMaybe || isApproved || isRejected;
+      console.log('🔍 V4 Campaign Pitches Debug:', {
+        campaignId: campaign?.id,
+        submissionVersion: campaign?.submissionVersion,
+        totalPitches: pitches?.length,
+        selectedFilter,
+        pitches: pitches?.map(p => ({ 
+          id: p.id, 
+          status: p.status, 
+          displayStatus: p.displayStatus, 
+          userName: p.user?.name,
+          ugcCredits: p.ugcCredits,
+          isGuestCreator: p.user?.creator?.isGuest,
+        }))
+      });
     }
 
-    // V3: Only show if credits assigned or already approved
-    const creditedUserIds = new Set(
-      (campaign?.shortlisted || [])
-        .filter((s) => (s?.ugcVideos || 0) > 0)
-        .map((s) => s.userId)
-    );
-    const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
-    return isApproved || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected;
-  });
+    // Determine which pitches to show based on version
+    let filtered = (pitches || []).filter((pitch) => {
+      const status = (pitch.displayStatus || pitch.status) || '';
+      const userId = pitch?.user?.id;
 
-  if (selectedFilter === 'PENDING_REVIEW') {
-    filtered = filtered?.filter(
-      (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
-    );
-  } else if (selectedFilter === 'SENT_TO_CLIENT') {
-    const sentToClientStatuses = ['SENT_TO_CLIENT'];
-    if (isV4) sentToClientStatuses.push('SENT_TO_CLIENT_WITH_COMMENTS');
-    
-    filtered = filtered?.filter(
-      (pitch) => sentToClientStatuses.includes(pitch.displayStatus || pitch.status)
-    );
-  } else if (selectedFilter === 'MAYBE') {
-    filtered = filtered?.filter(
-      (pitch) => (pitch.displayStatus || pitch.status) === 'MAYBE'
-    );
-  } else if (selectedFilter === 'APPROVED') {
-    filtered = filtered?.filter(
-      (pitch) =>
-        ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(
-          pitch.displayStatus || pitch.status
-        )
-    );
-  }
+      // Define status checks
+      const isPending = ['PENDING_REVIEW'].includes(status);
+      const sentToClient = ['SENT_TO_CLIENT'].includes(status);
+      const sentToClientWithComments = ['SENT_TO_CLIENT_WITH_COMMENTS'].includes(status);
+      const isMaybe = ['MAYBE'].includes(status);
+      const isApproved = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
+      const isRejected = ['REJECTED'].includes(status);
 
-  if (search) {
-    filtered = filtered?.filter((elem) =>
-      elem.user.name.toLowerCase().includes(search.toLowerCase())
-    );
-  }
+      // V4: Show all pitches in approval flow
+      if (isV4) {
+        return isPending || sentToClient || sentToClientWithComments || isMaybe || isApproved || isRejected;
+      }
 
-  return [...(filtered || [])].sort((a, b) => {
-    const nameA = (a.user?.name || '').toLowerCase();
-    const nameB = (b.user?.name || '').toLowerCase();
-    return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
-  });
-}, [pitches, selectedFilter, search, sortDirection, campaign]);
+      // V3: Only show if credits assigned or already approved
+      const creditedUserIds = new Set(
+        (campaign?.shortlisted || [])
+          .filter((s) => (s?.ugcVideos || 0) > 0)
+          .map((s) => s.userId)
+      );
+      const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
+      return isApproved || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected;
+    });
 
-  const handleViewPitch = (pitch) => {
-    setSelectedPitch(pitch);
-    setOpenPitchModal(true);
-  };
+    if (selectedFilter === 'PENDING_REVIEW') {
+      filtered = filtered?.filter(
+        (pitch) => (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW'
+      );
+    } else if (selectedFilter === 'SENT_TO_CLIENT') {
+      const sentToClientStatuses = ['SENT_TO_CLIENT'];
+      if (isV4) sentToClientStatuses.push('SENT_TO_CLIENT_WITH_COMMENTS');
+      
+      filtered = filtered?.filter(
+        (pitch) => sentToClientStatuses.includes(pitch.displayStatus || pitch.status)
+      );
+    } else if (selectedFilter === 'MAYBE') {
+      filtered = filtered?.filter(
+        (pitch) => (pitch.displayStatus || pitch.status) === 'MAYBE'
+      );
+    } else if (selectedFilter === 'APPROVED') {
+      filtered = filtered?.filter(
+        (pitch) =>
+          ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(
+            pitch.displayStatus || pitch.status
+          )
+      );
+    }
+
+    if (search) {
+      filtered = filtered?.filter((elem) =>
+        elem.user.name.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    return [...(filtered || [])].sort((a, b) => {
+      const nameA = (a.user?.name || '').toLowerCase();
+      const nameB = (b.user?.name || '').toLowerCase();
+      return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    });
+  }, [pitches, selectedFilter, search, sortDirection, campaign]);
+
   // Reopen modal when returning from media kit if state indicates
   useEffect(() => {
     const reopen = location?.state?.reopenModal;
@@ -240,6 +189,15 @@ const filteredPitches = useMemo(() => {
       }
     }
   }, [location?.state, pitches, navigate, location?.pathname, location?.search]);
+
+  const handleViewPitch = (pitch) => {
+    setSelectedPitch(pitch);
+    setOpenPitchModal(true);
+  };
+
+  const handleModalOpen = () => {
+    setAddCreatorOpen(true);
+  };
 
   const handleClosePitchModal = () => {
     setOpenPitchModal(false);
@@ -538,7 +496,7 @@ const filteredPitches = useMemo(() => {
                 },
               }}
             >
-              {`Sent to Client(${sentToClientCount})`}
+              {`Sent to Client (${sentToClientCount})`}
             </Button>
 
             <Button
@@ -744,100 +702,15 @@ const filteredPitches = useMemo(() => {
                 const isGuestCreator = pitch.user?.creator?.isGuest;
 
                 return (
-                  <TableRow key={pitch.id} hover>
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
-                        <Avatar
-                          src={pitch.user?.photoURL}
-                          alt={pitch.user?.name}
-                          sx={{
-                            width: { xs: 32, sm: 40 },
-                            height: { xs: 32, sm: 40 },
-                            border: '2px solid',
-                            borderColor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows.z8,
-                          }}
-                        >
-                          {pitch.user?.name?.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Stack spacing={0.5}>
-                          <Typography variant="body2">{pitch.user?.name}</Typography>
-                        </Stack>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant='body2'>0%</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant='body2'>0K</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Stack spacing={0.5} alignItems="start">
-                        <Typography
-                          variant="body2"
-                          whiteSpace={'nowrap'}
-                        >
-                          {dayjs(pitch.createdAt).format('LL')}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: '#8e8e93',
-                            display: 'block',
-                            mt: '-2px',
-                          }}
-                        >
-                          {dayjs(pitch.createdAt).format('LT')}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} />
-                    </TableCell>
-                    <TableCell>
-                      <Box
-                        sx={{
-                          textTransform: 'uppercase',
-                          fontWeight: 700,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          py: 0.5,
-                          pl: 1,
-                          pr: 1,
-                          fontSize: '0.75rem',
-                          border: '1px solid',
-                          borderBottom: '3px solid',
-                          borderRadius: 0.8,
-                          bgcolor: 'white',
-                          whiteSpace: 'nowrap',
-                          color: statusInfo.color,
-                          borderColor: statusInfo.borderColor,
-                        }}
-                      >
-                        {getStatusText(displayStatus, pitch)}
-                        {pitch?.adminComments && displayStatus === 'SENT_TO_CLIENT_WITH_COMMENTS' &&
-                          <Tooltip title="CS Comments provided" arrow>
-                            <Box
-                              component="img"
-                              src="/assets/icons/components/ic-comments.svg"
-                              alt="Comments"
-                              sx={{ width: 16, height: 16 }}
-                            />
-                          </Tooltip>
-                        }
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ padding: 0, paddingRight: 1 }}>
-                      {smUp ? (
-                        <V3PitchActions pitch={pitch} onViewPitch={handleViewPitch} />
-                      ) : (
-                        <IconButton onClick={() => handleViewPitch(pitch)}>
-                          <Iconify icon="hugeicons:view" />
-                        </IconButton>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                  <PitchRow
+                    key={pitch.id}
+                    pitch={pitch}
+                    displayStatus={displayStatus}
+                    statusInfo={statusInfo}
+                    isGuestCreator={isGuestCreator}
+                    campaign={campaign}
+                    onViewPitch={handleViewPitch}
+                  />
                 );
               })}
             </TableBody>
