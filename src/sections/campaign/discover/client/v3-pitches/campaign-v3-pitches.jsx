@@ -804,7 +804,7 @@ const filteredPitches = useMemo(() => {
                           gap: 0.5,
                           py: 0.5,
                           pl: 1,
-                          pr: displayStatus === 'SENT_TO_CLIENT_WITH_COMMENTS' ? 2.5 : 1,
+                          pr: 1,
                           fontSize: '0.75rem',
                           border: '1px solid',
                           borderBottom: '3px solid',
@@ -876,7 +876,9 @@ const filteredPitches = useMemo(() => {
               id: c.id,
               name: c.name || 'Creator',
               profileLink: c.profileLink || '',
-              followerCount: c.followerCount === undefined || c.followerCount === null ? '' : String(c.followerCount).trim(),
+              username: c.username || '',
+              followerCount: c.followerCount || '',
+              engagementRate: c.engagementRate || '',
               adminComments: c.adminComments || '',
               credits: '',
             })));
@@ -1268,7 +1270,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   );
 }
 
-export function NonPlatformCreatorFormDialog({ open, onClose, campaignId, onUpdated }) {
+export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
   const [formValues, setFormValues] = useState({
     creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
   });
@@ -1288,7 +1290,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId, onUpda
         ...prev,
         creators: [
           ...prev.creators,
-          { name: '', followerCount: '', profileLink: '', adminComments: '' },
+          { name: '', username: '', followerCount: '', engagementRate: '', profileLink: '', adminComments: '' },
         ],
       }));
     }
@@ -1313,7 +1315,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId, onUpda
     onUpdated?.({ openBatchCredits: true, creators: formValues.creators });
     onClose();
     setFormValues({
-      creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
+      creators: [{ name: '', username: '', followerCount: '', engagementRate: '', profileLink: '', adminComments: '' }],
     });
   };
 
@@ -1349,7 +1351,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId, onUpda
               mb: 2,
             }}
           >
-            <Box display="flex" gap={2} mb={2}>
+            <Stack flexDirection={'row'} flex={1} spacing={2} mb={2}>
               {/* Creator Name */}
               <Box flex={1}>
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
@@ -1364,6 +1366,38 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId, onUpda
                 />
               </Box>
 
+              <Stack flexDirection={'row'} flex={1} spacing={2}>
+                {/* Username */}
+                <Box flex={1}>
+                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
+                    Username (Social Media)
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Username"
+                    value={creator.username}
+                    onChange={handleCreatorChange(index, 'username')}
+                  />
+                </Box>
+
+                {/* Profile Link */}
+                <Box flex={1}>
+                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
+                    Profile Link
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Profile Link"
+                    value={creator.profileLink}
+                    onChange={handleCreatorChange(index, 'profileLink')}
+                  />
+                </Box>
+              </Stack>
+            </Stack>
+
+            <Box display="flex" gap={2} mb={2}>
               {/* Follower Count */}
               <Box flex={1}>
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
@@ -1378,17 +1412,17 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId, onUpda
                 />
               </Box>
 
-              {/* Profile Link */}
+              {/* Engagement Rate */}
               <Box flex={1}>
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
-                  Profile Link
+                  Engagement Rate (%)
                 </Typography>
                 <TextField
                   fullWidth
                   size="small"
-                  placeholder="Profile Link"
-                  value={creator.profileLink}
-                  onChange={handleCreatorChange(index, 'profileLink')}
+                  placeholder="Engagement Rate"
+                  value={creator.engagementRate}
+                  onChange={handleCreatorChange(index, 'engagementRate')}
                 />
               </Box>
             </Box>
