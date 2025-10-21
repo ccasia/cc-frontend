@@ -225,7 +225,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     creators.filter(
       (creator) => getStatusInfo(creator).normalizedStatus === 'APPROVED' && !creator.isShortlisted
     ).length || 0;
-  const shortlistedCount = creators.filter((creator) => creator.isShortlisted).length || 0;
   const rejectedCount =
     creators.filter((creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED').length ||
     0;
@@ -248,8 +247,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
         (creator) =>
           getStatusInfo(creator).normalizedStatus === 'APPROVED' && !creator.isShortlisted
       );
-    } else if (selectedFilter === 'shortlisted') {
-      filtered = filtered.filter((creator) => creator.isShortlisted);
     } else if (selectedFilter === 'rejected') {
       filtered = filtered.filter(
         (creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED'
@@ -387,12 +384,75 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 
   return (
     <>
+      <Button
+        onClick={handleToggleSort}
+        endIcon={
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            {sortDirection === 'asc' ? (
+              <Stack direction="column" alignItems="center" spacing={0}>
+                <Typography
+                  variant="caption"
+                  sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                >
+                  A
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                >
+                  Z
+                </Typography>
+              </Stack>
+            ) : (
+              <Stack direction="column" alignItems="center" spacing={0}>
+                <Typography
+                  variant="caption"
+                  sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                >
+                  Z
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                >
+                  A
+                </Typography>
+              </Stack>
+            )}
+            <Iconify
+              icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
+              width={12}
+            />
+          </Stack>
+        }
+        sx={{
+          px: 1.5,
+          py: 0.75,
+          mb: 2,
+          height: '42px',
+          color: '#637381',
+          fontWeight: 600,
+          fontSize: '0.875rem',
+          backgroundColor: 'transparent',
+          border: 'none',
+          borderRadius: 1,
+          textTransform: 'none',
+          whiteSpace: 'nowrap',
+          boxShadow: 'none',
+          '&:hover': {
+            backgroundColor: 'transparent',
+            color: '#221f20',
+          },
+        }}
+      >
+        Alphabetical
+      </Button>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         alignItems={{ xs: 'stretch', md: 'center' }}
         justifyContent="space-between"
         spacing={2}
-        sx={{ mb: 2 }}
+        sx={{ mb: 3 }}
       >
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -492,37 +552,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 
           <Button
             fullWidth={!mdUp}
-            onClick={() => setSelectedFilter('shortlisted')}
-            sx={{
-              px: 1.5,
-              py: 2.5,
-              height: '42px',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              borderRadius: 1,
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              textTransform: 'none',
-              ...(selectedFilter === 'shortlisted'
-                ? {
-                    color: '#203ff5',
-                    bgcolor: 'rgba(32, 63, 245, 0.04)',
-                  }
-                : {
-                    color: '#637381',
-                    bgcolor: 'transparent',
-                  }),
-              '&:hover': {
-                bgcolor:
-                  selectedFilter === 'shortlisted' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-              },
-            }}
-          >
-            {`Shortlisted (${shortlistedCount})`}
-          </Button>
-
-          <Button
-            fullWidth={!mdUp}
             onClick={() => setSelectedFilter('rejected')}
             sx={{
               px: 1.5,
@@ -549,71 +578,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             }}
           >
             {`Rejected (${rejectedCount})`}
-          </Button>
-
-          <Button
-            onClick={handleToggleSort}
-            endIcon={
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {sortDirection === 'asc' ? (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                  </Stack>
-                )}
-                <Iconify
-                  icon={
-                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                  }
-                  width={12}
-                />
-              </Stack>
-            }
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              height: '42px',
-              color: '#637381',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: 1,
-              textTransform: 'none',
-              whiteSpace: 'nowrap',
-              boxShadow: 'none',
-              '&:hover': {
-                backgroundColor: 'transparent',
-                color: '#221f20',
-              },
-            }}
-          >
-            Alphabetical
           </Button>
         </Stack>
 

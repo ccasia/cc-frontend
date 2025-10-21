@@ -292,36 +292,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     );
   };
 
-  const getStatusText = (status, pitch) => {
-    // Check for AGREEMENT_PENDING status with PENDING_REVIEW agreement form
-    if (status === 'AGREEMENT_PENDING') {
-      const agreementFormSubmission = campaign.submission.find(
-        (sub) => sub?.submissionType?.type === 'AGREEMENT_FORM'
-      );
-
-      if (agreementFormSubmission?.status === 'PENDING_REVIEW') {
-        return 'PENDING APPROVAL';
-      }
-    }
-
-    const statusTextMap = {
-      PENDING_REVIEW: 'PENDING REVIEW',
-      SENT_TO_CLIENT: 'SENT TO CLIENT',
-      MAYBE: 'MAYBE',
-      maybe: 'MAYBE',
-      APPROVED: 'APPROVED',
-      REJECTED: 'REJECTED',
-      AGREEMENT_PENDING: 'AGREEMENT PENDING',
-      AGREEMENT_SUBMITTED: 'AGREEMENT SUBMITTED',
-    };
-
-    if (status === 'SENT_TO_CLIENT_WITH_COMMENTS') {
-      return statusTextMap.SENT_TO_CLIENT;
-    }
-
-    return statusTextMap[status] || status;
-  };
-
   const handleCreatorTypeSelect = (type) => {
     setAddCreatorOpen(false);
 
