@@ -1550,7 +1550,9 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
   // Form state for editable fields
   const [formValues, setFormValues] = React.useState({
     name: pitch?.user?.name || '',
+    username: pitch?.username || '',
     followerCount: pitch?.followerCount || '',
+    engagementRate: pitch?.engagementRate || '',
     profileLink: pitch?.user?.guestProfileLink || '',
     adminComments: pitch?.adminComments || '',
   });
@@ -1560,7 +1562,9 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
     if (pitch) {
       setFormValues({
         name: pitch?.user?.name || '',
+        username: pitch?.username || '',
         followerCount: pitch?.followerCount || '',
+        engagementRate: pitch?.engagementRate || '',
         profileLink: pitch?.user?.guestProfileLink || '',
         adminComments: pitch?.adminComments || '',
       });
@@ -1602,7 +1606,9 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
       // Update guest creator information
       const response = await axiosInstance.patch(`/api/pitch/v3/${pitch.id}/updateGuest`, {
         name: formValues.name,
+        username: formValues.username,
         followerCount: formValues.followerCount,
+        engagementRate: formValues.engagementRate,
         profileLink: formValues.profileLink,
         adminComments: formValues.adminComments,
       });
@@ -1688,7 +1694,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
 
       <DialogContent sx={{ bgcolor: '#F4F4F4' }}>
         <Box sx={{ pb: 2 }}>
-          <Box display="flex" gap={2} mb={2}>
+          <Box display="flex" gap={1} mb={2}>
             {/* Creator Name */}
             <Box flex={1}>
               <Typography
@@ -1714,6 +1720,69 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
               )}
             </Box>
 
+            <Stack flex={1} spacing={1} flexDirection={'row'}>
+              {/* Username */}
+              <Box flex={1}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+                >
+                  Username (Social Media)
+                </Typography>
+                {isAdmin ? (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Username"
+                    value={formValues.username}
+                    onChange={handleFieldChange('username')}
+                    disabled={submitting}
+                    sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                  />
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                    {formValues.username || '—'}
+                  </Typography>
+                )}
+              </Box>
+
+              {/* Profile Link */}
+              <Box flex={1}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+                >
+                  Profile Link
+                </Typography>
+                {isAdmin ? (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Profile Link"
+                    value={formValues.profileLink}
+                    onChange={handleFieldChange('profileLink')}
+                    disabled={submitting}
+                    sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                  />
+                ) : formValues.profileLink ? (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#1340FF', textDecoration: 'underline', wordBreak: 'break-all' }}
+                    component="a"
+                    href={formValues.profileLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {formValues.profileLink}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2">—</Typography>
+                )}
+              </Box>              
+            </Stack>
+          </Box>
+
+          <Stack spacing={1} flexDirection={'row'} mb={2}>
             {/* Follower Count */}
             <Box flex={1}>
               <Typography
@@ -1739,40 +1808,31 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
               )}
             </Box>
 
-            {/* Profile Link */}
+            {/* Engagement Rate */}
             <Box flex={1}>
               <Typography
                 variant="caption"
                 sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
               >
-                Profile Link
+                Engagement Rate (%)
               </Typography>
               {isAdmin ? (
                 <TextField
                   fullWidth
                   size="small"
-                  placeholder="Profile Link"
-                  value={formValues.profileLink}
-                  onChange={handleFieldChange('profileLink')}
+                  placeholder="Follower Count"
+                  value={formValues.engagementRate}
+                  onChange={handleFieldChange('engagementRate')}
                   disabled={submitting}
                   sx={{ bgcolor: '#fff', borderRadius: 1 }}
                 />
-              ) : formValues.profileLink ? (
-                <Typography
-                  variant="body2"
-                  sx={{ color: '#1340FF', textDecoration: 'underline', wordBreak: 'break-all' }}
-                  component="a"
-                  href={formValues.profileLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {formValues.profileLink}
-                </Typography>
               ) : (
-                <Typography variant="body2">—</Typography>
+                <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                  {formValues.engagementRate || '—'}
+                </Typography>
               )}
             </Box>
-          </Box>
+          </Stack>
 
           {/* CS Comments */}
           <Box>
