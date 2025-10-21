@@ -4,7 +4,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { LoadingButton } from '@mui/lab';
 import { useSnackbar } from 'notistack';
 
-
 import {
   Dialog,
   DialogTitle,
@@ -43,10 +42,12 @@ import PitchRow from './v3-pitch-row';
 import BatchAssignUGCModal from './BatchAssignUGCModal';
 
 const countPitchesByStatus = (pitches, statusList) => {
-  return pitches?.filter((pitch) => {
-    const status = pitch.displayStatus || pitch.status;
-    return statusList.includes(status);
-  }).length || 0;
+  return (
+    pitches?.filter((pitch) => {
+      const status = pitch.displayStatus || pitch.status;
+      return statusList.includes(status);
+    }).length || 0
+  );
 };
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
@@ -80,11 +81,18 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   // Count pitches by display status
   const pendingReviewCount = countPitchesByStatus(pitches, ['PENDING_REVIEW']);
 
-  const sentToClientCount = countPitchesByStatus(pitches, ['SENT_TO_CLIENT', 'SENT_TO_CLIENT_WITH_COMMENTS']);
+  const sentToClientCount = countPitchesByStatus(pitches, [
+    'SENT_TO_CLIENT',
+    'SENT_TO_CLIENT_WITH_COMMENTS',
+  ]);
 
   const maybeCount = countPitchesByStatus(pitches, ['MAYBE']);
 
-  const approvedCount = countPitchesByStatus(pitches, ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED']);
+  const approvedCount = countPitchesByStatus(pitches, [
+    'APPROVED',
+    'AGREEMENT_PENDING',
+    'AGREEMENT_SUBMITTED',
+  ]);
 
   // Toggle sort direction
   const handleToggleSort = () => {
@@ -100,20 +108,20 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         submissionVersion: campaign?.submissionVersion,
         totalPitches: pitches?.length,
         selectedFilter,
-        pitches: pitches?.map(p => ({ 
-          id: p.id, 
-          status: p.status, 
-          displayStatus: p.displayStatus, 
+        pitches: pitches?.map((p) => ({
+          id: p.id,
+          status: p.status,
+          displayStatus: p.displayStatus,
           userName: p.user?.name,
           ugcCredits: p.ugcCredits,
           isGuestCreator: p.user?.creator?.isGuest,
-        }))
+        })),
       });
     }
 
     // Determine which pitches to show based on version
     let filtered = (pitches || []).filter((pitch) => {
-      const status = (pitch.displayStatus || pitch.status) || '';
+      const status = pitch.displayStatus || pitch.status || '';
       const userId = pitch?.user?.id;
 
       // Define status checks
@@ -126,14 +134,19 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
 
       // V4: Show all pitches in approval flow
       if (isV4) {
-        return isPending || sentToClient || sentToClientWithComments || isMaybe || isApproved || isRejected;
+        return (
+          isPending ||
+          sentToClient ||
+          sentToClientWithComments ||
+          isMaybe ||
+          isApproved ||
+          isRejected
+        );
       }
 
       // V3: Only show if credits assigned or already approved
       const creditedUserIds = new Set(
-        (campaign?.shortlisted || [])
-          .filter((s) => (s?.ugcVideos || 0) > 0)
-          .map((s) => s.userId)
+        (campaign?.shortlisted || []).filter((s) => (s?.ugcVideos || 0) > 0).map((s) => s.userId)
       );
       const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
       return isApproved || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected;
@@ -146,20 +159,17 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     } else if (selectedFilter === 'SENT_TO_CLIENT') {
       const sentToClientStatuses = ['SENT_TO_CLIENT'];
       if (isV4) sentToClientStatuses.push('SENT_TO_CLIENT_WITH_COMMENTS');
-      
-      filtered = filtered?.filter(
-        (pitch) => sentToClientStatuses.includes(pitch.displayStatus || pitch.status)
+
+      filtered = filtered?.filter((pitch) =>
+        sentToClientStatuses.includes(pitch.displayStatus || pitch.status)
       );
     } else if (selectedFilter === 'MAYBE') {
-      filtered = filtered?.filter(
-        (pitch) => (pitch.displayStatus || pitch.status) === 'MAYBE'
-      );
+      filtered = filtered?.filter((pitch) => (pitch.displayStatus || pitch.status) === 'MAYBE');
     } else if (selectedFilter === 'APPROVED') {
-      filtered = filtered?.filter(
-        (pitch) =>
-          ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(
-            pitch.displayStatus || pitch.status
-          )
+      filtered = filtered?.filter((pitch) =>
+        ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(
+          pitch.displayStatus || pitch.status
+        )
       );
     }
 
@@ -306,7 +316,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     };
 
     if (status === 'SENT_TO_CLIENT_WITH_COMMENTS') {
-      return statusTextMap.SENT_TO_CLIENT
+      return statusTextMap.SENT_TO_CLIENT;
     }
 
     return statusTextMap[status] || status;
@@ -366,9 +376,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 </Stack>
               )}
               <Iconify
-                icon={
-                  sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                }
+                icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
                 width={12}
               />
             </Stack>
@@ -390,7 +398,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
               backgroundColor: 'transparent',
               color: '#221f20',
             },
-            alignSelf: 'self-start'
+            alignSelf: 'self-start',
           }}
         >
           Alphabetical
@@ -522,8 +530,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                       bgcolor: 'transparent',
                     }),
                 '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'MAYBE' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                  bgcolor: selectedFilter === 'MAYBE' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
                 },
               }}
             >
@@ -731,7 +738,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         campaign={campaign}
         onUpdated={(payload) => {
           if (payload?.openBatchCredits) {
-            setBatchCreditCreators((payload.creators || []).map((c) => ({ id: c.id, name: c.name || 'Creator', credits: '' })));
+            setBatchCreditCreators(
+              (payload.creators || []).map((c) => ({
+                id: c.id,
+                name: c.name || 'Creator',
+                credits: '',
+              }))
+            );
             setBatchAdminComments(payload?.adminComments || '');
             setBatchCreditsOpen(true);
           }
@@ -745,16 +758,18 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         campaignId={campaign.id}
         onUpdated={(payload) => {
           if (payload?.openBatchCredits) {
-            setBatchCreditCreators((payload.creators || []).map((c) => ({
-              id: c.id,
-              name: c.name || 'Creator',
-              profileLink: c.profileLink || '',
-              username: c.username || '',
-              followerCount: c.followerCount || '',
-              engagementRate: c.engagementRate || '',
-              adminComments: c.adminComments || '',
-              credits: '',
-            })));
+            setBatchCreditCreators(
+              (payload.creators || []).map((c) => ({
+                id: c.id,
+                name: c.name || 'Creator',
+                profileLink: c.profileLink || '',
+                username: c.username || '',
+                followerCount: c.followerCount || '',
+                engagementRate: c.engagementRate || '',
+                adminComments: c.adminComments || '',
+                credits: '',
+              }))
+            );
             setBatchAdminComments(payload?.adminComments || '');
             setBatchCreditsOpen(true);
             setNonPlatformOpen(false);
@@ -771,7 +786,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           creators={batchCreditCreators}
           campaignId={campaign.id}
           adminComments={batchAdminComments}
-          creditsLeft={(campaign?.campaignCredits ?? 0) - ((campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0))}
+          creditsLeft={
+            (campaign?.campaignCredits ?? 0) -
+            (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0)
+          }
           onAssigned={() => {
             setBatchCreditsOpen(false);
             onUpdate?.();
@@ -943,7 +961,11 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
       setSubmitting(true);
 
       // Do NOT shortlist yet; open batch credits modal first.
-      onUpdated?.({ openBatchCredits: true, creators: selected.map((c) => ({ id: c.id, name: c.name || c.email || 'Creator' })), adminComments: commentText });
+      onUpdated?.({
+        openBatchCredits: true,
+        creators: selected.map((c) => ({ id: c.id, name: c.name || c.email || 'Creator' })),
+        adminComments: commentText,
+      });
       handleCloseAll();
     } catch (e) {
       console.error('Error shortlisting creators:', e);
@@ -1163,7 +1185,14 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
         ...prev,
         creators: [
           ...prev.creators,
-          { name: '', username: '', followerCount: '', engagementRate: '', profileLink: '', adminComments: '' },
+          {
+            name: '',
+            username: '',
+            followerCount: '',
+            engagementRate: '',
+            profileLink: '',
+            adminComments: '',
+          },
         ],
       }));
     }
@@ -1180,7 +1209,9 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
     // Validate required guest fields before proceeding
     const invalid = formValues.creators.find((c) => !c.name?.trim() || !c.profileLink?.trim());
     if (invalid) {
-      enqueueSnackbar('Please fill in Creator Name and Profile Link for all entries.', { variant: 'error' });
+      enqueueSnackbar('Please fill in Creator Name and Profile Link for all entries.', {
+        variant: 'error',
+      });
       return;
     }
 
@@ -1188,7 +1219,16 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
     onUpdated?.({ openBatchCredits: true, creators: formValues.creators });
     onClose();
     setFormValues({
-      creators: [{ name: '', username: '', followerCount: '', engagementRate: '', profileLink: '', adminComments: '' }],
+      creators: [
+        {
+          name: '',
+          username: '',
+          followerCount: '',
+          engagementRate: '',
+          profileLink: '',
+          adminComments: '',
+        },
+      ],
     });
   };
 
@@ -1379,7 +1419,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
             px: 3,
             '&:hover': {
               bgcolor: '#525151',
-              borderBottom: '3px solid #000'
+              borderBottom: '3px solid #000',
             },
           }}
         >
