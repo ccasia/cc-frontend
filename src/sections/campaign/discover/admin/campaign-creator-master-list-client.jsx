@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   Box,
@@ -32,53 +32,68 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchModal from './pitch-modal';
 import MediaKitModal from './media-kit-modal';
+import CreatorMasterListRow from './creator-master-list-row';
 
-const TABLE_HEAD = [
-  { id: 'creator', label: 'Creator', width: 300 },
-  { id: 'username', label: 'Username (Media Kit)', width: 350 },
-  { id: 'instagram', label: 'Engagement Rate (Media Kit)', width: 120 },
-  { id: 'engagement', label: 'Follower Count (Media Kit)', width: 100 },
-  { id: 'status', label: 'Status', width: 100 },
-  { id: 'actions', label: 'Actions', width: 80 },
-];
+// Status display helper function
+const getStatusInfo = (pitch) => {
+  // Normalize status first
+  let status;
+  if (pitch.isShortlisted) {
+    status = 'APPROVED';
+  } else {
+    status = pitch.isV3 ? pitch.displayStatus || pitch.status : pitch.status;
+    // Normalize legacy statuses to new format
+    if (status === 'undecided') status = 'PENDING_REVIEW';
+    if (status === 'approved') status = 'APPROVED';
+    if (status === 'rejected') status = 'REJECTED';
+  }
 
-// Helper function to get normalized status for filtering
-const getNormalizedStatus = (pitch) => {
-  if (pitch.isShortlisted) return 'APPROVED';
-
-  const status = pitch.isV3 ? pitch.displayStatus || pitch.status : pitch.status;
-
-  // Normalize legacy statuses to new format
-  if (status === 'undecided') return 'PENDING_REVIEW';
-  if (status === 'approved') return 'APPROVED';
-  if (status === 'rejected') return 'REJECTED';
-
-  return status;
-};
-
-// Status mapping function for consistent colors and labels
-const getStatusDisplay = (pitch) => {
-  const status = getNormalizedStatus(pitch);
-
+  // Map status to display properties
   const statusMap = {
-    PENDING_REVIEW: { color: '#FF9A02', label: 'PENDING REVIEW' },
-    MAYBE: { color: '#FFC702', label: 'Maybe' },
-    APPROVED: { color: '#1ABF66', label: 'APPROVED' },
-    REJECTED: { color: '#FF4842', label: 'REJECTED' },
-    AGREEMENT_SUBMITTED: { color: '#1ABF66', label: 'AGREEMENT SUBMITTED' },
-    AGREEMENT_PENDING: { color: '#8B5CF6', label: 'AGREEMENT PENDING' },
-    SENT_TO_CLIENT: { color: '#8B5CF6', label: 'SENT TO CLIENT' },
-    pending: { color: '#FF9A02', label: 'PENDING' },
-    filtered: { color: '#FF4842', label: 'FILTERED' },
-    draft: { color: '#637381', label: 'DRAFT' },
+    PENDING_REVIEW: {
+      color: '#FF9A02',
+      label: 'PENDING REVIEW',
+      normalizedStatus: 'PENDING_REVIEW',
+    },
+    MAYBE: { color: '#FFC702', label: 'Maybe', normalizedStatus: 'MAYBE' },
+    APPROVED: { color: '#1ABF66', label: 'APPROVED', normalizedStatus: 'APPROVED' },
+    REJECTED: { color: '#FF4842', label: 'REJECTED', normalizedStatus: 'REJECTED' },
+    AGREEMENT_SUBMITTED: {
+      color: '#1ABF66',
+      label: 'AGREEMENT SUBMITTED',
+      normalizedStatus: 'AGREEMENT_SUBMITTED',
+    },
+    AGREEMENT_PENDING: {
+      color: '#8B5CF6',
+      label: 'AGREEMENT PENDING',
+      normalizedStatus: 'AGREEMENT_PENDING',
+    },
+    SENT_TO_CLIENT: {
+      color: '#8B5CF6',
+      label: 'SENT TO CLIENT',
+      normalizedStatus: 'SENT_TO_CLIENT',
+    },
+    pending: { color: '#FF9A02', label: 'PENDING', normalizedStatus: 'PENDING_REVIEW' },
+    filtered: { color: '#FF4842', label: 'FILTERED', normalizedStatus: 'REJECTED' },
+    draft: { color: '#637381', label: 'DRAFT', normalizedStatus: 'DRAFT' },
   };
 
   // Special case for pitch approved vs regular approved
   if (status === 'APPROVED' && !pitch.isShortlisted && !pitch.isV3) {
-    return { color: '#1ABF66', label: 'PITCH APPROVED' };
+    return {
+      color: '#1ABF66',
+      label: 'PITCH APPROVED',
+      normalizedStatus: 'APPROVED',
+    };
   }
 
-  return statusMap[status] || { color: '#637381', label: status?.toUpperCase() || 'UNKNOWN' };
+  return (
+    statusMap[status] || {
+      color: '#637381',
+      label: status?.toUpperCase() || 'UNKNOWN',
+      normalizedStatus: status,
+    }
+  );
 };
 
 const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
@@ -88,10 +103,10 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
   const mediaKit = useBoolean();
-  const theme = useTheme();
 
   // Fetch V3 pitches for client-created campaigns OR admin-created v4 campaigns
-  const shouldFetchV3Pitches = campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
+  const shouldFetchV3Pitches =
+    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
   const {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
@@ -108,7 +123,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
       return (
         v3Pitches
           .map((pitch) => {
-
             return {
               id: pitch.userId || pitch.id,
               user: {
@@ -130,9 +144,11 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               pitchId: pitch.id,
               isV3: true,
               adminComments: pitch.adminComments,
-              // Include rejection reason fields for CLIENT REASON display
               rejectionReason: pitch.rejectionReason,
               customRejectionText: pitch.customRejectionText,
+              username: pitch.username,
+              followerCount: pitch.followerCount,
+              engagementRate: pitch.engagementRate,
             };
           })
           // FIX: Only require user to exist, not user.creator
@@ -179,7 +195,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             user: {
               id: pitch.userId || pitch.user?.id,
               name: pitch.user?.name,
-              username: pitch.user?.instagramUser?.username,
+              username: pitch.user?.instagramUser?.username || pitch.user?.tiktokUser?.username,
               photoURL: pitch.user?.photoURL,
               status: pitch.user?.status || 'active',
               creator: pitch.user?.creator,
@@ -201,47 +217,18 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     return [...shortlistedCreators, ...pitchCreators];
   }, [campaign, v3Pitches]);
 
-  // Enhanced data extraction from existing pitch data
-  const enhancedCreators = useMemo(() => {
-    if (!creators || creators.length === 0) return [];
-
-    return creators.map(creator => {
-      // Extract media kit data from the existing pitch/user data
-      const mediaKitData = {
-        username: creator.user?.instagramUser?.username || 
-                  creator.user?.creator?.instagram?.username ||
-                  creator.user?.username,
-        engagementRate: creator.user?.instagramUser?.engagement_rate || 
-                       creator.user?.creator?.instagram?.engagement_rate ||
-                       creator.user?.engagementRate,
-        followerCount: creator.user?.instagramUser?.followers_count || 
-                      creator.user?.creator?.instagram?.followers_count ||
-                      creator.user?.followerCount,
-      };
-
-      return {
-        ...creator,
-        mediaKitData
-      };
-    });
-  }, [creators]);
-
-  // Use enhanced creators with media kit data
-  const creatorsWithMediaKit = enhancedCreators;
-
-
-
   const activeCount = creators.length || 0;
   const pendingCount =
-    creators.filter((creator) => getNormalizedStatus(creator) === 'PENDING_REVIEW').length || 0;
+    creators.filter((creator) => getStatusInfo(creator).normalizedStatus === 'PENDING_REVIEW')
+      .length || 0;
   const approvedPitchCount =
     creators.filter(
-      (creator) => getNormalizedStatus(creator) === 'APPROVED' && !creator.isShortlisted
+      (creator) => getStatusInfo(creator).normalizedStatus === 'APPROVED' && !creator.isShortlisted
     ).length || 0;
   const shortlistedCount = creators.filter((creator) => creator.isShortlisted).length || 0;
-  const rejectedCount = creators.filter(
-    (creator) => getNormalizedStatus(creator) === 'REJECTED'
-  ).length || 0;
+  const rejectedCount =
+    creators.filter((creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED').length ||
+    0;
 
   // Handle toggling sort direction
   const handleToggleSort = () => {
@@ -249,19 +236,24 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   };
 
   const filteredCreators = useMemo(() => {
-    let filtered = creatorsWithMediaKit;
+    let filtered = creators;
 
     // Apply status filter
     if (selectedFilter === 'pending') {
-      filtered = filtered.filter((creator) => getNormalizedStatus(creator) === 'PENDING_REVIEW');
+      filtered = filtered.filter(
+        (creator) => getStatusInfo(creator).normalizedStatus === 'PENDING_REVIEW'
+      );
     } else if (selectedFilter === 'approved_pitch') {
       filtered = filtered.filter(
-        (creator) => getNormalizedStatus(creator) === 'APPROVED' && !creator.isShortlisted
+        (creator) =>
+          getStatusInfo(creator).normalizedStatus === 'APPROVED' && !creator.isShortlisted
       );
     } else if (selectedFilter === 'shortlisted') {
       filtered = filtered.filter((creator) => creator.isShortlisted);
     } else if (selectedFilter === 'rejected') {
-      filtered = filtered.filter((creator) => getNormalizedStatus(creator) === 'REJECTED');
+      filtered = filtered.filter(
+        (creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED'
+      );
     }
 
     // Apply search filter
@@ -285,8 +277,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
       return nameB.localeCompare(nameA);
     });
   }, [creators, search, sortDirection, selectedFilter]);
-
-
 
   const matchCampaignPercentage = (pitch) => {
     if (!pitch) return null;
@@ -375,16 +365,11 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     if (campaign?.origin === 'CLIENT') {
       v3PitchesMutate();
     }
-    
+
     // Also refresh campaign data to update shortlisted creators
     if (campaignMutate) {
       campaignMutate();
     }
-  };
-
-  const handleOpenMediaKit = (creatorId) => {
-    setSelectedPitch({ user: { creator: { id: creatorId } } });
-    mediaKit.onTrue();
   };
 
   const mdUp = useResponsive('up', 'md');
@@ -559,8 +544,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                     bgcolor: 'transparent',
                   }),
               '&:hover': {
-                bgcolor:
-                  selectedFilter === 'rejected' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                bgcolor: selectedFilter === 'rejected' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
             }}
           >
@@ -759,166 +743,17 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                 {filteredCreators.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
+                      <EmptyContent sx={{ py: 10 }} title="No creators found" filled />
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredCreators.map((pitch) => (
-                    <TableRow
+                    <CreatorMasterListRow
                       key={pitch.id}
-                      hover
-                      sx={{
-                        bgcolor: 'transparent',
-                        '& td': {
-                          borderBottom: '1px solid',
-                          borderColor: 'divider',
-                        },
-                      }}
-                    >
-                      <TableCell>
-                        <Stack direction="row" alignItems="center" spacing={2}>
-                          <Avatar
-                            src={pitch.user?.photoURL}
-                            alt={pitch.user?.name}
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              border: '2px solid',
-                              borderColor: 'background.paper',
-                              boxShadow: theme.customShadows.z8,
-                            }}
-                          >
-                            {pitch.user?.name?.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Typography variant="body2">{pitch.user?.name}</Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        {pitch.mediaKitData?.username || pitch.user?.username || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {pitch.mediaKitData?.engagementRate
-                          ? `${(Number(pitch.mediaKitData.engagementRate) * 100).toFixed(2)}%`
-                          : pitch.user?.engagementRate
-                          ? `${(pitch.user.engagementRate * 100).toFixed(2)}%`
-                          : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {pitch.mediaKitData?.followerCount
-                          ? Number(pitch.mediaKitData.followerCount).toLocaleString()
-                          : pitch.user?.followerCount
-                          ? pitch.user.followerCount.toLocaleString()
-                          : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Box
-                          sx={{
-                            textTransform: 'uppercase',
-                            fontWeight: 700,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 0.25,
-                            px: 1.5,
-                            py: 0.5,
-                            fontSize: '0.75rem',
-                            border: '1px solid',
-                            borderBottom: '3px solid',
-                            borderRadius: 0.8,
-                            bgcolor: 'white',
-                            whiteSpace: 'nowrap',
-                            ...(pitch.isShortlisted && {
-                              color: '#1ABF66',
-                              borderColor: '#1ABF66',
-                            }),
-                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'PENDING_REVIEW' && {
-                              color: '#FF9A02',
-                              borderColor: '#FF9A02',
-                            }),
-                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'MAYBE' && {
-                              color: '#FFC702',
-                              borderColor: '#FFC702',
-                            }),
-                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'APPROVED' && {
-                              color: '#1ABF66',
-                              borderColor: '#1ABF66',
-                            }),
-                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'REJECTED' && {
-                              color: '#FF4842',
-                              borderColor: '#FF4842',
-                            }),
-                            ...(!pitch.isShortlisted && (pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT' && {
-                              color: '#8B5CF6',
-                              borderColor: '#8B5CF6',
-                            }),
-                            ...(!pitch.isShortlisted && pitch.status === 'undecided' && {
-                              color: '#FF9A02',
-                              borderColor: '#FF9A02',
-                            }),
-                            ...(!pitch.isShortlisted && pitch.status === 'approved' && {
-                              color: '#1ABF66',
-                              borderColor: '#1ABF66',
-                            }),
-                            ...(!pitch.isShortlisted && pitch.status === 'rejected' && {
-                              color: '#FF4842',
-                              borderColor: '#FF4842',
-                            }),
-                          }}
-                        >
-                          {pitch.isShortlisted 
-                            ? 'APPROVED' 
-                            : pitch.isV3
-                              ? (pitch.displayStatus || pitch.status).toUpperCase()
-                            : pitch.status === 'undecided' 
-                              ? 'PENDING REVIEW' 
-                              : pitch.status === 'approved'
-                                ? 'PITCH APPROVED'
-                                : pitch.status.toUpperCase()}
-                          {((pitch.displayStatus || pitch.status) === 'SENT_TO_CLIENT' || pitch.status === 'SENT_TO_CLIENT') && 
-                           pitch.adminComments && 
-                           pitch.adminComments.trim().length > 0 && (
-                            <Tooltip title="CS Comments provided" arrow>
-                              <Box
-                                component="img"
-                                src="/assets/icons/components/ic-comments.svg"
-                                alt="Comments"
-                                sx={{ width: 16, height: 16 }}
-                              />
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleViewPitch(pitch)}
-                          sx={{
-                            cursor: 'pointer',
-                            px: 1.5,
-                            py: 2,
-                            border: '1px solid #e7e7e7',
-                            borderBottom: '3px solid #e7e7e7',
-                            borderRadius: 1,
-                            color: '#203ff5',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            height: '28px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            textTransform: 'none',
-                            bgcolor: 'transparent',
-                            whiteSpace: 'nowrap',
-                            '&:hover': {
-                              bgcolor: 'rgba(32, 63, 245, 0.04)',
-                              border: '1px solid #e7e7e7',
-                              borderBottom: '3px solid #e7e7e7',
-                            },
-                          }}
-                        >
-                          View Profile
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                      pitch={pitch}
+                      getStatusInfo={getStatusInfo}
+                      onViewPitch={handleViewPitch}
+                    />
                   ))
                 )}
               </TableBody>
