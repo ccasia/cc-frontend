@@ -44,6 +44,7 @@ export function useCreatorSocialMediaData(creatorId, options = {}) {
     // If no social media connected
     if (!hasInstagram && !hasTiktok) {
       return {
+        username: '',
         followerCount: null,
         engagementRate: null,
         platform: null,
@@ -53,39 +54,47 @@ export function useCreatorSocialMediaData(creatorId, options = {}) {
     }
 
     // Get Instagram data
+    const instagramUsername = instagramData?.instagramUser?.username || null;
     const instagramFollowers = instagramData?.instagramUser?.followers_count || 0;
     const instagramEngagement = instagramData?.instagramUser?.engagement_rate || 0;
 
     // Get TikTok data
+    const tiktokUsername = tiktokData?.tiktokUser?.username || null;
     const tiktokFollowers = tiktokData?.overview?.follower_count || 0;
     const tiktokEngagement = tiktokData?.tiktokUser?.engagement_rate || 0;
 
     // Determine primary platform (one with more followers)
     let primaryPlatform = null;
+    let username = null;
     let followerCount = 0;
     let engagementRate = 0;
 
     if (hasInstagram && hasTiktok) {
       if (instagramFollowers >= tiktokFollowers) {
         primaryPlatform = 'instagram';
+        username = instagramUsername;
         followerCount = instagramFollowers;
         engagementRate = instagramEngagement;
       } else {
         primaryPlatform = 'tiktok';
+        username = tiktokUsername;
         followerCount = tiktokFollowers;
         engagementRate = tiktokEngagement;
       }
     } else if (hasInstagram) {
       primaryPlatform = 'instagram';
+      username = instagramUsername;
       followerCount = instagramFollowers;
       engagementRate = instagramEngagement;
     } else if (hasTiktok) {
       primaryPlatform = 'tiktok';
+      username = tiktokUsername;
       followerCount = tiktokFollowers;
       engagementRate = tiktokEngagement;
     }
 
     return {
+      username,
       followerCount,
       engagementRate: engagementRate ? parseFloat(engagementRate.toFixed(2)) : null,
       platform: primaryPlatform,
