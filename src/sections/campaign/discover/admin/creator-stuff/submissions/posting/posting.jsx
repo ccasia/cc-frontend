@@ -137,7 +137,7 @@ const Posting = ({
     try {
       adminSubmissionLoading.onTrue();
       const res = await axiosInstance.post(endpoints.submission.admin.adminPostSubmission, {
-        ...data,
+        postingLinks: [data.postingLink],
         submissionId: submission?.id,
         creatorId: creator?.user?.id,
       });
@@ -696,14 +696,12 @@ const Posting = ({
               <Box
                 sx={{
                   p: 2,
-                  mt: -3.5,
                   borderRadius: 2,
                   border: '1px solid',
                   borderColor: 'divider',
-                  pb: 1,
                 }}
               >
-                <Box display="flex" flexDirection="column" gap={0.5}>
+                <Box display="flex" flexDirection="column">
                   <Stack direction="row" alignItems="center" spacing={2}>
                     <Avatar
                       src={creator?.user?.photoURL}
@@ -716,38 +714,36 @@ const Posting = ({
                     >
                       {creator?.user?.name?.charAt(0).toUpperCase()}
                     </Avatar>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            fontSize: '1.05rem',
-                            mt: -4,
-                          }}
-                        >
-                      {creator?.user?.name}
-                    </Typography>
-                  </Stack>
-
-                  <Box sx={{ pl: 7 }}>
-                    <Box sx={{ mt: 0 }}>
+                    <Stack>
                       <Typography
-                        variant="body2"
-                        component="a"
-                        href={submission?.content}
-                        target="_blank"
-                        rel="noopener"
+                        variant="subtitle2"
                         sx={{
-                          wordBreak: 'break-word',
-                          color: 'primary.main',
-                          textDecoration: 'none',
-                          '&:hover': {
-                            textDecoration: 'underline',
-                          },
+                          fontSize: '1.05rem',
                         }}
                       >
-                        {submission?.content}
+                        {creator?.user?.name}
                       </Typography>
-                    </Box>
-                  </Box>
+                      <Box sx={{ mt: 0 }}>
+                        <Typography
+                          variant="body2"
+                          component="a"
+                          href={submission?.content}
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
+                            wordBreak: 'break-word',
+                            color: 'primary.main',
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline',
+                            },
+                          }}
+                        >
+                          {submission?.content}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Stack>
                 </Box>
               </Box>
             </Box>
