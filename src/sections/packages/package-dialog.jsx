@@ -63,7 +63,7 @@ const schema = Yup.object().shape({
     .typeError('PackageInvoice must be a valid date'),
 });
 
-const PackageCreateDialog = ({ open, onClose, setValue: set, clientId }) => {
+const PackageCreateDialog = ({ open, onClose, setValue: set, clientId, onRefresh }) => {
   const { data: packages, isLoading } = useGetPackages();
   const { data: subscriptions, isLoading: subsLoading } = useSWR('/api/subscription/', fetcher);
   const { mutate } = useGetCompany();
@@ -78,6 +78,7 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId }) => {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = methods;
 
@@ -100,7 +101,13 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId }) => {
       );
       enqueueSnackbar(res?.data?.message);
       mutate();
+
+      if (onRefresh) {
+        onRefresh();
+      }
+
       onClose();
+      reset();
     } catch (error) {
       enqueueSnackbar(error, { variant: 'error' });
     }
@@ -125,6 +132,12 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId }) => {
       setValue('subsID', `P000${subscriptions.length + 1}`);
     }
   }, [setValue, packageType, currency, packages, subscriptions]);
+
+  useEffect(() => {
+    if (!open) {
+      reset();
+    }
+  }, [open, reset]);
 
   if (isLoading || subsLoading) {
     return (
@@ -208,13 +221,13 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId }) => {
 
             {packageType && currency && (
               <>
-                <FormField required={false} label="Package ID">
+                {/* <FormField required={false} label="Package ID">
                   <RHFTextField
                     name="subsID"
                     disabled={packageType !== 'Custom'}
                     placeholder="Package ID"
                   />
-                </FormField>
+                </FormField> */}
                 <FormField required={false} label="Package Value">
                   <NumericFormat
                     value={packageValue}
@@ -248,7 +261,7 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId }) => {
                   />
                 </FormField>
 
-                <FormField required={false} label="Validity Period">
+                <FormField required={false} label="Validity Period (month)">
                   <RHFTextField
                     name="validityPeriod"
                     disabled={packageType !== 'Custom'}
@@ -308,4 +321,5 @@ PackageCreateDialog.propTypes = {
   onClose: PropTypes.func,
   setValue: PropTypes.func,
   clientId: PropTypes.string,
+  onRefresh: PropTypes.func,
 };
