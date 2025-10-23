@@ -51,6 +51,7 @@ import Preference from '../creator/profile/preferences';
 import AccountSocialLinks from '../creator/profile/social';
 import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
+import ChildAccounts from './child-accounts';
 
 // import x from '../creator/profile/notification';
 
@@ -80,6 +81,7 @@ const Profile = () => {
     if (path.includes('/notifications')) return 'Notifications';
     if (path.includes('/preference')) return 'preference';
     if (path.includes('/client')) return 'client';
+    if (path.includes('/accounts')) return 'accounts';
 
     // Default to general/account tab
     if (user?.role === 'client') return 'client';
@@ -1039,6 +1041,55 @@ const Profile = () => {
         >
           Security
         </Button>
+
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.accounts}
+          disableRipple
+          size="large"
+          sx={{
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            ml: 2,
+            minWidth: 'fit-content',
+            color: currentTab === 'accounts' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'accounts' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'accounts' ? 1 : 0.5,
+              },
+            },
+          }}
+          startIcon={<Iconify icon="mdi:account-group" width={20} />}
+        >
+          Accounts
+        </Button>
       </Stack>
 
       {/* Indicator for more tabs */}
@@ -1116,6 +1167,7 @@ const Profile = () => {
     <>
       {currentTab === 'client' && <ClientProfile />}
       {currentTab === 'security' && <AccountSecurity />}
+      {currentTab === 'accounts' && <ChildAccounts />}
     </>
   );
 

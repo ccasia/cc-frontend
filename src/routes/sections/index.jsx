@@ -7,6 +7,7 @@ import Verify from 'src/sections/creator/verify';
 import VerfiyXero from 'src/sections/finance/verfiyXero';
 import CreatorFormView from 'src/sections/creator/form/creatorForm';
 import VerifyConfirmation from 'src/sections/creator/verifyConfirmation';
+import ChildAccountSetup from 'src/pages/auth/child-account-setup';
 
 import { mainRoutes } from './main';
 import { authRoutes } from './auth';
@@ -42,6 +43,7 @@ export default function Router() {
     { path: '/auth/creator-form-view', element: <CreatorFormView /> },
     { path: '/auth/verify', element: <Verify /> },
     { path: '/auth/verify/:token', element: <VerifyConfirmation /> },
+    { path: '/auth/child-account-setup/:token', element: <ChildAccountSetup /> },
     { path: '/dashboard/invoice/xeroVerfiy', element: <VerfiyXero /> },
 
     {path: "/template", element: <Agreement />},
