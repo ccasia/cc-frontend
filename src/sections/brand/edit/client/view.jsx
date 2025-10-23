@@ -423,6 +423,7 @@ const CompanyEditView = ({ id }) => {
         open={packageDialog.value}
         onClose={packageDialog.onFalse}
         clientId={id}
+        onRefresh={mutate}
       />
 
       {/* Client Activation Dialog */}

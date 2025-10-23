@@ -132,14 +132,15 @@ const ClientDashboard = () => {
     usedCredits,
     remainingCredits,
     subscription,
+    subscriptionForValidity,
     isLoading: creditsLoading,
   } = useGetClientCredits();
 
   // Calculate remaining days based on expiry date
   const calculateRemainingDays = () => {
-    if (!subscription?.expiredAt) return 0;
+    if (!subscriptionForValidity?.expiredAt) return 0;
 
-    const expiryDate = new Date(subscription.expiredAt);
+    const expiryDate = new Date(subscriptionForValidity.expiredAt);
     const currentDate = new Date();
     const timeDiff = expiryDate.getTime() - currentDate.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));

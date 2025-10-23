@@ -44,6 +44,7 @@ const useGetClientCredits = () => {
         remainingCredits: 0,
         company: companyData?.company || null,
         subscription: null,
+        subscriptionForValidity: null,
         isLoading,
         error: null,
       };
@@ -90,6 +91,9 @@ const useGetClientCredits = () => {
       remainingCredits,
       company: companyData?.company,
       subscription: nextExpiringSubscription,
+      subscriptionForValidity: {
+        expiredAt: creditSummary.validityPackageExpiry, 
+      },
       isLoading,
       error: null,
     };
