@@ -19,6 +19,7 @@ export const paths = {
       clientRegister: `${ROOTS.AUTH}/jwt/client/register`,
       setupPassword: `${ROOTS.AUTH}/jwt/client/setup-password`,
       forgetPassword: `${ROOTS.AUTH}/jwt/forgot-password`,
+      childAccountSetup: `${ROOTS.AUTH}/child-account-setup`,
     },
     verify: `${ROOTS.AUTH}/verify`,
   },
@@ -87,6 +88,7 @@ export const paths = {
         preference: `${ROOTS.DASHBOARD}/user/profile/preference`,
         // Client profile tabs
         client: `${ROOTS.DASHBOARD}/user/profile/client`,
+        accounts: `${ROOTS.DASHBOARD}/user/profile/accounts`,
       },
       myTasks: `${ROOTS.DASHBOARD}/tasks`,
     },

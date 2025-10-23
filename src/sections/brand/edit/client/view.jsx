@@ -44,6 +44,7 @@ import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
 import PackageHistoryList from './pakcage-history-list';
 import CampaignClientList from './campaign-client/view/campaign-list';
+import ChildAccountList from './child-accounts/child-account-list';
 
 const findLatestPackage = (packages) => {
   if (packages?.length === 0) {
@@ -341,6 +342,7 @@ const CompanyEditView = ({ id }) => {
               icon={<Label>{campaigns?.length || 0}</Label>}
             />
             <Tab value="pic" label="Person In Charge" />
+            <Tab value="child-accounts" label="Child Accounts" />
           </Tabs>
 
           <Box p={2}>
@@ -405,6 +407,8 @@ const CompanyEditView = ({ id }) => {
             {activeTab === 'campaign' && <CampaignClientList campaigns={campaigns} />}
 
             {activeTab === 'pic' && <PICList personIncharge={company?.pic} />}
+
+            {activeTab === 'child-accounts' && <ChildAccountList companyId={id} company={company} />}
           </Box>
         </Card>
       </Box>
