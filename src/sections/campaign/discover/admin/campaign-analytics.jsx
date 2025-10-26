@@ -490,7 +490,7 @@ const CampaignAnalytics = ({ campaign }) => {
                   width: 54,
                   height: (() => {
                     const maxCount = Math.max(platformCounts.Instagram, platformCounts.TikTok);
-                    const minHeight = 30;
+                    const minHeight = 10;
                     const maxHeight = 170;
                     if (maxCount === 0) return minHeight;
                     return (

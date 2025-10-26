@@ -44,6 +44,7 @@ import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
 import PackageHistoryList from './pakcage-history-list';
 import CampaignClientList from './campaign-client/view/campaign-list';
+import ChildAccountList from './child-accounts/child-account-list';
 
 const findLatestPackage = (packages) => {
   if (packages?.length === 0) {
@@ -114,6 +115,28 @@ const CompanyEditView = ({ id }) => {
     () => (company?.subscriptions?.length ? findLatestPackage(company?.subscriptions) : null),
     [company]
   );
+
+  const creditSummary = useMemo(() => {
+    if (!company?.subscriptions || company.subscriptions.length === 0) {
+      return { totalCredits: 0, usedCredits: 0, remainingCredits: 0, hasActivePackage: false };
+    }
+
+    const activeSubscriptions = company.subscriptions.filter((sub) => sub.status === 'ACTIVE');
+
+    if (activeSubscriptions.length === 0) {
+      return { totalCredits: 0, usedCredits: 0, remainingCredits: 0, hasActivePackage: false };
+    }
+    // Sum the credits from all active subscriptions
+    const totalCredits = activeSubscriptions.reduce((sum, sub) => sum + (sub.totalCredits || 0), 0);
+    const usedCredits = activeSubscriptions.reduce((sum, sub) => sum + (sub.creditsUsed || 0), 0);
+
+    return {
+      totalCredits,
+      usedCredits,
+      remainingCredits: totalCredits - usedCredits,
+      hasActivePackage: true,
+    };
+  }, [company?.subscriptions]);
 
   const methods = useForm({
     resolver: yupResolver(companySchema),
@@ -256,10 +279,8 @@ const CompanyEditView = ({ id }) => {
             {company?.brand?.length ? 'Agency' : 'Client'} Information
           </Typography>
 
-          {currentPackage && (
-            <Label color="success">
-              Remaining Credits: {currentPackage.totalCredits - currentPackage.creditsUsed || 0}
-            </Label>
+          {creditSummary.hasActivePackage && (
+            <Label color="success">Total Remaining Credits: {creditSummary.remainingCredits}</Label>
           )}
         </Box>
 
@@ -321,12 +342,13 @@ const CompanyEditView = ({ id }) => {
               icon={<Label>{campaigns?.length || 0}</Label>}
             />
             <Tab value="pic" label="Person In Charge" />
+            <Tab value="child-accounts" label="Child Accounts" />
           </Tabs>
 
           <Box p={2}>
             {activeTab === 'package' && (
               <>
-                {!currentPackage ? (
+                {!company?.subscriptions || company.subscriptions.length === 0 ? (
                   <Stack spacing={2} alignItems="center">
                     <Typography variant="subtitle1" color="text.secondary">
                       No package is connected
@@ -342,7 +364,11 @@ const CompanyEditView = ({ id }) => {
                   </Stack>
                 ) : (
                   <>
-                    <Stack direction="row" alignItems="center" justifyContent="end" mb={2}>
+                    <PackageHistoryList
+                      dataFiltered={company?.subscriptions}
+                      onRefresh={() => mutate()}
+                    />
+                    <Stack direction="row" alignItems="center" justifyContent="center" my={2}>
                       {/* <Typography
                       sx={{
                         fontFamily: (theme) => theme.typography.fontSecondaryFamily,
@@ -364,12 +390,15 @@ const CompanyEditView = ({ id }) => {
                     >
                       Renew Package
                     </Button> */}
+                      <Button
+                        variant="outlined"
+                        sx={{ boxShadow: '0px -3px 0px 0px #E7E7E7 inset' }}
+                        startIcon={<Iconify icon="bx:package" width={22} />}
+                        onClick={packageDialog.onTrue}
+                      >
+                        Add package
+                      </Button>
                     </Stack>
-
-                    <PackageHistoryList 
-                      dataFiltered={company?.subscriptions} 
-                      onRefresh={() => mutate()}
-                    />
                   </>
                 )}
               </>
@@ -378,6 +407,8 @@ const CompanyEditView = ({ id }) => {
             {activeTab === 'campaign' && <CampaignClientList campaigns={campaigns} />}
 
             {activeTab === 'pic' && <PICList personIncharge={company?.pic} />}
+
+            {activeTab === 'child-accounts' && <ChildAccountList companyId={id} company={company} />}
           </Box>
         </Card>
       </Box>
@@ -396,6 +427,7 @@ const CompanyEditView = ({ id }) => {
         open={packageDialog.value}
         onClose={packageDialog.onFalse}
         clientId={id}
+        onRefresh={mutate}
       />
 
       {/* Client Activation Dialog */}

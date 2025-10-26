@@ -82,7 +82,7 @@ export default function FeedbackLogs({ submission, onClose }) {
   return (
     <Box
       sx={{
-        height: '100%',
+        height: {xs: 350, sm: '100%'},
         display: 'flex',
         flexDirection: 'column',
         bgcolor: 'background.paper',
@@ -96,19 +96,26 @@ export default function FeedbackLogs({ submission, onClose }) {
           alignItems: 'center',
           justifyContent: 'space-between',
           borderColor: 'divider',
-          backgroundColor: '#F5F5F5'
+          backgroundColor: '#F5F5F5',
+          flexDirection: { xs: 'row', sm: 'row' },
+          gap: { xs: 0, sm: 0 },
+          p: { xs: 0, sm: 0 },
         }}
       >
-        <Box sx={{ display: 'flex' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          width: { xs: '100%', sm: 'auto' },
+          justifyContent: { xs: 'flex-start', sm: 'flex-start' }
+        }}>
           <Box
             onClick={() => handleTabChange(0)}
             sx={{
-              px: 2,
-              py: 1,
-              minWidth: 175,
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.8, sm: 1 },
+              minWidth: { xs: 120, sm: 175 },
               textAlign: 'center',
               cursor: 'pointer',
-              fontSize: 12,
+              fontSize: { xs: 11, sm: 12 },
               fontWeight: 600,
               borderRadius: 1,
               borderBottomLeftRadius: 0,
@@ -123,12 +130,12 @@ export default function FeedbackLogs({ submission, onClose }) {
           <Box
             onClick={() => handleTabChange(1)}
             sx={{
-              px: 2,
-              py: 1,
-              minWidth: 175,
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.8, sm: 1 },
+              minWidth: { xs: 120, sm: 175 },
               textAlign: 'center',
               cursor: 'pointer',
-              fontSize: 12,
+              fontSize: { xs: 11, sm: 12 },
               fontWeight: 600,
               borderRadius: 1,
               borderBottomLeftRadius: 0,
@@ -136,14 +143,27 @@ export default function FeedbackLogs({ submission, onClose }) {
               transition: 'all 0.2s',
               bgcolor: activeTab === 1 ? '#fff' : '#E7E7E7',
               color: activeTab === 0 ? '#8E8E93' : '#000',
-
             }}
           >
             Caption History
           </Box>
         </Box>
-        <IconButton onClick={onClose} sx={{ p: 0, '&:hover': { backgroundColor: 'transparent' } }}>
-          <Iconify icon="eva:close-fill" sx={{ width: 25, height: 25 }} />
+        <IconButton 
+          onClick={onClose} 
+          sx={{ 
+            p: { xs: 0.5, sm: 0 }, 
+            mt: { xs: -0.5, sm: 0 },
+            alignSelf: { xs: 'flex-end', sm: 'center' },
+            '&:hover': { backgroundColor: 'transparent' } 
+          }}
+        >
+          <Iconify 
+            icon="eva:close-fill" 
+            sx={{ 
+              width: { xs: 20, sm: 25 }, 
+              height: { xs: 20, sm: 25 } 
+            }} 
+          />
         </IconButton>
       </Box>
 
@@ -152,8 +172,8 @@ export default function FeedbackLogs({ submission, onClose }) {
         sx={{
           flex: 1,
           overflow: 'auto',
-          px: 2,
-          pb: 2,
+          px: { xs: 1.5, sm: 2 },
+          pb: { xs: 1.5, sm: 2 },
           scrollbarWidth: 'thin',
           scrollbarColor: '#888 transparent',
           '&::-webkit-scrollbar': {
@@ -190,12 +210,17 @@ export default function FeedbackLogs({ submission, onClose }) {
                   sx={{
                     borderBottom: '1px solid',
                     borderColor: 'divider',
-                    py: 2
+                    py: { xs: 1.5, sm: 2 }
                   }}
                 >
                   {/* Reasons (if any) */}
                   {log.reasons && log.reasons.length > 0 && (
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      flexWrap: 'wrap',  
+                      mb: { xs: 0.5, sm: 1 }
+                    }}>
                       <Chip
                         sx={FEEDBACK_CHIP_STYLES}
                         label={log.reasons[0]}
@@ -256,7 +281,7 @@ export default function FeedbackLogs({ submission, onClose }) {
                               cursor: 'pointer',
                               '& .MuiChip-label': {
                                 px: 0.5,
-                                fontSize: 14,
+                                fontSize: 12,
                                 fontWeight: 'bold'
                               }
                             }}
@@ -274,21 +299,43 @@ export default function FeedbackLogs({ submission, onClose }) {
                   <Box
                     sx={{
                       display: 'flex',
-                      alignItems: 'center',
+                      alignItems: { xs: 'flex-start', sm: 'center' },
                       justifyContent: 'space-between',
-                      my: 1
+                      my: { xs: 0.8, sm: 1 },
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: { xs: 0.3, sm: 0 }
                     }}
                   >
-                    <Typography fontSize={12} fontWeight="bold" color={getFeedbackLabel(log.type, log.sentToCreator, log.admin.role) === 'CS Comments' ? '#1340FF' : '#636366'}>
+                    <Typography 
+                      fontSize={{ xs: 11, sm: 12 }} 
+                      fontWeight="bold" 
+                      color={getFeedbackLabel(log.type, log.sentToCreator, log.admin.role) === 'CS Comments' ? '#1340FF' : '#636366'}
+                    >
                       {getFeedbackLabel(log.type, log.sentToCreator, log.admin.role)}
                     </Typography>
-                    <Typography fontSize={12} fontWeight="bold" color={getFeedbackLabel(log.type, log.sentToCreator, log.admin.role) === 'CS Comments' ? '#1340FF' : '#636366'}>
+                    <Typography 
+                      fontSize={{ xs: 10, sm: 12 }} 
+                      fontWeight="bold" 
+                      color={getFeedbackLabel(log.type, log.sentToCreator, log.admin.role) === 'CS Comments' ? '#1340FF' : '#636366'}
+                      sx={{ 
+                        textAlign: { xs: 'left', sm: 'right' },
+                        minWidth: 0
+                      }}
+                    >
                       {getActionLabel(log.type, log.sentToCreator, log.admin.role)} {formatDateTime(log.createdAt)}
                     </Typography>
                   </Box>
 
                   {/* Feedback Message */}
-                  <Typography variant="body2" color="text.primary" sx={{ whiteSpace: 'pre-wrap'}}>
+                  <Typography 
+                    variant="body2" 
+                    color="text.primary" 
+                    sx={{ 
+                      whiteSpace: 'pre-wrap',
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      lineHeight: { xs: 1.4, sm: 1.5 }
+                    }}
+                  >
                     {log.content || ''}
                   </Typography>
                 </Box>
@@ -311,20 +358,47 @@ export default function FeedbackLogs({ submission, onClose }) {
               </Typography>
             </Box>
           ) : captionHistory.length > 0 ? (
-            <Stack spacing={2} sx={{ mt: 2 }}>
+            <Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ mt: { xs: 1.5, sm: 2 } }}>
               {/* Caption History */}
               {captionHistory.map((log, index) => (
-                <Box key={log.id} sx={{ mb: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography fontSize={12} fontWeight="bold" color="#636366">
+                <Box key={log.id} sx={{ mb: { xs: 0.8, sm: 1 } }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: { xs: 'flex-start', sm: 'center' }, 
+                    justifyContent: 'space-between', 
+                    mb: { xs: 0.8, sm: 1 },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 0.3, sm: 0 }
+                  }}>
+                    <Typography 
+                      fontSize={{ xs: 11, sm: 12 }} 
+                      fontWeight="bold" 
+                      color="#636366"
+                    >
                       Caption
                     </Typography>
-                    <Typography fontSize={12} fontWeight="bold" color="#636366">
+                    <Typography 
+                      fontSize={{ xs: 10, sm: 12 }} 
+                      fontWeight="bold" 
+                      color="#636366"
+                      sx={{ 
+                        textAlign: { xs: 'left', sm: 'right' },
+                        minWidth: 0
+                      }}
+                    >
                       Edited by {log.authorType === 'admin' ? 'Admin' : 'Creator'} {formatDateTime(log.createdAt)}
                     </Typography>
                   </Box>
                   <Box>
-                    <Typography variant="body2" color="text.primary" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                    <Typography 
+                      variant="body2" 
+                      color="text.primary" 
+                      sx={{ 
+                        whiteSpace: 'pre-wrap', 
+                        lineHeight: { xs: 1.4, sm: 1.5 },
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                      }}
+                    >
                       {log.caption || '(empty)'}
                     </Typography>
                   </Box>

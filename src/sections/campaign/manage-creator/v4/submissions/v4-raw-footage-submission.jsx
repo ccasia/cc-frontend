@@ -195,6 +195,25 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     );
   }
 
+  const isDisabled =
+    uploading ||
+    submission.status === 'PENDING_REVIEW' ||
+    submission.status === 'POSTED' ||
+    (submission.status !== 'CHANGES_REQUIRED' && submission.status !== 'NOT_STARTED') ||
+    ((submission.status === 'NOT_STARTED' || submission.status === 'CLIENT_APPROVED') &&
+      selectedFiles.length === 0);
+
+  const isReuploadButton = submission.status === 'CHANGES_REQUIRED' && !isReuploadMode;
+
+  const isSubmitButton =
+    (isReuploadMode && submission.status === 'CHANGES_REQUIRED') ||
+    ((submission.status === 'NOT_STARTED' || submission.status === 'CLIENT_APPROVED') &&
+      selectedFiles.length > 0);
+
+  const buttonColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#1340FF' : '#3A3A3C';
+
+  const buttonBorderColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#00000073' : '#000';
+
   return (
     <Box>
       {uploading && (
@@ -358,21 +377,56 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         </Box>
       </Box>
 
-      {/* ACTION BUTTON */}
-      <SubmissionActionButton
-        isDisabled={isDisabled}
-        isReuploadButton={isReuploadButton}
-        isSubmitButton={isSubmitButton}
-        uploading={uploading}
-        postingLoading={false}
-        uploadProgress={uploadProgress}
-        onReupload={onReuploadMode}
-        onSubmit={handleSubmit}
-        onPostingLinkSubmit={() => {}}
-        isPostingLinkEditable={false}
-        reuploadText="Reupload Raw Footages"
-        uploadingText="Uploading..."
-      />
+      {/* Submit Button - Responsive Position */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: { xs: 'center', md: 'flex-end' }, // Center on mobile, right-aligned on desktop
+          alignItems: 'center',
+          mt: { xs: 2, md: -6 }, // Normal spacing on mobile, negative margin on desktop
+          position: 'relative',
+          zIndex: 10,
+        }}
+      >
+        <Typography
+          component="button"
+          onClick={isReuploadButton ? handleReuploadMode : handleSubmit}
+          disabled={isDisabled}
+          sx={{
+            px: 2,
+            py: 1,
+            fontWeight: 600,
+            border: '1px solid',
+            borderBottom: '3px solid',
+            borderRadius: 0.8,
+            bgcolor: buttonColor,
+            color: 'white',
+            borderColor: buttonBorderColor,
+            textTransform: 'none',
+            fontSize: '0.75rem',
+            minWidth: '80px',
+            height: '32px',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: isDisabled ? 'not-allowed' : 'pointer',
+            '&:disabled': {
+              bgcolor: '#BDBDBD',
+              borderColor: '#BDBDBD',
+              color: 'white',
+              cursor: 'not-allowed',
+            },
+            // Remove hover effect
+          }}
+        >
+          {uploading
+            ? 'Uploading...'
+            : isReuploadButton
+              ? 'Reupload Raw Footages' // or 'Reupload Draft'/'Reupload Raw Footages' based on component
+              : 'Submit'}
+        </Typography>
+      </Box>
     </Box>
   );
 };

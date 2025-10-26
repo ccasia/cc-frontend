@@ -581,7 +581,7 @@ const CampaignModal = ({
                     </Button>
                   </Stack>
                 ) : hasPitched ? (
-                  existingPitch.status === 'approved' ? (
+                  existingPitch.status === 'APPROVED' ? (
                     <Button
                       variant="contained"
                       onClick={() => handleManageClick(campaign.id)}
@@ -604,7 +604,7 @@ const CampaignModal = ({
                     >
                       Manage
                     </Button>
-                  ) : existingPitch.status === 'rejected' ? (
+                  ) : existingPitch.status === 'REJECTED' ? (
                     <Chip
                       icon={<Iconify icon="mdi:close-circle" />}
                       label="Rejected"
@@ -665,29 +665,6 @@ const CampaignModal = ({
                     }}
                   >
                     Draft
-                  </Button>
-                ) : isShortlisted ? (
-                  <Button
-                    variant="contained"
-                    onClick={() => handleManageClick(campaign.id)}
-                    sx={{
-                      backgroundColor: '#203ff5',
-                      color: 'white',
-                      borderBottom: '4px solid #102387 !important',
-                      border: 'none',
-                      '&:hover': {
-                        backgroundColor: '#1935dd',
-                        borderBottom: '4px solid #102387 !important',
-                      },
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      padding: { xs: '4px 12px', sm: '6px 18px' },
-                      minWidth: '100px',
-                      height: '42px',
-                      boxShadow: 'none',
-                      textTransform: 'none',
-                    }}
-                  >
-                    Manage
                   </Button>
                 ) : (
                   <Button
