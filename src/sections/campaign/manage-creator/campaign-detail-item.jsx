@@ -6,6 +6,9 @@ import { Box, Stack, Button } from '@mui/material';
 
 // import Image from 'src/components/image';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
@@ -16,6 +19,7 @@ import CampaignLogistics from './campaign-logistics';
 import CampaignV4Activity from './v4/campaign-v4-activity';
 
 const CampaignDetailItem = ({ campaign }) => {
+  const router = useRouter();
   const location = useLocation();
   const [currentTab, setCurrentTab] = useState(() => {
     if (location.state?.tab) {
@@ -29,6 +33,8 @@ const CampaignDetailItem = ({ campaign }) => {
   const isCampaignDone = campaign?.shortlisted?.find(
     (item) => item.userId === user?.id
   )?.isCampaignDone;
+
+  const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
 
   const openLogisticTab = () => {
     setCurrentTab('logistics');
@@ -113,9 +119,25 @@ const CampaignDetailItem = ({ campaign }) => {
           }}
         />
         {isCampaignDone && (
-          <Label color="success" sx={{ height: 40 }}>
-            🎉 Congratulations! {campaign?.name} is done!
-          </Label>
+            <Label color="success" sx={{ height: 40 }}>
+              🎉 Congratulations! {campaign?.name} is done!
+            {invoiceId && (
+              <Button
+                color="info"
+                disableRipple
+                sx={{
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    bgcolor: 'transparent',
+                  },
+                }}
+                onClick={() => router.push(paths.dashboard.creator.invoiceDetail(invoiceId))}
+              >
+                View Invoice
+              </Button>
+            )}
+            </Label>
         )}
 
         <Box mt={3} sx={{ overflowX: 'hidden', width: '100%' }}>
