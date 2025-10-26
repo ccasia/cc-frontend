@@ -195,21 +195,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     );
   }
 
-  const isDisabled =
-    uploading ||
-    submission.status === 'PENDING_REVIEW' ||
-    submission.status === 'POSTED' ||
-    (submission.status !== 'CHANGES_REQUIRED' && submission.status !== 'NOT_STARTED') ||
-    ((submission.status === 'NOT_STARTED' || submission.status === 'CLIENT_APPROVED') &&
-      selectedFiles.length === 0);
-
-  const isReuploadButton = submission.status === 'CHANGES_REQUIRED' && !isReuploadMode;
-
-  const isSubmitButton =
-    (isReuploadMode && submission.status === 'CHANGES_REQUIRED') ||
-    ((submission.status === 'NOT_STARTED' || submission.status === 'CLIENT_APPROVED') &&
-      selectedFiles.length > 0);
-
   const buttonColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#1340FF' : '#3A3A3C';
 
   const buttonBorderColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#00000073' : '#000';
