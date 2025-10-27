@@ -1089,7 +1089,8 @@ const Profile = () => {
           {renderForm}
         </Grid>
       )}
-      {user?.admin?.role?.name === 'Finance' && currentTab === 'api' && <API />}
+      {user?.admin?.role?.name === 'Finance' ||
+        (user?.role === 'superadmin' && currentTab === 'api' && <API />)}
       {/* {currentTab === 'api' && <API />} */}
     </>
   );
@@ -1132,6 +1133,7 @@ const Profile = () => {
       >
         Settings ⚙️
       </Typography>
+      {/* eslint-disable-next-line no-nested-ternary */}
       {['admin', 'superadmin'].includes(user?.role)
         ? Admintabs
         : user?.role === 'client'
