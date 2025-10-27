@@ -1089,9 +1089,8 @@ const Profile = () => {
           {renderForm}
         </Grid>
       )}
-      {user?.admin?.role?.name === 'Finance' ||
-        (user?.role === 'superadmin' && currentTab === 'api' && <API />)}
-      {/* {currentTab === 'api' && <API />} */}
+      {(user?.admin?.role?.name === 'Finance' || user?.role === 'superadmin') &&
+        currentTab === 'api' && <API />}
     </>
   );
 
