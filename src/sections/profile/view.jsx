@@ -440,7 +440,7 @@ const Profile = () => {
           Security
         </Button>
 
-        {user?.admin?.role?.name === 'Finance' && (
+        {(user?.admin?.role?.name === 'Finance' || user?.role === 'superadmin') && (
           <Button
             component={Link}
             to={paths.dashboard.user.profileTabs.api}
