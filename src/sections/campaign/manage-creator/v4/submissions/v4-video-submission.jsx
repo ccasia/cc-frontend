@@ -30,62 +30,49 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
 
   const [postingLinkLoading, setPostingLinkLoading] = useState(false);
 
-  // Check if there are existing submitted videos - memoized to prevent re-creation
   const submittedVideo = useMemo(() => {
     const hasSubmittedVideos = submission.video && submission.video.length > 0;
     return hasSubmittedVideos ? submission.video[0] : null;
   }, [submission.video]);
 
-  // Check if changes are required
   const hasChangesRequired = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
-
-  // Check posting link status
   const isApproved = ['APPROVED', 'CLIENT_APPROVED'].includes(submission.status);
   const isPosted = submission.status === 'POSTED';
 
-  // Check if posting links are required for this campaign type
   const requiresPostingLink =
     (campaign?.campaignType || submission.campaign?.campaignType) !== 'ugc';
 
   const needsPostingLink = isApproved && !submission.content && requiresPostingLink;
   const hasPostingLink = Boolean(submission.content);
-  // Check if posting link was rejected (status is REJECTED and content was cleared, but video exists)
   const isPostingLinkRejected =
     submission.status === 'REJECTED' && !submission.content && submission.video?.length > 0;
   const isPostingLinkEditable = (needsPostingLink || isPostingLinkRejected) && requiresPostingLink;
 
-  // Show submitted video only if not in reupload mode - memoized to prevent blinking
   const videoToShow = useMemo(() => {
     return isReuploadMode ? null : submittedVideo;
   }, [isReuploadMode, submittedVideo]);
 
-  // Determine if caption should be editable
+
   const isCaptionEditable = useMemo(() => {
-    // Editable if: in reupload mode OR no video has been submitted yet OR just uploaded locally
     return isReuploadMode || !submittedVideo || (!hasSubmitted && selectedFiles.length > 0);
   }, [isReuploadMode, submittedVideo, hasSubmitted, selectedFiles.length]);
 
-  // Memoize feedback filtering to avoid recalculation - only show the most recent feedback for this submission
   const relevantFeedback = useMemo(() => {
     if (!submission.feedback?.length) return [];
 
-    // Filter feedback that is sent to creator
     const sentFeedback = submission.feedback.filter((feedback) => feedback.sentToCreator);
 
-    // If we have feedback with matching submissionId, use those
     const matchingFeedback = sentFeedback.filter(
       (feedback) => feedback.submissionId === submission.id
     );
 
     if (matchingFeedback.length > 0) {
-      // Sort by creation date and take only the most recent one
       const sortedFeedback = matchingFeedback.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
       return [sortedFeedback[0]];
     }
 
-    // Fallback: if no submissionId match, show only the most recent feedback overall
     if (sentFeedback.length > 0) {
       const sortedFeedback = sentFeedback.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -98,24 +85,18 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
 
   const handleReupload = () => {
     if (isPostingLinkRejected) {
-      // For posting link rejection, don't enter reupload mode - just allow posting link editing
-      // The posting link field will become editable due to isPostingLinkRejected being true
       return;
     }
 
-    // For content rejection, enter full reupload mode
     setIsReuploadMode(true);
     setSelectedFiles([]);
-    setHasSubmitted(false); // Reset submitted state to allow editing
-    // Keep the existing caption for editing
+    setHasSubmitted(false); 
   };
 
-  // Memoized caption change handler to prevent unnecessary re-renders
   const handleCaptionChange = useCallback((e) => {
     setCaption(e.target.value);
   }, []);
 
-  // Memoized file change handler to prevent unnecessary re-renders
   const handleFilesChange = useCallback((files) => {
     setSelectedFiles(files);
   }, []);
@@ -139,7 +120,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
       });
 
       enqueueSnackbar('Posting link submitted successfully', { variant: 'success' });
-      onUpdate();
+      await onUpdate();
     } catch (error) {
       console.error('Error submitting posting link:', error);
       enqueueSnackbar(error.message || 'Failed to submit posting link', { variant: 'error' });
@@ -165,19 +146,16 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
     try {
       const formData = new FormData();
 
-      // Add form data as JSON string
       const requestData = {
         submissionId: submission.id,
         caption: caption.trim(),
       };
       formData.append('data', JSON.stringify(requestData));
 
-      // Add video files
       selectedFiles.forEach((file) => {
         formData.append('videos', file);
       });
 
-      // Upload with progress tracking
       const xhr = new XMLHttpRequest();
 
       xhr.upload.addEventListener('progress', (event) => {
@@ -208,12 +186,9 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
       enqueueSnackbar('Videos uploaded successfully and are being processed!', {
         variant: 'success',
       });
-      onUpdate();
-      setIsReuploadMode(false); // Reset reupload mode after successful submission
-      setHasSubmitted(true); // Mark as submitted to disable editing
-      // Keep selectedFiles so video preview remains visible
-      // setSelectedFiles([]);
-      // setCaption(''); // Keep caption too
+      await onUpdate();
+      setIsReuploadMode(false); 
+      setHasSubmitted(true); 
     } catch (error) {
       console.error('Submit error:', error);
       enqueueSnackbar(error.message || 'Failed to upload videos', { variant: 'error' });
@@ -254,7 +229,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
       <Box
         sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' }, // Stack vertically on mobile, horizontally on desktop
+          flexDirection: { xs: 'column', md: 'row' }, 
           gap: { xs: 2, md: 3 },
           mb: 2,
           position: 'relative',
@@ -271,10 +246,9 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
         {/* Upload Area - Responsive width */}
         <Box
           sx={{
-            width: { xs: '100%', md: '65%' }, // Full width on mobile, 65% on desktop
-            maxWidth: '100%', // Prevent overflow
-            order: { xs: 1, md: 1 }, // First on both mobile and desktop
-            // Adjust for smaller desktop screens
+            width: { xs: '100%', md: '65%' },
+            maxWidth: '100%', 
+            order: { xs: 1, md: 1 }, 
             '@media (max-width: 1200px)': {
               width: '100%',
             },
@@ -296,14 +270,13 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
         {/* Caption and Feedback - Responsive positioning */}
         <Box
           sx={{
-            width: { xs: '100%', md: 'min(325px, 35%)' }, // Responsive width on desktop, full width on mobile
-            maxWidth: { xs: '100%', md: '325px' }, // Ensure it doesn't exceed container
-            position: { xs: 'static', md: 'absolute' }, // Static on mobile, absolute on desktop
+            width: { xs: '100%', md: 'min(325px, 35%)' },
+            maxWidth: { xs: '100%', md: '325px' }, 
+            position: { xs: 'static', md: 'absolute' }, 
             top: { xs: 'auto', md: 0 },
             right: { xs: 'auto', md: 0 },
             zIndex: 2,
-            order: { xs: 2, md: 2 }, // Second on both mobile and desktop
-            // Ensure it doesn't overflow on smaller desktop screens
+            order: { xs: 2, md: 2 },
             '@media (max-width: 1200px)': {
               position: 'static',
               width: '100%',
@@ -337,17 +310,16 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
                 placeholder="Type your caption here..."
                 disabled={uploading}
                 sx={{
-                  maxWidth: '100%', // Prevent overflow
+                  maxWidth: '100%', 
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
                     backgroundColor: 'white',
-                    wordWrap: 'break-word', // Handle long words
+                    wordWrap: 'break-word',
                     overflowWrap: 'break-word',
                   },
                 }}
               />
             ) : (
-              // Show read-only caption text when submitted
               <Typography
                 variant="body2"
                 sx={{
@@ -370,7 +342,7 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
                   textOverflow: 'clip',
                   WebkitLineClamp: 'unset',
                   WebkitBoxOrient: 'unset',
-                  ml: -1.5, // Move caption text to the left on both mobile and desktop
+                  ml: -1.5, 
                 }}
               >
                 {caption || 'No caption provided'}

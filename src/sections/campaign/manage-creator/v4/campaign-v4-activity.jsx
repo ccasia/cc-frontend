@@ -28,6 +28,8 @@ import { LoadingButton } from '@mui/lab';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { fetcher, endpoints } from 'src/utils/axios';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
@@ -68,7 +70,6 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
-  // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
   const originalAgreementUrl = campaign?.agreement?.agreementUrl;
   const agreementUrl = originalAgreementUrl
     ? originalAgreementUrl.replace(
@@ -77,7 +78,6 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       )
     : null;
 
-  // Check if agreement has been submitted (not just pending)
   const isAgreementSubmitted =
     agreementSubmission?.status === 'PENDING_REVIEW' ||
     agreementSubmission?.status === 'APPROVED' ||
@@ -646,8 +646,14 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 const CampaignV4Activity = ({ campaign }) => {
   const [expandedSections, setExpandedSections] = useState({});
   const [numPages, setNumPages] = useState(null);
+  const updateTimerRef = React.useRef(null); // Store timer for debouncing updates
+  const isFirstUpdateRef = React.useRef(true); // Track if this is the first update
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
+  
+  // Socket integration for real-time updates
+  const { socket } = useSocketContext();
+  const { user } = useAuthContext();
 
   // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
   const originalAgreementUrl = campaign?.agreement?.agreementUrl;
@@ -658,11 +664,12 @@ const CampaignV4Activity = ({ campaign }) => {
       )
     : null;
 
-  // Fetch creator's v4 submissions
+  // Fetch creator's v4 submissions using SWR
+  // Following SWR's standard API: useSWR(key, fetcher, options)
   const {
     data: submissionsData,
     error,
-    mutate,
+    mutate, // mutate() will revalidate this data
   } = useSWR(
     campaign?.id
       ? `${endpoints.submission.creator.v4.getMyV4Submissions}?campaignId=${campaign?.id}`
@@ -670,16 +677,22 @@ const CampaignV4Activity = ({ campaign }) => {
     fetcher,
     {
       revalidateOnFocus: true,
-      refreshInterval: 30000, // Refresh every 30 seconds
+      revalidateOnReconnect: true,
+      refreshInterval: socket ? 0 : 30000, // Disable auto-refresh when socket is connected
     }
   );
 
-  // Fetch campaign overview
-  const { data: overviewData } = useSWR(
+  // Fetch campaign overview using SWR
+  const { data: overviewData, mutate: mutateOverview } = useSWR(
     campaign?.id
       ? `${endpoints.submission.creator.v4.getMyCampaignOverview}?campaignId=${campaign?.id}`
       : null,
-    fetcher
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      refreshInterval: socket ? 0 : 30000, // Disable auto-refresh when socket is connected
+    }
   );
 
   // Get signed agreement URL if available (for approved agreement display)
@@ -749,6 +762,101 @@ const CampaignV4Activity = ({ campaign }) => {
       }
     }
   }, [submissionsData, expandedSections]);
+
+  // Socket listeners for real-time submission updates
+  useEffect(() => {
+    if (!socket || !campaign?.id) return;
+    
+    const queueUpdate = () => {
+      if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
+
+      const delay = isFirstUpdateRef.current ? 0 : 200;
+      
+      updateTimerRef.current = setTimeout(() => {
+        mutate();
+        mutateOverview();
+        isFirstUpdateRef.current = false;
+      }, delay);
+    };
+
+    const handleSubmissionUpdate = (data) => {
+      // Check if the update is for submissions in this campaign
+      const allSubmissions = [
+        ...(submissionsData?.grouped?.videos || []),
+        ...(submissionsData?.grouped?.photos || []),
+        ...(submissionsData?.grouped?.rawFootage || []),
+      ];
+
+      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+
+      if (isRelevantUpdate && data.userId !== user?.id) {
+        queueUpdate();
+      }
+    };
+
+    const handleContentSubmitted = (data) => {
+      const allSubmissions = [
+        ...(submissionsData?.grouped?.videos || []),
+        ...(submissionsData?.grouped?.photos || []),
+        ...(submissionsData?.grouped?.rawFootage || []),
+      ];
+
+      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+
+      if (isRelevantUpdate && data.userId !== user?.id) {
+        queueUpdate();
+      }
+    };
+
+    const handlePostingUpdated = (data) => {
+      const allSubmissions = [
+        ...(submissionsData?.grouped?.videos || []),
+        ...(submissionsData?.grouped?.photos || []),
+        ...(submissionsData?.grouped?.rawFootage || []),
+      ];
+
+      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+
+      if (isRelevantUpdate && data.userId !== user?.id) {
+        queueUpdate();
+      }
+    };
+
+    const handleContentProcessed = (data) => {
+      const allSubmissions = [
+        ...(submissionsData?.grouped?.videos || []),
+        ...(submissionsData?.grouped?.photos || []),
+        ...(submissionsData?.grouped?.rawFootage || []),
+      ];
+
+      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+
+      if (isRelevantUpdate) {
+        queueUpdate();
+      }
+    };
+
+    // Join the campaign room
+    socket.emit('join-campaign', campaign.id);
+
+    // Listen for submission updates
+    socket.on('v4:submission:updated', handleSubmissionUpdate);
+    socket.on('v4:content:submitted', handleContentSubmitted);
+    socket.on('v4:posting:updated', handlePostingUpdated);
+    socket.on('v4:content:processed', handleContentProcessed);
+
+    // Cleanup
+    return () => {
+      // Clear any pending updates
+      if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
+      
+      socket.off('v4:submission:updated', handleSubmissionUpdate);
+      socket.off('v4:content:submitted', handleContentSubmitted);
+      socket.off('v4:posting:updated', handlePostingUpdated);
+      socket.off('v4:content:processed', handleContentProcessed);
+      socket.emit('leave-campaign', campaign.id);
+    };
+  }, [socket, campaign?.id, submissionsData, user?.id, mutate, mutateOverview]);
 
   // Helper function to determine if submission is "new" (not submitted yet)
   const isNewSubmission = (submission) => {
@@ -944,11 +1052,10 @@ const CampaignV4Activity = ({ campaign }) => {
               <AgreementSubmission
                 campaign={campaign}
                 agreementSubmission={submissionsData?.grouped?.agreement}
-                onUpdate={() =>
-                  mutate(
-                    `${endpoints.submission.creator.v4.getMyCampaignOverview}?campaignId=${campaign.id}`
-                  )
-                }
+                onUpdate={async () => {
+                  await Promise.all([mutate(), mutateOverview()]);
+                  setExpandedSections((prev) => ({ ...prev, agreement: false }));
+                }}
               />
             </Box>
           </Collapse>
@@ -1245,6 +1352,7 @@ const CampaignV4Activity = ({ campaign }) => {
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
                       fontSize: '0.75rem',
+                      transition: 'all 0.3s ease-in-out', // Smooth color transitions
                     }}
                   >
                     {status}
@@ -1275,7 +1383,29 @@ const CampaignV4Activity = ({ campaign }) => {
                   <V4VideoSubmission
                     submission={video}
                     campaign={campaign}
-                    onUpdate={() => mutate()}
+                    onUpdate={async () => {
+                      // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
+                      mutate(
+                        (currentData) => {
+                          if (!currentData?.grouped) return currentData;
+                          return {
+                            ...currentData,
+                            grouped: {
+                              ...currentData.grouped,
+                              videos: currentData.grouped.videos.map((v) =>
+                                v.id === video.id ? { ...v, status: 'PENDING_REVIEW' } : v
+                              ),
+                            },
+                          };
+                        },
+                        false // Don't revalidate - update cache immediately
+                      );
+                      
+                      // Then revalidate to get actual backend data
+                      await Promise.all([mutate(), mutateOverview()]);
+                      // Auto-collapse after successful submission
+                      setExpandedSections((prev) => ({ ...prev, [video.id]: false }));
+                    }}
                   />
                 </Box>
               </Collapse>
@@ -1344,6 +1474,7 @@ const CampaignV4Activity = ({ campaign }) => {
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
                       fontSize: '0.75rem',
+                      transition: 'all 0.3s ease-in-out', // Smooth color transitions
                     }}
                   >
                     {status}
@@ -1374,7 +1505,29 @@ const CampaignV4Activity = ({ campaign }) => {
                   <V4PhotoSubmission
                     submission={photo}
                     campaign={campaign}
-                    onUpdate={() => mutate()}
+                    onUpdate={async () => {
+                      // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
+                      mutate(
+                        (currentData) => {
+                          if (!currentData?.grouped) return currentData;
+                          return {
+                            ...currentData,
+                            grouped: {
+                              ...currentData.grouped,
+                              photos: currentData.grouped.photos.map((p) =>
+                                p.id === photo.id ? { ...p, status: 'PENDING_REVIEW' } : p
+                              ),
+                            },
+                          };
+                        },
+                        false // Don't revalidate - update cache immediately
+                      );
+                      
+                      // Then revalidate to get actual backend data
+                      await Promise.all([mutate(), mutateOverview()]);
+                      // Auto-collapse after successful submission
+                      setExpandedSections((prev) => ({ ...prev, [photo.id]: false }));
+                    }}
                   />
                 </Box>
               </Collapse>
@@ -1443,6 +1596,7 @@ const CampaignV4Activity = ({ campaign }) => {
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
                       fontSize: '0.75rem',
+                      transition: 'all 0.3s ease-in-out', // Smooth color transitions
                     }}
                   >
                     {status}
@@ -1470,7 +1624,32 @@ const CampaignV4Activity = ({ campaign }) => {
               <Collapse in={isExpanded}>
                 <Divider />
                 <Box sx={{ p: 3 }}>
-                  <V4RawFootageSubmission submission={rawFootage} onUpdate={() => mutate()} />
+                  <V4RawFootageSubmission
+                    submission={rawFootage}
+                    onUpdate={async () => {
+                      // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
+                      mutate(
+                        (currentData) => {
+                          if (!currentData?.grouped) return currentData;
+                          return {
+                            ...currentData,
+                            grouped: {
+                              ...currentData.grouped,
+                              rawFootage: currentData.grouped.rawFootage.map((rf) =>
+                                rf.id === rawFootage.id ? { ...rf, status: 'PENDING_REVIEW' } : rf
+                              ),
+                            },
+                          };
+                        },
+                        false // Don't revalidate - update cache immediately
+                      );
+                      
+                      // Then revalidate to get actual backend data
+                      await Promise.all([mutate(), mutateOverview()]);
+                      // Auto-collapse after successful submission
+                      setExpandedSections((prev) => ({ ...prev, [rawFootage.id]: false }));
+                    }}
+                  />
                 </Box>
               </Collapse>
             </Card>
