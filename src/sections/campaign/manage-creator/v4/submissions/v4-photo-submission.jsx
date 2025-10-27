@@ -232,14 +232,14 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
 
       enqueueSnackbar(successMessage, { variant: 'success' });
 
-      onUpdate();
+      await onUpdate();
       // Clear removal state after successful submission
       setPhotosToRemove([]);
-      // Reset submitted state to allow further changes
-      setHasSubmitted(false);
-      // Keep selectedFiles so preview remains visible
-      // setSelectedFiles([]);
-      // setCaption(''); // Keep caption too
+      // Keep submitted state - caption will be non-editable
+      setHasSubmitted(true);
+      // Clear selectedFiles to make upload box disappear
+      setSelectedFiles([]);
+      // Keep caption visible
     } catch (error) {
       console.error('Submit error:', error);
       setHasSubmitted(false); // Reset submitted state on error
@@ -264,7 +264,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
       });
 
       enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
-      onUpdate();
+      await onUpdate();
     } catch (error) {
       console.error('Error updating posting link:', error);
       enqueueSnackbar(error.message || 'Failed to update posting link', { variant: 'error' });

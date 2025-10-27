@@ -13,8 +13,6 @@ import {
   IconButton,
 } from '@mui/material';
 
-import axiosInstance from 'src/utils/axios';
-
 import Iconify from 'src/components/iconify';
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 import RawFootageGridDisplay from 'src/components/upload/raw-footage-grid-display';
@@ -147,13 +145,11 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     try {
       const formData = new FormData();
 
-      // Separate existing raw footages (API objects with URLs) from new files (File objects)
       const existingRawFootages = selectedFiles.filter(
         (file) => file && typeof file === 'object' && file.url && file.id
       );
       const newFiles = selectedFiles.filter((file) => file instanceof File);
 
-      // Add form data as JSON string with selective update information
       const requestData = {
         submissionId: submission.id,
         caption: caption.trim(),
@@ -165,12 +161,11 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       };
       formData.append('data', JSON.stringify(requestData));
 
-      // Add only new raw footage files (not existing ones)
       newFiles.forEach((file) => {
         formData.append('rawFootages', file);
       });
 
-      // Create XMLHttpRequest for progress tracking
+
       const uploadPromise = new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
@@ -219,28 +214,13 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
 
       enqueueSnackbar(successMessage, { variant: 'success' });
 
-      // Update submission status to IN REVIEW immediately after successful upload
-      try {
-        await axiosInstance.patch(`/api/creator/submissions/v4/${submission.id}/status`, {
-          status: 'PENDING_REVIEW',
-        });
-      } catch (statusError) {
-        console.error(
-          'Failed to update status to IN REVIEW:',
-          statusError.response?.data?.message || 'Something went wrong'
-        );
-      }
-
-      // Update parent component
       if (onUpdate) {
-        onUpdate();
+        await onUpdate();
       }
 
-      // Reset states for successful submission
       setIsReuploadMode(false);
-      // Commented out to maintain persistence like Photos
-      // setSelectedFiles([]);
-      // setCaption('');
+      setHasSubmitted(true);
+      setSelectedFiles([]);
     } catch (error) {
       console.error('Submit error:', error);
       setHasSubmitted(false);
@@ -251,23 +231,17 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     }
   };
 
-  // Determine what raw footages to display
   const rawFootagesToDisplay = useMemo(() => {
-    // If actively uploading/reuploading, show selected files
     if (isReuploadMode || selectedFiles.length > 0) {
       return selectedFiles;
     }
-    // Otherwise show submitted raw footages
     return submittedRawFootages;
   }, [isReuploadMode, selectedFiles, submittedRawFootages]);
 
-  // Determine if caption should be editable
   const isCaptionEditable = useMemo(() => {
-    // Not editable if already submitted (unless in reupload mode or changes required)
     if (hasSubmitted && !isReuploadMode && !hasChangesRequired) {
       return false;
     }
-    // Editable if: in reupload mode OR no raw footages have been submitted yet OR just uploaded locally OR changes are required
     return (
       isReuploadMode ||
       submittedRawFootages.length === 0 ||
@@ -282,7 +256,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     hasChangesRequired,
   ]);
 
-  // Determine if we can upload
   const canUpload = !isApproved && !isPosted;
 
   if (!canUpload) {
@@ -297,7 +270,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
           <Box sx={{ mb: 2 }}>
             <RawFootageGridDisplay
               files={submittedRawFootages}
-              onRemoveVideo={null} // No remove button for approved/posted content
+              onRemoveVideo={null}
               height={{ xs: 320, md: 480 }}
             />
           </Box>
