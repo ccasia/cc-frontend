@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import { Box, Stack, Button, TextField, Typography, Link, Select, MenuItem, FormControl, Chip } from '@mui/material';
+import { Box, Stack, Button, TextField, Typography, Link, Select, MenuItem, FormControl, Chip, Avatar } from '@mui/material';
 import axiosInstance from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { BUTTON_STYLES } from './submission-styles';
@@ -425,7 +425,16 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
           onClose={() => setConfirmDialogOpen(false)}
           title={actionText}
           isPosting={true}
-          emoji="🙂‍↕️"
+          emoji={
+            <Avatar
+              src='/assets/images/modals/approve.png'
+              alt='approve'
+              sx={{
+                width: 80,
+                height: 80,
+              }}
+            />
+          }
           content=""
           action={
             <Button
