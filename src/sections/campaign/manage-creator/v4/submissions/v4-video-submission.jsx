@@ -188,10 +188,6 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
           sx={{
             width: { xs: '100%', md: '35%' },
             order: { xs: 2, md: 2 },
-            '@media (max-width: 1200px)': {
-              width: '100%',
-              maxWidth: '100%',
-            },
           }}
         >
           <SubmissionSection
