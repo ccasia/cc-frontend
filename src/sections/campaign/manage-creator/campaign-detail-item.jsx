@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
-import { Box, Stack, Button } from '@mui/material';
+import { Box, Stack, Button, Typography } from '@mui/material';
 
 // import Image from 'src/components/image';
 
@@ -17,6 +17,7 @@ import CampaignInfo from './campaign-info';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignLogistics from './campaign-logistics';
 import CampaignV4Activity from './v4/campaign-v4-activity';
+import { fontSize } from '@mui/system';
 
 const CampaignDetailItem = ({ campaign }) => {
   const router = useRouter();
@@ -118,26 +119,15 @@ const CampaignDetailItem = ({ campaign }) => {
             mt: -2.2,
           }}
         />
+
         {isCampaignDone && (
-            <Label color="success" sx={{ height: 40 }}>
-              🎉 Congratulations! {campaign?.name} is done!
-            {invoiceId && (
-              <Button
-                color="info"
-                disableRipple
-                sx={{
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                  },
-                }}
-                onClick={() => router.push(paths.dashboard.creator.invoiceDetail(invoiceId))}
-              >
-                View Invoice
-              </Button>
-            )}
-            </Label>
+          <Box bgcolor={'#DAF5E4'} p={1} borderRadius={1} display={'flex'} flex={1} justifyContent={'center'} px={{ xs: 3 }}>
+            <Typography color="#308862" textAlign={'center'} fontSize={14} fontWeight={700}>
+              🎉 Congratulations, you've completed the campaign! Your{' '} 
+                <Link to={paths.dashboard.creator.invoiceDetail(invoiceId)} style={{ color: '#308862', textDecoration: 'underline' }}>invoice</Link>
+              {' '}is now being processed.
+            </Typography>
+          </Box>
         )}
 
         <Box mt={3} sx={{ overflowX: 'hidden', width: '100%' }}>
