@@ -93,7 +93,7 @@ const UploadPitch = ({
       {helperText && helperText}
 
       <Stack alignItems="center">
-        <Iconify icon="gridicons:add-outline" width={40} color="text.secondary" />
+        <Iconify icon="gridicons:add" width={40} color="#1340FF" />
         <ListItemText
           primary="Choose a file or drag and drop here"
           secondary="Upload a video that does not exceed 30 seconds"
