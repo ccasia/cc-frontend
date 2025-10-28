@@ -192,7 +192,7 @@ const InvoicePDF = ({ data }) => {
                         color: data.status === 'draft' ? '#231F20' : '#026D54',
                       }}
                     >
-                      {data.status === 'draft' ? 'WAITING FOR APPROVAL' : data.status.toUpperCase()}
+                      {data.status === 'draft' ? 'PROCESSING' : data.status.toUpperCase()}
                     </Text>
                   </View>
                 </View>

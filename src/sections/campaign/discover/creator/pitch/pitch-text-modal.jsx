@@ -526,7 +526,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
                 alignSelf: 'flex-start',
                 fontWeight: 500,
                 fontSize: '0.9rem',
-                mb: -1,
+                mb: -2,
                 ml: -1,
                 '&:hover': {
                   backgroundColor: 'transparent',
@@ -536,26 +536,24 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
             >
               Back
             </Button>
-            <Divider sx={{ bgcolor: '#D3D3D3' }} />
             <Stack direction="row" alignItems="center" gap={2}>
               <ListItemText
-                primary="Letter Pitch"
-                secondary="Start pitching your idea!"
-                primaryTypographyProps={{
-                  variant: 'h5',
-                  fontFamily: 'Instrument Serif',
-                  fontSize: '2rem',
-                  fontWeight: 550,
-                }}
-                secondaryTypographyProps={{
-                  variant: 'body1',
-                  color: 'text.secondary',
-                  lineHeight: 1.2,
-                  mb: 1,
-                }}
+                primary={<Typography fontSize={36} fontFamily={'Instrument Serif'}>Letter Pitch</Typography>}
+                secondary={
+                  <Box>
+                    <Typography variant="body1" color="#636366" sx={{ fontSize: 16 }}>
+                      Start pitching your idea!
+                    </Typography>
+                    <Typography variant="body2" color="#636366" >
+                      • Express how your unique style can be incorporated in the campaign
+                    </Typography>
+                    <Typography variant="body2" color="#636366" sx={{ fontSize: 14 }}>
+                      • Include your main social media account link (Instagram/TikTok)
+                    </Typography>
+                  </Box>
+                }
               />
             </Stack>
-            <Divider sx={{ bgcolor: '#D3D3D3' }} />
           </Stack>
         </DialogTitle>
         <DialogContent sx={{ p: 2 }}>

@@ -20,6 +20,7 @@ import {
   ListItemText,
   DialogActions,
   DialogContent,
+  Typography,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -295,7 +296,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
                   alignSelf: 'flex-start',
                   fontWeight: 500,
                   fontSize: '0.9rem',
-                  mb: -1,
+                  mb: -2,
                   ml: -1,
                   '&:hover': {
                     backgroundColor: 'transparent',
@@ -305,31 +306,20 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
               >
                 Back
               </Button>
-              <Divider sx={{ bgcolor: '#D3D3D3' }} />
               <Stack direction="row" alignItems="center" gap={2}>
                 <ListItemText
-                  primary="Video Pitch"
-                  secondary="Upload your pitching video!"
-                  primaryTypographyProps={{
-                    variant: 'h5',
-                    fontFamily: 'Instrument Serif',
-                    fontSize: '2rem',
-                    fontWeight: 550,
-                  }}
-                  secondaryTypographyProps={{
-                    variant: 'body1',
-                    // color: 'text.secondary',
-                    lineHeight: 1.2,
-                    color: '#636366',
-                    mb: 1,
-                  }}
+                  primary={<Typography fontSize={36} fontFamily={'Instrument Serif'}>Video Pitch</Typography>}
+                  secondary={
+                    <Typography variant="body1" color="#636366" sx={{ fontSize: 16 }}>
+                      Upload your pitching video!
+                    </Typography>
+                  }
                 />
               </Stack>
-              <Divider sx={{ bgcolor: '#D3D3D3' }} />
             </Stack>
           </DialogTitle>
 
-          <Box p={2}>
+          <Box px={2}>
             <UploadPitch
               name="pitchVideo"
               type="video"
@@ -381,7 +371,9 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
                 variant="outlined"
                 onClick={() => {
                   handleClose();
-                  handleRemove();
+                  if (source.find((item) => item.campaignId === campaign.id)) {
+                    handleRemove();
+                  }
                 }}
                 sx={{
                   fontSize: '1rem',

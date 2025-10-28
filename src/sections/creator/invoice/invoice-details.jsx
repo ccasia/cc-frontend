@@ -28,6 +28,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 const InvoiceDetail = ({ invoiceId }) => {
   const router = useRouter();
   const [pdfBlob, setPdfBlob] = useState(null);
+  const [numPages, setNumPages] = useState(null);
+  const [scale, setScale] = useState(1.8);
   const componentRef = useRef();
 
   const { data, isLoading, error } = useGetCreatorInvoice({ invoiceId });
@@ -65,8 +67,28 @@ const InvoiceDetail = ({ invoiceId }) => {
     generateBlob();
   }, [data]);
 
-  const handleUploadSuccess = ({ numPages }) => {
-    console.log(numPages);
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 600) {
+        // Mobile devices
+        setScale(0.5);
+      } else if (width < 900) {
+        // Tablets
+        setScale(1.0);
+      } else {
+        // Desktop
+        setScale(1.8);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleUploadSuccess = ({ numPages: pages }) => {
+    setNumPages(pages);
   };
 
   const handlePrint = useReactToPrint({
@@ -162,23 +184,41 @@ const InvoiceDetail = ({ invoiceId }) => {
         </Box>
       )}
 
-      {/* Fix this one later */}
       <Box
         sx={{
-          textAlign: 'center',
-          height: 1000,
-          overflow: 'hidden',
-          // overflowX: 'auto',
+          mt: 2,
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          overflow: 'auto',
+          maxHeight: { xs: 'calc(100vh - 200px)', sm: 'calc(100vh - 180px)' },
         }}
       >
         <Box
           ref={componentRef}
           sx={{
-            display: 'inline-flex',
+            width: '100%',
+            maxWidth: { xs: '100%', sm: '100%', md: '800px' },
+            display: 'flex',
+            justifyContent: 'center',
+            '& .react-pdf__Document': {
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+            },
+            '& .react-pdf__Page': {
+              maxWidth: '100%',
+              height: 'auto !important',
+            },
+            '& .react-pdf__Page__canvas': {
+              maxWidth: '100% !important',
+              height: 'auto !important',
+              width: '100% !important',
+            },
           }}
         >
           <Document file={pdfBlob} onLoadSuccess={handleUploadSuccess}>
-            <Page pageNumber={1} scale={1.8} />
+            <Page pageNumber={1} scale={scale} />
           </Document>
         </Box>
       </Box>
