@@ -266,95 +266,93 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
         {/* Left Side - PDF Preview */}
         {agreementUrl && (
-          <Box sx={{ flex: 1 }}>
-            <Box
-              sx={{
-                width: '100%',
-                height: { xs: '400px', sm: '500px' },
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-                overflow: 'auto',
-                bgcolor: 'background.neutral',
-                '& .react-pdf__Document': {
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                },
-                '&::-webkit-scrollbar': {
-                  width: '8px',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: 'rgba(0,0,0,0.2)',
-                  borderRadius: '4px',
-                },
-                '&::-webkit-scrollbar-track': {
-                  backgroundColor: 'rgba(0,0,0,0.1)',
-                },
-              }}
+          <Box
+            sx={{
+              width: { xs: '100%', md: '70%'},
+              height: { xs: '400px', sm: '500px' },
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              overflow: 'auto',
+              bgcolor: 'background.neutral',
+              '& .react-pdf__Document': {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              },
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0,0,0,0.2)',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'rgba(0,0,0,0.1)',
+              },
+            }}
+          >
+            <Document
+              file={agreementUrl}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
             >
-              <Document
-                file={agreementUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
-              >
-                {Array.from(new Array(numPages), (el, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      p: 2,
-                      width: '100%',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      '&:not(:last-child)': {
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                      },
-                    }}
-                  >
-                    <Page
-                      key={`page-${index + 1}`}
-                      pageNumber={index + 1}
-                      scale={isSmallScreen ? 0.4 : 0.6}
-                      renderAnnotationLayer={false}
-                      renderTextLayer={false}
-                    />
-                  </Box>
-                ))}
-              </Document>
-            </Box>
+              {Array.from(new Array(numPages), (el, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    p: 2,
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    '&:not(:last-child)': {
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                    },
+                  }}
+                >
+                  <Page
+                    key={`page-${index + 1}`}
+                    pageNumber={index + 1}
+                    scale={isSmallScreen ? 0.4 : 0.6}
+                    renderAnnotationLayer={false}
+                    renderTextLayer={false}
+                  />
+                </Box>
+              ))}
+            </Document>
           </Box>
         )}
 
-        {/* Right Side - Instructions and Buttons */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* Instructions */}
-          <Stack spacing={2} sx={{ mb: 3 }}>
-            <Typography variant="body1" sx={{ color: '#221f20' }}>
+        {/* Instructions */}
+        <Stack display={'flex'} flexDirection={'column'}>
+          <Box>
+            <Typography variant="body1" mb={1} sx={{ color: '#221f20' }}>
               Before starting the campaign, you must sign the standard agreement submission
               procedure!
             </Typography>
-            <Typography variant="body1" sx={{ color: '#221f20' }}>
+            <Typography variant="body1" mb={2} sx={{ color: '#221f20' }}>
               Review the agreement PDF below and choose your preferred method to sign and submit it.
             </Typography>
+          </Box>
 
+          {/* Action Buttons - Bottom Right */}
+          <Box display={'flex'} flexDirection={{ xs: 'row', md: 'column' }} flex={1} justifyContent={'space-between'}>
             {/* Download Agreement Button */}
             {agreementUrl && (
               <Button
                 variant="contained"
-                startIcon={<Iconify icon="material-symbols:download" width={20} />}
                 onClick={() => handleDownload(agreementUrl)}
                 sx={{
-                  bgcolor: 'white',
+                  bgcolor: '#fff',
                   border: 1,
                   borderColor: '#e7e7e7',
                   borderBottom: 3,
                   borderBottomColor: '#e7e7e7',
                   color: '#203ff5',
-                  ml: -1,
                   alignSelf: 'flex-start',
                   '&:hover': {
-                    bgcolor: 'white',
+                    bgcolor: '#fff',
                     borderColor: '#e7e7e7',
                   },
                   '& .MuiButton-startIcon': {
@@ -362,21 +360,19 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                   },
                 }}
               >
-                Download Agreement
+                <Iconify icon="material-symbols:download" width={{ xs: 30, md: 20}} />
+                <Box
+                  component="span"
+                  ml={1}
+                  sx={{
+                    display: { xs: 'none', md: 'inline' },
+                  }}
+                >
+                  Download Agreement
+                </Box>
               </Button>
             )}
-          </Stack>
 
-          {/* Action Buttons - Bottom Right */}
-          <Box
-            sx={{
-              mt: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              alignItems: { xs: 'flex-start', md: 'flex-end' },
-            }}
-          >
             {/* Digital Signing Option */}
             <Button
               variant="contained"
@@ -385,7 +381,8 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
               startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
               sx={{
                 bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
-                color: 'white',
+                color: '#fff',
+                alignSelf: 'flex-end',
                 borderBottom: 3.5,
                 borderBottomColor: isAgreementSubmitted ? '#9e9e9f' : '#112286',
                 borderRadius: 1.5,
@@ -396,105 +393,17 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                   opacity: 0.9,
                 },
                 '&.Mui-disabled': {
-                  color: 'white',
+                  color: '#fff',
                   opacity: 0.6,
                 },
               }}
             >
               {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement'}
             </Button>
-
-            {/* Upload Option Toggle */}
-            {!isAgreementSubmitted && (
-              <>
-                {/* <Button
-                  variant="outlined"
-                  onClick={() => setShowUploadOption(!showUploadOption)}
-                  startIcon={<Iconify icon="eva:upload-outline" width={20} />}
-                  sx={{
-                    borderColor: '#203ff5',
-                    color: '#203ff5',
-                    borderWidth: 1,
-                    borderBottom: 2,
-                    borderBottomColor: '#203ff5',
-                    borderRadius: 1.5,
-                    px: 2,
-                    py: 1,
-                    '&:hover': {
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      borderColor: '#203ff5',
-                    },
-                  }}
-                >
-                  {showUploadOption ? 'Hide Upload Option' : 'Upload Signed Agreement'}
-                </Button> */}
-
-                {/* Upload Section */}
-                <Collapse in={showUploadOption}>
-                  <Box
-                    sx={{
-                      mt: 2,
-                      p: 2,
-                      border: '1px solid #e0e0e0',
-                      borderRadius: 1,
-                      bgcolor: '#fafafa',
-                    }}
-                  >
-                    <FormProvider methods={methods} onSubmit={onSubmit}>
-                      <Stack spacing={2}>
-                        <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                          If digital signing doesn't work, you can download the agreement, sign it
-                          manually, and upload it here:
-                        </Typography>
-
-                        {!agreementForm && (
-                          <RHFUpload
-                            name="agreementForm"
-                            accept={{ 'application/pdf': [] }}
-                            onDrop={onDrop}
-                            onRemove={handleRemove}
-                            helperText="Upload your signed agreement PDF file"
-                          />
-                        )}
-
-                        {uploadProgress > 0 && uploadProgress < 100 && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <CircularProgress size={20} />
-                            <Typography variant="body2">Uploading... {uploadProgress}%</Typography>
-                          </Box>
-                        )}
-
-                        {agreementForm && (
-                          <Stack direction="row" spacing={2} justifyContent="flex-end">
-                            <Button
-                              variant="outlined"
-                              onClick={() => setPreview(URL.createObjectURL(agreementForm))}
-                              startIcon={<Iconify icon="eva:eye-outline" />}
-                            >
-                              Preview
-                            </Button>
-                            <LoadingButton
-                              type="submit"
-                              variant="contained"
-                              loading={uploading}
-                              sx={{
-                                bgcolor: '#203ff5',
-                                '&:hover': { bgcolor: '#203ff5', opacity: 0.9 },
-                              }}
-                            >
-                              Submit Agreement
-                            </LoadingButton>
-                          </Stack>
-                        )}
-                      </Stack>
-                    </FormProvider>
-                  </Box>
-                </Collapse>
-              </>
-            )}
           </Box>
-        </Box>
+        </Stack>
       </Box>
+
 
       {/* Sign Agreement Dialog */}
       <Dialog 
