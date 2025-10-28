@@ -55,7 +55,10 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
   }, []);
 
   const handleRemoveFile = useCallback((index) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => {
+      const newFiles = prev.filter((_, i) => i !== index);
+      return newFiles;
+    });
   }, []);
 
   const handleReuploadMode = useCallback(() => {

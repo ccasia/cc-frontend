@@ -1450,17 +1450,9 @@ const CampaignV4Activity = ({ campaign }) => {
                             },
                           };
                         },
-                        { revalidate: false } // Don't revalidate - update cache immediately
+                        { revalidate: false }
                       );
 
-                      // Small delay to ensure optimistic update is rendered before refetching
-                      // This prevents the brief flash of "NOT_STARTED" state
-                      await new Promise((resolve) => setTimeout(resolve, 100));
-
-                      // Then revalidate to get actual backend data
-                      await Promise.all([mutate(), mutateOverview()]);
-
-                      // Auto-collapse after successful submission
                       setExpandedSections((prev) => ({ ...prev, [video.id]: false }));
                     }}
                   />
@@ -1580,26 +1572,37 @@ const CampaignV4Activity = ({ campaign }) => {
                     submission={photo}
                     campaign={campaign}
                     onUpdate={async () => {
-                      // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
-                      mutate(
+                      await mutate(
                         (currentData) => {
+                          console.log('[Photo Submission] Before update - status:', currentData?.grouped?.photos?.find(p => p.id === photo.id)?.status);
+
                           if (!currentData?.grouped) return currentData;
-                          return {
+
+                          const updated = {
                             ...currentData,
                             grouped: {
                               ...currentData.grouped,
                               photos: currentData.grouped.photos.map((p) =>
-                                p.id === photo.id ? { ...p, status: 'PENDING_REVIEW' } : p
+                                p.id === photo.id
+                                  ? {
+                                      ...p,
+                                      status: 'PENDING_REVIEW',
+                                      // Update individual photo statuses to PENDING
+                                      photos: p.photos?.map((photoItem) => ({
+                                        ...photoItem,
+                                        status: 'PENDING',
+                                      })),
+                                    }
+                                  : p
                               ),
                             },
                           };
+
+                          console.log('[Photo Submission] After update - status:', updated.grouped.photos.find(p => p.id === photo.id)?.status);
+                          return updated;
                         },
-                        false // Don't revalidate - update cache immediately
+                        { revalidate: false }
                       );
-                      
-                      // Then revalidate to get actual backend data
-                      await Promise.all([mutate(), mutateOverview()]);
-                      // Auto-collapse after successful submission
                       setExpandedSections((prev) => ({ ...prev, [photo.id]: false }));
                     }}
                   />
@@ -1718,26 +1721,37 @@ const CampaignV4Activity = ({ campaign }) => {
                   <V4RawFootageSubmission
                     submission={rawFootage}
                     onUpdate={async () => {
-                      // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
-                      mutate(
+                      await mutate(
                         (currentData) => {
+                          console.log('[Raw Footage] Before update - status:', currentData?.grouped?.rawFootage?.find(rf => rf.id === rawFootage.id)?.status);
+
                           if (!currentData?.grouped) return currentData;
-                          return {
+
+                          const updated = {
                             ...currentData,
                             grouped: {
                               ...currentData.grouped,
                               rawFootage: currentData.grouped.rawFootage.map((rf) =>
-                                rf.id === rawFootage.id ? { ...rf, status: 'PENDING_REVIEW' } : rf
+                                rf.id === rawFootage.id
+                                  ? {
+                                      ...rf,
+                                      status: 'PENDING_REVIEW',
+                                      // Update individual raw footage statuses to PENDING
+                                      rawFootages: rf.rawFootages?.map((footage) => ({
+                                        ...footage,
+                                        status: 'PENDING',
+                                      })),
+                                    }
+                                  : rf
                               ),
                             },
                           };
+
+                          console.log('[Raw Footage] After update - status:', updated.grouped.rawFootage.find(rf => rf.id === rawFootage.id)?.status);
+                          return updated;
                         },
-                        false // Don't revalidate - update cache immediately
+                        { revalidate: false }
                       );
-                      
-                      // Then revalidate to get actual backend data
-                      await Promise.all([mutate(), mutateOverview()]);
-                      // Auto-collapse after successful submission
                       setExpandedSections((prev) => ({ ...prev, [rawFootage.id]: false }));
                     }}
                   />

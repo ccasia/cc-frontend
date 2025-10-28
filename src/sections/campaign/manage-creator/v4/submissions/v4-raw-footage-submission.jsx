@@ -4,8 +4,6 @@ import { enqueueSnackbar } from 'notistack';
 
 import { Box, Typography, LinearProgress } from '@mui/material';
 
-import axiosInstance from 'src/utils/axios';
-
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 import RawFootageGridDisplay from 'src/components/upload/raw-footage-grid-display';
 import {
@@ -92,7 +90,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       }
     }
 
-    submitUpload((params) => prepareRawFootageFormData({ ...params, submission }), async () => {
+    submitUpload((params) => prepareRawFootageFormData({ ...params, submission }), () => {
       const isUpdate = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
       const uploadedFilesCount = selectedFiles.filter((file) => file instanceof File).length;
       const keptRawFootagesCount = selectedFiles.filter(
@@ -106,18 +104,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       });
 
       enqueueSnackbar(successMessage, { variant: 'success' });
-
-      // Update submission status to IN REVIEW immediately after successful upload
-      try {
-        await axiosInstance.patch(`/api/creator/submissions/v4/${submission.id}/status`, {
-          status: 'PENDING_REVIEW',
-        });
-      } catch (statusError) {
-        console.error(
-          'Failed to update status to IN REVIEW:',
-          statusError.response?.data?.message || 'Something went wrong'
-        );
-      }
     });
   };
 
