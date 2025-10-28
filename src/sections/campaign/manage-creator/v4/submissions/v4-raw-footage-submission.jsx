@@ -121,7 +121,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     });
   };
 
-  // Determine what raw footages to display
   const rawFootagesToDisplay = useMemo(() => {
     if (isReuploadMode || selectedFiles.length > 0) {
       return selectedFiles;
@@ -142,7 +141,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     [isReuploadMode, submittedRawFootages.length, hasSubmitted, selectedFiles.length, hasChangesRequired]
   );
 
-  // Determine if we can upload
   const canUpload = !isApproved && !isPosted;
 
   // Get button states (for non-approved/posted submissions)
@@ -176,7 +174,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
           <Box sx={{ mb: 2 }}>
             <RawFootageGridDisplay
               files={submittedRawFootages}
-              onRemoveVideo={null} // No remove button for approved/posted content
+              onRemoveVideo={null}
               height={{ xs: 320, md: 480 }}
             />
           </Box>
