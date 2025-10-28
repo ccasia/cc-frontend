@@ -16,11 +16,8 @@ const SubmissionCaptionField = ({
     <Box sx={{ mb: 2 }}>
       <Typography
         variant="body2"
-        sx={{
-          mb: 1,
-          fontWeight: 700,
-          color: '#636366',
-        }}
+        fontWeight={'bold'}
+        color={'#636366'}
       >
         Post Caption {required && <span style={{ color: 'red' }}>*</span>}
       </Typography>
@@ -35,6 +32,7 @@ const SubmissionCaptionField = ({
           placeholder="Type your caption here..."
           disabled={disabled}
           sx={{
+            mt: 1,
             maxWidth: '100%',
             '& .MuiOutlinedInput-root': {
               borderRadius: 1,
@@ -52,7 +50,7 @@ const SubmissionCaptionField = ({
             lineHeight: 1.5,
             whiteSpace: 'pre-wrap',
             minHeight: 'auto',
-            p: 1.5,
+            mt: 1,
             border: 'none',
             backgroundColor: 'transparent',
             wordWrap: 'break-word',
@@ -65,7 +63,6 @@ const SubmissionCaptionField = ({
             textOverflow: 'clip',
             WebkitLineClamp: 'unset',
             WebkitBoxOrient: 'unset',
-            ml: -1.5,
           }}
         >
           {caption || 'No caption provided'}

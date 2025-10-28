@@ -16,14 +16,8 @@ const SubmissionPostingLinkField = ({
     <>
       <Typography
         variant="body2"
-        sx={{
-          mt: 2,
-          mb: 1,
-          fontWeight: 500,
-          fontFamily:
-            'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          color: '#636366',
-        }}
+        fontWeight={'bold'}
+        color={'#636366'}
       >
         Posting Link
       </Typography>
@@ -36,6 +30,7 @@ const SubmissionPostingLinkField = ({
           placeholder="Posting Link"
           disabled={disabled}
           sx={{
+            mt: 1,
             maxWidth: '100%',
             '& .MuiOutlinedInput-root': {
               borderRadius: 1,
@@ -51,31 +46,17 @@ const SubmissionPostingLinkField = ({
           rel="noopener noreferrer"
           variant="body2"
           sx={{
-            fontFamily:
-              'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            color: '#1340FF',
+            color: '#0062CD',
             lineHeight: 1.5,
-            whiteSpace: 'pre-wrap',
-            minHeight: 'auto',
-            p: 1.5,
-            border: 'none',
-            backgroundColor: 'transparent',
-            wordWrap: 'break-word',
-            overflowWrap: 'break-word',
-            wordBreak: 'break-word',
-            maxWidth: '100%',
+            mt: 1,
+            p: 2,
+            border: '1px solid #EBEBEB',
+            borderRadius: 1,
+            backgroundColor: '#fff',
             width: '100%',
             display: 'block',
-            overflow: 'visible',
-            textOverflow: 'clip',
-            WebkitLineClamp: 'unset',
-            WebkitBoxOrient: 'unset',
-            ml: -1.5,
-            textDecoration: 'underline',
             cursor: 'pointer',
-            '&:hover': {
-              opacity: 0.8,
-            },
+            textDecoration: 'none'
           }}
         >
           {submissionContent || 'No posting link provided'}
