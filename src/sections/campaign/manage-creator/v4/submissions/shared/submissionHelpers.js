@@ -86,13 +86,14 @@ export const getButtonStates = ({
 }) => {
   const status = submission.status;
 
-  // Determine if disabled
+  // Determine if disabled - improved logic to prevent re-submission during upload/review
   const isDisabled =
     uploading ||
     (hasCaption && !caption.trim()) ||
     postingLoading ||
     status === 'PENDING_REVIEW' ||
     status === 'POSTED' ||
+    status === 'APPROVED' || // Added - prevent submission when already approved
     (status !== 'CHANGES_REQUIRED' &&
       status !== 'NOT_STARTED' &&
       status !== 'CLIENT_APPROVED' &&
@@ -105,11 +106,12 @@ export const getButtonStates = ({
   const isReuploadButton =
     status === 'CHANGES_REQUIRED' && !isReuploadMode && !isPostingLinkRejected;
 
-  // Determine if showing submit button
+  // Determine if showing submit button - improved to prevent showing during PENDING_REVIEW
   const isSubmitButton =
     (isReuploadMode && status === 'CHANGES_REQUIRED') ||
     ((status === 'NOT_STARTED' || status === 'CLIENT_APPROVED') &&
-      (selectedFiles.length > 0 || isPostingLinkEditable));
+      selectedFiles.length > 0 &&
+      !uploading); // Added - prevent showing submit button during upload
 
   return {
     isDisabled,

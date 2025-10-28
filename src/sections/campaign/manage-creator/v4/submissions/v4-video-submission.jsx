@@ -16,7 +16,7 @@ import {
   prepareVideoFormData,
 } from './shared';
 
-const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
+const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange }) => {
   // Use shared hook with video-specific configuration
   const {
     uploading,
@@ -39,6 +39,13 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
     allowsMultipleUploads: false,
     mediaType: 'video',
   });
+
+  // Notify parent when upload state changes
+  React.useEffect(() => {
+    if (onUploadStateChange) {
+      onUploadStateChange(uploading);
+    }
+  }, [uploading, onUploadStateChange]);
 
   // Get submission status flags
   const statusFlags = useMemo(
@@ -117,18 +124,21 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
   };
 
   // Handle submit with video-specific logic
-  const onSubmit = useCallback((e) => {
-    // Prevent default if this is an event
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
+  const onSubmit = useCallback(
+    (e) => {
+      // Prevent default if this is an event
+      if (e && e.preventDefault) {
+        e.preventDefault();
+      }
 
-    handleSubmit(prepareVideoFormData, () => {
-      enqueueSnackbar('Videos uploaded successfully and are being processed!', {
-        variant: 'success',
+      handleSubmit(prepareVideoFormData, () => {
+        enqueueSnackbar('Videos uploaded successfully and are being processed!', {
+          variant: 'success',
+        });
       });
-    });
-  }, [handleSubmit]);
+    },
+    [handleSubmit]
+  );
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -152,7 +162,6 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
         <Box
           sx={{
             width: { xs: '100%', md: '65%' },
-            maxWidth: '100%',
             order: { xs: 1, md: 1 },
             '@media (max-width: 1200px)': {
               width: '100%',
@@ -168,15 +177,16 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign }) => {
             accept="video/*"
             maxSize={500 * 1024 * 1024}
             fileTypes="MP4, MOV, AVI, MKV, WEBM"
-            height={420}
+            height={450}
+            uploading={uploading}
+            hasSubmitted={hasSubmitted}
           />
         </Box>
 
         {/* RIGHT SIDE - Caption, Posting Link & Feedback Sidebar */}
         <Box
           sx={{
-            width: { xs: '100%', md: 'min(325px, 35%)' },
-            maxWidth: { xs: '100%', md: '325px' },
+            width: { xs: '100%', md: '35%' },
             order: { xs: 2, md: 2 },
             '@media (max-width: 1200px)': {
               width: '100%',
@@ -225,6 +235,23 @@ V4VideoSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   onUpdate: PropTypes.func.isRequired,
   campaign: PropTypes.object,
+  onUploadStateChange: PropTypes.func,
 };
 
-export default V4VideoSubmission;
+// Memoize component with custom comparison to prevent unnecessary re-renders
+const MemoizedV4VideoSubmission = React.memo(V4VideoSubmission, (prevProps, nextProps) => {
+  // Only re-render if submission status, video, caption, or content changes
+  return (
+    prevProps.submission.id === nextProps.submission.id &&
+    prevProps.submission.status === nextProps.submission.status &&
+    prevProps.submission.caption === nextProps.submission.caption &&
+    prevProps.submission.content === nextProps.submission.content &&
+    JSON.stringify(prevProps.submission.video) === JSON.stringify(nextProps.submission.video) &&
+    JSON.stringify(prevProps.submission.feedback) === JSON.stringify(nextProps.submission.feedback) &&
+    prevProps.campaign?.campaignType === nextProps.campaign?.campaignType
+  );
+});
+
+MemoizedV4VideoSubmission.displayName = 'V4VideoSubmission';
+
+export default MemoizedV4VideoSubmission;

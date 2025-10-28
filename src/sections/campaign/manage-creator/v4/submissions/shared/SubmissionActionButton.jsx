@@ -31,8 +31,8 @@ const SubmissionActionButton = ({
   uploadingText = 'Uploading...',
   postingText = 'Submitting...'
 }) => {
-  const buttonColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#1340FF' : '#3A3A3C';
-  const buttonBorderColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#00000073' : '#000';
+  const buttonColor = isDisabled ? '#A8A8A8' : isReuploadButton ? '#1340FF' : '#3A3A3C';
+  const buttonBorderColor = isDisabled ? '#0000001A' : isReuploadButton ? '#00000073' : '#000';
 
   const getButtonText = () => {
     if (uploading) return uploadingText;
@@ -79,28 +79,19 @@ const SubmissionActionButton = ({
         sx={{
           px: 2,
           py: 1,
-          fontWeight: 600,
+          bgcolor: buttonColor,
+          fontWeight: 800,
+          fontSize: 14,
+          color: '#fff',
           border: '1px solid',
           borderBottom: '3px solid',
-          borderRadius: 0.8,
-          bgcolor: buttonColor,
-          color: 'white',
+          borderRadius: 1,
           borderColor: buttonBorderColor,
-          textTransform: 'none',
-          fontSize: '0.75rem',
-          minWidth: '80px',
-          height: '32px',
-          whiteSpace: 'nowrap',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           cursor: isDisabled ? 'not-allowed' : 'pointer',
           outline: 'none',
           '&:disabled': {
-            bgcolor: '#BDBDBD',
-            borderColor: '#BDBDBD',
+            bgcolor: '#A8A8A8',
             color: 'white',
-            cursor: 'not-allowed',
           },
         }}
       >

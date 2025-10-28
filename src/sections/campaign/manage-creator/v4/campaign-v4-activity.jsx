@@ -646,11 +646,12 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 const CampaignV4Activity = ({ campaign }) => {
   const [expandedSections, setExpandedSections] = useState({});
   const [numPages, setNumPages] = useState(null);
+  const [uploadingSubmissions, setUploadingSubmissions] = useState({}); // Track which submissions are uploading
   const updateTimerRef = React.useRef(null); // Store timer for debouncing updates
   const isFirstUpdateRef = React.useRef(true); // Track if this is the first update
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
-  
+
   // Socket integration for real-time updates
   const { socket } = useSocketContext();
   const { user } = useAuthContext();
@@ -869,14 +870,17 @@ const CampaignV4Activity = ({ campaign }) => {
 
   // Helper function to get submission status
   const getSubmissionStatus = (submission) => {
-    const hasContent =
-      submission.video?.length > 0 ||
-      submission.photos?.length > 0 ||
-      submission.rawFootages?.length > 0;
+    // Check if this submission is currently uploading
+    const isUploading = uploadingSubmissions[submission.id];
 
-    if (!hasContent) {
-      return 'NOT STARTED';
+    // Show "UPLOADING..." immediately when upload starts
+    if (isUploading) {
+      return 'UPLOADING...';
     }
+
+    // IMPORTANT: Check status FIRST before checking content
+    // This prevents showing "NOT STARTED" when status is PENDING_REVIEW during upload
+    // (before backend has processed and added video/photo data)
 
     switch (submission.status) {
       case 'IN_PROGRESS':
@@ -907,7 +911,20 @@ const CampaignV4Activity = ({ campaign }) => {
         return 'APPROVED';
       case 'POSTED':
         return 'POSTED';
+      case 'NOT_STARTED':
       default:
+        // Only check content for NOT_STARTED status
+        const hasContent =
+          submission.video?.length > 0 ||
+          submission.photos?.length > 0 ||
+          submission.rawFootages?.length > 0;
+
+        // If there's content but status is NOT_STARTED, it means upload is in progress
+        // Show "IN REVIEW" to indicate processing
+        if (hasContent) {
+          return 'IN REVIEW';
+        }
+
         return 'NOT STARTED';
     }
   };
@@ -918,6 +935,10 @@ const CampaignV4Activity = ({ campaign }) => {
       'NOT STARTED': {
         color: '#8E8E93',
         borderColor: '#8E8E93',
+      },
+      'UPLOADING...': {
+        color: '#1340FF',
+        borderColor: '#1340FF',
       },
       'IN REVIEW': {
         color: '#8B5CF6',
@@ -1337,10 +1358,12 @@ const CampaignV4Activity = ({ campaign }) => {
                     {title}
                   </Typography>
 
-                  {/* Status Typography */}
-                  <Typography
-                    variant="caption"
+                  {/* Status Badge with Loading Indicator */}
+                  <Box
                     sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
                       px: 1.5,
                       py: 0.5,
                       fontWeight: 600,
@@ -1351,12 +1374,27 @@ const CampaignV4Activity = ({ campaign }) => {
                       whiteSpace: 'nowrap',
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
-                      fontSize: '0.75rem',
                       transition: 'all 0.3s ease-in-out', // Smooth color transitions
                     }}
                   >
-                    {status}
-                  </Typography>
+                    {status === 'UPLOADING...' && (
+                      <CircularProgress
+                        size={12}
+                        thickness={4}
+                        sx={{ color: statusInfo.color }}
+                      />
+                    )}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        color: 'inherit',
+                      }}
+                    >
+                      {status}
+                    </Typography>
+                  </Box>
 
                   {isNew && (
                     <Chip
@@ -1383,9 +1421,15 @@ const CampaignV4Activity = ({ campaign }) => {
                   <V4VideoSubmission
                     submission={video}
                     campaign={campaign}
+                    onUploadStateChange={(isUploading) => {
+                      setUploadingSubmissions((prev) => ({
+                        ...prev,
+                        [video.id]: isUploading,
+                      }));
+                    }}
                     onUpdate={async () => {
                       // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
-                      mutate(
+                      await mutate(
                         (currentData) => {
                           if (!currentData?.grouped) return currentData;
                           return {
@@ -1393,16 +1437,29 @@ const CampaignV4Activity = ({ campaign }) => {
                             grouped: {
                               ...currentData.grouped,
                               videos: currentData.grouped.videos.map((v) =>
-                                v.id === video.id ? { ...v, status: 'PENDING_REVIEW' } : v
+                                v.id === video.id
+                                  ? {
+                                      ...v,
+                                      status: 'PENDING_REVIEW',
+                                      // Keep video data to prevent UI flickering
+                                      video: v.video,
+                                      caption: v.caption,
+                                    }
+                                  : v
                               ),
                             },
                           };
                         },
-                        false // Don't revalidate - update cache immediately
+                        { revalidate: false } // Don't revalidate - update cache immediately
                       );
-                      
+
+                      // Small delay to ensure optimistic update is rendered before refetching
+                      // This prevents the brief flash of "NOT_STARTED" state
+                      await new Promise((resolve) => setTimeout(resolve, 100));
+
                       // Then revalidate to get actual backend data
                       await Promise.all([mutate(), mutateOverview()]);
+
                       // Auto-collapse after successful submission
                       setExpandedSections((prev) => ({ ...prev, [video.id]: false }));
                     }}
@@ -1459,10 +1516,12 @@ const CampaignV4Activity = ({ campaign }) => {
                     {title}
                   </Typography>
 
-                  {/* Status Typography */}
-                  <Typography
-                    variant="caption"
+                  {/* Status Badge with Loading Indicator */}
+                  <Box
                     sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
                       px: 1.5,
                       py: 0.5,
                       fontWeight: 600,
@@ -1473,12 +1532,27 @@ const CampaignV4Activity = ({ campaign }) => {
                       whiteSpace: 'nowrap',
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
-                      fontSize: '0.75rem',
                       transition: 'all 0.3s ease-in-out', // Smooth color transitions
                     }}
                   >
-                    {status}
-                  </Typography>
+                    {status === 'UPLOADING...' && (
+                      <CircularProgress
+                        size={12}
+                        thickness={4}
+                        sx={{ color: statusInfo.color }}
+                      />
+                    )}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        color: 'inherit',
+                      }}
+                    >
+                      {status}
+                    </Typography>
+                  </Box>
 
                   {isNew && (
                     <Chip
@@ -1581,10 +1655,12 @@ const CampaignV4Activity = ({ campaign }) => {
                     {title}
                   </Typography>
 
-                  {/* Status Typography */}
-                  <Typography
-                    variant="caption"
+                  {/* Status Badge with Loading Indicator */}
+                  <Box
                     sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
                       px: 1.5,
                       py: 0.5,
                       fontWeight: 600,
@@ -1595,12 +1671,27 @@ const CampaignV4Activity = ({ campaign }) => {
                       whiteSpace: 'nowrap',
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
-                      fontSize: '0.75rem',
                       transition: 'all 0.3s ease-in-out', // Smooth color transitions
                     }}
                   >
-                    {status}
-                  </Typography>
+                    {status === 'UPLOADING...' && (
+                      <CircularProgress
+                        size={12}
+                        thickness={4}
+                        sx={{ color: statusInfo.color }}
+                      />
+                    )}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        color: 'inherit',
+                      }}
+                    >
+                      {status}
+                    </Typography>
+                  </Box>
 
                   {isNew && (
                     <Chip

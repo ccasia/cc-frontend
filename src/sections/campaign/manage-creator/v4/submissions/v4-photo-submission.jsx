@@ -293,7 +293,9 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                   accept="image/*"
                   maxSize={50 * 1024 * 1024}
                   fileTypes="JPG, JPEG, PNG"
-                  height={{ xs: 320, md: 480 }} // Made longer to match Draft Videos
+                  height={450} // Made longer to match Draft Videos
+                  uploading={uploading}
+                  hasSubmitted={hasSubmitted}
                 />
               ) : (
                 <Box>
@@ -355,7 +357,7 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
               )}
             </Box>
 
-            {/* RIGHT SIDE - Caption, Posting Link & Feedback Area */}
+            {/* RIGHT SIDE - Caption, Posting Link, Additional Upload & Feedback Area */}
             <Box
               sx={{
                 width: { xs: '100%', md: 'min(325px, 35%)' },
@@ -378,6 +380,8 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                     maxSize={50 * 1024 * 1024}
                     fileTypes="JPG, JPEG, PNG"
                     height={120}
+                    uploading={uploading}
+                    hasSubmitted={hasSubmitted}
                   />
                 </Box>
               )}

@@ -193,10 +193,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
     );
   }
 
-  const buttonColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#1340FF' : '#3A3A3C';
-
-  const buttonBorderColor = isDisabled ? '#BDBDBD' : isReuploadButton ? '#00000073' : '#000';
-
   return (
     <Box>
       {uploading && (
@@ -243,7 +239,9 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
               accept="video/*"
               maxSize={500 * 1024 * 1024}
               fileTypes="MP4, MOV, AVI, MKV, WEBM, M4V"
-              height={{ xs: 320, md: 480 }}
+              height={450}
+              uploading={uploading}
+              hasSubmitted={hasSubmitted}
             />
           ) : (
             <RawFootageGridDisplay
@@ -281,77 +279,11 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
                 maxSize={500 * 1024 * 1024}
                 fileTypes="MP4, MOV, AVI, MKV, WEBM, M4V"
                 height={120}
+                uploading={uploading}
+                hasSubmitted={hasSubmitted}
               />
             </Box>
           )}
-
-          {/* Caption Field */}
-          {/* <Box sx={{ mb: 2 }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                mb: 1, 
-                fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                color: '#636366',
-                fontWeight: 500
-              }}
-            >
-              Post Caption <span style={{ color: 'red' }}>*</span>
-            </Typography>
-            {isCaptionEditable ? (
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                value={caption}
-                onChange={handleCaptionChange}
-                placeholder="Type your caption here..."
-                disabled={uploading}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: 'white',
-                    fontSize: '0.875rem',
-                    lineHeight: 1.5,
-                  },
-                  '& .MuiInputBase-input::placeholder': {
-                    color: '#9E9E9E',
-                    opacity: 1,
-                  },
-                  maxWidth: '100%', // Prevent overflow
-                  wordWrap: 'break-word',
-                }}
-              />
-            ) : (
-              // Show read-only caption text when submitted
-              <Typography
-                variant="body2"
-                sx={{
-                  fontFamily: 'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                  color: '#636366',
-                  lineHeight: 1.5,
-                  whiteSpace: 'pre-wrap', // Preserve line breaks
-                  minHeight: 'auto', // Allow natural height expansion
-                  p: 1.5, // Add padding to match TextField appearance
-                  border: 'none', // No border for read-only state
-                  backgroundColor: 'transparent',
-                  wordWrap: 'break-word', // Handle long words
-                  overflowWrap: 'break-word',
-                  wordBreak: 'break-word', // Force long words to break
-                  maxWidth: '100%', // Prevent overflow
-                  width: '100%', // Take full width
-                  display: 'block', // Ensure block display
-                  overflow: 'visible', // Allow content to expand
-                  textOverflow: 'clip', // Don't add ellipsis
-                  WebkitLineClamp: 'unset', // Remove line clamping
-                  WebkitBoxOrient: 'unset', // Remove webkit truncation
-                  ml: -1.5, // Move caption text to the left on both mobile and desktop
-                }}
-              >
-                {caption || 'No caption provided'}
-          </Typography>
-            )}
-          </Box> */}
 
           <SubmissionFeedback
             feedback={relevantFeedback}
@@ -360,56 +292,18 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         </Box>
       </Box>
 
-      {/* Submit Button - Responsive Position */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: { xs: 'center', md: 'flex-end' }, // Center on mobile, right-aligned on desktop
-          alignItems: 'center',
-          mt: { xs: 2, md: -6 }, // Normal spacing on mobile, negative margin on desktop
-          position: 'relative',
-          zIndex: 10,
-        }}
-      >
-        <Typography
-          component="button"
-          onClick={isReuploadButton ? handleReuploadMode : handleSubmit}
-          disabled={isDisabled}
-          sx={{
-            px: 2,
-            py: 1,
-            fontWeight: 600,
-            border: '1px solid',
-            borderBottom: '3px solid',
-            borderRadius: 0.8,
-            bgcolor: buttonColor,
-            color: 'white',
-            borderColor: buttonBorderColor,
-            textTransform: 'none',
-            fontSize: '0.75rem',
-            minWidth: '80px',
-            height: '32px',
-            whiteSpace: 'nowrap',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: isDisabled ? 'not-allowed' : 'pointer',
-            '&:disabled': {
-              bgcolor: '#BDBDBD',
-              borderColor: '#BDBDBD',
-              color: 'white',
-              cursor: 'not-allowed',
-            },
-            // Remove hover effect
-          }}
-        >
-          {uploading
-            ? 'Uploading...'
-            : isReuploadButton
-              ? 'Reupload Raw Footages' // or 'Reupload Draft'/'Reupload Raw Footages' based on component
-              : 'Submit'}
-        </Typography>
-      </Box>
+      <SubmissionActionButton
+        isDisabled={isDisabled}
+        isReuploadButton={isReuploadButton}
+        isSubmitButton={isSubmitButton}
+        uploading={uploading}
+        uploadProgress={uploadProgress}
+        onReupload={onReuploadMode}
+        onSubmit={handleSubmit}
+        reuploadText="Reupload Raw Footages"
+        submitText="Submit"
+        uploadingText="Uploading..."
+      />
     </Box>
   );
 };

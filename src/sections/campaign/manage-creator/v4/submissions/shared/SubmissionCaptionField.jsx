@@ -18,9 +18,7 @@ const SubmissionCaptionField = ({
         variant="body2"
         sx={{
           mb: 1,
-          fontWeight: 500,
-          fontFamily:
-            'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontWeight: 700,
           color: '#636366',
         }}
       >
@@ -31,7 +29,7 @@ const SubmissionCaptionField = ({
         <TextField
           fullWidth
           multiline
-          rows={{ xs: 4, md: 3 }}
+          rows={3}
           value={caption}
           onChange={onCaptionChange}
           placeholder="Type your caption here..."
@@ -39,8 +37,8 @@ const SubmissionCaptionField = ({
           sx={{
             maxWidth: '100%',
             '& .MuiOutlinedInput-root': {
-              borderRadius: 2,
-              backgroundColor: 'white',
+              borderRadius: 1,
+              backgroundColor: '#fff',
               wordWrap: 'break-word',
               overflowWrap: 'break-word',
             },
@@ -50,8 +48,6 @@ const SubmissionCaptionField = ({
         <Typography
           variant="body2"
           sx={{
-            fontFamily:
-              'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             color: '#636366',
             lineHeight: 1.5,
             whiteSpace: 'pre-wrap',

@@ -121,7 +121,7 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
   }, []);
 
   /**
-   * Generic submit handler
+   * Generic submit handler with optimistic updates
    * @param {Function} prepareFormData - Function to prepare media-specific FormData
    * @param {Function} onSuccess - Optional success callback
    * @param {boolean} skipValidation - Whether to skip validation (for custom validation in components)
@@ -160,10 +160,12 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
         enqueueSnackbar(`${mediaType}s uploaded successfully!`, { variant: 'success' });
       }
 
-      onUpdate();
+      // Clear selected files immediately to prevent re-submission
+      setSelectedFiles([]);
       setIsReuploadMode(false);
       setPhotosToRemove([]);
-      setHasSubmitted(false);
+
+      onUpdate();
     } catch (error) {
       console.error('Submit error:', error);
       setHasSubmitted(false);
