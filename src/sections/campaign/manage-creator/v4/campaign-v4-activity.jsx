@@ -969,7 +969,7 @@ const CampaignV4Activity = ({ campaign }) => {
   const getSubmissionTitle = (submission, index) => {
     switch (submission.submissionType?.type) {
       case 'VIDEO':
-        return `Draft Video ${submission.contentOrder || index + 1}`;
+        return `Video ${submission.contentOrder || index + 1}`;
       case 'PHOTO':
         return 'Photos';
       case 'RAW_FOOTAGE':

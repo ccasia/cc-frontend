@@ -163,10 +163,9 @@ const CustomV4Upload = ({
   return (
     <Box>
       {!hasVideo ? (
-        // Upload Box - Compressed
         <Paper
           sx={{
-            height: { xs: 280, md: height }, // Responsive height: 280px on mobile, provided height on desktop
+            height: { xs: 280, md: height },
             border: '1px solid #EBEBEB',
             borderRadius: 1,
             display: 'flex',
@@ -217,7 +216,7 @@ const CustomV4Upload = ({
               fontWeight: 'bold',
               mb: 0.5, // Reduced from 1
               textAlign: 'center',
-              fontSize: height <= 120 ? '0.75rem' : '0.85rem', // Smaller font for small upload boxes
+              fontSize: height <= 120 ? '0.75rem' : '0.85rem',
             }}
           >
             Choose a file or drag and drop here
@@ -297,8 +296,8 @@ const CustomV4Upload = ({
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'contain', // Changed from 'cover' to 'contain' to maintain aspect ratio with letterboxing
-                  backgroundColor: '#000', // Black background for letterboxing
+                  objectFit: 'contain',
+                  backgroundColor: '#000',
                   borderRadius: '8px',
                   position: 'relative',
                   zIndex: 1,
