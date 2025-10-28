@@ -45,7 +45,7 @@ const InvoiceLists = ({ invoices }) => {
                 Invoice ID
               </StyledTableCell>
               <StyledTableCell>Campaign</StyledTableCell>
-              <StyledTableCell>Issue Date</StyledTableCell>
+              <StyledTableCell>Due Date</StyledTableCell>
               <StyledTableCell>Price</StyledTableCell>
               <StyledTableCell>Status</StyledTableCell>
               <StyledTableCell
@@ -85,7 +85,7 @@ const InvoiceLists = ({ invoices }) => {
                       'success'
                     }
                   >
-                    {invoice.status === 'draft' ? 'waiting for approval' : invoice.status}
+                    {invoice.status === 'draft' ? 'Processing' : invoice.status}
                   </NewLabel>
                 </TableCell>
                 <TableCell align="right" sx={{ pr: 1 }}>

@@ -36,6 +36,7 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
+import { Link } from 'react-router-dom';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -449,8 +450,8 @@ const CampaignModal = ({
         {/* Campaign info */}
         <Box sx={{ px: 3, pb: 3, mt: 4 }}>
           <Grid container rowGap={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
-            <Grid item xs={12} sm={6}>
-              <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
+            <Grid item xs={12} sm={8}>
+              <Stack spacing={0.5} width={'100%'}>
                 <Typography
                   variant="h5"
                   sx={{
@@ -477,7 +478,7 @@ const CampaignModal = ({
                 </Typography>
               </Stack>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <Stack
                 direction={{ xs: 'row', sm: 'row' }}
                 spacing={1}
@@ -721,42 +722,36 @@ const CampaignModal = ({
                 </Button>
               </Stack>
             </Grid>
-          </Grid>
-
-          {false && (
-            <Box
-              mt={4}
+            <Typography
               sx={{
-                border: '1.5px solid #0062CD',
-                borderBottom: '4px solid #0062CD',
-                borderRadius: 1,
+                flex: 1,
+                textAlign: 'center',
                 p: 1,
-                mb: 1,
-                width: 'fit-content',
+                mt: 2,
+                borderRadius: 1,
+                color: '#FF3500',
+                backgroundColor: '#FFF2F0',
+                fontWeight: 600,
+                fontSize: 14,
+                alignSelf: 'center',
               }}
             >
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Stack spacing={0.5}>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#0062CD',
-                      fontWeight: 600,
-                    }}
-                  >
-                    Partnered with KWSP i-Saraan{' '}
-                  </Typography>
-                  <Divider />
-                  <Typography variant="caption" color="black" fontWeight={400}>
-                    Score an extra RM100! T&C’s apply.
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Box>
-          )}
+              Please complete your{' '}
+              <Link
+                to={paths.dashboard.user.profileTabs.payment}
+                style={{
+                  color: '#FF3500',
+                  fontWeight: 'inherit',
+                }}
+              >
+                payment details
+              </Link>{' '}
+              to access this feature. ☝️
+            </Typography>
+          </Grid>
 
-          {/* Add Divider here */}
           <Divider sx={{ my: 2, mb: 3 }} />
+
           {/* Campaign details grid */}
           <Grid container spacing={2}>
             {/* Left column */}

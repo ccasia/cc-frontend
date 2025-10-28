@@ -83,8 +83,53 @@ const CreatorProfileView = ({ id }) => {
     );
   }
 
-  const activeCampaigns = campaigns.filter(campaign => campaign.status === 'ACTIVE') || [];
-  const pastCampaigns = campaigns.filter(campaign => campaign.status === 'COMPLETED') || [];
+  // const approvedCampaigns =
+  //   campaigns.filter(
+  //     (campaign) => campaign.status !== 'COMPLETED' && campaign.pitch.status === 'APPROVED'
+  //   ) || [];
+  // const pendingCampaigns =
+  //   campaigns.filter(
+  //     (campaign) =>
+  //       campaign.pitch.status === 'PENDING_REVIEW' || campaign.pitch.status === 'SENT_TO_CLIENT'
+  //   ) || [];
+  // const rejectedCampaigns =
+  //   campaigns.filter((campaign) => campaign.pitch.status === 'REJECTED') || [];
+  // const pastCampaigns =
+  //   campaigns.filter(
+  //     (campaign) => campaign.status === 'COMPLETED' && campaign.pitch.status === 'APPROVED'
+  //   ) || [];
+
+  const groupsSetup = {
+    approved: [],
+    pending: [],
+    rejected: [],
+    past: [],
+  };
+
+  const groupedCampaigns = campaigns.reduce((groups, campaign) => {
+    const pitchStatus = campaign.pitch.status;
+    const campaignStatus = campaign.status;
+
+    if (pitchStatus === 'PENDING_REVIEW' || pitchStatus === 'SENT_TO_CLIENT') {
+      groups.pending.push(campaign);
+    } else if (pitchStatus === 'REJECTED') {
+      groups.rejected.push(campaign);
+    } else if (pitchStatus === 'APPROVED') {
+      if (campaignStatus === 'COMPLETED') {
+        groups.past.push(campaign);
+      } else {
+        groups.approved.push(campaign);
+      }
+    }
+    return groups;
+  }, groupsSetup);
+
+  const {
+    approved: approvedCampaigns,
+    pending: pendingCampaigns,
+    rejected: rejectedCampaigns,
+    past: pastCampaigns,
+  } = groupedCampaigns;
 
   return (
     <Container
@@ -466,52 +511,119 @@ const CreatorProfileView = ({ id }) => {
               >Campaign History</Typography>
             </Box>
 
-            {/* Active Campaigns */}
-            <Typography
-              variant="body2"
-              sx={{
-                color: '#1ABF66',
-                mb: 2,
-                fontWeight: 600,
-                fontSize: '15px'
-              }}
-            >
-              Active Campaigns
-            </Typography>
-            {activeCampaigns.map((campaign) => (
-              <Box key={campaign.id} sx={{ mb: 2 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body1">{campaign.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {dayjs(campaign.campaignBrief?.startDate).format('D MMM YYYY')} - {dayjs(campaign.campaignBrief?.endDate).format('D MMM YYYY')}
-                  </Typography>
-                </Stack>
-              </Box>
-            ))}
+            {approvedCampaigns.length > 0 && (
+              <>
+                {/* Active Campaigns */}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#1ABF66',
+                    mb: 2,
+                    fontWeight: 600,
+                    fontSize: '15px',
+                  }}
+                >
+                  Active Campaigns
+                </Typography>
+                {approvedCampaigns.map((campaign) => (
+                  <Box key={campaign.id} sx={{ mb: 2 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body1">{campaign.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {dayjs(campaign.campaignBrief?.startDate).format('D MMM YYYY')} -{' '}
+                        {dayjs(campaign.campaignBrief?.endDate).format('D MMM YYYY')}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                ))}
+              </>
+            )}
 
-            <Divider sx={{ my: 3 }} />
+            {pendingCampaigns.length > 0 && (
+              <>
+                {/* Pending_review or sent to client */}
+                <Divider sx={{ my: 3 }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#ff9800',
+                    mb: 2,
+                    fontWeight: 600,
+                    fontSize: '15px',
+                  }}
+                >
+                  Pending
+                </Typography>
+                {pendingCampaigns.map((campaign) => (
+                  <Box key={campaign.id} sx={{ mb: 2 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body1">{campaign.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {dayjs(campaign.campaignBrief?.startDate).format('D MMM YYYY')} -{' '}
+                        {dayjs(campaign.campaignBrief?.endDate).format('D MMM YYYY')}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                ))}
+              </>
+            )}
 
-            {/* Past Campaigns */}
-            <Typography
-              variant="body2"
-              sx={{
-                mb: 2,
-                fontWeight: 600,
-                fontSize: '15px'
-              }}
-            >
-              Past Campaigns
-            </Typography>
-            {pastCampaigns.map((campaign) => (
-              <Box key={campaign.id} sx={{ mb: 2 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body1">{campaign.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {dayjs(campaign.campaignBrief?.startDate).format('D MMM YYYY')} - {dayjs(campaign.campaignBrief?.endDate).format('D MMM YYYY')}
-                  </Typography>
-                </Stack>
-              </Box>
-            ))}
+            {rejectedCampaigns.length > 0 && (
+              <>
+                {/* Rejected Campaigns */}
+                <Divider sx={{ my: 3 }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#f44336',
+                    mb: 2,
+                    fontWeight: 600,
+                    fontSize: '15px',
+                  }}
+                >
+                  Rejected Campaigns
+                </Typography>
+                {rejectedCampaigns.map((campaign) => (
+                  <Box key={campaign.id} sx={{ mb: 2 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body1">{campaign.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {dayjs(campaign.campaignBrief?.startDate).format('D MMM YYYY')} -{' '}
+                        {dayjs(campaign.campaignBrief?.endDate).format('D MMM YYYY')}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                ))}
+              </>
+            )}
+
+            {pastCampaigns.length > 0 && (
+              <>
+                {/* Past Campaigns */}
+                <Divider sx={{ my: 3 }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mb: 2,
+                    fontWeight: 600,
+                    fontSize: '15px',
+                  }}
+                >
+                  Past Campaigns
+                </Typography>
+                {pastCampaigns.map((campaign) => (
+                  <Box key={campaign.id} sx={{ mb: 2 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body1">{campaign.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {dayjs(campaign.campaignBrief?.startDate).format('D MMM YYYY')} -{' '}
+                        {dayjs(campaign.campaignBrief?.endDate).format('D MMM YYYY')}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                ))}
+              </>
+            )}
           </Box>
 
           {/* Credits Assigned Box */}
