@@ -1249,7 +1249,7 @@ const CampaignV4Activity = ({ campaign }) => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.04)',
+                    bgcolor: 'transparent',
                   },
                 }}
                 onClick={() => handleToggleSection(video.id)}
@@ -1399,7 +1399,7 @@ const CampaignV4Activity = ({ campaign }) => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.04)',
+                    bgcolor: 'transparent',
                   },
                 }}
                 onClick={() => handleToggleSection(photo.id)}
@@ -1549,7 +1549,7 @@ const CampaignV4Activity = ({ campaign }) => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.04)',
+                    bgcolor: 'transparent',
                   },
                 }}
                 onClick={() => handleToggleSection(rawFootage.id)}
