@@ -152,6 +152,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
         data={navData}
         slotProps={{
           currentRole: user?.role,
+          onItemClick: onCloseNav,
         }}
       />
       {/* {!data?.tokenStatus && user.role === 'admin' && user.admin.role.name === 'Finance' ? (
