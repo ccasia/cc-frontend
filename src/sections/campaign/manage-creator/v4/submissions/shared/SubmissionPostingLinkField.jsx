@@ -56,7 +56,11 @@ const SubmissionPostingLinkField = ({
             width: '100%',
             display: 'block',
             cursor: 'pointer',
-            textDecoration: 'none'
+            textDecoration: 'none',
+            textOverflow: 'inherit',
+            whiteSpace: 'normal', 
+            overflowWrap: 'anywhere',
+            wordBreak: 'break-word'
           }}
         >
           {submissionContent || 'No posting link provided'}
