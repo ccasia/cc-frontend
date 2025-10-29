@@ -181,14 +181,6 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
 
   return (
     <Box>
-      {uploading && (
-        <Box sx={{ mb: 3 }}>
-          <LinearProgress variant="determinate" value={uploadProgress} sx={{ mb: 1 }} />
-          <Typography variant="body2" color="text.secondary" align="center">
-            Uploading... {uploadProgress}%
-          </Typography>
-        </Box>
-      )}
       <Box
         sx={{
           display: 'flex',
