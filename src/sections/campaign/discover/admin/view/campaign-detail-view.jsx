@@ -51,6 +51,7 @@ import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignLogistics from '../campaign-logistics';
+import CampaignLogisticsClient from '../campaign-logistics-client';
 import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
@@ -90,6 +91,7 @@ const clientAllowedTabs = [
   'deliverables',
   'submissions-v4',
   'analytics',
+  'logistics', // allow client to access Logistics tab
 ];
 
 const CampaignDetailView = ({ id }) => {
@@ -358,6 +360,7 @@ const CampaignDetailView = ({ id }) => {
                   : [{ label: 'Creator Deliverables', value: 'deliverables' }]
                 ),
                 { label: 'Campaign Analytics', value: 'analytics' },
+                { label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`, value: 'logistics' },
               ]
             : // Admin/other user tabs
               [
@@ -405,6 +408,10 @@ const CampaignDetailView = ({ id }) => {
                 {
                   label: `Invoices (${campaignInvoices?.length || 0})`,
                   value: 'invoices',
+                },
+                {
+                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                  value: 'logistics',
                 },
                 // {
                 //   label: `Logistics (${campaign?.logistic?.length || 0})`,
@@ -537,7 +544,9 @@ const CampaignDetailView = ({ id }) => {
     ),
     creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
-    logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />,
+    logistics: isClient
+      ? <CampaignLogisticsClient campaign={campaign} />
+      : <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />, // admin
     invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
