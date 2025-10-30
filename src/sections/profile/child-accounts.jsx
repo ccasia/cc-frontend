@@ -290,7 +290,7 @@ export default function ChildAccounts() {
                   mb: 1,
                 }}
               >
-                PIC Account
+                Accounts
               </Typography>
               <Typography
                 variant="body1"
@@ -1147,7 +1147,7 @@ export default function ChildAccounts() {
                 },
               }}
             >
-              Invite Child Account
+              Invite Account
             </Button>
           </Stack>
         </Box>
@@ -1188,7 +1188,7 @@ export default function ChildAccounts() {
             alignItems: 'center',
           }}
         >
-          <Box>Invite Child Account</Box>
+          <Box>Invite Account</Box>
           <IconButton
             onClick={() => setInviteDialogOpen(false)}
             sx={{

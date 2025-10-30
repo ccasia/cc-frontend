@@ -189,7 +189,7 @@ const ChildAccountList = ({ companyId, company }) => {
               '&:hover': { bgcolor: '#102387' },
             }}
           >
-            Invite Child Account
+            Invite Account
           </Button>
         </Stack>
       </Box>
@@ -242,7 +242,7 @@ const ChildAccountList = ({ companyId, company }) => {
 
       {/* Invite Child Account Dialog */}
       <Dialog open={inviteDialog} onClose={() => setInviteDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Invite Child Account</DialogTitle>
+        <DialogTitle>Invite Account</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
