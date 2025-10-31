@@ -107,8 +107,12 @@ const CreatorProfileView = ({ id }) => {
   };
 
   const groupedCampaigns = campaigns.reduce((groups, campaign) => {
-    const pitchStatus = campaign.pitch.status;
+    const pitchStatus = campaign.pitch?.status;
     const campaignStatus = campaign.status;
+
+    if (!pitchStatus) {
+      return groups
+    }
 
     if (pitchStatus === 'PENDING_REVIEW' || pitchStatus === 'SENT_TO_CLIENT') {
       groups.pending.push(campaign);
