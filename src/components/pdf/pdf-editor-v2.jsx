@@ -10,12 +10,12 @@ import { blue, grey } from '@mui/material/colors';
 import {
   Box,
   Chip,
+  Zoom,
   Stack,
   Dialog,
   Button,
   Tooltip,
   Divider,
-  Zoom,
   useTheme,
   Typography,
   IconButton,
@@ -23,7 +23,6 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
-  Zoom,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';

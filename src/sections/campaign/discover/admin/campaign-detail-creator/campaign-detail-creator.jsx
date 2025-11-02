@@ -192,9 +192,8 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const handleEditAgreement = (creator) => {
     if (campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4') {
       let creatorPitch = null;
-      
-      if (campaign?.submissionVersion === 'v4') {
 
+      if (campaign?.submissionVersion === 'v4') {
         creatorPitch = { status: 'APPROVED' };
       } else {
         // For client campaigns, check the regular pitch array
@@ -676,8 +675,8 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               },
             }}
           />
-          {campaign?.submissionVersion !== 'v4' && (
-            !smUp ? (
+          {campaign?.submissionVersion !== 'v4' &&
+            (!smUp ? (
               <IconButton
                 sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
                 onClick={modal.onTrue}
@@ -706,8 +705,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               >
                 Shortlist New Creators
               </Button>
-            )
-          )}
+            ))}
         </Stack>
 
         {campaign?.shortlisted?.length > 0 ? (
