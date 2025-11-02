@@ -2,14 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useRef, useMemo, useState, useCallback } from 'react';
 
-import {
-  Box,
-  Card,
-  Chip,
-  Stack,
-  TextField,
-  Typography
-} from '@mui/material';
+import { Box, Card, Chip, Stack, TextField, Typography } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 
@@ -40,24 +33,29 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
     const pendingReview = ['PENDING_REVIEW'].includes(submission.status);
     const hasPostingLink = Boolean(submission.content);
     const isClientFeedback = ['CLIENT_FEEDBACK'].includes(submission.status);
-    const clientVisible = !isClient || ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
+    const clientVisible =
+      !isClient ||
+      ['SENT_TO_CLIENT', 'CLIENT_APPROVED', 'APPROVED', 'POSTED'].includes(submission.status);
 
     return {
       photos,
       pendingReview,
       hasPostingLink,
       isClientFeedback,
-      clientVisible
+      clientVisible,
     };
-  }, [submission.photos, submission.status, submission.content]);
+  }, [submission.photos, submission.status, submission.content, isClient]);
 
-  const { photos, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
+  const { photos, pendingReview, hasPostingLink, isClientFeedback, clientVisible } =
+    submissionProps;
 
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('approve');
   const [localActionInProgress, setLocalActionInProgress] = useState(false);
   const [reasons, setReasons] = useState(() => getInitialReasons(isClientFeedback, submission));
-  const [feedback, setFeedback] = useState(() => getDefaultFeedback(isClientFeedback, submission, 'photos'));
+  const [feedback, setFeedback] = useState(() =>
+    getDefaultFeedback(isClientFeedback, submission, 'photos')
+  );
   const [caption, setCaption] = useState(submission.caption || '');
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -76,7 +74,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
           submissionId: submission.id,
           action: 'approve',
           feedback: feedback.trim(),
-          reasons: reasons || []
+          reasons: reasons || [],
         });
 
         enqueueSnackbar('Photos approved successfully', { variant: 'success' });
@@ -124,7 +122,9 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
       const hasReasons = currentReasons && currentReasons.length > 0;
 
       if (!hasContent && !hasReasons) {
-        enqueueSnackbar('Please provide feedback or select reasons for changes', { variant: 'warning' });
+        enqueueSnackbar('Please provide feedback or select reasons for changes', {
+          variant: 'warning',
+        });
         setLoading(false);
         return;
       }
@@ -134,7 +134,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
           submissionId: submission.id,
           action: 'request_changes',
           feedback: hasContent ? currentFeedback.trim() : '',
-          reasons: currentReasons || []
+          reasons: currentReasons || [],
         });
 
         enqueueSnackbar('Changes requested successfully', { variant: 'success' });
@@ -182,38 +182,44 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
     onUpdate,
     localActionInProgress,
     userId: user?.id,
-    hasPhotos: true
+    hasPhotos: true,
   });
 
   return (
-    <Box sx={{
-      overflow: 'hidden',
-      bgcolor: 'background.neutral'
-    }}>
+    <Box
+      sx={{
+        overflow: 'hidden',
+        bgcolor: 'background.neutral',
+      }}
+    >
       <Box>
         {clientVisible ? (
           photos.length > 0 ? (
             <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
-              <Box sx={{
-                display: 'flex',
-                gap: { xs: 1, sm: 1.5, md: 2 },
-                justifyContent: 'space-between',
-                alignItems: 'stretch',
-                minHeight: { xs: 600, sm: 550, md: 500 },
-                flexDirection: { xs: 'column', lg: 'row' }
-              }}>
-                {/* Caption & Feedback - Left side */}
-                <Box sx={{
-                  flex: 1,
+              <Box
+                sx={{
                   display: 'flex',
-                  flexDirection: 'column',
+                  gap: { xs: 1, sm: 1.5, md: 2 },
                   justifyContent: 'space-between',
-                  maxWidth: { xs: '100%', md: 420, lg: 500 },
-                  minWidth: { xs: '100%', lg: 350 },
-                  height: { xs: 'auto', lg: 500 },
-                  minHeight: { xs: 300, lg: 500 },
-                  overflow: 'hidden'
-                }}>
+                  alignItems: 'stretch',
+                  minHeight: { xs: 600, sm: 550, md: 500 },
+                  flexDirection: { xs: 'column', lg: 'row' },
+                }}
+              >
+                {/* Caption & Feedback - Left side */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    maxWidth: { xs: '100%', md: 420, lg: 500 },
+                    minWidth: { xs: '100%', lg: 350 },
+                    height: { xs: 'auto', lg: 500 },
+                    minHeight: { xs: 300, lg: 500 },
+                    overflow: 'hidden',
+                  }}
+                >
                   {showFeedbackLogs ? (
                     <FeedbackLogs
                       submission={submission}
@@ -222,7 +228,9 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                   ) : (
                     <>
                       <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
-                        <Typography variant='caption' fontWeight="bold" color="#636366" mb={0.5}>Caption</Typography>
+                        <Typography variant="caption" fontWeight="bold" color="#636366" mb={0.5}>
+                          Caption
+                        </Typography>
                         {pendingReview ? (
                           <Box>
                             <TextField
@@ -249,41 +257,54 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                                 position: 'absolute',
                                 width: '100%',
                                 maxWidth: 400,
-                                pointerEvents: 'none'
+                                pointerEvents: 'none',
                               }}
                             >
-                              <Typography fontSize={14} sx={{
-                                wordWrap: 'break-word',
-                                overflowWrap: 'break-word',
-                                lineHeight: 1.5
-                              }}>
+                              <Typography
+                                fontSize={14}
+                                sx={{
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  lineHeight: 1.5,
+                                }}
+                              >
                                 {submission.caption}
                               </Typography>
                             </Box>
 
                             {captionOverflows ? (
-                              <Box sx={{
-                                maxHeight: { xs: 80, sm: 100, md: 120 },
-                                overflow: 'auto',
-                                border: '1px solid #E7E7E7',
-                                borderRadius: 0.5,
-                                p: 1,
-                                bgcolor: 'background.paper',
-                              }}>
-                                <Typography fontSize={14} color="#636366" sx={{
-                                  wordWrap: 'break-word',
-                                  overflowWrap: 'break-word',
-                                  lineHeight: 1.5
-                                }}>
+                              <Box
+                                sx={{
+                                  maxHeight: { xs: 80, sm: 100, md: 120 },
+                                  overflow: 'auto',
+                                  border: '1px solid #E7E7E7',
+                                  borderRadius: 0.5,
+                                  p: 1,
+                                  bgcolor: 'background.paper',
+                                }}
+                              >
+                                <Typography
+                                  fontSize={14}
+                                  color="#636366"
+                                  sx={{
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'break-word',
+                                    lineHeight: 1.5,
+                                  }}
+                                >
                                   {submission.caption}
                                 </Typography>
                               </Box>
                             ) : (
-                              <Typography fontSize={14} color="#636366" sx={{
-                                wordWrap: 'break-word',
-                                overflowWrap: 'break-word',
-                                lineHeight: 1.5
-                              }}>
+                              <Typography
+                                fontSize={14}
+                                color="#636366"
+                                sx={{
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  lineHeight: 1.5,
+                                }}
+                              >
                                 {submission.caption}
                               </Typography>
                             )}
@@ -291,8 +312,19 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                         ) : null}
                       </Box>
 
-                      <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        {!isClient && (submission.status === 'CLIENT_APPROVED' || submission.status === 'POSTED' || submission.status === 'REJECTED') && campaign?.campaignType === 'normal' ? (
+                      <Box
+                        sx={{
+                          flex: 'auto 0 1',
+                          minHeight: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
+                        {!isClient &&
+                        (submission.status === 'CLIENT_APPROVED' ||
+                          submission.status === 'POSTED' ||
+                          submission.status === 'REJECTED') &&
+                        campaign?.campaignType === 'normal' ? (
                           <PostingLinkSection
                             submission={submission}
                             onUpdate={onUpdate}
@@ -329,7 +361,6 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                     </>
                   )}
                 </Box>
-                
                 {/* Content - Right side */}
                 <Box
                   sx={{
@@ -375,7 +406,11 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                     {photos.map((photo, photoIndex) => {
                       const getPhotoWidth = () => ({ xs: 140, sm: 160, md: 200, lg: 240 });
 
-                      const getPhotoHeight = () => ({ xs: 'calc(100% - 4px)', sm: 'calc(100% - 6px)', md: 'calc(100% - 8px)' });
+                      const getPhotoHeight = () => ({
+                        xs: 'calc(100% - 4px)',
+                        sm: 'calc(100% - 6px)',
+                        md: 'calc(100% - 8px)',
+                      });
 
                       return (
                         <Box
@@ -435,7 +470,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                                 zIndex: 10,
                                 border: '1px solid #EBEBEB',
                                 boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                                p: { xs: 0.3, sm: 0.5, md: 0.75, lg: 1 }
+                                p: { xs: 0.3, sm: 0.5, md: 0.75, lg: 1 },
                               }}
                             >
                               {photoIndex + 1}
@@ -476,13 +511,24 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
               </Box>
             </Box>
           ) : (
-            <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
-              <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              textAlign="center"
+              sx={{ p: 8, justifyContent: 'center' }}
+            >
+              <Box
+                component="img"
+                src="/assets/icons/empty/ic_content.svg"
+                alt="No content"
+                sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }}
+              />
               <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                 No deliverables found
               </Typography>
               <Typography variant="body2" color="text.secondary" mb={4}>
-                This submission doesn't have any deliverables to review yet.
+                This submission doesn&apos;t have any deliverables to review yet.
               </Typography>
             </Box>
           )
@@ -493,11 +539,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
               <Typography variant="body2" color="text.secondary">
                 Photo content is being processed.
               </Typography>
-              <Chip
-                label="In Progress"
-                color="info"
-                size="small"
-              />
+              <Chip label="In Progress" color="info" size="small" />
             </Stack>
           </Card>
         )}
@@ -520,5 +562,5 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
 V4PhotoSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   campaign: PropTypes.object,
-  onUpdate: PropTypes.func
+  onUpdate: PropTypes.func,
 };

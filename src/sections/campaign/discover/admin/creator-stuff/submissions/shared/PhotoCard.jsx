@@ -19,14 +19,14 @@ import {
 } from '@mui/material';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField , RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 
-const PhotoCard = ({ 
-  photoItem, 
-  index, 
-  submission, 
-  onImageClick, 
-  handleApprove, 
+const PhotoCard = ({
+  photoItem,
+  index,
+  submission,
+  onImageClick,
+  handleApprove,
   handleRequestChange,
   selectedPhotosForChange,
   handlePhotoSelection,
@@ -54,7 +54,10 @@ const PhotoCard = ({
     },
   });
 
-  const { formState: { isSubmitting }, reset } = formMethods;
+  const {
+    formState: { isSubmitting },
+    reset,
+  } = formMethods;
 
   // Reset form when cardType changes
   useEffect(() => {
@@ -73,13 +76,17 @@ const PhotoCard = ({
   const isPhotoApprovedByAdmin = currentStatus === 'SENT_TO_CLIENT';
   const isPhotoApprovedByClient = currentStatus === 'APPROVED';
   const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED';
-  
+
   // For client role, SENT_TO_CLIENT status should be treated as PENDING_REVIEW
-  const isPendingReview = userRole === 'client' ? 
-    // For clients: show approval buttons when media is SENT_TO_CLIENT or submission is PENDING_REVIEW
-    (currentStatus === 'SENT_TO_CLIENT' || (submission?.status === 'PENDING_REVIEW' && !isPhotoApprovedByClient && !hasRevisionRequested)) :
-    // For non-clients: show approval buttons when submission is PENDING_REVIEW and media not approved
-    (submission?.status === 'PENDING_REVIEW' && !isPhotoApprovedByAdmin && !hasRevisionRequested);
+  const isPendingReview =
+    userRole === 'client'
+      ? // For clients: show approval buttons when media is SENT_TO_CLIENT or submission is PENDING_REVIEW
+        currentStatus === 'SENT_TO_CLIENT' ||
+        (submission?.status === 'PENDING_REVIEW' &&
+          !isPhotoApprovedByClient &&
+          !hasRevisionRequested)
+      : // For non-clients: show approval buttons when submission is PENDING_REVIEW and media not approved
+        submission?.status === 'PENDING_REVIEW' && !isPhotoApprovedByAdmin && !hasRevisionRequested;
 
   // Get feedback for this specific photo
   const getPhotoFeedback = () => {
@@ -87,14 +94,12 @@ const PhotoCard = ({
     if (photoItem.individualFeedback && photoItem.individualFeedback.length > 0) {
       return photoItem.individualFeedback;
     }
-    
+
     // Fallback to submission-level feedback
-    const allFeedbacks = [
-      ...(submission?.feedback || [])
-    ];
+    const allFeedbacks = [...(submission?.feedback || [])];
 
     return allFeedbacks
-      .filter(feedback => feedback.photosToUpdate?.includes(photoItem.id))
+      .filter((feedback) => feedback.photosToUpdate?.includes(photoItem.id))
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
   };
 
@@ -390,7 +395,7 @@ const PhotoCard = ({
             }}
             onClick={() => onImageClick(photoItem)}
           />
-          
+
           {/* Status badge */}
           <Box
             sx={{
@@ -404,9 +409,14 @@ const PhotoCard = ({
               label={currentStatus}
               size="small"
               sx={{
-                bgcolor: currentStatus === 'SENT_TO_CLIENT' ? '#1ABF66' : 
-                         currentStatus === 'APPROVED' ? '#1ABF66' :
-                         currentStatus === 'REVISION_REQUESTED' ? '#D4321C' : '#666666',
+                bgcolor:
+                  currentStatus === 'SENT_TO_CLIENT'
+                    ? '#1ABF66'
+                    : currentStatus === 'APPROVED'
+                      ? '#1ABF66'
+                      : currentStatus === 'REVISION_REQUESTED'
+                        ? '#D4321C'
+                        : '#666666',
                 color: 'white',
                 fontWeight: 600,
                 fontSize: '0.7rem',
@@ -440,10 +450,7 @@ const PhotoCard = ({
           <Stack spacing={2}>
             {/* Photo info */}
             <Stack direction="row" alignItems="center" spacing={1}>
-              <Avatar
-                src={photoItem.user?.photoURL}
-                sx={{ width: 24, height: 24 }}
-              />
+              <Avatar src={photoItem.user?.photoURL} sx={{ width: 24, height: 24 }} />
               <Typography variant="caption" color="text.secondary">
                 {photoItem.user?.name || 'Creator'}
               </Typography>
@@ -493,4 +500,4 @@ PhotoCard.propTypes = {
   isV3: PropTypes.bool,
 };
 
-export default PhotoCard; 
+export default PhotoCard;

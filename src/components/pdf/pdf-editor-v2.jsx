@@ -22,6 +22,7 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
+  Zoom,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -106,7 +107,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
 
       setCurrentAnnotation(newAnnotation);
     },
-    [selectedTool, scale]
+    [selectedTool, hasSignature, scale]
   );
 
   const stopDrawing = useCallback(() => {
@@ -149,7 +150,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
       signDialog.onFalse();
       handleToolSelect('cursor');
     }
-  }, [setSignURL, currentSignatureId, signDialog, updateAnnotation]);
+  }, [currentSignatureId, updateAnnotation, setSignURL, signDialog, handleToolSelect]);
 
   const clearSignature = useCallback(() => {
     if (signRef.current) {
@@ -398,6 +399,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                                 }
                               }}
                             >
+                              {/* eslint-disable-next-line no-nested-ternary */}
                               {annotation.type === 'signature' && signURL ? (
                                 <img
                                   src={signURL}
@@ -444,7 +446,12 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                               )}
 
                               {/* Delete button - always visible for signatures, larger on mobile */}
-                              <Zoom in={selectedAnnotation === annotation.id || annotation.type === 'signature'}>
+                              <Zoom
+                                in={
+                                  selectedAnnotation === annotation.id ||
+                                  annotation.type === 'signature'
+                                }
+                              >
                                 <IconButton
                                   size={isMobile ? 'medium' : 'small'}
                                   onClick={(e) => {
