@@ -676,35 +676,37 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               },
             }}
           />
-          {!smUp ? (
-            <IconButton
-              sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
-              onClick={modal.onTrue}
-            >
-              <Iconify icon="fluent:people-add-28-filled" width={18} />
-            </IconButton>
-          ) : (
-            <Button
-              onClick={modal.onTrue}
-              disabled={isDisabled || totalUsedCredits === campaign?.campaignCredits}
-              sx={{
-                bgcolor: '#ffffff',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                height: 44,
-                color: '#203ff5',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                px: 3,
-                '&:hover': {
-                  bgcolor: alpha('#636366', 0.08),
-                  opacity: 0.9,
-                },
-              }}
-              startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
-            >
-              Shortlist New Creators
-            </Button>
+          {campaign?.submissionVersion !== 'v4' && (
+            !smUp ? (
+              <IconButton
+                sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
+                onClick={modal.onTrue}
+              >
+                <Iconify icon="fluent:people-add-28-filled" width={18} />
+              </IconButton>
+            ) : (
+              <Button
+                onClick={modal.onTrue}
+                disabled={isDisabled || totalUsedCredits === campaign?.campaignCredits}
+                sx={{
+                  bgcolor: '#ffffff',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  height: 44,
+                  color: '#203ff5',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  px: 3,
+                  '&:hover': {
+                    bgcolor: alpha('#636366', 0.08),
+                    opacity: 0.9,
+                  },
+                }}
+                startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
+              >
+                Shortlist New Creators
+              </Button>
+            )
           )}
         </Stack>
 
