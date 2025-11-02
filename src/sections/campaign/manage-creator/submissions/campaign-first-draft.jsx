@@ -1004,8 +1004,8 @@ const CampaignFirstDraft = ({
                               )}
 
                               <Stack spacing={1} flexGrow={1}>
-                                <Typography variant="subtitle2" noWrap>
-                                  {truncateText(currentFile?.fileName, 50) || 'Uploading file...'}
+                                <Typography fontSize={{ xs: 12, md: 14}} noWrap>
+                                  {truncateText(currentFile?.fileName, 25) || 'Uploading file...'}
                                 </Typography>
                                 <Stack spacing={1}>
                                   <LinearProgress
@@ -1023,6 +1023,8 @@ const CampaignFirstDraft = ({
                                       return next;
                                     })()}
                                     sx={{
+                                      width: { xs: 165, md: '100%'},
+                                      maxWidth: '100%',
                                       height: 6,
                                       borderRadius: 1,
                                       bgcolor: 'background.paper',
@@ -1037,7 +1039,7 @@ const CampaignFirstDraft = ({
                                     justifyContent="space-between"
                                     alignItems="center"
                                   >
-                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
                                       {Number(currentFile?.serverProgress || 0) >= 100 ? (
                                         <Box
                                           component="span"
@@ -1049,7 +1051,7 @@ const CampaignFirstDraft = ({
                                         `${currentFile?.name || 'Uploading'}... ${Math.floor(Number(currentFile?.progressShown || 0))}%`
                                       )}
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
                                       {formatFileSize(currentFile?.fileSize || 0)}
                                     </Typography>
                                   </Stack>

@@ -7,20 +7,23 @@ import {
   Paper,
   Typography,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
-const CustomV4Upload = ({ 
-  files, 
-  onFilesChange, 
-  disabled, 
-  submissionId, 
+const CustomV4Upload = ({
+  files,
+  onFilesChange,
+  disabled,
+  submissionId,
   submittedVideo,
   accept = 'video/*',
   maxSize = 500 * 1024 * 1024, // 500MB default
   fileTypes = 'MP4, MOV, JPEG, PNG',
   height = 160, // Compressed height
+  uploading = false, // NEW: Track if upload is in progress
+  hasSubmitted = false, // NEW: Track if content has been submitted
 }) => {
   const handleDrop = (e) => {
     e.preventDefault();
@@ -76,17 +79,19 @@ const CustomV4Upload = ({
 
   // Memoize video display logic to prevent blinking
   const videoDisplayData = useMemo(() => {
-    const hasVideo = files.length > 0 || submittedVideo;
+    // If uploading or has submitted, show loading/video state (not upload box)
+    // This prevents the upload box from showing during upload process
+    const hasVideo = files.length > 0 || submittedVideo || uploading || hasSubmitted;
     const videoToShow = files.length > 0 ? files[0] : submittedVideo;
     const isLocalVideo = files.length > 0;
-    
+
     // Memoize the video URL to prevent re-creation and blinking
-    const videoUrl = isLocalVideo && videoToShow 
-      ? URL.createObjectURL(videoToShow) 
+    const videoUrl = isLocalVideo && videoToShow
+      ? URL.createObjectURL(videoToShow)
       : videoToShow?.url || null;
-    
+
     return { hasVideo, videoToShow, isLocalVideo, videoUrl };
-  }, [files, submittedVideo]);
+  }, [files, submittedVideo, uploading, hasSubmitted]);
 
   const { hasVideo, videoToShow, isLocalVideo, videoUrl } = videoDisplayData;
 
@@ -156,12 +161,11 @@ const CustomV4Upload = ({
   return (
     <Box>
       {!hasVideo ? (
-        // Upload Box - Compressed
         <Paper
           sx={{
-            height: { xs: 280, md: height }, // Responsive height: 280px on mobile, provided height on desktop
+            height: { xs: 280, md: height },
             border: '1px solid #EBEBEB',
-            borderRadius: 2,
+            borderRadius: 1,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -170,7 +174,7 @@ const CustomV4Upload = ({
             bgcolor: 'white',
             boxShadow: 'none',
             '&:hover': {
-              borderColor: 'rgba(0, 0, 0, 0.87)',
+              borderColor: disabled ? '#EBEBEB' : 'rgba(0, 0, 0, 0.87)',
             },
           }}
           onDrop={handleDrop}
@@ -210,7 +214,7 @@ const CustomV4Upload = ({
               fontWeight: 'bold',
               mb: 0.5, // Reduced from 1
               textAlign: 'center',
-              fontSize: height <= 120 ? '0.75rem' : '0.85rem', // Smaller font for small upload boxes
+              fontSize: height <= 120 ? '0.75rem' : '0.85rem',
             }}
           >
             Choose a file or drag and drop here
@@ -231,7 +235,7 @@ const CustomV4Upload = ({
           </Typography>
         </Paper>
       ) : (
-        // Video Preview - Compressed
+        // Video Preview or Loading State
         <Box
           sx={{
             height: { xs: 280, md: height }, // Responsive height: 280px on mobile, provided height on desktop
@@ -240,6 +244,9 @@ const CustomV4Upload = ({
             overflow: 'visible', // Changed from 'hidden' to 'visible' to allow controls to show properly
             position: 'relative',
             bgcolor: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             // Ensure the container doesn't interfere with video controls
             '& video': {
               '&::-webkit-media-controls': {
@@ -261,48 +268,67 @@ const CustomV4Upload = ({
             },
           }}
         >
-          <video
-            src={videoUrl}
-            controls
-            controlsList="nodownload"
-            preload="metadata"
-            playsInline
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain', // Changed from 'cover' to 'contain' to maintain aspect ratio with letterboxing
-              backgroundColor: '#000', // Black background for letterboxing
-              borderRadius: '8px',
-              position: 'relative',
-              zIndex: 1,
-            }}
-          />
-          
-          {/* Remove Button - Only show for local files */}
-          {isLocalVideo && (
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                removeFile(0);
-              }}
+          {/* Show loading state if uploading/submitted but no video URL yet */}
+          {(uploading || hasSubmitted) && !videoUrl ? (
+            <Box
               sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                width: 28,
-                height: 28,
-                bgcolor: 'rgba(0, 0, 0, 0.7)',
-                color: 'white',
-                zIndex: 10, 
-                '&:hover': {
-                  bgcolor: 'rgba(0, 0, 0, 0.9)',
-                },
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
               }}
             >
-              <Iconify icon="eva:close-fill" width={16} />
-            </IconButton>
+              <CircularProgress size={48} sx={{ color: '#1340FF' }} />
+              <Typography variant="body2" color="text.secondary">
+                {uploading ? 'Uploading...' : 'Processing submission...'}
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <video
+                src={videoUrl}
+                controls
+                controlsList="nodownload"
+                preload="metadata"
+                playsInline
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  backgroundColor: '#000',
+                  borderRadius: '8px',
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              />
+
+              {/* Remove Button - Only show for local files */}
+              {isLocalVideo && (
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    removeFile(0);
+                  }}
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    width: 28,
+                    height: 28,
+                    bgcolor: 'rgba(0, 0, 0, 0.7)',
+                    color: 'white',
+                    zIndex: 10,
+                    '&:hover': {
+                      bgcolor: 'rgba(0, 0, 0, 0.9)',
+                    },
+                  }}
+                >
+                  <Iconify icon="eva:close-fill" width={16} />
+                </IconButton>
+              )}
+            </>
           )}
         </Box>
       )}
@@ -330,6 +356,8 @@ CustomV4Upload.propTypes = {
   maxSize: PropTypes.number,
   fileTypes: PropTypes.string,
   height: PropTypes.number,
+  uploading: PropTypes.bool,
+  hasSubmitted: PropTypes.bool,
 };
 
 export default React.memo(CustomV4Upload);

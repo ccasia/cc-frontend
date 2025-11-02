@@ -2,44 +2,57 @@ import PropTypes from 'prop-types';
 
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import { Box, Typography } from '@mui/material';
 import DialogContent from '@mui/material/DialogContent';
+import { Box, Typography } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
-export default function ConfirmDialogV2({ title, emoji, content, action, isPosting = false, open, onClose, ...other }) {
+export default function ConfirmDialogV2({
+  title,
+  emoji,
+  content,
+  action,
+  isPosting = false,
+  open,
+  onClose,
+  ...other
+}) {
   return (
-    <Dialog 
-      fullWidth 
-      maxWidth="xs" 
-      open={open} 
-      onClose={onClose} 
+    <Dialog
+      fullWidth
+      maxWidth="xs"
+      open={open}
+      onClose={onClose}
       {...other}
       PaperProps={{ sx: { padding: 2, width: 380 } }}
     >
-      {emoji &&
-        <Box sx={{ borderRadius: 20, width: 80, height: 80, bgcolor: isPosting ? '#1340FF' : '#8B5CF6', fontSize: 54, justifyContent: 'center', textAlign: 'center', alignSelf: 'center' }}>
+      {emoji && (
+        <Box display={'flex'} justifyContent={'center'}>
           {emoji}
         </Box>
-      }
+      )}
 
-      <Typography sx={{ 
-        textAlign: 'center',
-        fontFamily: 'Instrument Serif', 
-        fontSize: 36,
-        fontWeight: 400,
-        my: 2,
-        lineHeight: 1.2,
-      }}>
+      <Typography
+        sx={{
+          textAlign: 'center',
+          fontFamily: 'Instrument Serif',
+          fontSize: 36,
+          fontWeight: 400,
+          my: 2,
+          lineHeight: 1.2,
+        }}
+      >
         {title}
       </Typography>
 
       {content && (
-        <DialogContent sx={{ 
-          typography: 'body2',
-          textAlign: 'center',
-        }}> 
-          {content} 
+        <DialogContent
+          sx={{
+            typography: 'body2',
+            textAlign: 'center',
+          }}
+        >
+          {content}
         </DialogContent>
       )}
 
@@ -64,8 +77,8 @@ export default function ConfirmDialogV2({ title, emoji, content, action, isPosti
         </Button>
       )}
 
-      <Button 
-        variant="outlined" 
+      <Button
+        variant="outlined"
         fullWidth
         onClick={onClose}
         sx={{
@@ -75,7 +88,7 @@ export default function ConfirmDialogV2({ title, emoji, content, action, isPosti
           borderRadius: 1,
           '&:hover': {
             backgroundColor: '#F5F5F5',
-            boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
+            boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
           },
           boxShadow: 'inset 0px -2px 0px 0px #E7E7E7',
         }}

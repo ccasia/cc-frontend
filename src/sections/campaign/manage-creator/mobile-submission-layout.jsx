@@ -181,7 +181,7 @@ const MobileSubmissionLayout = ({
   };
 
   return (
-    <Stack spacing={1} sx={{ width: '100%', p: 2 }}>
+    <Stack spacing={1} sx={{ width: '100%' }}>
       {getVisibleStages()?.map((stage, index) => (
         <Card
           key={stage.type}
@@ -199,6 +199,7 @@ const MobileSubmissionLayout = ({
               cursor: 'pointer',
               '&:hover': {
                 bgcolor: '#f5f5f5',
+                borderRadius: 2,
               },
               display: 'flex',
               alignItems: 'center',

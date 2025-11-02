@@ -36,24 +36,8 @@ import Iconify from 'src/components/iconify';
 // import FormProvider from 'src/components/hook-form/form-provider';
 import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
 
-// Configure PDF.js worker - use CDN for better reliability
-try {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-} catch (error) {
-  // Fallback to local worker if CDN fails
-  console.warn('Failed to set CDN worker, falling back to local worker:', error);
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url
-  ).toString();
-}
-
-// eslint-disable-next-line react/prop-types
-const AvatarIcon = ({ icon, ...props }) => (
-  <Avatar {...props}>
-    <Iconify icon={icon} />
-  </Avatar>
-);
+// Configure PDF.js worker - use HTTPS for better mobile compatibility
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 // const formatFileSize = (bytes) => {
 //   if (bytes === 0) return '0 Bytes';
@@ -376,80 +360,41 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     setSubmitStatus('');
   };
 
-  // const handleDownload = async (url) => {
-  //   try {
-  //     const response = await fetch(url);
-  //     // const contentType = response.headers.get('content-type');
-  //     const blob = await response.blob();
-  //     const filename = `${campaign?.id}-${campaign?.name}.pdf?v=${dayjs().toISOString()}.pdf`;
+  const handleDownload = async (url) => {
+    try {
+      const response = await fetch(url);
+      // const contentType = response.headers.get('content-type');
+      const blob = await response.blob();
+      const filename = `${campaign?.id}-${campaign?.name}.pdf?v=${dayjs().toISOString()}.pdf`;
 
-  //     // For browsers that support the download attribute
-  //     if ('download' in document.createElement('a')) {
-  //       const link = document.createElement('a');
-  //       link.href = window.URL.createObjectURL(blob);
-  //       link.download = filename;
-  //       link.style.display = 'none';
-  //       document.body.appendChild(link);
-  //       link.click();
-  //       document.body.removeChild(link);
-  //       window.URL.revokeObjectURL(link.href);
-  //     }
-  //     // For IE10+
-  //     else if (navigator.msSaveBlob) {
-  //       navigator.msSaveBlob(blob, filename);
-  //     }
-  //     // Fallback - open in new window
-  //     else {
-  //       const newWindow = window.open(url, '_blank');
-  //       if (!newWindow) {
-  //         enqueueSnackbar('Please allow popups for this website to download the file.', {
-  //           variant: 'warning',
-  //         });
-  //       }
-  //     }
-  //   } catch (error) {
-  //     enqueueSnackbar('Download failed. Please try again.', { variant: 'error' });
-  //   }
-  // };
-
-  // const handleDownload = async (url) => {
-  //   try {
-  //     const response = await fetch(url);
-  //     const blob = await response.blob();
-  //     const filename = `${campaign?.id}-${campaign?.name}-${dayjs().toISOString()}.pdf`;
-
-  //     if ('download' in document.createElement('a')) {
-  //       const link = document.createElement('a');
-  //       const blobUrl = window.URL.createObjectURL(blob);
-  //       link.href = blobUrl;
-  //       link.download = filename;
-  //       link.style.display = 'none';
-  //       document.body.appendChild(link);
-  //       link.click();
-  //       document.body.removeChild(link);
-
-  //       // Delay revocation to ensure Safari processes the download
-  //       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000);
-  //     }
-  //     // For IE10+
-  //     else if (navigator.msSaveBlob) {
-  //       navigator.msSaveBlob(blob, filename);
-  //     }
-  //     // Fallback - open in a new window
-  //     else {
-  //       const newWindow = window.open(url, '_blank');
-  //       if (!newWindow) {
-  //         enqueueSnackbar('Please allow popups for this website to download the file.', {
-  //           variant: 'warning',
-  //         });
-  //       }
-  //     }
-  //   } catch (error) {
-  //     enqueueSnackbar('Download failed. Please try again.', { variant: 'error' });
-  //   }
-  // };
-
-  // V3 pitches removed
+      // For browsers that support the download attribute
+      if ('download' in document.createElement('a')) {
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(link.href);
+      }
+      // For IE10+
+      else if (navigator.msSaveBlob) {
+        navigator.msSaveBlob(blob, filename);
+      }
+      // Fallback - open in new window
+      else {
+        const newWindow = window.open(url, '_blank');
+        if (!newWindow) {
+          enqueueSnackbar('Please allow popups for this website to download the file.', {
+            variant: 'warning',
+          });
+        }
+      }
+    } catch (error) {
+      enqueueSnackbar('Download failed. Please try again.', { variant: 'error' });
+    }
+  };
 
   return (
     <Box p={1.5} sx={{ pb: 0 }}>
@@ -638,6 +583,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       bgcolor: '#203ff5',
                       opacity: 0.9,
                     },
+                    flex: { xs: 1, md: 'none' },
                   }}
                 >
                   Sign Agreement
@@ -722,33 +668,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   Before starting the campaign, you must sign the standard agreement submission
                   procedure!
                 </Typography>
-                {/* <Typography variant="body1" sx={{ color: '#221f20', mb: 2 }}>
+                <Typography variant="body1" sx={{ color: '#221f20', mb: 2 }}>
                   Download the agreement PDF from the link below, and then upload it back here to
                   proceed to the next step.
-                </Typography> */}
-
-                {/* <Button
-                  variant="contained"
-                  startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                  onClick={() => handleDownload(agreementUrl)}
-                  sx={{
-                    bgcolor: 'white',
-                    border: 1,
-                    borderColor: '#e7e7e7',
-                    borderBottom: 3,
-                    borderBottomColor: '#e7e7e7',
-                    color: '#203ff5',
-                    '&:hover': {
-                      bgcolor: 'white',
-                      borderColor: '#e7e7e7',
-                    },
-                    '& .MuiButton-startIcon': {
-                      color: '#203ff5',
-                    },
-                  }}
-                >
-                  Download Agreement
-                </Button> */}
+                </Typography>
 
                 {/* Full-width Scrollable PDF Preview */}
                 <Box
@@ -819,7 +742,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 }}
               /> */}
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                 <Button
                   variant="contained"
                   onClick={editor.onTrue}
@@ -830,15 +753,40 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     borderBottom: 3.5,
                     borderBottomColor: '#112286',
                     borderRadius: 1.5,
-                    px: 2.5,
+                    px: 2,
                     py: 1.2,
                     '&:hover': {
                       bgcolor: '#203ff5',
                       opacity: 0.9,
                     },
+                    flex: { xs: 1, md: 'none' },
                   }}
                 >
                   Sign Agreement
+                </Button>
+
+                <Button
+                  variant="contained"
+                  onClick={() => handleDownload(agreementUrl)}
+                  sx={{
+                    bgcolor: '#fff',
+                    border: 1,
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderRadius: 1.5,
+                    borderBottomColor: '#e7e7e7',
+                    color: '#203ff5',
+                    '&:hover': {
+                      bgcolor: 'white',
+                      borderColor: '#e7e7e7',
+                    },
+                    '& .MuiButton-startIcon': {
+                      color: '#203ff5',
+                    },
+                  }}
+                >
+                  <Typography variant='body2' fontWeight={'bold'} sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>
             </Stack>
@@ -980,34 +928,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   Before starting the campaign, you must sign the standard agreement submission
                   procedure!
                 </Typography>
-                {/* <Typography variant="body1" sx={{ color: '#221f20', mb: 2 }}>
-                  Download the agreement PDF from the link below, and then upload it back here to
-                  proceed to the next step.
-                </Typography> */}
-
-                {/* <Button
-                  variant="contained"
-                  startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                  onClick={() => handleDownload(agreementUrl)}
-                  sx={{
-                    bgcolor: 'white',
-                    border: 1,
-                    borderColor: '#e7e7e7',
-                    borderBottom: 3,
-                    borderBottomColor: '#e7e7e7',
-                    color: '#203ff5',
-                    // ml: -1,
-                    '&:hover': {
-                      bgcolor: 'white',
-                      borderColor: '#e7e7e7',
-                    },
-                    '& .MuiButton-startIcon': {
-                      color: '#203ff5',
-                    },
-                  }}
-                >
-                  Download Agreement
-                </Button> */}
 
                 <Box
                   sx={{
@@ -1068,35 +988,51 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 </Box>
               </Box>
 
-              <Box
-                sx={{
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  mb: -2,
-                  mx: -1.5,
-                }}
-              />
-
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'space-between', md: 'flex-end'}, gap: 1 }}>
                 <Button
                   variant="contained"
                   onClick={editor.onTrue}
-                  startIcon={<Iconify icon="solar:document-add-bold-duotone" width={24} />}
+                  startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
                   sx={{
                     bgcolor: '#203ff5',
                     color: 'white',
                     borderBottom: 3.5,
                     borderBottomColor: '#112286',
                     borderRadius: 1.5,
-                    px: 2.5,
+                    px: 2,
                     py: 1.2,
                     '&:hover': {
                       bgcolor: '#203ff5',
                       opacity: 0.9,
                     },
+                    flex: { xs: 1, md: 'none' },
                   }}
                 >
                   Sign Agreement
+                </Button>
+
+                <Button
+                  variant="contained"
+                  onClick={() => handleDownload(agreementUrl)}
+                  sx={{
+                    bgcolor: '#fff',
+                    border: 1,
+                    borderColor: '#e7e7e7',
+                    borderBottom: 3,
+                    borderRadius: 1.5,
+                    borderBottomColor: '#e7e7e7',
+                    color: '#203ff5',
+                    '&:hover': {
+                      bgcolor: '#f2f2f2',
+                      borderColor: '#e7e7e7',
+                    },
+                    '& .MuiButton-startIcon': {
+                      color: '#203ff5',
+                    },
+                  }}
+                >
+                  <Typography variant='body2' fontWeight={'bold'} sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>
             </Stack>

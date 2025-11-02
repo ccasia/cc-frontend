@@ -203,7 +203,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       let response;
 
       // Check if this is a V3 pitch (client-created campaign)
-      if (campaign?.origin === 'CLIENT') {
+      if (campaign?.submissionVersion === 'v4') {
         // Debug: Check what endpoints are available
         console.log('Available endpoints:', endpoints);
         console.log('Pitch endpoints:', endpoints?.pitch);
@@ -232,8 +232,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           status: 'approved',
         };
 
-        // Add UGC videos only for admin-created campaigns
-        if (campaign?.origin !== 'CLIENT') {
+        // Add UGC videos only for v4 campaigns
+        if (campaign?.submissionVersion !== 'v4') {
           requestData.totalUGCVideos = totalUGCVideos;
         }
 
@@ -265,7 +265,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       let response;
 
       // Check if this is a V3 pitch (client-created campaign)
-      if (campaign?.origin === 'CLIENT') {
+      if (campaign?.submissionVersion === 'v4') {
         // Use V3 endpoint for client-created campaigns
         const v3PitchId = pitch.pitchId || pitch.id; // Use pitchId as it seems to be the correct identifier
 
@@ -320,7 +320,7 @@ if (onUpdate) {
 
       let response;
 
-      if (campaign?.origin === 'CLIENT' && user?.role === 'client') {
+      if (campaign?.submissionVersion === 'v4' && user?.role === 'client') {
         const v3PitchId = pitch.pitchId || pitch.id;
 
         // Build request body
@@ -1490,7 +1490,7 @@ if (onUpdate) {
               {/* UGC input (approve, admin-created only) */}
               {campaign?.campaignCredits &&
                 confirmDialog.type === 'approve' &&
-                campaign?.origin !== 'CLIENT' && (
+                campaign?.submissionVersion !== 'v4' && (
                   <Box mt={2} width={1}>
                     <TextField
                       value={totalUGCVideos}
@@ -1551,7 +1551,7 @@ if (onUpdate) {
               // approve guard (unchanged)
               (confirmDialog.type === 'approve' &&
                 campaign?.campaignCredits &&
-                campaign?.origin !== 'CLIENT' &&
+                campaign?.submissionVersion !== 'v4' &&
                 (!totalUGCVideos || totalUGCVideos > ugcLeft)) ||
               // client-decline guard: require reason & if others then note
               (confirmDialog.type === 'decline' &&

@@ -190,14 +190,18 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   });
 
   const handleEditAgreement = (creator) => {
-    // For V3 campaigns (client-created), we need to create a new agreement
+    if (campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4') {
+      let creatorPitch = null;
+      
+      if (campaign?.submissionVersion === 'v4') {
 
-    if (campaign?.origin === 'CLIENT') {
-      // Check if there's an APPROVED pitch for this creator
-      const creatorPitch = campaign?.pitch?.find((p) => p.userId === creator.userId);
+        creatorPitch = { status: 'APPROVED' };
+      } else {
+        // For client campaigns, check the regular pitch array
+        creatorPitch = campaign?.pitch?.find((p) => p.userId === creator.userId);
+      }
 
-      if (creatorPitch?.status === 'APPROVED') {
-        // Create a new agreement object for V3
+      if (creatorPitch?.status === 'APPROVED' || campaign?.submissionVersion === 'v4') {
         const newAgreement = {
           userId: creator.userId,
           campaignId: campaign.id,
@@ -206,7 +210,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
             amount: null,
             currency: 'MYR',
           },
-          isNew: true, // Flag to indicate this is a new agreement for V3
+          isNew: true,
         };
 
         setSelectedAgreement(newAgreement);
