@@ -5,6 +5,7 @@ import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
 import { deepOrange } from '@mui/material/colors';
@@ -199,9 +200,8 @@ const CampaignDetailView = ({ id }) => {
     setSelectedTemplate(template);
   };
 
-  const [currentTab, setCurrentTab] = useState(
-    localStorage.getItem('campaigndetail') || 'campaign-content'
-  );
+  const [currentTab, setCurrentTab] = useState('campaign-content');
+  const location = useLocation();
 
   // Check if user is client
   const isClient = user?.role === 'client' || user?.admin?.role?.name === 'Client';
@@ -230,22 +230,43 @@ const CampaignDetailView = ({ id }) => {
 
   // Check if current tab is valid for client users
   useEffect(() => {
-    let allowedTabs = [...clientAllowedTabs];
-    
-    if (campaign?.submissionVersion === 'v4') {
-      // For v4: allow submissions-v4, remove deliverables
-      allowedTabs = allowedTabs.filter(tab => tab !== 'deliverables');
+    let tabToSet = null;
+
+    const queryParams = new URLSearchParams(location.search);
+    const tabFromUrl = queryParams.get('tab');
+
+    if (tabFromUrl) {
+      tabToSet = tabFromUrl;
     } else {
-      // For non-v4: allow deliverables, remove submissions-v4
-      allowedTabs = allowedTabs.filter(tab => tab !== 'submissions-v4');
+      const tabFromStorage = localStorage.getItem('campaigndetail');
+      
+      if (tabFromStorage) {
+        tabToSet = tabFromStorage;
+        localStorage.removeItem('campaigndetail');
+      }
     }
+
+    if (tabToSet) {
+      let allowedTabs = [...clientAllowedTabs];
+
+      if (campaign?.submissionVersion === 'v4') {
+        // For v4: allow submissions-v4, remove deliverables
+        allowedTabs = allowedTabs.filter(tab => tab !== 'deliverables');
+      } else {
+        // For non-v4: allow deliverables, remove submissions-v4
+        allowedTabs = allowedTabs.filter(tab => tab !== 'submissions-v4');
+      }
+
+      if (isClient && !allowedTabs.includes(tabToSet)) {
+        // If client user tries to access a restricted tab, redirect to overview
+        setCurrentTab('overview');
+      } else {
+        setCurrentTab(tabToSet);
+      }
+    }
+  }, [location.search, campaign, user]);
     
-    if (isClient && !allowedTabs.includes(currentTab)) {
-      // If client user tries to access a restricted tab, redirect to overview
-      setCurrentTab('overview');
-      localStorage.setItem('campaigndetail', 'overview');
-    }
-  }, [currentTab, isClient, campaign?.submissionVersion]);
+    
 
   const handleChangeTab = useCallback(
     (event, newValue) => {

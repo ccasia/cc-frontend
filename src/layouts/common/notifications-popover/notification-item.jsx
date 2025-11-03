@@ -47,6 +47,11 @@ export default function NotificationItem({ notification, markAsRead }) {
         link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
         break;
 
+      case 'Creator':
+        link = `/dashboard/campaign/discover/detail/${campaignId}`;
+        tabToSet = 'creator'
+        break;
+
       case 'Agreement':
         link = user.role.includes('admin')
           ? `/dashboard/campaign/discover/detail/${campaignId}`
@@ -65,6 +70,7 @@ export default function NotificationItem({ notification, markAsRead }) {
           link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
         }
         break;
+        
       case 'Post':
         link = user.role.includes('admin')
           ? `/dashboard/campaign/discover/detail/${campaignId}`
@@ -77,10 +83,15 @@ export default function NotificationItem({ notification, markAsRead }) {
         break;
 
       case 'Campaign':
-        link = user.role.includes('client')
-          ? `/dashboard/campaign/details/${campaignId}`
-          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
-        tabToSet = user.role.includes('client') ? 'overview' : null;
+        if (user.role.includes('admin')) {
+          link = `/dashboard/campaign/discover/detail/${campaignId}`;
+          tabToSet = 'overview';
+        } else if (user.role.includes('client')) {
+          link = `/dashboard/campaign/details/${campaignId}`;
+          tabToSet = 'overview';
+        } else {
+          link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        }
         break;
 
       case 'Status':
