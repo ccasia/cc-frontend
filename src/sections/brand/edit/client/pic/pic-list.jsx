@@ -24,15 +24,16 @@ import {
 import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
+import EditIcon from '@mui/icons-material/Edit';
 import Scrollbar from 'src/components/scrollbar';
 import { useTable, emptyRows, TableNoData, TableEmptyRows } from 'src/components/table';
 
 const TABLE_HEAD = [
-  { id: 'name', label: 'Name', width: 220 },
-  { id: 'email', label: 'Email', width: 180 },
-  { id: 'designation', label: 'Designation', width: 100 },
+  { id: 'name', label: 'Name', width: 200 },
+  { id: 'email', label: 'Email', width: 200 },
+  { id: 'designation', label: 'Designation', width: 150 },
   { id: 'status', label: 'Status', width: 100 },
-  { id: 'actions', label: 'Actions', width: 100 },
+  { id: 'actions', label: 'Actions', width: 100, textAlign: 'center' },
 ];
 
 const PICList = ({ personIncharge, companyId, onUpdate }) => {
@@ -119,22 +120,16 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
     const userData = picUsers[pic.id];
 
     if (!userData) {
-      return <Chip label="Inactive" color="default" size="small" />;
+      return <Chip label="Inactive" variant='outlined' color="default" />;
     }
 
     switch (userData.status) {
       case 'active':
-        return <Chip label="Active" color="success" size="small" />;
+        return <Chip label="Active" variant='outlined' color="success" />;
       case 'pending':
-        return <Chip label="Pending" color="warning" size="small" />;
-      case 'suspended':
-        return <Chip label="Suspended" color="error" size="small" />;
-      case 'banned':
-        return <Chip label="Banned" color="error" size="small" />;
-      case 'guest':
-        return <Chip label="Guest" color="info" size="small" />;
+        return <Chip label="Pending" variant='outlined' color="warning" />;
       default:
-        return <Chip label={userData.status || 'Unknown'} color="default" size="small" />;
+        return <Chip label={userData.status || 'Unknown'} variant='outlined' color="default" size="small" />;
     }
   };
 
@@ -146,7 +141,7 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
             <TableHead>
               <TableRow>
                 {TABLE_HEAD.map((item) => (
-                  <TableCell key={item.id} align="left">
+                  <TableCell key={item.id} sx={{ width: item.width, textAlign: item.textAlign }}>
                     {item.label}
                   </TableCell>
                 ))}
@@ -167,9 +162,9 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
                       <TableCell>{item?.email || 'None'}</TableCell>
                       <TableCell>{item?.designation || 'None'}</TableCell>
                       <TableCell>{getStatusChip(item)}</TableCell>
-                      <TableCell>
+                      <TableCell style={{ textAlign: 'center' }}>
                         <IconButton onClick={() => handleEditClick(item)} size="small" color="primary">
-                          <Iconify icon="eva:edit-fill" />
+                          <EditIcon fontSize='small' />
                         </IconButton>
                       </TableCell>
                     </TableRow>
