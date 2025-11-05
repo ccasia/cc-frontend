@@ -62,7 +62,7 @@ const steps = [
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
   { title: 'Campaign Type', logo: '⎏', color: '#D8FF01' },
   { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
-  { title: 'Select Admin Manager(s)', logo: '⛑️', color: '#FFF0E5' },
+  { title: 'Select Campaign Manager(s)', logo: '⛑️', color: '#FFF0E5' },
   { title: 'Agreement Form', logo: '✍️', color: '#026D54' },
   { title: 'Other Attachment ( Optional )', logo: '⺟', color: '#FF3500' },
 ];

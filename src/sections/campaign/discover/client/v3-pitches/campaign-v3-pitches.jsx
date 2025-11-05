@@ -1,18 +1,16 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useEffect } from 'react';
-import { LoadingButton } from '@mui/lab';
 import { useSnackbar } from 'notistack';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
+import { LoadingButton } from '@mui/lab';
+import { alpha } from '@mui/material/styles';
 import {
-  Dialog,
-  DialogTitle,
-  DialogActions,
-  DialogContent,
-  Autocomplete,
   Box,
   Stack,
   Table,
+  Dialog,
   Button,
   Avatar,
   TableRow,
@@ -22,39 +20,39 @@ import {
   TableHead,
   Typography,
   IconButton,
+  DialogTitle,
+  Autocomplete,
+  DialogActions,
+  DialogContent,
   TableContainer,
   CircularProgress,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useGetAllCreators } from 'src/api/creator';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
-import Iconify from 'src/components/iconify';
+import { useAuthContext } from 'src/auth/hooks';
+import { useGetAllCreators } from 'src/api/creator';
+
 import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import V3PitchModal from './v3-pitch-modal';
 import PitchRow from './v3-pitch-row';
+import V3PitchModal from './v3-pitch-modal';
 import BatchAssignUGCModal from './BatchAssignUGCModal';
 
-const countPitchesByStatus = (pitches, statusList) => {
-  return (
+const countPitchesByStatus = (pitches, statusList) => (
     pitches?.filter((pitch) => {
       const status = pitch.displayStatus || pitch.status;
       return statusList.includes(status);
     }).length || 0
   );
-};
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const { user } = useAuthContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc');
@@ -213,18 +211,14 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       );
     }
 
-    if (search) {
-      filtered = filtered?.filter((elem) =>
-        elem.user.name.toLowerCase().includes(search.toLowerCase())
-      );
-    }
+    // Search functionality removed (search state variable removed)
 
     return [...(filtered || [])].sort((a, b) => {
       const nameA = (a.user?.name || '').toLowerCase();
       const nameB = (b.user?.name || '').toLowerCase();
       return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
     });
-  }, [pitches, selectedFilter, search, sortDirection, campaign]);
+  }, [pitches, selectedFilter, sortDirection, campaign]);
 
   // Reopen modal when returning from media kit if state indicates
   useEffect(() => {
@@ -644,7 +638,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 >
                   Creator
                 </TableCell>
-                <TableCell
+                {/* <TableCell
                   sx={{
                     py: 1,
                     color: '#221f20',
@@ -655,7 +649,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                   }}
                 >
                   Engagement Rate
-                </TableCell>
+                </TableCell> */}
                 <TableCell
                   sx={{
                     py: 1,
@@ -935,6 +929,13 @@ export function AddCreatorModal({ open, onClose, onSelect, ugcLeft }) {
     </Dialog>
   );
 }
+
+AddCreatorModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  ugcLeft: PropTypes.number,
+};
 
 export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
@@ -1216,6 +1217,13 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   );
 }
 
+PlatformCreatorModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  campaign: PropTypes.object,
+  onUpdated: PropTypes.func,
+};
+
 export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
   const [formValues, setFormValues] = useState({
     creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
@@ -1315,7 +1323,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
               mb: 2,
             }}
           >
-            <Stack flexDirection={'row'} flex={1} spacing={2} mb={2}>
+            <Stack flexDirection="row" flex={1} spacing={2} mb={2}>
               {/* Creator Name */}
               <Box flex={1}>
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
@@ -1330,7 +1338,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
                 />
               </Box>
 
-              <Stack flexDirection={'row'} flex={1} spacing={2}>
+              <Stack flexDirection="row" flex={1} spacing={2}>
                 {/* Username */}
                 <Box flex={1}>
                   <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
@@ -1377,7 +1385,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
               </Box>
 
               {/* Engagement Rate */}
-              <Box flex={1}>
+              {/* <Box flex={1}>
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
                   Engagement Rate (%)
                 </Typography>
@@ -1388,7 +1396,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
                   value={creator.engagementRate}
                   onChange={handleCreatorChange(index, 'engagementRate')}
                 />
-              </Box>
+              </Box> */}
             </Box>
 
             {/* CS Comments */}
@@ -1479,13 +1487,13 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
       </DialogActions>
     </Dialog>
   );
-
-  <ViewNonPlatformCreatorsModal
-    open={viewOpen}
-    onClose={() => setViewOpen(false)}
-    creators={formValues.creators}
-  />;
 }
+
+NonPlatformCreatorFormDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onUpdated: PropTypes.func,
+};
 
 // View-only modal for Non-Platform Creator form values
 export function ViewNonPlatformCreatorsModal({
@@ -1593,6 +1601,13 @@ export function ViewNonPlatformCreatorsModal({
     </Dialog>
   );
 }
+
+ViewNonPlatformCreatorsModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  creators: PropTypes.array,
+  title: PropTypes.string,
+};
 
 export default CampaignV3Pitches;
 

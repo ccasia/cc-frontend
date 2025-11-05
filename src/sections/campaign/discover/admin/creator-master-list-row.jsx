@@ -4,17 +4,19 @@ import { useTheme } from '@emotion/react';
 
 import {
   Box,
+  Link,
   Stack,
   Avatar,
   Button,
+  Tooltip,
   TableRow,
   TableCell,
   Typography,
-  Tooltip,
   CircularProgress,
 } from '@mui/material';
 
 import { useCreatorSocialMediaData } from 'src/hooks/use-get-social-media-data';
+
 import { formatNumber } from 'src/utils/media-kit-utils';
 
 /**
@@ -67,6 +69,9 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
   };
 
   const displayData = getDisplayData();
+
+  // Get profile link - prioritize creator.profileLink, fallback to user.guestProfileLink
+  const profileLink = pitch.user?.creator?.profileLink || pitch.user?.guestProfileLink;
   const statusInfo = getStatusInfo(pitch);
 
   return (
@@ -99,13 +104,27 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
         </Stack>
       </TableCell>
       <TableCell>
-        {isLoading ? (
-          <CircularProgress size={16} thickness={6} />
-        ) : (
+        {isLoading && <CircularProgress size={16} thickness={6} />}
+        {!isLoading && profileLink && (
+          <Link
+            href={profileLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="hover"
+            sx={{
+              color: 'primary.main',
+              fontWeight: 500,
+              fontSize: '0.875rem',
+            }}
+          >
+            {displayData.username}
+          </Link>
+        )}
+        {!isLoading && !profileLink && (
           <Typography variant="body2">{displayData.username}</Typography>
         )}
       </TableCell>
-      <TableCell>
+      {/* <TableCell>
         {isLoading ? (
           <CircularProgress size={16} thickness={6} />
         ) : (
@@ -113,7 +132,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
             {displayData.engagementRate ? `${displayData.engagementRate}%` : '-'}
           </Typography>
         )}
-      </TableCell>
+      </TableCell> */}
       <TableCell>
         {isLoading ? (
           <CircularProgress size={16} thickness={6} />

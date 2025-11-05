@@ -1,25 +1,26 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
 
 import {
   Box,
   Stack,
   Avatar,
+  Tooltip,
   TableRow,
   TableCell,
   Typography,
   IconButton,
   CircularProgress,
-  Tooltip,
 } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useCreatorSocialMediaData } from 'src/hooks/use-get-social-media-data';
 
+import { formatNumber } from 'src/utils/media-kit-utils';
+
 import Iconify from 'src/components/iconify';
 
-import { formatNumber } from 'src/utils/media-kit-utils';
 import V3PitchActions from './v3-pitch-actions';
 
 const TYPE_LABELS = {
@@ -28,10 +29,13 @@ const TYPE_LABELS = {
   shortlisted: 'Shortlisted',
 };
 
-const PitchTypeCell = React.memo(function PitchTypeCell({ type, isGuestCreator }) {
+const PitchTypeCell = React.memo(({ type, isGuestCreator }) => {
   const label = TYPE_LABELS[type] ?? (type || '—');
-  const subtitle =
-    type === 'shortlisted' ? (isGuestCreator ? '(Non-platform)' : '(On Platform)') : null;
+
+  let subtitle = null;
+  if (type === 'shortlisted') {
+    subtitle = isGuestCreator ? '(Non-platform)' : '(On Platform)';
+  }
 
   return (
     <Stack>
@@ -63,6 +67,7 @@ const getStatusText = (status, pitch, campaign) => {
   const statusTextMap = {
     PENDING_REVIEW: 'PENDING REVIEW',
     SENT_TO_CLIENT: 'SENT TO CLIENT',
+    SENT_TO_CLIENT_WITH_COMMENTS: 'SENT TO CLIENT',
     MAYBE: 'MAYBE',
     maybe: 'MAYBE',
     APPROVED: 'APPROVED',
@@ -70,10 +75,6 @@ const getStatusText = (status, pitch, campaign) => {
     AGREEMENT_PENDING: 'AGREEMENT PENDING',
     AGREEMENT_SUBMITTED: 'AGREEMENT SUBMITTED',
   };
-
-  if (status === 'SENT_TO_CLIENT_WITH_COMMENTS') {
-    return statusTextMap.SENT_TO_CLIENT;
-  }
 
   return statusTextMap[status] || status;
 };
@@ -145,7 +146,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           </Stack>
         </Stack>
       </TableCell>
-      <TableCell>
+      {/* <TableCell>
         {isLoading ? (
           <CircularProgress size={16} thickness={6} />
         ) : (
@@ -154,7 +155,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
             {displayData.engagementRate && '%'}
           </Typography>
         )}
-      </TableCell>
+      </TableCell> */}
       <TableCell>
         {isLoading ? (
           <CircularProgress size={16} thickness={6} />
