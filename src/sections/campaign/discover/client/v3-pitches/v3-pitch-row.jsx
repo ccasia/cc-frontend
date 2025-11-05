@@ -63,6 +63,7 @@ const getStatusText = (status, pitch, campaign) => {
   const statusTextMap = {
     PENDING_REVIEW: 'PENDING REVIEW',
     SENT_TO_CLIENT: 'SENT TO CLIENT',
+    SENT_TO_CLIENT_WITH_COMMENTS: 'SENT TO CLIENT',
     MAYBE: 'MAYBE',
     maybe: 'MAYBE',
     APPROVED: 'APPROVED',
@@ -70,10 +71,6 @@ const getStatusText = (status, pitch, campaign) => {
     AGREEMENT_PENDING: 'AGREEMENT PENDING',
     AGREEMENT_SUBMITTED: 'AGREEMENT SUBMITTED',
   };
-
-  if (status === 'SENT_TO_CLIENT_WITH_COMMENTS') {
-    return statusTextMap.SENT_TO_CLIENT;
-  }
 
   return statusTextMap[status] || status;
 };
