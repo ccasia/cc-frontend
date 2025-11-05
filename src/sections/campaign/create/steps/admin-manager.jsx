@@ -17,15 +17,15 @@ const CampaignAdminManager = () => {
 
   const campaignManager = watch('campaignManager');
 
-  const selectedAdminManagers = useMemo(() => campaignManager || [], [campaignManager]);
+  const selectedCampaignManagers = useMemo(() => campaignManager || [], [campaignManager]);
 
-  const filteredAdmins = useMemo(
-    () => admins?.filter((item) => item.role === 'CSM' || item.role === 'Client') || [],
+  const filteredCampaignManagers = useMemo(
+    () => admins?.filter((item) => item.role === 'CSM' || item.role === 'Client').sort((a, b) => a.name.localeCompare(b.name)) || [],
     [admins]
   );
 
   // Check if any selected admin has the 'Client' role
-  const hasClientUser = useMemo(() => selectedAdminManagers.some((manager) => manager?.role === 'Client'), [selectedAdminManagers]);
+  const hasClientUser = useMemo(() => selectedCampaignManagers.some((manager) => manager?.role === 'Client'), [selectedCampaignManagers]);
 
   // Automatically set submissionVersion to 'v4' when a client user is added
   useEffect(() => {
@@ -82,7 +82,7 @@ const CampaignAdminManager = () => {
               name="campaignManager"
               multiple
               placeholder="Campaign Manager"
-              options={filteredAdmins}
+              options={filteredCampaignManagers}
               freeSolo
               isOptionEqualToValue={(option, value) => option.id === value.id}
               getOptionLabel={(option) => option.name}
