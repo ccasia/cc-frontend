@@ -592,7 +592,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 disabled={
                   isDisabled ||
                   (campaign?.submissionVersion === 'v4'
-                    ? v4UsedCredits !== null && v4UsedCredits >= campaign?.campaignCredits
+                    ? v4UsedCredits !== null && campaign?.campaignCredits && v4UsedCredits >= campaign.campaignCredits
                     : typeof ugcLeft === 'number' && ugcLeft <= 0)
                 }
                 sx={{
@@ -802,8 +802,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           campaignId={campaign.id}
           adminComments={batchAdminComments}
           creditsLeft={
-            (campaign?.campaignCredits ?? 0) -
-            (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0)
+            campaign?.submissionVersion === 'v4'
+              ? ugcLeft // For v4 campaigns, use ugcLeft which already counts only sent agreements
+              : (campaign?.campaignCredits ?? 0) -
+                (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0)
           }
           onAssigned={() => {
             setBatchCreditsOpen(false);
@@ -936,16 +938,50 @@ export function AddCreatorModal({ open, onClose, onSelect, ugcLeft }) {
 
 export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
+  const { data: agreements } = useGetAgreements(campaign?.id);
   const [selected, setSelected] = useState([]);
   const [commentOpen, setCommentOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // For v4 campaigns, calculate credits used only from sent agreements
+  const v4UsedCredits = useMemo(() => {
+    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+    if (!agreements || !campaign?.shortlisted) return 0;
+    
+    // Get userIds of Platform Creators whose agreements have been sent
+    const sentAgreementUserIds = new Set(
+      agreements
+        .filter(
+          (agreement) =>
+            agreement.isSent &&
+            agreement.user?.creator?.isGuest !== true
+        )
+        .map((agreement) => agreement.userId)
+    );
+    
+    return campaign.shortlisted.reduce((acc, creator) => {
+      if (
+        sentAgreementUserIds.has(creator.userId) &&
+        creator.user?.creator?.isGuest !== true &&
+        creator.ugcVideos
+      ) {
+        return acc + (creator.ugcVideos || 0);
+      }
+      return acc;
+    }, 0);
+  }, [campaign, agreements]);
+
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
+    // For v4 campaigns, only count credits from sent agreements
+    if (campaign?.submissionVersion === 'v4') {
+      return campaign.campaignCredits - (v4UsedCredits ?? 0);
+    }
+    // For non-v4 campaigns, count all shortlisted creators
     const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
     return campaign.campaignCredits - totalUGCs;
-  }, [campaign]);
+  }, [campaign, v4UsedCredits]);
 
   const shortlistedCreators = campaign?.shortlisted || [];
   const shortlistedIds = new Set(shortlistedCreators.map((c) => c.userId));
