@@ -1,7 +1,7 @@
-import React, { memo, useMemo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
+import React, { memo, useMemo, useEffect } from 'react';
 
-import { Box, Chip, Stack, Avatar, FormLabel, CircularProgress, Alert } from '@mui/material';
+import { Box, Chip, Stack, Alert, Avatar, FormLabel, CircularProgress } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -15,17 +15,17 @@ const CampaignAdminManager = () => {
   const { user } = useAuthContext();
   const { watch, setValue } = useFormContext();
 
-  const selectedAdminManagers = watch('adminManager') || [];
+  const campaignManager = watch('campaignManager');
+
+  const selectedAdminManagers = useMemo(() => campaignManager || [], [campaignManager]);
 
   const filteredAdmins = useMemo(
-    () => !isLoading && admins.filter((item) => item.admin?.role?.name === 'CSM' || item.admin?.role?.name === 'Client'),
-    [admins, isLoading]
+    () => admins?.filter((item) => item.role === 'CSM' || item.role === 'Client') || [],
+    [admins]
   );
 
   // Check if any selected admin has the 'Client' role
-  const hasClientUser = useMemo(() => {
-    return selectedAdminManagers.some((manager) => manager?.role === 'Client');
-  }, [selectedAdminManagers]);
+  const hasClientUser = useMemo(() => selectedAdminManagers.some((manager) => manager?.role === 'Client'), [selectedAdminManagers]);
 
   // Automatically set submissionVersion to 'v4' when a client user is added
   useEffect(() => {
@@ -76,30 +76,23 @@ const CampaignAdminManager = () => {
                 color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
               }}
             >
-              Admin Managers
+              Campaign Managers
             </FormLabel>
             <RHFAutocomplete
-              name="adminManager"
+              name="campaignManager"
               multiple
-              placeholder="Admin Manager"
-              options={
-                filteredAdmins.map((admin) => ({
-                  id: admin?.id,
-                  name: admin?.name,
-                  role: admin?.admin?.role?.name,
-                  photoURL: admin?.photoURL,
-                })) || []
-              }
+              placeholder="Campaign Manager"
+              options={filteredAdmins}
               freeSolo
               isOptionEqualToValue={(option, value) => option.id === value.id}
-              getOptionLabel={(option) => `${option.name}`}
+              getOptionLabel={(option) => option.name}
               renderTags={(selected, getTagProps) =>
                 selected.map((option, index) => (
                   <Chip
                     {...getTagProps({ index })}
                     avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
                     key={option?.id}
-                    label={option?.id === user?.id ? 'Me' : option?.name || ''}
+                    label={option?.id === user?.id ? 'Me' : option?.name}
                     size="small"
                     variant="outlined"
                     sx={{

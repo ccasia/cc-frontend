@@ -25,11 +25,11 @@ import { useGetAdmins } from 'src/sections/campaign/create/hooks/get-am';
 
 const EditCampaignAdmin = ({ open, campaign, onClose }) => {
   const { user } = useAuthContext();
-  const { data: admins, isLoading } = useGetAdmins('active');
+  const { data: admins } = useGetAdmins('active');
 
   const filteredAdmins = useMemo(
-    () => !isLoading && (admins?.filter((item) => item.admin?.role?.name === 'CSM') || []),
-    [admins, isLoading]
+    () => admins?.filter((item) => item.role === 'CSM' || item.role === 'Client') || [],
+    [admins]
   );
 
   const existedAdmins = campaign?.campaignAdmin?.map(({ admin }) => ({
@@ -66,32 +66,23 @@ const EditCampaignAdmin = ({ open, campaign, onClose }) => {
   return (
     <Dialog open={open} fullWidth maxWidth="xs">
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle id="alert-dialog-title">Edit Campaign Admin</DialogTitle>
+        <DialogTitle id="alert-dialog-title">Edit Campaign Manager</DialogTitle>
 
         <DialogContent>
           <RHFAutocomplete
             name="admins"
-            placeholder="Admin Manager"
+            placeholder="Campaign Manager"
             multiple
             disableCloseOnSelect
-            options={
-              (!isLoading &&
-                filteredAdmins?.map((admin) => ({
-                  id: admin?.id,
-                  name: admin?.name,
-                  role: admin?.admin?.role?.name,
-                }))) ||
-              []
-            }
-            // freeSolo
+            options={filteredAdmins}
             isOptionEqualToValue={(option, value) => option.id === value.id}
-            getOptionLabel={(option) => `${option.name}`}
+            getOptionLabel={(option) => option.name}
             renderTags={(selected, getTagProps) =>
               selected.map((option, index) => (
                 <Chip
                   {...getTagProps({ index })}
                   key={option?.id}
-                  label={option?.id === user?.id ? 'Me' : option?.name || ''}
+                  label={option?.id === user?.id ? 'Me' : option?.name}
                   size="small"
                   color="info"
                   variant="soft"
