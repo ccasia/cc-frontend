@@ -740,8 +740,9 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               onClick={modal.onTrue}
               disabled={
                 isDisabled ||
-                // For v4 campaigns, always allow shortlisting - credits are only validated when "Generate and Send" is clicked
-                (campaign?.submissionVersion !== 'v4' && totalUsedCredits >= (campaign?.campaignCredits || 0))
+                (campaign?.submissionVersion === 'v4'
+                  ? v4UsedCredits !== null && campaign?.campaignCredits && v4UsedCredits >= campaign.campaignCredits
+                  : totalUsedCredits >= (campaign?.campaignCredits || 0))
               }
               sx={{
                 bgcolor: '#ffffff',
