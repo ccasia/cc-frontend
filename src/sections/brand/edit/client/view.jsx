@@ -406,7 +406,9 @@ const CompanyEditView = ({ id }) => {
 
             {activeTab === 'campaign' && <CampaignClientList campaigns={campaigns} />}
 
-            {activeTab === 'pic' && <PICList personIncharge={company?.pic} />}
+            {activeTab === 'pic' && (
+              <PICList personIncharge={company?.pic} companyId={company?.id} onUpdate={mutate} />
+            )}
 
             {activeTab === 'child-accounts' && <ChildAccountList companyId={id} company={company} />}
           </Box>
