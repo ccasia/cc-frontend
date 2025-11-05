@@ -53,7 +53,6 @@ const countPitchesByStatus = (pitches, statusList) => (
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const { user } = useAuthContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc');
@@ -212,18 +211,14 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       );
     }
 
-    if (search) {
-      filtered = filtered?.filter((elem) =>
-        elem.user.name.toLowerCase().includes(search.toLowerCase())
-      );
-    }
+    // Search functionality removed (search state variable removed)
 
     return [...(filtered || [])].sort((a, b) => {
       const nameA = (a.user?.name || '').toLowerCase();
       const nameB = (b.user?.name || '').toLowerCase();
       return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
     });
-  }, [pitches, selectedFilter, search, sortDirection, campaign]);
+  }, [pitches, selectedFilter, sortDirection, campaign]);
 
   // Reopen modal when returning from media kit if state indicates
   useEffect(() => {
@@ -935,6 +930,13 @@ export function AddCreatorModal({ open, onClose, onSelect, ugcLeft }) {
   );
 }
 
+AddCreatorModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  ugcLeft: PropTypes.number,
+};
+
 export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
   const { data: agreements } = useGetAgreements(campaign?.id);
@@ -1215,6 +1217,13 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   );
 }
 
+PlatformCreatorModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  campaign: PropTypes.object,
+  onUpdated: PropTypes.func,
+};
+
 export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
   const [formValues, setFormValues] = useState({
     creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
@@ -1478,13 +1487,13 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
       </DialogActions>
     </Dialog>
   );
-
-  <ViewNonPlatformCreatorsModal
-    open={viewOpen}
-    onClose={() => setViewOpen(false)}
-    creators={formValues.creators}
-  />;
 }
+
+NonPlatformCreatorFormDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onUpdated: PropTypes.func,
+};
 
 // View-only modal for Non-Platform Creator form values
 export function ViewNonPlatformCreatorsModal({
@@ -1592,6 +1601,13 @@ export function ViewNonPlatformCreatorsModal({
     </Dialog>
   );
 }
+
+ViewNonPlatformCreatorsModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  creators: PropTypes.array,
+  title: PropTypes.string,
+};
 
 export default CampaignV3Pitches;
 
