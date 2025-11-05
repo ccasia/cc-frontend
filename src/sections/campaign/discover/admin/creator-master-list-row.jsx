@@ -12,6 +12,7 @@ import {
   Typography,
   Tooltip,
   CircularProgress,
+  Link,
 } from '@mui/material';
 
 import { useCreatorSocialMediaData } from 'src/hooks/use-get-social-media-data';
@@ -67,6 +68,9 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
   };
 
   const displayData = getDisplayData();
+
+  // Get profile link - prioritize creator.profileLink, fallback to user.guestProfileLink
+  const profileLink = pitch.user?.creator?.profileLink || pitch.user?.guestProfileLink;
   const statusInfo = getStatusInfo(pitch);
 
   return (
@@ -101,6 +105,20 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
       <TableCell>
         {isLoading ? (
           <CircularProgress size={16} thickness={6} />
+        ) : profileLink ? (
+          <Link
+            href={profileLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="hover"
+            sx={{
+              color: 'primary.main',
+              fontWeight: 500,
+              fontSize: '0.875rem',
+            }}
+          >
+            {displayData.username}
+          </Link>
         ) : (
           <Typography variant="body2">{displayData.username}</Typography>
         )}

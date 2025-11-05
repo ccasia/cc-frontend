@@ -134,6 +134,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                 creator: pitch.user?.creator,
                 engagementRate: pitch.user?.instagramUser?.engagement_rate,
                 followerCount: pitch.user?.instagramUser?.followers_count,
+                guestProfileLink: pitch.user?.guestProfileLink,
               },
               status: pitch.displayStatus || pitch.status || 'undecided',
               displayStatus: pitch.displayStatus || pitch.status || 'undecided',
@@ -171,6 +172,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               creator: item.user?.creator,
               engagementRate: item.user?.instagramUser?.engagement_rate,
               followerCount: item.user?.instagramUser?.followers_count,
+              guestProfileLink: item.user?.guestProfileLink,
             },
             status: 'approved', // Shortlisted creators are approved
             createdAt: item.shortlisted_date || new Date().toISOString(),
@@ -201,6 +203,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               creator: pitch.user?.creator,
               engagementRate: pitch.user?.instagramUser?.engagement_rate,
               followerCount: pitch.user?.instagramUser?.followers_count,
+              guestProfileLink: pitch.user?.guestProfileLink,
             },
             status: pitch.status || 'undecided',
             createdAt: pitch.createdAt || new Date().toISOString(),
