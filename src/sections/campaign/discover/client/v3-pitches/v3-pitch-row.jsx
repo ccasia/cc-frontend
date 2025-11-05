@@ -142,7 +142,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           </Stack>
         </Stack>
       </TableCell>
-      <TableCell>
+      {/* <TableCell>
         {isLoading ? (
           <CircularProgress size={16} thickness={6} />
         ) : (
@@ -151,7 +151,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
             {displayData.engagementRate && '%'}
           </Typography>
         )}
-      </TableCell>
+      </TableCell> */}
       <TableCell>
         {isLoading ? (
           <CircularProgress size={16} thickness={6} />

@@ -651,7 +651,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                   >
                     Username
                   </TableCell>
-                  <TableCell
+                  {/* <TableCell
                     sx={{
                       py: 1,
                       color: '#221f20',
@@ -662,7 +662,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                     }}
                   >
                     Engagement Rate
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell
                     sx={{
                       py: 1,

@@ -644,7 +644,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 >
                   Creator
                 </TableCell>
-                <TableCell
+                {/* <TableCell
                   sx={{
                     py: 1,
                     color: '#221f20',
@@ -655,7 +655,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                   }}
                 >
                   Engagement Rate
-                </TableCell>
+                </TableCell> */}
                 <TableCell
                   sx={{
                     py: 1,
@@ -1341,7 +1341,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
               </Box>
 
               {/* Engagement Rate */}
-              <Box flex={1}>
+              {/* <Box flex={1}>
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
                   Engagement Rate (%)
                 </Typography>
@@ -1352,7 +1352,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
                   value={creator.engagementRate}
                   onChange={handleCreatorChange(index, 'engagementRate')}
                 />
-              </Box>
+              </Box> */}
             </Box>
 
             {/* CS Comments */}
