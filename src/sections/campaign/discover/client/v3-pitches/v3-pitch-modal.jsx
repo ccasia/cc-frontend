@@ -45,7 +45,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const [ugcCreditsModalOpen, setUgCCreditsModalOpen] = useState(false);
-  const [swapCreatorModalOpen, setSwapCreatorModalOpen] = useState(false);
   const [comments, setComments] = useState('');
   const [creatorProfileFull, setCreatorProfileFull] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram', 'tiktok', or 'both'

@@ -43,8 +43,8 @@ import PICList from './pic/pic-list';
 import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
 import PackageHistoryList from './pakcage-history-list';
-import CampaignClientList from './campaign-client/view/campaign-list';
 import ChildAccountList from './child-accounts/child-account-list';
+import CampaignClientList from './campaign-client/view/campaign-list';
 
 const findLatestPackage = (packages) => {
   if (packages?.length === 0) {

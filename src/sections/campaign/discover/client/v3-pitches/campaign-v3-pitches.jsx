@@ -1,18 +1,16 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useEffect } from 'react';
-import { LoadingButton } from '@mui/lab';
 import { useSnackbar } from 'notistack';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
+import { LoadingButton } from '@mui/lab';
+import { alpha } from '@mui/material/styles';
 import {
-  Dialog,
-  DialogTitle,
-  DialogActions,
-  DialogContent,
-  Autocomplete,
   Box,
   Stack,
   Table,
+  Dialog,
   Button,
   Avatar,
   TableRow,
@@ -22,34 +20,35 @@ import {
   TableHead,
   Typography,
   IconButton,
+  DialogTitle,
+  Autocomplete,
+  DialogActions,
+  DialogContent,
   TableContainer,
   CircularProgress,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useGetAllCreators } from 'src/api/creator';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
-import Iconify from 'src/components/iconify';
+import { useAuthContext } from 'src/auth/hooks';
+import { useGetAllCreators } from 'src/api/creator';
+
 import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import V3PitchModal from './v3-pitch-modal';
 import PitchRow from './v3-pitch-row';
+import V3PitchModal from './v3-pitch-modal';
 import BatchAssignUGCModal from './BatchAssignUGCModal';
 
-const countPitchesByStatus = (pitches, statusList) => {
-  return (
+const countPitchesByStatus = (pitches, statusList) => (
     pitches?.filter((pitch) => {
       const status = pitch.displayStatus || pitch.status;
       return statusList.includes(status);
     }).length || 0
   );
-};
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const { user } = useAuthContext();
@@ -1315,7 +1314,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
               mb: 2,
             }}
           >
-            <Stack flexDirection={'row'} flex={1} spacing={2} mb={2}>
+            <Stack flexDirection="row" flex={1} spacing={2} mb={2}>
               {/* Creator Name */}
               <Box flex={1}>
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
@@ -1330,7 +1329,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
                 />
               </Box>
 
-              <Stack flexDirection={'row'} flex={1} spacing={2}>
+              <Stack flexDirection="row" flex={1} spacing={2}>
                 {/* Username */}
                 <Box flex={1}>
                   <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
