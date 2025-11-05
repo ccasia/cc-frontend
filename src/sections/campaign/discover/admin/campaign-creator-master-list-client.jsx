@@ -2,7 +2,6 @@
 import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
-import { useTheme } from '@emotion/react';
 import React, { useMemo, useState } from 'react';
 
 import {
@@ -10,7 +9,6 @@ import {
   Stack,
   Table,
   Button,
-  Avatar,
   TableRow,
   TextField,
   TableBody,
@@ -19,7 +17,6 @@ import {
   Typography,
   InputAdornment,
   TableContainer,
-  Tooltip,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -122,8 +119,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     if ((campaign.origin === 'CLIENT' || campaign.submissionVersion === 'v4') && v3Pitches) {
       return (
         v3Pitches
-          .map((pitch) => {
-            return {
+          .map((pitch) => ({
               id: pitch.userId || pitch.id,
               user: {
                 id: pitch.userId || pitch.user?.id,
@@ -150,8 +146,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               username: pitch.username,
               followerCount: pitch.followerCount,
               engagementRate: pitch.engagementRate,
-            };
-          })
+            }))
           // FIX: Only require user to exist, not user.creator
           .filter((creator) => !!creator.user && !!creator.user.id)
       );

@@ -4,18 +4,19 @@ import { useTheme } from '@emotion/react';
 
 import {
   Box,
+  Link,
   Stack,
   Avatar,
   Button,
+  Tooltip,
   TableRow,
   TableCell,
   Typography,
-  Tooltip,
   CircularProgress,
-  Link,
 } from '@mui/material';
 
 import { useCreatorSocialMediaData } from 'src/hooks/use-get-social-media-data';
+
 import { formatNumber } from 'src/utils/media-kit-utils';
 
 /**
