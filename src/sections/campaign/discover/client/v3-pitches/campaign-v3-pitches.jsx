@@ -32,6 +32,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useGetAllCreators } from 'src/api/creator';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import Iconify from 'src/components/iconify';
 import Label from 'src/components/label';
@@ -72,11 +73,50 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
 
+  const { data: agreements } = useGetAgreements(campaign?.id);
+
   const totalUsedCredits = campaign?.shortlisted?.reduce(
     (acc, creator) => acc + (creator?.ugcVideos ?? 0),
     0
   );
-  const ugcLeft = (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
+
+  // For v4 campaigns, count credits only from agreements that have been sent (isSent = true)
+  // AND only count Platform Creators (exclude Non-Platform/Guest creators)
+  // Sum the actual ugcVideos values, not just count agreements
+  const v4UsedCredits = useMemo(() => {
+    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+    if (!agreements || !campaign?.shortlisted) return 0;
+    
+    // Get userIds of Platform Creators whose agreements have been sent
+    const sentAgreementUserIds = new Set(
+      agreements
+        .filter(
+          (agreement) =>
+            agreement.isSent &&
+            agreement.user?.creator?.isGuest !== true
+        )
+        .map((agreement) => agreement.userId)
+    );
+    
+    return campaign.shortlisted.reduce((acc, creator) => {
+      if (
+        sentAgreementUserIds.has(creator.userId) &&
+        creator.user?.creator?.isGuest !== true &&
+        creator.ugcVideos
+      ) {
+        return acc + (creator.ugcVideos || 0);
+      }
+      return acc;
+    }, 0);
+  }, [campaign, agreements]);
+
+  const ugcLeft = useMemo(() => {
+    if (!campaign?.campaignCredits) return (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
+    if (campaign?.submissionVersion === 'v4') {
+      return campaign.campaignCredits - (v4UsedCredits ?? 0);
+    }
+    return (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
+  }, [campaign, totalUsedCredits, v4UsedCredits]);
 
   // Count pitches by display status
   const pendingReviewCount = countPitchesByStatus(pitches, ['PENDING_REVIEW']);
@@ -549,7 +589,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
             ) : (
               <Button
                 onClick={handleModalOpen}
-                disabled={isDisabled || (typeof ugcLeft === 'number' && ugcLeft <= 0)}
+                disabled={
+                  isDisabled ||
+                  (campaign?.submissionVersion === 'v4'
+                    ? v4UsedCredits !== null && v4UsedCredits >= campaign?.campaignCredits
+                    : typeof ugcLeft === 'number' && ugcLeft <= 0)
+                }
                 sx={{
                   bgcolor: '#ffffff',
                   border: '1px solid #e7e7e7',
