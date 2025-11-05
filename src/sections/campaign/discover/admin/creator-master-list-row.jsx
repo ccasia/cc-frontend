@@ -104,9 +104,8 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
         </Stack>
       </TableCell>
       <TableCell>
-        {isLoading ? (
-          <CircularProgress size={16} thickness={6} />
-        ) : profileLink ? (
+        {isLoading && <CircularProgress size={16} thickness={6} />}
+        {!isLoading && profileLink && (
           <Link
             href={profileLink}
             target="_blank"
@@ -120,7 +119,8 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
           >
             {displayData.username}
           </Link>
-        ) : (
+        )}
+        {!isLoading && !profileLink && (
           <Typography variant="body2">{displayData.username}</Typography>
         )}
       </TableCell>

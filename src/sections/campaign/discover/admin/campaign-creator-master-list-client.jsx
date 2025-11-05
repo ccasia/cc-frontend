@@ -107,7 +107,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
-    isError: v3PitchesError,
     mutate: v3PitchesMutate,
   } = useGetV3Pitches(shouldFetchV3Pitches ? campaign?.id : null);
 
