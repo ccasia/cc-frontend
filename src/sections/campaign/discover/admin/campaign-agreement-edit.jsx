@@ -75,7 +75,7 @@ const formatAmount = (value) => {
   }).format(cleanValue);
 };
 
-const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
+const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, agreementsMutate }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
 
@@ -131,6 +131,37 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
     console.log(agreement);
 
     try {
+      if (campaign?.submissionVersion === 'v4' && campaign?.campaignCredits) {
+        try {
+          const creditAssignment = await axiosInstance.post('/api/campaign/v4/assignCreditOnAgreementSend', {
+            userId: agreement?.user?.id,
+            campaignId: agreement?.campaignId,
+          });
+
+          if (creditAssignment?.status !== 200 || creditAssignment?.data?.error) {
+            loading.onFalse();
+            enqueueSnackbar(
+              creditAssignment?.data?.message || 'Cannot assign credits - all credits may be utilized',
+              { variant: 'error' }
+            );
+            return; 
+          }
+        } catch (error) {
+          loading.onFalse();
+          if (error?.response?.status === 400) {
+            enqueueSnackbar(
+              error?.response?.data?.message || 'Cannot send agreement - not enough credits available',
+              { variant: 'error' }
+            );
+          } else {
+            enqueueSnackbar(
+              error?.response?.data?.message || error?.message || 'Cannot send agreement - credits validation failed',
+              { variant: 'error' }
+            );
+          }
+          return;
+        }
+      }
       console.log('Generating PDF with values:', {
         currency: data.currency,
         amount: data.paymentAmount,
@@ -171,7 +202,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         user: agreement?.user,
         campaignId: agreement?.campaignId,
         id: agreement?.id,
-        isNew: agreement?.isNew || false, // Flag for V3 agreement creation
+        isNew: agreement?.isNew || false, 
       };
 
       console.log('Sending data to backend:', requestData);
@@ -193,7 +224,18 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
 
       await axiosInstance.patch(endpoints.campaign.sendAgreement, sendAgreementPayload);
 
-      mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
+
+      if (agreementsMutate) {
+        await agreementsMutate();
+      } else {
+        await mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
+      }
+
+      if (campaignMutate) {
+        await campaignMutate();
+      }
+
+      await mutate(endpoints.campaign.getCampaignById(agreement?.campaignId));
 
       // await mutate(
       //   endpoints.campaign.creatorAgreement(agreement.campaignId),
@@ -426,4 +468,6 @@ CampaignAgreementEdit.propTypes = {
   dialog: PropTypes.object,
   agreement: PropTypes.object,
   campaign: PropTypes.object,
+  campaignMutate: PropTypes.func,
+  agreementsMutate: PropTypes.func,
 };
