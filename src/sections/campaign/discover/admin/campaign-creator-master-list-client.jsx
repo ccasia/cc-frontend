@@ -2,7 +2,6 @@
 import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
-import { useTheme } from '@emotion/react';
 import React, { useMemo, useState } from 'react';
 
 import {
@@ -10,8 +9,6 @@ import {
   Stack,
   Table,
   Button,
-  Avatar,
-  Tooltip,
   TableRow,
   TextField,
   TableBody,
@@ -110,7 +107,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
-    isError: v3PitchesError,
     mutate: v3PitchesMutate,
   } = useGetV3Pitches(shouldFetchV3Pitches ? campaign?.id : null);
 
@@ -123,32 +119,33 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
       return (
         v3Pitches
           .map((pitch) => ({
-            id: pitch.userId || pitch.id,
-            user: {
-              id: pitch.userId || pitch.user?.id,
-              name: pitch.user?.name,
-              username: pitch.user?.instagramUser?.username,
-              photoURL: pitch.user?.photoURL,
-              status: pitch.user?.status || 'active',
-              creator: pitch.user?.creator,
-              engagementRate: pitch.user?.instagramUser?.engagement_rate,
-              followerCount: pitch.user?.instagramUser?.followers_count,
-            },
-            status: pitch.displayStatus || pitch.status || 'undecided',
-            displayStatus: pitch.displayStatus || pitch.status || 'undecided',
-            createdAt: pitch.createdAt || new Date().toISOString(),
-            type: pitch.type || 'text',
-            content: pitch.content || pitch.user?.creator?.about || 'No content available',
-            isShortlisted: false,
-            pitchId: pitch.id,
-            isV3: true,
-            adminComments: pitch.adminComments,
-            rejectionReason: pitch.rejectionReason,
-            customRejectionText: pitch.customRejectionText,
-            username: pitch.username,
-            followerCount: pitch.followerCount,
-            engagementRate: pitch.engagementRate,
-          }))
+              id: pitch.userId || pitch.id,
+              user: {
+                id: pitch.userId || pitch.user?.id,
+                name: pitch.user?.name,
+                username: pitch.user?.instagramUser?.username,
+                photoURL: pitch.user?.photoURL,
+                status: pitch.user?.status || 'active',
+                creator: pitch.user?.creator,
+                engagementRate: pitch.user?.instagramUser?.engagement_rate,
+                followerCount: pitch.user?.instagramUser?.followers_count,
+                guestProfileLink: pitch.user?.guestProfileLink,
+              },
+              status: pitch.displayStatus || pitch.status || 'undecided',
+              displayStatus: pitch.displayStatus || pitch.status || 'undecided',
+              createdAt: pitch.createdAt || new Date().toISOString(),
+              type: pitch.type || 'text',
+              content: pitch.content || pitch.user?.creator?.about || 'No content available',
+              isShortlisted: false,
+              pitchId: pitch.id,
+              isV3: true,
+              adminComments: pitch.adminComments,
+              rejectionReason: pitch.rejectionReason,
+              customRejectionText: pitch.customRejectionText,
+              username: pitch.username,
+              followerCount: pitch.followerCount,
+              engagementRate: pitch.engagementRate,
+            }))
           // FIX: Only require user to exist, not user.creator
           .filter((creator) => !!creator.user && !!creator.user.id)
       );
@@ -169,6 +166,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               creator: item.user?.creator,
               engagementRate: item.user?.instagramUser?.engagement_rate,
               followerCount: item.user?.instagramUser?.followers_count,
+              guestProfileLink: item.user?.guestProfileLink,
             },
             status: 'approved', // Shortlisted creators are approved
             createdAt: item.shortlisted_date || new Date().toISOString(),
@@ -199,6 +197,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               creator: pitch.user?.creator,
               engagementRate: pitch.user?.instagramUser?.engagement_rate,
               followerCount: pitch.user?.instagramUser?.followers_count,
+              guestProfileLink: pitch.user?.guestProfileLink,
             },
             status: pitch.status || 'undecided',
             createdAt: pitch.createdAt || new Date().toISOString(),
@@ -649,7 +648,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                   >
                     Username
                   </TableCell>
-                  <TableCell
+                  {/* <TableCell
                     sx={{
                       py: 1,
                       color: '#221f20',
@@ -660,7 +659,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                     }}
                   >
                     Engagement Rate
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell
                     sx={{
                       py: 1,

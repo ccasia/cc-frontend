@@ -6,6 +6,7 @@ import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 
+import { alpha } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
 import {
   Box,
@@ -20,12 +21,11 @@ import {
   TextField,
   IconButton,
   Typography,
-  DialogContent,
-  DialogActions,
   DialogTitle,
   Autocomplete,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -45,7 +45,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const [ugcCreditsModalOpen, setUgCCreditsModalOpen] = useState(false);
-  const [swapCreatorModalOpen, setSwapCreatorModalOpen] = useState(false);
   const [comments, setComments] = useState('');
   const [creatorProfileFull, setCreatorProfileFull] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram', 'tiktok', or 'both'
@@ -1720,7 +1719,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
               )}
             </Box>
 
-            <Stack flex={1} spacing={1} flexDirection={'row'}>
+            <Stack flex={1} spacing={1} flexDirection="row">
               {/* Username */}
               <Box flex={1}>
                 <Typography
@@ -1782,7 +1781,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
             </Stack>
           </Box>
 
-          <Stack spacing={1} flexDirection={'row'} mb={2}>
+          <Stack spacing={1} flexDirection="row" mb={2}>
             {/* Follower Count */}
             <Box flex={1}>
               <Typography

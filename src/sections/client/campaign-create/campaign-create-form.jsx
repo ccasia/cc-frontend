@@ -43,6 +43,7 @@ import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
+import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -51,6 +52,7 @@ const steps = [
   { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
   { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
+  { title: 'Other Attachment ( Optional )', logo: '⺟', color: '#FF3500' },
 ];
 
 const PDFEditor = lazy(() => import('src/sections/campaign/create/pdf-editor'));
@@ -121,6 +123,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     campaignCredits: Yup.number()
       .min(1, 'Minimum need to be 1')
       .required('Campaign credits is required'),
+      otherAttachments: Yup.array(),
   });
 
   const campaignInformationSchema = Yup.object().shape({
@@ -207,14 +210,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 2:
         return campaignImagesSchema;
       case 3:
-        return campaignTypeSchema;
-      case 4:
-        return timelineSchema;
-      case 5:
-        return campaignAdminSchema;
-      case 6:
-        return agreementSchema;
-      default:
+        return Yup.object().shape({
+          otherAttachments: Yup.array(),
+          referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
+        });
+      default: 
         return campaignSchema;
     }
   };
@@ -247,6 +247,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     campaignAdminManagers: [],
     campaignForm: [],
     otherAttachments: [],
+    referencesLinks: [],
     submissionVersion: 'v3',
   };
 
@@ -402,7 +403,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         campaignDont: Array.isArray(data.campaignDont)
           ? data.campaignDont.filter(Boolean).map(item => typeof item === 'object' ? item : { value: item }).filter(item => item.value)
           : [],
-        submissionVersion: data.submissionVersion || '',
+        referencesLinks: Array.isArray(data.referencesLinks) ? data.referencesLinks : [],
+        submissionVersion: data.submissionVersion || 'v3',
       };
       
       console.log('Client campaign data:', clientCampaignData);
@@ -418,6 +420,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             formData.append('campaignImages', data.campaignImages[i]);
           }
         }
+      }
+
+      // eslint-disable-next-line guard-for-in, no-restricted-syntax
+      for (const i in data.otherAttachments) {
+        formData.append('otherAttachments', data.otherAttachments[i]);
       }
       
       // Use the client-specific endpoint
@@ -554,6 +561,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return <CampaignTargetAudience />;
       case 2:
         return <CampaignUploadPhotos isLoading={isLoading} />;
+      case 3:
+        return <OtherAttachments />;
       default:
         return null;
     }

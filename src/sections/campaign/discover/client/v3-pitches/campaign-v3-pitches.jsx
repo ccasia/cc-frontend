@@ -5,7 +5,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
-import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 import {
   Box,
@@ -31,6 +30,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
@@ -43,16 +43,16 @@ import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import BatchAssignUGCModal from './BatchAssignUGCModal';
 
-const countPitchesByStatus = (pitches, statusList) =>
-  pitches?.filter((pitch) => {
-    const status = pitch.displayStatus || pitch.status;
-    return statusList.includes(status);
-  }).length || 0;
+const countPitchesByStatus = (pitches, statusList) => (
+    pitches?.filter((pitch) => {
+      const status = pitch.displayStatus || pitch.status;
+      return statusList.includes(status);
+    }).length || 0
+  );
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const { user } = useAuthContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc');
@@ -71,11 +71,50 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
 
+  const { data: agreements } = useGetAgreements(campaign?.id);
+
   const totalUsedCredits = campaign?.shortlisted?.reduce(
     (acc, creator) => acc + (creator?.ugcVideos ?? 0),
     0
   );
-  const ugcLeft = (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
+
+  // For v4 campaigns, count credits only from agreements that have been sent (isSent = true)
+  // AND only count Platform Creators (exclude Non-Platform/Guest creators)
+  // Sum the actual ugcVideos values, not just count agreements
+  const v4UsedCredits = useMemo(() => {
+    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+    if (!agreements || !campaign?.shortlisted) return 0;
+    
+    // Get userIds of Platform Creators whose agreements have been sent
+    const sentAgreementUserIds = new Set(
+      agreements
+        .filter(
+          (agreement) =>
+            agreement.isSent &&
+            agreement.user?.creator?.isGuest !== true
+        )
+        .map((agreement) => agreement.userId)
+    );
+    
+    return campaign.shortlisted.reduce((acc, creator) => {
+      if (
+        sentAgreementUserIds.has(creator.userId) &&
+        creator.user?.creator?.isGuest !== true &&
+        creator.ugcVideos
+      ) {
+        return acc + (creator.ugcVideos || 0);
+      }
+      return acc;
+    }, 0);
+  }, [campaign, agreements]);
+
+  const ugcLeft = useMemo(() => {
+    if (!campaign?.campaignCredits) return (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
+    if (campaign?.submissionVersion === 'v4') {
+      return campaign.campaignCredits - (v4UsedCredits ?? 0);
+    }
+    return (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
+  }, [campaign, totalUsedCredits, v4UsedCredits]);
 
   // Count pitches by display status
   const pendingReviewCount = countPitchesByStatus(pitches, ['PENDING_REVIEW']);
@@ -172,18 +211,14 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       );
     }
 
-    if (search) {
-      filtered = filtered?.filter((elem) =>
-        elem.user.name.toLowerCase().includes(search.toLowerCase())
-      );
-    }
+    // Search functionality removed (search state variable removed)
 
     return [...(filtered || [])].sort((a, b) => {
       const nameA = (a.user?.name || '').toLowerCase();
       const nameB = (b.user?.name || '').toLowerCase();
       return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
     });
-  }, [pitches, selectedFilter, search, sortDirection, campaign]);
+  }, [pitches, selectedFilter, sortDirection, campaign]);
 
   // Reopen modal when returning from media kit if state indicates
   useEffect(() => {
@@ -548,7 +583,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
             ) : (
               <Button
                 onClick={handleModalOpen}
-                disabled={isDisabled || (typeof ugcLeft === 'number' && ugcLeft <= 0)}
+                disabled={
+                  isDisabled ||
+                  (campaign?.submissionVersion === 'v4'
+                    ? v4UsedCredits !== null && campaign?.campaignCredits && v4UsedCredits >= campaign.campaignCredits
+                    : typeof ugcLeft === 'number' && ugcLeft <= 0)
+                }
                 sx={{
                   bgcolor: '#ffffff',
                   border: '1px solid #e7e7e7',
@@ -598,7 +638,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 >
                   Creator
                 </TableCell>
-                <TableCell
+                {/* <TableCell
                   sx={{
                     py: 1,
                     color: '#221f20',
@@ -609,7 +649,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                   }}
                 >
                   Engagement Rate
-                </TableCell>
+                </TableCell> */}
                 <TableCell
                   sx={{
                     py: 1,
@@ -756,8 +796,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           campaignId={campaign.id}
           adminComments={batchAdminComments}
           creditsLeft={
-            (campaign?.campaignCredits ?? 0) -
-            (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0)
+            campaign?.submissionVersion === 'v4'
+              ? ugcLeft // For v4 campaigns, use ugcLeft which already counts only sent agreements
+              : (campaign?.campaignCredits ?? 0) -
+                (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0)
           }
           onAssigned={() => {
             setBatchCreditsOpen(false);
@@ -889,19 +931,59 @@ export function AddCreatorModal({ open, onClose, onSelect, ugcLeft }) {
   );
 }
 
-// eslint-disable-next-line react/prop-types
+AddCreatorModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  ugcLeft: PropTypes.number,
+};
+
 export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
+  const { data: agreements } = useGetAgreements(campaign?.id);
   const [selected, setSelected] = useState([]);
   const [commentOpen, setCommentOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // For v4 campaigns, calculate credits used only from sent agreements
+  const v4UsedCredits = useMemo(() => {
+    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+    if (!agreements || !campaign?.shortlisted) return 0;
+    
+    // Get userIds of Platform Creators whose agreements have been sent
+    const sentAgreementUserIds = new Set(
+      agreements
+        .filter(
+          (agreement) =>
+            agreement.isSent &&
+            agreement.user?.creator?.isGuest !== true
+        )
+        .map((agreement) => agreement.userId)
+    );
+    
+    return campaign.shortlisted.reduce((acc, creator) => {
+      if (
+        sentAgreementUserIds.has(creator.userId) &&
+        creator.user?.creator?.isGuest !== true &&
+        creator.ugcVideos
+      ) {
+        return acc + (creator.ugcVideos || 0);
+      }
+      return acc;
+    }, 0);
+  }, [campaign, agreements]);
+
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
+    // For v4 campaigns, only count credits from sent agreements
+    if (campaign?.submissionVersion === 'v4') {
+      return campaign.campaignCredits - (v4UsedCredits ?? 0);
+    }
+    // For non-v4 campaigns, count all shortlisted creators
     const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
     return campaign.campaignCredits - totalUGCs;
-  }, [campaign]);
+  }, [campaign, v4UsedCredits]);
 
   const shortlistedCreators = campaign?.shortlisted || [];
   const shortlistedIds = new Set(shortlistedCreators.map((c) => c.userId));
@@ -1136,6 +1218,13 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   );
 }
 
+PlatformCreatorModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  campaign: PropTypes.object,
+  onUpdated: PropTypes.func,
+};
+
 export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
   const [formValues, setFormValues] = useState({
     creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
@@ -1297,7 +1386,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
               </Box>
 
               {/* Engagement Rate */}
-              <Box flex={1}>
+              {/* <Box flex={1}>
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
                   Engagement Rate (%)
                 </Typography>
@@ -1308,7 +1397,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
                   value={creator.engagementRate}
                   onChange={handleCreatorChange(index, 'engagementRate')}
                 />
-              </Box>
+              </Box> */}
             </Box>
 
             {/* CS Comments */}
@@ -1399,13 +1488,13 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
       </DialogActions>
     </Dialog>
   );
-
-  // <ViewNonPlatformCreatorsModal
-  //   open={viewOpen}
-  //   onClose={() => setViewOpen(false)}
-  //   creators={formValues.creators}
-  // />;
 }
+
+NonPlatformCreatorFormDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onUpdated: PropTypes.func,
+};
 
 // View-only modal for Non-Platform Creator form values
 export function ViewNonPlatformCreatorsModal({
@@ -1513,6 +1602,13 @@ export function ViewNonPlatformCreatorsModal({
     </Dialog>
   );
 }
+
+ViewNonPlatformCreatorsModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  creators: PropTypes.array,
+  title: PropTypes.string,
+};
 
 export default CampaignV3Pitches;
 
