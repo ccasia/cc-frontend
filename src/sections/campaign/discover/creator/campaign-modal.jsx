@@ -1,5 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
 import 'react-quill/dist/quill.snow.css';
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 
@@ -36,7 +37,6 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
-import { Link } from 'react-router-dom';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -89,16 +89,6 @@ const CampaignModal = ({
   const theme = useTheme();
   // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const isShortlisted = useMemo(
-    () =>
-      user &&
-      user?.shortlisted &&
-      user?.shortlisted.some(
-        (item) => item.userId === user?.id && item.campaignId === campaign?.id
-      ),
-    [campaign, user]
-  );
 
   const existingPitch = useMemo(
     () => user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id),
@@ -451,7 +441,7 @@ const CampaignModal = ({
         <Box sx={{ px: 3, pb: 3, mt: 4 }}>
           <Grid container rowGap={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
             <Grid item xs={12} sm={8}>
-              <Stack spacing={0.5} width={'100%'}>
+              <Stack spacing={0.5} width="100%">
                 <Typography
                   variant="h5"
                   sx={{
@@ -722,32 +712,35 @@ const CampaignModal = ({
                 </Button>
               </Stack>
             </Grid>
-            <Typography
-              sx={{
-                flex: 1,
-                textAlign: 'center',
-                p: 1,
-                mt: 2,
-                borderRadius: 1,
-                color: '#FF3500',
-                backgroundColor: '#FFF2F0',
-                fontWeight: 600,
-                fontSize: 14,
-                alignSelf: 'center',
-              }}
-            >
-              Please complete your{' '}
-              <Link
-                to={paths.dashboard.user.profileTabs.payment}
-                style={{
+
+            {(!isFormCompleted || !user?.paymentForm?.bankAccountName) && 
+              <Typography
+                sx={{
+                  flex: 1,
+                  textAlign: 'center',
+                  p: 1,
+                  mt: 2,
+                  borderRadius: 1,
                   color: '#FF3500',
-                  fontWeight: 'inherit',
+                  backgroundColor: '#FFF2F0',
+                  fontWeight: 600,
+                  fontSize: 12,
+                  alignSelf: 'center',
                 }}
               >
-                payment details
-              </Link>{' '}
-              to access this feature. ☝️
-            </Typography>
+                Please complete your{' '}
+                <Link
+                  to={paths.dashboard.user.profileTabs.payment}
+                  style={{
+                    color: '#FF3500',
+                    fontWeight: 'inherit',
+                  }}
+                >
+                  payment details
+                </Link>{' '}
+                to access this feature. ☝️
+              </Typography>          
+            }
           </Grid>
 
           <Divider sx={{ my: 2, mb: 3 }} />
