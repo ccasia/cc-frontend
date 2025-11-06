@@ -264,7 +264,7 @@ const CreateCompany = ({
               {e}
             </MenuItem>
           ))} */}
-          {packages?.map((item) => (
+          {packages?.filter((item) => item.name.toLowerCase() !== 'custom').map((item) => (
             <MenuItem key={item.id} value={item.id}>
               {item.name}
             </MenuItem>
