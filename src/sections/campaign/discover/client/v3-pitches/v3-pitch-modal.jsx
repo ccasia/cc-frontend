@@ -1819,7 +1819,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
                 <TextField
                   fullWidth
                   size="small"
-                  placeholder="Follower Count"
+                  placeholder="Engagement Rate"
                   value={formValues.engagementRate}
                   onChange={handleFieldChange('engagementRate')}
                   disabled={submitting}
