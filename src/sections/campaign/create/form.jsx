@@ -216,7 +216,7 @@ function CreateCampaignForm({ onClose, mutate }) {
   });
 
   const campaignAdminSchema = Yup.object().shape({
-    adminManager: Yup.array()
+    campaignManager: Yup.array()
       .min(1, 'At least One Admin is required')
       .required('Admin Manager is required'),
   });
