@@ -1,11 +1,11 @@
 import PropTypes from 'prop-types';
 
-import { LineChart } from '@mui/x-charts/LineChart';
 import { Box, Typography } from '@mui/material';
+import { LineChart } from '@mui/x-charts/LineChart';
 
 import { useMediaKitResponsive } from 'src/hooks/use-media-kit-responsive';
 
-import { processEngagementRateData, getMonthsData, chartStyles } from 'src/utils/media-kit-utils';
+import { chartStyles, getMonthsData, processEngagementRateData } from 'src/utils/media-kit-utils';
 
 /**
  * Reusable Engagement Rate Chart Component

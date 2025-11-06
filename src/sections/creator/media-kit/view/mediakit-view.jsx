@@ -142,6 +142,8 @@ const MediaKitCreator = () => {
 
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
+      const totalEngagement =
+        (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0);
       return {
         followers: instagram?.instagramUser?.followers_count || 0,
         engagement_rate: formatNumber(calculateTotalEngagement(
@@ -155,6 +157,8 @@ const MediaKitCreator = () => {
     }
 
     if (currentTab === 'tiktok') {
+      const totalEngagement =
+        (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0);
       return {
         followers: tiktok?.overview?.follower_count || 0,
         engagement_rate: formatNumber(calculateTotalEngagement(
@@ -1530,7 +1534,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.engagement_rate}
+                        {formatNumber(socialMediaAnalytics.engagement_total)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1648,7 +1652,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.engagement_rate}
+                  {formatNumber(socialMediaAnalytics.engagement_total)}
                 </Typography>
                 <Typography
                   variant="caption"

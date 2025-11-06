@@ -6,8 +6,8 @@ import {
   Chip,
   Stack,
   Divider,
-  Typography,
   Accordion,
+  Typography,
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
@@ -96,7 +96,7 @@ const CampaignModalMobile = ({ campaign }) => {
 
   const renderAccordionSummary = (panelName, iconPath, title, color) => (
     <AccordionSummary
-      expandIcon={<Iconify icon={'eva:arrow-ios-forward-fill'} />}
+      expandIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
       aria-contols={`${panelName}-content`}
       id={`${panelName}-header`}
       sx={{

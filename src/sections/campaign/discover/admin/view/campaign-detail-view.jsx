@@ -63,12 +63,12 @@ import ActivateCampaignDialog from '../activate-campaign-dialog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
+import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
-import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 
 // Ensure campaignTabs exists and is loaded from localStorage

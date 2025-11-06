@@ -6,8 +6,8 @@ import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -442,7 +442,7 @@ const Profile = () => {
           Security
         </Button>
 
-        {user?.admin?.role?.name === 'Finance' && (
+        {(user?.admin?.role?.name === 'Finance' || user?.role === 'superadmin') && (
           <Button
             component={Link}
             to={paths.dashboard.user.profileTabs.api}
@@ -1143,8 +1143,8 @@ const Profile = () => {
           {renderForm}
         </Grid>
       )}
-      {user?.admin?.role?.name === 'Finance' && currentTab === 'api' && <API />}
-      {/* {currentTab === 'api' && <API />} */}
+      {(user?.admin?.role?.name === 'Finance' || user?.role === 'superadmin') &&
+        currentTab === 'api' && <API />}
     </>
   );
 
@@ -1187,6 +1187,7 @@ const Profile = () => {
       >
         Settings ⚙️
       </Typography>
+      {/* eslint-disable-next-line no-nested-ternary */}
       {['admin', 'superadmin'].includes(user?.role)
         ? Admintabs
         : user?.role === 'client'

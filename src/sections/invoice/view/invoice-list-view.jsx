@@ -27,7 +27,9 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
+import { formatCurrencyAmount } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { fDate, fTime, isAfter, isBetween } from 'src/utils/format-time';
 
@@ -50,7 +52,6 @@ import {
 } from 'src/components/table';
 
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';
-import { formatCurrencyAmount } from 'src/utils/currency';
 
 // ----------------------------------------------------------------------
 
@@ -79,6 +80,8 @@ export default function InvoiceListView({ campId, invoices }) {
   const settings = useSettingsContext();
 
   const { user } = useAuthContext();
+
+  const { data, isLoading, error } = useGetAgreements(campId);
 
   const router = useRouter();
 
@@ -202,8 +205,8 @@ export default function InvoiceListView({ campId, invoices }) {
         enqueueSnackbar(res?.data?.message);
 
         setTableData(deleteRow);
-      } catch (error) {
-        enqueueSnackbar(error?.message, {
+      } catch (err) {
+        enqueueSnackbar(err?.message, {
           variant: 'error',
         });
       } finally {
@@ -224,8 +227,8 @@ export default function InvoiceListView({ campId, invoices }) {
       const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
 
       setTableData(deleteRows);
-    } catch (error) {
-      enqueueSnackbar(error?.message, {
+    } catch (err) {
+      enqueueSnackbar(err?.message, {
         variant: 'error',
       });
     } finally {
@@ -255,6 +258,24 @@ export default function InvoiceListView({ campId, invoices }) {
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
+  );
+
+  console.log('creatorAgreement Data: ', data);
+
+  const getCreatorAgreementCurrency = useCallback(
+    (row) => {
+      if (!data || !Array.isArray(data)) return 'MYR';
+
+      const creatorAgreement = data.find(
+        (agreement) =>
+          agreement?.user?.id === row?.invoiceFrom?.id || agreement?.userId === row?.invoiceFrom?.id
+      );
+
+      return (
+        creatorAgreement?.user?.shortlisted?.[0]?.currency || creatorAgreement?.currency || 'MYR'
+      );
+    },
+    [data]
   );
 
   const handleToggleSort = () => {
@@ -681,7 +702,9 @@ export default function InvoiceListView({ campId, invoices }) {
                             />
                           </TableCell>
 
-                          <TableCell sx={{ width: 100 }}>{formatCurrencyAmount(row.amount, row.currency)}</TableCell>
+                          <TableCell sx={{ width: 100 }}>
+                            {formatCurrencyAmount(row.amount, row.currency)}
+                          </TableCell>
 
                           <TableCell sx={{ width: 100 }}>
                             <Typography

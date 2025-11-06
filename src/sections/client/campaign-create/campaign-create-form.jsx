@@ -5,12 +5,12 @@ import { pdfjs } from 'react-pdf';
 import PropTypes from 'prop-types';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { enqueueSnackbar } from 'notistack';
+import { mutate as globalMutate } from 'swr';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { lazy, useState, useEffect, useCallback } from 'react';
-import { mutate as globalMutate } from 'swr';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';

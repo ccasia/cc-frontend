@@ -34,7 +34,7 @@ const ChipStyle = {
   borderColor: '#EBEBEB',
   borderRadius: 1,
   color: '#636366',
-  height: '32px', 
+  height: '32px',
   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
@@ -142,24 +142,60 @@ const CampaignInfo = ({ campaign }) => {
                 {[
                   { label: 'Gender', data: requirement?.gender?.map(capitalizeFirstLetter) },
                   { label: 'Geo Location', data: requirement?.geoLocation },
-                  { 
-                    label: 'Creator Persona', 
-                    data: requirement?.creator_persona?.map(value => 
-                      value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
-                    ) 
+                  {
+                    label: 'Country',
+                    data: requirement?.country || '',
                   },
-                ].map((item) => (
-                  <Box key={item.label}>
-                    <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
-                      {item.label}
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {item.data?.map((value, idx) => (
-                        <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                      ))}
+                  {
+                    label: 'Creator Persona',
+                    data: requirement?.creator_persona?.map((value) =>
+                      value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
+                    ),
+                  },
+                ]
+                  .filter((item, _, arr) => {
+                    if (item.label === 'Geo Location') {
+                      const hasMalaysia =
+                        arr.find((i) => i.label === 'Country')?.data === 'Malaysia';
+                      return hasMalaysia;
+                    }
+                    if (item.label === 'Country') {
+                      return item.data;
+                    }
+                    return true;
+                  })
+                  .map((item) => (
+                    <Box key={item.label}>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
+                      >
+                        {item.label}
+                      </Typography>
+                      {Array.isArray(item.data) ? (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {item.data?.map((value, idx) => (
+                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                          ))}
+                        </Box>
+                      ) : (
+                        item.label === 'Country' && (
+                          <Box
+                            display="inline-flex"
+                            gap={1}
+                            sx={{ ...ChipStyle, p: 1, px: 1.5 }}
+                            alignItems="center"
+                          >
+                            <Iconify
+                              icon={`emojione:flag-for-${item.data.toLowerCase()}`}
+                              width={20}
+                            />
+                            <Typography variant="subtitle2">{item.data}</Typography>
+                          </Box>
+                        )
+                      )}
                     </Box>
-                  </Box>
-                ))}
+                  ))}
               </Stack>
 
               {/* Right Column */}
@@ -559,23 +595,24 @@ const CampaignInfo = ({ campaign }) => {
                 CAMPAIGN DELIVERABLES
               </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {[
                 { label: 'UGC Videos', value: true },
                 { label: 'Raw Footage', value: campaign?.rawFootage },
                 { label: 'Photos', value: campaign?.photos },
                 { label: 'Ads', value: campaign?.ads },
-              ].map((deliverable) => (
-                deliverable.value && (
-                  <Chip
-                    key={deliverable.label}
-                    label={deliverable.label}
-                    size="small"
-                    sx={ChipStyle}
-                  />
-                )
-              ))}
+              ].map(
+                (deliverable) =>
+                  deliverable.value && (
+                    <Chip
+                      key={deliverable.label}
+                      label={deliverable.label}
+                      size="small"
+                      sx={ChipStyle}
+                    />
+                  )
+              )}
             </Box>
           </Box>
 

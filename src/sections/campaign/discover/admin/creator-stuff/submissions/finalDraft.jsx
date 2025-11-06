@@ -555,20 +555,14 @@ const FinalDraft = ({
     deliverables.photos.every(photo => photo.status === 'APPROVED');
 
   // Helper functions to check if any item has changes required
-  const hasVideosChangesRequired = () => {
-    return deliverables?.videos?.length > 0 && 
+  const hasVideosChangesRequired = () => deliverables?.videos?.length > 0 && 
       deliverables.videos.some(video => video.status === 'CHANGES_REQUIRED');
-  };
 
-  const hasRawFootagesChangesRequired = () => {
-    return deliverables?.rawFootages?.length > 0 && 
+  const hasRawFootagesChangesRequired = () => deliverables?.rawFootages?.length > 0 && 
       deliverables.rawFootages.some(footage => footage.status === 'CHANGES_REQUIRED');
-  };
 
-  const hasPhotosChangesRequired = () => {
-    return deliverables?.photos?.length > 0 && 
+  const hasPhotosChangesRequired = () => deliverables?.photos?.length > 0 && 
       deliverables.photos.some(photo => photo.status === 'CHANGES_REQUIRED');
-  };
 
   const getTabBorderColor = (tabType) => {
     const status = submission.displayStatus || submission.status;

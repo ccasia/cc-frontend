@@ -1,5 +1,5 @@
-import { debounce } from 'lodash';
 import useSWR from 'swr';
+import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -123,11 +123,11 @@ const CampaignView = () => {
   );
 
   // Persistent counts across tabs: fetch per-status counts independently of current filter
-  const buildCountKey = useCallback((statusString) => {
-    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(
+  const buildCountKey = useCallback((statusString) => 
+     `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(
       debouncedQuery
-    )}&status=${statusString}&limit=${500}`; // larger limit to approximate full count
-  }, [user?.id, debouncedQuery]);
+    )}&status=${statusString}&limit=${500}` // larger limit to approximate full count
+  , [user?.id, debouncedQuery]);
 
   const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, { revalidateOnFocus: false });
   const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, { revalidateOnFocus: false });

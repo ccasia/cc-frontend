@@ -722,32 +722,34 @@ const CampaignModal = ({
                 </Button>
               </Stack>
             </Grid>
-            <Typography
-              sx={{
-                flex: 1,
-                textAlign: 'center',
-                p: 1,
-                mt: 2,
-                borderRadius: 1,
-                color: '#FF3500',
-                backgroundColor: '#FFF2F0',
-                fontWeight: 600,
-                fontSize: 14,
-                alignSelf: 'center',
-              }}
-            >
-              Please complete your{' '}
-              <Link
-                to={paths.dashboard.user.profileTabs.payment}
-                style={{
+            {(!isFormCompleted || !user?.paymentForm?.bankAccountName) && (
+              <Typography
+                sx={{
+                  flex: 1,
+                  textAlign: 'center',
+                  p: 1,
+                  mt: 2,
+                  borderRadius: 1,
                   color: '#FF3500',
-                  fontWeight: 'inherit',
+                  backgroundColor: '#FFF2F0',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  alignSelf: 'center',
                 }}
               >
-                payment details
-              </Link>{' '}
-              to access this feature. ☝️
-            </Typography>
+                Please complete your{' '}
+                <Link
+                  to={paths.dashboard.user.profileTabs.payment}
+                  style={{
+                    color: '#FF3500',
+                    fontWeight: 'inherit',
+                  }}
+                >
+                  payment details
+                </Link>{' '}
+                to access this feature. ☝️
+              </Typography>
+            )}
           </Grid>
 
           <Divider sx={{ my: 2, mb: 3 }} />

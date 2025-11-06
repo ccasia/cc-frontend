@@ -210,6 +210,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
         {
           campaignName: '',
           clientName: '',
+          currency: '',
           // title: '',
           // description: '',
           service: '',
@@ -247,6 +248,21 @@ export default function InvoiceNewEditForm({ id, creators }) {
   } = methods;
 
   const handleCreateAndSend = handleSubmit(async (data) => {
+    // Check if this is an approved invoice and amount has changed
+    const originalAmount = invoice?.amount || 0;
+    const newAmount = data.totalAmount || 0;
+    const isApprovedInvoice = invoice?.status === 'approved';
+    const hasAmountChanged = Math.abs(originalAmount - newAmount) > 0.01; // Using small threshold for floating point comparison
+    
+    // If approved invoice amount changed, set status to draft
+    if (isApprovedInvoice && hasAmountChanged) {
+      data.status = 'draft';
+      enqueueSnackbar('Amount changed on approved invoice. Status automatically set to draft.', { 
+        variant: 'warning',
+        autoHideDuration: 4000
+      });
+    }
+
     if (data?.status === 'approved' && !user?.admin?.xeroTokenSet) {
       enqueueSnackbar(`You're not connected to Xero`, {
         variant: 'error',

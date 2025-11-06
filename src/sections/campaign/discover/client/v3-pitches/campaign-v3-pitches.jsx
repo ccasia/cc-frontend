@@ -831,6 +831,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   );
 };
 
+// eslint-disable-next-line react/prop-types
 export function AddCreatorModal({ open, onClose, onSelect, ugcLeft }) {
   return (
     <Dialog

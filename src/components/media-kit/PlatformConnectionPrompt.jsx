@@ -1,7 +1,7 @@
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 
 import { Box, Stack, alpha, Button, Typography } from '@mui/material';
-import { m } from 'framer-motion';
 
 import { useMediaKitResponsive } from 'src/hooks/use-media-kit-responsive';
 

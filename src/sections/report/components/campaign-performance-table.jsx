@@ -14,9 +14,10 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
-import { useAuthContext } from 'src/auth/hooks';
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
+import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
@@ -27,7 +28,9 @@ const CampaignPerformanceTable = () => {
     return pageParam ? parseInt(pageParam, 10) : 1;
   });
 
-  const [selectedCampaign, setSelectedCampaign] = useState(() => searchParams.get('campaign') || 'all');
+  const [selectedCampaign, setSelectedCampaign] = useState(
+    () => searchParams.get('campaign') || 'all'
+  );
 
   const itemsPerPage = 7;
 
@@ -48,17 +51,18 @@ const CampaignPerformanceTable = () => {
         const tiktokPostRegex =
           /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
 
-        const hasValidContent = instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
-        
+        const hasValidContent =
+          instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
+
         if (!hasValidContent) return false;
 
         // Filter by company/client association
         if (user?.role === 'client') {
           const campaignCompanyId = submission.campaign?.company.id;
-          
+
           const userCompanyId = user.client?.companyId || company?.id;
           const submissionByCompanyId = campaignCompanyId === userCompanyId;
-          
+
           return submissionByCompanyId;
         }
 
@@ -98,7 +102,7 @@ const CampaignPerformanceTable = () => {
     const params = new URLSearchParams();
     if (page > 1) params.set('page', page.toString());
     if (campaign !== 'all') params.set('campaign', campaign);
-    
+
     // Update URL without causing a page refresh
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     window.history.replaceState({}, '', `/dashboard/report${newUrl}`);
@@ -123,7 +127,7 @@ const CampaignPerformanceTable = () => {
       campaignName: row.campaignName,
       // Add return state for back navigation
       returnPage: currentPage.toString(),
-      returnCampaign: selectedCampaign
+      returnCampaign: selectedCampaign,
     });
 
     navigate(`/dashboard/report/view?${params.toString()}`);
@@ -492,6 +496,7 @@ const CampaignPerformanceTable = () => {
                   pageButtons.push(
                     <Button
                       key={1}
+                      // eslint-disable-next-line no-undef
                       onClick={() => handlePageClick(i)}
                       sx={{
                         minWidth: 'auto',
@@ -561,6 +566,7 @@ const CampaignPerformanceTable = () => {
                     pageButtons.push(
                       <Button
                         key={totalPages}
+                        // eslint-disable-next-line no-undef
                         onClick={() => handlePageClick(i)}
                         sx={{
                           minWidth: 'auto',

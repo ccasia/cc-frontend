@@ -248,7 +248,7 @@ export const dashboardRoutes = [
           {
             path: 'create/:id',
             element: (
-              <RoleBasedGuard roles={['admin']} hasContent>
+              <RoleBasedGuard roles={['admin', 'superadmin']} hasContent>
                 <CreateInvoice />
               </RoleBasedGuard>
             ),
@@ -256,7 +256,7 @@ export const dashboardRoutes = [
           {
             path: 'creator-list/:id',
             element: (
-              <RoleBasedGuard roles={['admin']} hasContent>
+              <RoleBasedGuard roles={['admin', 'superadmin']} hasContent>
                 <CreatorSelection />
               </RoleBasedGuard>
             ),

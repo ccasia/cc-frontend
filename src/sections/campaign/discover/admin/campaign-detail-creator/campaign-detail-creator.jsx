@@ -242,9 +242,8 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const handleEditAgreement = (creator) => {
     if (campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4') {
       let creatorPitch = null;
-      
-      if (campaign?.submissionVersion === 'v4') {
 
+      if (campaign?.submissionVersion === 'v4') {
         creatorPitch = { status: 'APPROVED' };
       } else {
         // For client campaigns, check the regular pitch array
