@@ -87,6 +87,7 @@ function CreateCampaignForm({ onClose, mutate }) {
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   const [pages, setPages] = useState(0);
+  const [hasCreditError, setHasCreditError] = useState(false)
 
   const pdfModal = useBoolean();
 
@@ -512,6 +513,7 @@ function CreateCampaignForm({ onClose, mutate }) {
               openCompany={openCompany}
               openBrand={openBrand}
               openPackage={openPackage}
+              onValidationChange={setHasCreditError}
             />
           );
         case 1:
@@ -654,7 +656,7 @@ function CreateCampaignForm({ onClose, mutate }) {
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                   py: 1,
                 }}
-                disabled={!isValid || errors?.campaignCredit}
+                disabled={!isValid || errors?.campaignCredit || hasCreditError}
                 onClick={handleNext}
               >
                 Next
