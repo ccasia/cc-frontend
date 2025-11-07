@@ -67,7 +67,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const [submitting, setSubmitting] = useState(false);
   const [campaignType, setCampaignType] = useState('');
   const [deliverables, setDeliverables] = useState([]);
-  const [adminManagers, setAdminManagers] = useState([]);
+  const [campaignManagers, setCampaignManagers] = useState([]);
   const [agreementTemplateId, setAgreementTemplateId] = useState('');
   
   const [adminOptions, setAdminOptions] = useState([]);
@@ -81,7 +81,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const [errors, setErrors] = useState({
     campaignType: '',
     deliverables: '',
-    adminManagers: '',
+    campaignManagers: '',
     agreementTemplateId: '',
   });
 
@@ -107,10 +107,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
 
   // Add debugging for selected admins
   useEffect(() => {
-    if (adminManagers.length > 0) {
-      console.log('Selected admin IDs:', adminManagers);
+    if (campaignManagers.length > 0) {
+      console.log('Selected admin IDs:', campaignManagers);
       const selectedAdmins = adminOptions.filter(admin => 
-        adminManagers.includes(admin.userId)
+        campaignManagers.includes(admin.userId)
       );
       console.log('Selected admin details:', selectedAdmins.map(admin => ({
         id: admin.id,
@@ -118,7 +118,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         userName: admin.user?.name
       })));
     }
-  }, [adminManagers, adminOptions]);
+  }, [campaignManagers, adminOptions]);
 
   // Fetch campaign details, admin users, and agreement templates
   useEffect(() => {
@@ -195,7 +195,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           const assignedAdminIds = campaignDetails.campaignAdmin.map(admin => 
             admin.adminId || admin.admin?.userId || admin.admin?.user?.id
           ).filter(Boolean);
-          setAdminManagers(assignedAdminIds);
+          setCampaignManagers(assignedAdminIds);
         }
       } else {
         setCurrentStep(1); // Start at Admin Assignment
@@ -215,8 +215,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     const {
       target: { value },
     } = event;
-    setAdminManagers(typeof value === 'string' ? value.split(',') : value);
-    setErrors((prev) => ({ ...prev, adminManagers: '' }));
+    setCampaignManagers(typeof value === 'string' ? value.split(',') : value);
+    setErrors((prev) => ({ ...prev, campaignManagers: '' }));
   };
 
   const validateForm = () => {
@@ -226,9 +226,9 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     const newErrors = {
       campaignType: !campaignType ? 'Campaign type is required' : '',
       deliverables: deliverables.length === 0 ? 'At least one deliverable is required' : '',
-      adminManagers: skipAdminValidation ? '' : (adminOptions.length === 0 
+      campaignManagers: skipAdminValidation ? '' : (adminOptions.length === 0 
         ? 'No CSM admins available in the system. Please create a CSM role admin first.'
-        : adminManagers.length === 0 
+        : campaignManagers.length === 0 
           ? 'At least one admin manager is required' 
           : ''),
       agreementTemplateId: !agreementTemplateId ? 'Agreement template is required' : '',
@@ -240,7 +240,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   };
 
   const handleInitialActivate = async () => {
-    if (adminManagers.length === 0) {
+    if (campaignManagers.length === 0) {
       enqueueSnackbar('Please select at least one admin manager', { variant: 'error' });
       return;
     }
@@ -249,12 +249,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     
     try {
       console.log('Sending initial activation data:', {
-        adminManager: adminManagers,
+        campaignManager: campaignManagers,
       });
       
       const formData = new FormData();
       formData.append('data', JSON.stringify({
-        adminManager: adminManagers, // These are the admin user IDs
+        campaignManager: campaignManagers, // These are the admin user IDs
       }));
       
       const response = await axios.post(`/api/campaign/initialActivateCampaign/${campaignId}`, formData);
@@ -289,7 +289,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       console.log('Sending data:', {
         campaignType,
         deliverables,
-        adminManager: adminManagers,
+        campaignManager: campaignManagers,
         agreementTemplateId,
       });
       
@@ -297,7 +297,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       formData.append('data', JSON.stringify({
         campaignType,
         deliverables,
-        adminManager: adminManagers, // These are the admin user IDs
+        campaignManager: campaignManagers, // These are the admin user IDs
         agreementTemplateId,
         status: 'ACTIVE', // Explicitly set status to ACTIVE
       }));
@@ -307,7 +307,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       
       // Get assigned admin names for success message
       const assignedAdminNames = adminOptions
-        .filter(admin => adminManagers.includes(admin.userId))
+        .filter(admin => campaignManagers.includes(admin.userId))
         .map(admin => admin.user?.name || admin.name)
         .join(', ');
       
@@ -338,7 +338,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       // Reset form state
       setCampaignType('');
       setDeliverables([]);
-      setAdminManagers([]);
+      setCampaignManagers([]);
       setAgreementTemplateId('');
       
       // Reset step based on user role and campaign status
@@ -351,7 +351,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       setErrors({
         campaignType: '',
         deliverables: '',
-        adminManagers: '',
+        campaignManagers: '',
         agreementTemplateId: '',
       });
       
@@ -494,11 +494,11 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               </Box>
             )}
             
-            <FormControl fullWidth error={!!errors.adminManagers} sx={{ mb: 4 }}>
+            <FormControl fullWidth error={!!errors.campaignManagers} sx={{ mb: 4 }}>
               <InputLabel>CS Admins</InputLabel>
               <Select
                 multiple
-                value={adminManagers}
+                value={campaignManagers}
                 onChange={handleAdminManagerChange}
                 input={<OutlinedInput label="CS Admins" />}
                 renderValue={(selected) => (
@@ -547,8 +547,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                   <MenuItem disabled>No CSM admins available</MenuItem>
                 )}
               </Select>
-              {errors.adminManagers && (
-                <FormHelperText>{errors.adminManagers}</FormHelperText>
+              {errors.campaignManagers && (
+                <FormHelperText>{errors.campaignManagers}</FormHelperText>
               )}
             </FormControl>
             
@@ -556,7 +556,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               <Button
                 variant="contained"
                 onClick={() => setCurrentStep(2)}
-                disabled={adminManagers.length === 0}
+                disabled={campaignManagers.length === 0}
                 sx={{ 
                   borderRadius: '8px',
                   backgroundColor: '#1340ff',
