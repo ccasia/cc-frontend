@@ -60,7 +60,7 @@ const steps = [
   { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
   { title: 'Creator Persona', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
-  { title: 'Campaign Type', logo: '⎏', color: '#D8FF01' },
+  { title: 'Campaign Type', logo: '⎏', color: '#8A5AFE' },
   { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
   { title: 'Select Campaign Manager(s)', logo: '⛑️', color: '#FFF0E5' },
   { title: 'Agreement Form', logo: '✍️', color: '#026D54' },
@@ -152,7 +152,7 @@ function CreateCampaignForm({ onClose, mutate }) {
     campaignImages: Yup.array()
       .min(1, 'Must have at least 1 image')
       .max(3, 'Must have at most 3 images'),
-    adminManager: Yup.array()
+    campaignManager: Yup.array()
       .min(1, 'At least One Admin is required')
       .required('Admin Manager is required'),
     campaignCredits: Yup.number()
@@ -307,7 +307,7 @@ function CreateCampaignForm({ onClose, mutate }) {
       },
     ],
     campaignImages: [],
-    adminManager: [],
+    campaignManager: [],
     agreementFrom: null,
     timeline: [],
     campaignTasksAdmin: [],
