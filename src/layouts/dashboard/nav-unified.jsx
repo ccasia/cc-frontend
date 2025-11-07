@@ -147,6 +147,7 @@ export default function NavUnified({ openNav, onCloseNav }) {
           data={navData}
           slotProps={{
             currentRole: user?.role,
+            onItemClick: onCloseNav,
           }}
         />
       ) : (
@@ -154,6 +155,7 @@ export default function NavUnified({ openNav, onCloseNav }) {
           data={navData}
           slotProps={{
             currentRole: user?.role,
+            onItemClick: onCloseNav,
           }}
         />
       )}
@@ -220,6 +222,7 @@ export default function NavUnified({ openNav, onCloseNav }) {
         data={navData}
         slotProps={{
           currentRole: user?.role,
+          onItemClick: onCloseNav,
         }}
       />
       <Box sx={{ flexGrow: 1 }} />

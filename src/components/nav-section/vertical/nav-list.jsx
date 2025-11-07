@@ -28,8 +28,13 @@ export default function NavList({ data, depth, slotProps }) {
   const handleToggleMenu = useCallback(() => {
     if (data.children) {
       setOpenMenu((prev) => !prev);
+    } else {
+      // Only close drawer if no children (i.e., it's a leaf node)
+      if (slotProps?.onItemClick) {
+        slotProps.onItemClick();
+      }
     }
-  }, [data.children]);
+  }, [data.children, slotProps]);
 
   const handleCloseMenu = useCallback(() => {
     setOpenMenu(false);

@@ -30,17 +30,17 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField , RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 
 import { options_changes } from '../firstDraft/constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 
-const PhotoCard = ({ 
-  photoItem, 
-  index, 
-  submission, 
-  onImageClick, 
-  handleApprove, 
+const PhotoCard = ({
+  photoItem,
+  index,
+  submission,
+  onImageClick,
+  handleApprove,
   handleRequestChange,
   selectedPhotosForChange,
   handlePhotoSelection,
@@ -82,7 +82,10 @@ const PhotoCard = ({
     },
   });
 
-  const { formState: { isSubmitting }, reset } = formMethods;
+  const {
+    formState: { isSubmitting },
+    reset,
+  } = formMethods;
 
   // Reset form when cardType changes
   useEffect(() => {
@@ -104,49 +107,51 @@ const PhotoCard = ({
   const hasRevisionRequested = currentStatus === 'CHANGES_REQUIRED';
   const isClientFeedback = false; // V2 doesn't have client feedback
   const isChangesRequired = currentStatus === 'CHANGES_REQUIRED';
-  
+
   // For V2: Show approval buttons only when photo status is PENDING and not approved
   // If photo was approved in first draft (status = 'APPROVED'), it should remain approved in final draft
   const isPhotoNotApproved = currentStatus !== 'APPROVED';
-  const isPendingReview = (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') && isPhotoNotApproved && !hasRevisionRequested;
+  const isPendingReview =
+    (currentStatus === 'PENDING' || currentStatus === 'PENDING_REVIEW') &&
+    isPhotoNotApproved &&
+    !hasRevisionRequested;
 
   // Get feedback for this specific photo
   const getPhotoFeedback = () => {
     const allFeedbacks = [];
-    
+
     // Add individual feedback first (includes approval comments)
     if (photoItem.individualFeedback && photoItem.individualFeedback.length > 0) {
       allFeedbacks.push(...photoItem.individualFeedback);
     }
-    
+
     // Add submission-level feedback (change requests)
-    const submissionFeedbacks = (submission?.feedback || [])
-      .filter(feedback => feedback.photosToUpdate?.includes(photoItem.id));
-    
+    const submissionFeedbacks = (submission?.feedback || []).filter((feedback) =>
+      feedback.photosToUpdate?.includes(photoItem.id)
+    );
+
     allFeedbacks.push(...submissionFeedbacks);
 
     // Remove duplicates based on ID and filter out empty comments
     const uniqueFeedbacks = allFeedbacks
-      .filter((feedback, index, self) => 
-        index === self.findIndex((f) => f.id === feedback.id)
-      )
-      .filter(feedback => {
+      .filter((feedback, index, self) => index === self.findIndex((f) => f.id === feedback.id))
+      .filter((feedback) => {
         // Check if it's client feedback
         const isClient = feedback?.admin?.role === 'client' || feedback?.role === 'client';
-        
+
         // For client feedback, be more lenient - show if it has any content
         if (isClient) {
           const hasContent = feedback?.content && feedback.content.trim() !== '';
           const hasPhotoContent = feedback?.photoContent && feedback.photoContent.trim() !== '';
           return hasContent || hasPhotoContent;
         }
-        
+
         // For admin feedback, check for meaningful content (content, media updates, or reasons)
         const hasContent = feedback?.content && feedback.content.trim() !== '';
         const hasPhotoContent = feedback?.photoContent && feedback.photoContent.trim() !== '';
         const hasMediaUpdates = feedback?.photosToUpdate?.length > 0;
         const hasReasons = feedback?.reasons && feedback.reasons.length > 0;
-        
+
         return hasContent || hasPhotoContent || hasMediaUpdates || hasReasons;
       });
 
@@ -163,14 +168,14 @@ const PhotoCard = ({
         photoId: photoItem.id,
         photoStatus: photoItem.status,
         totalFeedback: photoFeedback.length,
-        feedbackTypes: photoFeedback.map(f => ({
+        feedbackTypes: photoFeedback.map((f) => ({
           id: f.id,
           type: f.type,
           content: f.content,
           photoContent: f.photoContent,
           admin: f.admin?.name,
-          createdAt: f.createdAt
-        }))
+          createdAt: f.createdAt,
+        })),
       });
     }
   }, [photoFeedback, photoItem.id, photoItem.status]);
@@ -437,7 +442,10 @@ const PhotoCard = ({
                     onClick={() => {
                       console.log('[Send to Client Button Click] submission:', submission);
                       if (!submission || !submission.id) {
-                        console.error('[Send to Client Button] submission or submission.id is missing!', submission);
+                        console.error(
+                          '[Send to Client Button] submission or submission.id is missing!',
+                          submission
+                        );
                         enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
                         return;
                       }
@@ -448,7 +456,9 @@ const PhotoCard = ({
                   >
                     Send to Client
                   </Button>
-                ) : false && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
+                ) : false &&
+                  userRole === 'client' &&
+                  (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
                   <Stack direction="row" spacing={1.5}>
                     <Button
                       onClick={() => handleOpenClientRequestModal(photoItem.id)}
@@ -723,9 +733,7 @@ const PhotoCard = ({
       </Box>
 
       {/* Form Section */}
-      <CardContent sx={{ pt: 0 }}>
-        {renderFormContent()}
-      </CardContent>
+      <CardContent sx={{ pt: 0 }}>{renderFormContent()}</CardContent>
 
       {/* Feedback History */}
       {photoFeedback.length > 0 && (
@@ -746,10 +754,7 @@ const PhotoCard = ({
                 }}
               >
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                  <Avatar
-                    src={feedback.admin?.photoURL}
-                    sx={{ width: 20, height: 20 }}
-                  />
+                  <Avatar src={feedback.admin?.photoURL} sx={{ width: 20, height: 20 }} />
                   <Typography variant="caption" sx={{ fontWeight: 600 }}>
                     {feedback.admin?.name || 'Admin'}
                   </Typography>
@@ -769,9 +774,8 @@ const PhotoCard = ({
                       }}
                     />
                   )}
-
                 </Stack>
-                
+
                 <Typography variant="body2" sx={{ color: '#000000' }}>
                   {editingFeedbackId === feedback.id ? (
                     <Box>
@@ -790,8 +794,15 @@ const PhotoCard = ({
                           size="small"
                           onClick={async () => {
                             try {
-                              await handleAdminEditFeedback(photoItem.id, feedback.id, editingContent);
-                              setLocalFeedbackUpdates((prev) => ({ ...prev, [feedback.id]: editingContent }));
+                              await handleAdminEditFeedback(
+                                photoItem.id,
+                                feedback.id,
+                                editingContent
+                              );
+                              setLocalFeedbackUpdates((prev) => ({
+                                ...prev,
+                                [feedback.id]: editingContent,
+                              }));
                               setEditingFeedbackId(null);
                               setEditingContent('');
                             } catch (error) {
@@ -838,93 +849,112 @@ const PhotoCard = ({
                       </Stack>
                     </Box>
                   ) : (
-                    localFeedbackUpdates[feedback.id] ?? (feedback.content || feedback.photoContent)
+                    (localFeedbackUpdates[feedback.id] ??
+                    (feedback.content || feedback.photoContent))
                   )}
                 </Typography>
 
                 {/* Admin buttons for client feedback */}
-                {userRole === 'admin' && (feedback.admin?.admin?.role?.name === 'client' || feedback.admin?.admin?.role?.name === 'Client') && (feedback.type === 'REASON' || feedback.type === 'COMMENT') && (submission?.status === 'SENT_TO_ADMIN' || submission?.status === 'CLIENT_FEEDBACK') && (
-                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => {
-                        if (!isV3) {
-                          enqueueSnackbar('Edit functionality is only available for V3 campaigns', { variant: 'info' });
-                          return;
-                        }
-                        setEditingFeedbackId(feedback.id);
-                        setEditingContent(feedback.content || feedback.photoContent || '');
-                      }}
-                      sx={{
-                        fontSize: '0.75rem',
-                        py: 0.8,
-                        px: 1.5,
-                        minWidth: 'auto',
-                        border: '1.5px solid #e0e0e0',
-                        borderBottom: '3px solid #e0e0e0',
-                        color: '#000000',
-                        fontWeight: 600,
-                        borderRadius: '8px',
-                        textTransform: 'none',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
+                {userRole === 'admin' &&
+                  (feedback.admin?.admin?.role?.name === 'client' ||
+                    feedback.admin?.admin?.role?.name === 'Client') &&
+                  (feedback.type === 'REASON' || feedback.type === 'COMMENT') &&
+                  (submission?.status === 'SENT_TO_ADMIN' ||
+                    submission?.status === 'CLIENT_FEEDBACK') && (
+                    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          if (!isV3) {
+                            enqueueSnackbar(
+                              'Edit functionality is only available for V3 campaigns',
+                              { variant: 'info' }
+                            );
+                            return;
+                          }
+                          setEditingFeedbackId(feedback.id);
+                          setEditingContent(feedback.content || feedback.photoContent || '');
+                        }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          border: '1.5px solid #e0e0e0',
+                          borderBottom: '3px solid #e0e0e0',
                           color: '#000000',
-                          borderColor: '#d0d0d0',
-                          transform: 'translateY(-1px)',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                        },
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={async () => {
-                        if (!isV3) {
-                          enqueueSnackbar('Send to Creator functionality is only available for V3 campaigns', { variant: 'info' });
-                          return;
-                        }
-                        if (!handleAdminSendToCreator) {
-                          console.error('handleAdminSendToCreator is not defined');
-                          enqueueSnackbar('Send to Creator function not available', { variant: 'error' });
-                          return;
-                        }
-                        try {
-                          await handleAdminSendToCreator(photoItem.id, feedback.id, setLocalStatus, 'photo');
-                        } catch (error) {
-                          console.error('Error in handleAdminSendToCreator:', error);
-                          enqueueSnackbar('Failed to send to creator', { variant: 'error' });
-                        }
-                      }}
-                      sx={{
-                        fontSize: '0.75rem',
-                        py: 0.8,
-                        px: 1.5,
-                        minWidth: 'auto',
-                        bgcolor: '#ffffff',
-                        border: '1.5px solid #e0e0e0',
-                        borderBottom: '3px solid #e0e0e0',
-                        color: '#1ABF66',
-                        fontWeight: 600,
-                        borderRadius: '8px',
-                        textTransform: 'none',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          bgcolor: '#f0f9f0',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                            color: '#000000',
+                            borderColor: '#d0d0d0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          },
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={async () => {
+                          if (!isV3) {
+                            enqueueSnackbar(
+                              'Send to Creator functionality is only available for V3 campaigns',
+                              { variant: 'info' }
+                            );
+                            return;
+                          }
+                          if (!handleAdminSendToCreator) {
+                            console.error('handleAdminSendToCreator is not defined');
+                            enqueueSnackbar('Send to Creator function not available', {
+                              variant: 'error',
+                            });
+                            return;
+                          }
+                          try {
+                            await handleAdminSendToCreator(
+                              photoItem.id,
+                              feedback.id,
+                              setLocalStatus,
+                              'photo'
+                            );
+                          } catch (error) {
+                            console.error('Error in handleAdminSendToCreator:', error);
+                            enqueueSnackbar('Failed to send to creator', { variant: 'error' });
+                          }
+                        }}
+                        sx={{
+                          fontSize: '0.75rem',
+                          py: 0.8,
+                          px: 1.5,
+                          minWidth: 'auto',
+                          bgcolor: '#ffffff',
+                          border: '1.5px solid #e0e0e0',
+                          borderBottom: '3px solid #e0e0e0',
                           color: '#1ABF66',
-                          borderColor: '#d0d0d0',
-                          transform: 'translateY(-1px)',
-                          boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
-                        },
-                      }}
-                    >
-                      Send to Creator
-                    </Button>
-                  </Stack>
-                )}
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: '#f0f9f0',
+                            color: '#1ABF66',
+                            borderColor: '#d0d0d0',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(26, 191, 102, 0.2)',
+                          },
+                        }}
+                      >
+                        Send to Creator
+                      </Button>
+                    </Stack>
+                  )}
               </Box>
             ))}
           </Stack>
@@ -1011,7 +1041,7 @@ const Photos = ({
       const response = await axiosInstance.patch('/api/submission/v3/media/approve', {
         mediaId: photoId,
         mediaType: 'photo',
-        feedback: formValues.feedback || ''
+        feedback: formValues.feedback || '',
       });
 
       if (response.status === 200) {
@@ -1036,7 +1066,7 @@ const Photos = ({
         mediaId: photoId,
         mediaType: 'photo',
         feedback: formValues.feedback || '',
-        reasons: formValues.reasons || []
+        reasons: formValues.reasons || [],
       });
 
       if (response.status === 200) {
@@ -1062,7 +1092,7 @@ const Photos = ({
       return;
     }
     try {
-      console.log(`[handleSendToClient] PATCH /api/submission/v3/${  submissionId  }/approve/admin`);
+      console.log(`[handleSendToClient] PATCH /api/submission/v3/${submissionId}/approve/admin`);
       const response = await axiosInstance.patch(
         `/api/submission/v3/${submissionId}/approve/admin`,
         { submissionId, feedback: 'All sections approved by admin' }
@@ -1078,13 +1108,15 @@ const Photos = ({
       }
     } catch (error) {
       console.error('[handleSendToClient] Error:', error, error?.response);
-      enqueueSnackbar(error?.response?.data?.message || 'Error sending to client', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || 'Error sending to client', {
+        variant: 'error',
+      });
     }
   };
 
   // Check if all photos are already approved
-  const allPhotosApproved = deliverables?.photos?.length > 0 && 
-    deliverables.photos.every(p => p.status === 'APPROVED');
+  const allPhotosApproved =
+    deliverables?.photos?.length > 0 && deliverables.photos.every((p) => p.status === 'APPROVED');
 
   // Determine layout type
   const hasPhotos = deliverables?.photos?.length > 0;
@@ -1143,9 +1175,7 @@ const Photos = ({
   return (
     <>
       {/* Photos Horizontal Scroll */}
-      {!hasPhotos && (
-        <Typography>No photos uploaded yet.</Typography>
-      )}
+      {!hasPhotos && <Typography>No photos uploaded yet.</Typography>}
 
       {shouldUseHorizontalScroll && (
         <Box
@@ -1181,8 +1211,8 @@ const Photos = ({
                 flexShrink: 0,
               }}
             >
-              <PhotoCard 
-                photoItem={photo} 
+              <PhotoCard
+                photoItem={photo}
                 index={index}
                 submission={submission}
                 onImageClick={onImageClick}
@@ -1213,14 +1243,9 @@ const Photos = ({
       {shouldUseGrid && (
         <Grid container spacing={2}>
           {deliverables.photos.map((photo, index) => (
-            <Grid 
-              item 
-              xs={12} 
-              md={7} 
-              key={photo.id || index}
-            >
-              <PhotoCard 
-                photoItem={photo} 
+            <Grid item xs={12} md={7} key={photo.id || index}>
+              <PhotoCard
+                photoItem={photo}
                 index={index}
                 submission={submission}
                 onImageClick={onImageClick}
@@ -1353,9 +1378,7 @@ const Photos = ({
           }}
         >
           <Iconify icon="solar:check-circle-bold" color="success.main" />
-          <Typography color="success.darker">
-            All photos have been approved
-          </Typography>
+          <Typography color="success.darker">All photos have been approved</Typography>
         </Box>
       )}
 
@@ -1437,4 +1460,4 @@ Photos.propTypes = {
   handleAdminSendToCreator: PropTypes.func,
 };
 
-export default Photos; 
+export default Photos;

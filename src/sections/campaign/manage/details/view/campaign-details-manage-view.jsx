@@ -676,10 +676,10 @@ const CampaignDetailManageView = ({ id }) => {
 
   const renderAdminManager = (
     <Box component={Card} p={2}>
-      <Typography variant="h5">Admin Manager</Typography>
+      <Typography variant="h5">Campaign Manager</Typography>
       {isEditable && (
         <EditButton
-          tooltip="Edit Campaign Admin"
+          tooltip="Edit Campaign Manager"
           onClick={() =>
             setOpen((prev) => ({
               ...prev,
@@ -902,24 +902,7 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
-  const renderCampaignCredits = (
-    <Box component={Card} p={2}>
-      <Typography variant="h5">Campaign Credits</Typography>
-      {isEditable && (
-        <EditButton
-          tooltip="Edit Campaign Reference"
-          onClick={() =>
-            setOpen((prev) => ({
-              ...prev,
-              campaignReferences: true,
-            }))
-          }
-          disabled={isDisabled}
-        />
-      )}
-    </Box>
-  );
-
+  
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs

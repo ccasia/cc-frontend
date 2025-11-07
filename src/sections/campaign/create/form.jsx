@@ -60,9 +60,9 @@ const steps = [
   { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
   { title: 'Creator Persona', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
-  { title: 'Campaign Type', logo: '⎏', color: '#D8FF01' },
+  { title: 'Campaign Type', logo: '⎏', color: '#8A5AFE' },
   { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
-  { title: 'Select Admin Manager(s)', logo: '⛑️', color: '#FFF0E5' },
+  { title: 'Select Campaign Manager(s)', logo: '⛑️', color: '#FFF0E5' },
   { title: 'Agreement Form', logo: '✍️', color: '#026D54' },
   { title: 'Other Attachment ( Optional )', logo: '⺟', color: '#FF3500' },
 ];
@@ -153,7 +153,7 @@ function CreateCampaignForm({ onClose, mutate }) {
     campaignImages: Yup.array()
       .min(1, 'Must have at least 1 image')
       .max(3, 'Must have at most 3 images'),
-    adminManager: Yup.array()
+    campaignManager: Yup.array()
       .min(1, 'At least One Admin is required')
       .required('Admin Manager is required'),
     campaignCredits: Yup.number()
@@ -217,7 +217,7 @@ function CreateCampaignForm({ onClose, mutate }) {
   });
 
   const campaignAdminSchema = Yup.object().shape({
-    adminManager: Yup.array()
+    campaignManager: Yup.array()
       .min(1, 'At least One Admin is required')
       .required('Admin Manager is required'),
   });
@@ -308,7 +308,7 @@ function CreateCampaignForm({ onClose, mutate }) {
       },
     ],
     campaignImages: [],
-    adminManager: [],
+    campaignManager: [],
     agreementFrom: null,
     timeline: [],
     campaignTasksAdmin: [],
@@ -587,7 +587,7 @@ function CreateCampaignForm({ onClose, mutate }) {
               <Button
                 variant="contained"
                 sx={{
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                   py: 1,
                 }}
                 onClick={handleBack}

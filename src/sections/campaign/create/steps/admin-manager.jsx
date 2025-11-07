@@ -1,9 +1,11 @@
-import React, { memo, useMemo } from 'react';
+import { useFormContext } from 'react-hook-form';
+import React, { memo, useMemo, useEffect } from 'react';
 
-import { Box, Chip, Stack, Avatar, FormLabel, CircularProgress } from '@mui/material';
+import { Box, Chip, Stack, Alert, Avatar, FormLabel, CircularProgress } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
 import { RHFAutocomplete } from 'src/components/hook-form';
 
 import { useGetAdmins } from '../hooks/get-am';
@@ -11,11 +13,29 @@ import { useGetAdmins } from '../hooks/get-am';
 const CampaignAdminManager = () => {
   const { data: admins, isLoading } = useGetAdmins('active');
   const { user } = useAuthContext();
+  const { watch, setValue } = useFormContext();
 
-  const filteredAdmins = useMemo(
-    () => !isLoading && admins.filter((item) => item.admin?.role?.name === 'CSM'),
-    [admins, isLoading]
+  const campaignManager = watch('campaignManager');
+
+  const selectedCampaignManagers = useMemo(() => campaignManager || [], [campaignManager]);
+
+  const filteredCampaignManagers = useMemo(
+    () => admins?.filter((item) => item.role === 'CSM' || item.role === 'Client').sort((a, b) => a.name.localeCompare(b.name)) || [],
+    [admins]
   );
+
+  // Check if any selected admin has the 'Client' role
+  const hasClientUser = useMemo(() => selectedCampaignManagers.some((manager) => manager?.role === 'Client'), [selectedCampaignManagers]);
+
+  // Automatically set submissionVersion to 'v4' when a client user is added
+  useEffect(() => {
+    if (hasClientUser) {
+      setValue('submissionVersion', 'v4', { shouldValidate: true });
+    } else {
+      // Reset to default (v2) when no client users
+      setValue('submissionVersion', undefined, { shouldValidate: true });
+    }
+  }, [hasClientUser, setValue]);
 
   return (
     <>
@@ -56,30 +76,23 @@ const CampaignAdminManager = () => {
                 color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
               }}
             >
-              Admin Managers
+              Campaign Managers
             </FormLabel>
             <RHFAutocomplete
-              name="adminManager"
+              name="campaignManager"
               multiple
-              placeholder="Admin Manager"
-              options={
-                filteredAdmins.map((admin) => ({
-                  id: admin?.id,
-                  name: admin?.name,
-                  role: admin?.admin?.role?.name,
-                  photoURL: admin?.photoURL,
-                })) || []
-              }
+              placeholder="Campaign Manager"
+              options={filteredCampaignManagers}
               freeSolo
               isOptionEqualToValue={(option, value) => option.id === value.id}
-              getOptionLabel={(option) => `${option.name}`}
+              getOptionLabel={(option) => option.name}
               renderTags={(selected, getTagProps) =>
                 selected.map((option, index) => (
                   <Chip
                     {...getTagProps({ index })}
                     avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
                     key={option?.id}
-                    label={option?.id === user?.id ? 'Me' : option?.name || ''}
+                    label={option?.id === user?.id ? 'Me' : option?.name}
                     size="small"
                     variant="outlined"
                     sx={{
@@ -93,6 +106,17 @@ const CampaignAdminManager = () => {
                 ))
               }
             />
+
+            {/* V4 Submission Mode Indicator */}
+            {hasClientUser && (
+              <Alert
+                severity="info"
+                icon={<Iconify icon="mdi:information-outline" />}
+                sx={{ alignItems: 'center' }}
+              >
+                This campaign will be managed with clients following our new submission flow.
+              </Alert>
+            )}
           </Stack>
         </Box>
       )}

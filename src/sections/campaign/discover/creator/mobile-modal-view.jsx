@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
-import { useParams } from 'react-router-dom';
 import React, { useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -114,7 +114,7 @@ const MobileModalView = () => {
   const { isFormCompleted } = user.creator;
   const dialog = useBoolean();
 
-  const { data: campaignData, isLoading } = useSWR(
+  const { data: campaignData } = useSWR(
     endpoints.campaign.creator.getCampaign(id),
     fetcher,
     {
@@ -160,19 +160,6 @@ const MobileModalView = () => {
       ),
     [campaignData, user]
   );
-
-  const calculateDaysLeft = (endDate) => {
-    if (!endDate) return 'No end date';
-
-    const end = new Date(endDate);
-    const today = new Date();
-
-    if (end < today) return 'Campaign Ended';
-
-    const diffTime = Math.abs(end - today);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return `${diffDays} days`;
-  };
 
   const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
   const [textPitchOpen, setTextPitchOpen] = useState(false);
@@ -301,6 +288,35 @@ const MobileModalView = () => {
               Pitch Now
             </Button>
           </Stack>
+          {(!isFormCompleted || !user?.paymentForm?.bankAccountName) && 
+            <Typography
+              sx={{
+                flex: 1,
+                textAlign: 'center',
+                p: 1,
+                mt: 2,
+                borderRadius: 1,
+                color: '#FF3500',
+                backgroundColor: '#FFF2F0',
+                fontWeight: 600,
+                fontSize: 12,
+                alignSelf: 'center',
+              }}
+            >
+              Please complete your{' '}
+              <Link
+                to={paths.dashboard.user.profileTabs.payment}
+                style={{
+                  color: '#FF3500',
+                  fontWeight: 'inherit',
+                }}
+              >
+                payment details
+              </Link>{' '}
+              to access this feature. ☝️
+            </Typography>          
+          }
+
 
           <CreatorForm dialog={dialog} user={user} />
         </>

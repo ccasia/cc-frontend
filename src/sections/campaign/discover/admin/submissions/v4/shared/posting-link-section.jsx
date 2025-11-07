@@ -2,7 +2,19 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useState, useCallback } from 'react';
 
-import { Box, Link, Chip, Stack, Button, Select, MenuItem, TextField, Typography, FormControl } from '@mui/material';
+import {
+  Box,
+  Link,
+  Chip,
+  Stack,
+  Button,
+  Select,
+  Avatar,
+  MenuItem,
+  TextField,
+  Typography,
+  FormControl,
+} from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
 
@@ -31,9 +43,10 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
     }
 
     try {
+      // eslint-disable-next-line no-new
       new URL(postingLink.trim());
     } catch {
-      enqueueSnackbar('Please enter a valid URL', { variant: 'error' });
+      enqueueSnackbar('Please entcer a valid URL', { variant: 'error' });
       return;
     }
 
@@ -41,13 +54,15 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
       setLoading(true);
       await axiosInstance.put('/api/submissions/v4/posting-link', {
         submissionId: submission.id,
-        postingLink: postingLink.trim()
+        postingLink: postingLink.trim(),
       });
 
       enqueueSnackbar('Posting link updated successfully', { variant: 'success' });
       onUpdate?.();
     } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Failed to update posting link', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Failed to update posting link', {
+        variant: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -58,13 +73,15 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
       setLoading(true);
       await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
         submissionId: submission.id,
-        action: 'approve'
+        action: 'approve',
       });
 
       enqueueSnackbar('Posting link approved successfully', { variant: 'success' });
       onUpdate?.();
     } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Failed to approve posting link', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Failed to approve posting link', {
+        variant: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -76,7 +93,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
       await axiosInstance.post('/api/submissions/v4/posting-link/approve', {
         submissionId: submission.id,
         action: 'reject',
-        reasons
+        reasons,
       });
 
       enqueueSnackbar('Change request sent successfully', { variant: 'success' });
@@ -84,7 +101,9 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
       setReasons([]);
       onUpdate?.();
     } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Failed to send change request', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Failed to send change request', {
+        variant: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -104,7 +123,15 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
     <Box sx={{ flex: '0 0 auto' }}>
       <Box>
         {isPosted && (
-          <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 1,
+            }}
+          >
             <Box display="flex">
               <Typography variant="caption" fontWeight="600" color="text.primary" sx={{ mr: 0.5 }}>
                 Date approved:
@@ -142,13 +169,15 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
         )}
 
         {submission.content && (
-          <Box sx={{
-            p: 2,
-            border: '1px solid #E7E7E7',
-            borderRadius: 1,
-            bgcolor: 'background.paper',
-            mb: 2
-          }}>
+          <Box
+            sx={{
+              p: 2,
+              border: '1px solid #E7E7E7',
+              borderRadius: 1,
+              bgcolor: 'background.paper',
+              mb: 2,
+            }}
+          >
             <Link
               href={submission.content}
               target="_blank"
@@ -159,8 +188,8 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                 textDecoration: 'underline',
                 fontSize: 14,
                 '&:hover': {
-                  color: '#004A9F'
-                }
+                  color: '#004A9F',
+                },
               }}
             >
               {submission.content}
@@ -188,7 +217,13 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                 </Button>
               )}
               {action === 'request_revision' && (
-                <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
+                <Box
+                  display="flex"
+                  flexDirection="row"
+                  width="100%"
+                  gap={1}
+                  justifyContent="flex-end"
+                >
                   <Button
                     variant="contained"
                     color="secondary"
@@ -237,7 +272,12 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
               )}
             </Stack>
             {action === 'request_revision' && (
-              <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10 }} hiddenLabel size="small">
+              <FormControl
+                fullWidth
+                style={{ backgroundColor: '#fff', borderRadius: 10 }}
+                hiddenLabel
+                size="small"
+              >
                 <Select
                   multiple
                   value={reasons}
@@ -287,7 +327,13 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
                 </Button>
               )}
               {action === 'request_revision' && (
-                <Box display="flex" flexDirection="row" width="100%" gap={1} justifyContent="flex-end">
+                <Box
+                  display="flex"
+                  flexDirection="row"
+                  width="100%"
+                  gap={1}
+                  justifyContent="flex-end"
+                >
                   <Button
                     variant="contained"
                     color="secondary"
@@ -336,7 +382,12 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
               )}
             </Stack>
             {action === 'request_revision' && (
-              <FormControl fullWidth style={{ backgroundColor: '#fff', borderRadius: 10 }} hiddenLabel size="small">
+              <FormControl
+                fullWidth
+                style={{ backgroundColor: '#fff', borderRadius: 10 }}
+                hiddenLabel
+                size="small"
+              >
                 <Select
                   multiple
                   value={reasons}
@@ -369,7 +420,14 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
         {/* Posting link added by admin */}
         {!submission.content && (
           <Box display="flex" flexDirection="column">
-            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
               <Typography variant="caption" fontWeight="bold" color="#636366">
                 Posting Link
               </Typography>
@@ -410,13 +468,13 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
               <Button
                 variant="contained"
                 color="success"
-                size='small'
+                size="small"
                 onClick={handleSubmitPostingLink}
                 disabled={loading}
                 sx={{
                   display: 'flex',
                   ...BUTTON_STYLES.base,
-                  ...BUTTON_STYLES.success
+                  ...BUTTON_STYLES.success,
                 }}
               >
                 {loading ? 'Saving...' : 'Submit'}
@@ -429,8 +487,17 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
           open={confirmDialogOpen}
           onClose={() => setConfirmDialogOpen(false)}
           title={actionText}
-          isPosting
-          emoji="🙂‍↕️"
+          isPosting={true}
+          emoji={
+            <Avatar
+              src="/assets/images/modals/approve.png"
+              alt="approve"
+              sx={{
+                width: 80,
+                height: 80,
+              }}
+            />
+          }
           content=""
           action={
             <Button
@@ -451,4 +518,5 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
 PostingLinkSection.propTypes = {
   submission: PropTypes.object.isRequired,
   onUpdate: PropTypes.func,
+  onViewLogs: PropTypes.any,
 };

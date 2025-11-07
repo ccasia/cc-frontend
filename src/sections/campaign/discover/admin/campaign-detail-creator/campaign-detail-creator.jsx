@@ -31,7 +31,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
-import { endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
@@ -86,7 +86,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
 
   const { user } = useAuthContext();
 
-  const { data: agreements, isLoading: loadingAgreements } = useGetAgreements(campaign?.id);
+  const { data: agreements, isLoading: loadingAgreements, mutate: agreementsMutate } = useGetAgreements(campaign?.id);
   const smUp = useResponsive('up', 'sm');
 
   const shortlistedCreators = campaign?.shortlisted;
@@ -107,11 +107,49 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     0
   );
 
+
+  const v4UsedCredits = useMemo(() => {
+    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+    if (!agreements || !campaign?.shortlisted) return 0;
+    
+    const sentAgreementUserIds = new Set(
+      agreements
+        .filter(
+          (agreement) =>
+            agreement.isSent &&
+            agreement.user?.creator?.isGuest !== true
+        )
+        .map((agreement) => agreement.userId)
+    );
+    
+    return campaign.shortlisted.reduce((acc, creator) => {
+      if (
+        sentAgreementUserIds.has(creator.userId) &&
+        creator.user?.creator?.isGuest !== true &&
+        creator.ugcVideos
+      ) {
+        return acc + (creator.ugcVideos || 0);
+      }
+      return acc;
+    }, 0);
+  }, [campaign, agreements]);
+
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
+    if (campaign?.submissionVersion === 'v4') {
+      const remaining = campaign.campaignCredits - (v4UsedCredits ?? 0);
+      console.log('[V4 Credit Calculation]', {
+        totalCredits: campaign.campaignCredits,
+        usedCredits: v4UsedCredits,
+        remaining,
+        shortlistedCount: campaign.shortlisted?.length,
+        agreementsCount: agreements?.length,
+      });
+      return remaining;
+    }
     const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
     return campaign.campaignCredits - totalUGCs;
-  }, [campaign]);
+  }, [campaign, v4UsedCredits, agreements]);
 
   const methods = useForm({
     defaultValues: {
@@ -172,12 +210,24 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         creator: { ...val.creator, socialMediaData: '' },
       }));
 
-      const res = await shortlistCreator({ newVal, campaignId: campaign.id });
-      modal.onFalse();
-      reset();
-      enqueueSnackbar(res?.data?.message);
-      campaignMutate();
-      mutate(endpoints.campaign.creatorAgreement(campaign.id));
+      if (campaign?.submissionVersion === 'v4') {
+        const res = await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
+          creators: newVal.map((val) => ({ id: val.id })),
+          campaignId: campaign.id,
+        });
+        modal.onFalse();
+        reset();
+        enqueueSnackbar(res?.data?.message);
+        campaignMutate();
+        mutate(endpoints.campaign.creatorAgreement(campaign.id));
+      } else {
+        const res = await shortlistCreator({ newVal, campaignId: campaign.id });
+        modal.onFalse();
+        reset();
+        enqueueSnackbar(res?.data?.message);
+        campaignMutate();
+        mutate(endpoints.campaign.creatorAgreement(campaign.id));
+      }
     } catch (error) {
       console.log(error);
       loading.onFalse();
@@ -190,14 +240,17 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   });
 
   const handleEditAgreement = (creator) => {
-    // For V3 campaigns (client-created), we need to create a new agreement
+    if (campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4') {
+      let creatorPitch = null;
 
-    if (campaign?.origin === 'CLIENT') {
-      // Check if there's an APPROVED pitch for this creator
-      const creatorPitch = campaign?.pitch?.find((p) => p.userId === creator.userId);
+      if (campaign?.submissionVersion === 'v4') {
+        creatorPitch = { status: 'APPROVED' };
+      } else {
+        // For client campaigns, check the regular pitch array
+        creatorPitch = campaign?.pitch?.find((p) => p.userId === creator.userId);
+      }
 
-      if (creatorPitch?.status === 'APPROVED') {
-        // Create a new agreement object for V3
+      if (creatorPitch?.status === 'APPROVED' || campaign?.submissionVersion === 'v4') {
         const newAgreement = {
           userId: creator.userId,
           campaignId: campaign.id,
@@ -206,7 +259,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
             amount: null,
             currency: 'MYR',
           },
-          isNew: true, // Flag to indicate this is a new agreement for V3
+          isNew: true,
         };
 
         setSelectedAgreement(newAgreement);
@@ -400,7 +453,9 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               disabled={isSubmitting || !creators.length}
               loading={loading.value}
               onClick={() => {
-                if (campaign?.campaignCredits) {
+                if (campaign?.submissionVersion === 'v4') {
+                  onSubmit({ creator: creators });
+                } else if (campaign?.campaignCredits) {
                   ugcVideosModal.onTrue();
                 } else {
                   console.log('ASDS');
@@ -682,7 +737,12 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
           ) : (
             <Button
               onClick={modal.onTrue}
-              disabled={isDisabled || totalUsedCredits === campaign?.campaignCredits}
+              disabled={
+                isDisabled ||
+                (campaign?.submissionVersion === 'v4'
+                  ? v4UsedCredits !== null && campaign?.campaignCredits && v4UsedCredits >= campaign.campaignCredits
+                  : totalUsedCredits >= (campaign?.campaignCredits || 0))
+              }
               sx={{
                 bgcolor: '#ffffff',
                 border: '1px solid #e7e7e7',
@@ -763,6 +823,8 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         dialog={editDialog}
         agreement={selectedAgreement}
         campaign={campaign}
+        campaignMutate={campaignMutate}
+        agreementsMutate={agreementsMutate}
       />
     </>
   );

@@ -12,7 +12,7 @@ const V3PitchActions = ({ pitch, onViewPitch }) => (
       onClick={() => onViewPitch(pitch)}
       sx={{
         cursor: 'pointer',
-        px: 1.5,
+        px: 3,
         py: 2,
         border: '1px solid #e7e7e7',
         borderBottom: '3px solid #e7e7e7',
@@ -33,7 +33,7 @@ const V3PitchActions = ({ pitch, onViewPitch }) => (
         },
       }}
     >
-      View Pitch
+      View
     </Button>
   );
 

@@ -25,6 +25,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Label from 'src/components/label';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { useShortlistedCreators } from '../hooks/shortlisted-creator';
 
@@ -39,6 +40,7 @@ const schema = yup.object().shape({
 const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose, creditsLeft, campaign, campaignMutate }) => {
   const shortlistedCreators = useShortlistedCreators((state) => state.shortlistedCreators);
   const resetState = useShortlistedCreators((state) => state.reset);
+  const { data: agreements } = useGetAgreements(campaignId);
 
   const methods = useForm({
     resolver: yupResolver(schema),
@@ -58,10 +60,50 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
     formState: { isValid, isSubmitting },
   } = methods;
 
+  // For v4 campaigns, calculate credits used only from sent agreements
+  const v4UsedCredits = useMemo(() => {
+    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+    if (!agreements || !campaign?.shortlisted) return 0;
+    
+    // Get userIds of Platform Creators whose agreements have been sent
+    const sentAgreementUserIds = new Set(
+      agreements
+        .filter(
+          (agreement) =>
+            agreement.isSent &&
+            agreement.user?.creator?.isGuest !== true
+        )
+        .map((agreement) => agreement.userId)
+    );
+    
+    return campaign.shortlisted.reduce((acc, creator) => {
+      if (
+        sentAgreementUserIds.has(creator.userId) &&
+        creator.user?.creator?.isGuest !== true &&
+        creator.ugcVideos
+      ) {
+        return acc + (creator.ugcVideos || 0);
+      }
+      return acc;
+    }, 0);
+  }, [campaign, agreements]);
+
   // Watch the form values to calculate real-time credits left
   const watchedCreators = watch('shortlistedCreators');
   const realTimeCreditsLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
+    
+    // For v4 campaigns, only count credits from sent agreements
+    if (campaign?.submissionVersion === 'v4') {
+      const alreadyUtilized = v4UsedCredits ?? 0;
+      const newlyAssigned = watchedCreators?.reduce(
+        (acc, creator) => acc + (creator?.credits || 0),
+        0
+      ) || 0;
+      return campaign.campaignCredits - alreadyUtilized - newlyAssigned;
+    }
+    
+    // For non-v4 campaigns, count all shortlisted creators
     const alreadyUtilized = (campaign?.shortlisted || []).reduce(
       (acc, item) => acc + (item?.ugcVideos || 0),
       0
@@ -71,7 +113,7 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
       0
     ) || 0;
     return campaign.campaignCredits - alreadyUtilized - newlyAssigned;
-  }, [watchedCreators, campaign?.campaignCredits, campaign?.shortlisted]);
+  }, [watchedCreators, campaign?.campaignCredits, campaign?.shortlisted, campaign?.submissionVersion, v4UsedCredits]);
 
   const { fields } = useFieldArray({
     control,

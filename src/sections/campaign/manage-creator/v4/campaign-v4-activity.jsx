@@ -30,6 +30,8 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { fetcher, endpoints } from 'src/utils/axios';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
@@ -70,7 +72,6 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
-  // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
   const originalAgreementUrl = campaign?.agreement?.agreementUrl;
   const agreementUrl = originalAgreementUrl
     ? originalAgreementUrl.replace(
@@ -79,7 +80,6 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       )
     : null;
 
-  // Check if agreement has been submitted (not just pending)
   const isAgreementSubmitted =
     agreementSubmission?.status === 'PENDING_REVIEW' ||
     agreementSubmission?.status === 'APPROVED' ||
@@ -268,95 +268,93 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
         {/* Left Side - PDF Preview */}
         {agreementUrl && (
-          <Box sx={{ flex: 1 }}>
-            <Box
-              sx={{
-                width: '100%',
-                height: { xs: '400px', sm: '500px' },
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-                overflow: 'auto',
-                bgcolor: 'background.neutral',
-                '& .react-pdf__Document': {
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                },
-                '&::-webkit-scrollbar': {
-                  width: '8px',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: 'rgba(0,0,0,0.2)',
-                  borderRadius: '4px',
-                },
-                '&::-webkit-scrollbar-track': {
-                  backgroundColor: 'rgba(0,0,0,0.1)',
-                },
-              }}
+          <Box
+            sx={{
+              width: { xs: '100%', md: '70%'},
+              height: { xs: '400px', sm: '500px' },
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              overflow: 'auto',
+              bgcolor: 'background.neutral',
+              '& .react-pdf__Document': {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              },
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0,0,0,0.2)',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'rgba(0,0,0,0.1)',
+              },
+            }}
+          >
+            <Document
+              file={agreementUrl}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
             >
-              <Document
-                file={agreementUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
-              >
-                {Array.from(new Array(numPages), (el, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      p: 2,
-                      width: '100%',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      '&:not(:last-child)': {
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                      },
-                    }}
-                  >
-                    <Page
-                      key={`page-${index + 1}`}
-                      pageNumber={index + 1}
-                      scale={isSmallScreen ? 0.4 : 0.6}
-                      renderAnnotationLayer={false}
-                      renderTextLayer={false}
-                    />
-                  </Box>
-                ))}
-              </Document>
-            </Box>
+              {Array.from(new Array(numPages), (el, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    p: 2,
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    '&:not(:last-child)': {
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                    },
+                  }}
+                >
+                  <Page
+                    key={`page-${index + 1}`}
+                    pageNumber={index + 1}
+                    scale={isSmallScreen ? 0.4 : 0.6}
+                    renderAnnotationLayer={false}
+                    renderTextLayer={false}
+                  />
+                </Box>
+              ))}
+            </Document>
           </Box>
         )}
 
-        {/* Right Side - Instructions and Buttons */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* Instructions */}
-          <Stack spacing={2} sx={{ mb: 3 }}>
-            <Typography variant="body1" sx={{ color: '#221f20' }}>
+        {/* Instructions */}
+        <Stack display={'flex'} flexDirection={'column'}>
+          <Box>
+            <Typography variant="body1" mb={1} sx={{ color: '#221f20' }}>
               Before starting the campaign, you must sign the standard agreement submission
               procedure!
             </Typography>
-            <Typography variant="body1" sx={{ color: '#221f20' }}>
+            <Typography variant="body1" mb={2} sx={{ color: '#221f20' }}>
               Review the agreement PDF below and choose your preferred method to sign and submit it.
             </Typography>
+          </Box>
 
+          {/* Action Buttons - Bottom Right */}
+          <Box display={'flex'} flexDirection={{ xs: 'row', md: 'column' }} flex={1} justifyContent={'space-between'}>
             {/* Download Agreement Button */}
             {agreementUrl && (
               <Button
                 variant="contained"
-                startIcon={<Iconify icon="material-symbols:download" width={20} />}
                 onClick={() => handleDownload(agreementUrl)}
                 sx={{
-                  bgcolor: 'white',
+                  bgcolor: '#fff',
                   border: 1,
                   borderColor: '#e7e7e7',
                   borderBottom: 3,
                   borderBottomColor: '#e7e7e7',
                   color: '#203ff5',
-                  ml: -1,
                   alignSelf: 'flex-start',
                   '&:hover': {
-                    bgcolor: 'white',
+                    bgcolor: '#fff',
                     borderColor: '#e7e7e7',
                   },
                   '& .MuiButton-startIcon': {
@@ -364,21 +362,19 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                   },
                 }}
               >
-                Download Agreement
+                <Iconify icon="material-symbols:download" width={{ xs: 30, md: 20}} />
+                <Box
+                  component="span"
+                  ml={1}
+                  sx={{
+                    display: { xs: 'none', md: 'inline' },
+                  }}
+                >
+                  Download Agreement
+                </Box>
               </Button>
             )}
-          </Stack>
 
-          {/* Action Buttons - Bottom Right */}
-          <Box
-            sx={{
-              mt: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              alignItems: { xs: 'flex-start', md: 'flex-end' },
-            }}
-          >
             {/* Digital Signing Option */}
             <Button
               variant="contained"
@@ -387,7 +383,8 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
               startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
               sx={{
                 bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
-                color: 'white',
+                color: '#fff',
+                alignSelf: 'flex-end',
                 borderBottom: 3.5,
                 borderBottomColor: isAgreementSubmitted ? '#9e9e9f' : '#112286',
                 borderRadius: 1.5,
@@ -398,105 +395,17 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                   opacity: 0.9,
                 },
                 '&.Mui-disabled': {
-                  color: 'white',
+                  color: '#fff',
                   opacity: 0.6,
                 },
               }}
             >
               {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement'}
             </Button>
-
-            {/* Upload Option Toggle */}
-            {!isAgreementSubmitted && (
-              <>
-                {/* <Button
-                  variant="outlined"
-                  onClick={() => setShowUploadOption(!showUploadOption)}
-                  startIcon={<Iconify icon="eva:upload-outline" width={20} />}
-                  sx={{
-                    borderColor: '#203ff5',
-                    color: '#203ff5',
-                    borderWidth: 1,
-                    borderBottom: 2,
-                    borderBottomColor: '#203ff5',
-                    borderRadius: 1.5,
-                    px: 2,
-                    py: 1,
-                    '&:hover': {
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      borderColor: '#203ff5',
-                    },
-                  }}
-                >
-                  {showUploadOption ? 'Hide Upload Option' : 'Upload Signed Agreement'}
-                </Button> */}
-
-                {/* Upload Section */}
-                <Collapse in={showUploadOption}>
-                  <Box
-                    sx={{
-                      mt: 2,
-                      p: 2,
-                      border: '1px solid #e0e0e0',
-                      borderRadius: 1,
-                      bgcolor: '#fafafa',
-                    }}
-                  >
-                    <FormProvider methods={methods} onSubmit={onSubmit}>
-                      <Stack spacing={2}>
-                        <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                          If digital signing doesn't work, you can download the agreement, sign it
-                          manually, and upload it here:
-                        </Typography>
-
-                        {!agreementForm && (
-                          <RHFUpload
-                            name="agreementForm"
-                            accept={{ 'application/pdf': [] }}
-                            onDrop={onDrop}
-                            onRemove={handleRemove}
-                            helperText="Upload your signed agreement PDF file"
-                          />
-                        )}
-
-                        {uploadProgress > 0 && uploadProgress < 100 && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <CircularProgress size={20} />
-                            <Typography variant="body2">Uploading... {uploadProgress}%</Typography>
-                          </Box>
-                        )}
-
-                        {agreementForm && (
-                          <Stack direction="row" spacing={2} justifyContent="flex-end">
-                            <Button
-                              variant="outlined"
-                              onClick={() => setPreview(URL.createObjectURL(agreementForm))}
-                              startIcon={<Iconify icon="eva:eye-outline" />}
-                            >
-                              Preview
-                            </Button>
-                            <LoadingButton
-                              type="submit"
-                              variant="contained"
-                              loading={uploading}
-                              sx={{
-                                bgcolor: '#203ff5',
-                                '&:hover': { bgcolor: '#203ff5', opacity: 0.9 },
-                              }}
-                            >
-                              Submit Agreement
-                            </LoadingButton>
-                          </Stack>
-                        )}
-                      </Stack>
-                    </FormProvider>
-                  </Box>
-                </Collapse>
-              </>
-            )}
           </Box>
-        </Box>
+        </Stack>
       </Box>
+
 
       {/* Sign Agreement Dialog */}
       <Dialog
@@ -652,8 +561,15 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 const CampaignV4Activity = ({ campaign }) => {
   const [expandedSections, setExpandedSections] = useState({});
   const [numPages, setNumPages] = useState(null);
+  const [uploadingSubmissions, setUploadingSubmissions] = useState({}); // Track which submissions are uploading
+  const updateTimerRef = React.useRef(null); // Store timer for debouncing updates
+  const isFirstUpdateRef = React.useRef(true); // Track if this is the first update
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
+
+  // Socket integration for real-time updates
+  const { socket } = useSocketContext();
+  const { user } = useAuthContext();
 
   // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
   const originalAgreementUrl = campaign?.agreement?.agreementUrl;
@@ -664,11 +580,12 @@ const CampaignV4Activity = ({ campaign }) => {
       )
     : null;
 
-  // Fetch creator's v4 submissions
+  // Fetch creator's v4 submissions using SWR
+  // Following SWR's standard API: useSWR(key, fetcher, options)
   const {
     data: submissionsData,
     error,
-    mutate,
+    mutate, // mutate() will revalidate this data
   } = useSWR(
     campaign?.id
       ? `${endpoints.submission.creator.v4.getMyV4Submissions}?campaignId=${campaign?.id}`
@@ -676,16 +593,22 @@ const CampaignV4Activity = ({ campaign }) => {
     fetcher,
     {
       revalidateOnFocus: true,
-      refreshInterval: 30000, // Refresh every 30 seconds
+      revalidateOnReconnect: true,
+      refreshInterval: socket ? 0 : 30000, // Disable auto-refresh when socket is connected
     }
   );
 
-  // Fetch campaign overview
-  const { data: overviewData } = useSWR(
+  // Fetch campaign overview using SWR
+  const { data: overviewData, mutate: mutateOverview } = useSWR(
     campaign?.id
       ? `${endpoints.submission.creator.v4.getMyCampaignOverview}?campaignId=${campaign?.id}`
       : null,
-    fetcher
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      refreshInterval: socket ? 0 : 30000, // Disable auto-refresh when socket is connected
+    }
   );
 
   // Get signed agreement URL if available (for approved agreement display)
@@ -756,6 +679,101 @@ const CampaignV4Activity = ({ campaign }) => {
     }
   }, [submissionsData, expandedSections]);
 
+  // Socket listeners for real-time submission updates
+  useEffect(() => {
+    if (!socket || !campaign?.id) return;
+    
+    const queueUpdate = () => {
+      if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
+
+      const delay = isFirstUpdateRef.current ? 0 : 200;
+      
+      updateTimerRef.current = setTimeout(() => {
+        mutate();
+        mutateOverview();
+        isFirstUpdateRef.current = false;
+      }, delay);
+    };
+
+    const handleSubmissionUpdate = (data) => {
+      // Check if the update is for submissions in this campaign
+      const allSubmissions = [
+        ...(submissionsData?.grouped?.videos || []),
+        ...(submissionsData?.grouped?.photos || []),
+        ...(submissionsData?.grouped?.rawFootage || []),
+      ];
+
+      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+
+      if (isRelevantUpdate && data.userId !== user?.id) {
+        queueUpdate();
+      }
+    };
+
+    const handleContentSubmitted = (data) => {
+      const allSubmissions = [
+        ...(submissionsData?.grouped?.videos || []),
+        ...(submissionsData?.grouped?.photos || []),
+        ...(submissionsData?.grouped?.rawFootage || []),
+      ];
+
+      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+
+      if (isRelevantUpdate && data.userId !== user?.id) {
+        queueUpdate();
+      }
+    };
+
+    const handlePostingUpdated = (data) => {
+      const allSubmissions = [
+        ...(submissionsData?.grouped?.videos || []),
+        ...(submissionsData?.grouped?.photos || []),
+        ...(submissionsData?.grouped?.rawFootage || []),
+      ];
+
+      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+
+      if (isRelevantUpdate && data.userId !== user?.id) {
+        queueUpdate();
+      }
+    };
+
+    const handleContentProcessed = (data) => {
+      const allSubmissions = [
+        ...(submissionsData?.grouped?.videos || []),
+        ...(submissionsData?.grouped?.photos || []),
+        ...(submissionsData?.grouped?.rawFootage || []),
+      ];
+
+      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+
+      if (isRelevantUpdate) {
+        queueUpdate();
+      }
+    };
+
+    // Join the campaign room
+    socket.emit('join-campaign', campaign.id);
+
+    // Listen for submission updates
+    socket.on('v4:submission:updated', handleSubmissionUpdate);
+    socket.on('v4:content:submitted', handleContentSubmitted);
+    socket.on('v4:posting:updated', handlePostingUpdated);
+    socket.on('v4:content:processed', handleContentProcessed);
+
+    // Cleanup
+    return () => {
+      // Clear any pending updates
+      if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
+      
+      socket.off('v4:submission:updated', handleSubmissionUpdate);
+      socket.off('v4:content:submitted', handleContentSubmitted);
+      socket.off('v4:posting:updated', handlePostingUpdated);
+      socket.off('v4:content:processed', handleContentProcessed);
+      socket.emit('leave-campaign', campaign.id);
+    };
+  }, [socket, campaign?.id, submissionsData, user?.id, mutate, mutateOverview]);
+
   // Helper function to determine if submission is "new" (not submitted yet)
   const isNewSubmission = (submission) => {
     const hasContent =
@@ -767,14 +785,17 @@ const CampaignV4Activity = ({ campaign }) => {
 
   // Helper function to get submission status
   const getSubmissionStatus = (submission) => {
-    const hasContent =
-      submission.video?.length > 0 ||
-      submission.photos?.length > 0 ||
-      submission.rawFootages?.length > 0;
+    // Check if this submission is currently uploading
+    const isUploading = uploadingSubmissions[submission.id];
 
-    if (!hasContent) {
-      return 'NOT STARTED';
+    // Show "UPLOADING..." immediately when upload starts
+    if (isUploading) {
+      return 'UPLOADING...';
     }
+
+    // IMPORTANT: Check status FIRST before checking content
+    // This prevents showing "NOT STARTED" when status is PENDING_REVIEW during upload
+    // (before backend has processed and added video/photo data)
 
     switch (submission.status) {
       case 'IN_PROGRESS':
@@ -805,7 +826,20 @@ const CampaignV4Activity = ({ campaign }) => {
         return 'APPROVED';
       case 'POSTED':
         return 'POSTED';
+      case 'NOT_STARTED':
       default:
+        // Only check content for NOT_STARTED status
+        const hasContent =
+          submission.video?.length > 0 ||
+          submission.photos?.length > 0 ||
+          submission.rawFootages?.length > 0;
+
+        // If there's content but status is NOT_STARTED, it means upload is in progress
+        // Show "IN REVIEW" to indicate processing
+        if (hasContent) {
+          return 'IN REVIEW';
+        }
+
         return 'NOT STARTED';
     }
   };
@@ -816,6 +850,10 @@ const CampaignV4Activity = ({ campaign }) => {
       'NOT STARTED': {
         color: '#8E8E93',
         borderColor: '#8E8E93',
+      },
+      'UPLOADING...': {
+        color: '#1340FF',
+        borderColor: '#1340FF',
       },
       'IN REVIEW': {
         color: '#8B5CF6',
@@ -846,7 +884,7 @@ const CampaignV4Activity = ({ campaign }) => {
   const getSubmissionTitle = (submission, index) => {
     switch (submission.submissionType?.type) {
       case 'VIDEO':
-        return `Draft Video ${submission.contentOrder || index + 1}`;
+        return `Video ${submission.contentOrder || index + 1}`;
       case 'PHOTO':
         return 'Photos';
       case 'RAW_FOOTAGE':
@@ -952,11 +990,10 @@ const CampaignV4Activity = ({ campaign }) => {
               <AgreementSubmission
                 campaign={campaign}
                 agreementSubmission={submissionsData?.grouped?.agreement}
-                onUpdate={() =>
-                  mutate(
-                    `${endpoints.submission.creator.v4.getMyCampaignOverview}?campaignId=${campaign.id}`
-                  )
-                }
+                onUpdate={async () => {
+                  await Promise.all([mutate(), mutateOverview()]);
+                  setExpandedSections((prev) => ({ ...prev, agreement: false }));
+                }}
               />
             </Box>
           </Collapse>
@@ -1219,7 +1256,7 @@ const CampaignV4Activity = ({ campaign }) => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.04)',
+                    bgcolor: 'transparent',
                   },
                 }}
                 onClick={() => handleToggleSection(video.id)}
@@ -1237,10 +1274,12 @@ const CampaignV4Activity = ({ campaign }) => {
                     {title}
                   </Typography>
 
-                  {/* Status Typography */}
-                  <Typography
-                    variant="caption"
+                  {/* Status Badge with Loading Indicator */}
+                  <Box
                     sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
                       px: 1.5,
                       py: 0.5,
                       fontWeight: 600,
@@ -1251,11 +1290,27 @@ const CampaignV4Activity = ({ campaign }) => {
                       whiteSpace: 'nowrap',
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
-                      fontSize: '0.75rem',
+                      transition: 'all 0.3s ease-in-out', // Smooth color transitions
                     }}
                   >
-                    {status}
-                  </Typography>
+                    {status === 'UPLOADING...' && (
+                      <CircularProgress
+                        size={12}
+                        thickness={4}
+                        sx={{ color: statusInfo.color }}
+                      />
+                    )}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        color: 'inherit',
+                      }}
+                    >
+                      {status}
+                    </Typography>
+                  </Box>
 
                   {isNew && (
                     <Chip
@@ -1281,7 +1336,40 @@ const CampaignV4Activity = ({ campaign }) => {
                   <V4VideoSubmission
                     submission={video}
                     campaign={campaign}
-                    onUpdate={() => mutate()}
+                    onUploadStateChange={(isUploading) => {
+                      setUploadingSubmissions((prev) => ({
+                        ...prev,
+                        [video.id]: isUploading,
+                      }));
+                    }}
+                    onUpdate={async () => {
+                      // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
+                      await mutate(
+                        (currentData) => {
+                          if (!currentData?.grouped) return currentData;
+                          return {
+                            ...currentData,
+                            grouped: {
+                              ...currentData.grouped,
+                              videos: currentData.grouped.videos.map((v) =>
+                                v.id === video.id
+                                  ? {
+                                      ...v,
+                                      status: 'PENDING_REVIEW',
+                                      // Keep video data to prevent UI flickering
+                                      video: v.video,
+                                      caption: v.caption,
+                                    }
+                                  : v
+                              ),
+                            },
+                          };
+                        },
+                        { revalidate: false }
+                      );
+
+                      setExpandedSections((prev) => ({ ...prev, [video.id]: false }));
+                    }}
                   />
                 </Box>
               </Collapse>
@@ -1316,7 +1404,7 @@ const CampaignV4Activity = ({ campaign }) => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.04)',
+                    bgcolor: 'transparent',
                   },
                 }}
                 onClick={() => handleToggleSection(photo.id)}
@@ -1334,10 +1422,12 @@ const CampaignV4Activity = ({ campaign }) => {
                     {title}
                   </Typography>
 
-                  {/* Status Typography */}
-                  <Typography
-                    variant="caption"
+                  {/* Status Badge with Loading Indicator */}
+                  <Box
                     sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
                       px: 1.5,
                       py: 0.5,
                       fontWeight: 600,
@@ -1348,11 +1438,27 @@ const CampaignV4Activity = ({ campaign }) => {
                       whiteSpace: 'nowrap',
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
-                      fontSize: '0.75rem',
+                      transition: 'all 0.3s ease-in-out', // Smooth color transitions
                     }}
                   >
-                    {status}
-                  </Typography>
+                    {status === 'UPLOADING...' && (
+                      <CircularProgress
+                        size={12}
+                        thickness={4}
+                        sx={{ color: statusInfo.color }}
+                      />
+                    )}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        color: 'inherit',
+                      }}
+                    >
+                      {status}
+                    </Typography>
+                  </Box>
 
                   {isNew && (
                     <Chip
@@ -1379,7 +1485,40 @@ const CampaignV4Activity = ({ campaign }) => {
                   <V4PhotoSubmission
                     submission={photo}
                     campaign={campaign}
-                    onUpdate={() => mutate()}
+                    onUpdate={async () => {
+                      await mutate(
+                        (currentData) => {
+                          console.log('[Photo Submission] Before update - status:', currentData?.grouped?.photos?.find(p => p.id === photo.id)?.status);
+
+                          if (!currentData?.grouped) return currentData;
+
+                          const updated = {
+                            ...currentData,
+                            grouped: {
+                              ...currentData.grouped,
+                              photos: currentData.grouped.photos.map((p) =>
+                                p.id === photo.id
+                                  ? {
+                                      ...p,
+                                      status: 'PENDING_REVIEW',
+                                      // Update individual photo statuses to PENDING
+                                      photos: p.photos?.map((photoItem) => ({
+                                        ...photoItem,
+                                        status: 'PENDING',
+                                      })),
+                                    }
+                                  : p
+                              ),
+                            },
+                          };
+
+                          console.log('[Photo Submission] After update - status:', updated.grouped.photos.find(p => p.id === photo.id)?.status);
+                          return updated;
+                        },
+                        { revalidate: false }
+                      );
+                      setExpandedSections((prev) => ({ ...prev, [photo.id]: false }));
+                    }}
                   />
                 </Box>
               </Collapse>
@@ -1414,7 +1553,7 @@ const CampaignV4Activity = ({ campaign }) => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.04)',
+                    bgcolor: 'transparent',
                   },
                 }}
                 onClick={() => handleToggleSection(rawFootage.id)}
@@ -1432,10 +1571,12 @@ const CampaignV4Activity = ({ campaign }) => {
                     {title}
                   </Typography>
 
-                  {/* Status Typography */}
-                  <Typography
-                    variant="caption"
+                  {/* Status Badge with Loading Indicator */}
+                  <Box
                     sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
                       px: 1.5,
                       py: 0.5,
                       fontWeight: 600,
@@ -1446,11 +1587,27 @@ const CampaignV4Activity = ({ campaign }) => {
                       whiteSpace: 'nowrap',
                       color: statusInfo.color,
                       borderColor: statusInfo.color,
-                      fontSize: '0.75rem',
+                      transition: 'all 0.3s ease-in-out', // Smooth color transitions
                     }}
                   >
-                    {status}
-                  </Typography>
+                    {status === 'UPLOADING...' && (
+                      <CircularProgress
+                        size={12}
+                        thickness={4}
+                        sx={{ color: statusInfo.color }}
+                      />
+                    )}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        color: 'inherit',
+                      }}
+                    >
+                      {status}
+                    </Typography>
+                  </Box>
 
                   {isNew && (
                     <Chip
@@ -1474,7 +1631,43 @@ const CampaignV4Activity = ({ campaign }) => {
               <Collapse in={isExpanded}>
                 <Divider />
                 <Box sx={{ p: 3 }}>
-                  <V4RawFootageSubmission submission={rawFootage} onUpdate={() => mutate()} />
+                  <V4RawFootageSubmission
+                    submission={rawFootage}
+                    onUpdate={async () => {
+                      await mutate(
+                        (currentData) => {
+                          console.log('[Raw Footage] Before update - status:', currentData?.grouped?.rawFootage?.find(rf => rf.id === rawFootage.id)?.status);
+
+                          if (!currentData?.grouped) return currentData;
+
+                          const updated = {
+                            ...currentData,
+                            grouped: {
+                              ...currentData.grouped,
+                              rawFootage: currentData.grouped.rawFootage.map((rf) =>
+                                rf.id === rawFootage.id
+                                  ? {
+                                      ...rf,
+                                      status: 'PENDING_REVIEW',
+                                      // Update individual raw footage statuses to PENDING
+                                      rawFootages: rf.rawFootages?.map((footage) => ({
+                                        ...footage,
+                                        status: 'PENDING',
+                                      })),
+                                    }
+                                  : rf
+                              ),
+                            },
+                          };
+
+                          console.log('[Raw Footage] After update - status:', updated.grouped.rawFootage.find(rf => rf.id === rawFootage.id)?.status);
+                          return updated;
+                        },
+                        { revalidate: false }
+                      );
+                      setExpandedSections((prev) => ({ ...prev, [rawFootage.id]: false }));
+                    }}
+                  />
                 </Box>
               </Collapse>
             </Card>

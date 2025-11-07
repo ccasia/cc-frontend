@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -75,9 +76,10 @@ const formatAmount = (value) => {
   }).format(cleanValue);
 };
 
-const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
+const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, agreementsMutate }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
+  const { data: agreements } = useGetAgreements(campaign?.id);
 
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
@@ -126,11 +128,80 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
     );
   }, [campaign]);
 
+
+  const v4UsedCredits = React.useMemo(() => {
+    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+    if (!agreements || !campaign?.shortlisted) return 0;
+    
+    const sentAgreementUserIds = new Set(
+      agreements
+        .filter(
+          (agreement) =>
+            agreement.isSent &&
+            agreement.user?.creator?.isGuest !== true
+        )
+        .map((agreement) => agreement.userId)
+    );
+    
+    return campaign.shortlisted.reduce((acc, creator) => {
+      if (
+        sentAgreementUserIds.has(creator.userId) &&
+        creator.user?.creator?.isGuest !== true &&
+        creator.ugcVideos
+      ) {
+        return acc + (creator.ugcVideos || 0);
+      }
+      return acc;
+    }, 0);
+  }, [campaign, agreements]);
+
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
     console.log(agreement);
 
     try {
+      // For v4 campaigns, check if credits are fully utilized before attempting to assign
+      if (campaign?.submissionVersion === 'v4' && campaign?.campaignCredits) {
+        // Check if credits are already fully utilized
+        if (v4UsedCredits !== null && v4UsedCredits >= campaign.campaignCredits) {
+          loading.onFalse();
+          enqueueSnackbar(
+            'Insufficient Credits: All campaign credits have been utilized. Cannot generate and send agreement.',
+            { variant: 'error' }
+          );
+          return;
+        }
+
+        try {
+          const creditAssignment = await axiosInstance.post('/api/campaign/v4/assignCreditOnAgreementSend', {
+            userId: agreement?.user?.id,
+            campaignId: agreement?.campaignId,
+          });
+
+          if (creditAssignment?.status !== 200 || creditAssignment?.data?.error) {
+            loading.onFalse();
+            enqueueSnackbar(
+              creditAssignment?.data?.message || 'Insufficient Credits: All campaign credits have been utilized.',
+              { variant: 'error' }
+            );
+            return; 
+          }
+        } catch (error) {
+          loading.onFalse();
+          if (error?.response?.status === 400) {
+            enqueueSnackbar(
+              error?.response?.data?.message || 'Insufficient Credits: Not enough credits available to send this agreement.',
+              { variant: 'error' }
+            );
+          } else {
+            enqueueSnackbar(
+              error?.response?.data?.message || error?.message || 'Cannot send agreement - credits validation failed',
+              { variant: 'error' }
+            );
+          }
+          return;
+        }
+      }
       console.log('Generating PDF with values:', {
         currency: data.currency,
         amount: data.paymentAmount,
@@ -171,7 +242,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         user: agreement?.user,
         campaignId: agreement?.campaignId,
         id: agreement?.id,
-        isNew: agreement?.isNew || false, // Flag for V3 agreement creation
+        isNew: agreement?.isNew || false, 
       };
 
       console.log('Sending data to backend:', requestData);
@@ -193,7 +264,18 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
 
       await axiosInstance.patch(endpoints.campaign.sendAgreement, sendAgreementPayload);
 
-      mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
+
+      if (agreementsMutate) {
+        await agreementsMutate();
+      } else {
+        await mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
+      }
+
+      if (campaignMutate) {
+        await campaignMutate();
+      }
+
+      await mutate(endpoints.campaign.getCampaignById(agreement?.campaignId));
 
       // await mutate(
       //   endpoints.campaign.creatorAgreement(agreement.campaignId),
@@ -254,6 +336,26 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
             </Stack>
 
             <Box sx={{ borderBottom: '1px solid #e7e7e7' }} />
+
+            {/* Show Insufficient Credits warning for v4 campaigns when credits are fully utilized */}
+            {campaign?.submissionVersion === 'v4' && 
+             campaign?.campaignCredits && 
+             v4UsedCredits !== null && 
+             v4UsedCredits >= campaign.campaignCredits && (
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: 'error.lighter',
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'error.main',
+                }}
+              >
+                <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 600 }}>
+                  ⚠️ Insufficient Credits: All campaign credits ({campaign.campaignCredits}) have been utilized. 
+                </Typography>
+              </Box>
+            )}
 
             <Stack spacing={1}>
               <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
@@ -396,6 +498,12 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
             type="submit"
             variant="contained"
             loading={loading.value}
+            disabled={
+              campaign?.submissionVersion === 'v4' &&
+              campaign?.campaignCredits &&
+              v4UsedCredits !== null &&
+              v4UsedCredits >= campaign.campaignCredits
+            }
             loadingIndicator={
               <SyncLoader color={settings.themeMode === 'light' ? 'black' : 'white'} size={5} />
             }
@@ -409,6 +517,11 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
               '&:hover': {
                 bgcolor: '#3a3a3c',
                 opacity: 0.9,
+              },
+              '&.Mui-disabled': {
+                bgcolor: '#e0e0e0',
+                color: '#9e9e9e',
+                borderBottom: '3px solid #bdbdbd',
               },
             }}
           >
@@ -426,4 +539,6 @@ CampaignAgreementEdit.propTypes = {
   dialog: PropTypes.object,
   agreement: PropTypes.object,
   campaign: PropTypes.object,
+  campaignMutate: PropTypes.func,
+  agreementsMutate: PropTypes.func,
 };

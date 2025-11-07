@@ -10,6 +10,7 @@ import { blue, grey } from '@mui/material/colors';
 import {
   Box,
   Chip,
+  Zoom,
   Stack,
   Dialog,
   Button,
@@ -106,7 +107,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
 
       setCurrentAnnotation(newAnnotation);
     },
-    [selectedTool, scale]
+    [selectedTool, hasSignature, scale]
   );
 
   const stopDrawing = useCallback(() => {
@@ -149,7 +150,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
       signDialog.onFalse();
       handleToolSelect('cursor');
     }
-  }, [setSignURL, currentSignatureId, signDialog, updateAnnotation]);
+  }, [currentSignatureId, updateAnnotation, setSignURL, signDialog, handleToolSelect]);
 
   const clearSignature = useCallback(() => {
     if (signRef.current) {
@@ -286,13 +287,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
             minWidth: 'fit-content',
           }}
         >
-          <Box
-            sx={{
-              display: 'inline-block',
-              minWidth: { xs: '100%', sm: 'auto' },
-              maxWidth: { xs: '100%', sm: 'none' },
-            }}
-          >
+          <Box sx={{ display: 'inline-block', minWidth: { xs: '100vw', sm: 'auto' } }}>
             <Document file={file} onLoadSuccess={onLoadSuccess} renderMode="canvas">
               <Stack spacing={{ xs: 1, sm: 2 }}>
                 {Array(totalPages)
@@ -404,6 +399,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                                 }
                               }}
                             >
+                              {/* eslint-disable-next-line no-nested-ternary */}
                               {annotation.type === 'signature' && signURL ? (
                                 <img
                                   src={signURL}
@@ -449,27 +445,35 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                                 </Typography>
                               )}
 
-                              {/* Delete button - larger on mobile */}
-                              <IconButton
-                                size={isMobile ? 'medium' : 'small'}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteAnnotation(annotation.id);
-                                }}
-                                sx={{
-                                  position: 'absolute',
-                                  top: { xs: -20, sm: -12 },
-                                  right: { xs: -20, sm: -12 },
-                                  bgcolor: 'error.main',
-                                  color: 'white',
-                                  width: { xs: 32, sm: 28 },
-                                  height: { xs: 32, sm: 28 },
-                                  '&:hover': { bgcolor: 'error.dark' },
-                                  boxShadow: 2,
-                                }}
+                              {/* Delete button - always visible for signatures, larger on mobile */}
+                              <Zoom
+                                in={
+                                  selectedAnnotation === annotation.id ||
+                                  annotation.type === 'signature'
+                                }
                               >
-                                <Iconify icon="mdi:close" width={isMobile ? 20 : 16} />
-                              </IconButton>
+                                <IconButton
+                                  size={isMobile ? 'medium' : 'small'}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteAnnotation(annotation.id);
+                                  }}
+                                  sx={{
+                                    position: 'absolute',
+                                    top: { xs: -16, sm: -12 },
+                                    right: { xs: -16, sm: -12 },
+                                    bgcolor: 'error.main',
+                                    color: 'white',
+                                    width: { xs: 32, sm: 28 },
+                                    height: { xs: 32, sm: 28 },
+                                    '&:hover': { bgcolor: 'error.dark' },
+                                    boxShadow: 2,
+                                    zIndex: 10,
+                                  }}
+                                >
+                                  <Iconify icon="mdi:close" width={isMobile ? 20 : 16} />
+                                </IconButton>
+                              </Zoom>
                             </Box>
                           </Rnd>
                         ))}

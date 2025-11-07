@@ -35,13 +35,13 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
   
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [adminManagers, setAdminManagers] = useState([]);
+  const [campaignManagers, setCampaignManagers] = useState([]);
   const [adminOptions, setAdminOptions] = useState([]);
   const [campaignDetails, setCampaignDetails] = useState(null);
   
   // Form validation
   const [errors, setErrors] = useState({
-    adminManagers: '',
+    campaignManagers: '',
   });
 
   // Add debugging for admin data structure
@@ -58,10 +58,10 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
 
   // Add debugging for selected admins
   useEffect(() => {
-    if (adminManagers.length > 0) {
-      console.log('Selected admin IDs:', adminManagers);
+    if (campaignManagers.length > 0) {
+      console.log('Selected admin IDs:', campaignManagers);
       const selectedAdmins = adminOptions.filter(admin => 
-        adminManagers.includes(admin.userId)
+        campaignManagers.includes(admin.userId)
       );
       console.log('Selected admin details:', selectedAdmins.map(admin => ({
         id: admin.id,
@@ -69,7 +69,7 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
         userName: admin.user?.name
       })));
     }
-  }, [adminManagers, adminOptions]);
+  }, [campaignManagers, adminOptions]);
 
   // Fetch campaign details and admin users
   useEffect(() => {
@@ -126,15 +126,15 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
     const {
       target: { value },
     } = event;
-    setAdminManagers(typeof value === 'string' ? value.split(',') : value);
-    setErrors((prev) => ({ ...prev, adminManagers: '' }));
+    setCampaignManagers(typeof value === 'string' ? value.split(',') : value);
+    setErrors((prev) => ({ ...prev, campaignManagers: '' }));
   };
 
   const validateForm = () => {
     const newErrors = {
-      adminManagers: adminOptions.length === 0 
+      campaignManagers: adminOptions.length === 0 
         ? 'No CSM admins available in the system. Please create a CSM role admin first.'
-        : adminManagers.length === 0 
+        : campaignManagers.length === 0 
           ? 'At least one admin manager is required' 
           : '',
     };
@@ -155,12 +155,12 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
     try {
       // Log what we're sending to help debug
       console.log('Sending initial activation data:', {
-        adminManager: adminManagers,
+        campaignManager: campaignManagers,
       });
       
       const formData = new FormData();
       formData.append('data', JSON.stringify({
-        adminManager: adminManagers, // These are the admin user IDs
+        campaignManager: campaignManagers, // These are the admin user IDs
       }));
       
       const response = await axios.post(`/api/campaign/initialActivateCampaign/${campaignId}`, formData);
@@ -168,7 +168,7 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
       
       // Get assigned admin names for success message
       const assignedAdminNames = adminOptions
-        .filter(admin => adminManagers.includes(admin.userId))
+        .filter(admin => campaignManagers.includes(admin.userId))
         .map(admin => admin.name)
         .join(', ');
       
@@ -195,9 +195,9 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
   const handleClose = () => {
     if (!submitting) {
       // Reset form state
-      setAdminManagers([]);
+      setCampaignManagers([]);
       setErrors({
-        adminManagers: '',
+        campaignManagers: '',
       });
       
       onClose();
@@ -247,12 +247,12 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
 
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 2, mb: 4 }}>
-          <FormControl fullWidth error={!!errors.adminManagers}>
+          <FormControl fullWidth error={!!errors.campaignManagers}>
             <InputLabel id="admin-managers-label">Assign to Admin/CSM *</InputLabel>
             <Select
               labelId="admin-managers-label"
               multiple
-              value={adminManagers}
+              value={campaignManagers}
               onChange={handleAdminManagerChange}
               input={<OutlinedInput label="Assign to Admin/CSM *" />}
               renderValue={(selected) => {
@@ -268,8 +268,8 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
                 </MenuItem>
               ))}
             </Select>
-            {errors.adminManagers && (
-              <FormHelperText>{errors.adminManagers}</FormHelperText>
+            {errors.campaignManagers && (
+              <FormHelperText>{errors.campaignManagers}</FormHelperText>
             )}
           </FormControl>
         </Stack>

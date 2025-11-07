@@ -1,5 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
 import 'react-quill/dist/quill.snow.css';
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 
@@ -88,16 +89,6 @@ const CampaignModal = ({
   const theme = useTheme();
   // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const isShortlisted = useMemo(
-    () =>
-      user &&
-      user?.shortlisted &&
-      user?.shortlisted.some(
-        (item) => item.userId === user?.id && item.campaignId === campaign?.id
-      ),
-    [campaign, user]
-  );
 
   const existingPitch = useMemo(
     () => user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id),
@@ -449,8 +440,8 @@ const CampaignModal = ({
         {/* Campaign info */}
         <Box sx={{ px: 3, pb: 3, mt: 4 }}>
           <Grid container rowGap={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
-            <Grid item xs={12} sm={6}>
-              <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
+            <Grid item xs={12} sm={8}>
+              <Stack spacing={0.5} width="100%">
                 <Typography
                   variant="h5"
                   sx={{
@@ -477,7 +468,7 @@ const CampaignModal = ({
                 </Typography>
               </Stack>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <Stack
                 direction={{ xs: 'row', sm: 'row' }}
                 spacing={1}
@@ -581,7 +572,7 @@ const CampaignModal = ({
                     </Button>
                   </Stack>
                 ) : hasPitched ? (
-                  existingPitch.status === 'approved' ? (
+                  existingPitch.status === 'APPROVED' ? (
                     <Button
                       variant="contained"
                       onClick={() => handleManageClick(campaign.id)}
@@ -604,7 +595,7 @@ const CampaignModal = ({
                     >
                       Manage
                     </Button>
-                  ) : existingPitch.status === 'rejected' ? (
+                  ) : existingPitch.status === 'REJECTED' ? (
                     <Chip
                       icon={<Iconify icon="mdi:close-circle" />}
                       label="Rejected"
@@ -666,29 +657,6 @@ const CampaignModal = ({
                   >
                     Draft
                   </Button>
-                ) : isShortlisted ? (
-                  <Button
-                    variant="contained"
-                    onClick={() => handleManageClick(campaign.id)}
-                    sx={{
-                      backgroundColor: '#203ff5',
-                      color: 'white',
-                      borderBottom: '4px solid #102387 !important',
-                      border: 'none',
-                      '&:hover': {
-                        backgroundColor: '#1935dd',
-                        borderBottom: '4px solid #102387 !important',
-                      },
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      padding: { xs: '4px 12px', sm: '6px 18px' },
-                      minWidth: '100px',
-                      height: '42px',
-                      boxShadow: 'none',
-                      textTransform: 'none',
-                    }}
-                  >
-                    Manage
-                  </Button>
                 ) : (
                   <Button
                     variant="contained"
@@ -744,42 +712,39 @@ const CampaignModal = ({
                 </Button>
               </Stack>
             </Grid>
+
+            {(!isFormCompleted || !user?.paymentForm?.bankAccountName) && 
+              <Typography
+                sx={{
+                  flex: 1,
+                  textAlign: 'center',
+                  p: 1,
+                  mt: 2,
+                  borderRadius: 1,
+                  color: '#FF3500',
+                  backgroundColor: '#FFF2F0',
+                  fontWeight: 600,
+                  fontSize: 12,
+                  alignSelf: 'center',
+                }}
+              >
+                Please complete your{' '}
+                <Link
+                  to={paths.dashboard.user.profileTabs.payment}
+                  style={{
+                    color: '#FF3500',
+                    fontWeight: 'inherit',
+                  }}
+                >
+                  payment details
+                </Link>{' '}
+                to access this feature. ☝️
+              </Typography>          
+            }
           </Grid>
 
-          {false && (
-            <Box
-              mt={4}
-              sx={{
-                border: '1.5px solid #0062CD',
-                borderBottom: '4px solid #0062CD',
-                borderRadius: 1,
-                p: 1,
-                mb: 1,
-                width: 'fit-content',
-              }}
-            >
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Stack spacing={0.5}>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#0062CD',
-                      fontWeight: 600,
-                    }}
-                  >
-                    Partnered with KWSP i-Saraan{' '}
-                  </Typography>
-                  <Divider />
-                  <Typography variant="caption" color="black" fontWeight={400}>
-                    Score an extra RM100! T&C’s apply.
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Box>
-          )}
-
-          {/* Add Divider here */}
           <Divider sx={{ my: 2, mb: 3 }} />
+
           {/* Campaign details grid */}
           <Grid container spacing={2}>
             {/* Left column */}

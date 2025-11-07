@@ -51,6 +51,7 @@ import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignLogistics from '../campaign-logistics';
+import CampaignLogisticsClient from '../campaign-logistics-client';
 import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
@@ -90,6 +91,7 @@ const clientAllowedTabs = [
   'deliverables',
   'submissions-v4',
   'analytics',
+  'logistics', // allow client to access Logistics tab
 ];
 
 const CampaignDetailView = ({ id }) => {
@@ -159,12 +161,12 @@ const CampaignDetailView = ({ id }) => {
 
   const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
 
-  // Fetch V3 pitches for client-created campaigns to get accurate count
+  // Fetch V3 pitches for client-created campaigns OR v4 campaigns to get accurate count
   const { pitches: v3Pitches } = useGetV3Pitches(
-    campaign?.origin === 'CLIENT' ? campaign?.id : null
+    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? campaign?.id : null
   );
   const { data: v3Agreements } = useGetAgreements(
-    campaign?.origin === 'CLIENT' ? campaign?.id : null
+    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? campaign?.id : null
   );
 
   const generateNewAgreement = useCallback(async (template) => {
@@ -358,6 +360,7 @@ const CampaignDetailView = ({ id }) => {
                   : [{ label: 'Creator Deliverables', value: 'deliverables' }]
                 ),
                 { label: 'Campaign Analytics', value: 'analytics' },
+                { label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`, value: 'logistics' },
               ]
             : // Admin/other user tabs
               [
@@ -366,7 +369,7 @@ const CampaignDetailView = ({ id }) => {
                 // { label: 'Client Info', value: 'client' },
                 {
                   label: `Creator Master List (${
-                    campaign?.origin === 'CLIENT'
+                    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4'
                       ? v3Pitches?.filter(
                           (p) =>
                             p.status === 'PENDING_REVIEW' ||
@@ -385,7 +388,7 @@ const CampaignDetailView = ({ id }) => {
                   value: 'creator',
                 },
                 {
-                  label: `Agreements (${campaign?.origin === 'CLIENT' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : campaign?.creatorAgreement?.length || 0})`,
+                  label: `Agreements (${campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : campaign?.creatorAgreement?.length || 0})`,
                   value: 'agreement',
                 },
                 ...(campaign?.submissionVersion === 'v4' 
@@ -405,6 +408,10 @@ const CampaignDetailView = ({ id }) => {
                 {
                   label: `Invoices (${campaignInvoices?.length || 0})`,
                   value: 'invoices',
+                },
+                {
+                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                  value: 'logistics',
                 },
                 // {
                 //   label: `Logistics (${campaign?.logistic?.length || 0})`,
@@ -537,13 +544,15 @@ const CampaignDetailView = ({ id }) => {
     ),
     creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
-    logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />,
+    logistics: isClient
+      ? <CampaignLogisticsClient campaign={campaign} />
+      : <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />, // admin
     invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
     pitch:
-      campaign?.origin === 'CLIENT' ? (
+      campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? (
         <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} />
       ) : (
         <CampaignDetailPitch
