@@ -26,6 +26,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import useGetCompany from 'src/hooks/use-get-company';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -69,13 +70,15 @@ const steps = [
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
 
-function CreateCampaignForm({ onClose, mutate }) {
+function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
   const { user } = useAuthContext();
   const openCompany = useBoolean();
   const openBrand = useBoolean();
   const modal = useBoolean();
   const confirmation = useBoolean();
   const openPackage = useBoolean();
+
+  const { data: companyListData, mutate: mutateCompanyList } = useGetCompany();
 
   const [status, setStatus] = useState('');
   const [activeStep, setActiveStep] = useState(0);
@@ -87,6 +90,7 @@ function CreateCampaignForm({ onClose, mutate }) {
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   const [pages, setPages] = useState(0);
+  const [hasCreditError, setHasCreditError] = useState(false)
 
   const pdfModal = useBoolean();
 
@@ -483,7 +487,9 @@ function CreateCampaignForm({ onClose, mutate }) {
         variant: 'success',
       });
       reset();
-      mutate();
+      if (mutateCampaignList) {
+        mutateCampaignList();
+      }
       setStatus('');
       confirmation.onFalse();
       setActiveStep(0);
@@ -512,6 +518,7 @@ function CreateCampaignForm({ onClose, mutate }) {
               openCompany={openCompany}
               openBrand={openBrand}
               openPackage={openPackage}
+              onValidationChange={setHasCreditError}
             />
           );
         case 1:
@@ -536,6 +543,23 @@ function CreateCampaignForm({ onClose, mutate }) {
     },
     [pdfModal, openCompany, openBrand, openPackage]
   );
+
+  const handlePackageLinkSuccess = async () => {
+    const currentClientId = getValues('client')?.id;
+
+    openPackage.onFalse();
+    enqueueSnackbar('Package linked successfully!', {variant: 'success'});
+    
+    const newCompanyList = await mutateCompanyList();
+
+    if (newCompanyList && currentClientId) {
+      const updatedClient = newCompanyList.find((c) => c.id === currentClientId);
+
+      if (updatedClient) {
+        setValue('client', updatedClient, {shouldValidate:true});
+      }
+    }
+  };
 
   const startDate = getValues('campaignStartDate');
   const campaignStartDate = watch('campaignStartDate');
@@ -654,7 +678,7 @@ function CreateCampaignForm({ onClose, mutate }) {
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                   py: 1,
                 }}
-                disabled={!isValid || errors?.campaignCredit}
+                disabled={!isValid || errors?.campaignCredit || hasCreditError}
                 onClick={handleNext}
               >
                 Next
@@ -813,6 +837,7 @@ function CreateCampaignForm({ onClose, mutate }) {
       <PackageCreateDialog
         open={openPackage.value}
         onClose={openPackage.onFalse}
+        onRefresh={handlePackageLinkSuccess}
         setValue={setValue}
         clientId={getValues('client')?.id}
       />

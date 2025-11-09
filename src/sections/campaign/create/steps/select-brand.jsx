@@ -23,20 +23,20 @@ import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 const filter = createFilterOptions();
 
-const findLatestPackage = (packages) => {
-  if (packages.length === 0) {
-    return null; // Return null if the array is empty
-  }
+// const findLatestPackage = (packages) => {
+//   if (packages.length === 0) {
+//     return null; // Return null if the array is empty
+//   }
 
-  const latestPackage = packages.reduce((latest, current) => {
-    const latestDate = new Date(latest.createdAt);
-    const currentDate = new Date(current.createdAt);
+//   const latestPackage = packages.reduce((latest, current) => {
+//     const latestDate = new Date(latest.createdAt);
+//     const currentDate = new Date(current.createdAt);
 
-    return currentDate > latestDate ? current : latest;
-  });
+//     return currentDate > latestDate ? current : latest;
+//   });
 
-  return latestPackage;
-};
+//   return latestPackage;
+// };
 
 const getRemainingTime = (invoiceDate) => {
   const remainingDays = dayjs(invoiceDate).diff(dayjs(), 'days');
@@ -44,7 +44,7 @@ const getRemainingTime = (invoiceDate) => {
   return remainingDays;
 };
 
-const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
+const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }) => {
   const { data, isLoading } = useGetCompany();
 
   const {
@@ -56,44 +56,66 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
     formState: { errors },
   } = useFormContext();
 
-  const client = getValues('client');
+  const client = watch('client');
   const brand = getValues('campaignBrand');
   const campaignCredits = watch('campaignCredits');
 
-  const latestPackageItem = useMemo(() => {
-    if (client?.id && client?.subscriptions.length) {
-      let packageItem = findLatestPackage(client?.subscriptions);
-      packageItem = {
-        ...packageItem,
-        totalCredits:
-          packageItem.totalCredits ||
-          packageItem.package.credits ||
-          packageItem.customPackage.customCredits,
-        availableCredits:
-          (packageItem.totalCredits ||
-            packageItem.package.credits ||
-            packageItem.customPackage.customCredits) - packageItem.creditsUsed,
-      };
-      return packageItem;
+  const creditSummary = useMemo(() => {
+    return client?.creditSummary || null;
+  }, [client])
+
+  const requestedCredits = Number(campaignCredits || 0);
+  const availableCredits = creditSummary?.remainingCredits ?? 0;
+
+  let creditError = false;
+  let creditHelperText = '';
+
+  if (requestedCredits <= 0) {
+  } else if (requestedCredits > availableCredits) {
+    creditError = true;
+    creditHelperText = `Exceeds limit - credits available: ${availableCredits}`;
+  }
+
+  useEffect(() => {
+    if (onValidationChange) {
+      onValidationChange(creditError);
     }
-    return null;
-  }, [client]);
+  }, [creditError, onValidationChange]); 
 
-  const availabilityCredits = useMemo(() => {
-    let campaigns;
-    if ((client?.type && client?.type === 'directClient') || !client?.brand?.length) {
-      campaigns = client?.campaign;
-    } else {
-      campaigns = client?.brand?.flatMap((a) => a.campaign);
-    }
+  // const latestPackageItem = useMemo(() => {
+  //   if (client?.id && client?.subscriptions.length) {
+  //     let packageItem = findLatestPackage(client?.subscriptions);
+  //     packageItem = {
+  //       ...packageItem,
+  //       totalCredits:
+  //         packageItem.totalCredits ||
+  //         packageItem.package.credits ||
+  //         packageItem.customPackage.customCredits,
+  //       availableCredits:
+  //         (packageItem.totalCredits ||
+  //           packageItem.package.credits ||
+  //           packageItem.customPackage.customCredits) - packageItem.creditsUsed,
+  //     };
+  //     return packageItem;
+  //   }
+  //   return null;
+  // }, [client]);
 
-    campaigns = campaigns?.filter(
-      (campaign) =>
-        campaign?.subscriptionId != null && campaign?.subscriptionId === latestPackageItem?.id
-    );
+  // const availabilityCredits = useMemo(() => {
+  //   let campaigns;
+  //   if ((client?.type && client?.type === 'directClient') || !client?.brand?.length) {
+  //     campaigns = client?.campaign;
+  //   } else {
+  //     campaigns = client?.brand?.flatMap((a) => a.campaign);
+  //   }
 
-    return campaigns?.reduce((acc, sum) => acc + sum.campaignCredits, 0);
-  }, [client, latestPackageItem]);
+  //   campaigns = campaigns?.filter(
+  //     (campaign) =>
+  //       campaign?.subscriptionId != null && campaign?.subscriptionId === latestPackageItem?.id
+  //   );
+
+  //   return campaigns?.reduce((acc, sum) => acc + sum.campaignCredits, 0);
+  // }, [client, latestPackageItem]);
 
   useEffect(() => {
     if (client && client.inputValue) {
@@ -107,20 +129,20 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
     }
   }, [brand, openBrand]);
 
-  useEffect(() => {
-    if (
-      (latestPackageItem &&
-        campaignCredits > latestPackageItem.totalCredits - availabilityCredits) ||
-      !latestPackageItem
-    ) {
-      setError('campaignCredit', {
-        type: 'onChange',
-        message: 'Cannot exceeds available credits',
-      });
-    } else {
-      clearErrors('campaignCredit');
-    }
-  }, [campaignCredits, setError, clearErrors, latestPackageItem, availabilityCredits]);
+  // useEffect(() => {
+  //   if (
+  //     (latestPackageItem &&
+  //       campaignCredits > latestPackageItem.totalCredits - availabilityCredits) ||
+  //     !latestPackageItem
+  //   ) {
+  //     setError('campaignCredit', {
+  //       type: 'onChange',
+  //       message: 'Cannot exceeds available credits',
+  //     });
+  //   } else {
+  //     clearErrors('campaignCredit');
+  //   }
+  // }, [campaignCredits, setError, clearErrors, latestPackageItem, availabilityCredits]);
 
   useEffect(() => {
     if (client && client?.type === 'directClient') {
@@ -268,10 +290,10 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
       )}
 
       {client &&
-        (!latestPackageItem ? (
+        (!creditSummary.remainingCredits || creditSummary.activePackagesCount === 0 ? (
           <Box sx={{ textAlign: 'center', mt: 2 }}>
             <Typography variant="subtitle1" color="text.secondary">
-              Package not found
+              No active package found
             </Typography>
             <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
               Link a package
@@ -279,7 +301,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
           </Box>
         ) : (
           <>
-            {dayjs(latestPackageItem?.expiredAt).isBefore(dayjs(), 'date') ? (
+            {dayjs(creditSummary.nextExpiryDate).isBefore(dayjs(), 'date') ? (
               <Stack mt={2} alignItems="center" spacing={1}>
                 <Avatar
                   sx={{ bgcolor: (theme) => theme.palette.warning.light, width: 60, height: 60 }}
@@ -287,7 +309,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
                   <Iconify icon="pajamas:expire" width={26} />
                 </Avatar>
                 <Typography variant="subtitle2">
-                  Package with ID {latestPackageItem?.subscriptionId} is expired
+                  Package has expired
                 </Typography>
                 <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
                   Renew package
@@ -329,10 +351,10 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
                           color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
                         }}
                       >
-                        Available Credits
+                        Total Available Credits
                       </FormLabel>
 
-                      <Tooltip title="Available Credits = Total Credits - Allocation Credits">
+                      <Tooltip title={`Total remaining credits from ${creditSummary.activePackagesCount} active package(s).`}>
                         <Iconify
                           icon="material-symbols:info-outline-rounded"
                           width="24"
@@ -344,7 +366,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
                       </Tooltip>
                     </Stack>
                     <TextField
-                      value={`${latestPackageItem.totalCredits - availabilityCredits} UGC Credits`}
+                      value={`${creditSummary.remainingCredits} UGC Credits`}
                       InputProps={{
                         disabled: true,
                       }}
@@ -361,7 +383,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
                       Validity
                     </FormLabel>
                     <TextField
-                      value={`${getRemainingTime(latestPackageItem?.expiredAt)} days left`}
+                      value={`${getRemainingTime(creditSummary.nextExpiryDate)} days left`}
                       InputProps={{
                         disabled: true,
                       }}
@@ -382,8 +404,8 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
                     name="campaignCredits"
                     type="number"
                     placeholder="UGC Credits"
-                    error={errors?.campaignCredit || errors?.campaignCredits}
-                    helperText={errors?.campaignCredit?.message}
+                    error={creditError || errors?.campaignCredits}
+                    helperText={errors?.campaignCredits?.message || creditHelperText}
                   />
                 </Stack>
               </Stack>
@@ -400,4 +422,5 @@ SelectBrand.propTypes = {
   openCompany: PropTypes.object,
   openBrand: PropTypes.object,
   openPackage: PropTypes.object,
+  onValidationChange: PropTypes.func,
 };
