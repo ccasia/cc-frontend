@@ -290,7 +290,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
       )}
 
       {client &&
-        (!creditSummary.remainingCredits || creditSummary.activePackagesCount === 0 ? (
+        (!creditSummary || !creditSummary.remainingCredits ? (
           <Box sx={{ textAlign: 'center', mt: 2 }}>
             <Typography variant="subtitle1" color="text.secondary">
               No active package found
