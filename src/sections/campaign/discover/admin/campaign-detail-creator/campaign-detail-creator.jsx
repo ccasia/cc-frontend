@@ -189,15 +189,35 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
 
   console.log(creatorsWithAgreements);
 
-  const filteredCreators = useMemo(
-    () =>
-      query
-        ? creatorsWithAgreements?.filter((elem) =>
-            elem?.user?.name?.toLowerCase().includes(query.toLowerCase())
-          )
-        : creatorsWithAgreements,
-    [creatorsWithAgreements, query]
-  );
+  const filteredCreators = useMemo(() => {
+    let filtered = creatorsWithAgreements;
+
+    // For v4 campaigns, only show creators with approved pitches
+    if (campaign?.submissionVersion === 'v4') {
+      // Define approved statuses
+      const approvedStatuses = ['approved', 'APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'];
+
+      filtered = creatorsWithAgreements?.filter((elem) => {
+        // Find the pitch for this creator
+        const creatorPitch = campaign?.pitch?.find((p) => p.userId === elem.userId);
+
+        if (!creatorPitch) return false;
+
+        // Check if the pitch has an approved status (check both displayStatus and status)
+        const pitchStatus = creatorPitch.displayStatus || creatorPitch.status;
+        return approvedStatuses.includes(pitchStatus);
+      });
+    }
+
+    // Apply name search filter if query exists
+    if (query) {
+      filtered = filtered?.filter((elem) =>
+        elem?.user?.name?.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [creatorsWithAgreements, query, campaign]);
 
   const selectedCreator = watch('creator');
 

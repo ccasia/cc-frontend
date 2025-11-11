@@ -39,7 +39,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
@@ -51,7 +50,6 @@ import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignLogistics from '../campaign-logistics';
-import CampaignLogisticsClient from '../campaign-logistics-client';
 import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
@@ -59,16 +57,17 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
+import CampaignLogisticsClient from '../campaign-logistics-client';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
+import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
-import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 
 // Ensure campaignTabs exists and is loaded from localStorage
@@ -169,6 +168,27 @@ const CampaignDetailView = ({ id }) => {
     campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? campaign?.id : null
   );
 
+  // Calculate confirmed creators count based on campaign version
+  const confirmedCreatorsCount = useMemo(() => {
+    if (campaign?.submissionVersion === 'v4') {
+      // For v4 campaigns, only count creators with approved pitches
+      const approvedStatuses = ['approved', 'APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'];
+
+      if (!campaign?.shortlisted || !campaign?.pitch) return 0;
+
+      return campaign.shortlisted.filter((creator) => {
+        const creatorPitch = campaign.pitch.find((p) => p.userId === creator.userId);
+        if (!creatorPitch) return false;
+
+        const pitchStatus = creatorPitch.displayStatus || creatorPitch.status;
+        return approvedStatuses.includes(pitchStatus);
+      }).length;
+    }
+
+    // For non-v4 campaigns, use original logic
+    return campaign?.shortlisted?.length || 0;
+  }, [campaign]);
+
   const generateNewAgreement = useCallback(async (template) => {
     try {
       if (template) {
@@ -194,7 +214,7 @@ const CampaignDetailView = ({ id }) => {
   }, []);
 
   const onSelectAgreement = async (template) => {
-    const newAgreement = await generateNewAgreement(template);
+    await generateNewAgreement(template);
     // setDisplayPdf(newAgreement);
     setSelectedTemplate(template);
   };
@@ -209,24 +229,9 @@ const CampaignDetailView = ({ id }) => {
   // Check user roles for activation
   const isCSL = user?.admin?.role?.name === 'CSL';
   const isSuperAdmin = user?.admin?.mode === 'god';
-  const isAdmin = user?.role === 'admin';
-  const isCSM =
-    user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
 
   // Check if user can perform initial activation (CSL or Superadmin)
   const canInitialActivate = isCSL || isSuperAdmin;
-
-  // Check if user can complete activation (CSM/Admin assigned to campaign)
-  const isUserAssignedToCampaign = campaign?.campaignAdmin?.some(
-    (admin) =>
-      admin.adminId === user?.id ||
-      admin.admin?.userId === user?.id ||
-      admin.admin?.user?.id === user?.id
-  );
-  const canCompleteActivation =
-    (isCSM || isAdmin) &&
-    campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
-    isUserAssignedToCampaign;
 
   // Check if current tab is valid for client users
   useEffect(() => {
@@ -296,29 +301,7 @@ const CampaignDetailView = ({ id }) => {
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
   }, [isClient, campaign?.submissionVersion]);
 
-  const icons = (tab) => {
-    if (tab.value === 'pitch' && campaign?.pitch?.length > 0) {
-      const undecidedPitches = campaign.pitch.filter((pitch) => pitch.status === 'undecided');
-      return undecidedPitches.length > 0 ? <Label>{undecidedPitches.length}</Label> : null;
-    }
-
-    if (tab.value === 'creator' && campaign?.shortlisted?.length) {
-      return <Label>{campaign?.shortlisted?.length}</Label>;
-    }
-
-    if (tab.value === 'agreement') {
-      const v3Count = Array.isArray(v3Agreements) ? v3Agreements.length : 0;
-      const v2Count = Array.isArray(campaign?.creatorAgreement)
-        ? campaign.creatorAgreement.length
-        : 0;
-      const count = campaign?.origin === 'CLIENT' ? v3Count : v2Count;
-      return count > 0 ? <Label>{count}</Label> : null;
-    }
-
-    return '';
-  };
-
-  const { campaigns: campaignInvoices, isLoading: invoicesLoading } = useGetInvoicesByCampId(id);
+  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(id);
 
   const renderTabs = (
     <Box sx={{ mt: 2, mb: 2.5 }}>
@@ -379,16 +362,30 @@ const CampaignDetailView = ({ id }) => {
                             p.status === 'AGREEMENT_PENDING' ||
                             p.status === 'AGREEMENT_SUBMITTED'
                         ).length || 0
-                      : campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0
+                      : campaign?.pitch.filter(
+                        (p) =>
+                          p.status === 'PENDING_REVIEW' ||
+                          p.status === 'approved' ||
+                          p.status === 'rejected'
+                      ).length || 0
                   })`,
                   value: 'pitch',
                 },
                 {
-                  label: `Confirmed Creators (${campaign?.shortlisted?.length || 0})`,
+                  label: `Confirmed Creators (${confirmedCreatorsCount})`,
                   value: 'creator',
                 },
                 {
-                  label: `Agreements (${campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? (Array.isArray(v3Agreements) ? v3Agreements.length : 0) : campaign?.creatorAgreement?.length || 0})`,
+                  label: (() => {
+                    const isV3Campaign = campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
+                    let agreementCount = 0;
+                    if (isV3Campaign) {
+                      agreementCount = Array.isArray(v3Agreements) ? v3Agreements.length : 0;
+                    } else {
+                      agreementCount = campaign?.creatorAgreement?.length || 0;
+                    }
+                    return `Agreements (${agreementCount})`;
+                  })(),
                   value: 'agreement',
                 },
                 ...(campaign?.submissionVersion === 'v4' 
