@@ -54,6 +54,7 @@ const getStatusInfo = (pitch) => {
     },
     MAYBE: { color: '#FFC702', label: 'Maybe', normalizedStatus: 'MAYBE' },
     APPROVED: { color: '#1ABF66', label: 'APPROVED', normalizedStatus: 'APPROVED' },
+    approved: { color: '#1ABF66', label: 'APPROVED', normalizedStatus: 'APPROVED' },
     REJECTED: { color: '#FF4842', label: 'REJECTED', normalizedStatus: 'REJECTED' },
     AGREEMENT_SUBMITTED: {
       color: '#1ABF66',
@@ -114,8 +115,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const creators = useMemo(() => {
     if (!campaign) return [];
 
-    // For client-created campaigns OR v4 campaigns, use V3 pitches
-    if ((campaign.origin === 'CLIENT' || campaign.submissionVersion === 'v4') && v3Pitches) {
+    if (campaign.submissionVersion === 'v4' && v3Pitches) {
       return (
         v3Pitches
           .map((pitch) => ({
