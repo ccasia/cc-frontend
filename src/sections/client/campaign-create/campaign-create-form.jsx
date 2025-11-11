@@ -52,7 +52,7 @@ const steps = [
   { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
   { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
-  { title: 'Other Attachment ( Optional )', logo: '⺟', color: '#FF3500' },
+  { title: 'Other Attachment ( Optional )', logo: '🖇️', color: '#FF3500' },
 ];
 
 const PDFEditor = lazy(() => import('src/sections/campaign/create/pdf-editor'));
