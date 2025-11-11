@@ -65,7 +65,7 @@ const steps = [
   { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
   { title: 'Select Campaign Manager(s)', logo: '⛑️', color: '#FFF0E5' },
   { title: 'Agreement Form', logo: '✍️', color: '#026D54' },
-  { title: 'Other Attachment ( Optional )', logo: '⺟', color: '#FF3500' },
+  { title: 'Other Attachment ( Optional )', logo: '🖇️', color: '#FF3500' },
 ];
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
