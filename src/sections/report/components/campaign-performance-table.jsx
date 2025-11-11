@@ -182,7 +182,7 @@ const CampaignPerformanceTable = () => {
 
       {/* Campaign Filter Dropdown - Left aligned above table */}
       <Box sx={{ mb: 2 }}>
-        <FormControl sx={{ width: 400 }}>
+        <FormControl sx={{ width: { xs: '100%', sm: 400 } }}>
           <Select
             value={selectedCampaign}
             onChange={handleCampaignFilterChange}
@@ -190,8 +190,8 @@ const CampaignPerformanceTable = () => {
             sx={{
               backgroundColor: '#FFFFFF',
               borderRadius: '8px',
-              height: 48,
-              fontSize: '16px',
+              height: { xs: 44, sm: 48 },
+              fontSize: { xs: '14px', sm: '16px' },
               fontWeight: 400,
               color: '#000000',
               '& .MuiOutlinedInput-notchedOutline': {
@@ -206,9 +206,9 @@ const CampaignPerformanceTable = () => {
                 borderColor: '#E7E7E7',
               },
               '& .MuiSelect-select': {
-                paddingTop: '12px',
+                paddingTop: { xs: '10px', sm: '12px' },
                 paddingRight: '12px',
-                paddingBottom: '12px',
+                paddingBottom: { xs: '10px', sm: '12px' },
                 paddingLeft: '14px',
                 display: 'flex',
                 alignItems: 'center',
@@ -255,21 +255,21 @@ const CampaignPerformanceTable = () => {
         }}
       >
         {/* Table Container with minimum width */}
-        <Box sx={{ minWidth: { xs: 1000, md: '100%' } }}>
+        <Box>
           {/* Custom Table Header */}
           <Box
             sx={{
               width: '100%',
-              height: 32,
+              height: { xs: 28, md: 32 },
               backgroundColor: '#F5F5F5',
               borderRadius: '8px',
-              display: 'flex',
+              display: { xs: 'none', md: 'flex' },
               alignItems: 'center',
-              px: 3,
+              px: { xs: 2, md: 3 },
               mb: 0,
             }}
           >
-            <Box sx={{ flex: '0 0 25%' }}>
+            <Box sx={{ flex: '0 0 30%' }}>
               <Typography
                 sx={{
                   fontWeight: 600,
@@ -280,7 +280,7 @@ const CampaignPerformanceTable = () => {
                 Creator
               </Typography>
             </Box>
-            <Box sx={{ flex: '0 0 30%' }}>
+            <Box sx={{ flex: '0 0 25%' }}>
               <Typography
                 sx={{
                   fontWeight: 600,
@@ -314,87 +314,99 @@ const CampaignPerformanceTable = () => {
                 key={row.id}
                 sx={{
                   display: 'flex',
-                  alignItems: 'center',
-                  px: 3,
-                  py: 2.5,
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignItems: { xs: 'stretch', md: 'center' },
+                  px: { xs: 2, md: 3 },
+                  py: { xs: 2, md: 2.5 },
                   borderBottom: '1px solid #f0f0f0',
+                  gap: { xs: 1.5, md: 0 },
                   '&:hover': {
                     backgroundColor: '#f8f9fa',
                   },
                 }}
               >
+                {/* Mobile Card Layout */}
                 <Box
                   sx={{
-                    flex: '0 0 20%',
-                    minWidth: 200,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
+                    display: { xs: 'flex', md: 'none' },
+                    flexDirection: 'column',
+                    gap: 1.5,
                   }}
                 >
-                  <Avatar
-                    src={row.creatorAvatar}
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      backgroundColor: '#e0e0e0',
-                      color: '#666',
-                      fontSize: 14,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {row.creatorName.charAt(0)}
-                  </Avatar>
-                  <Typography
-                    sx={{
-                      fontWeight: 400,
-                      fontSize: 14,
-                      color: '#333',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {row.creatorName}
-                  </Typography>
-                </Box>
-                <Box sx={{ flex: '0 0 30%', pr: 2 }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 400,
-                      fontSize: 14,
-                      maxWidth: 260,
-                      color: '#666',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {row.creatorEmail}
-                  </Typography>
-                </Box>
-                <Box sx={{ flex: '0 0 25%', pr: 2 }}>
-                  <Typography
-                    sx={{
-                      fontSize: 14,
-                      color: '#333',
-                      fontWeight: 500,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {row.campaignName}
-                  </Typography>
-                </Box>
-                <Box sx={{ flex: '0 0 15%', textAlign: 'right' }}>
+                  {/* Creator Info */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar
+                      src={row.creatorAvatar}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        backgroundColor: '#e0e0e0',
+                        color: '#666',
+                        fontSize: 13,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {row.creatorName.charAt(0)}
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontWeight: 500,
+                          fontSize: 14,
+                          color: '#333',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {row.creatorName}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontWeight: 400,
+                          fontSize: 12,
+                          color: '#666',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {row.creatorEmail}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Campaign Name */}
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        color: '#999',
+                        fontWeight: 500,
+                        mb: 0.25,
+                      }}
+                    >
+                      Campaign
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 13,
+                        color: '#333',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {row.campaignName}
+                    </Typography>
+                  </Box>
+
+                  {/* Action Button */}
                   <Button
                     variant="text"
                     onClick={() => handleViewReport(row)}
+                    fullWidth
                     sx={{
-                      width: 192,
-                      height: 38,
-                      padding: '8px 12px 11px 12px',
-                      gap: '4px',
+                      height: 40,
+                      padding: '8px 12px',
                       borderRadius: '8px',
                       border: '1px solid #E7E7E7',
                       boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
@@ -402,7 +414,6 @@ const CampaignPerformanceTable = () => {
                       color: '#1340FF',
                       fontSize: 14,
                       fontWeight: 600,
-                      flexShrink: 0,
                       '&:hover': {
                         backgroundColor: '#F8F9FA',
                         border: '1px solid #E7E7E7',
@@ -417,6 +428,110 @@ const CampaignPerformanceTable = () => {
                     View Performance Report
                   </Button>
                 </Box>
+
+                {/* Desktop Table Layout */}
+                <Box
+                  sx={{
+                    display: { xs: 'none', md: 'flex' },
+                    alignItems: 'center',
+                    width: '100%',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      flex: '0 0 30%',
+                      minWidth: 200,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                    }}
+                  >
+                    <Avatar
+                      src={row.creatorAvatar}
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        backgroundColor: '#e0e0e0',
+                        color: '#666',
+                        fontSize: 14,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {row.creatorName.charAt(0)}
+                    </Avatar>
+                    <Typography
+                      sx={{
+                        fontWeight: 400,
+                        fontSize: 14,
+                        color: '#333',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {row.creatorName}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ flex: '0 0 25%', pr: 2 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 400,
+                        fontSize: 14,
+                        maxWidth: 260,
+                        color: '#666',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {row.creatorEmail}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ flex: '0 0 25%', pr: 2 }}>
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        color: '#333',
+                        fontWeight: 500,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {row.campaignName}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ flex: '0 0 15%', textAlign: 'right' }}>
+                    <Button
+                      variant="text"
+                      onClick={() => handleViewReport(row)}
+                      sx={{
+                        width: 192,
+                        height: 38,
+                        padding: '8px 12px 11px 12px',
+                        gap: '4px',
+                        borderRadius: '8px',
+                        border: '1px solid #E7E7E7',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        backgroundColor: '#FFFFFF',
+                        color: '#1340FF',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        flexShrink: 0,
+                        '&:hover': {
+                          backgroundColor: '#F8F9FA',
+                          border: '1px solid #E7E7E7',
+                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        },
+                        '&:active': {
+                          boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                          transform: 'translateY(1px)',
+                        },
+                      }}
+                    >
+                      View Performance Report
+                    </Button>
+                  </Box>
+                </Box>
               </Box>
             ))}
           </Box>
@@ -426,9 +541,9 @@ const CampaignPerformanceTable = () => {
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: 'flex-end',
+                justifyContent: { xs: 'center', md: 'flex-end' },
                 alignItems: 'center',
-                mt: 3,
+                mt: { xs: 2, md: 3 },
                 pb: 2,
                 gap: 0.3,
               }}
@@ -473,11 +588,11 @@ const CampaignPerformanceTable = () => {
                         sx={{
                           minWidth: 'auto',
                           p: 0,
-                          mx: 1,
+                          mx: { xs: 0.5, md: 1 },
                           backgroundColor: 'transparent',
                           color: currentPage === i ? '#000000' : '#8E8E93',
                           border: 'none',
-                          fontSize: 16,
+                          fontSize: { xs: 14, md: 16 },
                           fontWeight: 400,
                           '&:hover': {
                             backgroundColor: 'transparent',
@@ -497,11 +612,11 @@ const CampaignPerformanceTable = () => {
                       sx={{
                         minWidth: 'auto',
                         p: 0,
-                        mx: 1,
+                        mx: { xs: 0.5, md: 1 },
                         backgroundColor: 'transparent',
                         color: currentPage === 1 ? '#000000' : '#8E8E93',
                         border: 'none',
-                        fontSize: 16,
+                        fontSize: { xs: 14, md: 16 },
                         fontWeight: 400,
                         '&:hover': {
                           backgroundColor: 'transparent',
@@ -514,7 +629,7 @@ const CampaignPerformanceTable = () => {
 
                   if (currentPage > 3) {
                     pageButtons.push(
-                      <Typography key="ellipsis1" sx={{ mx: 1, color: '#8E8E93', fontSize: 16 }}>
+                      <Typography key="ellipsis1" sx={{ mx: { xs: 0.5, md: 1 }, color: '#8E8E93', fontSize: { xs: 14, md: 16 } }}>
                         ...
                       </Typography>
                     );
@@ -534,11 +649,11 @@ const CampaignPerformanceTable = () => {
                         sx={{
                           minWidth: 'auto',
                           p: 0,
-                          mx: 1,
+                          mx: { xs: 0.5, md: 1 },
                           backgroundColor: 'transparent',
                           color: currentPage === i ? '#000000' : '#8E8E93',
                           border: 'none',
-                          fontSize: 16,
+                          fontSize: { xs: 14, md: 16 },
                           fontWeight: 400,
                           '&:hover': {
                             backgroundColor: 'transparent',
@@ -552,7 +667,7 @@ const CampaignPerformanceTable = () => {
 
                   if (currentPage < totalPages - 2) {
                     pageButtons.push(
-                      <Typography key="ellipsis2" sx={{ mx: 1, color: '#8E8E93', fontSize: 16 }}>
+                      <Typography key="ellipsis2" sx={{ mx: { xs: 0.5, md: 1 }, color: '#8E8E93', fontSize: { xs: 14, md: 16 } }}>
                         ...
                       </Typography>
                     );
@@ -566,11 +681,11 @@ const CampaignPerformanceTable = () => {
                         sx={{
                           minWidth: 'auto',
                           p: 0,
-                          mx: 1,
+                          mx: { xs: 0.5, md: 1 },
                           backgroundColor: 'transparent',
                           color: currentPage === totalPages ? '#000000' : '#8E8E93',
                           border: 'none',
-                          fontSize: 16,
+                          fontSize: { xs: 14, md: 16 },
                           fontWeight: 400,
                           '&:hover': {
                             backgroundColor: 'transparent',
