@@ -14,13 +14,14 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
-import { useAuthContext } from 'src/auth/hooks';
 import useGetClientCredits from 'src/hooks/use-get-client-credits';
+import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const [currentPage, setCurrentPage] = useState(() => {
     const pageParam = searchParams.get('page');
@@ -54,8 +55,8 @@ const CampaignPerformanceTable = () => {
 
         // Filter by company/client association
         if (user?.role === 'client') {
-          const campaignCompanyId = submission.campaign?.company.id;
-          
+          const campaignCompanyId = submission.campaign?.company?.id;
+
           const userCompanyId = user.client?.companyId || company?.id;
           const submissionByCompanyId = campaignCompanyId === userCompanyId;
           
@@ -492,7 +493,7 @@ const CampaignPerformanceTable = () => {
                   pageButtons.push(
                     <Button
                       key={1}
-                      onClick={() => handlePageClick(i)}
+                      onClick={() => handlePageClick(1)}
                       sx={{
                         minWidth: 'auto',
                         p: 0,
@@ -561,7 +562,7 @@ const CampaignPerformanceTable = () => {
                     pageButtons.push(
                       <Button
                         key={totalPages}
-                        onClick={() => handlePageClick(i)}
+                        onClick={() => handlePageClick(totalPages)}
                         sx={{
                           minWidth: 'auto',
                           p: 0,
