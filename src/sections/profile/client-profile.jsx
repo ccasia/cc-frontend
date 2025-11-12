@@ -1,14 +1,9 @@
+/* eslint-disable no-empty */
 import { useForm } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import {
-  Box,
-  Grid,
-  Card,
-  Typography,
-  InputAdornment,
-} from '@mui/material';
+import { Box, Grid, Card, Typography, InputAdornment } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -29,7 +24,6 @@ const ClientProfile = () => {
   const [loading, setLoading] = useState(false);
 
   const defaultValues = {
-    companyLogo: {},
     companyName: '',
     companyAddress: '',
     picEmail: '',
@@ -84,9 +78,10 @@ const ClientProfile = () => {
             designation: pic.designation || override?.designation || '',
           };
           setCompanyData(company);
-          try { localStorage.setItem('client_company_logo', company.logo || ''); } catch {}
+          try {
+            localStorage.setItem('client_company_logo', company.logo || '');
+          } catch {}
           reset({
-            companyLogo: company.logo || {},
             companyName: company.name || '',
             companyAddress: company.address || '',
             picEmail: mergedPic.email,
@@ -105,12 +100,18 @@ const ClientProfile = () => {
         const userData = userResponse.data.user;
         const allCompanies = await axiosInstance.get(`${endpoints.company.getAll}`);
         const companies = allCompanies.data;
-        const matchedCompany = companies.find((co) =>
-          co.email?.toLowerCase() === userData.email?.toLowerCase() ||
-          co.pic?.some((p) => p.email?.toLowerCase() === userData.email?.toLowerCase())
+        const matchedCompany = companies.find(
+          (co) =>
+            co.email?.toLowerCase() === userData.email?.toLowerCase() ||
+            co.pic?.some((p) => p.email?.toLowerCase() === userData.email?.toLowerCase())
         );
         if (matchedCompany) {
-          const pic = matchedCompany.pic?.find((p) => p.email?.toLowerCase() === userData.email?.toLowerCase()) || matchedCompany.pic?.[0] || {};
+          const pic =
+            matchedCompany.pic?.find(
+              (p) => p.email?.toLowerCase() === userData.email?.toLowerCase()
+            ) ||
+            matchedCompany.pic?.[0] ||
+            {};
           const override = loadPicOverride();
           const mergedPic = {
             name: pic.name || override?.name || '',
@@ -118,9 +119,10 @@ const ClientProfile = () => {
             designation: pic.designation || override?.designation || '',
           };
           setCompanyData(matchedCompany);
-          try { localStorage.setItem('client_company_logo', matchedCompany.logo || ''); } catch {}
+          try {
+            localStorage.setItem('client_company_logo', matchedCompany.logo || '');
+          } catch {}
           reset({
-            companyLogo: matchedCompany.logo || {},
             companyName: matchedCompany.name || '',
             companyAddress: matchedCompany.address || '',
             picEmail: mergedPic.email,
@@ -146,7 +148,6 @@ const ClientProfile = () => {
               picDesignation: override.designation || '',
               picMobile: user?.phoneNumber || '',
               country: user?.country || '',
-              companyLogo: null,
             });
           }
         }
@@ -222,16 +223,22 @@ const ClientProfile = () => {
       };
       reset(submittedValues);
       // Persist PIC fields locally so they show after reopening
-      savePicOverride({ name: submittedValues.picName, email: submittedValues.picEmail, designation: submittedValues.picDesignation });
+      savePicOverride({
+        name: submittedValues.picName,
+        email: submittedValues.picEmail,
+        designation: submittedValues.picDesignation,
+      });
 
       // Background refresh to sync with server without wiping PIC fields
       try {
         const check = await axiosInstance.get(endpoints.client.checkCompany);
         if (check?.data?.company) {
-          const company = check.data.company;
+          const {company} = check.data;
           const pic = company.pic?.[0] || {};
           setCompanyData(company);
-          try { localStorage.setItem('client_company_logo', company.logo || ''); } catch {}
+          try {
+            localStorage.setItem('client_company_logo', company.logo || '');
+          } catch {}
           reset({
             companyLogo: company.logo || submittedValues.companyLogo,
             companyName: company.name || submittedValues.companyName,
@@ -243,7 +250,6 @@ const ClientProfile = () => {
             picDesignation: submittedValues.picDesignation || pic.designation || '',
             picMobile: submittedValues.picMobile || user?.phoneNumber || '',
             country: company.country || submittedValues.country,
-            companyLogo: company.logo || submittedValues.companyLogo,
           });
         }
       } catch {}
@@ -267,26 +273,22 @@ const ClientProfile = () => {
   return (
     <Box sx={{ mx: 'auto' }}>
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <RHFUploadAvatar name='companyLogo' onDrop={handleDrop} />
+        <RHFUploadAvatar name="companyLogo" onDrop={handleDrop} />
         <Grid container spacing={3} mt={1}>
           {/* First Row */}
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Company Name
             </Typography>
-            <RHFTextField 
-              name="companyName" 
-              placeholder="Company Name"
-              size="small"
-            />
+            <RHFTextField name="companyName" placeholder="Company Name" size="small" />
           </Grid>
 
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               PIC (Person in Charge) Name
             </Typography>
-            <RHFTextField 
-              name="picName" 
+            <RHFTextField
+              name="picName"
               placeholder="Company PIC (Person in Charge) Name"
               size="small"
             />
@@ -297,21 +299,13 @@ const ClientProfile = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               PIC Email
             </Typography>
-            <RHFTextField 
-              name="picEmail" 
-              placeholder="PIC Email"
-              size="small"
-            />
+            <RHFTextField name="picEmail" placeholder="PIC Email" size="small" />
           </Grid>
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Designation
             </Typography>
-            <RHFTextField 
-              name="picDesignation" 
-              placeholder="Designation"
-              size="small"
-            />
+            <RHFTextField name="picDesignation" placeholder="Designation" size="small" />
           </Grid>
 
           {/* Third Row */}
@@ -319,8 +313,8 @@ const ClientProfile = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Client Registration Number
             </Typography>
-            <RHFTextField 
-              name="registrationNumber" 
+            <RHFTextField
+              name="registrationNumber"
               placeholder="Client Registration Number"
               size="small"
             />
@@ -330,11 +324,7 @@ const ClientProfile = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Company Address
             </Typography>
-            <RHFTextField 
-              name="companyAddress" 
-              placeholder="Company Address"
-              size="small"
-            />
+            <RHFTextField name="companyAddress" placeholder="Company Address" size="small" />
           </Grid>
 
           {/* Fourth Row */}
@@ -345,13 +335,12 @@ const ClientProfile = () => {
             <RHFAutocomplete
               name="country"
               type="country"
-              size='small'
+              size="small"
               placeholder="Code"
               options={countries.map((option) => option.label)}
               getOptionLabel={(option) => option}
-
             />
-          </Grid>            
+          </Grid>
           <Grid item xs={12} sm={6}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               PIC Mobile Number
@@ -363,10 +352,7 @@ const ClientProfile = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment sx={{ fontSize: 14 }} position="start">
-                    +
-                    {countries
-                      .filter((elem) => elem.label === countryValue)
-                      .map((e) => e.phone)}
+                    +{countries.filter((elem) => elem.label === countryValue).map((e) => e.phone)}
                   </InputAdornment>
                 ),
               }}
@@ -397,7 +383,6 @@ const ClientProfile = () => {
       </FormProvider>
     </Box>
   );
-
 };
 
 export default ClientProfile;

@@ -27,7 +27,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { formatText } from 'src/utils/format-test';
 
 import { countries } from 'src/assets/data';
-
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';

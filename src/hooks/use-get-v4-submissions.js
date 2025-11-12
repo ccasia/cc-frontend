@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 
-import axiosInstance, { endpoints, fetcher } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 

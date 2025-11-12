@@ -1,22 +1,25 @@
-import PropTypes from 'prop-types';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
+
 import {
   Box,
+  Chip,
   Stack,
   Button,
-  TextField,
   Select,
-  MenuItem,
-  FormControl,
-  Chip,
-  Typography,
-  Tooltip,
   Avatar,
+  Tooltip,
+  MenuItem,
+  TextField,
+  Typography,
+  FormControl,
 } from '@mui/material';
-import { BUTTON_STYLES, FEEDBACK_CHIP_STYLES } from './submission-styles';
+
+import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
+
 import { options_changes } from '../constants';
 import { getFeedbackActionsVisibility } from './feedback-utils';
-import ConfirmDialogV2 from 'src/components/custom-dialog/confirm-dialog-v2';
+import { BUTTON_STYLES, FEEDBACK_CHIP_STYLES } from './submission-styles';
 
 export default function FeedbackActions({
   submission,
@@ -119,7 +122,7 @@ export default function FeedbackActions({
               </Button>
               <Button
                 variant="contained"
-                color={'warning'}
+                color="warning"
                 size="small"
                 onClick={handleRequestChanges}
                 disabled={loading}
@@ -128,6 +131,7 @@ export default function FeedbackActions({
                   ...BUTTON_STYLES.warning,
                 }}
               >
+                {/* eslint-disable-next-line no-nested-ternary */}
                 {loading ? 'Processing...' : !isClient ? 'Send to Creator' : 'Request a Change'}
               </Button>
             </Box>
@@ -145,6 +149,7 @@ export default function FeedbackActions({
                 ...BUTTON_STYLES.success,
               }}
             >
+              {/* eslint-disable-next-line no-nested-ternary */}
               {loading ? 'Processing...' : !isClient ? 'Send to Client' : 'Approve'}
             </Button>
           )}
@@ -286,7 +291,7 @@ export default function FeedbackActions({
         </Stack>
 
         {!isClient && submission.status !== 'CLIENT_FEEDBACK' && (
-          <Box display={'flex'} justifyContent={'flex-end'}>
+          <Box display="flex" justifyContent="flex-end">
             <Button
               size="small"
               variant="text"
@@ -398,7 +403,7 @@ export default function FeedbackActions({
                     <Typography
                       variant="caption"
                       fontWeight="bold"
-                      color={'#636366'}
+                      color="#636366"
                       sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                     >
                       Client Feedback

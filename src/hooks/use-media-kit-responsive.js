@@ -1,4 +1,5 @@
 import { useTheme, useMediaQuery } from '@mui/material';
+
 import { useResponsive } from 'src/hooks/use-responsive';
 
 /**

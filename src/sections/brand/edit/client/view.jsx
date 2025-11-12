@@ -243,6 +243,12 @@ const CompanyEditView = ({ id }) => {
     );
   }
 
+  const handlePackageLinkSuccess = () => {
+    packageDialog.onFalse(); 
+    mutate(); 
+    enqueueSnackbar('New package added successfully!', { variant: 'success' }); 
+  };
+
   return (
     <Container maxWidth="lg">
       <Button
@@ -429,7 +435,7 @@ const CompanyEditView = ({ id }) => {
         open={packageDialog.value}
         onClose={packageDialog.onFalse}
         clientId={id}
-        onRefresh={mutate}
+        onRefresh={handlePackageLinkSuccess}
       />
 
       {/* Client Activation Dialog */}

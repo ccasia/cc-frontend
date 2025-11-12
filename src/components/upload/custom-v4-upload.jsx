@@ -1,6 +1,6 @@
-import React, { useMemo, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useEffect, useCallback } from 'react';
 
 import {
   Box,
@@ -96,13 +96,11 @@ const CustomV4Upload = ({
   const { hasVideo, videoToShow, isLocalVideo, videoUrl } = videoDisplayData;
 
   // Cleanup object URLs to prevent memory leaks
-  useEffect(() => {
-    return () => {
+  useEffect(() => () => {
       if (isLocalVideo && videoUrl && videoUrl.startsWith('blob:')) {
         URL.revokeObjectURL(videoUrl);
       }
-    };
-  }, [videoUrl, isLocalVideo]);
+    }, [videoUrl, isLocalVideo]);
 
   const openPreview = useCallback(() => {
     // Create preview dialog

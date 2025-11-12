@@ -2,7 +2,7 @@
 /* eslint-disable prefer-promise-reject-errors */
 /* eslint-disable jsx-a11y/media-has-caption */
 import dayjs from 'dayjs';
-import useSWR, { mutate } from 'swr';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -39,7 +39,6 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { endpoints } from 'src/utils/axios';
-import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -431,7 +430,7 @@ const CampaignFinalDraft = ({
       return acc;
     }, {});
 
-    let reducedToForwardedOnly = [];
+    const reducedToForwardedOnly = [];
     Object.values(groupedByTarget).forEach((group) => {
       const sent = group.filter(hasSendToCreator);
       if (sent.length > 0) {
@@ -958,9 +957,9 @@ const CampaignFinalDraft = ({
                                                               {((feedbacksTesting && feedbacksTesting.length > 0) || previousSubmission?.status === 'CHANGES_REQUIRED') && (
                         <>
                           {/* Removed console.log for cleaner code */}
-                      {(feedbacksTesting || []).map((feedback, feedbackIndex) => {
+                      {(feedbacksTesting || []).map((feedback, feedbackIndex) => 
                           // Removed console.log for cleaner code
-                        return (
+                         (
                         <Box
                           key={`feedback-required-${feedbackIndex}`}
                               component="div"
@@ -1404,8 +1403,8 @@ const CampaignFinalDraft = ({
                             </Collapse>
                           </Box>
                         </Box>
-                      );
-                      })}
+                      )
+                      )}
                     </>
                   )}
 

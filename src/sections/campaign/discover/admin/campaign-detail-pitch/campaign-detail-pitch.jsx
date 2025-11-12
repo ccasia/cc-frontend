@@ -37,6 +37,7 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators, shortlistGuestCreator } from 'src/api/creator';
 
 import Label from 'src/components/label';
