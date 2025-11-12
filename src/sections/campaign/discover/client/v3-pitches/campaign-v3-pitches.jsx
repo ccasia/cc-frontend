@@ -127,6 +127,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const maybeCount = countPitchesByStatus(pitches, ['MAYBE']);
 
   const approvedCount = countPitchesByStatus(pitches, [
+    'approved',
     'APPROVED',
     'AGREEMENT_PENDING',
     'AGREEMENT_SUBMITTED',
@@ -167,8 +168,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       const sentToClient = ['SENT_TO_CLIENT'].includes(status);
       const sentToClientWithComments = ['SENT_TO_CLIENT_WITH_COMMENTS'].includes(status);
       const isMaybe = ['MAYBE'].includes(status);
-      const isApproved = ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
-      const isRejected = ['REJECTED'].includes(status);
+      const isApproved = ['approved', 'APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
+      const isRejected = ['rejected', 'REJECTED'].includes(status);
 
       // V4: Show all pitches in approval flow
       if (isV4) {
@@ -300,7 +301,17 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         borderColor: '#1ABF66',
         tooltip: 'Pitch has been approved by client',
       },
+      approved: {
+        color: '#1ABF66',
+        borderColor: '#1ABF66',
+        tooltip: 'Pitch has been approved by client',
+      },
       REJECTED: {
+        color: '#D4321C',
+        borderColor: '#D4321C',
+        tooltip: 'Pitch has been rejected',
+      },
+      rejected: {
         color: '#D4321C',
         borderColor: '#D4321C',
         tooltip: 'Pitch has been rejected',

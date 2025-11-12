@@ -1,20 +1,23 @@
 /* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
+import { mutate } from 'swr';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
-import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
+import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { alpha } from '@mui/material/styles';
 import {
   Box,
+  Chip,
   Stack,
   Table,
   Dialog,
   Button,
   Avatar,
+  Checkbox,
   TableRow,
   TextField,
   TableBody,
@@ -22,6 +25,7 @@ import {
   TableHead,
   Typography,
   DialogTitle,
+  ListItemText,
   Autocomplete,
   DialogActions,
   DialogContent,
@@ -45,17 +49,7 @@ import PitchModal from '../pitch-modal';
 import MediaKitModal from '../media-kit-modal';
 import { useShortlistedCreators } from '../campaign-detail-creator/hooks/shortlisted-creator';
 
-const TABLE_HEAD = [
-  { id: 'creator', label: 'Creator', width: 300 },
-  { id: 'email', label: "Creator's Email", width: 350 },
-  { id: 'submitDate', label: 'Pitch Submitted', width: 120 },
-  { id: 'format', label: 'Pitch Format', width: 100 },
-  { id: 'status', label: 'Status', width: 100 },
-  { id: 'actions', label: 'Actions', width: 80 },
-];
-
 const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
-  const { user } = useAuthContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
@@ -63,35 +57,28 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
+  const [sortDirection, setSortDirection] = useState('asc');
   const mediaKit = useBoolean();
   const theme = useTheme();
-  const smUp = useResponsive('up', 'sm');
-  const modal = useBoolean();
-  const isDisabled = useMemo(
-    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
-    [user]
-  );
-  const [modalOpen, setModalOpen] = useState(false);
 
-  const handleModalOpen = () => {
-    setAddCreatorOpen(true);
+  const handleModalClose = () => setNonPlatformOpen(false);
+
+  const handleToggleSort = () => {
+    setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   };
-  const handleModalClose = () => setModalOpen(false);
 
-  const totalUsedCredits = campaign?.shortlisted?.reduce(
-    (acc, creator) => acc + (creator?.ugcVideos ?? 0),
-    0
-  );
-
-  const undecidedCount = pitches?.filter((pitch) => pitch.status === 'undecided').length || 0;
+  const pendingCount = pitches?.filter((pitch) => pitch.status === 'PENDING_REVIEW').length || 0;
   const approvedCount = pitches?.filter((pitch) => pitch.status === 'approved').length || 0;
+  const rejectedCount = pitches?.filter((pitch) => pitch.status === 'rejected').length || 0;
 
   const filteredPitches = useMemo(() => {
     let filtered = pitches;
 
     // Apply status filter
-    if (selectedFilter === 'undecided') {
-      filtered = filtered?.filter((pitch) => pitch.status === 'undecided');
+    if (selectedFilter === 'PENDING_REVIEW') {
+      filtered = filtered?.filter((pitch) => pitch.status === 'PENDING_REVIEW');
+    } else if (selectedFilter === 'rejected') {
+      filtered = filtered?.filter((pitch) => pitch.status === 'rejected');
     } else if (selectedFilter === 'approved') {
       filtered = filtered?.filter((pitch) => pitch.status === 'approved');
     }
@@ -103,8 +90,21 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
       );
     }
 
+    // Apply sorting
+    if (filtered) {
+      filtered = [...filtered].sort((a, b) => {
+        const nameA = a.user?.name?.toLowerCase() || '';
+        const nameB = b.user?.name?.toLowerCase() || '';
+
+        if (sortDirection === 'asc') {
+          return nameA.localeCompare(nameB);
+        }
+        return nameB.localeCompare(nameA);
+      });
+    }
+
     return filtered;
-  }, [pitches, selectedFilter, search]);
+  }, [pitches, selectedFilter, search, sortDirection]);
 
   const matchCampaignPercentage = (pitch) => {
     if (!pitch) return null;
@@ -212,7 +212,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
     }
   };
 
-  return true ? (
+  return filteredPitches?.length > 0 ? (
     <>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
@@ -258,7 +258,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
 
           <Button
             fullWidth={!mdUp}
-            onClick={() => setSelectedFilter('undecided')}
+            onClick={() => setSelectedFilter('PENDING_REVIEW')}
             sx={{
               px: 1.5,
               py: 2.5,
@@ -269,7 +269,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
               fontSize: '0.85rem',
               fontWeight: 600,
               textTransform: 'none',
-              ...(selectedFilter === 'undecided'
+              ...(selectedFilter === 'PENDING_REVIEW'
                 ? {
                     color: '#203ff5',
                     bgcolor: 'rgba(32, 63, 245, 0.04)',
@@ -279,11 +279,41 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                     bgcolor: 'transparent',
                   }),
               '&:hover': {
-                bgcolor: selectedFilter === 'undecided' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                bgcolor: selectedFilter === 'PENDING_REVIEW' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
             }}
           >
-            {`Pending (${undecidedCount})`}
+            {`Pending (${pendingCount})`}
+          </Button>
+
+          <Button
+            fullWidth={!mdUp}
+            onClick={() => setSelectedFilter('rejected')}
+            sx={{
+              px: 1.5,
+              py: 2.5,
+              height: '42px',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              ...(selectedFilter === 'rejected'
+                ? {
+                    color: '#203ff5',
+                    bgcolor: 'rgba(32, 63, 245, 0.04)',
+                  }
+                : {
+                    color: '#637381',
+                    bgcolor: 'transparent',
+                  }),
+              '&:hover': {
+                bgcolor: selectedFilter === 'rejected' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+              },
+            }}
+          >
+            {`Rejected (${rejectedCount})`}
           </Button>
 
           <Button
@@ -317,48 +347,48 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
           </Button>
 
           <Button
-            // onClick={handleToggleSort}
-            // endIcon={
-            //   <Stack direction="row" alignItems="center" spacing={0.5}>
-            //     {sortDirection === 'asc' ? (
-            //       <Stack direction="column" alignItems="center" spacing={0}>
-            //         <Typography
-            //           variant="caption"
-            //           sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-            //         >
-            //           A
-            //         </Typography>
-            //         <Typography
-            //           variant="caption"
-            //           sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-            //         >
-            //           Z
-            //         </Typography>
-            //       </Stack>
-            //     ) : (
-            //       <Stack direction="column" alignItems="center" spacing={0}>
-            //         <Typography
-            //           variant="caption"
-            //           sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-            //         >
-            //           Z
-            //         </Typography>
-            //         <Typography
-            //           variant="caption"
-            //           sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-            //         >
-            //           A
-            //         </Typography>
-            //       </Stack>
-            //     )}
-            //     <Iconify
-            //       icon={
-            //         sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-            //       }
-            //       width={12}
-            //     />
-            //   </Stack>
-            // }
+            onClick={handleToggleSort}
+            endIcon={
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {sortDirection === 'asc' ? (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                  </Stack>
+                )}
+                <Iconify
+                  icon={
+                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+                  }
+                  width={12}
+                />
+              </Stack>
+            }
             sx={{
               px: 1.5,
               py: 0.75,
@@ -585,7 +615,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                           borderRadius: 0.8,
                           bgcolor: 'white',
                           whiteSpace: 'nowrap',
-                          ...(pitch.status === 'pending' && {
+                          ...(pitch.status === 'PENDING_REVIEW' && {
                             color: '#FF9A02',
                             borderColor: '#FF9A02',
                           }),
@@ -603,7 +633,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                           }),
                         }}
                       >
-                        {pitch.status === 'undecided'
+                        {pitch.status === ('PENDING_REVIEW' || 'undecided')
                           ? 'PENDING REVIEW'
                           : pitch.status?.toUpperCase() || 'PENDING'}
                       </Typography>
@@ -712,6 +742,12 @@ export function AddCreatorModal({ open, onClose, onSelect }) {
   );
 }
 
+AddCreatorModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
+};
+
 export function PlatformCreatorModal({ campaign }) {
   const { addCreators, shortlistedCreators: creators } = useShortlistedCreators();
   const { data, isLoading } = useGetAllCreators();
@@ -720,59 +756,16 @@ export function PlatformCreatorModal({ campaign }) {
     const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
     return campaign.campaignCredits - totalUGCs;
   }, [campaign]);
-  const methods = useForm({
-    defaultValues: {
-      creator: [],
-    },
-  });
 
-  const {
-    handleSubmit,
-    watch,
-    reset,
-    formState: { isSubmitting },
-  } = methods;
-
-  const selectedCreator = watch('creator');
   const loading = useBoolean();
   const modal = useBoolean();
   const shortlistedCreators = campaign?.shortlisted;
   const shortlistedCreatorsId = shortlistedCreators?.map((item) => item.userId);
 
-  const ListboxComponent = React.forwardRef((props, ref) => {
-    // eslint-disable-next-line react/prop-types
-    const { children, ...other } = props;
-    const items = React.Children.toArray(children);
-
-    const itemCount = items.length;
-    const itemSize = 60; // Adjust row height
-
-    return (
-      <div ref={ref} {...other}>
-        <OuterElementContext.Provider value={other}>
-          <FixedSizeList
-            height={
-              itemCount > 8
-                ? 8 * itemSize + LISTBOX_PADDING
-                : itemCount * itemSize + LISTBOX_PADDING
-            }
-            width="100%"
-            itemSize={itemSize}
-            itemCount={itemCount}
-            overscanCount={5}
-          >
-            {({ index, style }) => (
-              <div style={{ ...style, top: style.top + LISTBOX_PADDING }}>{items[index]}</div>
-            )}
-          </FixedSizeList>
-        </OuterElementContext.Provider>
-      </div>
-    );
-  });
-
-  <Dialog
+  return (
+    <Dialog
     open={modal.value}
-    onClose={selectedCreator.length ? confirmModal.onTrue : modal.onFalse}
+    onClose={modal.onFalse}
     maxWidth="xs"
     fullWidth
     PaperProps={{
@@ -830,11 +823,9 @@ export function PlatformCreatorModal({ campaign }) {
 
             <Autocomplete
               value={creators}
-              onChange={(e, val) => {
+              onChange={(_e, val) => {
                 addCreators(val);
               }}
-              ListboxComponent={ListboxComponent}
-              disableListWrap
               multiple
               disableCloseOnSelect
               options={data?.filter(
@@ -902,13 +893,9 @@ export function PlatformCreatorModal({ campaign }) {
           </Box>
 
           {loading.value && (
-            <ClimbingBoxLoader
-              color={settings.themeMode === 'light' ? 'black' : 'white'}
-              size={18}
-              cssOverride={{
-                marginInline: 'auto',
-              }}
-            />
+            <Box sx={{ textAlign: 'center', py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
           )}
         </DialogContent>
 
@@ -916,7 +903,6 @@ export function PlatformCreatorModal({ campaign }) {
           <Button
             onClick={() => {
               modal.onFalse();
-              reset();
             }}
             sx={{
               bgcolor: '#ffffff',
@@ -937,13 +923,11 @@ export function PlatformCreatorModal({ campaign }) {
           </Button>
 
           <LoadingButton
-            disabled={isSubmitting || !creators.length}
+            disabled={!creators.length}
             loading={loading.value}
             onClick={() => {
-              if (campaign?.campaignCredits) {
-                ugcVidesoModal.onTrue();
-              } else {
-              }
+              // Handle shortlisting creators
+              modal.onFalse();
             }}
             sx={{
               bgcolor: '#203ff5',
@@ -971,8 +955,13 @@ export function PlatformCreatorModal({ campaign }) {
         </DialogActions>
       </>
     )}
-  </Dialog>;
+  </Dialog>
+  );
 }
+
+PlatformCreatorModal.propTypes = {
+  campaign: PropTypes.object.isRequired,
+};
 
 export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
   const [formValues, setFormValues] = useState({
@@ -1139,6 +1128,12 @@ export function NonPlatformCreatorFormDialog({ open, onClose, campaignId }) {
     </Dialog>
   );
 }
+
+NonPlatformCreatorFormDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  campaignId: PropTypes.string.isRequired,
+};
 
 export default CampaignDetailPitch;
 
