@@ -103,7 +103,6 @@ const CampaignDetailContent = ({ campaign }) => {
   const display = useBoolean();
   const [numPages, setNumPages] = useState(null);
   const isSmallScreen = useResponsive('down', 'sm');
-  const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setError] = useState(null);
 
   const handleChatClick = async (admin) => {
@@ -138,12 +137,10 @@ const CampaignDetailContent = ({ campaign }) => {
 
   const onDocumentLoadSuccess = ({ numPages: num }) => {
     setNumPages(num);
-    setPdfLoading(false);
   };
 
   const onDocumentLoadError = (error) => {
     setError(error);
-    setPdfLoading(false);
   };
 
   return (
@@ -628,7 +625,7 @@ const CampaignDetailContent = ({ campaign }) => {
                   lineHeight: 1,
                 }}
               >
-                CAMPAIGN ADMIN
+                CAMPAIGN MANAGER(S)
               </Typography>
             </Box>
 

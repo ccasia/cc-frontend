@@ -1,9 +1,6 @@
 import dayjs from 'dayjs';
+import React from 'react';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
 import {
   Box,
@@ -22,9 +19,6 @@ import {
   ListItemIcon,
   TableContainer,
 } from '@mui/material';
-
-import { useBoolean } from 'src/hooks/use-boolean';
-import { useResponsive } from 'src/hooks/use-responsive';
 
 import Iconify from 'src/components/iconify';
 
@@ -76,26 +70,7 @@ const CompactHeaderStyle = {
 };
 
 const PublicCampaignDetailContent = ({ campaign }) => {
-  const navigate = useNavigate();
-  // const { user } = useAuthContext();
-  const display = useBoolean();
-  const [numPages, setNumPages] = useState(null);
-  const isSmallScreen = useResponsive('down', 'sm');
-  const [pdfLoading, setPdfLoading] = useState(true);
-  const [pdfError, setError] = useState(null);
-
-
   const requirement = campaign?.campaignRequirement;
-
-  const onDocumentLoadSuccess = ({ numPages: num }) => {
-    setNumPages(num);
-    setPdfLoading(false);
-  };
-
-  const onDocumentLoadError = (error) => {
-    setError(error);
-    setPdfLoading(false);
-  };
 
   return (
     <Box
@@ -510,7 +485,7 @@ const PublicCampaignDetailContent = ({ campaign }) => {
                   lineHeight: 1,
                 }}
               >
-                CAMPAIGN ADMIN
+                CAMPAIGN MANAGER(S)
               </Typography>
             </Box>
 
