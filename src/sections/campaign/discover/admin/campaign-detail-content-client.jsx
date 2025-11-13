@@ -477,7 +477,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   lineHeight: 1,
                 }}
               >
-                CAMPAIGN ADMIN
+                CAMPAIGN MANAGER(S)
               </Typography>
             </Box>
 

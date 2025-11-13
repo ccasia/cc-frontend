@@ -489,7 +489,7 @@ const CampaignInfo = ({ campaign }) => {
                   fontSize: '0.8rem',
                 }}
               >
-                CAMPAIGN ADMIN
+                CAMPAIGN MANAGER(S)
               </Typography>
             </Box>
 
