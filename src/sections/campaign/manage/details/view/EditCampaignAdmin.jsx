@@ -27,11 +27,6 @@ const EditCampaignAdmin = ({ open, campaign, onClose }) => {
   const { user } = useAuthContext();
   const { data: admins } = useGetAdmins('active');
 
-  const filteredAdmins = useMemo(
-    () => admins?.filter((item) => item.role === 'CSM' || item.role === 'Client') || [],
-    [admins]
-  );
-
   const existedAdmins = campaign?.campaignAdmin?.map(({ admin }) => ({
     id: admin?.user?.id,
     name: admin?.user?.name,
@@ -74,7 +69,7 @@ const EditCampaignAdmin = ({ open, campaign, onClose }) => {
             placeholder="Campaign Manager"
             multiple
             disableCloseOnSelect
-            options={filteredAdmins}
+            options={admins}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             getOptionLabel={(option) => option.name}
             renderTags={(selected, getTagProps) =>
