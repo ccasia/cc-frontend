@@ -1,28 +1,35 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 
 import { LineChart } from '@mui/x-charts/LineChart';
 import { Box, Typography } from '@mui/material';
 
 import { useMediaKitResponsive } from 'src/hooks/use-media-kit-responsive';
 
-import { processEngagementRateData, getMonthsData, chartStyles } from 'src/utils/media-kit-utils';
+import { processEngagementRateData, getMonthsData } from 'src/utils/media-kit-utils';
 
 /**
  * Reusable Engagement Rate Chart Component
  * Used by both Instagram and TikTok media kit components
  */
-const EngagementRateChart = ({ 
-  dataSource, 
+const EngagementRateChart = ({
+  dataSource,
   platform = 'instagram',
   containerStyle = {},
   showDataLabels = false,
   customData = null,
 }) => {
   const { isMobile, isTablet } = useMediaKitResponsive();
+  const [hoveredColumn, setHoveredColumn] = useState(null);
 
   // Use custom data if provided, otherwise process from dataSource
   const chartData = customData || processEngagementRateData(dataSource, platform);
   const monthsData = getMonthsData(dataSource);
+
+  // Calculate dynamic Y-axis max based on actual data
+  const maxDataValue = Math.max(...chartData, 0);
+  const yAxisMax = Math.ceil(maxDataValue * 1.2);
+  const yAxisMin = 0;
 
   // Responsive dimensions
   const chartWidth = isMobile 
@@ -32,24 +39,107 @@ const EngagementRateChart = ({
     ? (isTablet ? 200 : 160) 
     : 227;
   
-  const margins = isMobile 
+  const margins = isMobile
     ? {
-        left: 25,
+        left: 10,
         right: 15,
         top: 15,
         bottom: isTablet ? 35 : 25,
       }
-    : { left: 30, right: 15, top: 30, bottom: 60 };
+    : { left: 10, right: 15, top: 5, bottom: 60 };
+
+  // Handle mouse move to track hovered column
+  const handleMouseMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+
+    // Calculate plot area
+    const plotAreaLeft = margins.left;
+    const plotAreaRight = chartWidth - margins.right;
+
+    // Check if mouse is within plot area
+    if (x >= plotAreaLeft && x <= plotAreaRight) {
+      const plotAreaWidth = chartWidth - margins.left - margins.right;
+      const bandWidth = plotAreaWidth / chartData.length;
+      const columnIndex = Math.floor((x - plotAreaLeft) / bandWidth);
+
+      if (columnIndex >= 0 && columnIndex < chartData.length) {
+        setHoveredColumn(columnIndex);
+      } else {
+        setHoveredColumn(null);
+      }
+    } else {
+      setHoveredColumn(null);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredColumn(null);
+  };
 
   return (
-    <Box sx={{ position: 'relative', ...containerStyle }}>
+    <Box
+      sx={{ position: 'relative', ...containerStyle }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Column hover shading */}
+      {hoveredColumn !== null && (() => {
+        const bandWidth = (chartWidth - margins.left - margins.right) / chartData.length;
+        const centerX = margins.left + (hoveredColumn * bandWidth) + (bandWidth / 2);
+
+        // Responsive shade width
+        const shadeWidth = isMobile ? (isTablet ? 50 : 40) : 60;
+
+        // Responsive positioning and sizing
+        const topOffset = isMobile ? (isTablet ? -22 : 0) : -25;
+        const textTopOffset = isMobile ? (isTablet ? -17 : 5) : -20;
+        const fontSize = isMobile ? (isTablet ? 12 : 11) : 14;
+        const shadeHeight = chartHeight - margins.bottom + (isMobile ? (isTablet ? 20 : 30) : 58);
+
+        const engagementValue = chartData[hoveredColumn];
+
+        return (
+          <>
+            <Box
+              sx={{
+                position: 'absolute',
+                left: centerX - (shadeWidth / 2),
+                top: topOffset,
+                width: shadeWidth,
+                height: shadeHeight,
+                borderRadius: 1,
+                backgroundColor: 'rgba(19, 64, 255, 0.1)',
+                pointerEvents: 'none',
+                zIndex: 0,
+              }}
+            />
+            <Typography
+              sx={{
+                position: 'absolute',
+                left: centerX,
+                top: textTopOffset,
+                transform: 'translateX(-50%)',
+                fontSize,
+                fontWeight: 600,
+                color: '#1340FF',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            >
+              {engagementValue.toFixed(1)}%
+            </Typography>
+          </>
+        );
+      })()}
+
       <LineChart
         series={[
           {
             curve: 'linear',
             data: chartData,
             color: '#1340FF',
-            valueFormatter: (value) => `${value.toFixed(2)}%`,
+            valueFormatter: (value) => `${value.toFixed(1)}%`,
           },
         ]}
         width={chartWidth}
@@ -62,24 +152,15 @@ const EngagementRateChart = ({
             hideTooltip: true,
             tickLabelStyle: {
               fontSize: isMobile ? (isTablet ? 12 : 10) : 12,
-              fill: 'black',
-              fontStyle: 'italic',
             },
-            axisLine: false,
-            tickLine: false,
           },
         ]}
         yAxis={[
           {
-            min: 0,
-            max: 3,
-            tickNumber: 4,
+            min: yAxisMin,
+            max: yAxisMax,
+            tickNumber: 0,
             hideTooltip: true,
-            tickLabelStyle: {
-              fontSize: isMobile ? (isTablet ? 13 : 11) : 13,
-              fill: '#333',
-              fontWeight: 500,
-            },
             axisLine: false,
             tickLine: false,
           },
@@ -87,10 +168,7 @@ const EngagementRateChart = ({
         grid={{ horizontal: true, vertical: false }}
         slotProps={{
           legend: { hidden: true },
-          tooltip: {
-            trigger: 'item',
-            formatter: (params) => `${params.value.toFixed(2)}%`,
-          },
+          tooltip: { trigger: 'none' },
           axisHighlight: { x: 'none', y: 'none' },
           mark: {
             style: {
@@ -98,26 +176,48 @@ const EngagementRateChart = ({
               stroke: '#1340FF',
               strokeWidth: 2,
               r: isMobile ? (isTablet ? 6 : 5) : 6,
-              cursor: 'pointer',
             },
           },
         }}
         sx={{
-          ...chartStyles.lineChart,
+          '& .MuiChartsAxis-line': {
+            display: 'none',
+          },
+          '& .MuiChartsAxis-tick': {
+            display: 'none',
+          },
+          '& .MuiChartsAxis-tickLabel': {
+            fontStyle: 'italic',
+          },
+          '& .MuiChartsAxis-left': {
+            display: 'none !important',
+          },
+          '& .MuiChartsAxis-left .MuiChartsAxis-tickLabel': {
+            display: 'none !important',
+          },
+          '& .MuiChartsGrid-line': {
+            stroke: 'rgba(0, 0, 26, 0.3)',
+            strokeWidth: 1,
+          },
+          '& .MuiChartsGrid-root .MuiChartsGrid-line:not(:first-child)': {
+            display: 'none',
+          },
+          '& .MuiLineElement-root': {
+            strokeWidth: 1,
+          },
           '& .MuiMarkElement-root': {
             fill: '#1340FF !important',
             stroke: '#1340FF !important',
             strokeWidth: '2px !important',
             r: `${isMobile ? (isTablet ? 6 : 5) : 6}px !important`,
-            cursor: 'pointer !important',
-            transition: 'all 0.2s ease-in-out !important',
+            cursor: 'default !important',
+            pointerEvents: 'auto !important',
           },
-          '& .MuiMarkElement-root:hover, & .MuiMarkElement-root:active': {
-            fill: '#0F2FE6 !important',
-            stroke: '#0F2FE6 !important',
-            strokeWidth: '3px !important',
-            r: `${isMobile ? (isTablet ? 8 : 7) : 8}px !important`,
-            transform: 'scale(1.1) !important',
+          '& .MuiChartsTooltip-mark': {
+            display: 'none !important',
+          },
+          '& .MuiChartsAxisHighlight-root': {
+            display: 'none !important',
           },
         }}
       />
@@ -126,6 +226,7 @@ const EngagementRateChart = ({
       {showDataLabels && (
         <Box
           sx={{
+            bgcolor: 'pink',
             position: 'absolute',
             top: 0,
             left: 0,
@@ -145,8 +246,8 @@ const EngagementRateChart = ({
             const bandWidth = plotAreaWidth / chartData.length;
             const xPosition = plotAreaLeft + bandWidth * 0.5 + index * bandWidth;
 
-            // Calculate Y position based on data value (0-3 scale)
-            const normalizedValue = value / 3;
+            // Calculate Y position based on data value (dynamic scale)
+            const normalizedValue = (value - yAxisMin) / (yAxisMax - yAxisMin);
             const dataPointY = plotAreaTop + plotAreaHeight - (normalizedValue * plotAreaHeight);
             const labelY = dataPointY - (isMobile ? 18 : 22);
 
@@ -173,7 +274,7 @@ const EngagementRateChart = ({
                   justifyContent: 'center',
                 }}
               >
-                {value.toFixed(2)}%
+                {value.toFixed(1)}%
               </Typography>
             );
           })}
