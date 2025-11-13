@@ -149,7 +149,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   </Typography>
                   <Divider />
                   <Typography variant="caption" color="black" fontWeight={400}>
-                    Score an extra RM100! T&C's apply.
+                    Score an extra RM100! T&amp;C&apos;s apply.
                   </Typography>
                 </Stack>
               </Stack>
@@ -336,7 +336,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                 </Stack>
               ) : (
                 <Typography variant="caption" color="text.secondary">
-                  No campaign do's found.
+                  No campaign do&apos;s found.
                 </Typography>
               )}
           </Box>
@@ -388,7 +388,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
               </Stack>
             ) : (
               <Typography variant="caption" color="text.secondary">
-                No campaign don'ts found.
+                No campaign don&apos;ts found.
               </Typography>
             )}
           </Box>
@@ -477,7 +477,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   lineHeight: 1,
                 }}
               >
-                CAMPAIGN ADMIN
+                CAMPAIGN MANAGER(S)
               </Typography>
             </Box>
 
