@@ -8,14 +8,14 @@
  */
 export const formatNumber = (num) => {
   // Handle undefined, null, or non-numeric values
-  if (num === undefined || num === null || isNaN(num)) {
+  if (num === undefined || num === null || Number.isNaN(num)) {
     return '0';
   }
   
   // Convert to number if it's a string
   const number = typeof num === 'string' ? parseFloat(num) : num;
   
-  if (isNaN(number)) {
+  if (Number.isNaN(number)) {
     return '0';
   }
   
@@ -77,7 +77,7 @@ export const getLastNMonths = (n = 3) => {
   const currentMonth = currentDate.getMonth(); // 0-11
 
   const lastNMonths = [];
-  for (let i = n - 1; i >= 0; i--) {
+  for (let i = n - 1; i >= 0; i -= 1) {
     const monthIndex = (currentMonth - i + 12) % 12;
     lastNMonths.push(months[monthIndex]);
   }
@@ -149,7 +149,7 @@ export const processMonthlyInteractionsData = (dataSource) => {
         const postMonth = months[date.getMonth()];
 
         // Only count if this month is in our target months
-        if (monthlyTotals.hasOwnProperty(postMonth)) {
+        if (Object.prototype.hasOwnProperty.call(monthlyTotals, postMonth)) {
           const engagement = calculateTotalEngagement(post);
           monthlyTotals[postMonth] += engagement;
         }

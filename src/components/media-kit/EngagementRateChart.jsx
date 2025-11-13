@@ -1,12 +1,12 @@
-import PropTypes from 'prop-types';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
-import { LineChart } from '@mui/x-charts/LineChart';
 import { Box, Typography } from '@mui/material';
+import { LineChart } from '@mui/x-charts/LineChart';
 
 import { useMediaKitResponsive } from 'src/hooks/use-media-kit-responsive';
 
-import { processEngagementRateData, getMonthsData } from 'src/utils/media-kit-utils';
+import { getMonthsData, processEngagementRateData } from 'src/utils/media-kit-utils';
 
 /**
  * Reusable Engagement Rate Chart Component
@@ -32,21 +32,47 @@ const EngagementRateChart = ({
   const yAxisMin = 0;
 
   // Responsive dimensions
-  const chartWidth = isMobile 
-    ? (isTablet ? 310 : 208) 
-    : 450;
-  const chartHeight = isMobile 
-    ? (isTablet ? 200 : 160) 
-    : 227;
+  let chartWidth = 450;
+  if (isMobile) {
+    chartWidth = isTablet ? 310 : 208;
+  }
+  
+  let chartHeight = 227;
+  if (isMobile) {
+    chartHeight = isTablet ? 200 : 160;
+  }
+  
+  let bottomMargin = 60;
+  if (isMobile) {
+    bottomMargin = isTablet ? 35 : 25;
+  }
   
   const margins = isMobile
     ? {
         left: 10,
         right: 15,
         top: 15,
-        bottom: isTablet ? 35 : 25,
+        bottom: bottomMargin,
       }
-    : { left: 10, right: 15, top: 5, bottom: 60 };
+    : { left: 10, right: 15, top: 5, bottom: bottomMargin };
+
+  // Calculate tick label font size
+  let tickLabelFontSize = 12;
+  if (isMobile && !isTablet) {
+    tickLabelFontSize = 10;
+  }
+
+  // Calculate mark radius
+  let markRadius = 6;
+  if (isMobile && !isTablet) {
+    markRadius = 5;
+  }
+
+  // Calculate data label font size
+  let dataLabelFontSize = 14;
+  if (isMobile) {
+    dataLabelFontSize = isTablet ? 12 : 10;
+  }
 
   // Handle mouse move to track hovered column
   const handleMouseMove = (event) => {
@@ -89,13 +115,32 @@ const EngagementRateChart = ({
         const centerX = margins.left + (hoveredColumn * bandWidth) + (bandWidth / 2);
 
         // Responsive shade width
-        const shadeWidth = isMobile ? (isTablet ? 50 : 40) : 60;
+        let shadeWidth = 60;
+        if (isMobile) {
+          shadeWidth = isTablet ? 50 : 40;
+        }
 
         // Responsive positioning and sizing
-        const topOffset = isMobile ? (isTablet ? -22 : 0) : -25;
-        const textTopOffset = isMobile ? (isTablet ? -17 : 5) : -20;
-        const fontSize = isMobile ? (isTablet ? 12 : 11) : 14;
-        const shadeHeight = chartHeight - margins.bottom + (isMobile ? (isTablet ? 20 : 30) : 58);
+        let topOffset = -25;
+        if (isMobile) {
+          topOffset = isTablet ? -22 : 0;
+        }
+        
+        let textTopOffset = -20;
+        if (isMobile) {
+          textTopOffset = isTablet ? -17 : 5;
+        }
+        
+        let fontSize = 14;
+        if (isMobile) {
+          fontSize = isTablet ? 12 : 11;
+        }
+        
+        let bottomHeightAdjustment = 58;
+        if (isMobile) {
+          bottomHeightAdjustment = isTablet ? 20 : 30;
+        }
+        const shadeHeight = chartHeight - margins.bottom + bottomHeightAdjustment;
 
         const engagementValue = chartData[hoveredColumn];
 
@@ -151,7 +196,7 @@ const EngagementRateChart = ({
             data: monthsData,
             hideTooltip: true,
             tickLabelStyle: {
-              fontSize: isMobile ? (isTablet ? 12 : 10) : 12,
+              fontSize: tickLabelFontSize,
             },
           },
         ]}
@@ -175,7 +220,7 @@ const EngagementRateChart = ({
               fill: '#1340FF',
               stroke: '#1340FF',
               strokeWidth: 2,
-              r: isMobile ? (isTablet ? 6 : 5) : 6,
+              r: markRadius,
             },
           },
         }}
@@ -209,7 +254,7 @@ const EngagementRateChart = ({
             fill: '#1340FF !important',
             stroke: '#1340FF !important',
             strokeWidth: '2px !important',
-            r: `${isMobile ? (isTablet ? 6 : 5) : 6}px !important`,
+            r: `${markRadius}px !important`,
             cursor: 'default !important',
             pointerEvents: 'auto !important',
           },
@@ -249,7 +294,8 @@ const EngagementRateChart = ({
             // Calculate Y position based on data value (dynamic scale)
             const normalizedValue = (value - yAxisMin) / (yAxisMax - yAxisMin);
             const dataPointY = plotAreaTop + plotAreaHeight - (normalizedValue * plotAreaHeight);
-            const labelY = dataPointY - (isMobile ? 18 : 22);
+            const labelYOffset = isMobile ? 18 : 22;
+            const labelY = dataPointY - labelYOffset;
 
             return (
               <Typography
@@ -258,7 +304,7 @@ const EngagementRateChart = ({
                   position: 'absolute',
                   top: labelY,
                   left: xPosition,
-                  fontSize: isMobile ? (isTablet ? 12 : 10) : 14,
+                  fontSize: dataLabelFontSize,
                   color: '#000',
                   fontWeight: 500,
                   fontFamily: 'Aileron, sans-serif',
