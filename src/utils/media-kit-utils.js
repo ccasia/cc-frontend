@@ -97,17 +97,19 @@ export const processEngagementRateData = (dataSource, platform = 'instagram') =>
 
   // Calculate from recent posts if no analytics data
   const posts = dataSource?.medias?.sortedVideos || [];
-  if (posts.length >= 3) {
+  const followers = platform === 'instagram'
+    ? dataSource?.overview?.followers_count
+    : dataSource?.overview?.follower_count;
+
+  // Only calculate if we have both posts and valid follower data
+  if (posts.length >= 3 && followers && followers > 0) {
     return posts.slice(0, 3).map(post => {
       const engagement = calculateTotalEngagement(post);
-      const followers = platform === 'instagram' 
-        ? dataSource?.overview?.followers_count || 1
-        : dataSource?.overview?.follower_count || 1;
       return calculateEngagementRate(engagement, followers);
     });
   }
 
-  // Default fallback
+  // Default fallback when no valid data
   return [2.1, 2.8, 3.2];
 };
 
@@ -125,17 +127,40 @@ export const processMonthlyInteractionsData = (dataSource) => {
     }));
   }
 
-  // Calculate from recent posts if no analytics data
+  // Calculate from all posts grouped by month if no analytics data
   const posts = dataSource?.medias?.sortedVideos || [];
-  if (posts.length >= 3) {
-    const months = dataSource?.analytics?.months || getLastNMonths(3);
-    return posts.slice(0, 3).map((post, index) => {
-      const interactions = calculateTotalEngagement(post);
-      return {
-        month: months[index],
-        interactions,
-      };
+  if (posts.length > 0) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const targetMonths = dataSource?.analytics?.months || getLastNMonths(3);
+
+    // Create a map to store total interactions per month
+    const monthlyTotals = {};
+    targetMonths.forEach(month => {
+      monthlyTotals[month] = 0;
     });
+
+    // Group posts by month and sum their engagement
+    posts.forEach(post => {
+      // Try different date field names (timestamp, created_at, etc.)
+      const postDate = post.timestamp || post.created_at || post.date || post.created_time;
+
+      if (postDate) {
+        const date = new Date(postDate);
+        const postMonth = months[date.getMonth()];
+
+        // Only count if this month is in our target months
+        if (monthlyTotals.hasOwnProperty(postMonth)) {
+          const engagement = calculateTotalEngagement(post);
+          monthlyTotals[postMonth] += engagement;
+        }
+      }
+    });
+
+    // Convert to array format
+    return targetMonths.map(month => ({
+      month,
+      interactions: monthlyTotals[month] || 0,
+    }));
   }
 
   // Default fallback
