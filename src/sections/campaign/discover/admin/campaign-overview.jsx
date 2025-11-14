@@ -315,6 +315,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box
                   className="iconBox"
+                  alignSelf={'self-start'}
                   sx={{
                     backgroundColor: '#203ff5',
                   }}
@@ -330,7 +331,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                     CREATOR PITCHES
                   </Typography>
                   <Typography variant="h4">
-                    {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')
+                    {localCampaign?.pitch?.filter((pitch) => pitch.type === 'text' || pitch.type === 'video')
                       ?.length || 0}
                   </Typography>
                 </Stack>
@@ -342,11 +343,12 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
 
       <Grid item xs={12} sm={6} md={3}>
         <Zoom in>
-          <Box component={Card} p={3} flexGrow={1} sx={cardStyle}>
+          <Box component={Card} py={3} flexGrow={1} sx={cardStyle}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box
                   className="iconBox"
+                  alignSelf={'self-start'}
                   sx={{
                     backgroundColor: '#eb4a26',
                   }}
@@ -371,11 +373,12 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
 
       <Grid item xs={12} sm={6} md={3}>
         <Zoom in>
-          <Box component={Card} p={3} sx={cardStyle}>
+          <Box component={Card} py={3} sx={cardStyle}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box
                   className="iconBox"
+                  alignSelf={'self-start'}
                   sx={{
                     backgroundColor: '#f7c945',
                   }}
@@ -391,7 +394,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                     PENDING AGREEMENTS
                   </Typography>
                   <Typography variant="h4">
-                    {localCampaign?.creatorAgreement?.filter((a) => !a.isSent)?.length || 0}
+                    {(localCampaign?.creatorAgreement?.filter((a) => !a.isSent)?.length || 0) ||
+                    (localCampaign?.pitch?.filter((p) => p.status === 'AGREEMENT_PENDING')?.length || 0)}
                   </Typography>
                 </Stack>
               </Stack>
@@ -407,6 +411,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box
                   className="iconBox"
+                  alignSelf={'self-start'}
                   sx={{
                     backgroundColor: '#2e6c56',
                   }}
@@ -417,7 +422,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                     className="iconImage"
                   />
                 </Box>
-                <Stack gap={-1}>
+                <Stack>
                   <Typography variant="subtitle2" sx={{ color: '#8E8E93' }}>
                     INVOICES
                   </Typography>
@@ -626,7 +631,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         }}
                       >
                         (
-                        {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')
+                        {localCampaign?.pitch?.filter((pitch) => pitch.type === 'text' || pitch.type === 'video')
                           ?.length || 0}
                         )
                       </Typography>
@@ -636,7 +641,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   <Stack spacing={[1]}>
                     {localCampaign?.pitch?.length > 0 ? (
                       localCampaign?.pitch
-                        ?.filter((pitch) => pitch.status === 'undecided')
+                        ?.filter((pitch) => pitch.type === 'text' || pitch.type === 'video')
                         ?.map((pitch, index) => (
                           <Stack
                             key={pitch.id}
@@ -647,13 +652,13 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                               pt: 2,
                               pb:
                                 index !==
-                                localCampaign.pitch.filter((p) => p.status === 'undecided').length -
+                                localCampaign.pitch.filter((p) => p.type === 'text' || p.type === 'video').length -
                                   1
                                   ? 2
                                   : 1,
                               borderBottom:
                                 index !==
-                                localCampaign.pitch.filter((p) => p.status === 'undecided').length -
+                                localCampaign.pitch.filter((p) => p.type === 'text' || p.type === 'video').length -
                                   1
                                   ? '1px solid #e7e7e7'
                                   : 'none',
