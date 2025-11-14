@@ -171,7 +171,7 @@ const PublicCampaignOverview = ({ campaign, onUpdate }) => {
                     CREATOR PITCHES
                   </Typography>
                   <Typography variant="h4">
-                    {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')
+                    {localCampaign?.pitch?.filter((pitch) => pitch.status === 'PENDING_REVIEW')
                       ?.length || 0}
                   </Typography>
                 </Stack>
@@ -299,7 +299,7 @@ const PublicCampaignOverview = ({ campaign, onUpdate }) => {
                   }}
                 >
                   (
-                  {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')?.length ||
+                  {localCampaign?.pitch?.filter((pitch) => pitch.status === 'PENDING_REVIEW')?.length ||
                     0}
                   )
                 </Typography>
@@ -309,7 +309,7 @@ const PublicCampaignOverview = ({ campaign, onUpdate }) => {
             <Stack spacing={[1]}>
               {localCampaign?.pitch?.length > 0 ? (
                 localCampaign?.pitch
-                  ?.filter((pitch) => pitch.status === 'undecided')
+                  ?.filter((pitch) => pitch.status === 'PENDING_REVIEW')
                   ?.map((pitch, index) => (
                     <Stack
                       key={pitch.id}
@@ -320,12 +320,12 @@ const PublicCampaignOverview = ({ campaign, onUpdate }) => {
                         pt: 2,
                         pb:
                           index !==
-                          localCampaign.pitch.filter((p) => p.status === 'undecided').length - 1
+                          localCampaign.pitch.filter((p) => p.status === 'PENDING_REVIEW').length - 1
                             ? 2
                             : 1,
                         borderBottom:
                           index !==
-                          localCampaign.pitch.filter((p) => p.status === 'undecided').length - 1
+                          localCampaign.pitch.filter((p) => p.status === 'PENDING_REVIEW').length - 1
                             ? '1px solid #e7e7e7'
                             : 'none',
                       }}
