@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
 
 import {
   Box,
@@ -17,14 +17,14 @@ import {
 
 import { paths } from 'src/routes/paths';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
+
+import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
+import { formatNumber, calculateSummaryStats } from 'src/utils/socialMetricsCalculator';
 
 import Iconify from 'src/components/iconify';
 
 import PitchModal from './pitch-modal';
-import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
-import { calculateSummaryStats, formatNumber } from 'src/utils/socialMetricsCalculator';
 
 const BoxStyle = {
   border: '1px solid #e0e0e0',
@@ -47,13 +47,14 @@ const BoxStyle = {
 
 const CampaignOverviewClient = ({ campaign, onUpdate }) => {
   const navigate = useNavigate();
-  const { user } = useAuthContext();
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
 
   // Extract posting submissions to get analytics data
-  const submissions = campaign?.submission || [];
-  const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
+  const postingSubmissions = useMemo(() => {
+    const submissions = campaign?.submission || [];
+    return extractPostingSubmissions(submissions);
+  }, [campaign?.submission]);
 
   // Get social insights data for analytics
   const {
@@ -105,9 +106,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
       }
 
       // Calculate average of previous posts
-      const previousAverage = previousPosts.reduce((sum, post) => {
-        return sum + getMetricValue(post.insight, metricType);
-      }, 0) / previousPosts.length;
+      const previousAverage = previousPosts.reduce((sum, post) => sum + getMetricValue(post.insight, metricType), 0) / previousPosts.length;
 
       // Get current post value
       const currentPostValue = getMetricValue(currentPost.insight, metricType);
@@ -154,10 +153,6 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
 
   const handleClosePitchModal = () => {
     setOpenPitchModal(false);
-  };
-
-  const handleViewProfile = (creatorId) => {
-    navigate(`/dashboard/creator/profile/${creatorId}`);
   };
 
   const handleOpenMediaKit = (creatorUser) => {
@@ -257,7 +252,9 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                 try {
                   localStorage.setItem('campaigndetail', 'analytics');
                   window.dispatchEvent(new CustomEvent('switchCampaignTab', { detail: 'analytics' }));
-                } catch (e) {}
+                } catch (e) {
+                  // Silently fail if localStorage is not available
+                }
                 // No navigation needed; campaign-detail-view listens for the event and switches tabs in-place
               }}
               sx={{
