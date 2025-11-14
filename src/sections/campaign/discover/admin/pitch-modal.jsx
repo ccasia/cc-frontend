@@ -1,5 +1,6 @@
 /* eslint-disable no-unsafe-optional-chaining */
 /* eslint-disable no-nested-ternary */
+import dayjs from 'dayjs';
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
@@ -15,23 +16,21 @@ import {
   Dialog,
   Avatar,
   Button,
+  Select,
   Divider,
   Tooltip,
+  MenuItem,
   TextField,
   IconButton,
   Typography,
+  FormControl,
   DialogContent,
   DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
 
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import dayjs from 'dayjs';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -351,7 +350,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         setMaybeNote('');
       } else {
         console.warn('Maybe action is only available for client-created campaigns by clients');
-        return;
+        
       }
     } catch (error) {
       console.error('Error setting maybe:', error);
