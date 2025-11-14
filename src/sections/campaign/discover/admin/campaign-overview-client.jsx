@@ -21,7 +21,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 
 import Iconify from 'src/components/iconify';
-import Scrollbar from 'src/components/scrollbar';
 
 import PitchModal from './pitch-modal';
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
@@ -170,7 +169,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
   };
 
   // Filter pitches to only show approved ones for client users
-  const approvedPitches = campaign?.pitch?.filter((pitch) => pitch.status === 'approved') || [];
+  const approvedPitches = campaign?.pitch?.filter((pitch) => pitch.status === 'APPROVED') || [];
   const shortlistedCreators = campaign?.shortlisted || [];
   const referenceLinks = campaign?.campaignBrief?.referencesLinks || [];
   const otherAttachments = campaign?.campaignBrief?.otherAttachments || [];
@@ -570,84 +569,77 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                   No approved pitches yet
                 </Typography>
               ) : (
-                <Scrollbar sx={{ 
-                  maxHeight: approvedPitches.length > 5 ? { xs: 300, sm: 400 } : 'auto',
-                  minHeight: approvedPitches.length === 1 ? 'auto' : 'auto',
-                }}>
-                  <Stack spacing={[1]}>
-                    {approvedPitches.map((pitch, index) => (
-                      <Stack
-                        key={pitch.id}
-                        direction="row"
-                        alignItems="center"
-                        spacing={{ xs: 1, sm: 2 }}
+                <Stack spacing={1}>
+                  {approvedPitches.map((pitch, index) => (
+                    <Stack
+                      key={pitch.id}
+                      direction="row"
+                      alignItems="center"
+                      spacing={{ xs: 1, sm: 2 }}
+                      sx={{
+                        pt: 1.5,
+                        pb: index !== approvedPitches.length - 1 ? 1.5 : 0.5,
+                        borderBottom:
+                          index !== approvedPitches.length - 1
+                            ? '1px solid #e7e7e7'
+                            : 'none',
+                      }}
+                    >
+                      <Avatar
+                        src={pitch.user?.photoURL}
+                        alt={pitch.user?.name}
                         sx={{
-                          pt: 1.5,
-                          pb: index !== approvedPitches.length - 1 ? 1.5 : 0.5,
-                          borderBottom:
-                            index !== approvedPitches.length - 1
-                              ? '1px solid #e7e7e7'
-                              : 'none',
+                          width: { xs: 36, sm: 40 },
+                          height: { xs: 36, sm: 40 },
+                          border: '2px solid',
+                          borderColor: 'background.paper',
+                          flexShrink: 0,
                         }}
                       >
-                        <Avatar
-                          src={pitch.user?.photoURL}
-                          alt={pitch.user?.name}
+                        {pitch.user?.name?.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Stack sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          variant="subtitle3"
                           sx={{
-                            width: { xs: 36, sm: 40 },
-                            height: { xs: 36, sm: 40 },
-                            border: '2px solid',
-                            borderColor: 'background.paper',
+                            fontWeight: 500,
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word',
                           }}
                         >
-                          {pitch.user?.name?.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Stack sx={{ flex: 1 }}>
-                          <Typography 
-                            variant="subtitle3" 
-                            sx={{ 
-                              fontWeight: 500,
-                              fontSize: { xs: '0.875rem', sm: '1rem' },
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: { xs: 'normal', sm: 'nowrap' },
-                              display: '-webkit-box',
-                              WebkitLineClamp: { xs: 2, sm: 1 },
-                              WebkitBoxOrient: 'vertical',
-                            }}
-                          >
-                            {pitch.user?.name}
-                          </Typography>
-                        </Stack>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          onClick={() => handleViewPitch(pitch)}
-                          sx={{
-                            textTransform: 'none',
-                            minHeight: { xs: 34, sm: 38 },
-                            minWidth: { xs: 90, sm: 110 },
-                            bgcolor: '#231F20',
-                            color: '#FFFFFF',
-                            border: '1.5px solid',
-                            borderColor: '#231F20',
-                            borderBottom: '3px solid',
-                            borderBottomColor: '#000000',
-                            borderRadius: 1.15,
-                            fontWeight: 600,
-                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                            px: { xs: 1, sm: 2 },
-                            '&:hover': {
-                              bgcolor: '#000000',
-                            },
-                          }}
-                        >
-                          View Pitch
-                        </Button>
+                          {pitch.user?.name}
+                        </Typography>
                       </Stack>
-                    ))}
-                  </Stack>
-                </Scrollbar>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => handleViewPitch(pitch)}
+                        sx={{
+                          textTransform: 'none',
+                          minHeight: { xs: 34, sm: 38 },
+                          minWidth: { xs: 90, sm: 110 },
+                          bgcolor: '#231F20',
+                          color: '#FFFFFF',
+                          border: '1.5px solid',
+                          borderColor: '#231F20',
+                          borderBottom: '3px solid',
+                          borderBottomColor: '#000000',
+                          borderRadius: 1.15,
+                          fontWeight: 600,
+                          fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                          px: { xs: 1, sm: 2 },
+                          flexShrink: 0,
+                          '&:hover': {
+                            bgcolor: '#000000',
+                          },
+                        }}
+                      >
+                        View Pitch
+                      </Button>
+                    </Stack>
+                  ))}
+                </Stack>
               )}
             </Box>
           </Zoom>
@@ -701,82 +693,75 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                   No shortlisted creators yet
                 </Typography>
               ) : (
-                <Scrollbar sx={{ 
-                  maxHeight: shortlistedCreators.length > 5 ? { xs: 300, sm: 400 } : 'auto',
-                  minHeight: shortlistedCreators.length === 1 ? 'auto' : 'auto',
-                }}>
-                  <Stack spacing={[1]}>
-                    {shortlistedCreators.map((item, index) => (
-                      <Stack
-                        key={item.userId}
-                        direction="row"
-                        alignItems="center"
-                        spacing={{ xs: 1, sm: 2 }}
+                <Stack spacing={1}>
+                  {shortlistedCreators.map((item, index) => (
+                    <Stack
+                      key={item.userId}
+                      direction="row"
+                      alignItems="center"
+                      spacing={{ xs: 1, sm: 2 }}
+                      sx={{
+                        pt: 1.5,
+                        pb: index !== shortlistedCreators.length - 1 ? 1.5 : 0.5,
+                        borderBottom:
+                          index !== shortlistedCreators.length - 1
+                            ? '1px solid #e7e7e7'
+                            : 'none',
+                      }}
+                    >
+                      <Avatar
+                        src={item.user?.photoURL}
+                        alt={item.user?.name}
                         sx={{
-                          pt: 1.5,
-                          pb: index !== shortlistedCreators.length - 1 ? 1.5 : 0.5,
-                          borderBottom:
-                            index !== shortlistedCreators.length - 1
-                              ? '1px solid #e7e7e7'
-                              : 'none',
+                          width: { xs: 36, sm: 40 },
+                          height: { xs: 36, sm: 40 },
+                          border: '2px solid',
+                          borderColor: 'background.paper',
+                          flexShrink: 0,
                         }}
                       >
-                        <Avatar
-                          src={item.user?.photoURL}
-                          alt={item.user?.name}
+                        {item.user?.name?.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Stack sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          variant="subtitle3"
                           sx={{
-                            width: { xs: 36, sm: 40 },
-                            height: { xs: 36, sm: 40 },
-                            border: '2px solid',
-                            borderColor: 'background.paper',
+                            fontWeight: 500,
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word',
                           }}
                         >
-                          {item.user?.name?.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Stack sx={{ flex: 1 }}>
-                          <Typography 
-                            variant="subtitle3" 
-                            sx={{ 
-                              fontWeight: 500,
-                              fontSize: { xs: '0.875rem', sm: '1rem' },
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: { xs: 'normal', sm: 'nowrap' },
-                              display: '-webkit-box',
-                              WebkitLineClamp: { xs: 2, sm: 1 },
-                              WebkitBoxOrient: 'vertical',
-                            }}
-                          >
-                            {item.user?.name}
-                          </Typography>
-                        </Stack>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleOpenMediaKit(item)}
-                          sx={{
-                            textTransform: 'none',
-                            minHeight: { xs: 34, sm: 38 },
-                            minWidth: { xs: 90, sm: 100 },
-                            bgcolor: '#ffffff',
-                            color: '#231F20',
-                            border: '1px solid #e0e0e0',
-                            borderRadius: 1,
-                            fontWeight: 600,
-                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                            px: { xs: 1, sm: 1.5 },
-                            '&:hover': {
-                              bgcolor: '#f5f5f5',
-                              border: '1px solid #e0e0e0',
-                            },
-                          }}
-                        >
-                          Media Kit
-                        </Button>
+                          {item.user?.name}
+                        </Typography>
                       </Stack>
-                    ))}
-                  </Stack>
-                </Scrollbar>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleOpenMediaKit(item)}
+                        sx={{
+                          textTransform: 'none',
+                          minHeight: { xs: 34, sm: 38 },
+                          minWidth: { xs: 90, sm: 100 },
+                          bgcolor: '#ffffff',
+                          color: '#231F20',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: 1,
+                          fontWeight: 600,
+                          fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                          px: { xs: 1, sm: 1.5 },
+                          flexShrink: 0,
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                            border: '1px solid #e0e0e0',
+                          },
+                        }}
+                      >
+                        Media Kit
+                      </Button>
+                    </Stack>
+                  ))}
+                </Stack>
               )}
             </Box>
           </Zoom>
