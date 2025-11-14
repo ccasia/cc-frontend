@@ -150,36 +150,6 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
     setLocalCampaign(campaign);
   }, [campaign]);
 
-  const handleChatClick = async (data) => {
-    try {
-      const response = await axiosInstance.get(endpoints.threads.getAll);
-
-      const existingThread = response.data.find((thread) => {
-        const userIdsInThread = thread.UserThread.map((userThread) => userThread.userId);
-        return (
-          userIdsInThread.includes(user.id) &&
-          userIdsInThread.includes(data.user.id) &&
-          !thread.isGroup
-        );
-      });
-
-      if (existingThread) {
-        navigate(`/dashboard/chat/thread/${existingThread.id}`);
-      } else {
-        const newThreadResponse = await axiosInstance.post(endpoints.threads.create, {
-          title: `Chat between ${user.name} & ${data.user.name}`,
-          description: '',
-          userIds: [user.id, data.user.id],
-          isGroup: false,
-        });
-        navigate(`/dashboard/chat/thread/${newThreadResponse.data.id}`);
-      }
-    } catch (err) {
-      console.log(err);
-      console.error('Error creating or finding chat thread:', err);
-    }
-  };
-
   const handleDecline = async (pitch) => {
     try {
       const response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
@@ -315,7 +285,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box
                   className="iconBox"
-                  alignSelf={'self-start'}
+                  alignSelf="self-start"
                   sx={{
                     backgroundColor: '#203ff5',
                   }}
@@ -348,7 +318,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box
                   className="iconBox"
-                  alignSelf={'self-start'}
+                  alignSelf="self-start"
                   sx={{
                     backgroundColor: '#eb4a26',
                   }}
@@ -378,7 +348,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box
                   className="iconBox"
-                  alignSelf={'self-start'}
+                  alignSelf="self-start"
                   sx={{
                     backgroundColor: '#f7c945',
                   }}
@@ -411,7 +381,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box
                   className="iconBox"
-                  alignSelf={'self-start'}
+                  alignSelf="self-start"
                   sx={{
                     backgroundColor: '#2e6c56',
                   }}
