@@ -149,7 +149,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   </Typography>
                   <Divider />
                   <Typography variant="caption" color="black" fontWeight={400}>
-                    Score an extra RM100! T&C&apos;s apply.
+                    Score an extra RM100! T&amp;C&apos;s apply.
                   </Typography>
                 </Stack>
               </Stack>
@@ -348,33 +348,33 @@ const CampaignDetailContentClient = ({ campaign }) => {
               </Typography>
             </Box>
 
-            {campaign?.campaignBrief?.campaigns_do?.length > 0 &&
-            campaign?.campaignBrief?.campaigns_do?.some((item) => item.value) ? (
-              <Stack spacing={1} sx={{ pl: 0.5 }}>
-                {campaign?.campaignBrief?.campaigns_do?.map((item, index) =>
-                  item.value ? (
-                    <Stack key={index} direction="row" spacing={1} alignItems="center">
-                      <Iconify
-                        icon="octicon:dot-fill-16"
-                        sx={{
-                          color: '#000000',
-                          width: 12,
-                          height: 12,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <Typography variant="body2" sx={{ color: '#221f20' }}>
-                        {item.value}
-                      </Typography>
-                    </Stack>
-                  ) : null
-                )}
-              </Stack>
-            ) : (
-              <Typography variant="caption" color="text.secondary">
-                No campaign do&apos;s found.
-              </Typography>
-            )}
+                          {campaign?.campaignBrief?.campaigns_do?.length > 0 && 
+                campaign?.campaignBrief?.campaigns_do?.some(item => item.value) ? (
+                <Stack spacing={1} sx={{ pl: 0.5 }}>
+                  {campaign?.campaignBrief?.campaigns_do?.map((item, index) => 
+                    item.value ? (
+                      <Stack key={index} direction="row" spacing={1} alignItems="center">
+                        <Iconify
+                          icon="octicon:dot-fill-16"
+                          sx={{
+                            color: '#000000',
+                            width: 12,
+                            height: 12,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography variant="body2" sx={{ color: '#221f20' }}>
+                          {item.value}
+                        </Typography>
+                      </Stack>
+                    ) : null
+                  )}
+                </Stack>
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  No campaign do&apos;s found.
+                </Typography>
+              )}
           </Box>
 
           {/* Don'ts Box */}
@@ -513,7 +513,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   lineHeight: 1,
                 }}
               >
-                CAMPAIGN ADMIN
+                CAMPAIGN MANAGER(S)
               </Typography>
             </Box>
 
