@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
-import { Box, Button, Chip, Typography } from '@mui/material';
+
+import { Box, Chip, Button, Typography } from '@mui/material';
+
 import { FEEDBACK_CHIP_STYLES } from './submission-styles';
 
 export default function FeedbackDisplay({ feedback, submission, isClient, onViewLogs }) {
@@ -22,7 +24,7 @@ export default function FeedbackDisplay({ feedback, submission, isClient, onView
           <Typography 
             variant='caption' 
             fontWeight="bold" 
-            color={'#636366'}
+            color="#636366"
             sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
           >
             CS Feedback
@@ -59,7 +61,7 @@ export default function FeedbackDisplay({ feedback, submission, isClient, onView
             <Typography 
               variant='caption' 
               fontWeight="bold" 
-              color={'#636366'}
+              color="#636366"
               sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
             >
               CS Comments
@@ -114,7 +116,7 @@ export default function FeedbackDisplay({ feedback, submission, isClient, onView
         <Typography 
           variant='caption' 
           fontWeight="bold" 
-          color={'#636366'} 
+          color="#636366" 
           mb={{ xs: 0.4, sm: 0.5 }}
           sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
         >
@@ -134,7 +136,7 @@ export default function FeedbackDisplay({ feedback, submission, isClient, onView
             <Typography 
               variant='caption' 
               fontWeight="bold" 
-              color={'#636366'}
+              color="#636366"
               sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
             >
               Client Feedback

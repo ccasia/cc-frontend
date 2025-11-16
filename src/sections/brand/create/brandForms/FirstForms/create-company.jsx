@@ -213,9 +213,11 @@ const CreateCompany = ({
       });
     } catch (error) {
       console.log(error);
-      enqueueSnackbar(error?.message, {
-        variant: 'error',
-      });
+      console.error("API call failed:", error)
+      
+      const errorMessage = error.response?.data?.message || error.message || 'An unexpected error occurred.';
+  
+      enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       setLoading(false);
     }

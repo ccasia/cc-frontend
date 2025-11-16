@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useSnackbar } from 'notistack';
 
-import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Stack, TextField, Button, Typography } from '@mui/material';
+import { Box, Stack, Dialog, Button, TextField, Typography, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
 

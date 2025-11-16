@@ -1,5 +1,5 @@
-import React from 'react';
 import dayjs from 'dayjs';
+import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -19,11 +19,12 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+
 import { formatCurrencyAmount } from 'src/utils/currency';
 
 import NewLabel from 'src/components/styleLabel/styleLabel';
 
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
+const StyledTableCell = styled(TableCell)(() => ({
   fontWeight: 600,
   color: 'black',
 }));
@@ -74,7 +75,12 @@ const InvoiceLists = ({ invoices }) => {
                   </Stack>
                 </TableCell>
                 <TableCell>{dayjs(invoice.issued).format('LL')}</TableCell>
-                <TableCell>{formatCurrencyAmount(invoice.amount, invoice.campaign?.creatorAgreement?.[0]?.currency || 'MYR')}</TableCell>
+                <TableCell>
+                  {formatCurrencyAmount(
+                    invoice.amount,
+                    invoice.campaign?.creatorAgreement?.[0]?.currency || 'MYR'
+                  )}
+                </TableCell>
                 <TableCell>
                   <NewLabel
                     variant="soft"

@@ -5,7 +5,6 @@ import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import {
   Box,
   Grid,
-  Chip,
   Link,
   Alert,
   Stack,

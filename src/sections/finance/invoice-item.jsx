@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 
 import { Box, Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
 
-import Label from 'src/components/label';
 import { formatCurrencyAmount } from 'src/utils/currency';
+
+import Label from 'src/components/label';
 
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
   const [value, setValue] = useState(invoice?.status);
@@ -13,8 +14,6 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
   useEffect(() => {
     setValue(invoice?.status);
   }, [setValue, invoice]);
-
-
 
   return (
     <TableRow
@@ -44,7 +43,9 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         <Typography variant="subtitle2">{dayjs(invoice?.createdAt).format('LL')}</Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="subtitle2">{formatCurrencyAmount(invoice?.amount, invoice?.currency || 'MYR')}</Typography>
+        <Typography variant="subtitle2">
+          {formatCurrencyAmount(invoice?.amount, invoice?.currency || 'MYR')}
+        </Typography>
       </TableCell>
       <TableCell>
         <Label
@@ -73,12 +74,10 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
     </TableRow>
   );
 };
-
 export default InvoiceItem;
 
 InvoiceItem.propTypes = {
   invoice: PropTypes.object,
-  onChangeStatus: PropTypes.func,
   selected: PropTypes.string,
   onSelectRow: PropTypes.func,
   openEditInvoice: PropTypes.func,

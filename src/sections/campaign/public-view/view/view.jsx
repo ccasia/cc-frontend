@@ -1,9 +1,7 @@
-import { m } from 'framer-motion';
 import { useTheme } from '@emotion/react';
 import useSWRInfinite from 'swr/infinite';
-import { enqueueSnackbar } from 'notistack';
-import { orderBy, debounce, throttle, get } from 'lodash';
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { orderBy, debounce, throttle } from 'lodash';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
@@ -11,23 +9,19 @@ import {
   Stack,
   Button,
   Select,
-  Divider,
   MenuItem,
   Container,
   InputBase,
   Typography,
-  IconButton,
-  ListItemText,
   CircularProgress,
 } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
-import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 // import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
@@ -100,11 +94,6 @@ const PublicCampaignView = () => {
 
   const { user } = useAuthContext();
 
-  const load = useBoolean();
-  const [upload, setUpload] = useState([]);
-  const { socket } = useSocketContext();
-  const smUp = useResponsive('up', 'sm');
-
   const [sortBy, setSortBy] = useState('');
 
   const theme = useTheme();
@@ -127,118 +116,16 @@ const PublicCampaignView = () => {
     });
   };
 
-  useEffect(() => {
-    // Define the handler function
-    const handlePitchLoading = (val) => {
-      if (upload.find((item) => item.campaignId === val.campaignId)) {
-        setUpload((prev) =>
-          prev.map((item) =>
-            item.campaignId === val.campaignId
-              ? {
-                  campaignId: val.campaignId,
-                  loading: true,
-                  progress: Math.floor(val.progress),
-                }
-              : item
-          )
-        );
-      } else {
-        setUpload((item) => [
-          ...item,
-          { loading: true, campaignId: val.campaignId, progress: Math.floor(val.progress) },
-        ]);
-      }
-    };
-
-    const handlePitchSuccess = (val) => {
-      mutate();
-      enqueueSnackbar(val.name);
-      setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== val.campaignId));
-    };
-
-    // Attach the event listener
-    socket?.on('pitch-loading', handlePitchLoading);
-    socket?.on('pitch-uploaded', handlePitchSuccess);
-
-    // Clean-up function
-    return () => {
-      socket?.off('pitch-loading', handlePitchLoading);
-      socket?.off('pitch-uploaded', handlePitchSuccess);
-    };
-  }, [socket, upload, mutate]);
-
-  const renderUploadProgress = (
-    <Box
-      component={m.div}
-      transition={{ ease: 'easeInOut', duration: 0.4 }}
-      animate={load.value ? { height: 400 } : { height: 50 }}
-      sx={{
-        position: 'fixed',
-        bottom: 0,
-        right: smUp ? 50 : 0,
-        width: smUp ? 300 : '100vw',
-        height: load.value ? 400 : 50,
-        bgcolor: theme.palette.background.default,
-        boxShadow: 20,
-        border: 1,
-        borderBottom: 0,
-        borderRadius: '10px 10px 0 0',
-        borderColor: 'text.secondary',
-        p: 2,
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ position: 'absolute', top: 10 }}>
-        <Stack direction="row" gap={1.5} alignItems="center">
-          <IconButton
-            sx={{
-              transform: load.value ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}
-            onClick={load.onToggle}
-          >
-            <Iconify icon="bxs:up-arrow" />
-          </IconButton>
-          <Typography variant="subtitle2">Uploading {upload.length} files</Typography>
-        </Stack>
-      </Box>
-
-      <Stack mt={5} gap={2}>
-        {upload.map((elem) => (
-          <>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <ListItemText
-                primary={
-                  filteredData && filteredData.find((item) => item.id === elem.campaignId)?.name
-                }
-                secondary="Uploading pitch"
-                primaryTypographyProps={{ variant: 'subtitle1' }}
-                secondaryTypographyProps={{ variant: 'caption' }}
-              />
-              <CircularProgress
-                variant="determinate"
-                value={elem.progress}
-                size={20}
-                thickness={7}
-              />
-            </Stack>
-            <Divider sx={{ borderStyle: 'dashed' }} />
-          </>
-        ))}
-      </Stack>
-    </Box>
-  );
-
   const filteredData = useMemo(() => {
     const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
 
     return applyFilter({
       inputData: campaigns?.filter((campaign) => campaign?.status === 'ACTIVE'),
       filter,
-      user,
       sortBy,
       search,
     });
-  }, [data, filter, user, sortBy, search]);
+  }, [data, filter, sortBy, search]);
 
   const handleScroll = useCallback(() => {
     const windowHeight = window.innerHeight;
@@ -296,15 +183,12 @@ const PublicCampaignView = () => {
       sx={{
         px: { xs: 2, sm: 3, md: 4 },
         py: { lg: 2, xs: 2, sm: 2 },
-        // bgcolor: 'beige',
-        // overflow: 'hidden',
       }}
     >
       <Typography
         variant="h2"
         sx={{
           mb: 0.2,
-          // mt: { lg: 2, xs: 2, sm: 2 },
           fontFamily: theme.typography.fontSecondaryFamily,
           fontWeight: 'normal',
         }}
@@ -394,53 +278,6 @@ const PublicCampaignView = () => {
             >
               For you
             </Button>
-            {/* <Button
-              disableRipple
-              size="large"
-              onClick={() => setFilter('saved')}
-              sx={{
-                px: 1,
-                py: 0.5,
-                pb: 0.5,
-                ml: 2,
-                minWidth: 'fit-content',
-                color: filter === 'saved' ? '#221f20' : '#8e8e93',
-                position: 'relative',
-                fontSize: '1.05rem',
-                fontWeight: 650,
-                // transition: 'transform 0.1s ease-in-out',
-                '&:focus': {
-                  outline: 'none',
-                  bgcolor: 'transparent',
-                },
-                '&:active': {
-                  // transform: 'scale(0.95)',
-                  bgcolor: 'transparent',
-                },
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  bottom: -2.5,
-                  left: 0,
-                  right: 0,
-                  height: '2px',
-                  width: filter === 'saved' ? '100%' : '0%',
-                  bgcolor: '#1340ff',
-                  // transition: 'all 0.3s ease-in-out',
-                  transform: 'scaleX(1)',
-                  transformOrigin: 'left',
-                },
-                '&:hover': {
-                  bgcolor: 'transparent',
-                  '&::after': {
-                    width: '100%',
-                    opacity: filter === 'saved' ? 1 : 0.5,
-                  },
-                },
-              }}
-            >
-              Saved
-            </Button> */}
           </Stack>
 
           {/* Desktop Search and Sort Stack */}
@@ -757,8 +594,6 @@ const PublicCampaignView = () => {
           />
         ))}
 
-      {upload.length > 0 && renderUploadProgress}
-
       {showScrollTop && (
         <Fab
           color="primary"
@@ -780,19 +615,7 @@ const PublicCampaignView = () => {
 
 export default PublicCampaignView;
 
-const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
-  if (filter === 'saved') {
-    inputData = inputData?.filter((campaign) =>
-      campaign.bookMarkCampaign.some((item) => item.userId === user.id)
-    );
-  }
-
-  if (filter === 'draft') {
-    inputData = inputData?.filter((campaign) =>
-      campaign.pitch?.some((elem) => elem?.userId === user?.id && elem?.status === 'draft')
-    );
-  }
-
+const applyFilter = ({ inputData, filter, sortBy, search }) => {
   if (sortBy === 'Most matched') {
     inputData = orderBy(inputData, ['percentageMatch'], ['desc']);
   }

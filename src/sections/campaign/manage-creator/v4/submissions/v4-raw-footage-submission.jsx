@@ -1,19 +1,20 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useEffect, useCallback } from 'react';
 
-import { Box, Typography, LinearProgress } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 import RawFootageGridDisplay from 'src/components/upload/raw-footage-grid-display';
+
 import {
-  SubmissionFeedback,
-  SubmissionActionButton,
-  useSubmissionUpload,
-  getSubmissionStatusFlags,
-  getRelevantFeedback,
   getButtonStates,
+  SubmissionFeedback,
+  useSubmissionUpload,
+  getRelevantFeedback,
   getIsCaptionEditable,
+  SubmissionActionButton,
+  getSubmissionStatusFlags,
   prepareRawFootageFormData,
   getRawFootageUploadSuccessMessage,
 } from './shared';
@@ -53,9 +54,10 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
   const { isApproved, hasChangesRequired, isPosted } = statusFlags;
 
   // Get submitted raw footages
-  const submittedRawFootages = useMemo(() => {
-    return submission.rawFootages || [];
-  }, [submission.rawFootages]);
+  const submittedRawFootages = useMemo(
+    () => submission.rawFootages || [],
+    [submission.rawFootages]
+  );
 
   // Get relevant feedback
   const relevantFeedback = useMemo(() => getRelevantFeedback(submission), [submission]);
@@ -90,21 +92,24 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
       }
     }
 
-    submitUpload((params) => prepareRawFootageFormData({ ...params, submission }), () => {
-      const isUpdate = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
-      const uploadedFilesCount = selectedFiles.filter((file) => file instanceof File).length;
-      const keptRawFootagesCount = selectedFiles.filter(
-        (file) => file && typeof file === 'object' && file.url && file.id
-      ).length;
+    submitUpload(
+      (params) => prepareRawFootageFormData({ ...params, submission }),
+      () => {
+        const isUpdate = ['CHANGES_REQUIRED', 'REJECTED'].includes(submission.status);
+        const uploadedFilesCount = selectedFiles.filter((file) => file instanceof File).length;
+        const keptRawFootagesCount = selectedFiles.filter(
+          (file) => file && typeof file === 'object' && file.url && file.id
+        ).length;
 
-      const successMessage = getRawFootageUploadSuccessMessage({
-        isUpdate,
-        uploadedFilesCount,
-        keptRawFootagesCount,
-      });
+        const successMessage = getRawFootageUploadSuccessMessage({
+          isUpdate,
+          uploadedFilesCount,
+          keptRawFootagesCount,
+        });
 
-      enqueueSnackbar(successMessage, { variant: 'success' });
-    });
+        enqueueSnackbar(successMessage, { variant: 'success' });
+      }
+    );
   };
 
   const rawFootagesToDisplay = useMemo(() => {
@@ -124,7 +129,13 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         selectedFilesCount: selectedFiles.length,
         hasChangesRequired,
       }),
-    [isReuploadMode, submittedRawFootages.length, hasSubmitted, selectedFiles.length, hasChangesRequired]
+    [
+      isReuploadMode,
+      submittedRawFootages.length,
+      hasSubmitted,
+      selectedFiles.length,
+      hasChangesRequired,
+    ]
   );
 
   const canUpload = !isApproved && !isPosted;
@@ -139,13 +150,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         caption,
         uploading,
       }),
-    [
-      submission,
-      isReuploadMode,
-      selectedFiles,
-      caption,
-      uploading,
-    ]
+    [submission, isReuploadMode, selectedFiles, caption, uploading]
   );
 
   if (!canUpload) {
@@ -263,10 +268,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
             </Box>
           )}
 
-          <SubmissionFeedback
-            feedback={relevantFeedback}
-            hasChangesRequired={hasChangesRequired}
-          />
+          <SubmissionFeedback feedback={relevantFeedback} hasChangesRequired={hasChangesRequired} />
         </Box>
       </Box>
 

@@ -1,19 +1,20 @@
-import React, { useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useCallback } from 'react';
 
 import { Box } from '@mui/material';
 
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
+
 import {
-  SubmissionSection,
-  SubmissionActionButton,
-  useSubmissionUpload,
-  getSubmissionStatusFlags,
-  getRelevantFeedback,
   getButtonStates,
+  SubmissionSection,
+  useSubmissionUpload,
+  getRelevantFeedback,
   getIsCaptionEditable,
   prepareVideoFormData,
+  SubmissionActionButton,
+  getSubmissionStatusFlags,
 } from './shared';
 
 const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange }) => {
@@ -69,9 +70,10 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
   }, [submission.video]);
 
   // Determine video to show (null if in reupload mode)
-  const videoToShow = useMemo(() => {
-    return isReuploadMode ? null : submittedVideo;
-  }, [isReuploadMode, submittedVideo]);
+  const videoToShow = useMemo(
+    () => (isReuploadMode ? null : submittedVideo),
+    [isReuploadMode, submittedVideo]
+  );
 
   // Determine if caption is editable
   const isCaptionEditable = useMemo(
@@ -191,11 +193,13 @@ const V4VideoSubmission = ({ submission, onUpdate, campaign, onUploadStateChange
           }}
         >
           <SubmissionSection
-            hasCaption={true}
+            hasCaption
             caption={caption}
             onCaptionChange={handleCaptionChange}
             isCaptionEditable={isCaptionEditable}
-            hasPostingLink={requiresPostingLink && (isApproved || isPosted || isPostingLinkRejected)}
+            hasPostingLink={
+              requiresPostingLink && (isApproved || isPosted || isPostingLinkRejected)
+            }
             postingLink={postingLink}
             onPostingLinkChange={(e) => setPostingLink(e.target.value)}
             isPostingLinkEditable={isPostingLinkEditable}
@@ -235,18 +239,19 @@ V4VideoSubmission.propTypes = {
 };
 
 // Memoize component with custom comparison to prevent unnecessary re-renders
-const MemoizedV4VideoSubmission = React.memo(V4VideoSubmission, (prevProps, nextProps) => {
-  // Only re-render if submission status, video, caption, or content changes
-  return (
+const MemoizedV4VideoSubmission = React.memo(
+  V4VideoSubmission,
+  (prevProps, nextProps) =>
+    // Only re-render if submission status, video, caption, or content changes
     prevProps.submission.id === nextProps.submission.id &&
     prevProps.submission.status === nextProps.submission.status &&
     prevProps.submission.caption === nextProps.submission.caption &&
     prevProps.submission.content === nextProps.submission.content &&
     JSON.stringify(prevProps.submission.video) === JSON.stringify(nextProps.submission.video) &&
-    JSON.stringify(prevProps.submission.feedback) === JSON.stringify(nextProps.submission.feedback) &&
+    JSON.stringify(prevProps.submission.feedback) ===
+      JSON.stringify(nextProps.submission.feedback) &&
     prevProps.campaign?.campaignType === nextProps.campaign?.campaignType
-  );
-});
+);
 
 MemoizedV4VideoSubmission.displayName = 'V4VideoSubmission';
 
