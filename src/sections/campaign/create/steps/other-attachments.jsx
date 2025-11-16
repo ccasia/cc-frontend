@@ -64,7 +64,7 @@ const OtherAttachments = () => {
             )}
           </Stack>
         ))}
-        <Button onClick={() => append()} fullWidth sx={{ mt: 2 }} variant="outlined">
+        <Button onClick={() => append({value:''})} fullWidth sx={{ mt: 2 }} variant="outlined">
           Add more link
         </Button>
       </Box>

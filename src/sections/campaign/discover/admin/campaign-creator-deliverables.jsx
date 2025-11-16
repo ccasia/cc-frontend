@@ -12,7 +12,6 @@ import {
   TextField,
   Accordion,
   Typography,
-  useMediaQuery,
   InputAdornment,
   AccordionSummary,
   AccordionDetails,
@@ -43,31 +42,33 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   // Get shortlisted creators from campaign
   const shortlistedCreators = useMemo(() => {
     const creators = campaign?.shortlisted || [];
-    
+
     // Debug logging to understand the data structure
     console.log('🔍 Admin component - Shortlisted creators data:', {
       total: creators.length,
       campaignId: campaign?.id,
       campaignOrigin: campaign?.origin,
       isV3: campaign?.origin === 'CLIENT',
-      sample: creators.slice(0, 3).map(c => ({
+      sample: creators.slice(0, 3).map((c) => ({
         userId: c.userId,
         hasUser: !!c.user,
-        userData: c.user ? {
-          name: c.user.name,
-          username: c.user.username,
-          hasCreator: !!c.user.creator
-        } : null
+        userData: c.user
+          ? {
+              name: c.user.name,
+              username: c.user.username,
+              hasCreator: !!c.user.creator,
+            }
+          : null,
       })),
       fullCampaignData: {
         id: campaign?.id,
         name: campaign?.name,
         origin: campaign?.origin,
         shortlistedCount: campaign?.shortlisted?.length,
-        hasShortlisted: !!campaign?.shortlisted
-      }
+        hasShortlisted: !!campaign?.shortlisted,
+      },
     });
-    
+
     return creators;
   }, [campaign?.shortlisted, campaign?.id, campaign?.name, campaign?.origin]);
 
@@ -76,14 +77,14 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     if (!shortlistedCreators.length) return [];
 
     // Filter out creators without user data to prevent null reference errors
-    const validCreators = shortlistedCreators.filter(creator => creator?.user);
-    
+    const validCreators = shortlistedCreators.filter((creator) => creator?.user);
+
     // Debug logging for sorted creators
     if (validCreators.length !== shortlistedCreators.length) {
       console.warn('⚠️ Some creators were filtered out due to missing user data:', {
         total: shortlistedCreators.length,
         valid: validCreators.length,
-        filtered: shortlistedCreators.length - validCreators.length
+        filtered: shortlistedCreators.length - validCreators.length,
       });
     }
 
@@ -104,7 +105,6 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     isLoading: loadingSubmissionsV2,
     mutate: submissionMutateV2,
   } = useGetSubmissions(selectedCreator?.userId, campaign?.id);
-
 
   // Use V2 submissions only
   const submissions = submissionsV2;
@@ -144,12 +144,12 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     // Only apply minimal filtering for very specific cases
     filtered = filtered.filter((creator) => {
       const creatorStatus = creatorStatuses[creator.userId];
-      
+
       // For campaigns, show all shortlisted creators to admin
       if (isV3) {
         return true; // Show all creators for admin in campaigns
       }
-      
+
       // For V2 campaigns, show all creators to admin
       // Only exclude creators that are explicitly marked as SENT_TO_CLIENT and have no other activity
       // This ensures admin can see all creators and their progress
@@ -165,18 +165,16 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
     // Apply search filter
     if (search) {
-      filtered = filtered.filter(
-        (elem) => {
-          // Add null checks for elem.user
-          if (!elem?.user) return false;
-          
-          return (
-            elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
-            (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
-            (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
-          );
-        }
-      );
+      filtered = filtered.filter((elem) => {
+        // Add null checks for elem.user
+        if (!elem?.user) return false;
+
+        return (
+          elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
+          (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
+          (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
+        );
+      });
     }
 
     const result = [...filtered].sort((a, b) => {
@@ -194,21 +192,29 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     console.log('🔍 Admin component - Filtered creators result:', {
       originalCount: sortedCreators.length,
       filteredCount: result.length,
-      isV3: isV3,
-      loadingStatuses: loadingStatuses,
+      isV3,
+      loadingStatuses,
       creatorStatuses: Object.keys(creatorStatuses).length > 0 ? creatorStatuses : 'empty',
-      sampleFiltered: result.slice(0, 3).map(c => ({
+      sampleFiltered: result.slice(0, 3).map((c) => ({
         userId: c.userId,
         name: c.user?.name,
-        status: creatorStatuses[c.userId] || 'unknown'
+        status: creatorStatuses[c.userId] || 'unknown',
       })),
       campaignId: campaign?.id,
       campaignOrigin: campaign?.origin,
-      shortlistedCount: campaign?.shortlisted?.length || 0
+      shortlistedCount: campaign?.shortlisted?.length || 0,
     });
 
     return result;
-  }, [sortedCreators, search, sortDirection, selectedFilter, creatorStatuses, isV3, loadingStatuses]);
+  }, [
+    sortedCreators,
+    search,
+    sortDirection,
+    selectedFilter,
+    creatorStatuses,
+    isV3,
+    loadingStatuses,
+  ]);
 
   // Fetch all creator statuses using the existing hook
   useEffect(() => {
@@ -245,7 +251,6 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
               continue;
             }
             data = await response.json();
-            
 
             if (!data || data.length === 0) {
               console.log(`⚠️ No submissions found for creator ${creator.userId}`);
@@ -301,7 +306,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
               // If only agreement exists, use its status
               // This ensures creators with approved agreements show up
               const agreementStatus = agreementSubmission.status;
-              statusMap[creator.userId] = agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
+              statusMap[creator.userId] =
+                agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
             } else {
               statusMap[creator.userId] = 'NOT_STARTED';
             }
@@ -329,7 +335,6 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         const newStatuses = { ...prevStatuses };
 
         // Check if this is a V3 campaign (client-origin) - V3 removed
-        const isV3 = false;
 
         // Include all submission types to determine creator status
         const allSubmissions = submissions.filter(
@@ -357,28 +362,29 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         const agreementSubmission = allSubmissions.find(
           (item) => item.submissionType.type === 'AGREEMENT_FORM'
         );
-        const firstDraftSubmission = deliverableSubmissions.find(
+        const firstDraftSubmissionA = deliverableSubmissions.find(
           (item) => item.submissionType.type === 'FIRST_DRAFT'
         );
-        const finalDraftSubmission = deliverableSubmissions.find(
+        const finalDraftSubmissionB = deliverableSubmissions.find(
           (item) => item.submissionType.type === 'FINAL_DRAFT'
         );
-        const postingSubmission = deliverableSubmissions.find(
+        const postingSubmissionC = deliverableSubmissions.find(
           (item) => item.submissionType.type === 'POSTING'
         );
 
         // Determine the status based on the latest stage in the workflow
         // Priority: Posting > Final Draft > First Draft > Agreement
-        if (postingSubmission) {
-          newStatuses[selectedCreator.userId] = postingSubmission.status;
-        } else if (finalDraftSubmission) {
-          newStatuses[selectedCreator.userId] = finalDraftSubmission.status;
-        } else if (firstDraftSubmission) {
-          newStatuses[selectedCreator.userId] = firstDraftSubmission.status;
+        if (postingSubmissionC) {
+          newStatuses[selectedCreator.userId] = postingSubmissionC.status;
+        } else if (finalDraftSubmissionB) {
+          newStatuses[selectedCreator.userId] = finalDraftSubmissionB.status;
+        } else if (firstDraftSubmissionA) {
+          newStatuses[selectedCreator.userId] = firstDraftSubmissionA.status;
         } else if (agreementSubmission) {
           // If only agreement exists, use its status
           const agreementStatus = agreementSubmission.status;
-          newStatuses[selectedCreator.userId] = agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
+          newStatuses[selectedCreator.userId] =
+            agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
         } else {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
         }
@@ -407,23 +413,23 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           );
 
           if (relevantSubmissions.length > 0) {
-            const firstDraftSubmission = relevantSubmissions.find(
+            const firstDraftSubmissionA = relevantSubmissions.find(
               (item) => item.submissionType.type === 'FIRST_DRAFT'
             );
-            const finalDraftSubmission = relevantSubmissions.find(
+            const finalDraftSubmissionB = relevantSubmissions.find(
               (item) => item.submissionType.type === 'FINAL_DRAFT'
             );
-            const postingSubmission = relevantSubmissions.find(
+            const postingSubmissionC = relevantSubmissions.find(
               (item) => item.submissionType.type === 'POSTING'
             );
 
             // Determine the status based on the latest stage in the workflow
-            if (postingSubmission) {
-              statusMap[selectedCreator.userId] = postingSubmission.status;
-            } else if (finalDraftSubmission) {
-              statusMap[selectedCreator.userId] = finalDraftSubmission.status;
-            } else if (firstDraftSubmission) {
-              statusMap[selectedCreator.userId] = firstDraftSubmission.status;
+            if (postingSubmissionC) {
+              statusMap[selectedCreator.userId] = postingSubmissionC.status;
+            } else if (finalDraftSubmissionB) {
+              statusMap[selectedCreator.userId] = finalDraftSubmissionB.status;
+            } else if (firstDraftSubmissionA) {
+              statusMap[selectedCreator.userId] = firstDraftSubmissionA.status;
             }
           }
 
@@ -435,7 +441,15 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
 
       refreshStatuses();
     }
-  }, [selectedCreator?.userId, submissions, loadingSubmissions, campaign?.origin, shortlistedCreators, creatorStatuses, isV3]);
+  }, [
+    selectedCreator?.userId,
+    submissions,
+    loadingSubmissions,
+    campaign?.origin,
+    shortlistedCreators,
+    creatorStatuses,
+    isV3,
+  ]);
 
   // Toggle sort direction
   const handleToggleSort = () => {
@@ -525,7 +539,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           } else if (agreementSubmission) {
             // If only agreement exists, use its status
             const agreementStatus = agreementSubmission.status;
-            statusMap[creator.userId] = agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
+            statusMap[creator.userId] =
+              agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
           } else {
             statusMap[creator.userId] = 'NOT_STARTED';
           }
@@ -542,7 +557,6 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       setLoadingStatuses(false);
     }
   };
-
 
   // Set first creator as selected by default, or use target creator from localStorage
   useEffect(() => {
@@ -821,7 +835,9 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                   </Stack>
                 )}
                 <Iconify
-                  icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
+                  icon={
+                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+                  }
                   width={12}
                 />
               </Stack>

@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
+
 import { Box, Stack } from '@mui/material';
+
 import FeedbackDisplay from './feedback-display';
 
 export default function FeedbackSection({ submission, isVisible, isClient, onViewLogs }) {

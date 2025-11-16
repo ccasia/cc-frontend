@@ -1,7 +1,10 @@
 import dayjs from 'dayjs';
+import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
@@ -29,6 +32,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
+import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const Posting = ({ 
@@ -50,6 +55,7 @@ const Posting = ({
   const [feedback, setFeedback] = useState('');
   const [csmLink, setCsmLink] = useState('');
   const loading = useBoolean();
+  const adminSubmissionLoading = useBoolean();
   const postingDate = useBoolean();
   const [date, setDate] = useState({
     dueDate: submission?.endDate,
@@ -60,6 +66,22 @@ const Posting = ({
 
   // Get user role for workflow
   const userRole = user?.role || 'admin';
+  const [adminSubmittedThisSession, setAdminSubmittedThisSession] = useState(false);
+
+  // Form schema for admin submission
+  const adminSubmissionSchema = yup.object().shape({
+    postingLink: yup.string().required('Posting Link is required.'),
+  });
+
+  const adminSubmissionMethods = useForm({
+    resolver: yupResolver(adminSubmissionSchema),
+    defaultValues: {
+      postingLink: '',
+    },
+  });
+
+  const { handleSubmit: handleAdminSubmit, reset: resetAdminForm, watch: watchAdminForm } = adminSubmissionMethods;
+  const adminPostingLinkValue = watchAdminForm('postingLink');
 
   const onSubmit = async (type) => {
     let res;
@@ -110,6 +132,31 @@ const Posting = ({
     }
   };
 
+  // Admin submission function
+  const onAdminSubmit = handleAdminSubmit(async (data) => {
+    try {
+      adminSubmissionLoading.onTrue();
+      const res = await axiosInstance.post(endpoints.submission.admin.adminPostSubmission, {
+        postingLinks: [data.postingLink],
+        submissionId: submission?.id,
+        creatorId: creator?.user?.id,
+      });
+      
+      mutate(
+        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+      );
+      resetAdminForm();
+      setAdminSubmittedThisSession(true);
+      enqueueSnackbar(res?.data?.message || 'Posting link submitted successfully for review');
+    } catch (error) {
+      enqueueSnackbar(error?.message || 'Error submitting posting link', {
+        variant: 'error',
+      });
+    } finally {
+      adminSubmissionLoading.onFalse();
+    }
+  });
+
   const handleChangeDate = async (data) => {
     try {
       loadingDate.onTrue();
@@ -144,6 +191,27 @@ const Posting = ({
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced' || submission?.status === 'APPROVED',
     [user, submission?.status]
   );
+
+  // Check if user is admin (not superadmin) and can submit for creator
+  const canAdminSubmit = useMemo(() => 
+     user?.admin && 
+           user?.admin?.mode !== 'god' && 
+           submission?.status === 'IN_PROGRESS' &&
+           true // Note: Will add proper check when submittedByAdminId field is added to database
+  , [user, submission]);
+
+  // Check if current user can approve (based on who submitted)
+  const canApprove = useMemo(() => {
+    if (isDisabled) return false;
+    
+    // Hide approve/reject buttons if admin submitted this session
+    if (adminSubmittedThisSession && submission?.status === 'PENDING_REVIEW') {
+      return false;
+    }
+    
+    // Note: Will implement proper role-based approval when submittedByAdminId field is added
+    return user?.admin;
+  }, [user, submission, isDisabled, adminSubmittedThisSession]);
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%' }}>
@@ -232,8 +300,70 @@ const Posting = ({
           {submission?.status === 'REJECTED' && !submission?.content && !(submission?.videos && submission.videos.length > 0) && (
             <EmptyContent title="Waiting for another submission." />
           )}
-          {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'SENT_TO_CLIENT' || submission?.status === 'IN_PROGRESS' || submission?.content || (submission?.videos && submission.videos.length > 0)) && (
+          {submission?.status === 'IN_PROGRESS' && canAdminSubmit && (
+            <Box component={Paper} p={2.5} mb={2}>            
+              <FormProvider methods={adminSubmissionMethods} onSubmit={onAdminSubmit}>
+                <Stack spacing={2}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'flex-end' }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                        Posting Link{' '}
+                        <Box component="span" sx={{ color: 'error.main' }}>
+                          *
+                        </Box>
+                      </Typography>
+                      <TextField
+                        name="postingLink"
+                        placeholder="Submit for your creator"
+                        fullWidth
+                        variant="outlined"
+                        {...adminSubmissionMethods.register('postingLink')}
+                        sx={{
+                          bgcolor: '#ffffff',
+                          '& .MuiOutlinedInput-root': {
+                            '&:hover fieldset': {
+                              borderColor: '#203ff5',
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: '#203ff5',
+                            },
+                          },
+                        }}
+                      />
+                    </Box>
+                    <LoadingButton
+                      onClick={onAdminSubmit}
+                      variant="contained"
+                      loading={adminSubmissionLoading.value}
+                      disabled={!adminPostingLinkValue}
+                      startIcon={<Iconify icon="material-symbols:send" />}
+                      sx={{
+                        bgcolor: adminPostingLinkValue ? '#203ff5' : '#b0b0b1',
+                        color: '#ffffff',
+                        borderBottom: 3.5,
+                        borderBottomColor: adminPostingLinkValue ? '#112286' : '#9e9e9f',
+                        borderRadius: 1.5,
+                        px: 3,
+                        py: 1.5,
+                        height: '56px',
+                        fontWeight: 600,
+                        '&:hover': {
+                          bgcolor: adminPostingLinkValue ? '#203ff5' : '#b0b0b1',
+                          opacity: adminPostingLinkValue ? 0.9 : 1,
+                        },
+                        textTransform: 'none',
+                        minWidth: { xs: '100%', sm: '160px' },
+                      }}
+                    >
+                      Submit for Creator
+                    </LoadingButton>
+                  </Stack>
+                </Stack>
+              </FormProvider>
+            </Box>
+          )}          {submission?.status === 'PENDING_REVIEW' && (
             <>
+              {/* Temporarily disabled for testing */}
               <Box
                 component={Paper}
                 p={1.5}
@@ -244,8 +374,8 @@ const Posting = ({
               >
                 <Box
                   sx={{
-                    p: 3,
-                    mt: -2,
+                    p: 2,
+                    mt: -3,
                     borderRadius: 2,
                     border: '1px solid',
                     borderColor: 'divider',
@@ -255,7 +385,7 @@ const Posting = ({
                     position: 'relative',
                   }}
                 >
-                  <Box display="flex" flexDirection="column" gap={2}>
+                  <Box display="flex" flexDirection="column" gap={-5}>
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Avatar
                         src={creator?.user?.photoURL}
@@ -268,15 +398,17 @@ const Posting = ({
                       >
                         {creator?.user?.name?.charAt(0).toUpperCase()}
                       </Avatar>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          fontSize: '1.05rem',
-                          mt: -3,
-                        }}
-                      >
-                        {creator?.user?.name}
-                      </Typography>
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontSize: '1.05rem',
+                          }}
+                        >
+                          {creator?.user?.name}
+                        </Typography>
+                        {/* Temporarily disabled for testing */}
+                      </Box>
                     </Stack>
 
                     <Box
@@ -558,6 +690,63 @@ const Posting = ({
                 )}
               </Stack>
             </>
+          )}
+          {submission?.isReview && submission?.status === 'APPROVED' && (
+            <Box component={Paper} p={1.5}>
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box display="flex" flexDirection="column">
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Avatar
+                      src={creator?.user?.photoURL}
+                      alt={creator?.user?.name}
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        border: '1px solid #e7e7e7',
+                      }}
+                    >
+                      {creator?.user?.name?.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Stack>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontSize: '1.05rem',
+                        }}
+                      >
+                        {creator?.user?.name}
+                      </Typography>
+                      <Box sx={{ mt: 0 }}>
+                        <Typography
+                          variant="body2"
+                          component="a"
+                          href={submission?.content}
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
+                            wordBreak: 'break-word',
+                            color: 'primary.main',
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline',
+                            },
+                          }}
+                        >
+                          {submission?.content}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Stack>
+                </Box>
+              </Box>
+            </Box>
           )}
         </Grid>
       </Grid>
@@ -870,6 +1059,7 @@ const Posting = ({
           </LoadingButton>
         </DialogActions>
       </Dialog>
+
     </Box>
   );
 };

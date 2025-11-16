@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import { useRef, useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
@@ -12,20 +12,22 @@ import {
   IconButton
 } from '@mui/material';
 
+import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
+
 import axiosInstance from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
-import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
-import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
+import FeedbackLogs from './shared/feedback-logs';
 import FeedbackSection from './shared/feedback-section';
 import FeedbackActions from './shared/feedback-actions';
-import FeedbackLogs from './shared/feedback-logs';
-import useSubmissionSocket from './shared/use-submission-socket';
 import useCaptionOverflow from './shared/use-caption-overflow';
-import { getDefaultFeedback, getInitialReasons } from './shared/feedback-utils';
+import useSubmissionSocket from './shared/use-submission-socket';
+import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
+import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
 export default function V4RawFootageSubmission({ submission, campaign, onUpdate }) {
   const { user } = useAuthContext();
@@ -298,7 +300,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                   ) : (
                     <>
                       <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
-                        <Typography variant='caption' fontWeight={'bold'} color={'#636366'} mb={0.5}>Caption</Typography>
+                        <Typography variant='caption' fontWeight="bold" color="#636366" mb={0.5}>Caption</Typography>
                         {pendingReview ? (
                           <Box>
                             <TextField
@@ -346,7 +348,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                 p: 1,
                                 bgcolor: 'background.paper',
                               }}>
-                                <Typography fontSize={14} color={'#636366'} sx={{
+                                <Typography fontSize={14} color="#636366" sx={{
                                   wordWrap: 'break-word',
                                   overflowWrap: 'break-word',
                                   lineHeight: 1.5
@@ -355,7 +357,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                 </Typography>
                               </Box>
                             ) : (
-                              <Typography fontSize={14} color={'#636366'} sx={{
+                              <Typography fontSize={14} color="#636366" sx={{
                                 wordWrap: 'break-word',
                                 overflowWrap: 'break-word',
                                 lineHeight: 1.5
@@ -440,13 +442,9 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                     }}
                   >
                     {rawFootages.map((rawFootage, footageIndex) => {
-                      const getFootageWidth = () => {
-                        return { xs: 140, sm: 160, md: 200, lg: 240 };
-                      };
+                      const getFootageWidth = () => ({ xs: 140, sm: 160, md: 200, lg: 240 });
 
-                      const getFootageHeight = () => {
-                        return { xs: 'calc(100% - 4px)', sm: 'calc(100% - 6px)', md: 'calc(100% - 8px)' };
-                      };
+                      const getFootageHeight = () => ({ xs: 'calc(100% - 4px)', sm: 'calc(100% - 6px)', md: 'calc(100% - 8px)' });
 
                       return (
                         <Box
@@ -570,7 +568,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                   </IconButton>
 
                                   <Typography 
-                                    variant={'caption'} 
+                                    variant="caption" 
                                     sx={{ 
                                       color: 'white', 
                                       minWidth: { xs: '25px', sm: '28px', md: '30px' }, 
@@ -623,7 +621,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                                   </Box>
 
                                   <Typography 
-                                    variant={'caption'} 
+                                    variant="caption" 
                                     sx={{ 
                                       color: 'white', 
                                       minWidth: { xs: '25px', sm: '28px', md: '30px' }, 

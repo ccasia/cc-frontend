@@ -266,6 +266,8 @@ export const endpoints = {
     resendAgreement: `/api/campaign/resendAgreement`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
     linkNewAgreement: `/api/campaign/linkNewAgreement`,
+    exportActiveCompleted: '/api/campaign/export/active-completed',
+    exportCampaignCreators: '/api/campaign/export/campaign-creators',
     removeCreator: `/api/campaign/removeCreatorFromCampaign`,
   },
   submission: {
@@ -297,6 +299,7 @@ export const endpoints = {
       agreement: '/api/submission/adminManageAgreementSubmission',
       draft: '/api/submission/adminManageDraft',
       posting: '/api/submission/adminManagePosting',
+      adminPostSubmission: '/api/submission/adminPostSubmission',
       v2: {
         photos: '/api/submission/v2/managePhotos',
         videos: '/api/submission/v2/manageDraftVideos',
