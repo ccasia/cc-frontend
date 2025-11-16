@@ -22,8 +22,6 @@ import { useSocialInsights } from 'src/hooks/use-social-insights';
 import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
 import { formatNumber, calculateSummaryStats } from 'src/utils/socialMetricsCalculator';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import Iconify from 'src/components/iconify';
 
 import PitchModal from './pitch-modal';
@@ -49,13 +47,14 @@ const BoxStyle = {
 
 const CampaignOverviewClient = ({ campaign, onUpdate }) => {
   const navigate = useNavigate();
-  const { user } = useAuthContext();
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
 
   // Extract posting submissions to get analytics data
-  const submissions = campaign?.submission || [];
-  const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
+  const postingSubmissions = useMemo(() => {
+    const submissions = campaign?.submission || [];
+    return extractPostingSubmissions(submissions);
+  }, [campaign?.submission]);
 
   // Get social insights data for analytics
   const {
@@ -156,10 +155,6 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
     setOpenPitchModal(false);
   };
 
-  const handleViewProfile = (creatorId) => {
-    navigate(`/dashboard/creator/profile/${creatorId}`);
-  };
-
   const handleOpenMediaKit = (creatorUser) => {
     // Support being called with either the shortlisted item or the nested user
     const creatorId = creatorUser?.creator?.id || creatorUser?.user?.creator?.id;
@@ -257,7 +252,9 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                 try {
                   localStorage.setItem('campaigndetail', 'analytics');
                   window.dispatchEvent(new CustomEvent('switchCampaignTab', { detail: 'analytics' }));
-                } catch (e) {}
+                } catch (e) {
+                  // Silently fail if localStorage is not available
+                }
                 // No navigation needed; campaign-detail-view listens for the event and switches tabs in-place
               }}
               sx={{
