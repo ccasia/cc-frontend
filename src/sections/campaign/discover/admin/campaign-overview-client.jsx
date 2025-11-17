@@ -11,6 +11,7 @@ import {
   Stack,
   Avatar,
   Button,
+  Divider,
   Typography,
   CircularProgress,
 } from '@mui/material';
@@ -45,10 +46,43 @@ const BoxStyle = {
   },
 };
 
+const findLatestPackage = (packages) => {
+  if (!packages || packages.length === 0) {
+    return null;
+  }
+  const latestPackage = packages.reduce((latest, current) => {
+    const latestDate = new Date(latest.createdAt);
+    const currentDate = new Date(current.createdAt);
+    return currentDate > latestDate ? current : latest;
+  });
+  return latestPackage;
+};
+
 const CampaignOverviewClient = ({ campaign, onUpdate }) => {
   const navigate = useNavigate();
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
+
+  const latestPackageItem = useMemo(() => {
+    const client = campaign?.company || campaign?.brand?.company;
+    if (client && client?.subscriptions?.length) {
+      let packageItem = findLatestPackage(client?.subscriptions);
+      if (!packageItem) return null;
+      packageItem = {
+        ...packageItem,
+        totalCredits:
+          packageItem.totalCredits ||
+          packageItem.package?.credits ||
+          packageItem.customPackage?.customCredits,
+        availableCredits:
+          (packageItem.totalCredits ||
+            packageItem.package?.credits ||
+            packageItem.customPackage?.customCredits) - packageItem.creditsUsed,
+      };
+      return packageItem;
+    }
+    return null;
+  }, [campaign]);
 
   // Extract posting submissions to get analytics data
   const postingSubmissions = useMemo(() => {
@@ -518,11 +552,84 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
 
       {/* Existing Content */}
       <Grid container spacing={{ xs: 2, sm: 3 }}>
-        {/* Left Column: Creator Pitches */}
+        {/* Left Column: Creator Pitches and Credit Tracking */}
         <Grid item xs={12} md={6}>
+           <Zoom in>
+            <Box sx={{ ...BoxStyle, mb: 3 }}>
+              <Box className="header">
+                <Iconify
+                  icon="solar:money-bag-bold"
+                  sx={{
+                    color: '#203ff5',
+                    width: 20,
+                    height: 20,
+                  }}
+                />
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  spacing={1}
+                  sx={{ flex: 1 }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#221f20',
+                      fontWeight: 600,
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    CREDITS TRACKING
+                  </Typography>
+                </Stack>
+              </Box>
+
+              <Stack spacing={1}>
+                {campaign?.campaignCredits && latestPackageItem ? (
+                  <Stack spacing={1.5} color="text.secondary">
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
+                        Campaign Credits
+                      </Typography>
+                      <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
+                        {campaign?.campaignCredits ?? 0} UGC Credits
+                      </Typography>
+                    </Stack>
+                    <Divider />
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
+                        Credits Utilized
+                      </Typography>
+                      <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
+                        {campaign?.creditsUtilized || 0} UGC Credits
+                      </Typography>
+                    </Stack>
+                    <Divider />
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
+                        Credits Pending
+                      </Typography>
+                      <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
+                        {campaign?.creditsPending ?? 0} UGC Credits
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                ) : (
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}
+                  >
+                    Not connected to any package
+                  </Typography>
+                )}
+              </Stack>
+            </Box>
+          </Zoom>
           <Zoom in>
             <Box sx={{
               ...BoxStyle,
+              mt: 3,
               minHeight: approvedPitches.length === 0 ? 'auto' : 'auto',
             }}>
               <Box className="header" sx={{ px: { xs: 1, sm: 1.8 } }}>
