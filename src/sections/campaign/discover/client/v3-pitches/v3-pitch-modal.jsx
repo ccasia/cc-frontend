@@ -1927,7 +1927,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
                       </Typography>
                       {option?.creator?.instagram && (
                         <Typography variant="caption" color="primary.main" sx={{ lineHeight: 1.2 }}>
-                          @{option.creator.instagram}
+                          {option.creator.instagram}
                         </Typography>
                       )}
                     </Stack>
