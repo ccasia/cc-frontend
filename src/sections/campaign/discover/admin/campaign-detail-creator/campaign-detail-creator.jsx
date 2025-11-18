@@ -754,7 +754,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
             >
               <Iconify icon="fluent:people-add-28-filled" width={18} />
             </IconButton>
-          ) : (
+          ) : campaign?.submissionVersion !== 'v4' ? (
             <Button
               onClick={modal.onTrue}
               disabled={
@@ -781,7 +781,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
             >
               Shortlist New Creators
             </Button>
-          )}
+          ) : null}
         </Stack>
 
         {campaign?.shortlisted?.length > 0 ? (

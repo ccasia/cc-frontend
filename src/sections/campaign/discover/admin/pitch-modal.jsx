@@ -410,72 +410,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           <Iconify icon="eva:close-fill" width={32} height={32} />
         </IconButton>
 
-        {/* Social links under close button (desktop) */}
-        <Box
-          sx={{
-            display: { xs: 'none', sm: 'flex' },
-            position: 'absolute',
-            right: 14,
-            top: 60,
-            zIndex: 9,
-            flexDirection: 'row',
-            gap: 1,
-          }}
-        >
-          <Tooltip title="Instagram Stats">
-            <IconButton
-              onClick={() => setSelectedPlatform('instagram')}
-              size="small"
-              disabled={selectedPlatform === 'instagram'}
-              sx={{
-                p: 0.8,
-                color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
-                bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
-                border: '1px solid #ebebeb',
-                borderBottom: '3px solid #ebebeb',
-                borderRadius: '10px',
-                height: '42px',
-                width: '42px',
-                '&:hover': {
-                  bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5',
-                },
-                '&.Mui-disabled': {
-                  bgcolor: '#F2F2F7',
-                  color: '#8E8E93',
-                },
-              }}
-            >
-              <Iconify icon="mdi:instagram" width={22} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="TikTok Stats">
-            <IconButton
-              onClick={() => setSelectedPlatform('tiktok')}
-              size="small"
-              disabled={selectedPlatform === 'tiktok'}
-              sx={{
-                p: 0.8,
-                color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#000000',
-                bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
-                border: '1px solid #ebebeb',
-                borderBottom: '3px solid #ebebeb',
-                borderRadius: '10px',
-                height: '42px',
-                width: '42px',
-                '&:hover': {
-                  bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5',
-                },
-                '&.Mui-disabled': {
-                  bgcolor: '#F2F2F7',
-                  color: '#8E8E93',
-                },
-              }}
-            >
-              <Iconify icon="ic:baseline-tiktok" width={22} />
-            </IconButton>
-          </Tooltip>
-        </Box>
-
         {/* Fixed User Info Section */}
         <Box
           sx={{
@@ -1394,7 +1328,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         </DialogContent>
 
         {/* Action Buttons - Only show if pitch hasn't been acted upon */}
-        {(currentPitch?.status === 'PENDING_REVIEW' || currentPitch?.status === 'undecided') && (
+        {(currentPitch?.status === 'PENDING_REVIEW' || currentPitch?.displayStatus === 'PENDING_REVIEW' || currentPitch?.status === 'undecided' || currentPitch?.displayStatus === 'undecided') && (
           <DialogActions sx={{ px: 3, pb: 3, gap: -1, mt: -3 }}>
             <Button
               variant="contained"
