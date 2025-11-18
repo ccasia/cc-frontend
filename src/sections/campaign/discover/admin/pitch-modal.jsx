@@ -1586,7 +1586,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               // approve guard (unchanged)
               (confirmDialog.type === 'approve' &&
                 campaign?.campaignCredits &&
-                campaign?.submissionVersion !== 'v4' &&
+                campaign?.submissionVersion === 'v4' &&
                 (!totalUGCVideos || totalUGCVideos > ugcLeft)) ||
               // client-decline guard: require reason & if others then note
               (confirmDialog.type === 'decline' &&
