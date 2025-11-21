@@ -23,6 +23,7 @@ import {
   DialogActions,
   useMediaQuery,
   Avatar,
+  Paper,
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 
@@ -130,30 +131,21 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
     }
   };
 
-  const onDrop = (files) => {
-    const file = files[0];
-    setValue('agreementForm', file);
-    setUploadProgress(0);
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          enqueueSnackbar('Uploaded successfully!', { variant: 'success' });
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
-  };
+
 
   const handleRemove = () => {
-    setValue('agreementForm', null);
-    setUploadProgress(0);
+    setValue('agreementForm', null, {shouldValidate: true});
   };
 
   const onSubmit = handleSubmit(async (data) => {
-    setOpenUploadModal(false);
+    if (!data.agreementForm) {
+      enqueueSnackbar('Please select a file to upload.', {variant: 'warning'});
+
+      return;
+    }
+
     setUploading(true);
+    setOpenUploadModal(false);
 
     const formData = new FormData();
     formData.append('agreementForm', data.agreementForm);
@@ -173,7 +165,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 
       enqueueSnackbar('Agreement submitted successfully!', { variant: 'success' });
       reset();
-      setPreview('');
+      // setPreview('');
       // Update the agreement status to IN REVIEW after successful submission
       onUpdate();
     } catch (error) {
@@ -261,6 +253,18 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
     }
   };
 
+  // Handler to open the upload modal with a clean state
+  const handleOpenUploadModal = () => {
+    reset(); // Clears the react-hook-form state
+    setOpenUploadModal(true);
+  };
+
+  const handleOpenEditor = () => {
+    setAnnotations([]);
+    setSignURL(null);
+    editor.onTrue();
+  };
+
   return (
     <>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
@@ -337,7 +341,8 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           </Box>
 
           {/* Action Buttons - Bottom Right */}
-          <Box display={'flex'} flexDirection={{ xs: 'row', md: 'column' }} flex={1} justifyContent={'space-between'}>
+          <Box display={'flex'} flexDirection={{ xs: 'row', md: 'column' }} flex={1} justifyContent={'space-between'}
+          sx={{gap: 2}}>
             {/* Download Agreement Button */}
             {agreementUrl && (
               <Button
@@ -373,10 +378,54 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
               </Button>
             )}
 
+            <Box 
+            component="span"
+            sx={{
+              display: 'flex',
+              alignSelf: 'flex-end',
+              gap: 1,
+            }}>
+            {agreementUrl && (
+              <Button
+                variant="contained"
+                onClick={handleOpenUploadModal}
+                disabled={isAgreementSubmitted || !agreementUrl}
+                sx={{
+                  bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
+                  color: '#fff',
+                  alignSelf: 'flex-end',
+                  borderBottom: 3.5,
+                  borderBottomColor: isAgreementSubmitted ? '#9e9e9f' : '#112286',
+                  borderRadius: 1.5,
+                  px: 2.5,
+                  py: 1.2,
+                  '&:hover': {
+                  bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
+                  opacity: 0.9,
+                  },
+                  '&.Mui-disabled': {
+                  color: '#fff',
+                  opacity: 0.6,
+                  },
+                }}
+              >
+                <Iconify icon="material-symbols:upload" width={24} />
+                <Box
+                  component="span"
+                  ml={1}
+                  sx={{
+                    display: { xs: 'none', md: 'inline' },
+                  }}
+                >
+                  Upload Agreement
+                </Box>
+              </Button>
+            )}
+
             {/* Digital Signing Option */}
             <Button
               variant="contained"
-              onClick={editor.onTrue}
+              onClick={handleOpenEditor}
               disabled={isAgreementSubmitted || !agreementUrl}
               startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
               sx={{
@@ -400,6 +449,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             >
               {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement'}
             </Button>
+            </Box>
           </Box>
         </Stack>
       </Box>
@@ -547,6 +597,126 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             </Document>
           </Box>
         </DialogContent>
+      </Dialog>
+
+      <Dialog open={openUploadModal} onClose={() => setOpenUploadModal(false)} fullWidth maxWidth="sm">
+        <DialogTitle
+          sx={{
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}>
+            Upload Signed Agreement
+        </DialogTitle>
+        <FormProvider methods={methods} onSubmit={onSubmit}>
+          <DialogContent>
+            <Stack spacing={2} sx={{ py: 2}}>
+              <Typography variant="body2" color="text.secondary">
+                If you have downloaded and signed the agreement manually, please upload the completed PDF file here.
+              </Typography>
+              {!agreementForm ? (
+                <RHFUpload
+                  key={openUploadModal ? 'loaded' : 'empty'}
+                  name="agreementForm"
+                  type="pdf"
+                />
+              ) : (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderRadius: 1.5,
+                    bgcolor: 'background.neutral',
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Iconify 
+                    icon="solar:file-text-bold-duotone" 
+                    width={40} 
+                    sx={{ color: '#1340FF', mr: 2 }} 
+                  />
+                  
+                  <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle2" noWrap>
+                      {agreementForm.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      {(agreementForm.size / 1024 / 1024).toFixed(2)} MB
+                    </Typography>
+                  </Stack>
+
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={handleRemove}
+                    startIcon={<Iconify icon="eva:close-fill" />}
+                    sx={{ ml: 2, minWidth: 'auto', whiteSpace: 'nowrap' }}
+                  >
+                    Remove
+                  </Button>
+                </Paper>
+              )}
+            </Stack>
+          </DialogContent>
+          <DialogActions sx={{
+            p: { xs: 2, md: 2 },
+            borderTop: 1,
+            borderColor: 'divider',
+            gap: { xs: 1.5, md: 2 },
+          }}>
+            <Button 
+              onClick={() => setOpenUploadModal(false)} 
+              variant="outlined"
+              sx={{
+                borderColor: '#203ff5',
+                color: '#203ff5',
+                borderWidth: 1,
+                borderBottomWidth: 2,
+                borderRadius: 1.5,
+                px: { xs: 1.5, md: 2.5 },
+                py: { xs: 1, md: 1.2 },
+                fontSize: { xs: '0.875rem', md: '0.9rem' },
+                flex: 1,
+                '&:hover': {
+                  bgcolor: 'rgba(32, 63, 245, 0.04)',
+                  borderColor: '#203ff5',
+                },
+              }}
+            >
+              Cancel
+            </Button>
+            <LoadingButton
+              type="submit"
+              variant="contained"
+              loading={uploading}
+              disabled={!agreementForm}
+              sx={{
+                bgcolor: '#203ff5',
+                color: 'white',
+                borderBottom: 3.5,
+                borderBottomColor: '#112286',
+                borderRadius: 1.5,
+                px: { xs: 1.5, md: 2.5 },
+                py: { xs: 1, md: 1.2 },
+                fontSize: { xs: '0.875rem', md: '0.9rem' },
+                flex: 1,
+                '&:hover': {
+                  bgcolor: '#203ff5',
+                  opacity: 0.9,
+                },
+                '&.Mui-disabled': {
+                  bgcolor: '#b0b0b1',
+                  color: '#fff',
+                  borderBottomColor: '#9e9e9f',
+                },
+              }}
+            >
+              Submit Agreement
+            </LoadingButton>
+          </DialogActions>
+        </FormProvider>
       </Dialog>
     </>
   );
