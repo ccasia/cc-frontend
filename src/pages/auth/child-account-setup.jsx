@@ -1,8 +1,8 @@
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useParams, useNavigate } from 'react-router-dom';
 
 import LoadingButton from '@mui/lab/LoadingButton';
 import { 
@@ -16,10 +16,12 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useSnackbar } from 'src/components/snackbar';
-import { useAuthContext } from 'src/auth/hooks';
+
 import axiosInstance from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
+import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 export default function ChildAccountSetup() {

@@ -1,28 +1,28 @@
 import { Rnd } from 'react-rnd';
 import PropTypes from 'prop-types';
 import 'react-pdf/dist/Page/TextLayer.css';
-import React, { useRef, useState, useCallback, useEffect } from 'react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { Page, pdfjs, Document } from 'react-pdf';
 import ReactSignatureCanvas from 'react-signature-canvas';
+import React, { useRef, useState, useCallback } from 'react';
 
 import { blue, grey } from '@mui/material/colors';
 import {
   Box,
+  Chip,
+  Zoom,
   Stack,
   Dialog,
   Button,
   Tooltip,
+  Divider,
+  useTheme,
   Typography,
   IconButton,
   DialogTitle,
   DialogContent,
   DialogActions,
-  useTheme,
   useMediaQuery,
-  Divider,
-  Chip,
-  Zoom,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
