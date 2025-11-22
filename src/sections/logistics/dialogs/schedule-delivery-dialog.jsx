@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import axiosInstance from 'src/utils/axios';
@@ -226,3 +227,19 @@ ScheduleDeliveryDialog.propTypes = {
   campaignId: PropTypes.string,
   onUpdate: PropTypes.func,
 };
+=======
+import { Dialog, DialogTitle, DialogContent, Button, DialogActions } from '@mui/material';
+
+export default function ScheduleDeliveryDialog({ open, onClose }) {
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>Schedule Delivery</DialogTitle>
+      <DialogContent>Form fields..</DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained">Save</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+>>>>>>> d0b75412 (bare view and with placeholders)
