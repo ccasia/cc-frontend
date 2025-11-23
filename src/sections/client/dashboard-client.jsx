@@ -510,159 +510,160 @@ const ClientDashboard = () => {
           </Stack>
         </Box>
       </Grid>
-
-      <Grid item xs={12} md={8}>
-        <Box sx={{ pl: { xs: 0, md: 14 }, pr: 0 }}>
-          <Typography variant="h4" gutterBottom sx={{ fontFamily: 'Aileron, sans-serif' }}>
-            Credit Tracking
-          </Typography>
-          <Grid container spacing={{ xs: 2, md: 0 }} sx={{ mt: 0, alignItems: 'flex-end' }}>
-            <Grid item xs={6} sm={6} md={2.5}>
-              <Box
-                sx={{
-                  textAlign: 'left',
-                  borderRight: { xs: 'none', md: '1px solid #231F20' },
-                  borderBottom: { xs: 'none', md: 'none' },
-                  pr: { xs: 0, md: 2 },
-                  pb: { xs: 1, md: 0 },
-                  pl: 0,
-                  mb: { xs: 0, md: 0 },
-                }}
-              >
-                <Typography
-                  variant="h6"
+      {!user?.isChildAccount && (
+        <Grid item xs={12} md={8}>
+          <Box sx={{ pl: { xs: 0, md: 14 }, pr: 0 }}>
+            <Typography variant="h4" gutterBottom sx={{ fontFamily: 'Aileron, sans-serif' }}>
+              Credit Tracking
+            </Typography>
+            <Grid container spacing={{ xs: 2, md: 0 }} sx={{ mt: 0, alignItems: 'flex-end' }}>
+              <Grid item xs={6} sm={6} md={2.5}>
+                <Box
                   sx={{
-                    fontFamily: 'Aileron, sans-serif',
-                    color: '#636366',
-                    whiteSpace: 'nowrap',
-                    mb: 0,
-                    fontSize: { xs: '0.9rem', md: '1rem' },
-                  }}
-                >
-                  Total Credits
-                </Typography>
-                <Typography
-                  variant="h2"
-                  color="#3366FF"
-                  fontWeight={600}
-                  sx={{
-                    fontFamily: theme.typography.fontSecondaryFamily,
                     textAlign: 'left',
-                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                    borderRight: { xs: 'none', md: '1px solid #231F20' },
+                    borderBottom: { xs: 'none', md: 'none' },
+                    pr: { xs: 0, md: 2 },
+                    pb: { xs: 1, md: 0 },
+                    pl: 0,
+                    mb: { xs: 0, md: 0 },
                   }}
                 >
-                  {creditsLoading ? '...' : totalCredits || 0}
-                </Typography>
-              </Box>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily: 'Aileron, sans-serif',
+                      color: '#636366',
+                      whiteSpace: 'nowrap',
+                      mb: 0,
+                      fontSize: { xs: '0.9rem', md: '1rem' },
+                    }}
+                  >
+                    Total Credits
+                  </Typography>
+                  <Typography
+                    variant="h2"
+                    color="#3366FF"
+                    fontWeight={600}
+                    sx={{
+                      fontFamily: theme.typography.fontSecondaryFamily,
+                      textAlign: 'left',
+                      fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                    }}
+                  >
+                    {creditsLoading ? '...' : totalCredits || 0}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={6} sm={6} md={2.5}>
+                <Box
+                  sx={{
+                    borderRight: { xs: 'none', md: '1px solid #231F20' },
+                    borderBottom: { xs: 'none', md: 'none' },
+                    px: { xs: 0, md: 1 },
+                    pb: { xs: 1, md: 0 },
+                    pl: { xs: 0, md: 5 },
+                    mb: { xs: 0, md: 0 },
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily: 'Aileron, sans-serif',
+                      color: '#636366',
+                      whiteSpace: 'nowrap',
+                      mb: 0,
+                      fontSize: { xs: '0.9rem', md: '1rem' },
+                    }}
+                  >
+                    Used
+                  </Typography>
+                  <Typography
+                    variant="h2"
+                    color="#3366FF"
+                    fontWeight={600}
+                    sx={{
+                      fontFamily: theme.typography.fontSecondaryFamily,
+                      fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                    }}
+                  >
+                    {creditsLoading ? '...' : usedCredits || 0}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={6} sm={6} md={2.5}>
+                <Box
+                  sx={{
+                    borderRight: { xs: 'none', md: '1px solid #231F20' },
+                    borderBottom: { xs: 'none', md: 'none' },
+                    px: { xs: 0, md: 1 },
+                    pb: { xs: 1, md: 0 },
+                    pl: { xs: 0, md: 2 },
+                    mb: { xs: 0, md: 0 },
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily: 'Aileron, sans-serif',
+                      color: '#636366',
+                      whiteSpace: 'nowrap',
+                      mb: 0,
+                      fontSize: { xs: '0.9rem', md: '1rem' },
+                    }}
+                  >
+                    Remaining
+                  </Typography>
+                  <Typography
+                    variant="h2"
+                    color="#3366FF"
+                    fontWeight={600}
+                    sx={{
+                      fontFamily: theme.typography.fontSecondaryFamily,
+                      fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                    }}
+                  >
+                    {creditsLoading ? '...' : remainingCredits || 0}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={6} sm={6} md={4.5}>
+                <Box
+                  sx={{
+                    px: { xs: 0, md: 1 },
+                    pl: { xs: 0, md: 3 },
+                    pb: { xs: 0, md: 0 },
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily: 'Aileron, sans-serif',
+                      color: '#636366',
+                      whiteSpace: 'nowrap',
+                      mb: 0,
+                      fontSize: { xs: '0.9rem', md: '1rem' },
+                    }}
+                  >
+                    Credits Validity
+                  </Typography>
+                  <Typography
+                    variant="h2"
+                    color="#3366FF"
+                    fontWeight={600}
+                    sx={{
+                      fontFamily: theme.typography.fontSecondaryFamily,
+                      fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                    }}
+                  >
+                    {creditsLoading ? '...' : `${remainingDays} Day${remainingDays !== 1 ? 's' : ''}`}
+                  </Typography>
+                </Box>
+              </Grid>
             </Grid>
-            <Grid item xs={6} sm={6} md={2.5}>
-              <Box
-                sx={{
-                  borderRight: { xs: 'none', md: '1px solid #231F20' },
-                  borderBottom: { xs: 'none', md: 'none' },
-                  px: { xs: 0, md: 1 },
-                  pb: { xs: 1, md: 0 },
-                  pl: { xs: 0, md: 5 },
-                  mb: { xs: 0, md: 0 },
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontFamily: 'Aileron, sans-serif',
-                    color: '#636366',
-                    whiteSpace: 'nowrap',
-                    mb: 0,
-                    fontSize: { xs: '0.9rem', md: '1rem' },
-                  }}
-                >
-                  Used
-                </Typography>
-                <Typography
-                  variant="h2"
-                  color="#3366FF"
-                  fontWeight={600}
-                  sx={{
-                    fontFamily: theme.typography.fontSecondaryFamily,
-                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
-                  }}
-                >
-                  {creditsLoading ? '...' : usedCredits || 0}
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={6} md={2.5}>
-              <Box
-                sx={{
-                  borderRight: { xs: 'none', md: '1px solid #231F20' },
-                  borderBottom: { xs: 'none', md: 'none' },
-                  px: { xs: 0, md: 1 },
-                  pb: { xs: 1, md: 0 },
-                  pl: { xs: 0, md: 2 },
-                  mb: { xs: 0, md: 0 },
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontFamily: 'Aileron, sans-serif',
-                    color: '#636366',
-                    whiteSpace: 'nowrap',
-                    mb: 0,
-                    fontSize: { xs: '0.9rem', md: '1rem' },
-                  }}
-                >
-                  Remaining
-                </Typography>
-                <Typography
-                  variant="h2"
-                  color="#3366FF"
-                  fontWeight={600}
-                  sx={{
-                    fontFamily: theme.typography.fontSecondaryFamily,
-                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
-                  }}
-                >
-                  {creditsLoading ? '...' : remainingCredits || 0}
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={6} md={4.5}>
-              <Box
-                sx={{
-                  px: { xs: 0, md: 1 },
-                  pl: { xs: 0, md: 3 },
-                  pb: { xs: 0, md: 0 },
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontFamily: 'Aileron, sans-serif',
-                    color: '#636366',
-                    whiteSpace: 'nowrap',
-                    mb: 0,
-                    fontSize: { xs: '0.9rem', md: '1rem' },
-                  }}
-                >
-                  Credits Validity
-                </Typography>
-                <Typography
-                  variant="h2"
-                  color="#3366FF"
-                  fontWeight={600}
-                  sx={{
-                    fontFamily: theme.typography.fontSecondaryFamily,
-                    fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
-                  }}
-                >
-                  {creditsLoading ? '...' : `${remainingDays} Day${remainingDays !== 1 ? 's' : ''}`}
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </Box>
-      </Grid>
+          </Box>
+        </Grid>
+      )}
     </Grid>
   );
 
