@@ -28,7 +28,9 @@ const CampaignPerformanceTable = () => {
     return pageParam ? parseInt(pageParam, 10) : 1;
   });
 
-  const [selectedCampaign, setSelectedCampaign] = useState(() => searchParams.get('campaign') || 'all');
+  const [selectedCampaign, setSelectedCampaign] = useState(
+    () => searchParams.get('campaign') || 'all'
+  );
 
   const itemsPerPage = 7;
 
@@ -49,8 +51,9 @@ const CampaignPerformanceTable = () => {
         const tiktokPostRegex =
           /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
 
-        const hasValidContent = instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
-        
+        const hasValidContent =
+          instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
+
         if (!hasValidContent) return false;
 
         // Filter by company/client association
@@ -59,7 +62,7 @@ const CampaignPerformanceTable = () => {
 
           const userCompanyId = user.client?.companyId || company?.id;
           const submissionByCompanyId = campaignCompanyId === userCompanyId;
-          
+
           return submissionByCompanyId;
         }
 
@@ -99,7 +102,7 @@ const CampaignPerformanceTable = () => {
     const params = new URLSearchParams();
     if (page > 1) params.set('page', page.toString());
     if (campaign !== 'all') params.set('campaign', campaign);
-    
+
     // Update URL without causing a page refresh
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     window.history.replaceState({}, '', `/dashboard/report${newUrl}`);
@@ -124,7 +127,7 @@ const CampaignPerformanceTable = () => {
       campaignName: row.campaignName,
       // Add return state for back navigation
       returnPage: currentPage.toString(),
-      returnCampaign: selectedCampaign
+      returnCampaign: selectedCampaign,
     });
 
     navigate(`/dashboard/report/view?${params.toString()}`);

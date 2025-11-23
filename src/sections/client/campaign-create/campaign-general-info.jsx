@@ -4,7 +4,7 @@ import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import { DatePicker } from '@mui/x-date-pickers';
-import { Box, Grid, Stack, FormLabel, TextField, Typography, Switch, FormControlLabel } from '@mui/material';
+import { Box, Grid, Stack, FormLabel, TextField, Typography } from '@mui/material';
 
 import socket from 'src/hooks/socket';
 import useGetClientCredits from 'src/hooks/use-get-client-credits';

@@ -80,9 +80,9 @@ const ManageCampaignDetailView = ({ id }) => {
           spacing={2}
           width="100%"
         >
-          <Stack 
-            direction={{ xs: 'column', sm: 'row' }} 
-            alignItems={{ xs: 'flex-start', sm: 'center' }} 
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
             spacing={2}
             width={{ xs: '100%', sm: 'auto' }}
           >

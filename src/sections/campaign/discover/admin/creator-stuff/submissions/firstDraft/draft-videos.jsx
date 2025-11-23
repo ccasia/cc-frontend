@@ -1,26 +1,23 @@
-import useSWR, { mutate } from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
+import useSWR, { mutate } from 'swr';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect, useMemo } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import {
-  Box,
+import { Box ,
   Grid,
   Card,
-  Chip,
   Stack,
   Button,
   Avatar,
-  Tooltip,
+  TextField,
   Typography,
   CardContent,
 } from '@mui/material';
-import { TextField } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -296,7 +293,7 @@ const VideoCard = ({
                 textTransform: 'none',
               }}
             >
-              {'APPROVED'}
+              APPROVED
             </Box>
           </Box>
         );
@@ -1197,7 +1194,7 @@ const DraftVideos = ({
 
   const handleAdminEditFeedback = async (mediaId, feedbackId, adminFeedback) => {
     try {
-      await axiosInstance.patch('/api/submission/feedback/' + feedbackId, { content: adminFeedback });
+      await axiosInstance.patch(`/api/submission/feedback/${  feedbackId}`, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
       // Non-blocking SWR revalidation to avoid remount
       try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}

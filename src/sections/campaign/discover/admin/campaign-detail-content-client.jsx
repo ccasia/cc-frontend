@@ -81,7 +81,7 @@ const capitalizeFirstLetter = (string) => {
 const CampaignDetailContentClient = ({ campaign }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  
+
   const handleChatClick = async (admin) => {
     try {
       const response = await axiosInstance.get(endpoints.threads.getAll);
@@ -159,12 +159,12 @@ const CampaignDetailContentClient = ({ campaign }) => {
           <Box sx={{ ...BoxStyle, mt: 1 }}>
             <Box className="header">
               <Iconify
-              icon="solar:info-circle-bold"
-              sx={{
-                width: 20,
-                height: 20,
-                color: '#203ff5',
-              }}
+                icon="solar:info-circle-bold"
+                sx={{
+                  width: 20,
+                  height: 20,
+                  color: '#203ff5',
+                }}
               />
               <Typography
                 variant="body2"
@@ -210,6 +210,10 @@ const CampaignDetailContentClient = ({ campaign }) => {
               <Stack spacing={2} sx={{ flex: 1 }}>
                 {[
                   { label: 'Gender', data: requirement?.gender?.map(capitalizeFirstLetter) },
+                  {
+                    label: 'Country',
+                    data: requirement?.country || '',
+                  },
                   { label: 'Geo Location', data: requirement?.geoLocation },
                   {
                     label: 'Creator Persona',
@@ -217,18 +221,50 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
                     ),
                   },
-                ].map((item) => (
-                  <Box key={item.label}>
-                    <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
-                      {item.label}
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {item.data?.map((value, idx) => (
-                        <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                      ))}
+                ]
+                  .filter((item, _, arr) => {
+                    if (item.label === 'Geo Location') {
+                      const hasMalaysia =
+                        arr.find((i) => i.label === 'Country')?.data === 'Malaysia';
+                      return hasMalaysia;
+                    }
+                    if (item.label === 'Country') {
+                      return item.data;
+                    }
+                    return true;
+                  })
+                  .map((item) => (
+                    <Box key={item.label}>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
+                      >
+                        {item.label}
+                      </Typography>
+                      {Array.isArray(item.data) ? (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {item.data?.map((value, idx) => (
+                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                          ))}
+                        </Box>
+                      ) : (
+                        item.label === 'Country' && (
+                          <Box
+                            display="inline-flex"
+                            gap={1}
+                            sx={{ ...ChipStyle, p: 1, px: 1.5 }}
+                            alignItems="center"
+                          >
+                            <Iconify
+                              icon={`emojione:flag-for-${item.data.toLowerCase()}`}
+                              width={20}
+                            />
+                            <Typography variant="subtitle2">{item.data}</Typography>
+                          </Box>
+                        )
+                      )}
                     </Box>
-                  </Box>
-                ))}
+                  ))}
               </Stack>
 
               {/* Right Column */}
@@ -364,10 +400,10 @@ const CampaignDetailContentClient = ({ campaign }) => {
               </Typography>
             </Box>
 
-            {campaign?.campaignBrief?.campaigns_dont?.length > 0 && 
-              campaign?.campaignBrief?.campaigns_dont?.some(item => item.value) ? (
+            {campaign?.campaignBrief?.campaigns_dont?.length > 0 &&
+            campaign?.campaignBrief?.campaigns_dont?.some((item) => item.value) ? (
               <Stack spacing={1} sx={{ pl: 0.5 }}>
-                {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => 
+                {campaign?.campaignBrief?.campaigns_dont?.map((item, index) =>
                   item.value ? (
                     <Stack key={index} direction="row" spacing={1} alignItems="center">
                       <Iconify
@@ -398,7 +434,6 @@ const CampaignDetailContentClient = ({ campaign }) => {
 
         {/* Right Column */}
         <Stack spacing={-3} sx={{ flex: { xs: 1, md: 1 } }}>
-
           {/* Deliverables Box */}
           <Box sx={{ ...BoxStyle, mt: 0.9 }}>
             <Box className="header">
@@ -436,7 +471,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       key={deliverable.label}
                       label={deliverable.label}
                       size="small"
-                      sx={{   
+                      sx={{
                         bgcolor: '#F5F5F5',
                         borderRadius: 1,
                         color: '#231F20',
@@ -450,7 +485,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
                           justifyContent: 'center',
                           marginTop: '-3px',
                         },
-                        '&:hover': { bgcolor: '#F5F5F5' },}}
+                        '&:hover': { bgcolor: '#F5F5F5' },
+                      }}
                     />
                   )
               )}
@@ -551,7 +587,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
           {/* Client Info Box */}
           <Box sx={CompactHeaderStyle}>
             <Box className="header">
-            <Iconify
+              <Iconify
                 icon="solar:buildings-bold"
                 sx={{
                   color: '#1340ff',
@@ -774,4 +810,4 @@ CampaignDetailContentClient.propTypes = {
   campaign: PropTypes.object,
 };
 
-export default CampaignDetailContentClient; 
+export default CampaignDetailContentClient;

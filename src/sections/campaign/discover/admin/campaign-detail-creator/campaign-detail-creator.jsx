@@ -240,9 +240,8 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const handleEditAgreement = (creator) => {
     if (campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4') {
       let creatorPitch = null;
-      
-      if (campaign?.submissionVersion === 'v4') {
 
+      if (campaign?.submissionVersion === 'v4') {
         creatorPitch = { status: 'APPROVED' };
       } else {
         // For client campaigns, check the regular pitch array
@@ -733,7 +732,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
             >
               <Iconify icon="fluent:people-add-28-filled" width={18} />
             </IconButton>
-          ) : (
+          ) : campaign?.submissionVersion !== 'v4' ? (
             <Button
               onClick={modal.onTrue}
               disabled={
@@ -760,7 +759,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
             >
               Shortlist New Creators
             </Button>
-          )}
+          ) : null}
         </Stack>
 
         {campaign?.shortlisted?.length > 0 ? (

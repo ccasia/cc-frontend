@@ -1,23 +1,22 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useEffect, useCallback } from 'react';
 
 import { Box, Typography } from '@mui/material';
 
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 import ImageGridDisplay from 'src/components/upload/image-grid-display';
+
 import {
   SubmissionSection,
-  SubmissionActionButton,
   useSubmissionUpload,
-  getSubmissionStatusFlags,
   getRelevantFeedback,
   getIsCaptionEditable,
   preparePhotoFormData,
+  SubmissionActionButton,
+  getSubmissionStatusFlags,
   getPhotoUploadSuccessMessage,
 } from './shared';
-
-
 
 const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
   // Use shared hook with photo-specific configuration
@@ -201,22 +200,15 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
       },
       true // Skip validation - we already validated above
     );
-  }, [
-    isReuploadMode,
-    selectedFiles,
-    caption,
-    submission,
-    photosToRemove,
-    handleSubmit,
-  ]);
+  }, [isReuploadMode, selectedFiles, caption, submission, photosToRemove, handleSubmit]);
 
   // Get button states - customized for photos to allow removal-only submissions
   const { isDisabled, isReuploadButton, isSubmitButton } = useMemo(() => {
-    const hasChanges = isReuploadMode && (
-      selectedFiles.some(file => file instanceof File) || // Has new files
-      photosToRemove.length > 0 || // Has photos to remove
-      caption.trim() !== (submission.caption || '').trim() // Caption changed
-    );
+    const hasChanges =
+      isReuploadMode &&
+      (selectedFiles.some((file) => file instanceof File) || // Has new files
+        photosToRemove.length > 0 || // Has photos to remove
+        caption.trim() !== (submission.caption || '').trim()); // Caption changed
 
     return {
       isDisabled:
@@ -305,22 +297,33 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                       (isReuploadMode || selectedFiles.length > 0) && isCaptionEditable
                         ? (index) => {
                             if (isReuploadMode) {
-                              const existingPhotosToShow = submittedPhotos.filter(photo => !photosToRemove.includes(photo.id));
+                              const existingPhotosToShow = submittedPhotos.filter(
+                                (photo) => !photosToRemove.includes(photo.id)
+                              );
                               const existingPhotosCount = existingPhotosToShow.length;
-                              
+
                               if (index < existingPhotosCount) {
                                 // This is an existing photo - toggle removal status
                                 const photoToToggle = existingPhotosToShow[index];
-                                const isCurrentlyMarkedForRemoval = photosToRemove.includes(photoToToggle.id);
-                                
+                                const isCurrentlyMarkedForRemoval = photosToRemove.includes(
+                                  photoToToggle.id
+                                );
+
                                 if (isCurrentlyMarkedForRemoval) {
                                   // Unmark for removal
-                                  setPhotosToRemove(prev => prev.filter(id => id !== photoToToggle.id));
-                                  enqueueSnackbar(`Photo unmarked for removal.`, { variant: 'info' });
+                                  setPhotosToRemove((prev) =>
+                                    prev.filter((id) => id !== photoToToggle.id)
+                                  );
+                                  enqueueSnackbar(`Photo unmarked for removal.`, {
+                                    variant: 'info',
+                                  });
                                 } else {
                                   // Mark for removal
-                                  setPhotosToRemove(prev => [...prev, photoToToggle.id]);
-                                  enqueueSnackbar(`Photo marked for removal. Click again to unmark.`, { variant: 'info' });
+                                  setPhotosToRemove((prev) => [...prev, photoToToggle.id]);
+                                  enqueueSnackbar(
+                                    `Photo marked for removal. Click again to unmark.`,
+                                    { variant: 'info' }
+                                  );
                                 }
                                 return;
                               }
@@ -334,20 +337,27 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                     }
                     height={{ xs: 320, md: 480 }}
                   />
-                  
+
                   {/* Show photo status in reupload mode */}
                   {isReuploadMode && submittedPhotos.length > 0 && (
                     <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                       <Typography variant="caption" sx={{ color: '#636366', fontSize: '0.75rem' }}>
-                        📷 {submittedPhotos.length - photosToRemove.length} existing photo(s) remaining
+                        📷 {submittedPhotos.length - photosToRemove.length} existing photo(s)
+                        remaining
                       </Typography>
                       {photosToRemove.length > 0 && (
-                        <Typography variant="caption" sx={{ color: '#ff4444', fontSize: '0.75rem' }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: '#ff4444', fontSize: '0.75rem' }}
+                        >
                           🗑️ {photosToRemove.length} photo(s) marked for removal
                         </Typography>
                       )}
                       {selectedFiles.length > 0 && (
-                        <Typography variant="caption" sx={{ color: '#1340FF', fontSize: '0.75rem' }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: '#1340FF', fontSize: '0.75rem' }}
+                        >
                           ➕ {selectedFiles.length} new photo(s) to add
                         </Typography>
                       )}
@@ -381,11 +391,13 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                 </Box>
               )}
               <SubmissionSection
-                hasCaption={true}
+                hasCaption
                 caption={caption}
                 onCaptionChange={handleCaptionChange}
                 isCaptionEditable={isCaptionEditable}
-                hasPostingLink={requiresPostingLink && (isApproved || isPosted || isPostingLinkRejected)}
+                hasPostingLink={
+                  requiresPostingLink && (isApproved || isPosted || isPostingLinkRejected)
+                }
                 postingLink={postingLink}
                 onPostingLinkChange={(e) => setPostingLink(e.target.value)}
                 isPostingLinkEditable={isPostingLinkEditable}

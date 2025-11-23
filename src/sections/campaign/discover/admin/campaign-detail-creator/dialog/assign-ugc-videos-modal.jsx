@@ -1,8 +1,8 @@
 import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useEffect, useMemo } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 
@@ -57,7 +57,7 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
     handleSubmit,
     reset,
     watch,
-    formState: { isValid },
+    formState: { isValid, isSubmitting },
   } = methods;
 
   // For v4 campaigns, calculate credits used only from sent agreements
@@ -280,6 +280,7 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
             onClick={() => {
               onClose();
             }}
+            disabled={isSubmitting}
             sx={{
               bgcolor: '#ffffff',
               border: '1px solid #e7e7e7',
@@ -300,7 +301,8 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
 
           <LoadingButton
             type="submit"
-            disabled={!isValid || (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0)}
+            loading={isSubmitting}
+            disabled={isSubmitting || !isValid || (realTimeCreditsLeft !== null && realTimeCreditsLeft < 0)}
             sx={{
               bgcolor: '#203ff5',
               border: '1px solid #203ff5',
@@ -322,7 +324,7 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
               },
             }}
           >
-            Confirm
+            {isSubmitting ? '' : 'Confirm'}
           </LoadingButton>
         </DialogActions>
       </FormProvider>

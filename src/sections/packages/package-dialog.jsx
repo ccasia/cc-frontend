@@ -95,21 +95,19 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId, onRefresh
     };
 
     try {
-      const res = await axiosInstance.patch(
+      await axiosInstance.patch(
         `${endpoints.company.linkPackage(clientId)}`,
         updatedData
       );
-      enqueueSnackbar(res?.data?.message);
-      mutate();
 
       if (onRefresh) {
         onRefresh();
       }
 
-      onClose();
+      // onClose();
       reset();
     } catch (error) {
-      enqueueSnackbar(error, { variant: 'error' });
+      enqueueSnackbar(error?.message || 'Failed to link package', { variant: 'error' });
     }
   });
 
@@ -138,6 +136,11 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId, onRefresh
       reset();
     }
   }, [open, reset]);
+
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
 
   if (isLoading || subsLoading) {
     return (
@@ -292,10 +295,7 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId, onRefresh
           <Button
             variant="outlined"
             sx={{ borderRadius: 0.6 }}
-            onClick={() => {
-              onClose();
-              set('client', null);
-            }}
+            onClick={handleClose}
           >
             Close
           </Button>

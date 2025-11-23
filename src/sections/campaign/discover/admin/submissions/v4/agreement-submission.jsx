@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import { useState, useCallback } from 'react';
 
 import {
   Box,
@@ -10,18 +10,18 @@ import {
   Button,
   Dialog,
   TextField,
+  Accordion,
   Typography,
-  IconButton,
   DialogTitle,
   DialogActions,
   DialogContent,
-  Accordion,
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
+
+import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -95,9 +95,7 @@ export default function V4AgreementSubmission({ submission, campaign, onUpdate }
     return statusColors[status] || 'default';
   };
 
-  const formatStatus = (status) => {
-    return status?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
-  };
+  const formatStatus = (status) => status?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
 
   return (
     <>
