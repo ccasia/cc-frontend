@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React, { memo, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 
@@ -17,7 +18,7 @@ import { interestsLists } from 'src/contants/interestLists';
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 
-import CustomRHFMultiSelect from './custom-rhf-multi-select';
+import { CustomRHFMultiSelect } from './custom-rhf-multi-select';
 
 
 // Form field component with consistent styling
@@ -40,6 +41,12 @@ const FormField = ({ label, children, required = true }) => (
     {children}
   </Stack>
 );
+
+FormField.propTypes = {
+  label: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+  required: PropTypes.bool,
+};
 
 const GENDER_OPTIONS = [
   { value: 'female', label: 'Female' },
@@ -101,7 +108,7 @@ const VIDEO_ANGLE_OPTIONS = [
 ];
 
 const CampaignTargetAudience = () => {
-  const { control, setValue, watch } = useFormContext();
+  const { setValue, watch } = useFormContext();
 
   const audienceLocation = watch('audienceLocation') || [];
   const showOthersLocation = audienceLocation.includes('Others');
@@ -329,7 +336,7 @@ const CampaignTargetAudience = () => {
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
             }}
           >
-            Do's and Don'ts
+            Do&apos;s and Don&apos;ts
           </Typography>
           <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: '0.7rem' }}>
             OPTIONAL
@@ -363,7 +370,7 @@ const CampaignTargetAudience = () => {
               >
                 <Iconify icon="mdi:check" color="#4CAF50" width={12} height={12} />
               </Box>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>CAMPAIGN DO'S!</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>CAMPAIGN DO&apos;S!</Typography>
             </Stack>
 
             {doItems.map((item, index) => (
@@ -449,7 +456,7 @@ const CampaignTargetAudience = () => {
                 <Iconify icon="mdi:close" color="#F44336" width={12} height={12} />
               </Box>
               <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>
-                CAMPAIGN DONT'S!
+                CAMPAIGN DONT&apos;S!
               </Typography>
             </Stack>
 
@@ -505,7 +512,7 @@ const CampaignTargetAudience = () => {
                   },
                 }}
               >
-                Add another Don't
+                Add another Don&apos;t
               </Box>
             </Box>
           </Box>
