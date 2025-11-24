@@ -92,9 +92,9 @@ const MonthlyInteractionsChart = ({
                 width: barWidth,
                 height: `${Math.max(barHeight, parseInt(minHeight))}px`,
                 backgroundColor: '#1340FF',
-                borderRadius: borderRadius,
+                borderRadius,
                 transition: 'all 0.3s ease',
-                minHeight: minHeight,
+                minHeight,
                 boxShadow: isMobile 
                   ? '0 2px 8px rgba(19, 64, 255, 0.3)'
                   : '0 4px 12px rgba(19, 64, 255, 0.3)',

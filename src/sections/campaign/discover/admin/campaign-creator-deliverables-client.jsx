@@ -24,8 +24,6 @@ import {
 import socket from 'src/hooks/socket';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
@@ -87,8 +85,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
         displayStatus: s.displayStatus,
       })),
       loadingSubmissions,
-      userRole: userRole,
-      isV3: isV3,
+      userRole,
+      isV3,
     });
   }, [submissions, selectedCreator?.userId, campaign?.id, loadingSubmissions, userRole, isV3]);
 
@@ -125,6 +123,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
 
     socket.on('progress', handleProgress);
 
+    // eslint-disable-next-line consistent-return
     return () => {
       socket.off('progress', handleProgress);
     };
@@ -184,8 +183,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
         : null,
       hasSubmissions: !!submissions,
       submissionsCount: submissions?.length,
-      userRole: userRole,
-      isV3: isV3,
+      userRole,
+      isV3,
     });
   }, [postingSubmission, submissions, userRole, isV3]);
 
@@ -449,8 +448,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
         displayStatus: s.displayStatus,
       })),
 
-      userRole: userRole,
-      isV3: isV3,
+      userRole,
+      isV3,
     });
 
     return (
@@ -510,8 +509,8 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
       statusText,
       submissionType: submission.submissionType?.type,
 
-      userRole: userRole,
-      isV3: isV3,
+      userRole,
+      isV3,
       campaignOrigin: campaign?.origin,
     });
 

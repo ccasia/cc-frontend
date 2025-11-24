@@ -14,6 +14,6 @@ export const STATUS_COLORS = {
 };
 
 // Helper function to get status color
-export const getStatusColor = (status) => {
-  return STATUS_COLORS[status] || '#e0e0e0'; // Default gray color
-};
+export const getStatusColor = (status) => 
+   STATUS_COLORS[status] || '#e0e0e0' // Default gray color
+;

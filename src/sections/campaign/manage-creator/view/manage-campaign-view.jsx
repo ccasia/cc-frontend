@@ -73,10 +73,6 @@ const ManageCampaignView = () => {
             if (campaign.shortlisted && campaign.status === 'ACTIVE' && !campaign.shortlisted?.isCampaignDone) {
               return true;
             }
-            // Campaigns with approved pitches - these go to active tab
-            if (campaign?.pitch?.status === 'APPROVED' || campaign?.pitch?.status === 'approved') {
-              return true;
-            }
             return false;
           }
         ) || [],

@@ -303,9 +303,27 @@ const CampaignDetailView = ({ id }) => {
 
   const { campaigns: campaignInvoices } = useGetInvoicesByCampId(id);
 
+  const tabsContainerRef = useRef(null);
+
+  useEffect(() => {
+    const container = tabsContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e) => {
+      if (container.scrollWidth > container.clientWidth) {
+        e.preventDefault();
+        container.scrollLeft += e.deltaY > 0 ? 50 : -50;
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
+
   const renderTabs = (
     <Box sx={{ mt: 2, mb: 2.5 }}>
       <Stack
+        ref={tabsContainerRef}
         direction="row"
         spacing={0.5}
         sx={{

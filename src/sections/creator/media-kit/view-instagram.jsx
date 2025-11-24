@@ -2,7 +2,12 @@ import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
-import { Box, Stack, CardMedia, Typography } from '@mui/material';
+import {
+  Box,
+  Stack,
+  CardMedia,
+  Typography,
+} from '@mui/material';
 
 import { useMediaKitResponsive } from 'src/hooks/use-media-kit-responsive';
 
@@ -12,8 +17,8 @@ import { getCaptionStyles } from 'src/utils/media-kit-utils';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import InstagramOAuthWarning from 'src/components/instagram-oauth-warning';
 import ChartContainer from 'src/components/media-kit/ChartContainer';
+import InstagramOAuthWarning from 'src/components/instagram-oauth-warning';
 import EngagementRateChart from 'src/components/media-kit/EngagementRateChart';
 import MonthlyInteractionsChart from 'src/components/media-kit/MonthlyInteractionsChart';
 import PlatformConnectionPrompt from 'src/components/media-kit/PlatformConnectionPrompt';

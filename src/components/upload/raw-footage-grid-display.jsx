@@ -1,31 +1,28 @@
-import React, { useMemo, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Box, IconButton } from '@mui/material';
+import React, { useMemo, useEffect, useCallback } from 'react';
+
+import { Box } from '@mui/material';
 
 const RawFootageGridDisplay = ({ files, onRemoveVideo, height = { xs: 320, md: 480 } }) => {
   if (files.length === 0) return null;
 
   // Memoize video URLs to prevent recreation on every render
-  const videoUrls = useMemo(() => {
-    return files.map(file => {
+  const videoUrls = useMemo(() => files.map(file => {
       if (typeof file === 'string') return file; // Already a URL string
       if (file && typeof file === 'object' && file.url) return file.url; // API object with url property
       if (file instanceof File) return URL.createObjectURL(file); // File object
       console.error('Invalid file type:', file);
       return ''; // Fallback for invalid files
-    });
-  }, [files]);
+    }), [files]);
 
   // Cleanup blob URLs when component unmounts or files change
-  useEffect(() => {
-    return () => {
+  useEffect(() => () => {
       videoUrls.forEach(url => {
         if (url && url.startsWith('blob:')) {
           URL.revokeObjectURL(url);
         }
       });
-    };
-  }, [videoUrls]);
+    }, [videoUrls]);
 
   // Memoized component to prevent unnecessary re-renders
   const VideoWithRemoveButton = useCallback(({ file, index, sx }) => (

@@ -1,31 +1,28 @@
-import React, { useMemo, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Box, IconButton } from '@mui/material';
+import React, { useMemo, useEffect, useCallback } from 'react';
+
+import { Box } from '@mui/material';
 
 const ImageGridDisplay = ({ files, onRemoveAll, onRemoveImage, height = { xs: 320, md: 480 } }) => {
   if (files.length === 0) return null;
 
   // Memoize image URLs to prevent recreation on every render
-  const imageUrls = useMemo(() => {
-    return files.map(file => {
+  const imageUrls = useMemo(() => files.map(file => {
       if (typeof file === 'string') return file; // Already a URL string
       if (file && typeof file === 'object' && file.url) return file.url; // API object with url property
       if (file instanceof File) return URL.createObjectURL(file); // File object
       console.error('Invalid file type:', file);
       return ''; // Fallback for invalid files
-    });
-  }, [files]);
+    }), [files]);
 
   // Cleanup blob URLs when component unmounts or files change
-  useEffect(() => {
-    return () => {
+  useEffect(() => () => {
       imageUrls.forEach(url => {
         if (url && url.startsWith('blob:')) {
           URL.revokeObjectURL(url);
         }
       });
-    };
-  }, [imageUrls]);
+    }, [imageUrls]);
 
   // Memoized component to prevent unnecessary re-renders
   const ImageWithRemoveButton = useCallback(({ file, index, sx }) => (

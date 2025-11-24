@@ -1,41 +1,48 @@
-import useSWR, { mutate } from 'swr';
+/* eslint-disable no-case-declarations */
+/* eslint-disable no-nested-ternary */
+import useSWR from 'swr';
 import PropTypes from 'prop-types';
-import React, { useState, useEffect, useMemo } from 'react';
-import { Page, pdfjs, Document } from 'react-pdf';
+import { PDFDocument } from 'pdf-lib';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { Page, pdfjs, Document } from 'react-pdf';
+import React, { useMemo, useState, useEffect } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Card,
-  Stack,
   Chip,
+  Stack,
   Button,
-  Typography,
-  CircularProgress,
-  Collapse,
-  IconButton,
-  Divider,
   Dialog,
+  Divider,
+  Collapse,
+  Typography,
+  IconButton,
   DialogTitle,
   DialogContent,
   DialogActions,
   useMediaQuery,
   Avatar,
   Paper,
+  CircularProgress,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
 import { fetcher, endpoints } from 'src/utils/axios';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
-import FormProvider from 'src/components/hook-form/form-provider';
 import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
+import FormProvider from 'src/components/hook-form/form-provider';
+
+import V4VideoSubmission from './submissions/v4-video-submission';
+import V4PhotoSubmission from './submissions/v4-photo-submission';
+import V4RawFootageSubmission from './submissions/v4-raw-footage-submission';
 
 // Configure PDF.js worker
 try {
@@ -47,10 +54,6 @@ try {
     import.meta.url
   ).toString();
 }
-
-import V4VideoSubmission from './submissions/v4-video-submission';
-import V4PhotoSubmission from './submissions/v4-photo-submission';
-import V4RawFootageSubmission from './submissions/v4-raw-footage-submission';
 
 // Enhanced Agreement Submission Component with PDF Display and Signing
 const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
@@ -456,10 +459,10 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 
 
       {/* Sign Agreement Dialog */}
-      <Dialog 
-        open={editor.value} 
-        onClose={editor.onFalse} 
-        fullWidth 
+      <Dialog
+        open={editor.value}
+        onClose={editor.onFalse}
+        fullWidth
         maxWidth="md"
         PaperProps={{
           sx: {
@@ -469,22 +472,24 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             borderRadius: { xs: 2, md: 1 },
             width: { xs: '90vw', md: 'auto' },
             maxWidth: { xs: '90vw', md: 'md' },
-          }
+          },
         }}
       >
-        <DialogTitle sx={{ 
-          p: { xs: 2, md: 2 }, 
-          borderBottom: 1, 
-          borderColor: 'divider',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          bgcolor: 'background.paper',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}>
-          <Typography 
+        <DialogTitle
+          sx={{
+            p: { xs: 2, md: 2 },
+            borderBottom: 1,
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: 'background.paper',
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+          }}
+        >
+          <Typography
             variant="h6"
             sx={{
               fontWeight: 400,
@@ -494,12 +499,12 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           >
             Sign Your Agreement
           </Typography>
-          <IconButton 
-            onClick={editor.onFalse} 
+          <IconButton
+            onClick={editor.onFalse}
             size="small"
-            sx={{ 
+            sx={{
               color: 'text.secondary',
-              '&:hover': { bgcolor: 'action.hover' }
+              '&:hover': { bgcolor: 'action.hover' },
             }}
           >
             <Iconify icon="eva:close-fill" width={20} />
@@ -514,19 +519,21 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
             setSignURL={setSignURL}
           />
         </DialogContent>
-        <DialogActions sx={{ 
-          p: { xs: 2, md: 2 }, 
-          borderTop: 1, 
-          borderColor: 'divider', 
-          gap: { xs: 1.5, md: 2 },
-          flexDirection: 'row',
-          bgcolor: 'background.paper',
-          position: 'sticky',
-          bottom: 0,
-          zIndex: 10,
-        }}>
-          <Button 
-            onClick={editor.onFalse} 
+        <DialogActions
+          sx={{
+            p: { xs: 2, md: 2 },
+            borderTop: 1,
+            borderColor: 'divider',
+            gap: { xs: 1.5, md: 2 },
+            flexDirection: 'row',
+            bgcolor: 'background.paper',
+            position: 'sticky',
+            bottom: 0,
+            zIndex: 10,
+          }}
+        >
+          <Button
+            onClick={editor.onFalse}
             variant="outlined"
             sx={{
               borderColor: '#203ff5',
@@ -1079,6 +1086,8 @@ const CampaignV4Activity = ({ campaign }) => {
 
   const { grouped, progress, total, completed } = submissionsData;
 
+  console.log(submissionsData);
+
   // Check if creator's agreement has been approved
   const isAgreementApproved = overviewData?.isAgreementApproved;
 
@@ -1179,8 +1188,8 @@ const CampaignV4Activity = ({ campaign }) => {
           lineHeight: 1.5,
         }}
       >
-        Do ensure to read through the brief, and the do's and don't's for the creatives over at the{' '}
-        <br />
+        Do ensure to read through the brief, and the do&apos;s and don&apos;t&apos;s for the
+        creatives over at the <br />
         <Typography
           component="span"
           sx={{
@@ -1200,7 +1209,6 @@ const CampaignV4Activity = ({ campaign }) => {
         </Typography>{' '}
         page.
       </Typography>
-
       {/* Approved Agreement Display */}
       {isAgreementApproved && (
         <Card
@@ -1492,7 +1500,6 @@ const CampaignV4Activity = ({ campaign }) => {
                   <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
                 </IconButton>
               </Box>
-
               {/* Collapsible Content */}
               <Collapse in={isExpanded}>
                 <Divider />
@@ -1540,7 +1547,6 @@ const CampaignV4Activity = ({ campaign }) => {
             </Card>
           );
         })}
-
         {/* Photo Submissions */}
         {grouped?.photos?.map((photo, index) => {
           const isExpanded = expandedSections[photo.id];
@@ -1690,7 +1696,6 @@ const CampaignV4Activity = ({ campaign }) => {
             </Card>
           );
         })}
-
         {/* Raw Footage Submissions */}
         {grouped?.rawFootage?.map((rawFootage, index) => {
           const isExpanded = expandedSections[rawFootage.id];

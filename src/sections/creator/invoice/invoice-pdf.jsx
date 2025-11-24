@@ -112,7 +112,6 @@ const useStyles = () =>
 
 const InvoicePDF = ({ data }) => {
   const styles = useStyles();
-  console.log('invoice data: ', data)
 
   return (
     <Document>

@@ -31,9 +31,10 @@ import { fDate } from 'src/utils/format-time';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import CampaignModalMobile from 'src/sections/campaign/discover/creator/campaign-modal-mobile';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+
+import CampaignModalMobile from 'src/sections/campaign/discover/creator/campaign-modal-mobile';
 
 const ChipStyle = {
   bgcolor: '#FFF',

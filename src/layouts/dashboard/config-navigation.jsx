@@ -220,40 +220,7 @@ export function useNavData() {
           },
         ],
       },
-      // {
-      //   items: [
-      //     {
-      //       title: (
-      //         <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
-      //       ),
-      //       path: paths.dashboard.chat.root,
-      //       icon: ICONS.chat,
-      //       msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
-      //     },
-      //     {
-      //       title: (
-      //         <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-      //           Calendar
-      //         </span>
-      //       ),
-      //       path: paths.dashboard.calendar.root,
-      //       icon: ICONS.calendar,
-      //     },
-      //   ],
-      // },
-      // {
-      //   items: [
-      //     {
-      //       title: (
-      //         <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-      //           Settings
-      //         </span>
-      //       ),
-      //       path: paths.dashboard.user.profile,
-      //       icon: ICONS.settings,
-      //     },
-      //   ],
-      // },
+
       {
         items: [
           {
@@ -433,16 +400,16 @@ export function useNavData() {
                 },
               ]
             : [
-                {
-                  title: (
-                    <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-                      Chats
-                    </span>
-                  ),
-                  path: paths.dashboard.chat.root,
-                  icon: ICONS.chat,
-                  msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
-                },
+                // {
+                //   title: (
+                //     <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                //       Chats
+                //     </span>
+                //   ),
+                //   path: paths.dashboard.chat.root,
+                //   icon: ICONS.chat,
+                //   msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
+                // },
                 {
                   title: (
                     <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>

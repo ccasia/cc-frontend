@@ -1,28 +1,28 @@
 import { Rnd } from 'react-rnd';
 import PropTypes from 'prop-types';
 import 'react-pdf/dist/Page/TextLayer.css';
-import React, { useRef, useState, useCallback, useEffect } from 'react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { Page, pdfjs, Document } from 'react-pdf';
 import ReactSignatureCanvas from 'react-signature-canvas';
+import React, { useRef, useState, useCallback } from 'react';
 
 import { blue, grey } from '@mui/material/colors';
 import {
   Box,
+  Chip,
+  Zoom,
   Stack,
   Dialog,
   Button,
   Tooltip,
+  Divider,
+  useTheme,
   Typography,
   IconButton,
   DialogTitle,
   DialogContent,
   DialogActions,
-  useTheme,
   useMediaQuery,
-  Divider,
-  Chip,
-  Zoom,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -107,7 +107,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
 
       setCurrentAnnotation(newAnnotation);
     },
-    [selectedTool, scale]
+    [selectedTool, hasSignature, scale]
   );
 
   const stopDrawing = useCallback(() => {
@@ -150,7 +150,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
       signDialog.onFalse();
       handleToolSelect('cursor');
     }
-  }, [setSignURL, currentSignatureId, signDialog, updateAnnotation]);
+  }, [currentSignatureId, updateAnnotation, setSignURL, signDialog, handleToolSelect]);
 
   const clearSignature = useCallback(() => {
     if (signRef.current) {
@@ -399,6 +399,7 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                                 }
                               }}
                             >
+                              {/* eslint-disable-next-line no-nested-ternary */}
                               {annotation.type === 'signature' && signURL ? (
                                 <img
                                   src={signURL}
@@ -445,7 +446,12 @@ const PDFEditorV2 = ({ file, annotations, setAnnotations, signURL, setSignURL })
                               )}
 
                               {/* Delete button - always visible for signatures, larger on mobile */}
-                              <Zoom in={selectedAnnotation === annotation.id || annotation.type === 'signature'}>
+                              <Zoom
+                                in={
+                                  selectedAnnotation === annotation.id ||
+                                  annotation.type === 'signature'
+                                }
+                              >
                                 <IconButton
                                   size={isMobile ? 'medium' : 'small'}
                                   onClick={(e) => {

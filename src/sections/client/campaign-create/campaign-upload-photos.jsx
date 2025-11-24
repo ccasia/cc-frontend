@@ -19,10 +19,11 @@ import {
   DialogContent,
 } from '@mui/material';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
-import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 

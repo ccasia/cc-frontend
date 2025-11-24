@@ -70,13 +70,13 @@ const LoadingDots = () => {
 const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }) => {
   console.log('=== CAMPAIGN POSTING COMPONENT STARTED ===');
   console.log('Props received:', { campaign, submission, getDependency, fullSubmission });
-  
+
   // Simple test to see if component is working
   if (!submission) {
     console.log('No submission provided');
     return <div>No submission data</div>;
   }
-  
+
   const dependency = getDependency(submission?.id);
   const dialog = useBoolean();
   const { user, dispatch } = useAuthContext();
@@ -84,14 +84,14 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   console.log('CampaignPosting received:', {
     submission,
     submissionStatus: submission?.status,
-    submissionId: submission?.id
+    submissionId: submission?.id,
   });
 
   console.log('Checking submission status conditions:', {
     isInProgress: submission?.status === 'IN_PROGRESS',
     isPendingReview: submission?.status === 'PENDING_REVIEW',
     isApproved: submission?.status === 'APPROVED',
-    isRejected: submission?.status === 'REJECTED'
+    isRejected: submission?.status === 'REJECTED',
   });
 
   const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
@@ -110,7 +110,11 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
       dependency,
       finalDraftSubmission,
       firstDraftSubmission,
-      fullSubmission: fullSubmission?.map(s => ({ id: s.id, type: s.submissionType?.type, status: s.status }))
+      fullSubmission: fullSubmission?.map((s) => ({
+        id: s.id,
+        type: s.submissionType?.type,
+        status: s.status,
+      })),
     });
 
     if (firstDraftSubmission?.status === 'APPROVED') {
@@ -138,9 +142,10 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   }, [submission?.dueDate, submission?.endDate, submission?.startDate]);
 
   const schema = yup.object().shape({
-    postingLinks: yup.array().of(
-      yup.string().required('Link is required.')
-    ).min(1, 'At least one posting link is required.'),
+    postingLinks: yup
+      .array()
+      .of(yup.string().required('Link is required.'))
+      .min(1, 'At least one posting link is required.'),
   });
 
   const methods = useForm({
@@ -151,7 +156,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   });
 
   const { handleSubmit, reset, watch, control } = methods;
-  
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'postingLinks',
@@ -160,7 +165,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   console.log('Form methods initialized:', {
     handleSubmit: !!handleSubmit,
     reset: !!reset,
-    watch: !!watch
+    watch: !!watch,
   });
 
   const [openPostingModal, setOpenPostingModal] = useState(false);
@@ -173,7 +178,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   }, [fields.length, append]);
 
   const postingLinksValue = watch('postingLinks');
-  const hasValidLinks = postingLinksValue && postingLinksValue.some(link => link && link.trim() !== '');
+  const hasValidLinks =
+    postingLinksValue && postingLinksValue.some((link) => link && link.trim() !== '');
 
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
@@ -217,16 +223,14 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
       {console.log('Alert component being rendered')}
       <Typography variant="subtitle1">Draft Approved! Next Step: Post Your Deliverable</Typography>
       <Typography variant="subtitle2">
-        {submission?.startDate === submission?.endDate ? (
-          `You can now post your content on ${dayjs(submission?.startDate).format('D MMMM, YYYY')}`
-        ) : (
-          `You can now post your content between ${dayjs(submission?.startDate).format('D MMMM, YYYY')} and ${dayjs(submission?.endDate).format('D MMMM, YYYY')}`
-        )}
+        {submission?.startDate === submission?.endDate
+          ? `You can now post your content on ${dayjs(submission?.startDate).format('D MMMM, YYYY')}`
+          : `You can now post your content between ${dayjs(submission?.startDate).format('D MMMM, YYYY')} and ${dayjs(submission?.endDate).format('D MMMM, YYYY')}`}
       </Typography>
       {console.log('renderPostingTimeline dates:', {
         startDate: submission?.startDate,
         endDate: submission?.endDate,
-        dueDate: submission?.dueDate
+        dueDate: submission?.dueDate,
       })}
     </Alert>
   );
@@ -375,9 +379,9 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         submissionId: submission.id,
         link: link.trim(),
       });
-      
+
       enqueueSnackbar('Posting link submitted for review', { variant: 'success' });
-      
+
       // Refresh data
       mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
       mutate(endpoints.kanban.root);
@@ -393,276 +397,174 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
       {console.log('previewSubmission status check:', {
         previewSubmission,
         previewSubmissionStatus: previewSubmission?.status,
-        condition: previewSubmission?.status === 'APPROVED'
+        condition: previewSubmission?.status === 'APPROVED',
       })}
       <Box p={1.5} sx={{ pb: 0 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 2,
-              mt: { xs: 0, sm: -2 },
-              ml: { xs: 0, sm: -1.2 },
-              textAlign: { xs: 'center', sm: 'left' },
-            }}
-          >
-            <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
-              Posting Link Submission 🔗
-            </Typography>
-            <Typography variant="subtitle2" color="text.secondary">
-              Due: {getDueDate ? getDueDate.format('MMM DD, YYYY') : 'TBD'}
-            </Typography>
-          </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 2,
+            mt: { xs: 0, sm: -2 },
+            ml: { xs: 0, sm: -1.2 },
+            textAlign: { xs: 'center', sm: 'left' },
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
+            Posting Link Submission 🔗
+          </Typography>
+          <Typography variant="subtitle2" color="text.secondary">
+            Due: {getDueDate ? getDueDate.format('MMM DD, YYYY') : 'TBD'}
+          </Typography>
+        </Box>
 
-          <Box
-            sx={{
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              mb: 3,
-              mx: -1.5,
-            }}
-          />
+        <Box
+          sx={{
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            mb: 3,
+            mx: -1.5,
+          }}
+        />
 
-          <Stack gap={2}>
-            {submission?.status !== 'PENDING_REVIEW' && submission?.status !== 'APPROVED' && (
-              <Box>
-                <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                  Let&apos;s wrap up this campaign by submitting your posting link on your socials!
-                  🥳
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: '#221f20', mb: 2, ml: -1, fontWeight: 600 }}
-                >
-                  {' '}
-                  <Box
-                    component="span"
-                    sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
-                    onClick={dialog.onTrue}
-                  >
-                    Show Guide
-                  </Box>
-                </Typography>
-              </Box>
-            )}
-          </Stack>
-
-          {submission?.status === 'PENDING_REVIEW' && (
-            <>
-              {/* Show submission form if no content exists */}
-              {campaign?.origin === 'CLIENT' && (!submission?.content || submission?.content.trim() === '') ? (
-                <Stack spacing={2}>
-                  <Typography variant="body1" sx={{ color: '#221f20', mb: 2 }}>
-                    Submit your posting link to complete this campaign! 🥳
-                  </Typography>
-                  <Box
-                    component="form"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const formData = new FormData(e.target);
-                      const link = formData.get('postingLink');
-                      if (link) {
-                        handleSubmitPostingLink(link);
-                      }
-                    }}
-                  >
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <TextField
-                        name="postingLink"
-                        fullWidth
-                        placeholder="Paste your posting link here"
-                        required
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                          },
-                        }}
-                      />
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#203ff5',
-                          color: 'white',
-                          borderBottom: 3.5,
-                          borderBottomColor: '#112286',
-                          borderRadius: 1.5,
-                          px: 3,
-                          py: 1.2,
-                          minWidth: 120,
-                          '&:hover': {
-                            bgcolor: '#203ff5',
-                            opacity: 0.9,
-                          },
-                        }}
-                      >
-                        Submit
-                      </Button>
-                    </Stack>
-                  </Box>
-                </Stack>
-              ) : (
-                /* Show review status when content exists */
-                <Stack justifyContent="center" alignItems="center" spacing={2}>
-                  <Box
-                    sx={{
-                      width: 100,
-                      height: 100,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '50%',
-                      bgcolor: '#f4b84a',
-                      fontSize: '50px',
-                      mb: -2,
-                    }}
-                  >
-                    ⏳
-                  </Box>
-                  <Stack spacing={1} alignItems="center">
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontFamily: 'Instrument Serif, serif',
-                        fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                        fontWeight: 550,
-                      }}
-                    >
-                      In Review
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: '#636366',
-                        mt: -1,
-                      }}
-                    >
-                      Your posting link is being reviewed.
-                    </Typography>
-                  </Stack>
-                </Stack>
-              )}
-            </>
-          )}
-
-          {submission?.status === 'IN_PROGRESS' && (
-            <>
-              {console.log('Rendering IN_PROGRESS content for posting')}
-              {console.log('renderPostingTimeline component:', renderPostingTimeline)}
-              <Stack spacing={1}>
-                {console.log('Stack component being rendered')}
-                {renderPostingTimeline}
+        <Stack gap={2}>
+          {submission?.status !== 'PENDING_REVIEW' && submission?.status !== 'APPROVED' && (
+            <Box>
+              <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                Let&apos;s wrap up this campaign by submitting your posting link on your socials! 🥳
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#221f20', mb: 2, ml: -1, fontWeight: 600 }}>
+                {' '}
                 <Box
-                  sx={{
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    mb: 2,
-                    mt: 24,
-                    mx: -1.5,
+                  component="span"
+                  sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
+                  onClick={dialog.onTrue}
+                >
+                  Show Guide
+                </Box>
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+
+        {submission?.status === 'PENDING_REVIEW' && (
+          <>
+            {/* Show submission form if no content exists */}
+            {campaign?.origin === 'CLIENT' &&
+            (!submission?.content || submission?.content.trim() === '') ? (
+              <Stack spacing={2}>
+                <Typography variant="body1" sx={{ color: '#221f20', mb: 2 }}>
+                  Submit your posting link to complete this campaign! 🥳
+                </Typography>
+                <Box
+                  component="form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const link = formData.get('postingLink');
+                    if (link) {
+                      handleSubmitPostingLink(link);
+                    }
                   }}
-                />
-                {campaign?.origin !== 'CLIENT' && (
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                >
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <TextField
+                      name="postingLink"
+                      fullWidth
+                      placeholder="Paste your posting link here"
+                      required
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        },
+                      }}
+                    />
                     <Button
+                      type="submit"
                       variant="contained"
-                      onClick={() => setOpenPostingModal(true)}
                       sx={{
                         bgcolor: '#203ff5',
                         color: 'white',
                         borderBottom: 3.5,
                         borderBottomColor: '#112286',
                         borderRadius: 1.5,
-                        px: 2.5,
+                        px: 3,
                         py: 1.2,
+                        minWidth: 120,
                         '&:hover': {
                           bgcolor: '#203ff5',
                           opacity: 0.9,
                         },
                       }}
                     >
-                      Submit Link
+                      Submit
                     </Button>
-                  </Box>
-                )}
+                  </Stack>
+                </Box>
               </Stack>
-            </>
-          )}
-
-          {submission?.status === 'APPROVED' && (
-            <Stack justifyContent="center" alignItems="center" spacing={2}>
-              <Box
-                sx={{
-                  width: 100,
-                  height: 100,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '50%',
-                  bgcolor: '#e0fe52',
-                  fontSize: '50px',
-                  mb: -2,
-                }}
-              >
-                🥳
-              </Box>
-              <Stack spacing={1} alignItems="center">
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontFamily: 'Instrument Serif, serif',
-                    fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                    fontWeight: 550,
-                  }}
-                >
-                  Completed!
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: '#636366',
-                    mt: -1,
-                  }}
-                >
-                  Your posting has been approved.
-                </Typography>
-              </Stack>
-              <Button
-                variant="contained"
-                onClick={() => router.push(paths.dashboard.finance.invoiceDetail(invoiceId))}
-                sx={{
-                  bgcolor: '#203ff5',
-                  color: 'white',
-                  borderBottom: 3.5,
-                  borderBottomColor: '#112286',
-                  borderRadius: 1.5,
-                  px: 2.5,
-                  py: 1.2,
-                  '&:hover': {
-                    bgcolor: '#203ff5',
-                    opacity: 0.9,
-                  },
-                }}
-              >
-                View Invoice
-              </Button>
-            </Stack>
-          )}
-
-          {submission?.status === 'REJECTED' && (
-            <>
-              {renderRejectMessage}
-              <Stack spacing={1} my={1.5}>
+            ) : (
+              /* Show review status when content exists */
+              <Stack justifyContent="center" alignItems="center" spacing={2}>
                 <Box
                   sx={{
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    mt: 2,
-                    mb: 2,
-                    mx: -1.5,
+                    width: 100,
+                    height: 100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '50%',
+                    bgcolor: '#f4b84a',
+                    fontSize: '50px',
+                    mb: -2,
                   }}
-                />
+                >
+                  ⏳
+                </Box>
+                <Stack spacing={1} alignItems="center">
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily: 'Instrument Serif, serif',
+                      fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                      fontWeight: 550,
+                    }}
+                  >
+                    In Review
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: '#636366',
+                      mt: -1,
+                    }}
+                  >
+                    Your posting link is being reviewed.
+                  </Typography>
+                </Stack>
+              </Stack>
+            )}
+          </>
+        )}
+
+        {submission?.status === 'IN_PROGRESS' && (
+          <>
+            {console.log('Rendering IN_PROGRESS content for posting')}
+            {console.log('renderPostingTimeline component:', renderPostingTimeline)}
+            <Stack spacing={1}>
+              {console.log('Stack component being rendered')}
+              {renderPostingTimeline}
+              <Box
+                sx={{
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  mb: 2,
+                  mt: 24,
+                  mx: -1.5,
+                }}
+              />
+              {campaign?.origin !== 'CLIENT' && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button
                     variant="contained"
@@ -681,13 +583,112 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                       },
                     }}
                   >
-                    Submit New Link
+                    Submit Link
                   </Button>
                 </Box>
-              </Stack>
-            </>
-          )}
-        </Box>
+              )}
+            </Stack>
+          </>
+        )}
+
+        {submission?.status === 'APPROVED' && (
+          <Stack justifyContent="center" alignItems="center" spacing={2}>
+            <Box
+              sx={{
+                width: 100,
+                height: 100,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                bgcolor: '#e0fe52',
+                fontSize: '50px',
+                mb: -2,
+              }}
+            >
+              🥳
+            </Box>
+            <Stack spacing={1} alignItems="center">
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                  fontWeight: 550,
+                }}
+              >
+                Completed!
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: '#636366',
+                  mt: -1,
+                }}
+              >
+                Your posting has been approved.
+              </Typography>
+            </Stack>
+            <Button
+              variant="contained"
+              onClick={() => router.push(paths.dashboard.finance.invoiceDetail(invoiceId))}
+              sx={{
+                bgcolor: '#203ff5',
+                color: 'white',
+                borderBottom: 3.5,
+                borderBottomColor: '#112286',
+                borderRadius: 1.5,
+                px: 2.5,
+                py: 1.2,
+                '&:hover': {
+                  bgcolor: '#203ff5',
+                  opacity: 0.9,
+                },
+              }}
+            >
+              View Invoice
+            </Button>
+          </Stack>
+        )}
+
+        {submission?.status === 'REJECTED' && (
+          <>
+            {renderRejectMessage}
+            <Stack spacing={1} my={1.5}>
+              <Box
+                sx={{
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  mt: 2,
+                  mb: 2,
+                  mx: -1.5,
+                }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="contained"
+                  onClick={() => setOpenPostingModal(true)}
+                  sx={{
+                    bgcolor: '#203ff5',
+                    color: 'white',
+                    borderBottom: 3.5,
+                    borderBottomColor: '#112286',
+                    borderRadius: 1.5,
+                    px: 2.5,
+                    py: 1.2,
+                    '&:hover': {
+                      bgcolor: '#203ff5',
+                      opacity: 0.9,
+                    },
+                  }}
+                >
+                  Submit New Link
+                </Button>
+              </Box>
+            </Stack>
+          </>
+        )}
+      </Box>
 
       <Dialog
         open={openPostingModal}
@@ -759,32 +760,40 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   *
                 </Box>
               </Typography>
-              {fields.length > 0 ? fields.map((field, index) => (
-                <Stack key={field.id} direction="row" spacing={1} alignItems="center" width="100%">
-                  <TextField
-                    placeholder="Add Posting Link"
-                    fullWidth
-                    variant="outlined"
-                    {...methods.register(`postingLinks.${index}`)}
-                    sx={{
-                      bgcolor: '#ffffff',
-                    }}
-                  />
-                  {index > 0 && (
-                    <IconButton
-                      onClick={() => remove(index)}
+              {fields.length > 0 ? (
+                fields.map((field, index) => (
+                  <Stack
+                    key={field.id}
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    width="100%"
+                  >
+                    <TextField
+                      placeholder="Add Posting Link"
+                      fullWidth
+                      variant="outlined"
+                      {...methods.register(`postingLinks.${index}`)}
                       sx={{
-                        color: 'error.main',
-                        '&:hover': {
-                          bgcolor: 'error.lighter',
-                        },
+                        bgcolor: '#ffffff',
                       }}
-                    >
-                      <Iconify icon="mingcute:delete-line" width={20} />
-                    </IconButton>
-                  )}
-                </Stack>
-              )) : (
+                    />
+                    {index > 0 && (
+                      <IconButton
+                        onClick={() => remove(index)}
+                        sx={{
+                          color: 'error.main',
+                          '&:hover': {
+                            bgcolor: 'error.lighter',
+                          },
+                        }}
+                      >
+                        <Iconify icon="mingcute:delete-line" width={20} />
+                      </IconButton>
+                    )}
+                  </Stack>
+                ))
+              ) : (
                 <Stack direction="row" spacing={1} alignItems="center" width="100%">
                   <TextField
                     placeholder="Link 1"
@@ -797,23 +806,26 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   />
                 </Stack>
               )}
-              {postingLinksValue && postingLinksValue.length > 0 && postingLinksValue[0] && postingLinksValue[0].trim() !== '' && (
-                <Button
-                  variant="outlined"
-                  onClick={() => append('')}
-                  startIcon={<Iconify icon="mingcute:add-line" />}
-                  sx={{
-                    borderColor: '#203ff5',
-                    color: '#203ff5',
-                    '&:hover': {
+              {postingLinksValue &&
+                postingLinksValue.length > 0 &&
+                postingLinksValue[0] &&
+                postingLinksValue[0].trim() !== '' && (
+                  <Button
+                    variant="outlined"
+                    onClick={() => append('')}
+                    startIcon={<Iconify icon="mingcute:add-line" />}
+                    sx={{
                       borderColor: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    },
-                  }}
-                >
-                  Add Another Link
-                </Button>
-              )}
+                      color: '#203ff5',
+                      '&:hover': {
+                        borderColor: '#203ff5',
+                        bgcolor: 'rgba(32, 63, 245, 0.04)',
+                      },
+                    }}
+                  >
+                    Add Another Link
+                  </Button>
+                )}
               <Button
                 variant="contained"
                 size="medium"
