@@ -82,12 +82,82 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
         };
       }) || [];
 
+  // Filter client activity logs (V4 campaigns)
+  const clientRows =
+    allRows
+      ?.filter(
+        (row) =>
+          row.action.toLowerCase().includes('by client') ||
+          row.action.toLowerCase().includes('client approved') ||
+          row.action.toLowerCase().includes('client rejected') ||
+          row.action.toLowerCase().includes('client requested') ||
+          row.action.toLowerCase().includes('client logged in') ||
+          row.action.toLowerCase().includes('client submitted') ||
+          row.action.toLowerCase().includes('client activated') ||
+          row.action.toLowerCase().includes('client received') ||
+          row.action.toLowerCase().includes('client exported') ||
+          row.action.toLowerCase().includes('user logs in') ||
+          row.action.toLowerCase().includes('submitted campaign') ||
+          row.action.toLowerCase().includes('campaign activated') ||
+          row.action.toLowerCase().includes('approve creator') ||
+          row.action.toLowerCase().includes('reject creator') ||
+          row.action.toLowerCase().includes('maybe') ||
+          row.action.toLowerCase().includes('receive draft') ||
+          row.action.toLowerCase().includes('approve draft') ||
+          row.action.toLowerCase().includes('request change') ||
+          row.action.toLowerCase().includes('export campaign analytics')
+      )
+      .map((row) => {
+        // Extract submission type from the action text
+        let submissionType = 'Unknown';
+
+        if (row.action.toLowerCase().includes('logs in') || row.action.toLowerCase().includes('logged in')) {
+          submissionType = 'Login';
+        } else if (row.action.toLowerCase().includes('submitted campaign') || row.action.toLowerCase().includes('campaign created')) {
+          submissionType = 'Campaign';
+        } else if (row.action.toLowerCase().includes('campaign activated') || row.action.toLowerCase().includes('activated')) {
+          submissionType = 'Activation';
+        } else if (row.action.toLowerCase().includes('approve creator') || (row.action.toLowerCase().includes('approved') && row.action.toLowerCase().includes('pitch'))) {
+          submissionType = 'Pitch';
+        } else if (row.action.toLowerCase().includes('reject creator') || (row.action.toLowerCase().includes('rejected') && row.action.toLowerCase().includes('pitch'))) {
+          submissionType = 'Pitch';
+        } else if (row.action.toLowerCase().includes('maybe')) {
+          submissionType = 'Pitch';
+        } else if (row.action.toLowerCase().includes('receive draft') || row.action.toLowerCase().includes('received')) {
+          submissionType = 'Draft';
+        } else if (row.action.toLowerCase().includes('approve draft') || (row.action.toLowerCase().includes('approved') && row.action.toLowerCase().includes('draft'))) {
+          submissionType = 'Draft';
+        } else if (row.action.toLowerCase().includes('request change') || row.action.toLowerCase().includes('requested changes')) {
+          submissionType = 'Changes';
+        } else if (row.action.toLowerCase().includes('export campaign analytics') || row.action.toLowerCase().includes('exported')) {
+          submissionType = 'Analytics';
+        } else if (row.action.includes('Agreement')) {
+          submissionType = 'Agreement';
+        } else if (row.action.includes('First Draft') || row.action.includes('first draft')) {
+          submissionType = 'First Draft';
+        } else if (row.action.includes('Final Draft') || row.action.includes('final draft')) {
+          submissionType = 'Final Draft';
+        } else if (row.action.includes('Posting Link') || row.action.includes('posting')) {
+          submissionType = 'Posting Link';
+        } else if (row.action.includes('approved')) {
+          submissionType = 'Approval';
+        } else if (row.action.includes('rejected')) {
+          submissionType = 'Rejection';
+        }
+
+        return {
+          ...row,
+          submissionType,
+        };
+      }) || [];
+
   // Filter admin activity logs
   const adminRows =
     (
       allRows?.filter(
         (row) =>
-          (row.action.includes('approved') &&
+          !row.action.toLowerCase().includes('by client') && // Exclude client actions
+          ((row.action.includes('approved') &&
             (row.action.includes('pitch') ||
               row.action.includes('Agreement') ||
               row.action.includes('First Draft') ||
@@ -100,8 +170,8 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
           row.action.includes('requested changes to') ||
           row.action.includes('changed the amount from') ||
           row.action.includes('resent the Agreement to') ||
-          (row.action.includes('created') && !row.action.includes('Created the Campaign')) ||
-          row.action.includes('edited the Campaign Details')
+          (row.action.includes('created') && !row.action.includes('Created the Campaign') && !row.action.toLowerCase().includes('by client')) ||
+          row.action.includes('edited the Campaign Details'))
       ) || []
     ).map((row) => {
       // Extract submission type from the action text
@@ -149,6 +219,8 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
         return creatorRows;
       case 'admin':
         return adminRows;
+      case 'client':
+        return clientRows;
       default:
         return allRows;
     }
@@ -271,8 +343,8 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                 <Typography
                   variant="h3"
                   sx={{
-                    fontFamily: 'InterDisplay, sans-serif',
-                    fontWeight: 700,
+                    fontFamily: 'fontSecondaryFamily',
+                    fontWeight: 'normal',
                     fontSize: { xs: '1.5rem', sm: '1.75rem' },
                     color: '#212529',
                   }}
@@ -389,6 +461,12 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                 icon={<Iconify icon="solar:shield-user-bold" width={18} />}
                 iconPosition="start"
               />
+              <Tab
+                label={`Client (${clientRows?.length || 0})`}
+                value="client"
+                icon={<Iconify icon="solar:user-id-bold" width={18} />}
+                iconPosition="start"
+              />
             </Tabs>
           </Box>
         </Box>
@@ -402,7 +480,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                 <TableHead>
                   <TableRow>
                     <TableCell
-                      width={currentTab === 'creator' || currentTab === 'admin' ? '25%' : '30%'}
+                      width={currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client' ? '25%' : '30%'}
                       sx={{
                         pl: 2,
                         py: 2,
@@ -417,7 +495,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                     >
                       🕐 Date & Time
                     </TableCell>
-                    {(currentTab === 'creator' || currentTab === 'admin') && (
+                    {(currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client') && (
                       <TableCell
                         width="15%"
                         sx={{
@@ -435,7 +513,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                       </TableCell>
                     )}
                     <TableCell
-                      width={currentTab === 'creator' || currentTab === 'admin' ? '38%' : '50%'}
+                      width={currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client' ? '38%' : '50%'}
                       sx={{
                         py: 2,
                         fontWeight: 700,
@@ -450,7 +528,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                       ⚡ Action
                     </TableCell>
                     <TableCell
-                      width={currentTab === 'creator' || currentTab === 'admin' ? '22%' : '20%'}
+                      width={currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client' ? '22%' : '20%'}
                       sx={{
                         pr: 2,
                         py: 2,
@@ -532,29 +610,19 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                             borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
                           }}
                         >
-                          <Box
+                          <Typography
+                            variant="body2"
                             sx={{
-                              backgroundColor: '#f8f9fa',
-                              borderRadius: 1.5,
-                              px: 1.5,
-                              py: 0.75,
-                              border: '1px solid #e9ecef',
+                              color: '#212529',
+                              fontWeight: 400,
+                              fontSize: '0.8rem',
                             }}
                           >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                color: '#212529',
-                                fontWeight: 400,
-                                fontSize: '0.8rem',
-                              }}
-                            >
-                              {row.datePerformed}
-                            </Typography>
-                          </Box>
+                            {row.datePerformed}
+                          </Typography>
                         </TableCell>
 
-                        {(currentTab === 'creator' || currentTab === 'admin') && (
+                        {(currentTab === 'creator' || currentTab === 'admin' || currentTab === 'client') && (
                           <TableCell
                             sx={{
                               py: 1.5,
@@ -636,6 +704,72 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                                     color: '#673ab7',
                                     borderColor: '#673ab7',
                                   }),
+                                // Client activity colors
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Agreement' && {
+                                    color: '#1976d2',
+                                    borderColor: '#1976d2',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'First Draft' && {
+                                    color: '#ed6c02',
+                                    borderColor: '#ed6c02',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Final Draft' && {
+                                    color: '#9c27b0',
+                                    borderColor: '#9c27b0',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Posting Link' && {
+                                    color: '#2e7d32',
+                                    borderColor: '#2e7d32',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Pitch' && {
+                                    color: '#f57c00',
+                                    borderColor: '#f57c00',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Campaign' && {
+                                    color: '#673ab7',
+                                    borderColor: '#673ab7',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Approval' && {
+                                    color: '#10b981',
+                                    borderColor: '#10b981',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Rejection' && {
+                                    color: '#f44336',
+                                    borderColor: '#f44336',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Changes' && {
+                                    color: '#f59e0b',
+                                    borderColor: '#f59e0b',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Login' && {
+                                    color: '#06b6d4',
+                                    borderColor: '#06b6d4',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Activation' && {
+                                    color: '#10b981',
+                                    borderColor: '#10b981',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Draft' && {
+                                    color: '#9c27b0',
+                                    borderColor: '#9c27b0',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Analytics' && {
+                                    color: '#3b82f6',
+                                    borderColor: '#3b82f6',
+                                  }),
                               }}
                             >
                               {row.submissionType}
@@ -649,22 +783,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                             borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
                           }}
                         >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: 32,
-                                height: 32,
-                                borderRadius: '50%',
-                                background: `linear-gradient(45deg, ${actionColor}15, ${actionColor}08)`,
-                                border: `2px solid ${actionColor}30`,
-                                color: actionColor,
-                              }}
-                            >
-                              <Iconify icon={actionIcon} width={16} />
-                            </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Box sx={{ flex: 1 }}>
                               {(() => {
                                 const actionText = row.action;
@@ -852,7 +971,9 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                           ? 'solar:user-broken'
                           : currentTab === 'admin'
                             ? 'solar:shield-user-broken'
-                            : 'solar:list-broken'
+                            : currentTab === 'client'
+                              ? 'solar:user-id-broken'
+                              : 'solar:list-broken'
                     }
                     width={32}
                     height={32}
@@ -873,19 +994,9 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                       ? 'No Creator Activities 👨‍🎨'
                       : currentTab === 'admin'
                         ? 'No Admin Activities 👨‍💼'
-                        : 'No Activities Yet 📝'}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: '#6c757d', lineHeight: 1.5, fontSize: '0.875rem' }}
-                >
-                  {currentTab === 'invoice'
-                    ? "No invoice-related actions have been recorded for this campaign yet. Once invoices are created or managed, they'll appear here! 💰"
-                    : currentTab === 'creator'
-                      ? 'No creator-related actions have been recorded for this campaign yet. Creator activities like submissions will show up here! 🎨'
-                      : currentTab === 'admin'
-                        ? 'No admin-related actions have been recorded for this campaign yet. Admin approvals and changes will be tracked here! ⚡'
-                        : 'No activities have been recorded for this campaign yet. All actions will be logged here as they happen! 🚀'}
+                        : currentTab === 'client'
+                          ? 'No Client Activities 👔'
+                          : 'No Activities Yet 📝'}
                 </Typography>
               </Box>
             </Box>
