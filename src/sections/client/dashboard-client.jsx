@@ -159,7 +159,7 @@ const ClientDashboard = () => {
     if (!Array.isArray(allPitches) || clientCampaignIds.size === 0) return 0;
     const normalize = (p) => {
       const status = p?.displayStatus || p?.status;
-      if (status === 'undecided') return 'PENDING_REVIEW';
+      if (status === 'undecided' || status === 'PENDING_REVIEW' || status === 'pending') return 'PENDING_REVIEW';
       if (status === 'approved') return 'APPROVED';
       if (status === 'rejected') return 'REJECTED';
       return status;
