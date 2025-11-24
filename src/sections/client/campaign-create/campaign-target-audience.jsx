@@ -30,6 +30,9 @@ const FormField = ({ label, children, required = true }) => (
         color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
         fontSize: '0.875rem',
         mb: 0.5,
+        '& .MuiFormLabel-asterisk': {
+          color: '#FF3500', // Change this to your desired color
+        },
       }}
     >
       {label}
@@ -186,7 +189,7 @@ const CampaignTargetAudience = () => {
                 size="small"
                 checkbox
                 sx={{ 
-                  '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
                 }}
               />
             </FormField>
@@ -199,7 +202,7 @@ const CampaignTargetAudience = () => {
                 size="small"
                 checkbox
                 sx={{ 
-                  '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
                 }}
               />
 
@@ -211,7 +214,7 @@ const CampaignTargetAudience = () => {
                   name="othersAudienceLocation"
                   placeholder="Specify other locations"
                   size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
                 />
               </Box>
             )}
@@ -247,7 +250,7 @@ const CampaignTargetAudience = () => {
               size="small"
               checkbox
               sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                '& .MuiOutlinedInput-root': { minHeight: '50px' },
               }}
             />
           </FormField>
@@ -261,7 +264,7 @@ const CampaignTargetAudience = () => {
               size="small"
               checkbox
               sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                '& .MuiOutlinedInput-root': { minHeight: '50px' },
               }}
             />
           </FormField>
@@ -279,7 +282,7 @@ const CampaignTargetAudience = () => {
               size="small"
               checkbox
               sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                '& .MuiOutlinedInput-root': { minHeight: '50px' },
               }}
             />
           </FormField>
@@ -293,7 +296,7 @@ const CampaignTargetAudience = () => {
               size="small"
               checkbox
               sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                '& .MuiOutlinedInput-root': { minHeight: '50px' },
               }}
             />
           </FormField>
@@ -310,7 +313,7 @@ const CampaignTargetAudience = () => {
             size="small"
             checkbox
             sx={{
-              '& .MuiOutlinedInput-root': { minHeight: '40px' },
+              '& .MuiOutlinedInput-root': { minHeight: '50px' },
             }}
           />
         </FormField>
@@ -371,7 +374,7 @@ const CampaignTargetAudience = () => {
                   placeholder={`No. ${index + 1}`}
                   value={item.value}
                   onChange={(e) => handleDoChange(index, e.target.value)}
-                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
                 />
                 <IconButton onClick={() => handleRemoveDo(item.id)} sx={{ p: 0.5 }}>
                   <Iconify icon="eva:trash-2-fill" />
@@ -381,7 +384,7 @@ const CampaignTargetAudience = () => {
 
             <Box
               sx={{
-                mt: doItems.length > 0 ? 1 : 0,
+                mt: doItems.length > 0 ? 2 : 0,
                 display: 'flex',
                 justifyContent: 'center',
                 cursor: 'pointer',
@@ -402,7 +405,7 @@ const CampaignTargetAudience = () => {
                   px: 1.5,
                   fontWeight: 600,
                   fontSize: '0.8rem',
-                  height: '32px',
+                  height: '45px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -458,7 +461,7 @@ const CampaignTargetAudience = () => {
                   placeholder={`No. ${index + 1}`}
                   value={item.value}
                   onChange={(e) => handleDontChange(index, e.target.value)}
-                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
                 />
                 <IconButton onClick={() => handleRemoveDont(item.id)} sx={{ p: 0.5 }}>
                   <Iconify icon="eva:trash-2-fill" />
@@ -468,7 +471,7 @@ const CampaignTargetAudience = () => {
 
             <Box
               sx={{
-                mt: dontItems.length > 0 ? 1 : 0,
+                mt: dontItems.length > 0 ? 2 : 0,
                 display: 'flex',
                 justifyContent: 'center',
                 cursor: 'pointer',
@@ -489,7 +492,7 @@ const CampaignTargetAudience = () => {
                   px: 1.5,
                   fontWeight: 600,
                   fontSize: '0.8rem',
-                  height: '32px',
+                  height: '45px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
