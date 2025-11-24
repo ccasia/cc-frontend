@@ -6,15 +6,21 @@ import React, { useMemo, useState } from 'react';
 
 import {
   Box,
+  Card,
   Stack,
   Table,
   Button,
+  Select,
+  Avatar,
   TableRow,
+  MenuItem,
+  Collapse,
   TextField,
   TableBody,
   TableCell,
   TableHead,
   Typography,
+  CardContent,
   InputAdornment,
   TableContainer,
 } from '@mui/material';
@@ -48,7 +54,7 @@ const getStatusInfo = (pitch) => {
   // Map status to display properties
   const statusMap = {
     PENDING_REVIEW: {
-      color: '#FF9A02',
+      color: '#FFC702',
       label: 'PENDING REVIEW',
       normalizedStatus: 'PENDING_REVIEW',
     },
@@ -101,6 +107,13 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
   const mediaKit = useBoolean();
+  
+  // Mobile-specific state
+  const [expandedSections, setExpandedSections] = useState({
+    pending: true,
+    approved: true,
+    rejected: false,
+  });
 
   // Fetch V3 pitches for client-created campaigns OR admin-created v4 campaigns
   const shouldFetchV3Pitches =
@@ -368,6 +381,21 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 
   const mdUp = useResponsive('up', 'md');
 
+  // Group creators by status for mobile view - MUST be before conditional returns
+  const groupedCreators = useMemo(() => {
+    const pending = filteredCreators.filter(
+      (creator) => getStatusInfo(creator).normalizedStatus === 'PENDING_REVIEW'
+    );
+    const approved = filteredCreators.filter(
+      (creator) => getStatusInfo(creator).normalizedStatus === 'APPROVED' && !creator.isShortlisted
+    );
+    const rejected = filteredCreators.filter(
+      (creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED'
+    );
+    
+    return { pending, approved, rejected };
+  }, [filteredCreators]);
+
   // Show loading state for V3 pitches
   if (campaign?.origin === 'CLIENT' && v3PitchesLoading) {
     return (
@@ -379,6 +407,171 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     );
   }
 
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  const formatFollowerCount = (count) => {
+    if (!count) return '0';
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
+  // Mobile View
+  if (!mdUp) {
+    return (
+      <>
+        <Box sx={{ mb: 3 }}>
+          <Select
+            value={selectedFilter}
+            onChange={(e) => setSelectedFilter(e.target.value)}
+            displayEmpty
+            sx={{
+              height: 40,
+              borderRadius: 1,
+              pb: 0.3,
+              color: '#1340FF',
+              fontSize: 14,
+              bgcolor: '#fff',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              border: '1px solid #e7e7e7',
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: 'none',
+              },
+            }}
+          >
+            <MenuItem value="all" sx={{ width: 180 }}>
+              <Stack direction="row" alignItems="center">
+                <Typography fontWeight={600}>All</Typography>
+              </Stack>
+            </MenuItem>
+            <MenuItem value="pending">
+              <Stack direction="row" alignItems="center">
+                <Typography fontWeight={600}>Pending</Typography>
+              </Stack>
+            </MenuItem>
+            <MenuItem value="approved_pitch">
+              <Stack direction="row" alignItems="center">
+                <Typography fontWeight={600}>Approved</Typography>
+              </Stack>
+            </MenuItem>
+            <MenuItem value="rejected">
+              <Stack direction="row" alignItems="center">
+                <Typography fontWeight={600}>Rejected</Typography>
+              </Stack>
+            </MenuItem>
+          </Select>
+        </Box>
+
+        <Box>
+          {selectedFilter === 'all' ? (
+            <>
+              {pendingCount > 0 && (
+                <MobileSection
+                  title="PENDING REVIEW"
+                  count={pendingCount}
+                  color="#FFC702"
+                  creators={groupedCreators.pending}
+                  sectionKey="pending"
+                  isExpanded={expandedSections.pending}
+                  onToggle={toggleSection}
+                  onViewPitch={handleViewPitch}
+                  formatFollowerCount={formatFollowerCount}
+                />
+              )}
+              {approvedPitchCount > 0 && (
+                <MobileSection
+                  title="APPROVED"
+                  count={approvedPitchCount}
+                  color="#1ABF66"
+                  creators={groupedCreators.approved}
+                  sectionKey="approved"
+                  isExpanded={expandedSections.approved}
+                  onToggle={toggleSection}
+                  onViewPitch={handleViewPitch}
+                  formatFollowerCount={formatFollowerCount}
+                />
+              )}
+              {rejectedCount > 0 && (
+                <MobileSection
+                  title="REJECTED"
+                  count={rejectedCount}
+                  color="#D4321C"
+                  creators={groupedCreators.rejected}
+                  sectionKey="rejected"
+                  isExpanded={expandedSections.rejected}
+                  onToggle={toggleSection}
+                  onViewPitch={handleViewPitch}
+                  formatFollowerCount={formatFollowerCount}
+                />
+              )}
+              {activeCount === 0 && (
+                <Box sx={{ py: 8, textAlign: 'center' }}>
+                  <EmptyContent title="No creators found" filled />
+                </Box>
+              )}
+            </>
+          ) : selectedFilter === 'pending' ? (
+            <MobileSection
+              title="PENDING REVIEW"
+              count={pendingCount}
+              color="#FFC702"
+              creators={groupedCreators.pending}
+              sectionKey="pending"
+              isExpanded={expandedSections.pending}
+              onToggle={toggleSection}
+              onViewPitch={handleViewPitch}
+              formatFollowerCount={formatFollowerCount}
+            />
+          ) : selectedFilter === 'approved_pitch' ? (
+            <MobileSection
+              title="APPROVED"
+              count={approvedPitchCount}
+              color="#1ABF66"
+              creators={groupedCreators.approved}
+              sectionKey="approved"
+              isExpanded={expandedSections.approved}
+              onToggle={toggleSection}
+              onViewPitch={handleViewPitch}
+              formatFollowerCount={formatFollowerCount}
+            />
+          ) : (
+            <MobileSection
+              title="REJECTED"
+              count={rejectedCount}
+              color="#D4321C"
+              creators={groupedCreators.rejected}
+              sectionKey="rejected"
+              isExpanded={expandedSections.rejected}
+              onToggle={toggleSection}
+              onViewPitch={handleViewPitch}
+              formatFollowerCount={formatFollowerCount}
+            />
+          )}
+        </Box>
+
+        <PitchModal
+          pitch={selectedPitch}
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          onUpdate={handlePitchUpdate}
+          campaign={campaign}
+        />
+
+        <MediaKitModal
+          open={mediaKit.value}
+          handleClose={mediaKit.onFalse}
+          creatorId={selectedPitch?.user?.creator?.id}
+        />
+      </>
+    );
+  }
+
+  // Desktop View
   return (
     <>
       <Button
@@ -740,9 +933,184 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   );
 };
 
+const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
+  const followerCount = pitch?.followerCount;
+  const engagementRate = pitch?.engagementRate;
+
+  return (
+    <Card
+      sx={{
+        mb: 1.5,
+        borderRadius: 2,
+        boxShadow: '0 2px 0px 0px rgba(0,0,0,0.08)',
+        border: '1px solid #f0f0f0',
+      }}
+    >
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Stack flex={1} direction="row" spacing={1}>
+          <Stack flex={3} direction="row" spacing={1}>
+            <Avatar
+              src={pitch?.user?.photoURL}
+              alt={pitch?.user?.name || 'Creator avatar'}
+              sx={{ width: 35, height: 35 }}
+            />
+
+            <Stack>
+              <Typography variant="subtitle2" fontWeight="bold" lineHeight={1.4} sx={{ color: '#221f20' }}>
+                {pitch?.user?.name || 'Unknown Creator'}
+              </Typography>
+
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Iconify icon="mdi:instagram" width={14} sx={{ color: '#637381' }} />
+                <Typography variant="subtitle" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                  {pitch?.username || 'N/A'}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Stack>
+
+          <Button
+            onClick={() => onViewPitch(pitch)}
+            sx={{
+              flex: 1,
+              px: 1,
+              height: 30,
+              color: '#203ff5',
+              border: '1px solid #E7E7E7',
+              boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+              textTransform: 'none',
+              fontSize: 12,
+              fontWeight: 600,
+              '&:hover': {
+                border: '1px solid #E7E7E7',
+                bgcolor: '#E7E7E7',
+              },
+            }}
+          >
+            View Profile
+          </Button>
+        </Stack>
+
+        <Stack direction="row" spacing={2} ml={5.2} sx={{ mt: 0.5 }}>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <Iconify icon="streamline:user-multiple-group" width={12} sx={{ color: '#637381' }} />
+            <Typography variant="caption" sx={{ color: '#637381', fontSize: 12, pt: 0.2 }}>
+              {formatFollowerCount(followerCount)} Followers
+            </Typography>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <Iconify icon="mage:chart-up-b" width={16} sx={{ color: '#637381' }} />
+            <Typography variant="caption" sx={{ color: '#637381', fontSize: 12, pt: 0.2 }}>
+              {typeof engagementRate === 'number' ? `${(engagementRate * 100).toFixed(2)}%` : 'N/A'} Engagement
+            </Typography>
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
+const MobileSection = ({
+  title,
+  count,
+  color,
+  creators: sectionCreators,
+  sectionKey,
+  isExpanded,
+  onToggle,
+  onViewPitch,
+  formatFollowerCount,
+}) => (
+  <Box sx={{ mb: 2 }}>
+    <Button
+      fullWidth
+      onClick={() => onToggle(sectionKey)}
+      endIcon={
+        <Iconify
+          icon={isExpanded ? 'tabler:chevron-down' : 'tabler:chevron-right'}
+          width={20}
+          color="#000"
+        />
+      }
+      sx={{
+        px: 1,
+        pt: 0.5,
+        py: 1,
+        maxHeight: 50,
+        justifyContent: 'space-between',
+        bgcolor: '#fff',
+        color,
+        boxShadow: `0px -2px 0px 0px ${color} inset`,
+        borderRadius: 0.8,
+        border: `1px solid ${color}`,
+        textTransform: 'none',
+        fontWeight: 600,
+        fontSize: 14,
+        '&:hover': {
+          bgcolor: '#fff',
+          boxShadow: `0px -3px 0px 0px ${color} inset`,
+        },
+      }}
+    >
+      {title} ({count})
+    </Button>
+
+    <Collapse in={isExpanded}>
+      <Box sx={{ mt: 1.5, px: 0.5 }}>
+        {sectionCreators.length === 0 ? (
+          <Box sx={{ py: 4, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No creators in this category
+            </Typography>
+          </Box>
+        ) : (
+          sectionCreators.map((sectionPitch) => (
+            <MobileCreatorCard
+              key={sectionPitch.id}
+              pitch={sectionPitch}
+              onViewPitch={onViewPitch}
+              formatFollowerCount={formatFollowerCount}
+            />
+          ))
+        )}
+      </Box>
+    </Collapse>
+  </Box>
+);
+
 export default CampaignCreatorMasterListClient;
 
 CampaignCreatorMasterListClient.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+};
+
+// Shared prop-type shape for pitch objects
+const pitchPropType = PropTypes.shape({
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  user: PropTypes.shape({
+    name: PropTypes.string,
+    username: PropTypes.string,
+    photoURL: PropTypes.string,
+    followerCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    engagementRate: PropTypes.number,
+  }),
+});
+
+MobileCreatorCard.propTypes = {
+  pitch: pitchPropType.isRequired,
+  onViewPitch: PropTypes.func.isRequired,
+  formatFollowerCount: PropTypes.func.isRequired,
+};
+
+MobileSection.propTypes = {
+  title: PropTypes.string.isRequired,
+  count: PropTypes.number.isRequired,
+  color: PropTypes.string.isRequired,
+  creators: PropTypes.arrayOf(pitchPropType).isRequired,
+  sectionKey: PropTypes.string.isRequired,
+  isExpanded: PropTypes.bool.isRequired,
+  onToggle: PropTypes.func.isRequired,
+  onViewPitch: PropTypes.func.isRequired,
+  formatFollowerCount: PropTypes.func.isRequired,
 };
