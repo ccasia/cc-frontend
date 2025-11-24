@@ -67,6 +67,7 @@ const ClientDashboard = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const campaignsPerPage = 3; // 3 campaigns per page for table, 1 row (3 cards) for card view
+  const [activeCampaignId, setActiveCampaignId] = useState(null);
 
   const checkClientCompanyAndProfile = React.useCallback(async () => {
     try {
@@ -912,151 +913,223 @@ const ClientDashboard = () => {
 
       {/* Campaign list - List view */}
       {!isLoading && campaigns && campaigns.length > 0 && viewMode === 'table' && (
-        <Stack mb={2} spacing={2}>
+        <Stack mb={2}>
           {currentCampaigns.map((campaign) => (
             <Box
               key={campaign.id}
-              onClick={() => handleViewCampaign(campaign.id)}
+              onClick={() => setActiveCampaignId(campaign.id)}
+              onMouseEnter={() => setActiveCampaignId(campaign.id)}
+              onMouseLeave={() => setActiveCampaignId(null)}
+              onFocus={() => setActiveCampaignId(campaign.id)}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setActiveCampaignId(null);
+                }
+              }}
+              tabIndex={0}
               sx={{
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                flexDirection: 'column',
                 px: 2,
-                pb: 2,
+                py: 2,
                 borderBottom: '1px solid #E7E7E7',
                 bgcolor: '#FFFFFF',
                 cursor: 'pointer',
+                transition: 'background-color 0.2s ease',
                 '&:hover': {
                   bgcolor: '#F8F9FA',
                 },
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
-                <Avatar
-                  src={campaign?.campaignBrief?.images?.[0] || campaign.brand?.logo || campaign.company?.logo || clientCompanyLogo || ''}
-                  sx={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: '50%',
-                    backgroundColor: '#e0e0e0',
-                    color: '#666',
-                    fontSize: '1rem',
-                    flexShrink: 0,
-                  }}
-                >
-                  {campaign.name?.charAt(0)}
-                </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
+                  <Avatar
+                    src={campaign?.campaignBrief?.images?.[0] || campaign.brand?.logo || campaign.company?.logo || clientCompanyLogo || ''}
                     sx={{
-                      fontWeight: 700,
-                      fontSize: 14,
-                      color: '#333',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      mb: 0.3,
+                      width: 38,
+                      height: 38,
+                      borderRadius: '50%',
+                      backgroundColor: '#e0e0e0',
+                      color: '#666',
+                      fontSize: '1rem',
+                      flexShrink: 0,
                     }}
                   >
-                    {campaign.name}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      color: '#8E8E93',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Iconify icon="mdi:calendar-blank-outline" width={12} sx={{ mr: 0.5, mb: -0.2 }} />
-                    {campaign.campaignBrief?.startDate && campaign.campaignBrief?.endDate
-                      ? `${fDate(campaign.campaignBrief.startDate)} - ${fDate(campaign.campaignBrief.endDate)}`
-                      : 'Dates TBD'}
-                  </Typography>
+                    {campaign.name?.charAt(0)}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: '#333',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        mb: 0.3,
+                      }}
+                    >
+                      {campaign.name}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        color: '#8E8E93',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Iconify icon="mdi:calendar-blank-outline" width={12} sx={{ mr: 0.5, mb: -0.2 }} />
+                      {campaign.campaignBrief?.startDate && campaign.campaignBrief?.endDate
+                        ? `${fDate(campaign.campaignBrief.startDate)} - ${fDate(campaign.campaignBrief.endDate)}`
+                        : 'Dates TBD'}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ flexShrink: 0, ml: 1 }}>
+                  {(() => {
+                    if (
+                      campaign.status === 'PENDING_CSM_REVIEW' ||
+                      campaign.status === 'SCHEDULED' ||
+                      campaign.status === 'PENDING_ADMIN_ACTIVATION'
+                    ) {
+                      return (
+                        <Chip
+                          label="PENDING"
+                          size="small"
+                          sx={{
+                            borderRadius: '4px',
+                            border: '1px solid #FFC702',
+                            boxShadow: '0px -2px 0px 0px #FFC702 inset',
+                            backgroundColor: '#FFFFFF',
+                            color: '#FFC702',
+                            fontWeight: 600,
+                            fontSize: 12,
+                            height: 30,
+                            minWidth: 70,
+                            '&:hover': {
+                              backgroundColor: '#FFF',
+                            },
+                          }}
+                        />
+                      );
+                    }
+                    if (campaign.status === 'INACTIVE') {
+                      return (
+                        <Chip
+                          label="INACTIVE"
+                          size="small"
+                          sx={{
+                            borderRadius: '4px',
+                            border: '1px solid #8E8E93',
+                            boxShadow: '0px -2px 0px 0px #8E8E93 inset',
+                            backgroundColor: '#FFFFFF',
+                            color: '#8E8E93',
+                            fontWeight: 600,
+                            fontSize: 12,
+                            height: 30,
+                            minWidth: 70,
+                            '&:hover': {
+                              backgroundColor: '#FFF',
+                            },
+                          }}
+                        />
+                      );
+                    }
+                    return (
+                      <Chip
+                        label={campaign.status}
+                        size="small"
+                        sx={{
+                          borderRadius: '4px',
+                          border: '1px solid #E7E7E7',
+                          boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                          backgroundColor: '#FFFFFF',
+                          fontWeight: 600,
+                          fontSize: 12,
+                          height: 30,
+                          minWidth: 70,
+                          '&:hover': {
+                            backgroundColor: '#FFF',
+                          },
+                          ...(campaign.status === 'ACTIVE' && {
+                            color: '#1abf66',
+                            border: '1px solid #1abf66',
+                            boxShadow: '0px -2px 0px 0px #1abf66 inset',
+                          }),
+                          ...(campaign.status === 'DRAFT' && {
+                            color: '#ff9800',
+                            border: '1px solid #ff9800',
+                            boxShadow: '0px -2px 0px 0px #ff9800 inset',
+                          }),
+                          ...(campaign.status === 'COMPLETED' && {
+                            color: '#3366FF',
+                            border: '1px solid #3366FF',
+                            boxShadow: '0px -2px 0px 0px #3366FF inset',
+                          }),
+                          ...(campaign.status === 'PAUSED' && {
+                            color: '#f44336',
+                            border: '1px solid #f44336',
+                            boxShadow: '0px -2px 0px 0px #f44336 inset',
+                          }),
+                        }}
+                      />
+                    );
+                  })()}
                 </Box>
               </Box>
-              <Box sx={{ flexShrink: 0, ml: 1 }}>
-                {(() => {
-                  if (
-                    campaign.status === 'PENDING_CSM_REVIEW' ||
-                    campaign.status === 'SCHEDULED' ||
-                    campaign.status === 'PENDING_ADMIN_ACTIVATION'
-                  ) {
-                    return (
-                      <Chip
-                        label="PENDING"
-                        size="small"
-                        sx={{
-                          borderRadius: '4px',
-                          border: '1px solid #FFC702',
-                          boxShadow: '0px -2px 0px 0px #FFC702 inset',
-                          backgroundColor: '#FFFFFF',
-                          color: '#FFC702',
-                          fontWeight: 600,
-                          fontSize: 12,
-                          height: 30,
-                          minWidth: 70,
-                        }}
-                      />
-                    );
-                  }
-                  if (campaign.status === 'INACTIVE') {
-                    return (
-                      <Chip
-                        label="INACTIVE"
-                        size="small"
-                        sx={{
-                          borderRadius: '4px',
-                          border: '1px solid #8E8E93',
-                          boxShadow: '0px -2px 0px 0px #8E8E93 inset',
-                          backgroundColor: '#FFFFFF',
-                          color: '#8E8E93',
-                          fontWeight: 600,
-                          fontSize: 12,
-                          height: 30,
-                          minWidth: 70,
-                        }}
-                      />
-                    );
-                  }
-                  return (
-                    <Chip
-                      label={campaign.status}
-                      size="small"
-                      sx={{
-                        borderRadius: '4px',
-                        border: '1px solid #E7E7E7',
-                        boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                        backgroundColor: '#FFFFFF',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        height: 30,
-                        minWidth: 70,
-                        ...(campaign.status === 'ACTIVE' && {
-                          color: '#1abf66',
-                          border: '1px solid #1abf66',
-                          boxShadow: '0px -2px 0px 0px #1abf66 inset',
-                        }),
-                        ...(campaign.status === 'DRAFT' && {
-                          color: '#ff9800',
-                          border: '1px solid #ff9800',
-                          boxShadow: '0px -2px 0px 0px #ff9800 inset',
-                        }),
-                        ...(campaign.status === 'COMPLETED' && {
-                          color: '#3366FF',
-                          border: '1px solid #3366FF',
-                          boxShadow: '0px -2px 0px 0px #3366FF inset',
-                        }),
-                        ...(campaign.status === 'PAUSED' && {
-                          color: '#f44336',
-                          border: '1px solid #f44336',
-                          boxShadow: '0px -2px 0px 0px #f44336 inset',
-                        }),
-                      }}
-                    />
-                  );
-                })()}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                  opacity: activeCampaignId === campaign.id ? 1 : 0,
+                  maxHeight: activeCampaignId === campaign.id ? 48 : 0,
+                  mt: activeCampaignId === campaign.id ? 1.5 : 0,
+                  pointerEvents: activeCampaignId === campaign.id ? 'auto' : 'none',
+                  overflow: 'hidden',
+                }}
+              >
+                <Button
+                  variant="contained"
+                  color="inherit"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleViewCampaign(campaign.id);
+                  }}
+                  sx={{
+                    width: '100%',
+                    maxWidth: 150,
+                    borderRadius: '6px',
+                    border: '1px solid #E7E7E7',
+                    pt: 0.5,
+                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                    backgroundColor: '#FFFFFF',
+                    color: '#1340FF',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#F0F4FF',
+                      border: '1px solid #E7E7E7',
+                      boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                    },
+                    '&:active': {
+                      boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                      transform: 'translateY(1px)',
+                    },
+                  }}
+                >
+                  View Campaign
+                </Button>
               </Box>
             </Box>
           ))}
