@@ -1267,7 +1267,7 @@ const ClientDashboard = () => {
 
       {/* Pagination for Mobile View */}
       {totalPages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
           <Stack direction="row" spacing={2} alignItems="center">
             <Typography
               onClick={() => handlePageChange(null, Math.max(1, currentPage - 1))}
