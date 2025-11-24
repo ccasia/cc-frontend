@@ -63,33 +63,27 @@ const ClientDashboard = () => {
     const savedViewMode = localStorage.getItem('clientDashboardViewMode');
     return savedViewMode || 'table'; // fallback to table if no preference saved
   });
-  const [anchorEl, setAnchorEl] = useState(null);
-  const isChatopen = Boolean(anchorEl);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const campaignsPerPage = 3; // 3 campaigns per page for table, 1 row (3 cards) for card view
 
-  useEffect(() => {
-    checkClientCompanyAndProfile();
-  }, []);
-
-  const checkClientCompanyAndProfile = async () => {
+  const checkClientCompanyAndProfile = React.useCallback(async () => {
     try {
       setIsCheckingCompany(true);
       const response = await axiosInstance.get(endpoints.client.checkCompany);
-      const { hasCompany, company } = response.data;
+      const { hasCompany: userHasCompany, company: userCompany } = response.data;
 
-      setHasCompany(hasCompany);
-      setCompany(company);
+      setHasCompany(userHasCompany);
+      setCompany(userCompany);
 
       // Handle company dialog
-      if (!hasCompany) {
+      if (!userHasCompany) {
         setOpenCompanyDialog(true);
       }
 
       // Handle profile completion modal
-      if (!hasCompany) {
+      if (!userHasCompany) {
         // Check if we've already shown the modal this session
         const hasShownModal = sessionStorage.getItem('profileModalShown');
         if (hasShownModal !== 'true') {
@@ -113,11 +107,15 @@ const ClientDashboard = () => {
     } finally {
       setIsCheckingCompany(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkClientCompanyAndProfile();
+  }, [checkClientCompanyAndProfile]);
 
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
   // Fetch V3 pitches (creator master list items)
-  const { pitches: allPitches, isLoading: pitchesLoading } = useGetV3Pitches();
+  const { pitches: allPitches } = useGetV3Pitches();
 
   // Client campaign ids for scoping counts to "their own" campaigns
   const clientCampaignIds = React.useMemo(() => {
@@ -128,7 +126,6 @@ const ClientDashboard = () => {
     totalCredits,
     usedCredits,
     remainingCredits,
-    subscription,
     subscriptionForValidity,
     isLoading: creditsLoading,
   } = useGetClientCredits();
@@ -208,7 +205,7 @@ const ClientDashboard = () => {
     } catch (e) {
       console.warn('[ClientDashboard] debug log error:', e);
     }
-  }, [campaigns, allPitches]);
+  }, [campaigns, allPitches, clientCampaignIds]);
 
   const handleCompanyCreated = (newCompany) => {
     setHasCompany(true);
@@ -238,39 +235,6 @@ const ClientDashboard = () => {
     router.push(paths.dashboard.campaign.details(id));
   };
 
-  const handleRefreshCampaigns = () => {
-    mutate(); // Refresh campaigns data
-    enqueueSnackbar('Refreshing campaigns...', { variant: 'info' });
-  };
-
-  const handleCheckCampaignAdmin = async () => {
-    try {
-      const response = await axiosInstance.get('/api/campaign/checkCampaignAdmin');
-      enqueueSnackbar(`Found ${response.data.length} campaign associations`, {
-        variant: 'success',
-      });
-      console.log('Campaign admin entries:', response.data);
-    } catch (error) {
-      console.error('Error checking campaign admin:', error);
-      enqueueSnackbar('Error checking campaign associations', { variant: 'error' });
-    }
-  };
-
-  const handleAddToAllCampaigns = async () => {
-    try {
-      const response = await axiosInstance.post('/api/campaign/addClientToCampaignAdmin');
-      enqueueSnackbar(`Processed ${response.data.results.length} campaigns`, {
-        variant: 'success',
-      });
-      console.log('Add to campaigns result:', response.data);
-      // Refresh campaigns data after adding
-      mutate();
-    } catch (error) {
-      console.error('Error adding to campaigns:', error);
-      enqueueSnackbar('Error adding to campaigns', { variant: 'error' });
-    }
-  };
-
   // Calculate pagination
   const indexOfLastCampaign = currentPage * campaignsPerPage;
   const indexOfFirstCampaign = indexOfLastCampaign - campaignsPerPage;
@@ -290,7 +254,7 @@ const ClientDashboard = () => {
     for (
       let i = Math.max(2, currentPage - delta);
       i <= Math.min(totalPages - 1, currentPage + delta);
-      i++
+      i += 1
     ) {
       range.push(i);
     }
@@ -1013,76 +977,86 @@ const ClientDashboard = () => {
                 </Box>
               </Box>
               <Box sx={{ flexShrink: 0, ml: 1 }}>
-                {campaign.status === 'PENDING_CSM_REVIEW' ||
-                campaign.status === 'SCHEDULED' ||
-                campaign.status === 'PENDING_ADMIN_ACTIVATION' ? (
-                  <Chip
-                    label="PENDING"
-                    size="small"
-                    sx={{
-                      borderRadius: '4px',
-                      border: '1px solid #FFC702',
-                      boxShadow: '0px -2px 0px 0px #FFC702 inset',
-                      backgroundColor: '#FFFFFF',
-                      color: '#FFC702',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      height: 30,
-                      minWidth: 70,
-                    }}
-                  />
-                ) : campaign.status === 'INACTIVE' ? (
-                  <Chip
-                    label="INACTIVE"
-                    size="small"
-                    sx={{
-                      borderRadius: '4px',
-                      border: '1px solid #8E8E93',
-                      boxShadow: '0px -2px 0px 0px #8E8E93 inset',
-                      backgroundColor: '#FFFFFF',
-                      color: '#8E8E93',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      height: 30,
-                      minWidth: 70,
-                    }}
-                  />
-                ) : (
-                  <Chip
-                    label={campaign.status}
-                    size="small"
-                    sx={{
-                      borderRadius: '4px',
-                      border: '1px solid #E7E7E7',
-                      boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                      backgroundColor: '#FFFFFF',
-                      fontWeight: 600,
-                      fontSize: 12,
-                      height: 30,
-                      minWidth: 70,
-                      ...(campaign.status === 'ACTIVE' && {
-                        color: '#1abf66',
-                        border: '1px solid #1abf66',
-                        boxShadow: '0px -2px 0px 0px #1abf66 inset',
-                      }),
-                      ...(campaign.status === 'DRAFT' && {
-                        color: '#ff9800',
-                        border: '1px solid #ff9800',
-                        boxShadow: '0px -2px 0px 0px #ff9800 inset',
-                      }),
-                      ...(campaign.status === 'COMPLETED' && {
-                        color: '#3366FF',
-                        border: '1px solid #3366FF',
-                        boxShadow: '0px -2px 0px 0px #3366FF inset',
-                      }),
-                      ...(campaign.status === 'PAUSED' && {
-                        color: '#f44336',
-                        border: '1px solid #f44336',
-                        boxShadow: '0px -2px 0px 0px #f44336 inset',
-                      }),
-                    }}
-                  />
-                )}
+                {(() => {
+                  if (
+                    campaign.status === 'PENDING_CSM_REVIEW' ||
+                    campaign.status === 'SCHEDULED' ||
+                    campaign.status === 'PENDING_ADMIN_ACTIVATION'
+                  ) {
+                    return (
+                      <Chip
+                        label="PENDING"
+                        size="small"
+                        sx={{
+                          borderRadius: '4px',
+                          border: '1px solid #FFC702',
+                          boxShadow: '0px -2px 0px 0px #FFC702 inset',
+                          backgroundColor: '#FFFFFF',
+                          color: '#FFC702',
+                          fontWeight: 600,
+                          fontSize: 12,
+                          height: 30,
+                          minWidth: 70,
+                        }}
+                      />
+                    );
+                  }
+                  if (campaign.status === 'INACTIVE') {
+                    return (
+                      <Chip
+                        label="INACTIVE"
+                        size="small"
+                        sx={{
+                          borderRadius: '4px',
+                          border: '1px solid #8E8E93',
+                          boxShadow: '0px -2px 0px 0px #8E8E93 inset',
+                          backgroundColor: '#FFFFFF',
+                          color: '#8E8E93',
+                          fontWeight: 600,
+                          fontSize: 12,
+                          height: 30,
+                          minWidth: 70,
+                        }}
+                      />
+                    );
+                  }
+                  return (
+                    <Chip
+                      label={campaign.status}
+                      size="small"
+                      sx={{
+                        borderRadius: '4px',
+                        border: '1px solid #E7E7E7',
+                        boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                        backgroundColor: '#FFFFFF',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        height: 30,
+                        minWidth: 70,
+                        ...(campaign.status === 'ACTIVE' && {
+                          color: '#1abf66',
+                          border: '1px solid #1abf66',
+                          boxShadow: '0px -2px 0px 0px #1abf66 inset',
+                        }),
+                        ...(campaign.status === 'DRAFT' && {
+                          color: '#ff9800',
+                          border: '1px solid #ff9800',
+                          boxShadow: '0px -2px 0px 0px #ff9800 inset',
+                        }),
+                        ...(campaign.status === 'COMPLETED' && {
+                          color: '#3366FF',
+                          border: '1px solid #3366FF',
+                          boxShadow: '0px -2px 0px 0px #3366FF inset',
+                        }),
+                        ...(campaign.status === 'PAUSED' && {
+                          color: '#f44336',
+                          border: '1px solid #f44336',
+                          boxShadow: '0px -2px 0px 0px #f44336 inset',
+                        }),
+                      }}
+                    />
+                  );
+                })()}
               </Box>
             </Box>
           ))}
@@ -1519,7 +1493,7 @@ const ClientDashboard = () => {
                   <Tooltip title="Waiting for admin approval">
                     <Chip
                       label={
-                        <Box display={'flex'} alignItems={'center'} pb={0.2} gap={0.5}>
+                        <Box display="flex" alignItems="center" pb={0.2} gap={0.5}>
                           PENDING
                           <Iconify 
                             icon="mdi:information-outline" 
@@ -1951,27 +1925,6 @@ const ClientDashboard = () => {
       )}
     </Box>
   );
-
-  const BoxStyle = {
-    border: '1px solid #e0e0e0',
-    borderRadius: 2,
-    p: 3,
-    mt: -1,
-    mb: 3,
-    width: '100%',
-    '& .header': {
-      borderBottom: '1px solid #e0e0e0',
-      mx: -3,
-      mt: -1,
-      mb: 2,
-      pb: 1.5,
-      pt: -1,
-      px: 1.8,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 1,
-    },
-  };
 
   const renderSidebar = (
     <Stack spacing={-3}>
