@@ -1,8 +1,10 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
 import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 
+// import CustomRHFSelect from './custom-rhf-select'; // Will reuse RHFMultiSelect hook instead
 import { DatePicker } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, TextField, Typography } from '@mui/material';
 
@@ -15,12 +17,7 @@ import { objectivesLists } from 'src/contants/objectives';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Label from 'src/components/label';
-import Iconify from 'src/components/iconify';
-import { RHFTextField } from 'src/components/hook-form';
-// import CustomRHFSelect from './custom-rhf-select'; // Will reuse RHFMultiSelect hook instead
-// import CustomRHFMultiSelect from './custom-rhf-multi-select'; // Will reuse RHFMultiSelect hook instead
-import { RHFMultiSelect } from 'src/components/hook-form';
-import { fontSize } from '@mui/system';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -43,6 +40,12 @@ const FormField = ({ label, children, required = true }) => (
   </Stack>
 );
 
+FormField.propTypes = {
+  label: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+  required: PropTypes.bool,
+};
+
 const ClientCampaignGeneralInfo = () => {
   const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
   const { setValue, watch } = useFormContext();
@@ -57,7 +60,9 @@ const ClientCampaignGeneralInfo = () => {
   useEffect(() => {
     try {
       localStorage.setItem('clientAvailableCredits', String(availableCredits || 0));
-    } catch (e) {}
+    } catch (e) {
+      // Ignore localStorage persistence errors
+    }
   }, [availableCredits]);
 
   // Compute exceed state and notify parent
@@ -65,11 +70,22 @@ const ClientCampaignGeneralInfo = () => {
   const requestedCredits = Number(credits ?? 0);
   const exceedOnly = (numericAvailable <= 0 && requestedCredits > 0) || (numericAvailable > 0 && requestedCredits > numericAvailable);
   const blockInvalid = numericAvailable <= 0 || requestedCredits <= 0 || exceedOnly;
+  let creditHelperText = '';
+
+  if (exceedOnly) {
+    if (numericAvailable <= 0) {
+      creditHelperText = 'No credits available';
+    } else {
+      creditHelperText = `Exceeds limits: available ${numericAvailable}`;
+    }
+  }
 
   useEffect(() => {
     try {
       window.dispatchEvent(new CustomEvent('client-campaign-credits-error', { detail: blockInvalid }));
-    } catch (e) {}
+    } catch (e) {
+      // Ignore failures when notifying window listeners
+    }
   }, [blockInvalid]);
 
   useEffect(() => {
@@ -201,8 +217,8 @@ const ClientCampaignGeneralInfo = () => {
                       max: numericAvailable > 0 ? numericAvailable : 0,
                     },
                   }}
-                  helperText={exceedOnly ? (numericAvailable <= 0 ? 'No credits available' : `Exceeds limits: available ${numericAvailable}`) : ''}
-                  error={exceedOnly}
+                  helperText={creditHelperText}
+                  error={Boolean(creditHelperText)}
                   sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
                 />
               </FormField>
