@@ -37,6 +37,7 @@ import PitchModal from './pitch-modal';
 import MediaKitModal from './media-kit-modal';
 import PitchModalMobile from './pitch-modal-mobile';
 import CreatorMasterListRow from './creator-master-list-row';
+import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 // Status display helper function
 const getStatusInfo = (pitch) => {
@@ -45,7 +46,7 @@ const getStatusInfo = (pitch) => {
   if (pitch.isShortlisted) {
     status = 'APPROVED';
   } else {
-    status = pitch.isV3 ? pitch.displayStatus || pitch.status : pitch.status;
+    status = pitch.displayStatus || pitch.status;
     // Normalize legacy statuses to new format
     if (status === 'undecided') status = 'PENDING_REVIEW';
     if (status === 'approved') status = 'APPROVED';
@@ -83,15 +84,6 @@ const getStatusInfo = (pitch) => {
     draft: { color: '#637381', label: 'DRAFT', normalizedStatus: 'DRAFT' },
   };
 
-  // Special case for pitch approved vs regular approved
-  if (status === 'APPROVED' && !pitch.isShortlisted && !pitch.isV3) {
-    return {
-      color: '#1ABF66',
-      label: 'PITCH APPROVED',
-      normalizedStatus: 'APPROVED',
-    };
-  }
-
   return (
     statusMap[status] || {
       color: '#637381',
@@ -118,13 +110,13 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   });
 
   // Fetch V3 pitches for client-created campaigns OR admin-created v4 campaigns
-  const shouldFetchV3Pitches =
+  const fetchV3Pitches =
     campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
   const {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
     mutate: v3PitchesMutate,
-  } = useGetV3Pitches(shouldFetchV3Pitches ? campaign?.id : null);
+  } = useGetV3Pitches(fetchV3Pitches ? campaign?.id : null);
 
   // Create a list of creators from the shortlisted array and pitches
   const creators = useMemo(() => {
@@ -134,39 +126,37 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
       return (
         v3Pitches
           .map((pitch) => ({
-              id: pitch.userId || pitch.id,
+              pitchId: pitch.id,
               user: {
                 id: pitch.userId || pitch.user?.id,
                 name: pitch.user?.name,
-                username: pitch.user?.instagramUser?.username,
+                email: pitch.user?.email,
+                ig_username: pitch.user?.creator?.instagramUser?.username,
+                tiktok_username: pitch.user?.creator?.tiktokUser?.username,
                 photoURL: pitch.user?.photoURL,
                 status: pitch.user?.status || 'active',
                 creator: pitch.user?.creator,
                 engagementRate: pitch.user?.instagramUser?.engagement_rate,
                 followerCount: pitch.user?.instagramUser?.followers_count,
-                guestProfileLink: pitch.user?.guestProfileLink,
+                profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
               },
               status: pitch.displayStatus || pitch.status || 'undecided',
               displayStatus: pitch.displayStatus || pitch.status || 'undecided',
               createdAt: pitch.createdAt || new Date().toISOString(),
               type: pitch.type || 'text',
               content: pitch.content || pitch.user?.creator?.about || 'No content available',
-              isShortlisted: false,
-              pitchId: pitch.id,
-              isV3: true,
               adminComments: pitch.adminComments,
               rejectionReason: pitch.rejectionReason,
               customRejectionText: pitch.customRejectionText,
               username: pitch.username,
               followerCount: pitch.followerCount,
               engagementRate: pitch.engagementRate,
+              isShortlisted: false,
             }))
-          // FIX: Only require user to exist, not user.creator
           .filter((creator) => !!creator.user && !!creator.user.id)
       );
     }
 
-    // For admin-created campaigns, use V2 approach
     // Get creators from shortlisted
     const shortlistedCreators = campaign.shortlisted
       ? campaign.shortlisted
@@ -175,20 +165,20 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             user: {
               id: item.userId,
               name: item.user?.name,
-              username: item.user?.instagramUser?.username,
+              ig_username: item.user?.instagramUser?.username,
+              tiktok_username: item.user?.tiktokUser?.username,
               photoURL: item.user?.photoURL,
               status: item.user?.status || 'active',
               creator: item.user?.creator,
               engagementRate: item.user?.instagramUser?.engagement_rate,
               followerCount: item.user?.instagramUser?.followers_count,
-              guestProfileLink: item.user?.guestProfileLink,
+              profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
             },
             status: 'approved', // Shortlisted creators are approved
             createdAt: item.shortlisted_date || new Date().toISOString(),
             type: 'text',
             content: item.user?.creator?.about || 'No content available',
             isShortlisted: true,
-            isV3: false,
           }))
           .filter((creator) => creator.user && creator.user.creator)
       : [];
@@ -202,17 +192,18 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               !shortlistedCreators.some((sc) => sc.id === pitch.userId)
           )
           .map((pitch) => ({
-            id: pitch.userId || pitch.id,
+            pitchId: pitch.id,
             user: {
               id: pitch.userId || pitch.user?.id,
               name: pitch.user?.name,
-              username: pitch.user?.instagramUser?.username || pitch.user?.tiktokUser?.username,
+              ig_username: pitch.user?.creator?.instagramUser?.username,
+              tiktok_username: pitch.user?.creator?.tiktokUser?.username,
               photoURL: pitch.user?.photoURL,
               status: pitch.user?.status || 'active',
               creator: pitch.user?.creator,
               engagementRate: pitch.user?.instagramUser?.engagement_rate,
               followerCount: pitch.user?.instagramUser?.followers_count,
-              guestProfileLink: pitch.user?.guestProfileLink,
+              profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
             },
             status: pitch.status || 'undecided',
             createdAt: pitch.createdAt || new Date().toISOString(),
@@ -246,6 +237,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
+  console.log('List of creators: ', creators)
+
   const filteredCreators = useMemo(() => {
     let filtered = creators;
 
@@ -269,9 +262,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     if (search) {
       filtered = filtered.filter(
         (elem) =>
-          elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
-          (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
-          (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
+          elem.user.name?.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -946,8 +937,22 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 };
 
 const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
-  const followerCount = pitch?.followerCount;
-  const engagementRate = pitch?.engagementRate;
+  const resolveMetric = (...values) => values.find((value) => value != null);
+  const creatorProfile = pitch?.user?.creator || {};
+  const instagramStats = creatorProfile.instagramUser || {};
+  const tiktokStats = creatorProfile.tiktokUser || {};
+
+  const followerCount = resolveMetric(
+    instagramStats.followers_count,
+    tiktokStats.follower_count,
+    pitch?.followerCount,
+  );
+
+  const engagementRate = resolveMetric(
+    instagramStats.engagement_rate,
+    tiktokStats.engagement_rate,
+    pitch?.engagementRate,
+  );
 
   return (
     <Card
@@ -975,7 +980,7 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 <Iconify icon="mdi:instagram" width={14} sx={{ color: '#637381' }} />
                 <Typography variant="subtitle" sx={{ color: '#8E8E93', fontSize: 12 }}>
-                  {pitch?.username || 'N/A'}
+                  {pitch.user?.ig_username || pitch?.user?.tiktok_username || pitch?.username || extractUsernameFromProfileLink(pitch.user?.profileLink) || 'N/A'}
                 </Typography>
               </Stack>
             </Stack>
