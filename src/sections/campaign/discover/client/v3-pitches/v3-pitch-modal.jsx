@@ -200,14 +200,14 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   };
 
   const handleApprove = () => {
+    if (campaign?.campaignCredits && campaign?.submissionVersion !== 'v4' && ugcLeft <= 0) {
+      enqueueSnackbar('No credits left. Cannot approve or assign UGC credits.', {
+        variant: 'warning',
+      });
+      return;
+    }
+
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
-      if (ugcLeft <= 0) {
-        enqueueSnackbar('No credits left. Cannot approve or assign UGC credits.', {
-          variant: 'warning',
-        });
-        return;
-      }
-      // For admin, open UGC credits modal instead of direct approval
       setUgCCreditsModalOpen(true);
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
       handleAction('approve', 'approve/client', { adminComments: comments });
@@ -216,7 +216,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
 
   const handleReject = () => {
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
-      // For admin rejecting from MAYBE status, include the current status for context
       const actionData = {
         rejectionReason,
         previousStatus: displayStatus === 'MAYBE' ? 'MAYBE' : 'PENDING_REVIEW',
@@ -1258,9 +1257,9 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                   onClick={handleApprove}
                   disabled={
                     loading ||
-                    (isAdmin &&
-                      (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE') &&
-                      (campaign?.submissionVersion !== 'v4' && ugcLeft <= 0))
+                    (campaign?.submissionVersion !== 'v4' &&
+                     campaign?.campaignCredits &&
+                     ugcLeft <= 0)
                   }
                   sx={{
                     textTransform: 'none',
