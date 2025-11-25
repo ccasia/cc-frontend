@@ -212,7 +212,7 @@ const ManageCampaignView = () => {
                 width: '100%',
                 color: 'text.primary',
                 '& input': {
-                  py: 1.5,
+                  py: 1.1,
                   px: 1,
                   height: '100%',
                 },
