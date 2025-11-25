@@ -18,10 +18,9 @@ import EmptyContent from 'src/components/empty-content';
 import LogisticsTableRow from './logistics-table-row';
 
 const TABLE_HEAD = [
-  { id: 'name', label: 'Name', width: '25%' },
-  { id: 'product', label: 'Product Assigned', width: '20%' },
-  { id: 'status', label: 'Status', width: '45%' },
-  { id: 'action', label: '', width: '10%' },
+  { id: 'name', label: 'Name', width: '40%' },
+  { id: 'product', label: 'Product Assigned', width: '40%' },
+  { id: 'status', label: 'Status', width: '20%' },
 ];
 
 export default function LogisticsList({ campaignId }) {
@@ -29,7 +28,7 @@ export default function LogisticsList({ campaignId }) {
     data: logistics,
     isLoading,
     mutate,
-  } = useSWR(campaignId ? `/api/campaign/${campaignId}/logistics` : null, fetcher);
+  } = useSWR(campaignId ? `/api/logistics/campaign/${campaignId}` : null, fetcher);
 
   if (isLoading) return <LoadingScreen />;
 
@@ -37,38 +36,39 @@ export default function LogisticsList({ campaignId }) {
 
   return (
     <Card>
-      <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-        <Scrollbar>
-          <Table sx={{ minWidth: 960 }}>
-            <TableHead>
-              <TableRow>
-                {TABLE_HEAD.map((heading) => (
-                  <TableCell key={heading.id} sx={{ width: heading.width }}>
-                    {heading.label}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {logistics?.map((row) => (
-                <LogisticsTableRow key={row.id} row={row} onUpdate={() => mutate()} />
+      <TableContainer sx={{ position: 'relative' }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {TABLE_HEAD.map((heading) => (
+                <TableCell
+                  key={heading.id}
+                  sx={{ width: heading.width, py: 1, height: 40, color: '#231F20' }}
+                >
+                  {heading.label}
+                </TableCell>
               ))}
+            </TableRow>
+          </TableHead>
 
-              {notFound && (
-                <TableRow>
-                  <TableCell colSpan={4}>
-                    <EmptyContent
-                      title="No deliveries scheduled"
-                      description="Click 'Edit & Bulk Assign' to get started."
-                      imgUrl="/assets/icons/empty/ic_content.svg"
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Scrollbar>
+          <TableBody>
+            {logistics?.map((row) => (
+              <LogisticsTableRow key={row.id} row={row} onUpdate={() => mutate()} />
+            ))}
+
+            {notFound && (
+              <TableRow>
+                <TableCell colSpan={4}>
+                  <EmptyContent
+                    title="No deliveries scheduled"
+                    description="Click 'Edit & Bulk Assign' to get started."
+                    imgUrl="/assets/icons/empty/ic_content.svg"
+                  />
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </TableContainer>
     </Card>
   );

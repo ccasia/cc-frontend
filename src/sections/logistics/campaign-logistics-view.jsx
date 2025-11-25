@@ -1,12 +1,26 @@
 import PropTypes from 'prop-types';
 import { useState, useCallback } from 'react';
+import useSWR from 'swr';
 
-import { Box, Button, Container, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  Grid,
+  Button,
+  Divider,
+  Container,
+  Typography,
+  TextField,
+  InputAdornment,
+} from '@mui/material';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import { fetcher } from 'src/utils/axios';
 
 import LogisticsList from './logistics-list';
 import BulkAssignView from './bulk-assign-view';
+import LogisticsCalendar from './logistics-calendar';
+import LogisticsScheduledList from './logistics-scheduled-list';
 
 export default function CampaignLogisticsView({ campaign, campaignMutate }) {
   const settings = useSettingsContext();
@@ -26,32 +40,59 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
     return <BulkAssignView campaign={campaign} onBack={handleCloseBulkAssign} />;
   }
 
+  const safeLogistics = logistics || [];
+
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
+    <>
+      <Grid container spacing={3} sx={{ mb: 5 }}>
+        <Grid item xs={12} md={9}>
+          <Card
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              height: '100%',
+            }}
+          >
+            <Box
+              sx={{
+                width: { xs: '100%', md: 320 }, // Fixed width on desktop to prevent squashing
+                flexShrink: 0,
+              }}
+            >
+              <LogisticsCalendar
+                date={date}
+                onChange={(newDate) => setDate(newDate)}
+                logistics={mockLogistics}
+              />
+            </Box>
+            {/* Vertical Divider (Desktop) */}
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{
+                display: { xs: 'none', md: 'block' },
+              }}
+            />
+
+            {/* Horizontal Divider (Mobile) */}
+            <Divider sx={{ display: { xs: 'block', md: 'none' } }} />
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <LogisticsScheduledList date={date} logistics={mockLogistics} />
+            </Box>
+          </Card>
+        </Grid>
+        {/* <Grid item xs={12} md={3}>
+          <LogisticsAnalytics logistics={safeLogistics} />
+        </Grid> */}
+      </Grid>
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          mb: 5,
+          mb: 2,
         }}
       >
-        <Box>
-          <Typography
-            variant="h4"
-            sx={{
-              fontFamily: 'Instrument Serif, serif',
-              color: '#221f20',
-              mb: 1,
-            }}
-          >
-            Logistics Overview
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Track, manage, and coordinate product deliveries and reservations.
-          </Typography>
-        </Box>
-
         <Button
           variant="contained"
           startIcon={<Iconify icon="eva:edit-2-fill" />}
@@ -65,7 +106,7 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
         </Button>
       </Box>
       <LogisticsList campaignId={campaign?.id} />
-    </Container>
+    </>
   );
 }
 
