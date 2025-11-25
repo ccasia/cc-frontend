@@ -422,176 +422,174 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           }}
         >
           <Stack spacing={3}>
-            {/* Creator Info and Social Media - Horizontal Layout */}
-            <Box sx={{ position: 'relative' }}>
+            {/* Creator Info and Social Media */}
+            <Box>
               <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
                 spacing={2}
-                sx={{ pr: { xs: 0, sm: 8 } }}
               >
-                {/* Creator Info */}
-                <Avatar
-                  src={currentPitch?.user?.photoURL}
-                  sx={{
-                    width: 64,
-                    height: 64,
-                    border: '2px solid',
-                    borderColor: 'background.paper',
-                    boxShadow: (theme) => theme.customShadows.z8,
-                  }}
-                />
-                <Stack spacing={0.5}>
-                  <Typography
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Avatar
+                    src={currentPitch?.user?.photoURL}
                     sx={{
-                      fontSize: '16px',
-                      fontWeight: 700,
-                      lineHeight: '18px',
-                      color: '#231F20',
-                      cursor: 'pointer',
-                      textDecoration: 'underline',
+                      width: 64,
+                      height: 64,
+                      border: '2px solid',
+                      borderColor: 'background.paper',
+                      boxShadow: (theme) => theme.customShadows.z8,
                     }}
-                    onClick={() => {
-                      const creatorId = currentPitch?.user?.creator?.id || currentPitch?.user?.id;
-                      navigate(`/dashboard/mediakit/client/${creatorId}`, {
-                        state: {
-                          returnTo: {
-                            pathname: window.location.pathname,
-                            search: window.location.search,
+                  />
+                  <Stack spacing={0.5}>
+                    <Typography
+                      sx={{
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        lineHeight: '18px',
+                        color: '#231F20',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                      }}
+                      onClick={() => {
+                        const creatorId = currentPitch?.user?.creator?.id || currentPitch?.user?.id;
+                        navigate(`/dashboard/mediakit/client/${creatorId}`, {
+                          state: {
+                            returnTo: {
+                              pathname: window.location.pathname,
+                              search: window.location.search,
+                            },
+                            reopenModal: { pitchId: currentPitch?.id, isV3: true },
                           },
-                          reopenModal: { pitchId: currentPitch?.id, isV3: true },
-                        },
-                      });
-                    }}
-                  >
-                    {currentPitch?.user?.name}
-                  </Typography>
-                  {(() => {
-                    const email = currentPitch?.user?.email;
-                    const isGuest = email?.includes('@tempmail.com') || email?.startsWith('guest_');
-                    return email && !isGuest ? (
-                      <Typography
-                        sx={{
-                          fontSize: '14px',
-                          fontWeight: 400,
-                          lineHeight: '16px',
-                          color: '#8E8E93',
-                        }}
-                      >
-                        {email}
-                      </Typography>
-                    ) : null;
-                  })()}
+                        });
+                      }}
+                    >
+                      {currentPitch?.user?.name}
+                    </Typography>
+                    {(() => {
+                      const email = currentPitch?.user?.email;
+                      const isGuest =
+                        email?.includes('@tempmail.com') || email?.startsWith('guest_');
+                      return email && !isGuest ? (
+                        <Typography
+                          sx={{
+                            fontSize: '14px',
+                            fontWeight: 400,
+                            lineHeight: '16px',
+                            color: '#8E8E93',
+                          }}
+                        >
+                          {email}
+                        </Typography>
+                      ) : null;
+                    })()}
+                  </Stack>
+                </Stack>
 
-                  {/* Social Media Icons - Mobile */}
-                  <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
-                    <Stack direction="row" spacing={1.5}>
-                      <Tooltip title="Instagram Stats">
-                        <IconButton
-                          onClick={() => setSelectedPlatform('instagram')}
-                          size="small"
-                          disabled={selectedPlatform === 'instagram'}
-                          sx={{
-                            p: 0.8,
-                            color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
-                            bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
-                            border: '1px solid #ebebeb',
-                            borderBottom: '3px solid #ebebeb',
-                            borderRadius: '10px',
-                            height: '42px',
-                            width: '42px',
-                            '&:hover': {
-                              bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5',
-                            },
-                            '&.Mui-disabled': {
-                              bgcolor: '#F2F2F7',
-                              color: '#8E8E93',
-                            },
-                          }}
-                        >
-                          <Iconify icon="mdi:instagram" width={24} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="TikTok Stats">
-                        <IconButton
-                          onClick={() => setSelectedPlatform('tiktok')}
-                          size="small"
-                          disabled={selectedPlatform === 'tiktok'}
-                          sx={{
-                            p: 0.8,
-                            color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#000000',
-                            bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
-                            border: '1px solid #ebebeb',
-                            borderBottom: '3px solid #ebebeb',
-                            borderRadius: '10px',
-                            height: '42px',
-                            width: '42px',
-                            '&:hover': {
-                              bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5',
-                            },
-                            '&.Mui-disabled': {
-                              bgcolor: '#F2F2F7',
-                              color: '#8E8E93',
-                            },
-                          }}
-                        >
-                          <Iconify icon="ic:baseline-tiktok" width={24} />
-                        </IconButton>
-                      </Tooltip>
-                      {/* Both Platforms Button */}
-                      <Tooltip title="Both Platforms">
-                        <IconButton
-                          onClick={() => setSelectedPlatform('both')}
-                          size="small"
-                          disabled={selectedPlatform === 'both'}
-                          sx={{
-                            p: 0.8,
-                            color: selectedPlatform === 'both' ? '#8E8E93' : '#636366',
-                            bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#FFF',
-                            border: '1px solid #ebebeb',
-                            borderBottom: '3px solid #ebebeb',
-                            borderRadius: '10px',
-                            height: '42px',
-                            width: '42px',
-                            '&:hover': {
-                              bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#f5f5f5',
-                            },
-                            '&.Mui-disabled': {
-                              bgcolor: '#F2F2F7',
-                              color: '#8E8E93',
-                            },
-                          }}
-                        >
-                          <Iconify icon="eva:layers-fill" width={24} />
-                        </IconButton>
-                      </Tooltip>
-                      {currentPitch?.status === 'approved' && (
-                        <Tooltip title="View Shortlisted Profile">
-                          <Button
-                            size="small"
-                            sx={{
-                              p: 2,
-                              color: '#FFFFFF',
-                              bgcolor: '#3A3A3C',
-                              border: '1px solid #282424',
-                              borderBottom: '3px solid #282424',
-                              borderRadius: '10px',
-                              height: '42px',
-                              fontWeight: 600,
-                              fontSize: '12px',
-                              textTransform: 'none',
-                              '&:hover': {
-                                bgcolor: '#4a4a4c',
-                              },
-                            }}
-                            onClick={handleShortlistedProfileClick}
-                          >
-                            Profile
-                          </Button>
-                        </Tooltip>
-                      )}
-                    </Stack>
-                  </Box>
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Tooltip title="Instagram Stats">
+                    <IconButton
+                      onClick={() => setSelectedPlatform('instagram')}
+                      size="small"
+                      disabled={selectedPlatform === 'instagram'}
+                      sx={{
+                        p: 0.8,
+                        color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
+                        bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
+                        border: '1px solid #ebebeb',
+                        borderBottom: '3px solid #ebebeb',
+                        borderRadius: '10px',
+                        height: '42px',
+                        width: '42px',
+                        '&:hover': {
+                          bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5',
+                        },
+                        '&.Mui-disabled': {
+                          bgcolor: '#F2F2F7',
+                          color: '#8E8E93',
+                        },
+                      }}
+                    >
+                      <Iconify icon="mdi:instagram" width={24} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="TikTok Stats">
+                    <IconButton
+                      onClick={() => setSelectedPlatform('tiktok')}
+                      size="small"
+                      disabled={selectedPlatform === 'tiktok'}
+                      sx={{
+                        p: 0.8,
+                        color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#000000',
+                        bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
+                        border: '1px solid #ebebeb',
+                        borderBottom: '3px solid #ebebeb',
+                        borderRadius: '10px',
+                        height: '42px',
+                        width: '42px',
+                        '&:hover': {
+                          bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5',
+                        },
+                        '&.Mui-disabled': {
+                          bgcolor: '#F2F2F7',
+                          color: '#8E8E93',
+                        },
+                      }}
+                    >
+                      <Iconify icon="ic:baseline-tiktok" width={24} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Both Platforms">
+                    <IconButton
+                      onClick={() => setSelectedPlatform('both')}
+                      size="small"
+                      disabled={selectedPlatform === 'both'}
+                      sx={{
+                        p: 0.8,
+                        color: selectedPlatform === 'both' ? '#8E8E93' : '#636366',
+                        bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#FFF',
+                        border: '1px solid #ebebeb',
+                        borderBottom: '3px solid #ebebeb',
+                        borderRadius: '10px',
+                        height: '42px',
+                        width: '42px',
+                        '&:hover': {
+                          bgcolor: selectedPlatform === 'both' ? '#F2F2F7' : '#f5f5f5',
+                        },
+                        '&.Mui-disabled': {
+                          bgcolor: '#F2F2F7',
+                          color: '#8E8E93',
+                        },
+                      }}
+                    >
+                      <Iconify icon="eva:layers-fill" width={24} />
+                    </IconButton>
+                  </Tooltip>
+                  {currentPitch?.status === 'approved' && (
+                    <Tooltip title="View Shortlisted Profile">
+                      <Button
+                        size="small"
+                        sx={{
+                          p: 2,
+                          color: '#FFFFFF',
+                          bgcolor: '#3A3A3C',
+                          border: '1px solid #282424',
+                          borderBottom: '3px solid #282424',
+                          borderRadius: '10px',
+                          height: '42px',
+                          fontWeight: 600,
+                          fontSize: '12px',
+                          textTransform: 'none',
+                          '&:hover': {
+                            bgcolor: '#4a4a4c',
+                          },
+                        }}
+                        onClick={handleShortlistedProfileClick}
+                      >
+                        Profile
+                      </Button>
+                    </Tooltip>
+                  )}
                 </Stack>
               </Stack>
             </Box>
@@ -1117,15 +1115,14 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                           backgroundColor: (theme) => theme.palette.common.white,
                           color: '#48484a',
                           fontWeight: 'bold',
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          fontSize: '0.875rem',
                           borderRadius: '10px',
-                          height: { xs: '32px', sm: '35px' },
+                          height: '35px',
                           border: '1px solid #ebebeb',
                           borderBottom: '3px solid #ebebeb',
                           mt: 1,
-                          maxWidth: { xs: '100%', sm: 'auto' },
                           '& .MuiChip-label': {
-                            padding: { xs: '0 6px 0 8px', sm: '0 8px 0 12px' },
+                            padding: '0 8px 0 12px',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -1142,16 +1139,13 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 {/* Submission Info Section */}
                 <Grid item xs={12} md={6}>
                   <Stack
-                    direction={{ xs: 'row', sm: 'row' }}
+                    direction="row"
                     spacing={0}
                     alignItems="center"
-                    justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
+                    justifyContent="flex-end"
                     sx={{ width: '100%' }}
                   >
-                    <Stack
-                      alignItems={{ xs: 'flex-start', md: 'flex-start' }}
-                      sx={{ mr: { md: 11 } }}
-                    >
+                    <Stack alignItems="flex-start" sx={{ mr: 11 }}>
                       <Typography
                         variant="caption"
                         color="text.secondary"
@@ -1170,7 +1164,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                         })}
                       </Typography>
                     </Stack>
-                    <Stack alignItems={{ xs: 'flex-start', md: 'flex-end' }}>
+                    <Stack alignItems="flex-end">
                       <Typography variant="caption" color="text.secondary">
                         STATUS
                       </Typography>
@@ -1201,7 +1195,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     currentPitch?.rejectionReason ||
                     (currentPitch?.status || '').toUpperCase() === 'MAYBE' ||
                     (currentPitch?.displayStatus || '').toUpperCase() === 'MAYBE') && (
-                    <Box sx={{ mt: 1.5, width: { xs: '100%', md: 220 }, ml: { md: 'auto' } }}>
+                    <Box sx={{ mt: 1.5, width: 220, ml: 'auto' }}>
                       <Stack spacing={0.25} alignItems="flex-start">
                         <Typography
                           variant="caption"
@@ -1223,7 +1217,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             lineHeight: 1.35,
                             textAlign: 'left',
                             wordBreak: 'break-word',
-                            fontSize: { xs: '0.75rem', md: '0.75rem' },
+                            fontSize: '0.75rem',
                           }}
                         >
                           {currentPitch?.customRejectionText ||
@@ -1438,7 +1432,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 variant="h6"
                 sx={{
                   fontFamily: 'Instrument Serif, serif',
-                  fontSize: { xs: '1.5rem', sm: '2rem' },
+                  fontSize: '2rem',
                   fontWeight: 550,
                 }}
               >
@@ -1509,7 +1503,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   variant="h6"
                   sx={{
                     fontFamily: 'Instrument Serif, serif',
-                    fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                    fontSize: '2.5rem',
                     fontWeight: 550,
                   }}
                 >
@@ -1587,7 +1581,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               (confirmDialog.type === 'approve' &&
                 campaign?.campaignCredits &&
                 campaign?.submissionVersion === 'v4' &&
-                (!totalUGCVideos || totalUGCVideos > ugcLeft)) ||
+                (totalUGCVideos > ugcLeft)) ||
               // client-decline guard: require reason & if others then note
               (confirmDialog.type === 'decline' &&
                 user?.role === 'client' &&
@@ -1639,7 +1633,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               variant="h6"
               sx={{
                 fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                fontSize: '2.5rem',
                 fontWeight: 550,
               }}
             >
