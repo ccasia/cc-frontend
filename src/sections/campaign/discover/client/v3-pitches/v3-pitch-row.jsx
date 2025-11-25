@@ -2,20 +2,9 @@ import React from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 
-import {
-  Box,
-  Stack,
-  Avatar,
-  Tooltip,
-  TableRow,
-  TableCell,
-  Typography,
-  IconButton,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, IconButton } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useCreatorSocialMediaData } from 'src/hooks/use-get-social-media-data';
 
 import { formatNumber } from 'src/utils/media-kit-utils';
 
@@ -86,12 +75,19 @@ const getStatusText = (status, pitch, campaign) => {
 const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch }) => {
   const smUp = useResponsive('up', 'sm');
 
-  // Fetch social media data for this creator
-  const { data: socialData, isLoading } = useCreatorSocialMediaData(pitch.user?.id);
-
   // Determine what to display for engagement rate and follower count
   const getDisplayData = () => {
     // P1: Use data from pitch object (for guest creators or manually entered data)
+    const instagramStats = pitch?.user?.creator?.instagramUser || null;
+    const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
+
+    const resolveMetric = (primary, secondary, tertiary) => {
+      if (primary != null) return primary;
+      if (secondary != null) return secondary;
+      if (tertiary != null) return tertiary;
+      return null;
+    };
+
     if (pitch.engagementRate && pitch.followerCount) {
       return {
         engagementRate: pitch.engagementRate,
@@ -99,19 +95,19 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
       };
     }
 
-    // P2: Use fetched social media data (for platform creators)
-    if (!isGuestCreator && socialData?.isConnected) {
+    // P2: Use pitch data if available (partial data)
+    if (instagramStats || tiktokStats) {
       return {
-        engagementRate: socialData.engagementRate,
-        followerCount: socialData.followerCount,
-      };
-    }
-
-    // P3: Use pitch data if available (partial data)
-    if (pitch.engagementRate || pitch.followerCount) {
-      return {
-        engagementRate: pitch.engagementRate,
-        followerCount: pitch.followerCount,
+        engagementRate: resolveMetric(
+          instagramStats?.engagement_rate,
+          tiktokStats?.engagement_rate,
+          pitch.engagementRate
+        ),
+        followerCount: resolveMetric(
+          instagramStats?.followers_count,
+          tiktokStats?.follower_count,
+          pitch.followerCount
+        ),
       };
     }
 
@@ -157,13 +153,9 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
         )}
       </TableCell> */}
       <TableCell>
-        {isLoading ? (
-          <CircularProgress size={16} thickness={6} />
-        ) : (
-          <Typography variant="body2">
-            {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
-          </Typography>
-        )}
+        <Typography variant="body2">
+          {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
+        </Typography>
       </TableCell>
       <TableCell>
         <Stack spacing={0.5} alignItems="start">
