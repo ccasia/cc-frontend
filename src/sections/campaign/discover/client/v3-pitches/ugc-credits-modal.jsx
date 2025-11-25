@@ -21,15 +21,22 @@ import Iconify from 'src/components/iconify';
 const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [ugcCredits, setUgCCredits] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const ugcLeft = (() => {
+    if (campaign?.submissionVersion === 'v4') {
+      if (!campaign?.campaignCredits) return 0;
+      const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
+      return Math.max(0, campaign.campaignCredits - used);
+    }
+    
     if (!campaign?.campaignCredits) return 0;
     const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
     return Math.max(0, campaign.campaignCredits - used);
   })();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async () => {
-    if (ugcLeft <= 0) {
+    if (campaign?.submissionVersion !== 'v4' && ugcLeft <= 0) {
       enqueueSnackbar('No credits left. Cannot assign UGC credits.', { variant: 'warning' });
       return;
     }
@@ -37,18 +44,18 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
       enqueueSnackbar('Please enter a valid number of UGC credits', { variant: 'error' });
       return;
     }
-    if (parseInt(ugcCredits) > ugcLeft) {
+    if (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits) > ugcLeft) {
       enqueueSnackbar(`You only have ${ugcLeft} credits left. Reduce the assigned credits.`, { variant: 'error' });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Call the pitch approval endpoint with UGC credits
       const response = await axiosInstance.patch(`/api/pitch/v3/${pitch.id}/approve`, {
         ugcCredits: parseInt(ugcCredits),
         feedback: 'Pitch approved by admin',
         adminComments: comments,
+        campaignVersion: campaign?.submissionVersion,
       });
       enqueueSnackbar('Pitch approved and UGC credits assigned successfully!', {
         variant: 'success',
@@ -171,7 +178,7 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
             borderRadius: 1,
           }}
         >
-          UGC Credits: {ugcLeft} left
+          {campaign?.submissionVersion === 'v4' ? 'V4 Campaign: Credits assigned at agreement' : `UGC Credits: ${ugcLeft} left`}
         </Typography>
 
         {/* UGC Credits Input */}
@@ -229,11 +236,13 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
             onClick={handleSubmit}
             disabled={
               isSubmitting ||
-              ugcLeft <= 0 ||
+              // For non-v4 campaigns, check credit limits
+              (campaign?.submissionVersion !== 'v4' && ugcLeft <= 0) ||
               !ugcCredits ||
               isNaN(ugcCredits) ||
               parseInt(ugcCredits) <= 0 ||
-              parseInt(ugcCredits) > ugcLeft
+              // For non-v4 campaigns, check if credits exceed available
+              (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits) > ugcLeft)
             }
             fullWidth
             sx={{

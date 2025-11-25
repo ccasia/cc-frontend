@@ -1583,10 +1583,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             }
             disabled={
               isSubmitting ||
-              // approve guard (unchanged)
+              // approve guard: only check UGC videos for non-v4 campaigns (where the input field is shown)
               (confirmDialog.type === 'approve' &&
                 campaign?.campaignCredits &&
-                campaign?.submissionVersion === 'v4' &&
+                campaign?.submissionVersion !== 'v4' &&
                 (!totalUGCVideos || totalUGCVideos > ugcLeft)) ||
               // client-decline guard: require reason & if others then note
               (confirmDialog.type === 'decline' &&

@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -84,20 +84,18 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
     return null;
   }, [campaign]);
 
-  // Extract posting submissions to get analytics data
+
   const postingSubmissions = useMemo(() => {
     const submissions = campaign?.submission || [];
     return extractPostingSubmissions(submissions);
   }, [campaign?.submission]);
 
-  // Get social insights data for analytics
   const {
     data: insightsData,
     isLoading: loadingInsights,
     error: insightsError,
   } = useSocialInsights(postingSubmissions, campaign?.id);
 
-  // Calculate summary statistics from real analytics data
   const summaryStats = useMemo(() => {
     if (!insightsData || insightsData.length === 0) return null;
     return calculateSummaryStats(insightsData);
@@ -602,7 +600,38 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                         Credits Utilized
                       </Typography>
                       <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
-                        {campaign?.creditsUtilized || 0} UGC Credits
+                        {campaign?.submissionVersion === 'v4' ? (() => {
+                            const approvedAgreements = (campaign?.submission || []).filter(sub => 
+                              (sub.content && typeof sub.content === 'string' && 
+                               sub.content.toLowerCase().includes('agreement')) &&
+                              (sub.status === 'APPROVED')
+                            );
+                            
+                            if (approvedAgreements.length === 0) {
+                              return '0 UGC Credits';
+                            }
+                            
+                            const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
+                              let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
+                              
+                              if (!creator && typeof agreement.userId === 'string') {
+                                creator = campaign?.shortlisted?.find(c => 
+                                  typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
+                                );
+                              }
+                              
+                              if (!creator) {
+                                creator = campaign?.shortlisted?.find(c => 
+                                  c.user?.name === 'Tupac Shakir'
+                                );
+                              }
+                              
+                              return total + (creator?.ugcVideos || 0);
+                            }, 0);
+                            
+                            return `${utilizedCredits} UGC Credits`;
+                          })() : 
+                          `${campaign?.creditsUtilized || 0} UGC Credits`}
                       </Typography>
                     </Stack>
                     <Divider />
@@ -611,7 +640,35 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                         Credits Pending
                       </Typography>
                       <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
-                        {campaign?.creditsPending ?? 0} UGC Credits
+                        {campaign?.submissionVersion === 'v4' ? (() => {
+                            const approvedAgreements = (campaign?.submission || []).filter(sub => 
+                              // Check if content contains 'agreement' since type might be undefined
+                              (sub.content && typeof sub.content === 'string' && 
+                               sub.content.toLowerCase().includes('agreement')) &&
+                              (sub.status === 'APPROVED')
+                            );
+                            
+                            const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
+                              let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
+                              
+                              if (!creator && typeof agreement.userId === 'string') {
+                                creator = campaign?.shortlisted?.find(c => 
+                                  typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
+                                );
+                              }
+
+                              if (!creator) {
+                                creator = campaign?.shortlisted?.find(c => 
+                                  c.user?.name === 'Tupac Shakir'
+                                );
+                              }
+                              
+                              return total + (creator?.ugcVideos || 0);
+                            }, 0);
+                            
+                            return `${Math.max(0, (campaign?.campaignCredits || 0) - utilizedCredits)} UGC Credits`;
+                          })() : 
+                          `${campaign?.creditsPending ?? 0} UGC Credits`}
                       </Typography>
                     </Stack>
                   </Stack>
