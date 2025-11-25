@@ -21,6 +21,7 @@ import LogisticsList from './logistics-list';
 import BulkAssignView from './bulk-assign-view';
 import LogisticsCalendar from './logistics-calendar';
 import LogisticsScheduledList from './logistics-scheduled-list';
+import LogisticsAnalytics from './logistics-analytics';
 
 export default function CampaignLogisticsView({ campaign, campaignMutate }) {
   const settings = useSettingsContext();
@@ -81,9 +82,9 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
             </Box>
           </Card>
         </Grid>
-        {/* <Grid item xs={12} md={3}>
-          <LogisticsAnalytics logistics={safeLogistics} />
-        </Grid> */}
+        <Grid item xs={12} md={3}>
+          <LogisticsAnalytics logistics={mockLogistics} />
+        </Grid>
       </Grid>
       <Box
         sx={{
