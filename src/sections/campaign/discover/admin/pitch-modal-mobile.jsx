@@ -46,11 +46,10 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { mutate } = useGetCampaignById(campaign.id);
   const navigate = useNavigate();
 
-  const [maybeOpen, setMaybeOpen] = useState(false);
   const [maybeReason, setMaybeReason] = useState('');
   const [maybeNote, setMaybeNote] = useState('');
   const [creatorProfileFull, setCreatorProfileFull] = useState(null);
-  const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram', 'tiktok', or 'both'
+  const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram' or 'tiktok'
   const MAYBE_REASONS = [
     { value: 'engagement_low', label: 'Engagement Rate Too Low' },
     { value: 'not_fit_brief', label: 'Does Not Fit Criteria in Campaign Brief' },
@@ -66,7 +65,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   useEffect(() => {
     if (open && currentPitch?.user?.creator) {
       if (currentPitch.user.creator.instagram && currentPitch.user.creator.tiktok) {
-        setSelectedPlatform('both'); // Show both if both platforms exist
+        setSelectedPlatform('both');
       } else if (currentPitch.user.creator.instagram) {
         setSelectedPlatform('instagram');
       } else if (currentPitch.user.creator.tiktok) {
@@ -93,8 +92,8 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   }, [open, currentPitch?.user?.id]);
 
   // Derive creator profile data from multiple possible sources
-  const creatorProfile = creatorProfileFull?.creator || currentPitch?.user?.creator || {};
-  const accountUser = creatorProfileFull || currentPitch?.user || {};
+  const creatorProfile = currentPitch?.user?.creator || {};
+  const accountUser = currentPitch?.user || {};
   const derivedLanguages = (
     Array.isArray(creatorProfile.languages) && creatorProfile.languages.length
       ? creatorProfile.languages
@@ -105,6 +104,63 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const derivedBirthDate = creatorProfile.birthDate || accountUser.birthDate || null;
   const derivedPronouns =
     creatorProfile.pronounce || accountUser.pronounce || accountUser.pronouns || null;
+  
+  const isGuest = accountUser.status === 'guest';
+
+  const resolveNumber = (value) =>
+    typeof value === 'number' && Number.isFinite(value) ? value : null;
+
+  const platformStats = useMemo(() => {
+    const collect = (platform) => {
+      const creator = currentPitch?.user?.creator;
+      const account = creatorProfileFull;
+
+      const sources =
+        platform === 'instagram'
+          ? [creator?.instagramUser, account?.instagramUser]
+          : [creator?.tiktokUser, account?.tiktokUser];
+
+      const base = sources.find(Boolean) || {};
+      const followerKey = platform === 'instagram' ? 'followers_count' : 'follower_count';
+
+      return {
+        followers: resolveNumber(base[followerKey]),
+        engagementRate: resolveNumber(base.engagement_rate),
+        averageLikes: resolveNumber(base.averageLikes),
+        username:
+          base.username ??
+          (platform === 'instagram'
+            ? creator?.instagram ?? account?.instagram
+            : creator?.tiktok ?? account?.tiktok),
+      };
+    };
+
+    return {
+      instagram: collect('instagram'),
+      tiktok: collect('tiktok'),
+    };
+  }, [currentPitch]);
+
+  const activePlatform = selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram';
+  const activeStats = platformStats[activePlatform] || {};
+
+  const formatCount = (value, emptyLabel = 'N/A') => {
+    const numeric = typeof value === 'string' ? Number(value) : value;
+    if (!Number.isFinite(numeric)) return emptyLabel;
+    if (numeric >= 1000000) return `${(numeric / 1000000).toFixed(1)}M`;
+    if (numeric >= 1000) return `${(numeric / 1000).toFixed(1)}K`;
+    return Math.round(numeric).toLocaleString();
+  };
+
+  const formatEngagement = (value) => (value == null ? 'N/A' : `${Math.round(value)}%`);
+
+  const formatLikes = (value) => formatCount(value, 'N/A');
+
+  const matchingPercentage = useMemo(() => {
+    const numeric = Number(pitch?.matchingPercentage);
+    if (!Number.isFinite(numeric)) return 0;
+    return Math.min(numeric, 100);
+  }, [pitch?.matchingPercentage]);
 
   // Normalized CS Comments text (for client view rendering)
   const adminCommentsText = ((currentPitch?.adminComments ?? pitch?.adminComments ?? '') || '')
@@ -226,57 +282,6 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
     }
   };
 
-  const handleCloseMaybe = () => {
-    setMaybeOpen(false);
-    setMaybeReason('');
-    setMaybeNote('');
-  };
-
-  const handleMaybeSubmit = async () => {
-    try {
-      setIsSubmitting(true);
-
-      let response;
-
-      if (campaign?.submissionVersion === 'v4' && user?.role === 'client') {
-        const v3PitchId = pitch.pitchId || pitch.id;
-
-        // Build request body
-        let body;
-        if (maybeReason === 'others') {
-          body = { customRejectionText: maybeNote.trim() };
-        } else {
-          const reasonLabel =
-            MAYBE_REASONS.find((r) => r.value === maybeReason)?.label || 'Unspecified';
-          body = { rejectionReason: reasonLabel };
-        }
-
-        // Call your endpoint
-        response = await axiosInstance.patch(
-          endpoints.campaign.pitch.v3.maybeClient(v3PitchId),
-          body
-        );
-
-        // Update pitch status
-        const updatedPitch = { ...pitch, status: 'MAYBE' };
-        setCurrentPitch(updatedPitch);
-        onUpdate?.(updatedPitch);
-
-        enqueueSnackbar(response?.data?.message || 'Pitch marked as Maybe');
-        setMaybeOpen(false);
-        setMaybeReason('');
-        setMaybeNote('');
-      } else {
-        console.warn('Maybe action is only available for client-created campaigns by clients');
-      }
-    } catch (error) {
-      console.error('Error setting maybe:', error);
-      enqueueSnackbar('Error setting Maybe', { variant: 'error' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   // Adds a delay before fully closing the dialog
   const handleCloseConfirmDialog = () => {
     // First just close the dialog
@@ -351,7 +356,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   {currentPitch?.user?.name}
                 </Typography>
                 {(() => {
-                  const email = 'test@mail.com';
+                  const email = accountUser?.email;
                   const isGuest = email?.includes('@tempmail.com') || email?.startsWith('guest_');
                   return email && !isGuest ? (
                     <Typography
@@ -444,81 +449,85 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
 									</Box>
 								)}
 							</Stack>
-							<Stack justifyContent={'space-between'} gap={2} alignItems={'flex-end'}>
-								{/* Media Kit Button */}
-								<Button
-									onClick={handleMediaKitClick}
-									sx={{
-										height: 40,
-										bgcolor: '#3A3A3C',
-										color: '#FFFFFF',
-										borderRadius: '10px',
-										py: 1.25,
-										fontSize: 14,
-										fontWeight: 600,
-										textTransform: 'none',
-										minWidth: '100px',
-										'&:hover': {
-											bgcolor: '#2A2A2C',
-										},
-									}}
-								>
-									Media Kit
-								</Button>
-								{/* Social Media Icons - Mobile */}
-								<Stack direction="row" spacing={0.5}>
-									<Tooltip title="Instagram Stats">
-										<IconButton
-											onClick={() => setSelectedPlatform('instagram')}
-											size="small"
-											disabled={selectedPlatform === 'instagram'}
-											sx={{
-												color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
-												bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
-												border: '1px solid #ebebeb',
-												borderBottom: '3px solid #ebebeb',
-												borderRadius: '10px',
-												height: '42px',
-												width: '42px',
-												'&:hover': {
-													bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5',
-												},
-												'&.Mui-disabled': {
-													bgcolor: '#F2F2F7',
-													color: '#8E8E93',
-												},
-											}}
-										>
-											<Iconify icon="mdi:instagram" width={20} />
-										</IconButton>
-									</Tooltip>
-									<Tooltip title="TikTok Stats">
-										<IconButton
-											onClick={() => setSelectedPlatform('tiktok')}
-											size="small"
-											disabled={selectedPlatform === 'tiktok'}
-											sx={{
-												color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#000000',
-												bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
-												border: '1px solid #ebebeb',
-												borderBottom: '3px solid #ebebeb',
-												borderRadius: '10px',
-												height: '42px',
-												width: '42px',
-												'&:hover': {
-													bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5',
-												},
-												'&.Mui-disabled': {
-													bgcolor: '#F2F2F7',
-													color: '#8E8E93',
-												},
-											}}
-										>
-											<Iconify icon="ic:baseline-tiktok" width={24} />
-										</IconButton>
-									</Tooltip>
-								</Stack>
-							</Stack>
+              
+              {!isGuest && 
+                <Stack justifyContent={'space-between'} gap={2} alignItems={'flex-end'}>
+                  {/* Media Kit Button */}
+                  <Button
+                    onClick={handleMediaKitClick}
+                    sx={{
+                      height: 40,
+                      bgcolor: '#3A3A3C',
+                      color: '#FFFFFF',
+                      borderRadius: '10px',
+                      py: 1.25,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      minWidth: '100px',
+                      '&:hover': {
+                        bgcolor: '#2A2A2C',
+                      },
+                    }}
+                  >
+                    Media Kit
+                  </Button>
+                  {/* Social Media Icons - Mobile */}
+                  <Stack direction="row" spacing={0.5}>
+                    <Tooltip title="Instagram Stats">
+                      <IconButton
+                        onClick={() => setSelectedPlatform('instagram')}
+                        size="small"
+                        disabled={selectedPlatform === 'instagram'}
+                        sx={{
+                          color: selectedPlatform === 'instagram' ? '#8E8E93' : '#231F20',
+                          bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#FFF',
+                          border: '1px solid #ebebeb',
+                          borderBottom: '3px solid #ebebeb',
+                          borderRadius: '10px',
+                          height: '42px',
+                          width: '42px',
+                          '&:hover': {
+                            bgcolor: selectedPlatform === 'instagram' ? '#F2F2F7' : '#f5f5f5',
+                          },
+                          '&.Mui-disabled': {
+                            bgcolor: '#F2F2F7',
+                            color: '#8E8E93',
+                          },
+                        }}
+                      >
+                        <Iconify icon="mdi:instagram" width={20} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="TikTok Stats">
+                      <IconButton
+                        onClick={() => setSelectedPlatform('tiktok')}
+                        size="small"
+                        disabled={selectedPlatform === 'tiktok'}
+                        sx={{
+                          color: selectedPlatform === 'tiktok' ? '#8E8E93' : '#000000',
+                          bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#FFF',
+                          border: '1px solid #ebebeb',
+                          borderBottom: '3px solid #ebebeb',
+                          borderRadius: '10px',
+                          height: '42px',
+                          width: '42px',
+                          '&:hover': {
+                            bgcolor: selectedPlatform === 'tiktok' ? '#F2F2F7' : '#f5f5f5',
+                          },
+                          '&.Mui-disabled': {
+                            bgcolor: '#F2F2F7',
+                            color: '#8E8E93',
+                          },
+                        }}
+                      >
+                        <Iconify icon="ic:baseline-tiktok" width={24} />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                </Stack>              
+              }
+
 						</Stack>
 
             {/* Stats Section */}
@@ -538,22 +547,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     sx={{ width: 20, height: 20 }}
                   />
                   <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#231F20' }}>
-                    {(() => {
-                      const followers =
-                        selectedPlatform === 'instagram'
-                          ? currentPitch?.user?.creator?.instagramUser?.followers_count ||
-                            creatorProfileFull?.creator?.instagramUser?.followers_count ||
-                            creatorProfileFull?.instagramUser?.followers_count
-                          : currentPitch?.user?.creator?.tiktokUser?.follower_count ||
-                            creatorProfileFull?.creator?.tiktokUser?.follower_count ||
-                            creatorProfileFull?.tiktokUser?.follower_count;
-                      if (!followers) return 'N/A';
-                      if (followers >= 1000) {
-                        const k = followers / 1000;
-                        return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
-                      }
-                      return followers.toLocaleString();
-                    })()}
+                    {formatCount(activeStats.followers)}
                   </Typography>
                   <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#8E8E93' }}>
                     Followers
@@ -568,18 +562,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     sx={{ width: 20, height: 20 }}
                   />
                   <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#231F20' }}>
-                    {(() => {
-                      const engagementRate =
-                        selectedPlatform === 'instagram'
-                          ? currentPitch?.user?.creator?.instagramUser?.engagement_rate ||
-                            creatorProfileFull?.creator?.instagramUser?.engagement_rate ||
-                            creatorProfileFull?.instagramUser?.engagement_rate
-                          : currentPitch?.user?.creator?.tiktokUser?.engagement_rate ||
-                            creatorProfileFull?.creator?.tiktokUser?.engagement_rate ||
-                            creatorProfileFull?.tiktokUser?.engagement_rate;
-                      if (!engagementRate) return 'N/A';
-                      return `${Math.round(engagementRate)}%`;
-                    })()}
+                    {formatEngagement(activeStats.engagementRate)}
                   </Typography>
                   <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#8E8E93' }}>
                     Engagement
@@ -594,22 +577,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     sx={{ width: 20, height: 20 }}
                   />
                   <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#231F20' }}>
-                    {(() => {
-                      const likes =
-                        selectedPlatform === 'instagram'
-                          ? currentPitch?.user?.creator?.instagramUser?.averageLikes ||
-                            creatorProfileFull?.creator?.instagramUser?.averageLikes ||
-                            creatorProfileFull?.instagramUser?.averageLikes
-                          : currentPitch?.user?.creator?.tiktokUser?.averageLikes ||
-                            creatorProfileFull?.creator?.tiktokUser?.averageLikes ||
-                            creatorProfileFull?.tiktokUser?.averageLikes;
-                      if (!likes) return 'N/A';
-                      if (likes >= 1000) {
-                        const k = likes / 1000;
-                        return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
-                      }
-                      return Math.round(likes).toLocaleString();
-                    })()}
+                    {formatLikes(activeStats.averageLikes)}
                   </Typography>
                   <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#8E8E93' }}>
                     Average Likes
@@ -649,7 +617,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       />
                       <CircularProgress
                         variant="determinate"
-                        value={Math.min(pitch?.matchingPercentage, 100)}
+                        value={matchingPercentage}
                         size={16}
                         thickness={7}
                         sx={{
@@ -661,7 +629,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       />
                     </Box>
                   }
-                  label={`${Math.min(pitch?.matchingPercentage, 100)}% MATCH WITH CAMPAIGN`}
+                  label={`${matchingPercentage}% MATCH WITH CAMPAIGN`}
                   sx={{
                     backgroundColor: '#FFF',
                     color: '#48484a',
@@ -971,7 +939,6 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Typography>
               </Stack>
 
-              {/* UGC input (approve, admin-created only) */}
               {campaign?.campaignCredits &&
                 confirmDialog.type === 'approve' &&
                 campaign?.submissionVersion !== 'v4' && (
@@ -1011,7 +978,6 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
               borderBottom: '3px solid',
               borderBottomColor: '#e7e7e7',
               borderRadius: 1.15,
-              px: 2.5,
               py: 1.2,
               flex: 1,
               mr: 1,
@@ -1043,7 +1009,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 (!maybeReason || (maybeReason === 'others' && !maybeNote.trim())))
             }
             sx={{
-              bgcolor: confirmDialog.type === 'approve' ? '#2e6c56' : '#ffffff',
+              bgcolor: confirmDialog.type === 'approve' ? '#026D54' : '#ffffff',
               color:
                 confirmDialog.type === 'approve'
                   ? '#fff'
@@ -1054,9 +1020,8 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
               borderBottom: '3px solid',
               borderBottomColor: confirmDialog.type === 'approve' ? '#202021' : '#e7e7e7',
               borderRadius: 1.15,
-              px: 2.5,
-              py: 1.2,
               flex: 1,
+              py: 1.2,
               ml: 1,
               fontWeight: 600,
               '&:hover': {
@@ -1082,74 +1047,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={maybeOpen} onClose={handleCloseMaybe} maxWidth="sm" fullWidth>
-        <DialogContent sx={{ pt: 3 }}>
-          <Stack spacing={1}>
-            <Typography
-              variant="h6"
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                fontWeight: 550,
-              }}
-            >
-              Reason for Maybe
-            </Typography>
-
-            <Typography variant="caption" sx={{ fontWeight: 400 }}>
-              Selection Reason
-            </Typography>
-
-            <FormControl fullWidth>
-              <Select
-                value={maybeReason}
-                onChange={(e) => setMaybeReason(e.target.value)}
-                displayEmpty
-              >
-                <MenuItem value="" disabled>
-                  Select Reason
-                </MenuItem>
-                {MAYBE_REASONS.map((r) => (
-                  <MenuItem key={r.value} value={r.value}>
-                    {r.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {maybeReason === 'others' && (
-              <Stack spacing={1}>
-                <Typography variant="caption" sx={{ fontWeight: 400 }}>
-                  Selection Description
-                </Typography>
-
-                <TextField
-                  placeholder="Please describe the reason for your selection, so we can provide more creators more suited to your needs"
-                  multiline
-                  minRows={3}
-                  value={maybeNote}
-                  onChange={(e) => setMaybeNote(e.target.value)}
-                  fullWidth
-                  required
-                  error={!maybeNote.trim() && isSubmitting}
-                  helperText={!maybeNote.trim() && isSubmitting ? 'This field is required' : ''}
-                />
-              </Stack>
-            )}
-          </Stack>
-        </DialogContent>
-
-        <DialogActions sx={{ pb: 3, px: 3 }}>
-          <Button
-            onClick={handleMaybeSubmit}
-            disabled={
-              isSubmitting || !maybeReason || (maybeReason === 'others' && !maybeNote.trim())
-            }
-          >
-            {isSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Submit Reason'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      
     </>
   );
 };
