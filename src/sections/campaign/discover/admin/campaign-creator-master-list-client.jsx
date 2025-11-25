@@ -35,6 +35,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchModal from './pitch-modal';
 import MediaKitModal from './media-kit-modal';
+import PitchModalMobile from './pitch-modal-mobile';
 import CreatorMasterListRow from './creator-master-list-row';
 
 // Status display helper function
@@ -107,6 +108,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
   const mediaKit = useBoolean();
+  const smDown = useResponsive('down', 'sm');
   
   // Mobile-specific state
   const [expandedSections, setExpandedSections] = useState({
@@ -554,7 +556,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
           )}
         </Box>
 
-        <PitchModal
+        <PitchModalMobile
           pitch={selectedPitch}
           open={openPitchModal}
           onClose={handleClosePitchModal}
@@ -916,13 +918,23 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
         </Scrollbar>
       </Box>
 
-      <PitchModal
-        pitch={selectedPitch}
-        open={openPitchModal}
-        onClose={handleClosePitchModal}
-        onUpdate={handlePitchUpdate}
-        campaign={campaign}
-      />
+      {smDown ? (
+        <PitchModalMobile
+          pitch={selectedPitch}
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          onUpdate={handlePitchUpdate}
+          campaign={campaign}
+        />
+      ) : (
+        <PitchModal
+          pitch={selectedPitch}
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          onUpdate={handlePitchUpdate}
+          campaign={campaign}
+        />
+      )}
 
       <MediaKitModal
         open={mediaKit.value}
