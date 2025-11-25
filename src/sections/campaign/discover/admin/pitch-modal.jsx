@@ -1490,10 +1490,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Box>
               <Stack spacing={1} alignItems="center">
                 <Typography
-                  variant="h6"
+                  variant="h3"
                   sx={{
                     fontFamily: 'Instrument Serif, serif',
-                    fontSize: '2.5rem',
                     fontWeight: 550,
                   }}
                 >
@@ -1570,21 +1569,18 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               // approve guard - only check UGC videos for non-v4 campaigns
               (confirmDialog.type === 'approve' &&
                 campaign?.campaignCredits &&
-                campaign?.submissionVersion !== 'v4' &&
-                (!totalUGCVideos || totalUGCVideos > ugcLeft)) ||
+                campaign?.submissionVersion === 'v4' &&
+                (totalUGCVideos > ugcLeft)) ||
               // client-decline guard: require reason & if others then note
               (confirmDialog.type === 'decline' &&
                 user?.role === 'client' &&
                 (!maybeReason || (maybeReason === 'others' && !maybeNote.trim())))
             }
             sx={{
-              bgcolor: confirmDialog.type === 'approve' ? '#2e6c56' : '#ffffff',
+              bgcolor: confirmDialog.type === 'approve' ? '#026D54' : '#ffffff',
               color:
                 confirmDialog.type === 'approve'
-                  ? '#fff'
-                  : user?.role === 'client' && confirmDialog.type === 'decline'
-                    ? '#D4321C'
-                    : '#ff3b30',
+                  ? '#fff' : '#000',
               border: confirmDialog.type === 'approve' ? 'none' : '1.5px solid #e7e7e7',
               borderBottom: '3px solid',
               borderBottomColor: confirmDialog.type === 'approve' ? '#202021' : '#e7e7e7',
