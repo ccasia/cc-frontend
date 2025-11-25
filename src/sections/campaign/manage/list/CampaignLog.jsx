@@ -87,49 +87,89 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
     allRows
       ?.filter(
         (row) =>
-          row.action.toLowerCase().includes('by client') ||
-          row.action.toLowerCase().includes('client approved') ||
-          row.action.toLowerCase().includes('client rejected') ||
-          row.action.toLowerCase().includes('client requested') ||
-          row.action.toLowerCase().includes('client logged in') ||
-          row.action.toLowerCase().includes('client submitted') ||
-          row.action.toLowerCase().includes('client activated') ||
-          row.action.toLowerCase().includes('client received') ||
-          row.action.toLowerCase().includes('client exported') ||
+          // Catch all logs that start with "Client"
+          row.action.toLowerCase().startsWith('client') ||
+          // User login and account activation
           row.action.toLowerCase().includes('user logs in') ||
+          row.action.toLowerCase().includes('client logged in') ||
+          row.action.toLowerCase().includes('first time login') ||
+          row.action.toLowerCase().includes('activated account') ||
+          // Campaign creation and activation
           row.action.toLowerCase().includes('submitted campaign') ||
+          row.action.toLowerCase().includes('campaign created by client') ||
           row.action.toLowerCase().includes('campaign activated') ||
+          row.action.toLowerCase().includes('client activated') ||
+          // Creator actions
           row.action.toLowerCase().includes('approve creator') ||
           row.action.toLowerCase().includes('reject creator') ||
           row.action.toLowerCase().includes('maybe') ||
+          row.action.toLowerCase().includes('set pitch') ||
+          // Draft actions
           row.action.toLowerCase().includes('receive draft') ||
+          row.action.toLowerCase().includes('received draft') ||
           row.action.toLowerCase().includes('approve draft') ||
+          row.action.toLowerCase().includes('approved draft') ||
           row.action.toLowerCase().includes('request change') ||
+          row.action.toLowerCase().includes('requested changes') ||
+          row.action.toLowerCase().includes('changes requested') ||
+          // Other client actions
+          row.action.toLowerCase().includes('by client') ||
+          row.action.toLowerCase().includes('client requested') ||
+          row.action.toLowerCase().includes('client submitted') ||
+          row.action.toLowerCase().includes('client received') ||
+          row.action.toLowerCase().includes('client exported') ||
           row.action.toLowerCase().includes('export campaign analytics')
       )
       .map((row) => {
         // Extract submission type from the action text
         let submissionType = 'Unknown';
 
-        if (row.action.toLowerCase().includes('logs in') || row.action.toLowerCase().includes('logged in')) {
+        // User login and account activation
+        if (row.action.toLowerCase().includes('logs in') || 
+            row.action.toLowerCase().includes('logged in') ||
+            row.action.toLowerCase().includes('first time login') ||
+            row.action.toLowerCase().includes('activated account')) {
           submissionType = 'Login';
-        } else if (row.action.toLowerCase().includes('submitted campaign') || row.action.toLowerCase().includes('campaign created')) {
+        } 
+        // Campaign creation and activation
+        else if (row.action.toLowerCase().includes('submitted campaign') || 
+                 row.action.toLowerCase().includes('campaign created')) {
           submissionType = 'Campaign';
-        } else if (row.action.toLowerCase().includes('campaign activated') || row.action.toLowerCase().includes('activated')) {
+        } 
+        else if (row.action.toLowerCase().includes('campaign activated') || 
+                 row.action.toLowerCase().includes('activated')) {
           submissionType = 'Activation';
-        } else if (row.action.toLowerCase().includes('approve creator') || (row.action.toLowerCase().includes('approved') && row.action.toLowerCase().includes('pitch'))) {
-          submissionType = 'Pitch';
-        } else if (row.action.toLowerCase().includes('reject creator') || (row.action.toLowerCase().includes('rejected') && row.action.toLowerCase().includes('pitch'))) {
-          submissionType = 'Pitch';
-        } else if (row.action.toLowerCase().includes('maybe')) {
-          submissionType = 'Pitch';
-        } else if (row.action.toLowerCase().includes('receive draft') || row.action.toLowerCase().includes('received')) {
-          submissionType = 'Draft';
-        } else if (row.action.toLowerCase().includes('approve draft') || (row.action.toLowerCase().includes('approved') && row.action.toLowerCase().includes('draft'))) {
-          submissionType = 'Draft';
-        } else if (row.action.toLowerCase().includes('request change') || row.action.toLowerCase().includes('requested changes')) {
-          submissionType = 'Changes';
-        } else if (row.action.toLowerCase().includes('export campaign analytics') || row.action.toLowerCase().includes('exported')) {
+        } 
+        // Creator/Pitch actions
+        else if (row.action.toLowerCase().includes('approve creator') || 
+                 (row.action.toLowerCase().includes('approved') && row.action.toLowerCase().includes('pitch'))) {
+          submissionType = 'Approve Pitch';
+        } 
+        else if (row.action.toLowerCase().includes('reject creator') || 
+                 (row.action.toLowerCase().includes('rejected') && row.action.toLowerCase().includes('pitch'))) {
+          submissionType = 'Reject Pitch';
+        } 
+        else if (row.action.toLowerCase().includes('maybe') ||
+                 row.action.toLowerCase().includes('set pitch')) {
+          submissionType = 'Maybe Pitch';
+        } 
+        // Draft actions
+        else if (row.action.toLowerCase().includes('receive draft') || 
+                 row.action.toLowerCase().includes('received draft')) {
+          submissionType = 'Receive Draft';
+        } 
+        else if ((row.action.toLowerCase().includes('approve draft') || 
+                 (row.action.toLowerCase().includes('approved') && row.action.toLowerCase().includes('draft'))) &&
+                 !row.action.toLowerCase().includes('changes requested')) {
+          submissionType = 'Approve Draft';
+        } 
+        else if (row.action.toLowerCase().includes('request change') || 
+                 row.action.toLowerCase().includes('requested changes') ||
+                 row.action.toLowerCase().includes('changes requested')) {
+          submissionType = 'Request Changes';
+        } 
+        else if (row.action.toLowerCase().includes('export campaign analytics') || 
+                 row.action.toLowerCase().includes('exported')) {
           submissionType = 'Analytics';
         } else if (row.action.includes('Agreement')) {
           submissionType = 'Agreement';
@@ -157,6 +197,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
       allRows?.filter(
         (row) =>
           !row.action.toLowerCase().includes('by client') && // Exclude client actions
+          !row.action.toLowerCase().startsWith('client') && // Exclude logs that start with "Client"
           ((row.action.includes('approved') &&
             (row.action.includes('pitch') ||
               row.action.includes('Agreement') ||
@@ -725,30 +766,43 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                                     color: '#2e7d32',
                                     borderColor: '#2e7d32',
                                   }),
+                                // Client pitch actions
                                 ...(currentTab === 'client' &&
-                                  row.submissionType === 'Pitch' && {
-                                    color: '#f57c00',
-                                    borderColor: '#f57c00',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Campaign' && {
-                                    color: '#673ab7',
-                                    borderColor: '#673ab7',
-                                  }),
-                                ...(currentTab === 'client' &&
-                                  row.submissionType === 'Approval' && {
+                                  row.submissionType === 'Approve Pitch' && {
                                     color: '#10b981',
                                     borderColor: '#10b981',
                                   }),
                                 ...(currentTab === 'client' &&
-                                  row.submissionType === 'Rejection' && {
+                                  row.submissionType === 'Reject Pitch' && {
                                     color: '#f44336',
                                     borderColor: '#f44336',
                                   }),
                                 ...(currentTab === 'client' &&
-                                  row.submissionType === 'Changes' && {
+                                  row.submissionType === 'Maybe Pitch' && {
+                                    color: '#f57c00',
+                                    borderColor: '#f57c00',
+                                  }),
+                                // Client draft actions
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Receive Draft' && {
+                                    color: '#3b82f6',
+                                    borderColor: '#3b82f6',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Approve Draft' && {
+                                    color: '#10b981',
+                                    borderColor: '#10b981',
+                                  }),
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Request Changes' && {
                                     color: '#f59e0b',
                                     borderColor: '#f59e0b',
+                                  }),
+                                // Client campaign actions
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Campaign' && {
+                                    color: '#673ab7',
+                                    borderColor: '#673ab7',
                                   }),
                                 ...(currentTab === 'client' &&
                                   row.submissionType === 'Login' && {
@@ -761,14 +815,25 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                                     borderColor: '#10b981',
                                   }),
                                 ...(currentTab === 'client' &&
+                                  row.submissionType === 'Analytics' && {
+                                    color: '#3b82f6',
+                                    borderColor: '#3b82f6',
+                                  }),
+                                // Legacy types
+                                ...(currentTab === 'client' &&
+                                  row.submissionType === 'Pitch' && {
+                                    color: '#f57c00',
+                                    borderColor: '#f57c00',
+                                  }),
+                                ...(currentTab === 'client' &&
                                   row.submissionType === 'Draft' && {
                                     color: '#9c27b0',
                                     borderColor: '#9c27b0',
                                   }),
                                 ...(currentTab === 'client' &&
-                                  row.submissionType === 'Analytics' && {
-                                    color: '#3b82f6',
-                                    borderColor: '#3b82f6',
+                                  row.submissionType === 'Changes' && {
+                                    color: '#f59e0b',
+                                    borderColor: '#f59e0b',
                                   }),
                               }}
                             >
