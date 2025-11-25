@@ -21,28 +21,28 @@ const getStatusConfig = (currentStatus) => {
   switch (currentStatus) {
     case 'PENDING_ASSIGNMENT':
       return {
-        label: 'UNASSIGNED',
+        label: 'unassigned',
         color: '#B0B0B0',
         bgColor: '#EFEFEF',
         hasAction: true,
       };
     case 'SCHEDULED':
       return {
-        label: 'YET TO SHIP',
+        label: 'yet to ship',
         color: '#FF9A02',
         bgColor: '#FFF7DB',
         hasAction: true,
       };
     case 'SHIPPED':
       return {
-        label: 'SHIPPED OUT',
+        label: 'shipped out',
         color: '#8A5AFE',
         bgColor: '#ECE4FF',
         hasAction: false,
       };
     case 'DELIVERED':
       return {
-        label: 'DELIVERED',
+        label: 'delivered',
         color: '#1ABF66',
         bgColor: '#DCFAE6',
         hasAction: false,
@@ -50,14 +50,14 @@ const getStatusConfig = (currentStatus) => {
     case 'RECEIVED':
     case 'COMPLETED':
       return {
-        label: 'COMPLETED',
+        label: 'completed',
         color: '#1ABF66',
         bgColor: '#DCFAE6',
         hasAction: false,
       };
     case 'ISSUE_REPORTED':
       return {
-        label: 'FAILED',
+        label: 'failed',
         color: '#FF3500',
         bgColor: '#FFD0C9',
         hasAction: true,
@@ -127,7 +127,7 @@ function ScheduledItem({ item }) {
               border: `1px solid ${statusConfig.bgColor}`,
               fontSize: '10px',
               fontWeight: 600,
-              textTransform: 'uppercase',
+              textTransform: 'capitalize',
               whiteSpace: 'nowrap',
             }}
           >
@@ -224,7 +224,7 @@ export default function LogisticsScheduledList({ date, logistics }) {
         sx={{
           flexGrow: 0,
           overflowY: 'auto',
-          height: 200, //TODO adjust list height
+          height: 250, //TODO adjust list height
           px: 0.5,
         }}
       >
