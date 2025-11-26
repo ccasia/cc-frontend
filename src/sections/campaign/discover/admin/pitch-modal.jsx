@@ -119,8 +119,39 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
 
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
-    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
-    return campaign?.campaignCredits - totalUGCs;
+    
+    // For V4 campaigns, only count credits as utilized when agreements are approved
+    if (campaign?.submissionVersion === 'v4') {
+      const approvedAgreements = (campaign?.submission || []).filter(sub => 
+        (sub.content && typeof sub.content === 'string' && 
+         sub.content.toLowerCase().includes('agreement')) &&
+        (sub.status === 'APPROVED')
+      );
+      
+      const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
+        let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
+        
+        if (!creator && typeof agreement.userId === 'string') {
+          creator = campaign?.shortlisted?.find(c => 
+            typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
+          );
+        }
+        
+        if (!creator) {
+          creator = campaign?.shortlisted?.find(c => 
+            c.user?.name === 'Tupac Shakir'
+          );
+        }
+        
+        return total + (creator?.ugcVideos || 0);
+      }, 0);
+      
+      return campaign.campaignCredits - utilizedCredits;
+    } else {
+      // For non-V4 campaigns, use the original calculation
+      const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
+      return campaign?.campaignCredits - totalUGCs;
+    }
   }, [campaign]);
 
   // Calculate match percentage
