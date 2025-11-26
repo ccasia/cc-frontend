@@ -1,68 +1,190 @@
 import PropTypes from 'prop-types';
+import { useState, useMemo } from 'react';
 
-import { Box, Stack, Drawer, Avatar, Divider, Typography, IconButton, Link } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Drawer,
+  Avatar,
+  Button,
+  Divider,
+  Typography,
+  IconButton,
+  Link,
+} from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
 import LogisticsStepper from './logistics-stepper';
+// import AssignLogisticDialog from './dialogs/assign-logistic-dialog';
+// import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
+// import ReviewIssueDialog from './dialogs/review-issue-dialog';
 
 export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId }) {
-  if (!logistic) return null;
+  const [openAssign, setOpenAssign] = useState(false);
+  const [openSchedule, setOpenSchedule] = useState(false);
+  const [openIssue, setOpenIssue] = useState(false);
 
-  const { creator, deliveryDetails } = logistic;
+  const status = logistic?.status;
+  const creator = logistic?.creator;
+  const deliveryDetails = logistic?.deliveryDetails;
 
-  const renderCreator = (
+  const buttonSx = {
+    width: 'fit-content',
+    height: 44,
+    padding: { xs: '4px 8px', sm: '6px 10px' },
+    borderRadius: '6px',
+    border: '1px solid #1340FF',
+    boxShadow: '0px -2px 0px 0px #0c2aa6 inset',
+    backgroundColor: '#1340FF',
+    color: '#FFFFFF',
+    fontSize: { xs: 12, sm: 14, md: 16 },
+    fontWeight: 600,
+    textTransform: 'none',
+    '&:hover': {
+      backgroundColor: '#1340FF',
+      border: '1px solid #0c2aa6',
+      boxShadow: '0px -2px 0px 0px #0c2aa6 inset',
+    },
+    '&:active': {
+      boxShadow: '0px -1px 0px 0px #0c2aa6 inset',
+      transform: 'translateY(1px)',
+    },
+  };
+
+  const actionButton = useMemo(() => {
+    if (!logistic) return null;
+
+    switch (status) {
+      case 'PENDING_ASSIGNMENT':
+        return (
+          <Button fullWidth variant="contained" onClick={() => setOpenAssign(true)} sx={buttonSx}>
+            Assign
+          </Button>
+        );
+      case 'SCHEDULED':
+        return (
+          <Button fullWidth variant="contained" onClick={() => setOpenSchedule(true)} sx={buttonSx}>
+            Schedule Delivery
+          </Button>
+        );
+      case 'ISSUE_REPORTED':
+        return (
+          <Button fullWidth variant="contained" onClick={() => setOpenIssue(true)} sx={buttonSx}>
+            Review Issue
+          </Button>
+        );
+      case 'SHIPPED':
+      case 'DELIVERED':
+      case 'COMPLETED':
+        return null;
+      default:
+        return null;
+    }
+  }, [status, logistic]);
+
+  const renderHeader = (
     <Stack
       direction="row"
-      alignContent="center"
+      alignItems="center"
       justifyContent="space-between"
       sx={{ py: 2, px: 2.5 }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ width: 48, height: 48, mr: 2 }} />
-        <Box>
-          <Typography variant="subtitle1">{creator?.name}</Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            {creator?.creator?.instagramUser?.username
-              ? `@${creator.creator.instagramUser.username}`
-              : '-'}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'text.primary', display: 'block' }}>
-            {creator?.phoneNumber || '-'}
-          </Typography>
-        </Box>
-      </Box>
-      {/* <IconButton onClick={onClose}>
-        <Iconify icon="eva:close-fill" />
-      </IconButton> */}
+      <IconButton onClick={onClose}>
+        <Iconify icon="eva:close-fill" sx={{ height: '24px', width: '24px' }} />
+      </IconButton>
     </Stack>
   );
 
+  const renderCreator = (
+    <Box
+      sx={{
+        p: 2.5,
+        border: '1px solid #919EAB3D',
+        bgcolor: '#F4F6F8',
+        borderRadius: 2,
+        mx: 3,
+        mb: 3,
+      }}
+    >
+      <Stack
+        direction="row"
+        alignContent="center"
+        justifyContent="space-between"
+        // sx={{ py: 2, px: 2.5 }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar
+            alt={creator?.name}
+            src={creator?.photoURL}
+            sx={{ width: 48, height: 48, mr: 2 }}
+          />
+          <Box>
+            <Typography variant="subtitle1">{creator?.name}</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {creator?.creator?.instagramUser?.username
+                ? `@${creator.creator.instagramUser.username}`
+                : '-'}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.primary', display: 'block' }}>
+              {creator?.phoneNumber || '-'}
+            </Typography>
+          </Box>
+        </Box>
+        {/* <IconButton onClick={onClose}>
+        <Iconify icon="eva:close-fill" />
+      </IconButton> */}
+      </Stack>
+    </Box>
+  );
+
   const renderDietary = (
-    <Box sx={{ p: 2.5, bgcolor: '#F4F6F8', borderRadius: 2, mx: 2.5, mb: 3 }}>
+    <Box
+      sx={{
+        px: 2.5,
+        py: 1,
+        border: '1px solid #919EAB3D',
+        bgcolor: '#F4F6F8',
+        borderRadius: 2,
+        mx: 3,
+        mb: 3,
+      }}
+    >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
         <Iconify icon="material-symbols:clarify-outline-rounded" sx={{ color: '#1340FF' }} />
         <Typography variant="subtitle2">DIETARY RESTRICTIONS/ALLERGIES</Typography>
       </Stack>
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+      <Divider />
+      <Typography variant="body2" sx={{ color: 'text.secondary', my: 2 }}>
         {deliveryDetails?.dietaryRestrictions || 'No dietary restrictions or allergies specified.'}
       </Typography>
     </Box>
   );
 
   const renderDeliveryDetails = (
-    <Box sx={{ p: 2.5, border: '1px solid #919EAB3D', borderRadius: 2, mx: 2.5, mb: 3 }}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+    <Box
+      sx={{
+        px: 2.5,
+        py: 1,
+        border: '1px solid #919EAB3D',
+        bgcolor: '#F4F6F8',
+        borderRadius: 2,
+        mx: 3,
+        mb: 3,
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
         <Iconify icon="material-symbols:clarify-outline-rounded" sx={{ color: '#1340FF' }} />
         <Typography variant="subtitle2">DELIVERY DETAILS</Typography>
       </Stack>
-      <Stack spacing={2}>
+      <Divider />
+      <Stack spacing={2} sx={{ my: 2 }}>
         <Box>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             Product
           </Typography>
-          <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
+          <Stack direction="row" spacing={1}>
             {deliveryDetails?.items?.map((item, index) => (
               <Box
                 key={index}
@@ -84,9 +206,10 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             Tracking Link
           </Typography>
-          <Box>
+          <Box sx={{ mt: 0 }}>
             {deliveryDetails?.trackingLink ? (
               <Link
+                variant="body2"
                 href={deliveryDetails.trackingLink}
                 target="_blank"
                 rel="noopener"
@@ -95,27 +218,34 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
                 {deliveryDetails.trackingLink}
               </Link>
             ) : (
-              <Typography variant="body2"></Typography>
+              <Typography variant="body2">-</Typography>
             )}
           </Box>
         </Box>
         <Box>
-          <Typography>Delivery Address</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Delivery Address
+          </Typography>
           <Stack>
             <Iconify />
-            <Typography>{deliveryDetails?.address || 'No address provided'}</Typography>
+            <Typography variant="body2">
+              {deliveryDetails?.address || 'No address provided'}
+            </Typography>
           </Stack>
         </Box>
         <Box>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             Expected Delivery
           </Typography>
-          <Typography>
+          <Typography variant="body2">
             {deliveryDetails?.expectedDeliveryDate
               ? new Date(deliveryDetails.expectedDeliveryDate).toLocaleString()
               : '-'}
           </Typography>
         </Box>
+      </Stack>
+      <Stack alignItems="center">
+        <Box>{actionButton}</Box>
       </Stack>
     </Box>
   );
@@ -126,19 +256,34 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
       onClose={onClose}
       anchor="right"
       PaperProps={{
-        sx: { width: { xs: 1, sm: 370 } },
+        sx: {
+          width: { xs: 1, sm: 370 },
+          backgroundColor: '#F4F6F8 !important',
+          borderTopLeftRadius: 12,
+        },
       }}
     >
-      <Scrollbar>
-        <Divider />
-        {renderCreator}
-        <Box>
-          <LogisticsStepper logistic={logistic} onUpdate={onUpdate} campaignId={campaignId} />
-        </Box>
-        <Divider />
-        {renderDietary}
-        {renderDeliveryDetails}
-      </Scrollbar>
+      {renderHeader}
+      <Divider
+        sx={{
+          mb: 3,
+        }}
+      />
+      {renderCreator}
+      <Box
+        sx={{
+          p: 2.5,
+          border: '1px solid #919EAB3D',
+          bgcolor: '#F4F6F8',
+          borderRadius: 2,
+          mx: 3,
+          mb: 3,
+        }}
+      >
+        <LogisticsStepper logistic={logistic} onUpdate={onUpdate} campaignId={campaignId} />
+      </Box>
+      {renderDietary}
+      {renderDeliveryDetails}
     </Drawer>
   );
 }

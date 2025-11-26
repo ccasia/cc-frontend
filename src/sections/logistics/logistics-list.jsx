@@ -41,7 +41,7 @@ export default function LogisticsList({ campaignId, logistics: staticLogistics }
 
   const handleCloseDrawer = () => {
     setOpenDrawer(false);
-    setSelectedLogistic(null);
+    // setSelectedLogistic(null);
   };
 
   if (isLoading) return <LoadingScreen />;
