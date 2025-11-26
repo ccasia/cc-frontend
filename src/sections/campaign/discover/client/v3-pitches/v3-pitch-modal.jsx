@@ -73,12 +73,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
           );
         }
         
-        if (!creator) {
-          creator = campaign?.shortlisted?.find(c => 
-            c.user?.name === 'Tupac Shakir'
-          );
-        }
-        
         return total + (creator?.ugcVideos || 0);
       }, 0);
       

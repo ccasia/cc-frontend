@@ -137,12 +137,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           );
         }
         
-        if (!creator) {
-          creator = campaign?.shortlisted?.find(c => 
-            c.user?.name === 'Tupac Shakir'
-          );
-        }
-        
         return total + (creator?.ugcVideos || 0);
       }, 0);
       
