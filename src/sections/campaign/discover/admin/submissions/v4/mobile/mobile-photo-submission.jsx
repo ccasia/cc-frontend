@@ -265,7 +265,9 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
   }
 
   // Render a single photo tile
-  const renderPhotoTile = (photo, photoIndex, size = 'normal') => {
+  const renderPhotoTile = (photos, photo, photoIndex, size = 'normal') => {
+    const photosLength = photos.length;
+
     const sizeStyles = {
       large: { width: '100%', height: '100%' },
       normal: { width: '100%', height: '100%' },
@@ -292,7 +294,7 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
           alt={`Photo ${photoIndex + 1}`}
           sx={{
             width: '100%',
-            height: '100%',
+            height: photosLength === 1 ? 200 : '100%',
             objectFit: 'cover',
           }}
         />
@@ -367,7 +369,7 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
               const photoIndex = colIndex * 2 + rowIndex;
               return (
                 <Box key={photo.id} sx={{ flex: 1 }}>
-                  {renderPhotoTile(photo, photoIndex)}
+                  {renderPhotoTile(photos, photo, photoIndex)}
                 </Box>
               );
             })}
