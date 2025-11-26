@@ -561,12 +561,6 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                                     );
                                   }
                                   
-                                  if (!creator) {
-                                    creator = campaign?.shortlisted?.find(c => 
-                                      c.user?.name === 'Tupac Shakir'
-                                    );
-                                  }
-                                  
                                   if (creator) {
                                     return total + (creator.ugcVideos || 0);
                                   }

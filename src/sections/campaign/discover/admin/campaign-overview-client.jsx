@@ -620,12 +620,6 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                                 );
                               }
                               
-                              if (!creator) {
-                                creator = campaign?.shortlisted?.find(c => 
-                                  c.user?.name === 'Tupac Shakir'
-                                );
-                              }
-                              
                               return total + (creator?.ugcVideos || 0);
                             }, 0);
                             
@@ -654,12 +648,6 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                               if (!creator && typeof agreement.userId === 'string') {
                                 creator = campaign?.shortlisted?.find(c => 
                                   typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
-                                );
-                              }
-
-                              if (!creator) {
-                                creator = campaign?.shortlisted?.find(c => 
-                                  c.user?.name === 'Tupac Shakir'
                                 );
                               }
                               

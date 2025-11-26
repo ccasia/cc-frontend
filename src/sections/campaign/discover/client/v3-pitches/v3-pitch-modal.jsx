@@ -55,8 +55,33 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   // Compute remaining UGC credits from campaign overview
   const ugcLeft = (() => {
     if (!campaign?.campaignCredits) return 0;
-    const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
-    return Math.max(0, campaign.campaignCredits - used);
+    
+    // For V4 campaigns, only count credits as utilized when agreements are approved
+    if (campaign?.submissionVersion === 'v4') {
+      const approvedAgreements = (campaign?.submission || []).filter(sub => 
+        (sub.content && typeof sub.content === 'string' && 
+         sub.content.toLowerCase().includes('agreement')) &&
+        (sub.status === 'APPROVED')
+      );
+      
+      const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
+        let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
+        
+        if (!creator && typeof agreement.userId === 'string') {
+          creator = campaign?.shortlisted?.find(c => 
+            typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
+          );
+        }
+        
+        return total + (creator?.ugcVideos || 0);
+      }, 0);
+      
+      return Math.max(0, campaign.campaignCredits - utilizedCredits);
+    } else {
+      // For non-V4 campaigns, use the original calculation
+      const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
+      return Math.max(0, campaign.campaignCredits - used);
+    }
   })();
   // Normalize admin comments text so UI displays whenever present
   const adminCommentsText = ((currentPitch?.adminComments ?? pitch?.adminComments ?? '') || '')
