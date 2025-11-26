@@ -304,32 +304,19 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate }
             preload="auto"
           />
           {/* Play button overlay */}
-          <Box
+          <Iconify
+            icon="streamline-block:control-buttons-play"
+            width={24}
+            height={24}
             sx={{
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: 44,
-              height: 44,
-              bgcolor: 'rgba(0, 0, 0, 0.6)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1,
+              color: '#B0B0B0',
+              ml: 0.25,
             }}
-          >
-            <Iconify
-              icon="solar:play-bold"
-              width={24}
-              height={24}
-              sx={{
-                color: 'white',
-                ml: 0.25,
-              }}
-            />
-          </Box>
+          />
         </Box>
       </Stack>
 

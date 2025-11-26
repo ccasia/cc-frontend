@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useRef, useMemo, useState, useCallback } from 'react';
 
-import { Box, Stack, TextField, Typography, IconButton } from '@mui/material';
+import { Box, Stack, TextField, Typography } from '@mui/material';
 
 import { approveV4Submission } from 'src/hooks/use-get-v4-submissions';
 
@@ -60,53 +60,8 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
   const videoRefs = useRef({});
   const [showFeedbackLogs, setShowFeedbackLogs] = useState(false);
 
-  const formatTime = useCallback((time) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }, []);
-
-  const togglePlay = useCallback(
-    (footageId) => {
-      const videoRef = videoRefs.current[footageId];
-      if (videoRef) {
-        const currentState = videoStates[footageId];
-        if (currentState?.isPlaying) {
-          videoRef.pause();
-        } else {
-          videoRef.play();
-        }
-        setVideoStates((prev) => ({
-          ...prev,
-          [footageId]: {
-            ...prev[footageId],
-            isPlaying: !currentState?.isPlaying,
-          },
-        }));
-      }
-    },
-    [videoStates]
-  );
-
-  const handleSeek = useCallback(
-    (event, footageId) => {
-      const videoRef = videoRefs.current[footageId];
-      if (videoRef) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        const pos = (event.clientX - rect.left) / rect.width;
-        const newTime = pos * (videoStates[footageId]?.duration || 0);
-        videoRef.currentTime = newTime;
-        setVideoStates((prev) => ({
-          ...prev,
-          [footageId]: {
-            ...prev[footageId],
-            currentTime: newTime,
-          },
-        }));
-      }
-    },
-    [videoStates]
-  );
+  // NOTE: formatTime, togglePlay and handleSeek removed as they are not used in
+  // the mobile UI here. Keep video refs and time/state handling where needed.
 
   const handleTimeUpdate = useCallback((footageId) => {
     const videoRef = videoRefs.current[footageId];
@@ -366,22 +321,14 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
         }}
       >
         {rawFootages.map((rawFootage, footageIndex) => {
-          const videoState = videoStates[rawFootage.id] || {};
-          const {
-            isPlaying = false,
-            currentTime = 0,
-            duration = 0,
-          } = videoState;
-          const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-
+          const isPlaying = videoStates[rawFootage.id]?.isPlaying;
           return (
           <Box
             key={rawFootage.id}
             sx={{
               position: 'relative',
               flexShrink: 0,
-              width: 160,
-              borderRadius: 1.5,
+              width: 120,
               overflow: 'hidden',
               bgcolor: 'black',
             }}
@@ -395,6 +342,7 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
                     width: '100%',
                     height: 180,
                     cursor: 'pointer',
+                    bgcolor: 'grey.900',
                   }}
                   onClick={() => handleVideoClick(footageIndex)}
                 >
@@ -425,144 +373,22 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
                   >
                     <track kind="captions" srcLang="en" label="English" />
                   </video>
-
-                  {/* Index Badge */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      width: 22,
-                      height: 28,
-                      backgroundColor: 'white',
-                      color: 'black',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      fontWeight: 'bold',
-                      border: '1px solid #EBEBEB',
-                      boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                      zIndex: 2,
-                    }}
-                  >
-                    {footageIndex + 1}
-                  </Box>
-                </Box>
-
-                {/* Mini Video Controls */}
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: 32,
-                    bgcolor: 'rgba(0, 0, 0, 0.9)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    px: 0.8,
-                    py: 0.3,
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      togglePlay(rawFootage.id);
-                    }}
-                    sx={{
-                      color: 'white',
-                      bgcolor: 'rgba(255,255,255,0.1)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      width: 24,
-                      height: 24,
-                      p: 0.3,
-                      mr: 0.5,
-                      '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
-                    }}
-                  >
-                    {isPlaying ? (
-                      <Box sx={{ width: 7, height: 8, display: 'flex', gap: 0.3 }}>
-                        <Box sx={{ width: 3, height: '100%', bgcolor: 'white' }} />
-                        <Box sx={{ width: 3, height: '100%', bgcolor: 'white' }} />
-                      </Box>
-                    ) : (
-                      <Box
+                  {/* Play Button Overlay */}
+                    {!isPlaying && (
+                      <Iconify
+                        icon="streamline-block:control-buttons-play"
+                        width={24}
+                        height={24}
                         sx={{
-                          width: 0,
-                          height: 0,
-                          borderLeft: '7px solid white',
-                          borderTop: '4.5px solid transparent',
-                          borderBottom: '4.5px solid transparent',
-                          ml: 0.3,
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          color: '#B0B0B0',
+                          ml: 0.25,
                         }}
                       />
                     )}
-                  </IconButton>
-
-                  <Box
-                    sx={{
-                      flex: 1,
-                      height: 4,
-                      bgcolor: 'rgba(255,255,255,0.3)',
-                      borderRadius: 2,
-                      cursor: 'pointer',
-                      mx: 0.3,
-                      position: 'relative',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: -8,
-                        bottom: -8,
-                        left: 0,
-                        right: 0,
-                      },
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSeek(e, rawFootage.id);
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: `${progressPercent}%`,
-                        height: '100%',
-                        bgcolor: 'primary.main',
-                        borderRadius: 2,
-                        transition: 'width 0.1s ease',
-                      }}
-                    />
-                  </Box>
-
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'white',
-                      fontSize: 9,
-                      minWidth: 28,
-                      textAlign: 'right',
-                    }}
-                  >
-                    {formatTime(duration)}
-                  </Typography>
-
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleVideoClick(footageIndex);
-                    }}
-                    sx={{
-                      color: 'white',
-                      p: 0.3,
-                      ml: 0.3,
-                      width: 24,
-                      height: 24,
-                      '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
-                    }}
-                  >
-                    <Iconify icon="eva:expand-fill" width={14} height={14} />
-                  </IconButton>
                 </Box>
               </Box>
             ) : (
@@ -585,8 +411,8 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
               </Box>
             )}
           </Box>
-          );
-        })}
+            );
+          })}
       </Box>
 
       {/* Caption Section */}

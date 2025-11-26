@@ -158,7 +158,7 @@ function MobileSubmissionRow({
         <Typography 
           variant="body1" 
           fontWeight={700}
-          sx={{ color: isExpanded ? '#1340FF' : 'text.primary' }}
+          sx={{ color: 'text.primary' }}
         >
           {label}
         </Typography>
