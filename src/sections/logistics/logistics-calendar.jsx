@@ -143,7 +143,7 @@ export default function LogisticsCalendar({ date, onChange, logistics }) {
           sx={{
             width: '100%',
             height: '100%',
-            maxHeight: 400,
+            maxHeight: 500,
             '& .MuiPickersCalendarHeader-root': { mt: 1 },
             '& .MuiPickersCalendarHeader': { borderBottom: '5px solid rgba(145, 158, 171, 0.24)' },
             '& .MuiDayCalendar-weekDayLabel': {
@@ -156,6 +156,14 @@ export default function LogisticsCalendar({ date, onChange, logistics }) {
             },
             '& .MuiDayCalendar-monthContainer': {
               borderTop: '1px solid rgba(145, 158, 171, 0.24)',
+              paddingBottom: '4px',
+            },
+            '& .MuiPickersYear-yearButton.Mui-selected': {
+              backgroundColor: '#1340FF !important', // Your Blue Color
+              color: '#ffffff',
+              '&:hover': {
+                backgroundColor: '#0b2dad !important', // Darker Blue on hover
+              },
             },
           }}
         />
