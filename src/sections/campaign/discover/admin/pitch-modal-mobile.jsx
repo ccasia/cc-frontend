@@ -38,10 +38,10 @@ import Iconify from 'src/components/iconify';
 
 const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuthContext();
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
-  const { user } = useAuthContext();
   const [totalUGCVideos, setTotalUGCVideos] = useState(null);
   const { mutate } = useGetCampaignById(campaign.id);
   const navigate = useNavigate();
