@@ -208,7 +208,7 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
       return (
         <Box
           sx={{
-            maxHeight: 80,
+            maxHeight: 150,
             overflow: 'auto',
             mt: 0.5,
           }}
@@ -264,17 +264,79 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
     );
   }
 
-  return (
-    <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
-      {/* Photo Gallery - Horizontal Scroll */}
+  // Render a single photo tile
+  const renderPhotoTile = (photo, photoIndex, size = 'normal') => {
+    const sizeStyles = {
+      large: { width: '100%', height: '100%' },
+      normal: { width: '100%', height: '100%' },
+      small: { width: '100%', height: '100%' },
+    };
+
+    return (
+      <Box
+        key={photo.id}
+        sx={{
+          position: 'relative',
+          ...sizeStyles[size],
+          overflow: 'hidden',
+          cursor: 'pointer',
+          '&:active': {
+            opacity: 0.8,
+          },
+        }}
+        onClick={() => handlePhotoClick(photoIndex)}
+      >
+        <Box
+          component="img"
+          src={photo.url}
+          alt={`Photo ${photoIndex + 1}`}
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+        {/* Photo Index Badge */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            width: 22,
+            height: 28,
+            backgroundColor: 'white',
+            color: 'black',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 12,
+            fontWeight: 'bold',
+            border: '1px solid #EBEBEB',
+            boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+          }}
+        >
+          {photoIndex + 1}
+        </Box>
+      </Box>
+    );
+  };
+
+  // Render photo grid based on number of photos
+  const renderPhotoGrid = () => {
+    // Group photos into columns of 2 (top and bottom)
+    const columns = [];
+    for (let i = 0; i < photos.length; i += 2) {
+      columns.push(photos.slice(i, i + 2));
+    }
+
+    return (
       <Box
         sx={{
           display: 'flex',
-          gap: 1,
-          overflowX: 'auto',
+          gap: 0.5,
+          overflowX: columns.length > 1 ? 'auto' : 'hidden',
           overflowY: 'hidden',
-          pb: 1,
-          mb: 2,
           '&::-webkit-scrollbar': {
             height: 4,
           },
@@ -290,90 +352,59 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
           scrollBehavior: 'smooth',
         }}
       >
-        {photos.map((photo, photoIndex) => (
+        {columns.map((column, colIndex) => (
           <Box
-            key={photo.id}
+            key={colIndex}
             sx={{
-              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+              width: 120,
               flexShrink: 0,
-              width: 140,
-              height: 180,
-              borderRadius: 1.5,
-              overflow: 'hidden',
-              cursor: 'pointer',
-              '&:active': {
-                opacity: 0.8,
-              },
             }}
-            onClick={() => handlePhotoClick(photoIndex)}
           >
-            <Box
-              component="img"
-              src={photo.url}
-              alt={`Photo ${photoIndex + 1}`}
-              sx={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-            {/* Photo Index Badge */}
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                width: 22,
-                height: 28,
-                backgroundColor: 'white',
-                color: 'black',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 12,
-                fontWeight: 'bold',
-                border: '1px solid #EBEBEB',
-                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-              }}
-            >
-              {photoIndex + 1}
-            </Box>
-            {/* Expand Overlay */}
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                bgcolor: 'rgba(0, 0, 0, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: 0.6,
-              }}
-            >
-              <Iconify
-                icon="eva:expand-fill"
-                sx={{
-                  color: 'white',
-                  width: 32,
-                  height: 32,
-                  opacity: 0.9,
-                }}
-              />
-            </Box>
+            {column.map((photo, rowIndex) => {
+              const photoIndex = colIndex * 2 + rowIndex;
+              return (
+                <Box key={photo.id} sx={{ flex: 1 }}>
+                  {renderPhotoTile(photo, photoIndex)}
+                </Box>
+              );
+            })}
           </Box>
         ))}
       </Box>
+    );
+  };
 
-      {/* Caption Section */}
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="caption" fontWeight="bold" color="#636366" mb={0.5}>
-          Caption
-        </Typography>
-        {renderCaptionContent()}
+  return (
+    <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
+      {/* Caption (Left) + Photo Gallery (Right) Layout */}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          mb: 2,
+        }}
+      >
+        {/* Caption Section - Left Side */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="caption" fontWeight="bold" color="#636366" mb={0.5}>
+            Caption
+          </Typography>
+          {renderCaptionContent()}
+        </Box>
+
+        {/* Photo Gallery - Right Side */}
+        <Box
+          sx={{
+            flexShrink: 0,
+            maxWidth: 140,
+            overflow: 'hidden',
+          }}
+        >
+          {renderPhotoGrid()}
+        </Box>
       </Box>
 
       {/* Feedback Section */}
