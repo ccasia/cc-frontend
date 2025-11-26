@@ -6,6 +6,7 @@ import {
   Box,
   Stack,
   Avatar,
+  Button,
   Tooltip,
   TextField,
   Typography,
@@ -705,16 +706,29 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortDirection, setSortDirection] = useState('asc');
 
 
   const handleSearchChange = useCallback((event) => {
     setSearchTerm(event.target.value);
   }, []);
 
+  const toggleSortDirection = useCallback(() => {
+    setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  }, []);
 
 
-  // Filter creators based on search term
-  const filteredCreators = campaign?.shortlisted?.filter(creator => {
+
+  // Sort and filter creators based on search term and sort direction
+  const sortedCreators = (campaign?.shortlisted || []).slice().sort((a, b) => {
+    const aName = (a?.user?.name || '').toLowerCase();
+    const bName = (b?.user?.name || '').toLowerCase();
+    if (aName === bName) return 0;
+    if (sortDirection === 'asc') return aName > bName ? 1 : -1;
+    return aName < bName ? 1 : -1;
+  });
+
+  const filteredCreators = sortedCreators.filter(creator => {
     const name = creator.user?.name?.toLowerCase() || '';
     const email = creator.user?.email?.toLowerCase() || '';
     const searchLower = searchTerm.toLowerCase();
@@ -741,33 +755,58 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
   return (
     <Box>
       <Box sx={{ mx: { xs: 1, sm: 0 }, mb: 2 }}>
-        <TextField
-          fullWidth
-          size="medium"
-          placeholder="Search creators..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          sx={{
-            maxWidth: { xs: '100%', sm: 400 },
-            '& .MuiOutlinedInput-root': {
-              '&:hover fieldset': {
-                borderColor: 'primary.main',
-              },
-            }
-          }}
-          InputProps={{
-            startAdornment: <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />,
-          }}
-        />
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            size="medium"
+            placeholder="Search creators..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            sx={{
+              flex: 1,
+              maxWidth: { xs: '100%', sm: 400 },
+            }}
+            InputProps={{
+              startAdornment: <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />,
+            }}
+          />
+
+          <Button
+            onClick={toggleSortDirection}
+            sx={{
+              height: { xs: 45, sm: '100%' },
+              whiteSpace: 'nowrap',
+              borderRadius: 1,
+              border: '1px solid #E7E7E7',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              px: 2,
+              py: 1.8,
+              '&:hover': {
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                bgcolor: '#fff'
+              }
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="body" color="#636366">Alphabetical</Typography>
+              <Iconify
+                icon={sortDirection === 'asc' ? 'mdi:sort-alphabetical-ascending' : 'mdi:sort-alphabetical-descending'}
+                width={18}
+                sx={{ color: '#636366' }}
+              />
+            </Box>
+          </Button>
+        </Box>
       </Box>
 
       {/* Mobile View */}
       {(() => {
-        if (isMobile) {
+          if (isMobile) {
           return (
             <MobileCreatorSubmissions 
               campaign={campaign} 
-              creators={campaign?.shortlisted} 
+              creators={sortedCreators} 
               searchTerm={searchTerm}
             />
           );
