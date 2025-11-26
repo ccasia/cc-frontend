@@ -82,8 +82,8 @@ export default function LogisticsAnalytics({ logistics = [] }) {
   };
 
   const renderListRow = (count, label, color, bgColor) => (
-    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
-      <Typography variant="subtitle1" sx={{ minWidth: 24, textAlign: 'right' }}>
+    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+      <Typography variant="subtitle1" sx={{ minWidth: 24, textAlign: 'left' }}>
         {count}
       </Typography>
       <Box
@@ -115,8 +115,8 @@ export default function LogisticsAnalytics({ logistics = [] }) {
         </Typography>
       </Stack>
       <Divider />
-      <Stack alignItems="center" justifyContent="center" sx={{ flexGrow: 1, p: 3, minHeight: 300 }}>
-        <Box sx={{ position: 'relative', mb: 3 }}>
+      <Stack alignItems="center" justifyContent="center" sx={{ flexGrow: 1, p: 2, minHeight: 300 }}>
+        <Box sx={{ position: 'relative', mb: 2 }}>
           <Chart
             dir="ltr"
             type="donut"
@@ -126,13 +126,17 @@ export default function LogisticsAnalytics({ logistics = [] }) {
             height={80}
           />
         </Box>
-        <Typography>{percentCompleted}% COMPLETED</Typography>
-        <Box>
-          {renderListRow(stats.unassigned, 'Uassigned', '#B0B0B0', '#EFEFEF')}
-          {renderListRow(stats.yetToShip, 'Yet To Ship', '#FF9A02', '#FFF7DB')}
-          {renderListRow(stats.shipped, 'Shipped Out', '#8A5AFE', '#ECE4FF')}
-          {renderListRow(stats.delivered, 'Delivered', '#1ABF66', '#DCFAE6')}
-          {renderListRow(stats.failed, 'Failed', '#FF3500', '#FFD0C9')}
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#454F5B' }}>
+          {percentCompleted}% COMPLETED
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ width: '100%', maxWidth: 200 }}>
+            {renderListRow(stats.unassigned, 'Uassigned', '#B0B0B0', '#EFEFEF')}
+            {renderListRow(stats.yetToShip, 'Yet To Ship', '#FF9A02', '#FFF7DB')}
+            {renderListRow(stats.shipped, 'Shipped Out', '#8A5AFE', '#ECE4FF')}
+            {renderListRow(stats.delivered, 'Delivered', '#1ABF66', '#DCFAE6')}
+            {renderListRow(stats.failed, 'Failed', '#FF3500', '#FFD0C9')}
+          </Box>
         </Box>
       </Stack>
     </Card>

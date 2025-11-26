@@ -45,7 +45,7 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
 
   return (
     <>
-      <Grid container spacing={3} sx={{ mb: 5 }}>
+      <Grid container spacing={2} sx={{ mb: 5 }}>
         <Grid item xs={12} md={9}>
           <Card
             sx={{
@@ -56,7 +56,7 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
           >
             <Box
               sx={{
-                width: { xs: '100%', md: 320 }, // Fixed width on desktop to prevent squashing
+                width: { xs: '100%', md: 300 }, // Fixed width on desktop to prevent squashing
                 flexShrink: 0,
               }}
             >
