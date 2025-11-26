@@ -8,7 +8,9 @@ import {
   Tooltip,
   TextField,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
 
@@ -21,6 +23,7 @@ import EmptyContent from 'src/components/empty-content';
 import V4VideoSubmission from './submissions/v4/video-submission';
 import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
+import MobileCreatorSubmissions from './submissions/v4/mobile/mobile-creator-submissions';
 
 // ----------------------------------------------------------------------
 
@@ -694,6 +697,8 @@ CreatorAccordion.propTypes = {
 };
 
 export default function CampaignCreatorSubmissionsV4({ campaign }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchTerm, setSearchTerm] = useState('');
 
 
@@ -729,15 +734,15 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 0 } }}>
-      <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+    <Box>
+      <Box sx={{ mx: { xs: 1, sm: 0 }, mb: 2 }}>
         <TextField
           fullWidth
-          size="small"
+          size="medium"
           placeholder="Search creators..."
           value={searchTerm}
           onChange={handleSearchChange}
-          sx={{ 
+          sx={{
             maxWidth: { xs: '100%', sm: 400 },
             '& .MuiOutlinedInput-root': {
               '&:hover fieldset': {
@@ -751,20 +756,30 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
         />
       </Box>
 
-      {filteredCreators.length === 0 ? (
-        <Box sx={{ p: 3, textAlign: 'center' }}>
-          <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
-        </Box>
+      {/* Mobile View */}
+      {isMobile ? (
+        <MobileCreatorSubmissions 
+          campaign={campaign} 
+          creators={campaign?.shortlisted} 
+          searchTerm={searchTerm}
+        />
       ) : (
-        <Stack spacing={{ xs: 0.5, sm: 1 }}>
-          {filteredCreators.map((creator, index) => (
-            <CreatorAccordionWithSubmissions
-              key={creator.userId || index}
-              creator={creator}
-              campaign={campaign}
-            />
-          ))}
-        </Stack>
+        /* Desktop View */
+        filteredCreators.length === 0 ? (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
+          </Box>
+        ) : (
+          <Stack spacing={{ xs: 0.5, sm: 1 }}>
+            {filteredCreators.map((creator, index) => (
+              <CreatorAccordionWithSubmissions
+                key={creator.userId || index}
+                creator={creator}
+                campaign={campaign}
+              />
+            ))}
+          </Stack>
+        )
       )}
     </Box>
   );
