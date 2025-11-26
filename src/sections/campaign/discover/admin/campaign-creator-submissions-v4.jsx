@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState, useCallback } from 'react';
 
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Stack,
@@ -10,7 +11,6 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
 
@@ -82,7 +82,6 @@ function CreatorAccordion({ creator, campaign }) {
 
   const renderSubmissionPills = () => {
     const pills = [];
-    let submissionCounter = 0;
 
     const formatStatus = (status) => status?.replace(/_/g, ' ') || 'Unknown';
 
@@ -162,7 +161,7 @@ function CreatorAccordion({ creator, campaign }) {
     
     // Video submission pills
     grouped.videos?.forEach((videoSubmission, index) => {
-      submissionCounter++;
+      // removed unused submissionCounter
       const key = `video-${videoSubmission.id}`;
       const isExpanded = expandedSubmission === key;
 
@@ -288,7 +287,7 @@ function CreatorAccordion({ creator, campaign }) {
 
     // Photo submission pills
     grouped.photos?.forEach((photoSubmission, index) => {
-      submissionCounter++;
+      // removed unused submissionCounter
       const key = `photo-${photoSubmission.id}`;
       const isExpanded = expandedSubmission === key;
       
@@ -408,7 +407,7 @@ function CreatorAccordion({ creator, campaign }) {
 
     // Raw footage submission pills
     grouped.rawFootage?.forEach((rawFootageSubmission, index) => {
-      submissionCounter++;
+      // removed unused submissionCounter
       const key = `rawFootage-${rawFootageSubmission.id}`;
       const isExpanded = expandedSubmission === key;
       
@@ -662,17 +661,23 @@ function CreatorAccordion({ creator, campaign }) {
             borderRadius: 2,
           },
         }}>
-          {submissionsLoading ? (
-            <Typography variant="body2" color="text.secondary">
-              Loading submissions...
-            </Typography>
-          ) : submissions.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No content submissions found
-            </Typography>
-          ) : (
-            renderSubmissionPills()
-          )}
+          {(() => {
+            if (submissionsLoading) {
+              return (
+                <Typography variant="body2" color="text.secondary">
+                  Loading submissions...
+                </Typography>
+              );
+            }
+            if (submissions.length === 0) {
+              return (
+                <Typography variant="body2" color="text.secondary">
+                  No content submissions found
+                </Typography>
+              );
+            }
+            return renderSubmissionPills();
+          })()}
         </Box>
       </Box>
 
@@ -757,19 +762,25 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
       </Box>
 
       {/* Mobile View */}
-      {isMobile ? (
-        <MobileCreatorSubmissions 
-          campaign={campaign} 
-          creators={campaign?.shortlisted} 
-          searchTerm={searchTerm}
-        />
-      ) : (
-        /* Desktop View */
-        filteredCreators.length === 0 ? (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
-          </Box>
-        ) : (
+      {(() => {
+        if (isMobile) {
+          return (
+            <MobileCreatorSubmissions 
+              campaign={campaign} 
+              creators={campaign?.shortlisted} 
+              searchTerm={searchTerm}
+            />
+          );
+        }
+        // Desktop View
+        if (filteredCreators.length === 0) {
+          return (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
+            </Box>
+          );
+        }
+        return (
           <Stack spacing={{ xs: 0.5, sm: 1 }}>
             {filteredCreators.map((creator, index) => (
               <CreatorAccordionWithSubmissions
@@ -779,8 +790,8 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
               />
             ))}
           </Stack>
-        )
-      )}
+        );
+      })()}
     </Box>
   );
 }

@@ -73,7 +73,7 @@ export default function FeedbackActions({
     <Box sx={{ flex: '0 0 auto' }}>
       <Stack>
         <Stack
-          direction={'row'}
+          direction="row"
           spacing={{ xs: 0.8, sm: 1 }}
           width="100%"
           justifyContent={{ xs: 'space-between', sm: "flex-end"}}
@@ -97,7 +97,7 @@ export default function FeedbackActions({
           {visibility.showChangeRequestForm && (
             <Box
               display="flex"
-              flexDirection={'row'}
+              flexDirection="row"
               width="100%"
               gap={{ xs: 0.8, sm: 1 }}
               mb={{ xs: 0, sm: 1 }}

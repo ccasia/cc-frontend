@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import { useRef, useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 
 import { Box, Stack, TextField, Typography } from '@mui/material';
 
@@ -183,6 +183,58 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
     hasPhotos: true,
   });
 
+  const renderCaptionContent = () => {
+    if (pendingReview) {
+      return (
+        <TextField
+          fullWidth
+          multiline
+          rows={2}
+          placeholder="Enter caption here..."
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          size="small"
+          sx={{
+            mt: 0.5,
+            '& .MuiOutlinedInput-root': {
+              bgcolor: 'background.paper',
+            },
+          }}
+        />
+      );
+    }
+
+    if (submission.caption) {
+      return (
+        <Box
+          sx={{
+            maxHeight: 80,
+            overflow: 'auto',
+            mt: 0.5,
+          }}
+        >
+          <Typography
+            fontSize={13}
+            color="#636366"
+            sx={{
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              lineHeight: 1.4,
+            }}
+          >
+            {submission.caption}
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Typography fontSize={13} color="text.disabled" sx={{ mt: 0.5 }}>
+        No caption provided
+      </Typography>
+    );
+  };
+
   if (!clientVisible) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -321,47 +373,7 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
         <Typography variant="caption" fontWeight="bold" color="#636366" mb={0.5}>
           Caption
         </Typography>
-        {pendingReview ? (
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            placeholder="Enter caption here..."
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            size="small"
-            sx={{
-              mt: 0.5,
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'background.paper',
-              },
-            }}
-          />
-        ) : submission.caption ? (
-          <Box
-            sx={{
-              maxHeight: 80,
-              overflow: 'auto',
-              mt: 0.5,
-            }}
-          >
-            <Typography
-              fontSize={13}
-              color="#636366"
-              sx={{
-                wordWrap: 'break-word',
-                overflowWrap: 'break-word',
-                lineHeight: 1.4,
-              }}
-            >
-              {submission.caption}
-            </Typography>
-          </Box>
-        ) : (
-          <Typography fontSize={13} color="text.disabled" sx={{ mt: 0.5 }}>
-            No caption provided
-          </Typography>
-        )}
+        {renderCaptionContent()}
       </Box>
 
       {/* Feedback Section */}

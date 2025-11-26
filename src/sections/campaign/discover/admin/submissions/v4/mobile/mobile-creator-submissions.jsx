@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState, useCallback } from 'react';
 
-import { Box, Stack, Avatar, Collapse, Typography, IconButton } from '@mui/material';
+import { Box, Stack, Avatar, Collapse, Typography } from '@mui/material';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
 
@@ -306,20 +306,27 @@ function MobileCreatorRow({ creator, campaign, isExpanded, onToggle }) {
             borderTop: 'none',
           }}
         >
-          {submissionsLoading ? (
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                Loading submissions...
-              </Typography>
-            </Box>
-          ) : !hasSubmissions ? (
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                No content submissions found
-              </Typography>
-            </Box>
-          ) : (
-            <Stack spacing={0} sx={{ border: '1px solid #E7E7E7' }}>
+          {(() => {
+            if (submissionsLoading) {
+              return (
+                <Box sx={{ p: 3, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Loading submissions...
+                  </Typography>
+                </Box>
+              );
+            }
+            if (!hasSubmissions) {
+              return (
+                <Box sx={{ p: 3, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No content submissions found
+                  </Typography>
+                </Box>
+              );
+            }
+            return (
+              <Stack spacing={0} sx={{ border: '1px solid #E7E7E7' }}>
               {/* Video Submissions */}
               {grouped.videos?.map((videoSubmission) => {
                 const key = `video-${videoSubmission.id}`;
@@ -383,7 +390,8 @@ function MobileCreatorRow({ creator, campaign, isExpanded, onToggle }) {
                 );
               })}
             </Stack>
-          )}
+          );
+          })()}
         </Box>
       </Collapse>
     </Box>

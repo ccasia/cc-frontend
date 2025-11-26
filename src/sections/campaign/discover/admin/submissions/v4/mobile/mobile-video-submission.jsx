@@ -189,6 +189,56 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate }
     userId: user?.id,
   });
 
+  const renderCaptionContent = () => {
+    if (pendingReview) {
+      return (
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          placeholder="Enter caption here..."
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          size="small"
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              bgcolor: 'background.paper',
+            },
+          }}
+        />
+      );
+    }
+
+    if (submission.caption) {
+      return (
+        <Box
+          sx={{
+            maxHeight: 120,
+            overflow: 'auto',
+          }}
+        >
+          <Typography
+            fontSize={13}
+            color="#636366"
+            sx={{
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              lineHeight: 1.5,
+            }}
+          >
+            {submission.caption}
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Typography fontSize={13} color="text.disabled">
+        No caption provided
+      </Typography>
+    );
+  };
+
   if (!clientVisible) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -227,45 +277,7 @@ export default function MobileVideoSubmission({ submission, campaign, onUpdate }
           <Typography variant="caption" fontWeight="bold" color="#636366" sx={{ display: 'block', mb: 0.5 }}>
             Caption
           </Typography>
-          {pendingReview ? (
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              placeholder="Enter caption here..."
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'background.paper',
-                },
-              }}
-            />
-          ) : submission.caption ? (
-            <Box
-              sx={{
-                maxHeight: 120,
-                overflow: 'auto',
-              }}
-            >
-              <Typography
-                fontSize={13}
-                color="#636366"
-                sx={{
-                  wordWrap: 'break-word',
-                  overflowWrap: 'break-word',
-                  lineHeight: 1.5,
-                }}
-              >
-                {submission.caption}
-              </Typography>
-            </Box>
-          ) : (
-            <Typography fontSize={13} color="text.disabled">
-              No caption provided
-            </Typography>
-          )}
+          {renderCaptionContent()}
         </Box>
 
         {/* Video Thumbnail - Right Side */}

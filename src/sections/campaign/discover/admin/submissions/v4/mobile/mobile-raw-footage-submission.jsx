@@ -258,6 +258,58 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
     hasRawFootage: true,
   });
 
+  const renderCaptionContent = () => {
+    if (pendingReview) {
+      return (
+        <TextField
+          fullWidth
+          multiline
+          rows={2}
+          placeholder="Enter caption here..."
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          size="small"
+          sx={{
+            mt: 0.5,
+            '& .MuiOutlinedInput-root': {
+              bgcolor: 'background.paper',
+            },
+          }}
+        />
+      );
+    }
+
+    if (submission.caption) {
+      return (
+        <Box
+          sx={{
+            maxHeight: 80,
+            overflow: 'auto',
+            mt: 0.5,
+          }}
+        >
+          <Typography
+            fontSize={13}
+            color="#636366"
+            sx={{
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              lineHeight: 1.4,
+            }}
+          >
+            {submission.caption}
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Typography fontSize={13} color="text.disabled" sx={{ mt: 0.5 }}>
+        No caption provided
+      </Typography>
+    );
+  };
+
   if (!clientVisible) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -313,7 +365,16 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
           scrollBehavior: 'smooth',
         }}
       >
-        {rawFootages.map((rawFootage, footageIndex) => (
+        {rawFootages.map((rawFootage, footageIndex) => {
+          const videoState = videoStates[rawFootage.id] || {};
+          const {
+            isPlaying = false,
+            currentTime = 0,
+            duration = 0,
+          } = videoState;
+          const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+          return (
           <Box
             key={rawFootage.id}
             sx={{
@@ -420,7 +481,7 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
                       '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
                     }}
                   >
-                    {videoStates[rawFootage.id]?.isPlaying ? (
+                    {isPlaying ? (
                       <Box sx={{ width: 7, height: 8, display: 'flex', gap: 0.3 }}>
                         <Box sx={{ width: 3, height: '100%', bgcolor: 'white' }} />
                         <Box sx={{ width: 3, height: '100%', bgcolor: 'white' }} />
@@ -464,7 +525,7 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
                   >
                     <Box
                       sx={{
-                        width: `${videoStates[rawFootage.id]?.duration > 0 ? (videoStates[rawFootage.id]?.currentTime / videoStates[rawFootage.id]?.duration) * 100 : 0}%`,
+                        width: `${progressPercent}%`,
                         height: '100%',
                         bgcolor: 'primary.main',
                         borderRadius: 2,
@@ -482,7 +543,7 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
                       textAlign: 'right',
                     }}
                   >
-                    {formatTime(videoStates[rawFootage.id]?.duration || 0)}
+                    {formatTime(duration)}
                   </Typography>
 
                   <IconButton
@@ -524,7 +585,8 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
               </Box>
             )}
           </Box>
-        ))}
+          );
+        })}
       </Box>
 
       {/* Caption Section */}
@@ -532,47 +594,7 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
         <Typography variant="caption" fontWeight="bold" color="#636366" mb={0.5}>
           Caption
         </Typography>
-        {pendingReview ? (
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            placeholder="Enter caption here..."
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            size="small"
-            sx={{
-              mt: 0.5,
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'background.paper',
-              },
-            }}
-          />
-        ) : submission.caption ? (
-          <Box
-            sx={{
-              maxHeight: 80,
-              overflow: 'auto',
-              mt: 0.5,
-            }}
-          >
-            <Typography
-              fontSize={13}
-              color="#636366"
-              sx={{
-                wordWrap: 'break-word',
-                overflowWrap: 'break-word',
-                lineHeight: 1.4,
-              }}
-            >
-              {submission.caption}
-            </Typography>
-          </Box>
-        ) : (
-          <Typography fontSize={13} color="text.disabled" sx={{ mt: 0.5 }}>
-            No caption provided
-          </Typography>
-        )}
+        {renderCaptionContent()}
       </Box>
 
       {/* Feedback Section */}
