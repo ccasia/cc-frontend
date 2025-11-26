@@ -17,75 +17,7 @@ import { styled } from '@mui/material/styles';
 import Iconify from 'src/components/iconify';
 
 import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
-
-// ----------------------------------------------------------------------------
-
-// const QConnector = styled(StepConnector)(({ theme }) => ({
-//   [`&.${stepConnectorClasses.alternativeLabel}`]: {
-//     top: 10,
-//     left: 'calc(-50% + 16px)',
-//     right: 'calc(50% + 16px)',
-//   },
-//   [`&.${stepConnectorClasses.active}`]: {
-//     [`&.${stepConnectorClasses.line}`]: {
-//       borderColor: '#00AB55',
-//     },
-//   },
-//   [`&.${stepConnectorClasses.completed}`]: {
-//     [`& .${stepConnectorClasses.line}`]: {
-//       borderColor: '#00AB55',
-//     },
-//   },
-//   [`& .${stepConnectorClasses.line}`]: {
-//     borderColor: theme.palette.divider,
-//     borderTopWidth: 2,
-//     borderRadius: 1,
-//   },
-// }));
-
-// const StepIconRoot = styled('div')(({ theme, ownerState }) => ({
-//   color: theme.palette.text.disabled,
-//   display: 'flex',
-//   height: 22,
-//   alignItems: 'center',
-//   ...(ownerState.active && {
-//     color: '#00AB55',
-//   }),
-//   '& .completed-icon': {
-//     color: '#00AB55',
-//     zIndex: 1,
-//     fontSize: 18,
-//   },
-//   '& .circle': {
-//     width: 8,
-//     height: 8,
-//     borderRadius: '50%',
-//     backgroundColor: 'currentColor',
-//   },
-// }));
-
-// function StepIcon(props) {
-//   const { active, completed, className } = props;
-
-//   return (
-//     <StepIconRoot ownerState={{ active }} className={className}>
-//       {completed ? (
-//         <Iconify icon="eva:checkmark-fill" className="completed-icon" />
-//       ) : (
-//         <div className="circle" />
-//       )}
-//     </StepIconRoot>
-//   );
-// }
-
-// StepIcon.propTypes = {
-//   active: PropTypes.bool,
-//   className: PropTypes.string,
-//   completed: PropTypes.bool,
-// };
-
-// ----------------------------------------------------------------------------
-export default function LogisticsTableRow({ row, onUpdate }) {
+export default function LogisticsTableRow({ row, onClick }) {
   const { creator, status, items } = row;
   const [openSchedule, setOpenSchedule] = useState(false);
 
@@ -144,7 +76,7 @@ export default function LogisticsTableRow({ row, onUpdate }) {
 
   return (
     <>
-      <TableRow hover>
+      <TableRow hover onClick={onClick} sx={{ cursor: 'pointer' }}>
         {/* Column 1: Name */}
         <TableCell sx={{ display: 'flex', alignItems: 'center', width: '40%' }}>
           <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ mr: 2 }} />
