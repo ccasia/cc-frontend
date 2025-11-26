@@ -16,7 +16,6 @@ import { styled } from '@mui/material/styles';
 
 import Iconify from 'src/components/iconify';
 
-import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
 export default function LogisticsTableRow({ row, onClick }) {
   const { creator, status, items } = row;
   const [openSchedule, setOpenSchedule] = useState(false);
@@ -180,17 +179,11 @@ export default function LogisticsTableRow({ row, onClick }) {
           </Box>
         </TableCell>
       </TableRow>
-      <ScheduleDeliveryDialog
-        open={openSchedule}
-        onClose={() => setOpenSchedule(false)}
-        logistic={row}
-        onUpdate={onUpdate}
-      />
     </>
   );
 }
 
 LogisticsTableRow.propTypes = {
   row: PropTypes.object,
-  onUpdate: PropTypes.func,
+  onClick: PropTypes.func,
 };
