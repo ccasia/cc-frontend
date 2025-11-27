@@ -24,7 +24,7 @@ const TABLE_HEAD = [
   { id: 'status', label: 'Status', width: '20%' },
 ];
 
-export default function LogisticsList({ campaignId, logistics: staticLogistics }) {
+export default function LogisticsList({ campaignId }) {
   const {
     data: logistics,
     isLoading,
