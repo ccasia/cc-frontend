@@ -131,7 +131,7 @@ export default function LogisticsCalendar({ date, onChange, logistics }) {
         <DateCalendar
           value={date}
           onChange={onChange}
-          minDate={new Date('2024-01-01')}
+          minDate={new Date()}
           showDaysOutsideCurrentMonth
           fixedWeekNumber={6}
           slots={{

@@ -156,7 +156,6 @@ export default function AssignLogisticDialog({ open, onClose, logistic, campaign
           </Typography>
 
           <Typography variant="body2" sx={{ color: '#636366', lineHeight: 1.6 }}>
-            {/* Hardcoded based on image, or fetch from DB */}
             {logistic?.deliveryDetails?.dietaryRestrictions ||
               "This is a paragraph field about creator's personalized requests, preferences or any additional notes filled by the admin.\nDietary: Halal/Vegetarian/Vegan/No Beef/No Peanuts\nReligious Concerns: Muslim\nMedical Conditions: Eczema"}
           </Typography>
@@ -324,7 +323,7 @@ export default function AssignLogisticDialog({ open, onClose, logistic, campaign
       </Grid>
 
       {/* Footer / Action Button */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6, mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 0 }}>
         <Button
           variant="contained"
           size="large"
