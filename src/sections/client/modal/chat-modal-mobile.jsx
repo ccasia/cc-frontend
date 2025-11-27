@@ -350,7 +350,16 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
     }));
 
     if (attachedFiles.length > 0) {
-      sendMessageInThread(threadId, { content: trimmedMessage, attachments: attachedFiles })
+      // Send all attachments via API
+      sendMessageInThread(threadId, { 
+        content: trimmedMessage, 
+        attachments: attachedFiles.map(file => ({
+          file: file.file,
+          name: file.name,
+          size: file.size,
+          type: file.type
+        }))
+      })
         .then(() => {
           setTimeout(() => {
             setOptimisticMessages((prev) => ({
@@ -645,7 +654,7 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
               borderColor: '#E7E7E7',
               bgcolor: '#FFF',
               px: 2,
-              py: 1,
+              py: 0.65,
               display: 'flex',
               alignItems: 'center',
               minHeight: 44,
@@ -661,6 +670,32 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
               sx={{ flex: 1, fontSize: 14 }}
             />
           </Box>
+
+          {/* Send Button */}
+          <IconButton
+            onClick={handleSendMessage}
+            disabled={message.trim() === '' && attachedFiles.length === 0}
+            sx={{
+              border: 1,
+              borderRadius: 1,
+              borderColor: '#E7E7E7',
+              width: 44,
+              height: 44,
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              bgcolor: message.trim() !== '' || attachedFiles.length > 0 ? 'primary.main' : '#FFF',
+              color: message.trim() !== '' || attachedFiles.length > 0 ? '#FFF' : 'text.disabled',
+              flexShrink: 0,
+              '&:hover': {
+                bgcolor: message.trim() !== '' || attachedFiles.length > 0 ? 'primary.dark' : '#F5F5F5',
+              },
+              '&.Mui-disabled': {
+                bgcolor: '#FFF',
+                borderColor: '#E7E7E7',
+              },
+            }}
+          >
+            <Iconify icon="iconamoon:send-fill" width={20} />
+          </IconButton>
         </Stack>
       </Box>
     </Box>
