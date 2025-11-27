@@ -52,14 +52,23 @@ const ChatModalMobile = ({ open, onClose }) => {
   }, [setThreadId]);
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal 
+      open={open} 
+      onClose={onClose}
+      sx={{
+        '& .MuiModal-backdrop': {
+          backgroundColor: 'transparent',
+        },
+      }}
+    >
       <Box
         sx={{
           position: 'fixed',
           top: 0,
           left: 0,
           width: '100vw',
-          height: '100vh',
+          height: '100dvh', // Use dynamic viewport height for mobile
+          maxHeight: '100vh',
           bgcolor: 'background.paper',
           display: 'flex',
           flexDirection: 'column',
@@ -451,13 +460,22 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
   const isCampaignThread = !!thread?.campaign;
 
   return (
-    <>
+    <Box 
+      sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: '100%',
+        width: '100%',
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+    >
       {/* Header */}
       <Stack
         direction="row"
         alignItems="center"
         justifyContent="space-between"
-        sx={{ pl: -2, pr: 1.5, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}
+        sx={{ pl: -2, pr: 1.5, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}
       >
         <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1, minWidth: 0 }}>
           <IconButton onClick={onBack}>
@@ -521,7 +539,7 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
       </Stack>
 
       {/* Messages */}
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {/* Empty state: Beginning of chat */}
         {allMessages.length === 0 && (
           <Box sx={{ textAlign: 'center', pt: 3, pb: 2 }}>
@@ -543,7 +561,7 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
             </Typography>
           </Box>
         )}
-        <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
           <ChatMessageList messages={allMessages} />
         </Box>
       </Box>
@@ -558,6 +576,7 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
             borderTop: '1px solid',
             borderColor: 'divider',
             bgcolor: 'background.neutral',
+            flexShrink: 0,
           }}
         >
           <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
@@ -586,6 +605,10 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
           py: 1,
           borderTop: '1px solid',
           borderColor: 'divider',
+          flexShrink: 0,
+          bgcolor: 'background.paper',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <Stack direction="row" alignItems="center" spacing={1}>
@@ -625,6 +648,7 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
               py: 1,
               display: 'flex',
               alignItems: 'center',
+              minHeight: 44,
             }}
           >
             <InputBase
@@ -639,7 +663,7 @@ function MobileThreadMessages({ threadId, onBack, onClose }) {
           </Box>
         </Stack>
       </Box>
-    </>
+    </Box>
   );
 }
 
