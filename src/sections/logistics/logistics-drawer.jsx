@@ -18,7 +18,7 @@ import Scrollbar from 'src/components/scrollbar';
 
 import LogisticsStepper from './logistics-stepper';
 import AssignLogisticDialog from './dialogs/assign-logistic-dialog';
-// import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
+import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
 // import ReviewIssueDialog from './dialogs/review-issue-dialog';
 
 export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId }) {
@@ -294,6 +294,13 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
       <AssignLogisticDialog
         open={openAssign}
         onClose={() => setOpenAssign(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
+      <ScheduleDeliveryDialog
+        open={openSchedule}
+        onClose={() => setOpenSchedule(false)}
         logistic={logistic}
         campaignId={campaignId}
         onUpdate={onUpdate}

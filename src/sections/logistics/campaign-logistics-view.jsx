@@ -27,6 +27,13 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
   const settings = useSettingsContext();
 
   const [isBulkAssigning, setIsBulkAssigning] = useState(false);
+  const [date, setDate] = useState(new Date());
+  const [filterName, setFilterName] = useState('');
+
+  const { data: logistics } = useSWR(
+    campaign?.id ? `/api/logistics/campaign/${campaign?.id}` : null,
+    fetcher
+  );
 
   const handleOpenBulkAssign = useCallback(() => {
     setIsBulkAssigning(true);
@@ -63,7 +70,7 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
               <LogisticsCalendar
                 date={date}
                 onChange={(newDate) => setDate(newDate)}
-                logistics={mockLogistics}
+                logistics={safeLogistics}
               />
             </Box>
             {/* Vertical Divider (Desktop) */}
@@ -78,12 +85,12 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
             {/* Horizontal Divider (Mobile) */}
             <Divider sx={{ display: { xs: 'block', md: 'none' } }} />
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <LogisticsScheduledList date={date} logistics={mockLogistics} />
+              <LogisticsScheduledList date={date} logistics={safeLogistics} />
             </Box>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <LogisticsAnalytics logistics={mockLogistics} />
+          <LogisticsAnalytics logistics={safeLogistics} />
         </Grid>
       </Grid>
       <Box
@@ -106,7 +113,7 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
           Edit & Bulk Assign
         </Button>
       </Box>
-      <LogisticsList campaignId={campaign?.id} />
+      <LogisticsList campaignId={campaign?.id} logistics={safeLogistics} />
     </>
   );
 }
