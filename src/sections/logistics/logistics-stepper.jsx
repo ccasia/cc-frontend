@@ -68,7 +68,7 @@ CustomStepIcon.propTypes = {
 export default function LogisticsStepper({ logistic }) {
   if (!logistic) return null;
 
-  const { status, deliveryDetails } = logistic?.status;
+  const { status, deliveryDetails } = logistic;
 
   // Determine Active Step Index based on status
   let activeStep = 0;
@@ -86,7 +86,7 @@ export default function LogisticsStepper({ logistic }) {
       step: 1,
       label: 'Assign Product',
       description: 'Assign product to creator',
-      completedDate: logistic.createdAt,
+      completedDate: logistic.updatedAt,
       color: '#FF3500',
     },
     {
@@ -99,7 +99,7 @@ export default function LogisticsStepper({ logistic }) {
     {
       step: 3,
       label: 'Shipped Out',
-      description: 'Waiting for delivery...',
+      description: 'We will update the status when the delivery date comes.',
       completedDate: logistic.shippedAt,
       color: '#1340FF',
     },

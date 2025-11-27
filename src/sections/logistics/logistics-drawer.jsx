@@ -17,7 +17,7 @@ import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
 import LogisticsStepper from './logistics-stepper';
-// import AssignLogisticDialog from './dialogs/assign-logistic-dialog';
+import AssignLogisticDialog from './dialogs/assign-logistic-dialog';
 // import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
 // import ReviewIssueDialog from './dialogs/review-issue-dialog';
 
@@ -34,8 +34,8 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
     width: 'fit-content',
     height: 44,
     padding: { xs: '4px 8px', sm: '6px 10px' },
-    borderRadius: '6px',
-    border: '1px solid #1340FF',
+    borderRadius: '8px',
+    border: '1px solid #0c2aa6',
     boxShadow: '0px -2px 0px 0px #0c2aa6 inset',
     backgroundColor: '#1340FF',
     color: '#FFFFFF',
@@ -60,18 +60,21 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
       case 'PENDING_ASSIGNMENT':
         return (
           <Button fullWidth variant="contained" onClick={() => setOpenAssign(true)} sx={buttonSx}>
+            <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
             Assign
           </Button>
         );
       case 'SCHEDULED':
         return (
           <Button fullWidth variant="contained" onClick={() => setOpenSchedule(true)} sx={buttonSx}>
+            <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
             Schedule Delivery
           </Button>
         );
       case 'ISSUE_REPORTED':
         return (
           <Button fullWidth variant="contained" onClick={() => setOpenIssue(true)} sx={buttonSx}>
+            <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
             Review Issue
           </Button>
         );
@@ -244,47 +247,58 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
           </Typography>
         </Box>
       </Stack>
-      <Stack alignItems="center">
-        <Box>{actionButton}</Box>
-      </Stack>
     </Box>
   );
 
   return (
-    <Drawer
-      open={open}
-      onClose={onClose}
-      anchor="right"
-      PaperProps={{
-        sx: {
-          width: { xs: 1, sm: 370 },
-          backgroundColor: '#F4F6F8 !important',
-          borderTopLeftRadius: 12,
-        },
-      }}
-    >
-      {renderHeader}
-      <Divider
-        sx={{
-          mb: 3,
-        }}
-      />
-      {renderCreator}
-      <Box
-        sx={{
-          p: 2.5,
-          border: '1px solid #919EAB3D',
-          bgcolor: '#F4F6F8',
-          borderRadius: 2,
-          mx: 3,
-          mb: 3,
+    <>
+      <Drawer
+        open={open}
+        onClose={onClose}
+        anchor="right"
+        PaperProps={{
+          sx: {
+            width: { xs: 1, sm: 370 },
+            backgroundColor: '#F4F6F8 !important',
+            borderTopLeftRadius: 12,
+          },
         }}
       >
-        <LogisticsStepper logistic={logistic} onUpdate={onUpdate} campaignId={campaignId} />
-      </Box>
-      {renderDietary}
-      {renderDeliveryDetails}
-    </Drawer>
+        {renderHeader}
+        <Divider
+          sx={{
+            mb: 3,
+          }}
+        />
+        {renderCreator}
+        <Box
+          sx={{
+            p: 2.5,
+            border: '1px solid #919EAB3D',
+            bgcolor: '#F4F6F8',
+            borderRadius: 2,
+            mx: 3,
+            mb: 3,
+          }}
+        >
+          <LogisticsStepper logistic={logistic} onUpdate={onUpdate} campaignId={campaignId} />
+          {actionButton && (
+            <Stack alignItems="center" sx={{ mt: 3 }}>
+              <Box>{actionButton}</Box>
+            </Stack>
+          )}
+        </Box>
+        {renderDietary}
+        {renderDeliveryDetails}
+      </Drawer>
+      <AssignLogisticDialog
+        open={openAssign}
+        onClose={() => setOpenAssign(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
+    </>
   );
 }
 
