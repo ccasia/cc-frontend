@@ -8,16 +8,14 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
-// import Step from '@mui/material/Step';
-// import Stepper from '@mui/material/Stepper';
-// import StepLabel from '@mui/material/StepLabel';
-// import StepConnector, { stepConnectorClasses } from '@mui/material/StepConnector';
 import { styled } from '@mui/material/styles';
 
 import Iconify from 'src/components/iconify';
 
 export default function LogisticsTableRow({ row, onClick }) {
-  const { creator, status, items } = row;
+  const { creator, status, deliveryDetails } = row;
+  const items = deliveryDetails?.items;
+
   const [openSchedule, setOpenSchedule] = useState(false);
 
   const getStatusConfig = (currentStatus) => {
@@ -70,8 +68,8 @@ export default function LogisticsTableRow({ row, onClick }) {
   const configCurrentStatus = getStatusConfig(status);
 
   const isUnassigned = !items || items.length === 0;
-  // const finalStatus = isUnassigned ? getStatusConfig('PENDING_ASSIGNMENT') : configCurrentStatus;
-  const finalStatus = getStatusConfig('SHIPPED');
+  const finalStatus = isUnassigned ? getStatusConfig('PENDING_ASSIGNMENT') : configCurrentStatus;
+
 
   return (
     <>
