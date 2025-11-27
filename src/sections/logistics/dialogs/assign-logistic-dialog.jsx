@@ -2,49 +2,21 @@ import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 
-import {
-  Box,
-  Stack,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Typography,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  FormHelperText,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import Avatar from '@mui/material/Avatar';
+import Popover from '@mui/material/Popover';
+import Divider from '@mui/material/Divider';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Chip from '@mui/material/Chip';
 
 import Iconify from 'src/components/iconify';
 import { fetcher } from 'src/utils/axios';
 import axiosInstance from 'src/utils/axios';
-
-const mockProducts = [
-  {
-    id: 'prod-001',
-    productName: 'Jar',
-    description: 'A glass jar of goodness',
-  },
-  {
-    id: 'prod-002',
-    productName: 'Sachet',
-    description: 'Travel size pack',
-  },
-  {
-    id: 'prod-003',
-    productName: 'Full Bundle Set',
-    description: 'Contains all items',
-  },
-  {
-    id: 'prod-004',
-    productName: 'Manna & Tayebat Jar',
-    description: 'Premium edition',
-  },
-];
 
 export default function AssignLogisticDialog({ open, onClose, logistic, campaignId, onUpdate }) {
   const { data: products } = useSWR(
@@ -52,160 +24,336 @@ export default function AssignLogisticDialog({ open, onClose, logistic, campaign
     fetcher
   );
 
-  const [selectedItems, setSelectedItems] = useState([]);
+  const [quantities, setQuantities] = useState({});
+  const [anchorEl, setAnchorEl] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open && logistic?.deliveryDetails?.items) {
-      const existingItems = logistic.deliveryDetails.items.map((item) => ({
-        productId: item.productId,
-        productName: item.product?.productName,
-        quantity: item.quantity,
-      }));
-      setSelectedItems(existingItems);
+      const initialMap = {};
+      logistic.deliveryDetails.items.forEach((item) => {
+        initialMap[item.productId] = item.quantity;
+      });
+      setQuantities(initialMap);
     } else if (open) {
-      setSelectedItems([]);
+      setQuantities({});
     }
   }, [open, logistic]);
 
-  const handleAddProduct = (productId) => {
-    const product = products.find((p) => p.id === productId);
-    if (!product) return;
-
-    const exists = selectedItems.find((item) => item.productId === productId);
-
-    if (!exists) {
-      setSelectedItems([
-        ...selectedItems,
-        { productId, productName: product.productName, quantity: 1 },
-      ]);
-    }
+  const handleOpenDropdown = (event) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  const handleQuantityChange = (productId, delta) => {
-    setSelectedItems((current) =>
-      current
-        .map((item) => {
-          if (item.productId === productId) {
-            return { ...item, quantity: Math.max(0, item.quantity + delta) };
-          }
-          return item;
-        })
-        .filter((item) => item.quantity > 0)
-    );
+  const handleCloseDropdown = () => {
+    setAnchorEl(null);
   };
 
-  const handleAssign = async () => {
+  const handleUpdateQuantity = (productId, delta) => {
+    setQuantities((prev) => {
+      const currentQty = prev[productId] || 0;
+      const newQty = Math.max(0, currentQty + delta);
+
+      const newState = { ...prev, [productId]: newQty };
+      if (newQty === 0) delete newState[productId];
+      return newState;
+    });
+  };
+
+  const handleRemoveItem = (productId, e) => {
+    e.stopPropagation();
+    setQuantities((prev) => {
+      const newState = { ...prev };
+      delete newState[productId];
+      return newState;
+    });
+  };
+
+  const handleConfirm = async () => {
     setIsSubmitting(true);
+
+    const payload = Object.entries(quantities).map(([productId, quantity]) => ({
+      productId,
+      quantity,
+    }));
+
     try {
       await axiosInstance.post(`/api/logistics/assign/${campaignId}`, {
         creatorId: logistic.creatorId,
-        items: selectedItems.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
+        items: payload,
       });
       onUpdate();
       onClose();
     } catch (error) {
-      console.error('Failed to assign products', error);
+      console.error('Failed to assign', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const selectedProductIds = Object.keys(quantities);
+  const hasSelection = selectedProductIds.length > 0;
+
+  const getProduct = (id) => products?.find((p) => p.id === id);
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ pb: 1 }}>Assign Products</DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-          Assign products to <strong>{logistic?.creator?.name}</strong>. Items with 0 quantity will
-          be removed.
-        </Typography>
-
-        <FormControl fullWidth sx={{ mb: 3 }}>
-          <InputLabel>Select Product to Add</InputLabel>
-          <Select
-            label="Select Product to Add"
-            onChange={(e) => handleAddProduct(e.target.value)}
-            value=""
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          bgcolor: '#F4F4F4',
+          p: 3,
+          width: '100%',
+          maxWidth: 700,
+        },
+      }}
+    >
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+        <Box>
+          <Typography
+            variant="h2"
+            sx={{ fontWeight: 400, fontFamily: 'instrument serif', color: '#231F20' }}
           >
-            {products?.map((product) => {
-              const isSelected = selectedItems.some((i) => i.productId === product.id);
+            Assign Logistic
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#636366', mt: 0.5 }}>
+            You may edit products in <strong>[Edit & Bulk Assign]</strong> page.
+          </Typography>
+        </Box>
+        <IconButton onClick={onClose}>
+          <Iconify icon="eva:close-fill" width={32} />
+        </IconButton>
+      </Box>
 
-              return (
-                <MenuItem key={product.id} value={product.id} disabled={isSelected}>
-                  {product.productName}
-                </MenuItem>
-              );
-            })}
-          </Select>
-          <FormHelperText>Select a product to add it to the list below.</FormHelperText>
-        </FormControl>
+      <Divider sx={{ my: 2 }} />
 
-        <Stack spacing={2}>
-          {selectedItems.length === 0 && (
-            <Box sx={{ p: 3, textAlign: 'center', bgcolor: '#F4F6F8', borderRadius: 1 }}>
-              <Typography>No products assigned yet.</Typography>
+      <Grid container spacing={4}>
+        {/* LEFT COLUMN: Creator Info */}
+        <Grid item xs={12} md={7}>
+          <Typography variant="subtitle2" sx={{ color: '#636366', mb: 2 }}>
+            Assigning to
+          </Typography>
+
+          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 4 }}>
+            <Avatar src={logistic?.creator?.photoURL} sx={{ width: 56, height: 56 }} />
+            <Box>
+              <Typography variant="body" sx={{ fontWeight: 600, fontSize: '20px' }}>
+                {logistic?.creator?.name}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#636366' }}>
+                {logistic?.creator?.creator?.instagramUser?.username
+                  ? `@${logistic.creator.creator.instagramUser.username}`
+                  : '-'}
+              </Typography>
             </Box>
-          )}
+          </Stack>
 
-          {selectedItems.map((item) => (
-            <Stack
-              key={item.productId}
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              sx={{
-                p: 2,
-                borderRadius: 1,
-                border: '1px solid #919EAB3D',
-                bgcolor: '#FFFFFF',
-              }}
-            >
-              <Typography variant="subtitle2">{item.productName}</Typography>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <IconButton
-                  size="small"
-                  onClick={() => handleQuantityChange(item.productId, -1)}
-                  sx={{ border: '1px solid #919EAB3D' }}
-                >
-                  <Iconify icon="eva:minus-fill" width={16} />
-                </IconButton>
+          <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+            Creator Remarks
+          </Typography>
 
-                <Typography variant="subtitle2" sx={{ minWidth: 20, textAlign: 'center' }}>
-                  {item.quantity}
+          <Typography variant="body2" sx={{ color: '#636366', lineHeight: 1.6 }}>
+            {/* Hardcoded based on image, or fetch from DB */}
+            {logistic?.deliveryDetails?.dietaryRestrictions ||
+              "This is a paragraph field about creator's personalized requests, preferences or any additional notes filled by the admin.\nDietary: Halal/Vegetarian/Vegan/No Beef/No Peanuts\nReligious Concerns: Muslim\nMedical Conditions: Eczema"}
+          </Typography>
+        </Grid>
+
+        {/* RIGHT COLUMN: Product Selector */}
+        <Grid item xs={12} md={5}>
+          <Typography variant="subtitle2" sx={{ color: '#636366', mb: 2 }}>
+            Product
+          </Typography>
+
+          {/* Custom Trigger Box */}
+          <Box
+            onClick={handleOpenDropdown}
+            sx={{
+              border: '1.5px solid #1340FF',
+              borderRadius: 1.5,
+              bgcolor: '#fff',
+              minHeight: 56,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 2,
+              py: 1,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              '&:hover': {
+                bgcolor: '#F4F6F8',
+              },
+            }}
+          >
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {!hasSelection && (
+                <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+                  Select products...
                 </Typography>
+              )}
+              {selectedProductIds.map((id) => {
+                const product = getProduct(id);
+                return (
+                  <Chip
+                    key={id}
+                    label={`${product?.productName} (${quantities[id]})`}
+                    onDelete={(e) => handleRemoveItem(id, e)}
+                    deleteIcon={<Iconify icon="eva:close-fill" />}
+                    size="small"
+                    sx={{
+                      py: 2,
+                      bgcolor: '#fff',
+                      boxShadow: '0px -3px 0px 0px #E0E0E0 inset',
+                      border: '1px solid #E0E0E0',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      '&:hover': { bgcolor: '#fff' },
+                      '& .MuiChip-deleteIcon': {
+                        color: 'text.disabled',
+                        '&:hover': { color: 'text.primary' },
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Box>
+            <Iconify
+              icon={anchorEl ? 'eva:arrow-ios-downward-fill' : 'eva:arrow-ios-upward-fill'}
+              sx={{ color: '#1340FF', ml: 1 }}
+            />
+          </Box>
 
-                <IconButton
-                  size="small"
-                  onClick={() => handleQuantityChange(item.productId, +1)}
-                  sx={{ border: '1px solid #919EAB3D' }}
-                >
-                  <Iconify icon="eva:plus-fill" width={16} />
-                </IconButton>
-              </Stack>
+          {/* The Dropdown Menu (Popover) */}
+          <Popover
+            open={Boolean(anchorEl)}
+            anchorEl={anchorEl}
+            onClose={handleCloseDropdown}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'center',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'center',
+            }}
+            transitionDuration={100}
+            PaperProps={{
+              sx: {
+                width: anchorEl?.offsetWidth,
+                mt: 1,
+                p: 1,
+                bgcolor: '#fff',
+                boxShadow:
+                  '0px -3px 0px 0px #E7E7E7 inset, 0px 20px 40px -4px rgba(145, 158, 171, 0.55)',
+                border: '1px solid #E7E7E7',
+                borderRadius: '8px',
+                maxHeight: 300,
+                overflowY: 'auto',
+              },
+            }}
+          >
+            <Stack spacing={0.5}>
+              {products?.map((product, index) => {
+                const quantity = quantities[product.id] || 0;
+                const isLast = index === products.length - 1;
+
+                return (
+                  <>
+                    <Box
+                      key={product.id}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1,
+                        borderRadius: 1,
+                        '&:hover': { bgcolor: '#F4F6F8' },
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {product.productName}
+                      </Typography>
+
+                      {/* Quantity Stepper */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          border: '1px solid #E0E0E0',
+                          borderRadius: 20,
+                          px: 1,
+                          py: 0.5,
+                          bgcolor: '#fff',
+                        }}
+                      >
+                        <IconButton
+                          size="small"
+                          onClick={() => handleUpdateQuantity(product.id, -1)}
+                          sx={{ p: 0.5, color: '#1340FF' }}
+                        >
+                          <Iconify icon="eva:minus-fill" width={16} />
+                        </IconButton>
+
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ minWidth: 24, textAlign: 'center', mx: 0 }}
+                        >
+                          {quantity}
+                        </Typography>
+
+                        <IconButton
+                          size="small"
+                          onClick={() => handleUpdateQuantity(product.id, 1)}
+                          sx={{ p: 0.5, color: '#1340FF' }}
+                        >
+                          <Iconify icon="eva:plus-fill" width={16} />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                    {!isLast && <Divider />}
+                  </>
+                );
+              })}
             </Stack>
-          ))}
-        </Stack>
-      </DialogContent>
+          </Popover>
+        </Grid>
+      </Grid>
 
-      <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={onClose} color="inherit" disabled={isSubmitting}>
-          Cancel
-        </Button>
+      {/* Footer / Action Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6, mb: 2 }}>
         <Button
-          onClick={handleAssign}
           variant="contained"
-          disabled={selectedItems.length === 0 || isSubmitting}
+          size="large"
+          onClick={handleConfirm}
+          disabled={!hasSelection || isSubmitting}
           sx={{
-            bgcolor: '#1340FF',
-            '&:hover': { bgcolor: '#0B2DAD' },
+            bgcolor: '#333333',
+            color: '#fff',
+            px: 6,
+            py: 1.5,
+            borderRadius: '8px',
+            textTransform: 'none',
+            boxShadow: '0px -4px 0px 0px #000000 inset',
+            backgroundColor: '#3A3A3C',
+            fontSize: '1rem',
+            fontWeight: 700,
+            '&:hover': {
+              backgroundColor: '#3A3A3C',
+              boxShadow: '0px -4px 0px 0px #000000ef inset',
+            },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #000000 inset',
+              transform: 'translateY(1px)',
+            },
           }}
         >
-          {isSubmitting ? 'Assigning...' : 'Confirm Assignment'}
+          {isSubmitting ? 'Confirming...' : 'Confirm'}
         </Button>
-      </DialogActions>
+      </Box>
     </Dialog>
   );
 }
