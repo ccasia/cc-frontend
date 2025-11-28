@@ -63,33 +63,28 @@ const ClientDashboard = () => {
     const savedViewMode = localStorage.getItem('clientDashboardViewMode');
     return savedViewMode || 'table'; // fallback to table if no preference saved
   });
-  const [anchorEl, setAnchorEl] = useState(null);
-  const isChatopen = Boolean(anchorEl);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const campaignsPerPage = 3; // 3 campaigns per page for table, 1 row (3 cards) for card view
+  const [activeCampaignId, setActiveCampaignId] = useState(null);
 
-  useEffect(() => {
-    checkClientCompanyAndProfile();
-  }, []);
-
-  const checkClientCompanyAndProfile = async () => {
+  const checkClientCompanyAndProfile = React.useCallback(async () => {
     try {
       setIsCheckingCompany(true);
       const response = await axiosInstance.get(endpoints.client.checkCompany);
-      const { hasCompany, company } = response.data;
+      const { hasCompany: userHasCompany, company: userCompany } = response.data;
 
-      setHasCompany(hasCompany);
-      setCompany(company);
+      setHasCompany(userHasCompany);
+      setCompany(userCompany);
 
       // Handle company dialog
-      if (!hasCompany) {
+      if (!userHasCompany) {
         setOpenCompanyDialog(true);
       }
 
       // Handle profile completion modal
-      if (!hasCompany) {
+      if (!userHasCompany) {
         // Check if we've already shown the modal this session
         const hasShownModal = sessionStorage.getItem('profileModalShown');
         if (hasShownModal !== 'true') {
@@ -113,11 +108,15 @@ const ClientDashboard = () => {
     } finally {
       setIsCheckingCompany(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkClientCompanyAndProfile();
+  }, [checkClientCompanyAndProfile]);
 
   const { campaigns, isLoading, mutate } = useGetClientCampaigns();
   // Fetch V3 pitches (creator master list items)
-  const { pitches: allPitches, isLoading: pitchesLoading } = useGetV3Pitches();
+  const { pitches: allPitches } = useGetV3Pitches();
 
   // Client campaign ids for scoping counts to "their own" campaigns
   const clientCampaignIds = React.useMemo(() => {
@@ -128,7 +127,6 @@ const ClientDashboard = () => {
     totalCredits,
     usedCredits,
     remainingCredits,
-    subscription,
     subscriptionForValidity,
     isLoading: creditsLoading,
   } = useGetClientCredits();
@@ -162,7 +160,7 @@ const ClientDashboard = () => {
     if (!Array.isArray(allPitches) || clientCampaignIds.size === 0) return 0;
     const normalize = (p) => {
       const status = p?.displayStatus || p?.status;
-      if (status === 'undecided') return 'PENDING_REVIEW';
+      if (status === 'undecided' || status === 'PENDING_REVIEW' || status === 'pending') return 'PENDING_REVIEW';
       if (status === 'approved') return 'APPROVED';
       if (status === 'rejected') return 'REJECTED';
       return status;
@@ -208,7 +206,7 @@ const ClientDashboard = () => {
     } catch (e) {
       console.warn('[ClientDashboard] debug log error:', e);
     }
-  }, [campaigns, allPitches]);
+  }, [campaigns, allPitches, clientCampaignIds]);
 
   const handleCompanyCreated = (newCompany) => {
     setHasCompany(true);
@@ -238,39 +236,6 @@ const ClientDashboard = () => {
     router.push(paths.dashboard.campaign.details(id));
   };
 
-  const handleRefreshCampaigns = () => {
-    mutate(); // Refresh campaigns data
-    enqueueSnackbar('Refreshing campaigns...', { variant: 'info' });
-  };
-
-  const handleCheckCampaignAdmin = async () => {
-    try {
-      const response = await axiosInstance.get('/api/campaign/checkCampaignAdmin');
-      enqueueSnackbar(`Found ${response.data.length} campaign associations`, {
-        variant: 'success',
-      });
-      console.log('Campaign admin entries:', response.data);
-    } catch (error) {
-      console.error('Error checking campaign admin:', error);
-      enqueueSnackbar('Error checking campaign associations', { variant: 'error' });
-    }
-  };
-
-  const handleAddToAllCampaigns = async () => {
-    try {
-      const response = await axiosInstance.post('/api/campaign/addClientToCampaignAdmin');
-      enqueueSnackbar(`Processed ${response.data.results.length} campaigns`, {
-        variant: 'success',
-      });
-      console.log('Add to campaigns result:', response.data);
-      // Refresh campaigns data after adding
-      mutate();
-    } catch (error) {
-      console.error('Error adding to campaigns:', error);
-      enqueueSnackbar('Error adding to campaigns', { variant: 'error' });
-    }
-  };
-
   // Calculate pagination
   const indexOfLastCampaign = currentPage * campaignsPerPage;
   const indexOfFirstCampaign = indexOfLastCampaign - campaignsPerPage;
@@ -290,7 +255,7 @@ const ClientDashboard = () => {
     for (
       let i = Math.max(2, currentPage - delta);
       i <= Math.min(totalPages - 1, currentPage + delta);
-      i++
+      i += 1
     ) {
       range.push(i);
     }
@@ -345,7 +310,13 @@ const ClientDashboard = () => {
           Keep up the good work! Here&apos;s what is relevant to you right now.
         </Typography>
       </Box>
-      <Stack direction="row" spacing={1.5}>
+      <Stack
+        direction="row"
+        spacing={1.5}
+        justifyContent={{ xs: 'space-between', md: 'flex-end' }}
+        alignItems="center"
+        sx={{ width: { xs: '92%', md: 'auto' }, alignSelf: { xs: 'stretch', md: 'auto' } }}
+      >
         {/* View Mode Toggle */}
         <Box
           onClick={() => {
@@ -357,24 +328,21 @@ const ClientDashboard = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            px: 1.5,
-            py: 1.5,
+            px: 1.3,
+            py: 1,
             borderRadius: 1,
-            bgcolor: viewMode === 'card' ? '#203ff5' : '#FFF',
-            border: '1px solid #EBEBEB',
+            border: '1px solid #E7E7E7',
             borderBottom: '3px solid #E7E7E7',
+            bgcolor: '#fff',
             cursor: 'pointer',
-            height: '42px',
-            width: '42px',
             '&:hover': {
-              bgcolor: viewMode === 'card' ? '#1935dd' : '#F5F5F5',
+              bgcolor: '#F5F5F5',
             },
           }}
         >
           <Iconify
-            icon={viewMode === 'table' ? 'eva:grid-outline' : 'eva:list-outline'}
-            width={20}
-            color={viewMode === 'card' ? 'white' : '#636366'}
+            icon={viewMode === 'table' ? 'mdi:grid' : 'eva:list-outline'}
+            width={23}
           />
         </Box>
 
@@ -383,15 +351,14 @@ const ClientDashboard = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
+            px: 2,
+            py: 1,
             gap: 1,
-            px: { xs: 2, sm: 3 },
-            py: 1.5,
             borderRadius: 1,
             bgcolor: '#203ff5',
             border: '1px solid #203ff5',
-            borderBottom: '3px solid #102387',
+            borderBottom: '3px solid #00000073',
             cursor: 'pointer',
-            height: '42px',
             '&:hover': {
               bgcolor: '#1935dd',
             },
@@ -409,6 +376,262 @@ const ClientDashboard = () => {
     </Box>
   );
 
+  // Mobile version - Tasks and Credits
+  const renderTasksAndCreditsMobile = (
+    <Box sx={{ mb: 4 }}>
+      <Grid container spacing={2}>
+        {/* Tasks To Do Column */}
+        <Grid item xs={6}>
+          <Typography 
+            variant="h6" 
+            gutterBottom 
+            sx={{ 
+              fontFamily: 'Aileron, sans-serif',
+              fontSize: '1rem',
+              fontWeight: 600,
+              mb: 2,
+            }}
+          >
+            Tasks To Do
+          </Typography>
+          <Stack spacing={1.5}>
+            {/* Creators to Approve */}
+            <Box
+              sx={{
+                bgcolor: '#F5F5F5',
+                borderRadius: 1.5,
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: '0px 4px 4px 0px #8E8E9340',
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  lineHeight: 1.2,
+                  fontWeight: 500,
+                  color: '#2C2C2C',
+                  fontSize: 16,
+                }}
+              >
+                Creators to Approve
+              </Typography>
+              <Box
+                sx={{
+                  width: 45,
+                  height: 45,
+                  borderRadius: 1,
+                  bgcolor: '#1340FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: 20,
+                  fontWeight: 600,
+                  flexShrink: 0,
+                }}
+              >
+                {creatorsToApprove}
+              </Box>
+            </Box>
+
+            {/* Drafts to Approve */}
+            <Box
+              sx={{
+                bgcolor: '#F5F5F5',
+                borderRadius: 1.5,
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: '0px 4px 4px 0px #8E8E9340',
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  lineHeight: 1.2,
+                  fontWeight: 500,
+                  color: '#2C2C2C',
+                  fontSize: 16,
+                }}
+              >
+                Drafts to Approve
+              </Typography>
+              <Box
+                sx={{
+                  width: 45,
+                  height: 45,
+                  borderRadius: 1,
+                  bgcolor: '#1340FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: 20,
+                  fontWeight: 600,
+                  flexShrink: 0,
+                }}
+              >
+                {draftsToApprove}
+              </Box>
+            </Box>
+          </Stack>
+        </Grid>
+
+        {/* Credit Tracking Column */}
+        {!user?.isChildAccount && (
+          <Grid item xs={6}>
+            <Typography 
+              variant="h6" 
+              gutterBottom 
+              sx={{ 
+                fontFamily: 'Aileron, sans-serif',
+                fontSize: '1rem',
+                fontWeight: 600,
+                mb: 2,
+              }}
+            >
+              Credit Tracking
+            </Typography>
+            <Stack spacing={2}>
+              {/* Total Credits */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: 'Aileron, sans-serif',
+                    color: '#636366',
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  Total Credits
+                </Typography>
+                <Typography
+                  variant="h5"
+                  color="#3366FF"
+                  fontWeight={600}
+                  sx={{
+                    fontFamily: theme.typography.fontSecondaryFamily,
+                    fontSize: 20,
+                  }}
+                >
+                  {creditsLoading ? '...' : totalCredits || 0}
+                </Typography>
+              </Box>
+
+              {/* Used */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: 'Aileron, sans-serif',
+                    color: '#636366',
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  Used
+                </Typography>
+                <Typography
+                  variant="h5"
+                  color="#3366FF"
+                  fontWeight={600}
+                  sx={{
+                    fontFamily: theme.typography.fontSecondaryFamily,
+                    fontSize: 20,
+                  }}
+                >
+                  {creditsLoading ? '...' : usedCredits || 0}
+                </Typography>
+              </Box>
+
+              {/* Remaining */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: 'Aileron, sans-serif',
+                    color: '#636366',
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  Remaining
+                </Typography>
+                <Typography
+                  variant="h5"
+                  color="#3366FF"
+                  fontWeight={600}
+                  sx={{
+                    fontFamily: theme.typography.fontSecondaryFamily,
+                    fontSize: 20,
+                  }}
+                >
+                  {creditsLoading ? '...' : remainingCredits || 0}
+                </Typography>
+              </Box>
+
+              {/* Validity */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: 'Aileron, sans-serif',
+                    color: '#636366',
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  Validity
+                </Typography>
+                <Typography
+                  variant="h5"
+                  color="#3366FF"
+                  fontWeight={600}
+                  sx={{
+                    fontFamily: theme.typography.fontSecondaryFamily,
+                    fontSize: 20,
+                  }}
+                >
+                  {creditsLoading ? '...' : `${remainingDays} Day${remainingDays !== 1 ? 's' : ''}`}
+                </Typography>
+              </Box>
+            </Stack>
+          </Grid>
+        )}
+      </Grid>
+    </Box>
+  );
+
+  // Desktop version - Tasks and Credits
   const renderTasksAndCredits = (
     <Grid container spacing={1} sx={{ mb: 4 }}>
       <Grid item xs={12} md={4}>
@@ -667,372 +890,852 @@ const ClientDashboard = () => {
     </Grid>
   );
 
-  const renderCampaignTable = (
+  // Mobile Campaign List
+  const renderCampaignMobile = (
     <Box sx={{ width: '100%' }}>
-      <Box sx={{ width: '100%' }}>
-        {/* Custom Table Header */}
-        <Box
-          sx={{
-            width: '100%',
-            height: 32,
-            backgroundColor: '#F5F5F5',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            px: 2,
-            mb: 0,
-          }}
-        >
-          <Box sx={{ flex: { xs: '1 1 50%', md: '0 0 30%' } }}>
-            <Typography
-              sx={{
-                fontWeight: 600,
-                fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                color: '#666',
-              }}
-            >
-              Campaign Name
-            </Typography>
-          </Box>
-          <Box
-            sx={{ flex: { xs: '1 1 25%', md: '0 0 18%' }, display: { xs: 'none', sm: 'block' } }}
-          >
-            <Typography
-              sx={{
-                fontWeight: 600,
-                fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                color: '#666',
-              }}
-            >
-              Start Date
-            </Typography>
-          </Box>
-          <Box
-            sx={{ flex: { xs: '1 1 25%', md: '0 0 18%' }, display: { xs: 'none', sm: 'block' } }}
-          >
-            <Typography
-              sx={{
-                fontWeight: 600,
-                fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                color: '#666',
-              }}
-            >
-              End Date
-            </Typography>
-          </Box>
-          <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 14%' } }}>
-            <Typography
-              sx={{
-                fontWeight: 600,
-                fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                color: '#666',
-              }}
-            >
-              Status
-            </Typography>
-          </Box>
-          <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 20%' }, textAlign: 'right' }}>
-            {/* Empty space for action column */}
-          </Box>
+      {/* Loading state */}
+      {isLoading && (
+        <Box sx={{ py: 8, textAlign: 'center' }}>
+          <CircularProgress size={40} />
         </Box>
+      )}
 
-        {/* Loading state */}
-        {isLoading && (
-          <Box sx={{ py: 8, textAlign: 'center' }}>
-            <CircularProgress size={40} />
-          </Box>
-        )}
+      {/* Empty state for campaigns */}
+      {!isLoading && (!campaigns || campaigns.length === 0) && (
+        <Box sx={{ py: 8, textAlign: 'center' }}>
+          <EmptyContent
+            title="No campaigns yet"
+            description="Create your first campaign by clicking the 'New Campaign' button"
+            sx={{ py: 5 }}
+          />
+        </Box>
+      )}
 
-        {/* Empty state for campaigns */}
-        {!isLoading && (!campaigns || campaigns.length === 0) && (
-          <Box sx={{ py: 8, textAlign: 'center' }}>
-            <EmptyContent
-              title="No campaigns yet"
-              description="Create your first campaign by clicking the 'New Campaign' button"
-              sx={{ py: 5 }}
-            />
-          </Box>
-        )}
-
-        {/* Campaign list */}
-        {!isLoading && campaigns && campaigns.length > 0 && (
-          <Box sx={{ width: '100%' }}>
-            {currentCampaigns.map((campaign) => (
+      {/* Campaign list - List view */}
+      {!isLoading && campaigns && campaigns.length > 0 && viewMode === 'table' && (
+        <Stack mb={2}>
+          {currentCampaigns.map((campaign) => (
+            <Box
+              key={campaign.id}
+              onClick={() => setActiveCampaignId(campaign.id)}
+              onMouseEnter={() => setActiveCampaignId(campaign.id)}
+              onMouseLeave={() => setActiveCampaignId(null)}
+              onFocus={() => setActiveCampaignId(campaign.id)}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setActiveCampaignId(null);
+                }
+              }}
+              tabIndex={0}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                px: 2,
+                py: 2,
+                borderBottom: '1px solid #E7E7E7',
+                bgcolor: '#FFFFFF',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s ease',
+                '&:hover': {
+                  bgcolor: '#F8F9FA',
+                },
+              }}
+            >
               <Box
-                key={campaign.id}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  px: 2,
-                  py: 2,
-                  borderBottom: '1px solid #f0f0f0',
-                  '&:hover': {
-                    backgroundColor: '#f8f9fa',
-                  },
+                  justifyContent: 'space-between',
+                  gap: 1,
                 }}
               >
-                <Box
-                  sx={{
-                    flex: { xs: '1 1 50%', md: '0 0 30%' },
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    pr: 1,
-                    minWidth: 0, // Allow flex item to shrink below content size
-                  }}
-                >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
                   <Avatar
                     src={campaign?.campaignBrief?.images?.[0] || campaign.brand?.logo || campaign.company?.logo || clientCompanyLogo || ''}
                     sx={{
-                      width: { xs: 32, sm: 36 },
-                      height: { xs: 32, sm: 36 },
+                      width: 38,
+                      height: 38,
+                      borderRadius: '50%',
                       backgroundColor: '#e0e0e0',
                       color: '#666',
-                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                      fontSize: '1rem',
                       flexShrink: 0,
                     }}
                   >
                     {campaign.name?.charAt(0)}
                   </Avatar>
-                  <Typography
-                    sx={{
-                      fontWeight: 400,
-                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                      color: '#333',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      minWidth: 0, // Allow text to shrink
-                      flex: 1, // Take remaining space
-                    }}
-                  >
-                    {campaign.name}
-                  </Typography>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: '#333',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        mb: 0.3,
+                      }}
+                    >
+                      {campaign.name}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        color: '#8E8E93',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Iconify icon="mdi:calendar-blank-outline" width={12} sx={{ mr: 0.5, mb: -0.2 }} />
+                      {campaign.campaignBrief?.startDate && campaign.campaignBrief?.endDate
+                        ? `${fDate(campaign.campaignBrief.startDate)} - ${fDate(campaign.campaignBrief.endDate)}`
+                        : 'Dates TBD'}
+                    </Typography>
+                  </Box>
                 </Box>
-                <Box
-                  sx={{
-                    flex: { xs: '1 1 25%', md: '0 0 18%' },
-                    pr: 1,
-                    display: { xs: 'none', sm: 'block' },
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontWeight: 400,
-                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                      color: '#333',
-                    }}
-                  >
-                    {campaign.campaignBrief?.startDate
-                      ? fDate(campaign.campaignBrief.startDate)
-                      : 'N/A'}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    flex: { xs: '1 1 25%', md: '0 0 18%' },
-                    pr: 1,
-                    display: { xs: 'none', sm: 'block' },
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontWeight: 400,
-                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                      color: '#333',
-                    }}
-                  >
-                    {campaign.campaignBrief?.endDate
-                      ? fDate(campaign.campaignBrief.endDate)
-                      : 'N/A'}
-                  </Typography>
-                </Box>
-                <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 14%' }, pr: 1 }}>
-                  {campaign.status === 'PENDING_CSM_REVIEW' ||
-                  campaign.status === 'SCHEDULED' ||
-                  campaign.status === 'PENDING_ADMIN_ACTIVATION' ? (
-                    <Tooltip title="Waiting for admin approval">
+                <Box sx={{ flexShrink: 0, ml: 1 }}>
+                  {(() => {
+                    if (
+                      campaign.status === 'PENDING_CSM_REVIEW' ||
+                      campaign.status === 'SCHEDULED' ||
+                      campaign.status === 'PENDING_ADMIN_ACTIVATION'
+                    ) {
+                      return (
+                        <Chip
+                          label="PENDING"
+                          size="small"
+                          sx={{
+                            borderRadius: '4px',
+                            border: '1px solid #FFC702',
+                            boxShadow: '0px -2px 0px 0px #FFC702 inset',
+                            backgroundColor: '#FFFFFF',
+                            color: '#FFC702',
+                            fontWeight: 600,
+                            fontSize: 12,
+                            height: 30,
+                            minWidth: 70,
+                            '&:hover': {
+                              backgroundColor: '#FFF',
+                            },
+                          }}
+                        />
+                      );
+                    }
+                    if (campaign.status === 'INACTIVE') {
+                      return (
+                        <Chip
+                          label="INACTIVE"
+                          size="small"
+                          sx={{
+                            borderRadius: '4px',
+                            border: '1px solid #8E8E93',
+                            boxShadow: '0px -2px 0px 0px #8E8E93 inset',
+                            backgroundColor: '#FFFFFF',
+                            color: '#8E8E93',
+                            fontWeight: 600,
+                            fontSize: 12,
+                            height: 30,
+                            minWidth: 70,
+                            '&:hover': {
+                              backgroundColor: '#FFF',
+                            },
+                          }}
+                        />
+                      );
+                    }
+                    return (
                       <Chip
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <span>PENDING</span>
-                            <Box
-                              sx={{
-                                ml: 0.5,
-                                width: 14,
-                                height: 14,
-                                borderRadius: '50%',
-                                border: '1px solid #FFC702',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#FFC702',
-                                fontSize: '9px',
-                                fontWeight: 'bold',
-                                lineHeight: 1,
-                              }}
-                            >
-                              i
-                            </Box>
-                          </Box>
-                        }
+                        label={campaign.status}
                         size="small"
                         sx={{
                           borderRadius: '4px',
-                          border: '1px solid #FFC702',
-                          boxShadow: '0px -3px 0px 0px #FFC702 inset',
+                          border: '1px solid #E7E7E7',
+                          boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
                           backgroundColor: '#FFFFFF',
-                          color: '#FFC702',
                           fontWeight: 600,
-                          fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                          height: { xs: 24, sm: 26 },
-                          minWidth: { xs: 60, sm: 70 },
+                          fontSize: 12,
+                          height: 30,
+                          minWidth: 70,
                           '&:hover': {
-                            backgroundColor: '#F8F9FA',
+                            backgroundColor: '#FFF',
                           },
+                          ...(campaign.status === 'ACTIVE' && {
+                            color: '#1abf66',
+                            border: '1px solid #1abf66',
+                            boxShadow: '0px -2px 0px 0px #1abf66 inset',
+                          }),
+                          ...(campaign.status === 'DRAFT' && {
+                            color: '#ff9800',
+                            border: '1px solid #ff9800',
+                            boxShadow: '0px -2px 0px 0px #ff9800 inset',
+                          }),
+                          ...(campaign.status === 'COMPLETED' && {
+                            color: '#3366FF',
+                            border: '1px solid #3366FF',
+                            boxShadow: '0px -2px 0px 0px #3366FF inset',
+                          }),
+                          ...(campaign.status === 'PAUSED' && {
+                            color: '#f44336',
+                            border: '1px solid #f44336',
+                            boxShadow: '0px -2px 0px 0px #f44336 inset',
+                          }),
                         }}
                       />
-                    </Tooltip>
-                  ) : (
+                    );
+                  })()}
+                </Box>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                  opacity: activeCampaignId === campaign.id ? 1 : 0,
+                  maxHeight: activeCampaignId === campaign.id ? 48 : 0,
+                  mt: activeCampaignId === campaign.id ? 1.5 : 0,
+                  pointerEvents: activeCampaignId === campaign.id ? 'auto' : 'none',
+                  overflow: 'hidden',
+                }}
+              >
+                <Button
+                  variant="contained"
+                  color="inherit"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleViewCampaign(campaign.id);
+                  }}
+                  sx={{
+                    width: '100%',
+                    maxWidth: 150,
+                    borderRadius: '6px',
+                    border: '1px solid #E7E7E7',
+                    pt: 0.5,
+                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                    backgroundColor: '#FFFFFF',
+                    color: '#1340FF',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#F0F4FF',
+                      border: '1px solid #E7E7E7',
+                      boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                    },
+                    '&:active': {
+                      boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                      transform: 'translateY(1px)',
+                    },
+                  }}
+                >
+                  View Campaign
+                </Button>
+              </Box>
+            </Box>
+          ))}
+        </Stack>
+      )}
+
+      {/* Campaign cards - Horizontal scroll view */}
+      {!isLoading && campaigns && campaigns.length > 0 && viewMode === 'card' && (
+        <Box
+          sx={{
+            width: '100%',
+            overflowX: 'auto',
+            pb: 2,
+            mb: 2,
+            '&::-webkit-scrollbar': {
+              height: 8,
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: '#F5F5F5',
+              borderRadius: 4,
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#C7C7CC',
+              borderRadius: 4,
+              '&:hover': {
+                backgroundColor: '#8E8E93',
+              },
+            },
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              minWidth: 'min-content',
+            }}
+          >
+            {currentCampaigns.map((campaign) => (
+              <Card
+                key={campaign.id}
+                onClick={() => handleViewCampaign(campaign.id)}
+                sx={{
+                  width: 280,
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  bgcolor: 'background.default',
+                  borderRadius: '15px',
+                  border: '1.2px solid',
+                  borderColor: 'divider',
+                  maxHeight: 280,
+                  pb:  1,
+                  '&:hover': {
+                    borderColor: '#1340ff',
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+              >
+                {/* Campaign Image */}
+                <Box sx={{ position: 'relative', height: 120, overflow: 'hidden' }}>
+                  <Image
+                    alt={campaign?.name}
+                    src={campaign?.campaignBrief?.images?.[0] || '/assets/images/placeholder.jpg'}
+                    sx={{
+                      height: '100%',
+                      width: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'center',
+                    }}
+                  />
+                  <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
                     <Chip
                       label={
-                        campaign.status === 'PENDING_ADMIN_ACTIVATION' ? 'PENDING' : campaign.status
+                        campaign.status === 'PENDING_CSM_REVIEW' ||
+                        campaign.status === 'SCHEDULED' ||
+                        campaign.status === 'PENDING_ADMIN_ACTIVATION'
+                          ? 'PENDING'
+                          : campaign.status
+                      }
+                      sx={{
+                        backgroundColor: 'white',
+                        color: campaign.status === 'PENDING_ADMIN_ACTIVATION' ? '#1340FF' : '#48484a',
+                        fontWeight: 600,
+                        fontSize: '0.7rem',
+                        borderRadius: '5px',
+                        height: '24px',
+                        border:
+                          campaign.status === 'PENDING_ADMIN_ACTIVATION'
+                            ? '1.2px solid #1340FF'
+                            : '1.2px solid #e7e7e7',
+                        borderBottom:
+                          campaign.status === 'PENDING_ADMIN_ACTIVATION'
+                            ? '3px solid #1340FF'
+                            : '3px solid #e7e7e7',
+                        '& .MuiChip-label': {
+                          padding: '0 5px',
+                        },
+                        '&:hover': {
+                          backgroundColor: 'white',
+                        },
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                {/* Campaign Content */}
+                <Box sx={{ position: 'relative', pt: 2, px: 2 }}>
+                  <Avatar
+                    src={campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo || campaign?.company?.logo}
+                    alt={campaign?.brand?.name || campaign?.company?.name}
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      border: '2px solid #ebebeb',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      top: -25,
+                      left: 12,
+                    }}
+                  >
+                    {campaign?.name?.charAt(0)}
+                  </Avatar>
+
+                  <Box sx={{ mt: 0.5 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 650,
+                        mb: -0.1,
+                        pb: 0.2,
+                        mt: 0.6,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontSize: '1rem',
+                      }}
+                    >
+                      {campaign?.name}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        mb: 1.2,
+                        color: '#8e8e93',
+                        fontSize: '0.8rem',
+                        fontWeight: 550,
+                      }}
+                    >
+                      {campaign?.brand?.name || campaign?.company?.name || 'Client Campaign'}
+                    </Typography>
+                  </Box>
+
+                  <Stack spacing={0.4}>
+                    <Stack direction="row" alignItems="center" spacing={0.8}>
+                      <img
+                        src="/assets/icons/overview/IndustriesTag.svg"
+                        alt="Industries"
+                        style={{
+                          width: 14,
+                          height: 14,
+                        }}
+                      />
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#8e8e93',
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {campaign?.campaignBrief?.industries || 'General'}
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Stack direction="row" alignItems="center" spacing={0.8}>
+                        <img
+                          src="/assets/icons/overview/SmallCalendar.svg"
+                          alt="Calendar"
+                          style={{
+                            width: 14,
+                            height: 14,
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: '#8e8e93',
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {campaign?.campaignBrief?.startDate && campaign?.campaignBrief?.endDate
+                            ? `${dayjs(campaign?.campaignBrief?.startDate).format('D MMM YYYY')} - ${dayjs(
+                                campaign?.campaignBrief?.endDate
+                              ).format('D MMM YYYY')}`
+                            : 'Dates TBD'}
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </Stack>
+                </Box>
+              </Card>
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      {/* Pagination for Mobile View */}
+      {totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Typography
+              onClick={() => handlePageChange(null, Math.max(1, currentPage - 1))}
+              sx={{
+                cursor: currentPage === 1 ? 'default' : 'pointer',
+                color: currentPage === 1 ? '#C7C7CC' : '#000000',
+                fontSize: '1rem',
+                fontWeight: 500,
+                userSelect: 'none',
+              }}
+            >
+              &lt;
+            </Typography>
+
+            {getPaginationRange().map((page, index) =>
+              page === '...' ? (
+                <Typography key={`dots-${index}`} sx={{ color: '#8E8E93', fontSize: '1rem' }}>
+                  ...
+                </Typography>
+              ) : (
+                <Typography
+                  key={page}
+                  onClick={() => handlePageChange(null, page)}
+                  sx={{
+                    cursor: 'pointer',
+                    color: currentPage === page ? '#1340FF' : '#000000',
+                    fontSize: '1rem',
+                    fontWeight: currentPage === page ? 700 : 500,
+                    userSelect: 'none',
+                    '&:hover': {
+                      color: currentPage === page ? '#1340FF' : '#666666',
+                    },
+                  }}
+                >
+                  {page}
+                </Typography>
+              )
+            )}
+
+            <Typography
+              onClick={() => handlePageChange(null, Math.min(totalPages, currentPage + 1))}
+              sx={{
+                cursor: currentPage === totalPages ? 'default' : 'pointer',
+                color: currentPage === totalPages ? '#C7C7CC' : '#000000',
+                fontSize: '1rem',
+                fontWeight: 500,
+                userSelect: 'none',
+              }}
+            >
+              &gt;
+            </Typography>
+          </Stack>
+        </Box>
+      )}
+    </Box>
+  );
+
+  // Desktop Campaign Table
+  const renderCampaignTable = (
+    <Box sx={{ width: '100%' }}>
+      {/* Custom Table Header */}
+      <Box
+        sx={{
+          width: '100%',
+          height: 32,
+          backgroundColor: '#F5F5F5',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          px: 2,
+          mb: 0,
+        }}
+      >
+        <Box sx={{ flex: '0 0 33%' }}>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              color: '#666',
+            }}
+          >
+            Campaign Name
+          </Typography>
+        </Box>
+        <Box sx={{ flex: '0 0 15%' }}>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              color: '#666',
+            }}
+          >
+            Start Date
+          </Typography>
+        </Box>
+        <Box sx={{ flex: '0 0 15%' }}>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              color: '#666',
+            }}
+          >
+            End Date
+          </Typography>
+        </Box>
+        <Box sx={{ flex: '0 0 18%', }}>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              color: '#666',
+            }}
+          >
+            Status
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Loading state */}
+      {isLoading && (
+        <Box sx={{ py: 8, textAlign: 'center' }}>
+          <CircularProgress size={40} />
+        </Box>
+      )}
+
+      {/* Empty state for campaigns */}
+      {!isLoading && (!campaigns || campaigns.length === 0) && (
+        <Box sx={{ py: 8, textAlign: 'center' }}>
+          <EmptyContent
+            title="No campaigns yet"
+            description="Create your first campaign by clicking the 'New Campaign' button"
+            sx={{ py: 5 }}
+          />
+        </Box>
+      )}
+
+      {/* Campaign list */}
+      {!isLoading && campaigns && campaigns.length > 0 && (
+        <Box sx={{ width: '100%' }}>
+          {currentCampaigns.map((campaign) => (
+            <Box
+              key={campaign.id}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                px: 2,
+                py: 2,
+                borderBottom: '1px solid #f0f0f0',
+                '&:hover': {
+                  backgroundColor: '#f8f9fa',
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  flex: '0 0 33%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  pr: 1,
+                  minWidth: 0,
+                }}
+              >
+                <Avatar
+                  src={campaign?.campaignBrief?.images?.[0] || campaign.brand?.logo || campaign.company?.logo || clientCompanyLogo || ''}
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: '#e0e0e0',
+                    color: '#666',
+                    fontSize: '0.9rem',
+                    flexShrink: 0,
+                  }}
+                >
+                  {campaign.name?.charAt(0)}
+                </Avatar>
+                <Typography
+                  sx={{
+                    fontWeight: 400,
+                    fontSize: '0.9rem',
+                    color: '#333',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    minWidth: 0,
+                    flex: 1,
+                  }}
+                >
+                  {campaign.name}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: '0 0 15%', pr: 1 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 400,
+                    fontSize: '0.9rem',
+                    color: '#333',
+                  }}
+                >
+                  {campaign.campaignBrief?.startDate
+                    ? fDate(campaign.campaignBrief.startDate)
+                    : 'N/A'}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: '0 0 15%', pr: 1 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 400,
+                    fontSize: '0.9rem',
+                    color: '#333',
+                  }}
+                >
+                  {campaign.campaignBrief?.endDate
+                    ? fDate(campaign.campaignBrief.endDate)
+                    : 'N/A'}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: '0 0 18%' }}>
+                {campaign.status === 'PENDING_CSM_REVIEW' ||
+                campaign.status === 'SCHEDULED' ||
+                campaign.status === 'PENDING_ADMIN_ACTIVATION' ? (
+                  <Tooltip title="Waiting for admin approval">
+                    <Chip
+                      label={
+                        <Box display="flex" alignItems="center" pb={0.2} gap={0.5}>
+                          PENDING
+                          <Iconify 
+                            icon="mdi:information-outline" 
+                            sx={{
+                              color: '#FFC702',
+                              width: 16,
+                              height: 16,
+                            }} 
+                          />
+                        </Box>
                       }
                       size="small"
                       sx={{
-                        borderRadius: '4px',
-                        border: '1px solid #E7E7E7',
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        borderRadius: 0.8,
+                        border: '1px solid #FFC702',
+                        boxShadow: '0px -2px 0px 0px #FFC702 inset',
+                        height: 30,
                         backgroundColor: '#FFFFFF',
+                        color: '#FFC702',
                         fontWeight: 600,
-                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                        height: { xs: 24, sm: 26 },
-                        minWidth: { xs: 60, sm: 70 },
-                        ...(campaign.status === 'PENDING_ADMIN_ACTIVATION' && {
-                          color: '#1340FF',
-                          border: '1px solid #1340FF',
-                          boxShadow: '0px -3px 0px 0px #1340FF inset',
-                        }),
-                        ...(campaign.status === 'ACTIVE' && {
-                          color: '#1abf66',
-                          border: '1px solid #1abf66',
-                          boxShadow: '0px -3px 0px 0px #1abf66 inset',
-                        }),
-                        ...(campaign.status === 'DRAFT' && {
-                          color: '#ff9800',
-                          border: '1px solid #ff9800',
-                          boxShadow: '0px -3px 0px 0px #ff9800 inset',
-                        }),
-                        ...(campaign.status === 'COMPLETED' && {
-                          color: '#3366FF',
-                          border: '1px solid #3366FF',
-                          boxShadow: '0px -3px 0px 0px #3366FF inset',
-                        }),
-                        ...(campaign.status === 'PAUSED' && {
-                          color: '#f44336',
-                          border: '1px solid #f44336',
-                          boxShadow: '0px -3px 0px 0px #f44336 inset',
-                        }),
+                        fontSize: 12,
+                        minWidth: 70,
                         '&:hover': {
                           backgroundColor: '#F8F9FA',
                         },
                       }}
                     />
-                  )}
-                </Box>
-                <Box sx={{ flex: { xs: '1 1 25%', md: '0 0 20%' }, textAlign: 'right' }}>
-                  <Button
-                    variant="text"
-                    onClick={() => handleViewCampaign(campaign.id)}
+                  </Tooltip>
+                ) : (
+                  <Chip
+                    label={
+                      campaign.status === 'PENDING_ADMIN_ACTIVATION' ? 'PENDING' : campaign.status
+                    }
+                    size="small"
                     sx={{
-                      width: { xs: 80, sm: 110, md: 130 },
-                      height: { xs: 28, sm: 30 },
-                      padding: { xs: '4px 8px', sm: '6px 10px' },
-                      borderRadius: '6px',
+                      borderRadius: 0.8,
                       border: '1px solid #E7E7E7',
                       boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
                       backgroundColor: '#FFFFFF',
-                      color: '#1340FF',
-                      fontSize: { xs: 8, sm: 10, md: 12 },
+                      pb: 0.2,
                       fontWeight: 600,
-                      textTransform: 'none',
+                      fontSize: 12,
+                      height: 30,
+                      minWidth: 70,
+                      ...(campaign.status === 'PENDING_ADMIN_ACTIVATION' && {
+                        color: '#1340FF',
+                        border: '1px solid #1340FF',
+                        boxShadow: '0px -2px 0px 0px #1340FF inset',
+                      }),
+                      ...(campaign.status === 'ACTIVE' && {
+                        color: '#1abf66',
+                        border: '1px solid #1abf66',
+                        boxShadow: '0px -2px 0px 0px #1abf66 inset',
+                      }),
+                      ...(campaign.status === 'DRAFT' && {
+                        color: '#ff9800',
+                        border: '1px solid #ff9800',
+                        boxShadow: '0px -2px 0px 0px #ff9800 inset',
+                      }),
+                      ...(campaign.status === 'COMPLETED' && {
+                        color: '#3366FF',
+                        border: '1px solid #3366FF',
+                        boxShadow: '0px -2px 0px 0px #3366FF inset',
+                      }),
+                      ...(campaign.status === 'PAUSED' && {
+                        color: '#f44336',
+                        border: '1px solid #f44336',
+                        boxShadow: '0px -2px 0px 0px #f44336 inset',
+                      }),
                       '&:hover': {
                         backgroundColor: '#F8F9FA',
-                        border: '1px solid #E7E7E7',
-                        boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                      },
-                      '&:active': {
-                        boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
-                        transform: 'translateY(1px)',
                       },
                     }}
-                  >
-                    View Campaign
-                  </Button>
-                </Box>
+                  />
+                )}
               </Box>
-            ))}
-          </Box>
-        )}
+              <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
+                <Button
+                  variant="text"
+                  onClick={() => handleViewCampaign(campaign.id)}
+                  sx={{
+                    width: 130,
+                    height: 32,
+                    pb: 1,
+                    borderRadius: '6px',
+                    border: '1px solid #E7E7E7',
+                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                    backgroundColor: '#FFFFFF',
+                    color: '#1340FF',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#F8F9FA',
+                      border: '1px solid #E7E7E7',
+                      boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                    },
+                    '&:active': {
+                      boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                      transform: 'translateY(1px)',
+                    },
+                  }}
+                >
+                  View Campaign
+                </Button>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      )}
 
-        {/* Pagination for Table View */}
-        {totalPages > 1 && (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Typography
-                onClick={() => handlePageChange(null, Math.max(1, currentPage - 1))}
-                sx={{
-                  cursor: currentPage === 1 ? 'default' : 'pointer',
-                  color: currentPage === 1 ? '#C7C7CC' : '#000000',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  userSelect: 'none',
-                }}
-              >
-                &lt;
-              </Typography>
+      {/* Pagination for Table View */}
+      {totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Typography
+              onClick={() => handlePageChange(null, Math.max(1, currentPage - 1))}
+              sx={{
+                cursor: currentPage === 1 ? 'default' : 'pointer',
+                color: currentPage === 1 ? '#C7C7CC' : '#000000',
+                fontSize: '1rem',
+                fontWeight: 500,
+                userSelect: 'none',
+              }}
+            >
+              &lt;
+            </Typography>
 
-              {getPaginationRange().map((page, index) =>
-                page === '...' ? (
-                  <Typography key={`dots-${index}`} sx={{ color: '#8E8E93', fontSize: '1rem' }}>
-                    ...
-                  </Typography>
-                ) : (
-                  <Typography
-                    key={page}
-                    onClick={() => handlePageChange(null, page)}
-                    sx={{
-                      cursor: 'pointer',
-                      color: currentPage === page ? '#1340FF' : '#000000',
-                      fontSize: '1rem',
-                      fontWeight: currentPage === page ? 700 : 500,
-                      userSelect: 'none',
-                      '&:hover': {
-                        color: currentPage === page ? '#1340FF' : '#666666',
-                      },
-                    }}
-                  >
-                    {page}
-                  </Typography>
-                )
-              )}
+            {getPaginationRange().map((page, index) =>
+              page === '...' ? (
+                <Typography key={`dots-${index}`} sx={{ color: '#8E8E93', fontSize: '1rem' }}>
+                  ...
+                </Typography>
+              ) : (
+                <Typography
+                  key={page}
+                  onClick={() => handlePageChange(null, page)}
+                  sx={{
+                    cursor: 'pointer',
+                    color: currentPage === page ? '#1340FF' : '#000000',
+                    fontSize: '1rem',
+                    fontWeight: currentPage === page ? 700 : 500,
+                    userSelect: 'none',
+                    '&:hover': {
+                      color: currentPage === page ? '#1340FF' : '#666666',
+                    },
+                  }}
+                >
+                  {page}
+                </Typography>
+              )
+            )}
 
-              <Typography
-                onClick={() => handlePageChange(null, Math.min(totalPages, currentPage + 1))}
-                sx={{
-                  cursor: currentPage === totalPages ? 'default' : 'pointer',
-                  color: currentPage === totalPages ? '#C7C7CC' : '#000000',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  userSelect: 'none',
-                }}
-              >
-                &gt;
-              </Typography>
-            </Stack>
-          </Box>
-        )}
-      </Box>
+            <Typography
+              onClick={() => handlePageChange(null, Math.min(totalPages, currentPage + 1))}
+              sx={{
+                cursor: currentPage === totalPages ? 'default' : 'pointer',
+                color: currentPage === totalPages ? '#C7C7CC' : '#000000',
+                fontSize: '1rem',
+                fontWeight: 500,
+                userSelect: 'none',
+              }}
+            >
+              &gt;
+            </Typography>
+          </Stack>
+        </Box>
+      )}
     </Box>
   );
 
@@ -1297,27 +2000,6 @@ const ClientDashboard = () => {
     </Box>
   );
 
-  const BoxStyle = {
-    border: '1px solid #e0e0e0',
-    borderRadius: 2,
-    p: 3,
-    mt: -1,
-    mb: 3,
-    width: '100%',
-    '& .header': {
-      borderBottom: '1px solid #e0e0e0',
-      mx: -3,
-      mt: -1,
-      mb: 2,
-      pb: 1.5,
-      pt: -1,
-      px: 1.8,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 1,
-    },
-  };
-
   const renderSidebar = (
     <Stack spacing={-3}>
       {/* <Box sx={{ ...BoxStyle, mt: 1 }}>
@@ -1382,10 +2064,12 @@ const ClientDashboard = () => {
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       {renderHeader}
 
-      {renderTasksAndCredits}
+      {smDown && renderCampaignMobile}
+
+      {smDown ? renderTasksAndCreditsMobile : renderTasksAndCredits}
 
       <Grid container spacing={3}>
-        <Grid item xs={12} lg={8}>
+        <Grid item display={{ xs: 'none ', sm: 'flex' }} lg={8}>
           {viewMode === 'table' ? renderCampaignTable : renderCampaignCards}
         </Grid>
         <Grid item xs={12} lg={4}>

@@ -7,8 +7,8 @@ import timelinePlugin from '@fullcalendar/timeline';
 import interactionPlugin from '@fullcalendar/interaction';
 
 import Card from '@mui/material/Card';
-import { Divider } from '@mui/material';
 import Stack from '@mui/material/Stack';
+import { Divider } from '@mui/material';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { useTheme } from '@mui/material/styles';
@@ -27,6 +27,7 @@ import { StyledCalendar } from '../styles';
 import CalendarForm from '../calendar-form';
 import { useEvent, useCalendar } from '../hooks';
 import EventDetails from './calendar-view-details';
+import CalendarViewMobile from './calendar-view-mobile';
 
 // ----------------------------------------------------------------------
 
@@ -35,7 +36,7 @@ export default function CalendarView() {
 
   const settings = useSettingsContext();
 
-  const smUp = useResponsive('up', 'sm');
+  const isMobile = useResponsive('down', 'md');
 
   const { events } = useGetEvents();
   const {
@@ -72,188 +73,210 @@ export default function CalendarView() {
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'xl'}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{
-            mb: { xs: 3, md: 2 },
-          }}
-        >
-          <Typography
-            variant="h2"
-            sx={{
-              fontFamily: theme.typography.fontSecondaryFamily,
-              fontWeight: 'normal', 
-            }}
-          >
-            {date.toLocaleString('default', { month: 'long' })} {date.getFullYear()}
-          </Typography>
-
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Button
-              onClick={onDateToday}
+        {/* Mobile View */}
+        {isMobile ? (
+          <CalendarViewMobile
+            date={date}
+            events={events}
+            onDatePrev={onDatePrev}
+            onDateNext={onDateNext}
+            onDateToday={onDateToday}
+            onEventClick={handleEventClick}
+            selectedEvent={selectedEvent}
+            drawerOpen={drawerOpen}
+            onCloseDrawer={() => setDrawerOpen(false)}
+          />
+        ) : (
+          <>
+            {/* Desktop View */}
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
               sx={{
-                width: 80,
-                height: 44,
-                fontSize: 16,
-                fontWeight: 600,
-                color: '#231F20',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E7E7E7',
-                borderBottom: '3px solid #E7E7E7',
-                '&:hover': {
-                  backgroundColor: '#f2f2f2',
-                  borderBottom: '3px solid #e7e7e7',
-                },
+                mb: { xs: 3, md: 2 },
               }}
             >
-              Today
-            </Button>
-            <Button
-              onClick={onDatePrev}
-              sx={{
-                minWidth: 44,
-                width: 44,
-                height: 44,
-                padding: 0,
-                color: '#231F20',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E7E7E7',
-                borderBottom: '3px solid #E7E7E7',
-                '&:hover': {
-                  backgroundColor: '#f2f2f2',
-                  borderBottom: '3px solid #e7e7e7',
-                },
-              }}
-            >
-              <img src="/assets/icons/components/ic_chevron_left.svg" alt="Previous" />
-            </Button>
-            <Button
-              onClick={onDateNext}
-              sx={{
-                minWidth: 44,
-                width: 44,
-                height: 44,
-                padding: 0,
-                color: '#231F20',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E7E7E7',
-                borderBottom: '3px solid #E7E7E7',
-                '&:hover': {
-                  backgroundColor: '#f2f2f2',
-                  borderBottom: '3px solid #e7e7e7',
-                },
-              }}
-            >
-              <img src="/assets/icons/components/ic_chevron_right.svg" alt="Next" />
-            </Button>
-          </Stack>
-        </Stack>
+              <Typography
+                variant="h2"
+                sx={{
+                  fontFamily: theme.typography.fontSecondaryFamily,
+                  fontWeight: 'normal',
+                }}
+              >
+                {date.toLocaleString('default', { month: 'long' })} {date.getFullYear()}
+              </Typography>
 
-        <Card>
-          <StyledCalendar>
-            <Calendar
-              weekends
-              editable
-              droppable
-              selectable
-              rerenderDelay={10}
-              allDayMaintainDuration
-              eventResizableFromStart
-              ref={calendarRef}
-              initialDate={date}
-              initialView={view}
-              dayMaxEventRows={3}
-              eventDisplay="block"
-              events={events}
-              headerToolbar={false}
-              select={onSelectRange}
-              eventClick={handleEventClick}
-              height={smUp ? 720 : 'auto'}
-              eventDrop={(arg) => {
-                onDropEvent(arg, updateEvent);
-              }}
-              eventResize={(arg) => {
-                onResizeEvent(arg, updateEvent);
-              }}
-              plugins={[
-                listPlugin,
-                dayGridPlugin,
-                timelinePlugin,
-                timeGridPlugin,
-                interactionPlugin,
-              ]}
-              dayCellContent={(dayInfo) => {
-                const datee = new Date(dayInfo.date);
-                const isFirstOfMonth = datee.getDate() === 1;
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Button
+                  onClick={onDateToday}
+                  sx={{
+                    width: 80,
+                    height: 44,
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: '#231F20',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E7E7E7',
+                    borderBottom: '3px solid #E7E7E7',
+                    '&:hover': {
+                      backgroundColor: '#f2f2f2',
+                      borderBottom: '3px solid #e7e7e7',
+                    },
+                  }}
+                >
+                  Today
+                </Button>
+                <Button
+                  onClick={onDatePrev}
+                  sx={{
+                    minWidth: 44,
+                    width: 44,
+                    height: 44,
+                    padding: 0,
+                    color: '#231F20',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E7E7E7',
+                    borderBottom: '3px solid #E7E7E7',
+                    '&:hover': {
+                      backgroundColor: '#f2f2f2',
+                      borderBottom: '3px solid #e7e7e7',
+                    },
+                  }}
+                >
+                  <img src="/assets/icons/components/ic_chevron_left.svg" alt="Previous" />
+                </Button>
+                <Button
+                  onClick={onDateNext}
+                  sx={{
+                    minWidth: 44,
+                    width: 44,
+                    height: 44,
+                    padding: 0,
+                    color: '#231F20',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E7E7E7',
+                    borderBottom: '3px solid #E7E7E7',
+                    '&:hover': {
+                      backgroundColor: '#f2f2f2',
+                      borderBottom: '3px solid #e7e7e7',
+                    },
+                  }}
+                >
+                  <img src="/assets/icons/components/ic_chevron_right.svg" alt="Next" />
+                </Button>
+              </Stack>
+            </Stack>
+            <Card>
+              <StyledCalendar>
+                <Calendar
+                  weekends
+                  editable={!isMobile}
+                  droppable={!isMobile}
+                  selectable
+                  rerenderDelay={10}
+                  allDayMaintainDuration
+                  eventResizableFromStart={!isMobile}
+                  ref={calendarRef}
+                  initialDate={date}
+                  initialView={view}
+                  dayMaxEventRows={isMobile ? false : 3}
+                  eventDisplay="block"
+                  events={events}
+                  headerToolbar={false}
+                  select={onSelectRange}
+                  eventClick={handleEventClick}
+                  height="auto"
+                  contentHeight="auto"
+                  aspectRatio={isMobile ? 1.2 : 1.35}
+                  handleWindowResize
+                  stickyHeaderDates={false}
+                  fixedWeekCount={false}
+                  eventDrop={(arg) => {
+                    onDropEvent(arg, updateEvent);
+                  }}
+                  eventResize={(arg) => {
+                    onResizeEvent(arg, updateEvent);
+                  }}
+                  plugins={[
+                    listPlugin,
+                    dayGridPlugin,
+                    timelinePlugin,
+                    timeGridPlugin,
+                    interactionPlugin,
+                  ]}
+                  dayCellContent={(dayInfo) => {
+                    const datee = new Date(dayInfo.date);
+                    const isFirstOfMonth = datee.getDate() === 1;
 
-                // Check if the date is the first of the month
-                if (isFirstOfMonth) {
-                  const formattedDate = `${datee.getDate()}${datee.toLocaleString('default', {
-                    month: 'short',
-                  })}`;
-                  return <div>{formattedDate}</div>;
-                }
-                return <div>{datee.getDate()}</div>;
-              }}
-              // Content format for different media screen
-              eventContent={(eventInfo) => {
-                const { start, end, title, backgroundColor } = eventInfo.event;
-                const isSmallScreen = window.innerWidth < 600;
+                    // Check if the date is the first of the month
+                    if (isFirstOfMonth) {
+                      const formattedDate = `${datee.getDate()}${datee.toLocaleString('default', {
+                        month: 'short',
+                      })}`;
+                      return <div>{formattedDate}</div>;
+                    }
+                    return <div>{datee.getDate()}</div>;
+                  }}
+                  // Content format for different media screen
+                  eventContent={(eventInfo) => {
+                    const { start, end, title, backgroundColor } = eventInfo.event;
+                    const isSmallScreen = window.innerWidth < 600;
 
-                const labelColor =
-                  CALENDAR_COLOR_OPTIONS.find((option) => option.color === backgroundColor)
-                    ?.labelColor || 'black';
+                    const labelColor =
+                      CALENDAR_COLOR_OPTIONS.find((option) => option.color === backgroundColor)
+                        ?.labelColor || 'black';
 
-                const eventTitleStyle = {
-                  '--label-color': labelColor,
-                  color: 'var(--label-color)',
-                };
+                    const eventTitleStyle = {
+                      '--label-color': labelColor,
+                      color: 'var(--label-color)',
+                    };
 
-                if (isSmallScreen) {
-                  return (
-                    <div
-                      style={{
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        textOverflow: 'ellipsis',
-                        maxWidth: '100%',
-                        fontSize: '0.8rem',
-                        fontWeight: '500',
-                      }}
-                    >
-                      {title}
-                    </div>
-                  );
-                }
+                    if (isSmallScreen) {
+                      return (
+                        <div
+                          style={{
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
+                            maxWidth: '100%',
+                            fontSize: '0.8rem',
+                            fontWeight: '500',
+                          }}
+                        >
+                          {title}
+                        </div>
+                      );
+                    }
 
-                const startTime = start
-                  .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-                  .replace(' ', '');
-                const endTime = end
-                  .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-                  .replace(' ', '');
+                    const startTime = start
+                      .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                      .replace(' ', '');
+                    const endTime = end
+                      .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                      .replace(' ', '');
 
-                return (
-                  <div
-                    style={{
-                      ...eventTitleStyle,
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '100%',
-                      fontSize: '0.8rem',
-                      fontWeight: '500',
-                    }}
-                  >
-                    ({startTime}-{endTime}) {title}
-                  </div>
-                );
-              }}
-            />
-          </StyledCalendar>
-        </Card>
+                    return (
+                      <div
+                        style={{
+                          ...eventTitleStyle,
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '100%',
+                          fontSize: '0.8rem',
+                          fontWeight: '500',
+                        }}
+                      >
+                        ({startTime}-{endTime}) {title}
+                      </div>
+                    );
+                  }}
+                />
+              </StyledCalendar>
+            </Card>
+          </>
+        )}
       </Container>
 
       <Dialog
@@ -299,8 +322,9 @@ export default function CalendarView() {
         />
       </Dialog>
 
+      {/* Desktop Event Details - Shows in drawer */}
       <EventDetails
-        open={drawerOpen}
+        open={drawerOpen && !isMobile}
         onClose={() => setDrawerOpen(false)}
         currentEvent={selectedEvent}
         colorOptions={CALENDAR_COLOR_OPTIONS}

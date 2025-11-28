@@ -29,6 +29,7 @@ import {
 } from 'src/utils/socialMetricsCalculator';
 
 import Iconify from 'src/components/iconify';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 const CampaignAnalytics = ({ campaign }) => {
   const campaignId = campaign?.id;
@@ -36,6 +37,8 @@ const CampaignAnalytics = ({ campaign }) => {
   const [selectedPlatform, setSelectedPlatform] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  const lgUp = useResponsive('up', 'lg');
 
   // Extract posting submissions with URLs directly from campaign prop
   const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
@@ -160,9 +163,9 @@ const CampaignAnalytics = ({ campaign }) => {
 
   const PlatformToggle = () => {
     const platformConfig = [
-      { key: 'ALL', label: 'Overview', icon: null, color: '#1340FF' },
-      { key: 'Instagram', label: 'Instagram', icon: 'simple-icons:instagram', color: '#C13584' },
-      { key: 'TikTok', label: 'TikTok', icon: 'simple-icons:tiktok', color: '#000000' },
+      { key: 'ALL', label: 'Overview', icon: null, color: '#1340FF', display: true },
+      { key: 'Instagram', label: 'Instagram', icon: 'prime:instagram', color: '#C13584', display: lgUp ? true : false },
+      { key: 'TikTok', label: 'TikTok', icon: 'prime:tiktok', color: '#000000', display: lgUp ? true : false },
     ];
 
     // Filter to only show platforms that exist in the campaign
@@ -172,14 +175,13 @@ const CampaignAnalytics = ({ campaign }) => {
 
     return (
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: '10px', mb: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
           {availablePlatformConfig.map((config) => (
             <Button
               key={config.key}
               onClick={() => handlePlatformChange(config.key)}
-              variant="outlined"
               sx={{
-                width: 125,
+                width: 135,
                 height: 40,
                 borderRadius: '8px',
                 borderWidth: '2px',
@@ -191,7 +193,6 @@ const CampaignAnalytics = ({ campaign }) => {
                     : '2px solid #9E9E9E',
                 fontWeight: 600,
                 fontSize: 16,
-                display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 textTransform: 'none',
@@ -206,19 +207,36 @@ const CampaignAnalytics = ({ campaign }) => {
                 },
               }}
             >
-              {config.icon && (
-                <Iconify
-                  icon={config.icon}
-                  className="iconify"
-                  sx={{
-                    height: 20,
-                    width: 20,
-                    mr: config.key === 'TikTok' ? 0.5 : 1,
-                    color: selectedPlatform === config.key ? config.color : '#9E9E9E',
-                  }}
-                />
-              )}
-              {config.label}
+              {config.display ? 
+                <>
+                  {config.icon && (
+                    <Iconify
+                      icon={config.icon}
+                      className="iconify"
+                      sx={{
+                        height: 30,
+                        width: 30,
+                        mr: config.key === 'TikTok' ? 0 : 0.5,
+                        color: selectedPlatform === config.key ? config.color : '#9E9E9E',
+                      }}
+                    />
+                  )}
+                  {config.label}   
+                </> :
+                <>
+                  {config.icon && (
+                    <Iconify
+                      icon={config.icon}
+                      className="iconify"
+                      sx={{
+                        height: 35,
+                        width: 35,
+                        color: selectedPlatform === config.key ? config.color : '#9E9E9E',
+                      }}
+                    />
+                  )}
+                </>         
+              }
             </Button>
           ))}
         </Box>

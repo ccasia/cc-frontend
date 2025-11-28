@@ -1,13 +1,16 @@
 import PropTypes from 'prop-types';
 import { useState, useCallback } from 'react';
 
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Stack,
   Avatar,
+  Button,
   Tooltip,
   TextField,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
@@ -21,6 +24,7 @@ import EmptyContent from 'src/components/empty-content';
 import V4VideoSubmission from './submissions/v4/video-submission';
 import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
+import MobileCreatorSubmissions from './submissions/v4/mobile/mobile-creator-submissions';
 
 // ----------------------------------------------------------------------
 
@@ -79,7 +83,6 @@ function CreatorAccordion({ creator, campaign }) {
 
   const renderSubmissionPills = () => {
     const pills = [];
-    let submissionCounter = 0;
 
     const formatStatus = (status) => status?.replace(/_/g, ' ') || 'Unknown';
 
@@ -159,7 +162,7 @@ function CreatorAccordion({ creator, campaign }) {
     
     // Video submission pills
     grouped.videos?.forEach((videoSubmission, index) => {
-      submissionCounter++;
+      // removed unused submissionCounter
       const key = `video-${videoSubmission.id}`;
       const isExpanded = expandedSubmission === key;
 
@@ -285,7 +288,7 @@ function CreatorAccordion({ creator, campaign }) {
 
     // Photo submission pills
     grouped.photos?.forEach((photoSubmission, index) => {
-      submissionCounter++;
+      // removed unused submissionCounter
       const key = `photo-${photoSubmission.id}`;
       const isExpanded = expandedSubmission === key;
       
@@ -405,7 +408,7 @@ function CreatorAccordion({ creator, campaign }) {
 
     // Raw footage submission pills
     grouped.rawFootage?.forEach((rawFootageSubmission, index) => {
-      submissionCounter++;
+      // removed unused submissionCounter
       const key = `rawFootage-${rawFootageSubmission.id}`;
       const isExpanded = expandedSubmission === key;
       
@@ -659,17 +662,23 @@ function CreatorAccordion({ creator, campaign }) {
             borderRadius: 2,
           },
         }}>
-          {submissionsLoading ? (
-            <Typography variant="body2" color="text.secondary">
-              Loading submissions...
-            </Typography>
-          ) : submissions.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No content submissions found
-            </Typography>
-          ) : (
-            renderSubmissionPills()
-          )}
+          {(() => {
+            if (submissionsLoading) {
+              return (
+                <Typography variant="body2" color="text.secondary">
+                  Loading submissions...
+                </Typography>
+              );
+            }
+            if (submissions.length === 0) {
+              return (
+                <Typography variant="body2" color="text.secondary">
+                  No content submissions found
+                </Typography>
+              );
+            }
+            return renderSubmissionPills();
+          })()}
         </Box>
       </Box>
 
@@ -694,17 +703,32 @@ CreatorAccordion.propTypes = {
 };
 
 export default function CampaignCreatorSubmissionsV4({ campaign }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortDirection, setSortDirection] = useState('asc');
 
 
   const handleSearchChange = useCallback((event) => {
     setSearchTerm(event.target.value);
   }, []);
 
+  const toggleSortDirection = useCallback(() => {
+    setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  }, []);
 
 
-  // Filter creators based on search term
-  const filteredCreators = campaign?.shortlisted?.filter(creator => {
+
+  // Sort and filter creators based on search term and sort direction
+  const sortedCreators = (campaign?.shortlisted || []).slice().sort((a, b) => {
+    const aName = (a?.user?.name || '').toLowerCase();
+    const bName = (b?.user?.name || '').toLowerCase();
+    if (aName === bName) return 0;
+    if (sortDirection === 'asc') return aName > bName ? 1 : -1;
+    return aName < bName ? 1 : -1;
+  });
+
+  const filteredCreators = sortedCreators.filter(creator => {
     const name = creator.user?.name?.toLowerCase() || '';
     const email = creator.user?.email?.toLowerCase() || '';
     const searchLower = searchTerm.toLowerCase();
@@ -729,43 +753,84 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 0 } }}>
-      <Box sx={{ mb: { xs: 2, sm: 3 } }}>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Search creators..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          sx={{ 
-            maxWidth: { xs: '100%', sm: 400 },
-            '& .MuiOutlinedInput-root': {
-              '&:hover fieldset': {
-                borderColor: 'primary.main',
-              },
-            }
-          }}
-          InputProps={{
-            startAdornment: <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />,
-          }}
-        />
+    <Box>
+      <Box sx={{ mx: { xs: 1, sm: 0 }, mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            size="medium"
+            placeholder="Search creators..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            sx={{
+              flex: 1,
+              maxWidth: { xs: '100%', sm: 400 },
+            }}
+            InputProps={{
+              startAdornment: <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />,
+            }}
+          />
+
+          <Button
+            onClick={toggleSortDirection}
+            sx={{
+              height: { xs: 45, sm: '100%' },
+              whiteSpace: 'nowrap',
+              borderRadius: 1,
+              border: '1px solid #E7E7E7',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              px: 2,
+              py: 1.8,
+              '&:hover': {
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                bgcolor: '#fff'
+              }
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="body" color="#636366">Alphabetical</Typography>
+              <Iconify
+                icon={sortDirection === 'asc' ? 'mdi:sort-alphabetical-ascending' : 'mdi:sort-alphabetical-descending'}
+                width={18}
+                sx={{ color: '#636366' }}
+              />
+            </Box>
+          </Button>
+        </Box>
       </Box>
 
-      {filteredCreators.length === 0 ? (
-        <Box sx={{ p: 3, textAlign: 'center' }}>
-          <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
-        </Box>
-      ) : (
-        <Stack spacing={{ xs: 0.5, sm: 1 }}>
-          {filteredCreators.map((creator, index) => (
-            <CreatorAccordionWithSubmissions
-              key={creator.userId || index}
-              creator={creator}
-              campaign={campaign}
+      {/* Mobile View */}
+      {(() => {
+          if (isMobile) {
+          return (
+            <MobileCreatorSubmissions 
+              campaign={campaign} 
+              creators={sortedCreators} 
+              searchTerm={searchTerm}
             />
-          ))}
-        </Stack>
-      )}
+          );
+        }
+        // Desktop View
+        if (filteredCreators.length === 0) {
+          return (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <EmptyContent sx={{ py: 10 }}  title="No creators found" filled />
+            </Box>
+          );
+        }
+        return (
+          <Stack spacing={{ xs: 0.5, sm: 1 }}>
+            {filteredCreators.map((creator, index) => (
+              <CreatorAccordionWithSubmissions
+                key={creator.userId || index}
+                creator={creator}
+                campaign={campaign}
+              />
+            ))}
+          </Stack>
+        );
+      })()}
     </Box>
   );
 }

@@ -6,15 +6,21 @@ import React, { useMemo, useState } from 'react';
 
 import {
   Box,
+  Card,
   Stack,
   Table,
   Button,
+  Select,
+  Avatar,
   TableRow,
+  MenuItem,
+  Collapse,
   TextField,
   TableBody,
   TableCell,
   TableHead,
   Typography,
+  CardContent,
   InputAdornment,
   TableContainer,
 } from '@mui/material';
@@ -29,7 +35,9 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchModal from './pitch-modal';
 import MediaKitModal from './media-kit-modal';
+import PitchModalMobile from './pitch-modal-mobile';
 import CreatorMasterListRow from './creator-master-list-row';
+import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 // Status display helper function
 const getStatusInfo = (pitch) => {
@@ -38,7 +46,7 @@ const getStatusInfo = (pitch) => {
   if (pitch.isShortlisted) {
     status = 'APPROVED';
   } else {
-    status = pitch.isV3 ? pitch.displayStatus || pitch.status : pitch.status;
+    status = pitch.displayStatus || pitch.status;
     // Normalize legacy statuses to new format
     if (status === 'undecided') status = 'PENDING_REVIEW';
     if (status === 'approved') status = 'APPROVED';
@@ -48,7 +56,7 @@ const getStatusInfo = (pitch) => {
   // Map status to display properties
   const statusMap = {
     PENDING_REVIEW: {
-      color: '#FF9A02',
+      color: '#FFC702',
       label: 'PENDING REVIEW',
       normalizedStatus: 'PENDING_REVIEW',
     },
@@ -76,15 +84,6 @@ const getStatusInfo = (pitch) => {
     draft: { color: '#637381', label: 'DRAFT', normalizedStatus: 'DRAFT' },
   };
 
-  // Special case for pitch approved vs regular approved
-  if (status === 'APPROVED' && !pitch.isShortlisted && !pitch.isV3) {
-    return {
-      color: '#1ABF66',
-      label: 'PITCH APPROVED',
-      normalizedStatus: 'APPROVED',
-    };
-  }
-
   return (
     statusMap[status] || {
       color: '#637381',
@@ -101,15 +100,23 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
   const mediaKit = useBoolean();
+  const smDown = useResponsive('down', 'sm');
+  
+  // Mobile-specific state
+  const [expandedSections, setExpandedSections] = useState({
+    pending: true,
+    approved: true,
+    rejected: false,
+  });
 
   // Fetch V3 pitches for client-created campaigns OR admin-created v4 campaigns
-  const shouldFetchV3Pitches =
+  const fetchV3Pitches =
     campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4';
   const {
     pitches: v3Pitches,
     isLoading: v3PitchesLoading,
     mutate: v3PitchesMutate,
-  } = useGetV3Pitches(shouldFetchV3Pitches ? campaign?.id : null);
+  } = useGetV3Pitches(fetchV3Pitches ? campaign?.id : null);
 
   // Create a list of creators from the shortlisted array and pitches
   const creators = useMemo(() => {
@@ -119,39 +126,37 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
       return (
         v3Pitches
           .map((pitch) => ({
-              id: pitch.userId || pitch.id,
+              pitchId: pitch.id,
               user: {
                 id: pitch.userId || pitch.user?.id,
                 name: pitch.user?.name,
-                username: pitch.user?.instagramUser?.username,
+                email: pitch.user?.email,
+                ig_username: pitch.user?.creator?.instagramUser?.username,
+                tiktok_username: pitch.user?.creator?.tiktokUser?.username,
                 photoURL: pitch.user?.photoURL,
                 status: pitch.user?.status || 'active',
                 creator: pitch.user?.creator,
                 engagementRate: pitch.user?.instagramUser?.engagement_rate,
                 followerCount: pitch.user?.instagramUser?.followers_count,
-                guestProfileLink: pitch.user?.guestProfileLink,
+                profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
               },
               status: pitch.displayStatus || pitch.status || 'undecided',
               displayStatus: pitch.displayStatus || pitch.status || 'undecided',
               createdAt: pitch.createdAt || new Date().toISOString(),
               type: pitch.type || 'text',
               content: pitch.content || pitch.user?.creator?.about || 'No content available',
-              isShortlisted: false,
-              pitchId: pitch.id,
-              isV3: true,
               adminComments: pitch.adminComments,
               rejectionReason: pitch.rejectionReason,
               customRejectionText: pitch.customRejectionText,
               username: pitch.username,
               followerCount: pitch.followerCount,
               engagementRate: pitch.engagementRate,
+              isShortlisted: false,
             }))
-          // FIX: Only require user to exist, not user.creator
           .filter((creator) => !!creator.user && !!creator.user.id)
       );
     }
 
-    // For admin-created campaigns, use V2 approach
     // Get creators from shortlisted
     const shortlistedCreators = campaign.shortlisted
       ? campaign.shortlisted
@@ -160,20 +165,20 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             user: {
               id: item.userId,
               name: item.user?.name,
-              username: item.user?.instagramUser?.username,
+              ig_username: item.user?.instagramUser?.username,
+              tiktok_username: item.user?.tiktokUser?.username,
               photoURL: item.user?.photoURL,
               status: item.user?.status || 'active',
               creator: item.user?.creator,
               engagementRate: item.user?.instagramUser?.engagement_rate,
               followerCount: item.user?.instagramUser?.followers_count,
-              guestProfileLink: item.user?.guestProfileLink,
+              profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
             },
             status: 'approved', // Shortlisted creators are approved
             createdAt: item.shortlisted_date || new Date().toISOString(),
             type: 'text',
             content: item.user?.creator?.about || 'No content available',
             isShortlisted: true,
-            isV3: false,
           }))
           .filter((creator) => creator.user && creator.user.creator)
       : [];
@@ -187,17 +192,18 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               !shortlistedCreators.some((sc) => sc.id === pitch.userId)
           )
           .map((pitch) => ({
-            id: pitch.userId || pitch.id,
+            pitchId: pitch.id,
             user: {
               id: pitch.userId || pitch.user?.id,
               name: pitch.user?.name,
-              username: pitch.user?.instagramUser?.username || pitch.user?.tiktokUser?.username,
+              ig_username: pitch.user?.creator?.instagramUser?.username,
+              tiktok_username: pitch.user?.creator?.tiktokUser?.username,
               photoURL: pitch.user?.photoURL,
               status: pitch.user?.status || 'active',
               creator: pitch.user?.creator,
               engagementRate: pitch.user?.instagramUser?.engagement_rate,
               followerCount: pitch.user?.instagramUser?.followers_count,
-              guestProfileLink: pitch.user?.guestProfileLink,
+              profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
             },
             status: pitch.status || 'undecided',
             createdAt: pitch.createdAt || new Date().toISOString(),
@@ -231,6 +237,8 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
+  console.log('List of creators: ', creators)
+
   const filteredCreators = useMemo(() => {
     let filtered = creators;
 
@@ -254,9 +262,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     if (search) {
       filtered = filtered.filter(
         (elem) =>
-          elem.user.name?.toLowerCase().includes(search.toLowerCase()) ||
-          (elem.user.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
-          (elem.user.creator?.instagram?.toLowerCase() || '').includes(search.toLowerCase())
+          elem.user.name?.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -368,6 +374,21 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 
   const mdUp = useResponsive('up', 'md');
 
+  // Group creators by status for mobile view - MUST be before conditional returns
+  const groupedCreators = useMemo(() => {
+    const pending = filteredCreators.filter(
+      (creator) => getStatusInfo(creator).normalizedStatus === 'PENDING_REVIEW'
+    );
+    const approved = filteredCreators.filter(
+      (creator) => getStatusInfo(creator).normalizedStatus === 'APPROVED' && !creator.isShortlisted
+    );
+    const rejected = filteredCreators.filter(
+      (creator) => getStatusInfo(creator).normalizedStatus === 'REJECTED'
+    );
+    
+    return { pending, approved, rejected };
+  }, [filteredCreators]);
+
   // Show loading state for V3 pitches
   if (campaign?.origin === 'CLIENT' && v3PitchesLoading) {
     return (
@@ -379,6 +400,171 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
     );
   }
 
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  const formatFollowerCount = (count) => {
+    if (!count) return '0';
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
+  // Mobile View
+  if (!mdUp) {
+    return (
+      <>
+        <Box sx={{ mb: 3 }}>
+          <Select
+            value={selectedFilter}
+            onChange={(e) => setSelectedFilter(e.target.value)}
+            displayEmpty
+            sx={{
+              height: 40,
+              borderRadius: 1,
+              pb: 0.3,
+              color: '#1340FF',
+              fontSize: 14,
+              bgcolor: '#fff',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              border: '1px solid #e7e7e7',
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: 'none',
+              },
+            }}
+          >
+            <MenuItem value="all" sx={{ width: 180 }}>
+              <Stack direction="row" alignItems="center">
+                <Typography fontWeight={600}>All</Typography>
+              </Stack>
+            </MenuItem>
+            <MenuItem value="pending">
+              <Stack direction="row" alignItems="center">
+                <Typography fontWeight={600}>Pending</Typography>
+              </Stack>
+            </MenuItem>
+            <MenuItem value="approved_pitch">
+              <Stack direction="row" alignItems="center">
+                <Typography fontWeight={600}>Approved</Typography>
+              </Stack>
+            </MenuItem>
+            <MenuItem value="rejected">
+              <Stack direction="row" alignItems="center">
+                <Typography fontWeight={600}>Rejected</Typography>
+              </Stack>
+            </MenuItem>
+          </Select>
+        </Box>
+
+        <Box>
+          {selectedFilter === 'all' ? (
+            <>
+              {pendingCount > 0 && (
+                <MobileSection
+                  title="PENDING REVIEW"
+                  count={pendingCount}
+                  color="#FFC702"
+                  creators={groupedCreators.pending}
+                  sectionKey="pending"
+                  isExpanded={expandedSections.pending}
+                  onToggle={toggleSection}
+                  onViewPitch={handleViewPitch}
+                  formatFollowerCount={formatFollowerCount}
+                />
+              )}
+              {approvedPitchCount > 0 && (
+                <MobileSection
+                  title="APPROVED"
+                  count={approvedPitchCount}
+                  color="#1ABF66"
+                  creators={groupedCreators.approved}
+                  sectionKey="approved"
+                  isExpanded={expandedSections.approved}
+                  onToggle={toggleSection}
+                  onViewPitch={handleViewPitch}
+                  formatFollowerCount={formatFollowerCount}
+                />
+              )}
+              {rejectedCount > 0 && (
+                <MobileSection
+                  title="REJECTED"
+                  count={rejectedCount}
+                  color="#D4321C"
+                  creators={groupedCreators.rejected}
+                  sectionKey="rejected"
+                  isExpanded={expandedSections.rejected}
+                  onToggle={toggleSection}
+                  onViewPitch={handleViewPitch}
+                  formatFollowerCount={formatFollowerCount}
+                />
+              )}
+              {activeCount === 0 && (
+                <Box sx={{ py: 8, textAlign: 'center' }}>
+                  <EmptyContent title="No creators found" filled />
+                </Box>
+              )}
+            </>
+          ) : selectedFilter === 'pending' ? (
+            <MobileSection
+              title="PENDING REVIEW"
+              count={pendingCount}
+              color="#FFC702"
+              creators={groupedCreators.pending}
+              sectionKey="pending"
+              isExpanded={expandedSections.pending}
+              onToggle={toggleSection}
+              onViewPitch={handleViewPitch}
+              formatFollowerCount={formatFollowerCount}
+            />
+          ) : selectedFilter === 'approved_pitch' ? (
+            <MobileSection
+              title="APPROVED"
+              count={approvedPitchCount}
+              color="#1ABF66"
+              creators={groupedCreators.approved}
+              sectionKey="approved"
+              isExpanded={expandedSections.approved}
+              onToggle={toggleSection}
+              onViewPitch={handleViewPitch}
+              formatFollowerCount={formatFollowerCount}
+            />
+          ) : (
+            <MobileSection
+              title="REJECTED"
+              count={rejectedCount}
+              color="#D4321C"
+              creators={groupedCreators.rejected}
+              sectionKey="rejected"
+              isExpanded={expandedSections.rejected}
+              onToggle={toggleSection}
+              onViewPitch={handleViewPitch}
+              formatFollowerCount={formatFollowerCount}
+            />
+          )}
+        </Box>
+
+        <PitchModalMobile
+          pitch={selectedPitch}
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          onUpdate={handlePitchUpdate}
+          campaign={campaign}
+        />
+
+        <MediaKitModal
+          open={mediaKit.value}
+          handleClose={mediaKit.onFalse}
+          creatorId={selectedPitch?.user?.creator?.id}
+        />
+      </>
+    );
+  }
+
+  // Desktop View
   return (
     <>
       <Button
@@ -723,13 +909,23 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
         </Scrollbar>
       </Box>
 
-      <PitchModal
-        pitch={selectedPitch}
-        open={openPitchModal}
-        onClose={handleClosePitchModal}
-        onUpdate={handlePitchUpdate}
-        campaign={campaign}
-      />
+      {smDown ? (
+        <PitchModalMobile
+          pitch={selectedPitch}
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          onUpdate={handlePitchUpdate}
+          campaign={campaign}
+        />
+      ) : (
+        <PitchModal
+          pitch={selectedPitch}
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          onUpdate={handlePitchUpdate}
+          campaign={campaign}
+        />
+      )}
 
       <MediaKitModal
         open={mediaKit.value}
@@ -740,9 +936,198 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
   );
 };
 
+const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
+  const resolveMetric = (...values) => values.find((value) => value != null);
+  const creatorProfile = pitch?.user?.creator || {};
+  const instagramStats = creatorProfile.instagramUser || {};
+  const tiktokStats = creatorProfile.tiktokUser || {};
+
+  const followerCount = resolveMetric(
+    instagramStats.followers_count,
+    tiktokStats.follower_count,
+    pitch?.followerCount,
+  );
+
+  const engagementRate = resolveMetric(
+    instagramStats.engagement_rate,
+    tiktokStats.engagement_rate,
+    pitch?.engagementRate,
+  );
+
+  return (
+    <Card
+      sx={{
+        mb: 1.5,
+        borderRadius: 2,
+        boxShadow: '0 2px 0px 0px rgba(0,0,0,0.08)',
+        border: '1px solid #f0f0f0',
+      }}
+    >
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Stack flex={1} direction="row" spacing={1}>
+          <Stack flex={3} direction="row" spacing={1}>
+            <Avatar
+              src={pitch?.user?.photoURL}
+              alt={pitch?.user?.name || 'Creator avatar'}
+              sx={{ width: 35, height: 35 }}
+            />
+
+            <Stack>
+              <Typography variant="subtitle2" fontWeight="bold" lineHeight={1.4} sx={{ color: '#221f20' }}>
+                {pitch?.user?.name || 'Unknown Creator'}
+              </Typography>
+
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Iconify icon="mdi:instagram" width={14} sx={{ color: '#637381' }} />
+                <Typography variant="subtitle" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                  {pitch.user?.ig_username || pitch?.user?.tiktok_username || pitch?.username || extractUsernameFromProfileLink(pitch.user?.profileLink) || 'N/A'}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Stack>
+
+          <Button
+            onClick={() => onViewPitch(pitch)}
+            sx={{
+              flex: 1,
+              px: 1,
+              height: 30,
+              color: '#203ff5',
+              border: '1px solid #E7E7E7',
+              boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+              textTransform: 'none',
+              fontSize: 12,
+              fontWeight: 600,
+              '&:hover': {
+                border: '1px solid #E7E7E7',
+                bgcolor: '#E7E7E7',
+              },
+            }}
+          >
+            View Profile
+          </Button>
+        </Stack>
+
+        <Stack direction="row" spacing={2} ml={5.2} sx={{ mt: 0.5 }}>
+          <Stack direction="row" alignItems="center" spacing={0.5} minWidth={100}>
+            <Iconify icon="streamline:user-multiple-group" width={12} sx={{ color: '#637381' }} />
+            <Typography variant="caption" sx={{ color: '#637381', fontSize: 12, pt: 0.2 }}>
+              {formatFollowerCount(followerCount)} Followers
+            </Typography>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <Iconify icon="mage:chart-up-b" width={16} sx={{ color: '#637381' }} />
+            <Typography variant="caption" sx={{ color: '#637381', fontSize: 12, pt: 0.2 }}>
+              {typeof engagementRate === 'number' ? `${(engagementRate * 100).toFixed(2)}%` : 'N/A'} Engagement
+            </Typography>
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
+const MobileSection = ({
+  title,
+  count,
+  color,
+  creators: sectionCreators,
+  sectionKey,
+  isExpanded,
+  onToggle,
+  onViewPitch,
+  formatFollowerCount,
+}) => (
+  <Box sx={{ mb: 2 }}>
+    <Button
+      fullWidth
+      onClick={() => onToggle(sectionKey)}
+      endIcon={
+        <Iconify
+          icon={isExpanded ? 'tabler:chevron-down' : 'tabler:chevron-right'}
+          width={20}
+          color="#000"
+        />
+      }
+      sx={{
+        px: 1,
+        pt: 0.5,
+        py: 1,
+        maxHeight: 50,
+        justifyContent: 'space-between',
+        bgcolor: '#fff',
+        color,
+        boxShadow: `0px -2px 0px 0px ${color} inset`,
+        borderRadius: 0.8,
+        border: `1px solid ${color}`,
+        textTransform: 'none',
+        fontWeight: 600,
+        fontSize: 14,
+        '&:hover': {
+          bgcolor: '#fff',
+          boxShadow: `0px -3px 0px 0px ${color} inset`,
+        },
+      }}
+    >
+      {title} ({count})
+    </Button>
+
+    <Collapse in={isExpanded}>
+      <Box sx={{ mt: 1.5 }}>
+        {sectionCreators.length === 0 ? (
+          <Box sx={{ py: 4, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No creators in this category
+            </Typography>
+          </Box>
+        ) : (
+          sectionCreators.map((sectionPitch) => (
+            <MobileCreatorCard
+              key={sectionPitch.id}
+              pitch={sectionPitch}
+              onViewPitch={onViewPitch}
+              formatFollowerCount={formatFollowerCount}
+            />
+          ))
+        )}
+      </Box>
+    </Collapse>
+  </Box>
+);
+
 export default CampaignCreatorMasterListClient;
 
 CampaignCreatorMasterListClient.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+};
+
+// Shared prop-type shape for pitch objects
+const pitchPropType = PropTypes.shape({
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  user: PropTypes.shape({
+    name: PropTypes.string,
+    username: PropTypes.string,
+    photoURL: PropTypes.string,
+    followerCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    engagementRate: PropTypes.number,
+  }),
+});
+
+MobileCreatorCard.propTypes = {
+  pitch: pitchPropType.isRequired,
+  onViewPitch: PropTypes.func.isRequired,
+  formatFollowerCount: PropTypes.func.isRequired,
+};
+
+MobileSection.propTypes = {
+  title: PropTypes.string.isRequired,
+  count: PropTypes.number.isRequired,
+  color: PropTypes.string.isRequired,
+  creators: PropTypes.arrayOf(pitchPropType).isRequired,
+  sectionKey: PropTypes.string.isRequired,
+  isExpanded: PropTypes.bool.isRequired,
+  onToggle: PropTypes.func.isRequired,
+  onViewPitch: PropTypes.func.isRequired,
+  formatFollowerCount: PropTypes.func.isRequired,
 };

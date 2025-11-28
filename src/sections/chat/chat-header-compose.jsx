@@ -260,14 +260,14 @@ export default function ChatHeaderCompose({ currentUserId, threadId, isClient })
                   <Iconify icon="iconamoon:arrow-left-2-light" width={20} />
                 </IconButton>
               )}
-              {thread.isGroup ? (
+              {thread.isGroup || thread.campaign ? (
                 <>
                   <Avatar
-                    alt={thread.title}
-                    src={thread.photoURL}
+                    alt={thread.campaign?.name || thread.title}
+                    src={thread.campaign?.campaignBrief?.images?.[0] || thread.campaign?.photoURL || thread.photoURL}
                     sx={{ width: 32, height: 32, mr: 1 }}
                   />
-                  <Typography variant="subtitle2">{thread.title}</Typography>
+                  <Typography variant="subtitle2">{thread.campaign?.name || thread.title}</Typography>
                 </>
               ) : (
                 <>

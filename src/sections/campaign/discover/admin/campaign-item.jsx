@@ -365,7 +365,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   );
 
   const renderTexts = (
-    <Box sx={{ position: 'relative', pt: 2, px: 3, pb: 2.5 }}>
+    <Box sx={{ position: 'relative', px: 2, pt: 2 }}>
       <Avatar
         src={campaign?.brand?.logo || campaign?.company?.logo}
         alt={campaign?.brand?.name || campaign?.company?.name}
@@ -685,8 +685,9 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         border: '1.2px solid',
         borderColor: theme.palette.divider,
         position: 'relative',
+        pb: 1.5,
         mb: -0.5,
-        height: 345,
+        maxHeight: 370,
         '&:hover': {
           borderColor: '#1340ff',
           transform: 'translateY(-2px)',

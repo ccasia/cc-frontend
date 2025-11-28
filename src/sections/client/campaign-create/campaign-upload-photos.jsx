@@ -33,7 +33,7 @@ CampaignUploadPhotos.propTypes = {
 };
 
 export default function CampaignUploadPhotos({ isPreview = false, isLoading = false }) {
-  const { control, watch, setValue } = useFormContext();
+  const { watch, setValue } = useFormContext();
   const [openPreview, setOpenPreview] = useState(false);
   const theme = useTheme();
   const { user } = useAuthContext();
@@ -976,8 +976,8 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
   // Regular upload component with preview
   return (
     <Box sx={{ maxWidth: '650px', mx: 'auto' }}>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-        Upload Campaign Photos
+      <Typography variant="body1" textAlign="center" mb={3}>
+        The image you select will be used on your campaign card as shown below
       </Typography>
 
       <RHFUpload
@@ -1011,7 +1011,7 @@ export default function CampaignUploadPhotos({ isPreview = false, isLoading = fa
       {campaignImages && campaignImages.length > 0 && (
         <>
           <Box
-            // onClick={handleOpenPreview}
+            onClick={handleOpenPreview}
             sx={{
               mt: 4,
               overflow: 'hidden',
