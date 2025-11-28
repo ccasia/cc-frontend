@@ -461,7 +461,7 @@ export default function MobileCreatorSubmissions({ campaign, creators, searchTer
   }
 
   return (
-    <Stack spacing={1} sx={{ px: 1, py: 1 }}>
+    <Stack spacing={1} sx={{ py: 1 }}>
       {filteredCreators.map((creator) => (
         <MobileCreatorRowWithSubmissions
           key={creator.userId}
