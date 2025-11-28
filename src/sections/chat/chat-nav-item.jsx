@@ -52,8 +52,44 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, onC
     }
   }, [threadData, user]);
 
-  const avatarURL = thread.isGroup ? thread.photoURL : otherUser?.photoURL;
-  const title = thread.isGroup ? thread.title : otherUser?.name;
+  // Determine display name: campaign name > thread title > other user name
+  const getChatTitle = () => {
+    // If thread has a campaign, use campaign name
+    if (thread.campaign?.name) {
+      return thread.campaign.name;
+    }
+    // If it's a group thread, use thread title
+    if (thread.isGroup) {
+      return thread.title;
+    }
+    // For 1:1 chats, use other user's name
+    return otherUser?.name || 'Unknown';
+  };
+
+  // Get avatar URL: campaign brief images > thread photoURL > other user photoURL
+  const getAvatarURL = () => {
+    // If thread has a campaign, check for campaign brief images first
+    if (thread.campaign) {
+      const campaignImage = thread.campaign.campaignBrief?.images?.[0];
+      if (campaignImage) {
+        return campaignImage;
+      }
+      // Fall back to campaign photoURL if exists
+      if (thread.campaign.photoURL) {
+        return thread.campaign.photoURL;
+      }
+    }
+    // For group chats, use thread photoURL
+    if (thread.isGroup) {
+      return thread.photoURL;
+    }
+    // For 1:1 chats, use other user's photoURL
+    return otherUser?.photoURL;
+  };
+
+  const avatarURL = getAvatarURL();
+  const title = getChatTitle();
+  const isCampaignThread = !!thread.campaign;
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);

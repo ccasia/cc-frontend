@@ -71,12 +71,12 @@ export default function FeedbackActions({
 
   return (
     <Box sx={{ flex: '0 0 auto' }}>
-      <Stack spacing={{ xs: 1, sm: 0 }}>
+      <Stack>
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
+          direction="row"
           spacing={{ xs: 0.8, sm: 1 }}
           width="100%"
-          justifyContent="flex-end"
+          justifyContent={{ xs: 'space-between', sm: "flex-end"}}
         >
           {visibility.showRequestChangeButton && (
             <Button
@@ -88,7 +88,6 @@ export default function FeedbackActions({
               sx={{
                 ...BUTTON_STYLES.base,
                 ...BUTTON_STYLES.warning,
-                mt: { xs: 1, sm: 0 },
               }}
             >
               {loading ? 'Processing...' : 'Request a Change'}
@@ -98,11 +97,11 @@ export default function FeedbackActions({
           {visibility.showChangeRequestForm && (
             <Box
               display="flex"
-              flexDirection={{ xs: 'column', sm: 'row' }}
+              flexDirection="row"
               width="100%"
               gap={{ xs: 0.8, sm: 1 }}
-              mb={1}
-              justifyContent="flex-end"
+              mb={{ xs: 0, sm: 1 }}
+              justifyContent={{ xs: "space-between", sm: "flex-end" }}
             >
               <Button
                 variant="contained"
@@ -158,7 +157,7 @@ export default function FeedbackActions({
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
+                flexDirection: { xs: 'row' },
                 justifyContent: 'space-between',
                 alignItems: { xs: 'stretch', sm: 'center' },
                 width: '100%',
@@ -281,7 +280,7 @@ export default function FeedbackActions({
                 sx={{
                   ...BUTTON_STYLES.base,
                   ...BUTTON_STYLES.warning,
-                  width: { xs: '100%', sm: 140 },
+                  width: { xs: 110, sm: 140 },
                 }}
               >
                 {loading ? 'Processing...' : 'Send to Creator'}
@@ -319,7 +318,7 @@ export default function FeedbackActions({
             style={{
               backgroundColor: '#fff',
               borderRadius: 10,
-              marginTop: { xs: 4, sm: 5 },
+              marginTop: 4,
             }}
             hiddenLabel
             size="small"
@@ -433,7 +432,7 @@ export default function FeedbackActions({
         })()}
 
         <TextField
-          style={{ marginTop: !isClient ? 4 : 8 }}
+          style={{ marginTop: !isClient ? 1 : 8 }}
           multiline
           rows={3}
           fullWidth

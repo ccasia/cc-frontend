@@ -79,28 +79,30 @@ export default function Main({ children, sx, ...other }) {
         {...other}
       >
         {children}
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 15,
-            right: 45,
-            textAlign: 'right',
-          }}
-        >
-          <IconButton
+        {lgUp && 
+          <Box
             sx={{
-              background: 'linear-gradient(231.34deg, #8A5AFE 14.73%, #3A3A3C 84.06%)',
-              width: 60,
-              height: 60,
-              ':hover': {
-                background: 'linear-gradient(231.34deg, #8A5AFE 100%, #3A3A3C 100%)',
-              },
+              position: 'absolute',
+              bottom: 15,
+              right: 45,
+              textAlign: 'right',
             }}
-            onClick={(e) => setAnchorEl(e.currentTarget)}
           >
-            <Image src="/assets/chat.svg" alt="Chat" sx={{ width: 30 }} />
-          </IconButton>
-        </Box>
+            <IconButton
+              sx={{
+                background: 'linear-gradient(231.34deg, #8A5AFE 14.73%, #3A3A3C 84.06%)',
+                width: 60,
+                height: 60,
+                ':hover': {
+                  background: 'linear-gradient(231.34deg, #8A5AFE 100%, #3A3A3C 100%)',
+                },
+              }}
+              onClick={(e) => setAnchorEl(e.currentTarget)}
+            >
+              <Image src="/assets/chat.svg" alt="Chat" sx={{ width: 30 }} />
+            </IconButton>
+          </Box>        
+        }
         <ChatModal open={isChatopen} onClose={() => setAnchorEl(null)} anchorEl={anchorEl} />
       </Box>
     </mainContext.Provider>
