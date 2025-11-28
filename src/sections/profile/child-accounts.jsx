@@ -1,43 +1,44 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSnackbar } from 'src/components/snackbar';
-import axiosInstance from 'src/utils/axios';
-import { useAuthContext } from 'src/auth/hooks';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
   Card,
+  Menu,
   Stack,
-  Button,
   Table,
+  Button,
   Avatar,
   Dialog,
+  Select,
   Tooltip,
+  Divider,
   TableRow,
+  MenuItem,
   TableBody,
   TableCell,
   TableHead,
+  TextField,
+  Container,
   Typography,
   IconButton,
   DialogTitle,
+  FormControl,
+  ListItemIcon,
+  ListItemText,
   DialogContent,
   DialogActions,
   TableContainer,
-  CircularProgress,
-  TextField,
-  Alert,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Container,
   InputAdornment,
-  FormControl,
-  Select,
+  CircularProgress,
 } from '@mui/material';
 
+import axiosInstance from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
 import { useSettingsContext } from 'src/components/settings';
-import { useResponsive } from 'src/hooks/use-responsive';
 
 const defaultFilters = {
   name: '',
@@ -46,7 +47,7 @@ const defaultFilters = {
 
 const TABS = [
   { value: 'all', label: 'All', color: 'default' },
-  { value: 'pending', label: 'Invitation Sent', color: 'warning' },
+  { value: 'pending', label: 'Invitation Sent', color: '#FFC702' },
   { value: 'active', label: 'Activated', color: 'success' },
   { value: 'disabled', label: 'Deactivated', color: 'error' },
 ];
@@ -55,8 +56,7 @@ export default function ChildAccounts() {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const settings = useSettingsContext();
-  const smUp = useResponsive('up', 'sm');
-  
+
   const [childAccounts, setChildAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -65,7 +65,7 @@ export default function ChildAccounts() {
   const [submitting, setSubmitting] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
   const [expandedSections, setExpandedSections] = useState({
-    invitationSent: true,
+    pending: true,
     activated: true,
     deactivated: true,
   });
@@ -77,11 +77,7 @@ export default function ChildAccounts() {
     lastName: '',
   });
 
-  useEffect(() => {
-    fetchChildAccounts();
-  }, []);
-
-  const fetchChildAccounts = async () => {
+  const fetchChildAccounts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/api/child-account/client/${user?.client?.id}`);
@@ -91,7 +87,11 @@ export default function ChildAccounts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.client?.id, enqueueSnackbar]);
+
+  useEffect(() => {
+    fetchChildAccounts();
+  }, [fetchChildAccounts]);
 
   const handleInviteChildAccount = async () => {
     if (!formData.email || !formData.firstName || !formData.lastName) {
@@ -102,13 +102,15 @@ export default function ChildAccounts() {
     try {
       setSubmitting(true);
       await axiosInstance.post(`/api/child-account/client/${user?.client?.id}`, formData);
-      
+
       enqueueSnackbar('Invitation sent successfully!', { variant: 'success' });
       setInviteDialogOpen(false);
       setFormData({ email: '', firstName: '', lastName: '' });
       fetchChildAccounts();
     } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Failed to send invitation', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Failed to send invitation', {
+        variant: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -134,7 +136,9 @@ export default function ChildAccounts() {
       enqueueSnackbar('Access granted successfully!', { variant: 'success' });
       fetchChildAccounts();
     } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Failed to grant access', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Failed to grant access', {
+        variant: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -147,7 +151,9 @@ export default function ChildAccounts() {
       enqueueSnackbar('Access removed successfully!', { variant: 'success' });
       fetchChildAccounts();
     } catch (error) {
-      enqueueSnackbar(error.response?.data?.message || 'Failed to remove access', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Failed to remove access', {
+        variant: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -177,21 +183,18 @@ export default function ChildAccounts() {
   };
 
   const toggleSection = (section) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
-  const handleFilters = useCallback(
-    (name, value) => {
-      setFilters((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
-    },
-    []
-  );
+  const handleFilters = useCallback((name, value) => {
+    setFilters((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  }, []);
 
   const getStatusText = (account) => {
     if (account.isActive) {
@@ -207,16 +210,9 @@ export default function ChildAccounts() {
     return 'Invitation Sent';
   };
 
-  const getStatusColor = (account) => {
-    const status = getStatusText(account);
-    if (status === 'Activated') return 'success';
-    if (status === 'Invitation Sent') return 'warning';
-    return 'error';
-  };
-
   const getStatusCount = (status) => {
     if (status === 'all') return childAccounts.length;
-    return childAccounts.filter(account => {
+    return childAccounts.filter((account) => {
       const accountStatus = getStatusText(account);
       if (status === 'pending') return accountStatus === 'Invitation Sent';
       if (status === 'active') return accountStatus === 'Activated';
@@ -230,15 +226,16 @@ export default function ChildAccounts() {
     let filtered = childAccounts;
 
     if (filters.name) {
-      filtered = filtered.filter(account =>
-        account.firstName?.toLowerCase().includes(filters.name.toLowerCase()) ||
-        account.lastName?.toLowerCase().includes(filters.name.toLowerCase()) ||
-        account.email?.toLowerCase().includes(filters.name.toLowerCase())
+      filtered = filtered.filter(
+        (account) =>
+          account.firstName?.toLowerCase().includes(filters.name.toLowerCase()) ||
+          account.lastName?.toLowerCase().includes(filters.name.toLowerCase()) ||
+          account.email?.toLowerCase().includes(filters.name.toLowerCase())
       );
     }
 
     if (filters.status !== 'all') {
-      filtered = filtered.filter(account => {
+      filtered = filtered.filter((account) => {
         const status = getStatusText(account);
         if (filters.status === 'pending') return status === 'Invitation Sent';
         if (filters.status === 'active') return status === 'Activated';
@@ -262,7 +259,7 @@ export default function ChildAccounts() {
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
-        px: { xs: 2, md: 3, lg: 4 },
+        px: { xs: 0, md: 3, lg: 4 },
         maxWidth: '100%',
       }}
     >
@@ -298,7 +295,7 @@ export default function ChildAccounts() {
                   fontFamily: 'Aileron',
                   fontWeight: 400,
                   fontSize: { xs: '12px', sm: '13px' },
-                  lineHeight: '20px',
+                  lineHeight: 1.2,
                   letterSpacing: '0%',
                   color: 'text.secondary',
                 }}
@@ -383,8 +380,8 @@ export default function ChildAccounts() {
             </Stack>
 
             {/* Desktop: Search Bar - Using transform to move right */}
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 width: 300,
                 transform: 'translateX(65px)',
               }}
@@ -425,6 +422,7 @@ export default function ChildAccounts() {
             direction="row"
             alignItems="center"
             spacing={2}
+            justifyContent="space-between"
             sx={{
               display: { xs: 'flex', md: 'none' },
               mb: 2,
@@ -432,13 +430,14 @@ export default function ChildAccounts() {
             }}
           >
             {/* Mobile: Dropdown Filter */}
-            <FormControl sx={{ minWidth: 150 }}>
+            <FormControl>
               <Select
                 value={filters.status}
                 onChange={(e) => handleFilters('status', e.target.value)}
                 displayEmpty
                 sx={{
                   height: '42px',
+                  maxWidth: 200,
                   border: '1px solid #e7e7e7',
                   borderBottom: '3px solid #e7e7e7',
                   borderRadius: 1,
@@ -450,25 +449,27 @@ export default function ChildAccounts() {
                     px: 2,
                     fontSize: '0.85rem',
                     fontWeight: 600,
-                    color: '#637381',
+                    color: '#1340FF',
                   },
                 }}
               >
                 {TABS.map((tab) => (
-                  <MenuItem key={tab.value} value={tab.value}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Box component="span">{tab.label}</Box>
-                      <Box component="span" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                        ({getStatusCount(tab.value)})
-                      </Box>
-                    </Box>
+                  <MenuItem 
+                    key={tab.value} 
+                    value={tab.value}
+                    sx={{
+                      height: 40,
+                      minHeight: 40,
+                    }}
+                  >
+                    <Box component="span" fontWeight={700} pr={0.5}>{tab.label}</Box>
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
             {/* Mobile: Search Bar */}
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ flex: 1, maxWidth: 150 }}>
               <TextField
                 placeholder="Search"
                 value={filters.name}
@@ -491,8 +492,7 @@ export default function ChildAccounts() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     height: '42px',
-                    border: '1px solid #e7e7e7',
-                    borderBottom: '3px solid #e7e7e7',
+                    borderBottom: '2px solid #e7e7e7',
                     borderRadius: 1,
                   },
                 }}
@@ -500,107 +500,107 @@ export default function ChildAccounts() {
             </Box>
           </Stack>
 
-      <Box
-        sx={{
-          mb: 3,
-          ml: { xs: 0, md: -4 },
-          mr: { md: -6 },
-          mt: 1,
-        }}
-      >
-        {/* Desktop Table View */}
-        <TableContainer
-          sx={{
-            width: 'calc(100% + -16px)',
-            minWidth: 1000,
-            position: 'relative',
-            bgcolor: 'transparent',
-            display: { xs: 'none', lg: 'block' },
-          }}
-        >
-            <Table
+          <Box
+            sx={{
+              mb: 3,
+              ml: { xs: 0, md: -4 },
+              mr: { md: -6 },
+              mt: 1,
+            }}
+          >
+            {/* Desktop Table View */}
+            <TableContainer
               sx={{
-                width: '100%',
-                borderCollapse: 'collapse',
+                width: 'calc(100% + -16px)',
+                minWidth: 1000,
+                position: 'relative',
+                bgcolor: 'transparent',
+                display: { xs: 'none', lg: 'block' },
               }}
             >
-              <TableHead>
-                <TableRow
-                  sx={{
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    '& td': {
-                      borderBottom: 'none',
-                    },
-                  }}
-                >
-                  <TableCell
+              <Table
+                sx={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                }}
+              >
+                <TableHead>
+                  <TableRow
                     sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 300,
-                      borderRadius: '10px 0 0 10px',
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      '& td': {
+                        borderBottom: 'none',
+                      },
                     }}
                   >
-                    Name
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 250,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Email
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 150,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Status
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 120,
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Activated On
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: 100,
-                      borderRadius: '0 10px 10px 0',
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Actions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: 300,
+                        borderRadius: '10px 0 0 10px',
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Name
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: 250,
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Email
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: 150,
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Status
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: 120,
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Activated On
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: 100,
+                        borderRadius: '0 10px 10px 0',
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
 
-              <TableBody>
-                {filteredData.map((account) => (
+                <TableBody>
+                  {filteredData.map((account) => (
                     <TableRow
                       key={account.id}
                       hover
@@ -617,11 +617,13 @@ export default function ChildAccounts() {
                         },
                       }}
                     >
-                      <TableCell sx={{ 
-                        width: 300, 
-                        display: 'flex', 
-                        alignItems: 'center',
-                      }}>
+                      <TableCell
+                        sx={{
+                          width: 300,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
                         <Avatar alt={`${account.firstName} ${account.lastName}`} sx={{ mr: 2 }}>
                           {account.firstName?.charAt(0) || account.email.charAt(0).toUpperCase()}
                         </Avatar>
@@ -630,17 +632,21 @@ export default function ChildAccounts() {
                         </Typography>
                       </TableCell>
 
-                      <TableCell sx={{ 
-                        width: 250,
-                      }}>
-                        <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+                      <TableCell
+                        sx={{
+                          width: 250,
+                        }}
+                      >
+                        <Typography variant="body2" noWrap>
                           {account.email}
                         </Typography>
                       </TableCell>
 
-                      <TableCell sx={{ 
-                        width: 150,
-                      }}>
+                      <TableCell
+                        sx={{
+                          width: 150,
+                        }}
+                      >
                         <Typography
                           variant="body2"
                           sx={{
@@ -672,14 +678,15 @@ export default function ChildAccounts() {
                         </Typography>
                       </TableCell>
 
-                      <TableCell sx={{ 
-                        width: 120,
-                      }}>
+                      <TableCell
+                        sx={{
+                          width: 120,
+                        }}
+                      >
                         <Typography variant="body2" noWrap>
-                          {account.activatedAt 
+                          {account.activatedAt
                             ? new Date(account.activatedAt).toLocaleDateString()
-                            : 'Not activated'
-                          }
+                            : 'Not activated'}
                         </Typography>
                       </TableCell>
 
@@ -692,29 +699,25 @@ export default function ChildAccounts() {
                           height: '100%',
                         }}
                       >
-                          <Tooltip title="More actions">
-                            <IconButton
-                              onClick={(e) => handleMenuOpen(e, account)}
-                              sx={{
-                                width: 44,
-                                height: 44,
-                                pt: '10px',
-                                pr: '16px',
-                                pb: '13px',
-                                pl: '16px',
-                                gap: '6px',
-                                borderRadius: '8px',
-                                border: '1px solid #E7E7E7',
-                                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                                background: '#FFFFFF',
-                                '&:hover': {
-                                  background: '#F5F5F5',
-                                },
-                              }}
-                            >
-                              <Iconify icon="eva:more-vertical-fill" />
-                            </IconButton>
-                          </Tooltip>
+                        <Tooltip title="More actions">
+                          <IconButton
+                            onClick={(e) => handleMenuOpen(e, account)}
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              padding: 1,
+                              borderRadius: '8px',
+                              border: '1px solid #E7E7E7',
+                              boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                              background: '#FFFFFF',
+                              '&:hover': {
+                                background: '#F5F5F5',
+                              },
+                            }}
+                          >
+                            <Iconify icon="eva:more-horizontal-fill" width={20} color="#000" />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -722,358 +725,518 @@ export default function ChildAccounts() {
               </Table>
             </TableContainer>
 
-        {/* Mobile Card View */}
-        <Box
-          sx={{
-            display: { xs: 'block', lg: 'none' },
-            width: '100%',
-          }}
-        >
-          <Stack spacing={2}>
-            {/* Invitation Sent Section */}
-            {childAccounts.filter(account => getStatusText(account) === 'Invitation Sent').length > 0 && (
-              <Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    mb: 1,
-                    pl: 0,
-                  }}
-                >
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 1, 
-                      width: { xs: '100%', sm: 320 },
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => toggleSection('invitationSent')}
-                  >
-                    <Typography
-                      variant="subtitle2"
+            {/* Mobile Card View */}
+            <Box
+              sx={{
+                display: { xs: 'block', lg: 'none' },
+                width: '100%',
+                mb: 5
+              }}
+            >
+              <Stack spacing={2}>
+                {/* Invitation Sent Section */}
+                {childAccounts.filter((account) => getStatusText(account) === 'Invitation Sent').length >
+                  0 && (
+                  <Box>
+                    <Box
                       sx={{
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
-                        px: 4,
-                        py: 0.5,
-                        fontSize: '0.75rem',
-                        border: '1px solid',
-                        borderBottom: '3px solid',
-                        borderRadius: 0.8,
-                        bgcolor: 'white',
-                        color: '#FFA902',
-                        borderColor: '#FFA902',
-                        width: '100%',
+                        justifyContent: 'flex-start',
                       }}
                     >
-                      <span>INVITATION SENT ({childAccounts.filter(account => getStatusText(account) === 'Invitation Sent').length})</span>
-                      <Iconify 
-                        icon={expandedSections.invitationSent ? "eva:arrow-ios-downward-fill" : "eva:arrow-ios-forward-fill"} 
-                        width={16} 
-                        sx={{ color: '#FFA902' }} 
-                      />
-                    </Typography>
-                  </Box>
-                </Box>
-                {expandedSections.invitationSent && (
-                  <Stack spacing={0.5} sx={{ bgcolor: 'white', p: 1, pl: 0, alignItems: 'flex-start', width: { xs: '100%', sm: 360 } }}>
-                    {childAccounts
-                      .filter(account => getStatusText(account) === 'Invitation Sent')
-                      .map((account) => (
-                      <Card
-                        key={account.id}
+                      <Box
                         sx={{
-                          width: { xs: '102%', sm: 360 },
-                          height: 100,
-                          p: 2,
-                          borderRadius: 1,
-                          bgcolor: '#FFFFFF',
-                          border: '1px solid #EBEBEB',
-                          boxShadow: '0px -3px 0px 0px #EBEBEB inset',
-                          '&:hover': {
-                            boxShadow: '0px -3px 0px 0px #EBEBEB inset, 0px 2px 4px rgba(0,0,0,0.1)',
-                          },
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          width: { xs: '100%', sm: 320 },
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => toggleSection('pending')}
+                      >
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            textTransform: 'uppercase',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: 1,
+                            py: 1,
+                            fontSize: '0.75rem',
+                            border: '1px solid',
+                            borderBottom: '3px solid',
+                            borderRadius: 0.8,
+                            bgcolor: 'white',
+                            color: '#FFC702',
+                            borderColor: '#FFC702',
+                            width: '100%',
+                          }}
+                        >
+                          <span>
+                            INVITATION SENT (
+                            {
+                              childAccounts.filter(
+                                (account) => getStatusText(account) === 'Invitation Sent'
+                              ).length
+                            }
+                            )
+                          </span>
+                          <Iconify
+                            icon={
+                              expandedSections.pending
+                                ? 'eva:arrow-ios-downward-fill'
+                                : 'eva:arrow-ios-forward-fill'
+                            }
+                            width={16}
+                            sx={{ color: '#FFA902' }}
+                          />
+                        </Typography>
+                      </Box>
+                    </Box>
+                    {expandedSections.pending && (
+                      <Stack
+                        spacing={1}
+                        sx={{
+                          bgcolor: 'white',
+                          mt: 1,
+                          alignItems: 'center',
+                          width: '100%'
                         }}
                       >
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                          <Stack direction="row" spacing={2} sx={{ flex: 1, minWidth: 0, alignItems: 'flex-start' }}>
-                            <Avatar alt={`${account.firstName} ${account.lastName}`} sx={{ width: 40, height: 40, bgcolor: '#f5f5f5' }}>
-                              {account.firstName?.charAt(0) || account.email.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600, mb: 0.05, color: '#000' }}>
-                                {account.firstName} {account.lastName}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0, fontWeight: 600 }}>
-                                {account.email}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', mt: -3, lineHeight: 0.8, position: 'relative', top: -4 }}>
-                                Invited on {account.createdAt ? new Date(account.createdAt).toLocaleDateString() : 'N/A'}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                          <Tooltip title="More actions">
-                            <IconButton
-                              onClick={(e) => handleMenuOpen(e, account)}
+                        {childAccounts
+                          .filter((account) => getStatusText(account) === 'Invitation Sent')
+                          .map((account) => (
+                            <Card
+                              key={account.id}
                               sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: '8px',
-                                border: '1px solid #E7E7E7',
-                                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                                background: '#FFFFFF',
+                                p: 1.6,
+                                width: '100%',
+                                borderRadius: 1,
+                                bgcolor: '#FFFFFF',
+                                border: '1px solid #EBEBEB',
+                                boxShadow: '0px -3px 0px 0px #EBEBEB inset',
                                 '&:hover': {
-                                  background: '#F5F5F5',
+                                  boxShadow:
+                                    '0px -3px 0px 0px #EBEBEB inset, 0px 2px 4px rgba(0,0,0,0.1)',
                                 },
                               }}
                             >
-                              <Iconify icon="eva:more-vertical-fill" width={16} />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
-                      </Card>
-                    ))}
-                  </Stack>
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                spacing={2}
+                              >
+                                <Stack
+                                  direction="row"
+                                  spacing={2}
+                                  sx={{ flex: 1, minWidth: 0, alignItems: 'center' }}
+                                >
+                                  <Avatar
+                                    alt={`${account.firstName} ${account.lastName}`}
+                                    sx={{ width: 40, height: 40, bgcolor: '#f5f5f5' }}
+                                  >
+                                    {account.firstName?.charAt(0) ||
+                                      account.email.charAt(0).toUpperCase()}
+                                  </Avatar>
+                                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography
+                                      lineHeight={1.5}
+                                      fontSize={14}
+                                      noWrap
+                                      sx={{ fontWeight: 600, color: '#000' }}
+                                    >
+                                      {account.firstName} {account.lastName}
+                                    </Typography>
+                                    <Typography
+                                      lineHeight={1.5}
+                                      fontSize={12}
+                                      color="text.secondary"
+                                      noWrap
+                                      sx={{ fontWeight: 600 }}
+                                    >
+                                      {account.email}
+                                    </Typography>
+                                    <Typography
+                                      color="text.secondary"
+                                      sx={{
+                                        fontSize: 12,
+                                        lineHeight: 1.5,
+                                      }}
+                                    >
+                                      Invited on{' '}
+                                      {account.createdAt
+                                        ? new Date(account.createdAt).toLocaleDateString()
+                                        : 'N/A'}
+                                    </Typography>
+                                  </Box>
+                                </Stack>
+                                <Tooltip title="More actions">
+                                  <IconButton
+                                    onClick={(e) => handleMenuOpen(e, account)}
+                                    sx={{
+                                      width: 36,
+                                      height: 36,
+                                      padding: 1,
+                                      borderRadius: '8px',
+                                      border: '1px solid #E7E7E7',
+                                      boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                                      background: '#FFFFFF',
+                                      '&:hover': {
+                                        background: '#F5F5F5',
+                                      },
+                                    }}
+                                  >
+                                    <Iconify icon="eva:more-horizontal-fill" width={24} color="#000" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </Card>
+                          ))}
+                      </Stack>
+                    )}
+                  </Box>
                 )}
-              </Box>
-            )}
 
-            {/* Activated Section */}
-            {childAccounts.filter(account => getStatusText(account) === 'Activated').length > 0 && (
-              <Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    mb: 1,
-                    pl: 0,
-                  }}
-                >
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 1, 
-                      width: { xs: '102%', sm: 320 },
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => toggleSection('activated')}
-                  >
-                    <Typography
-                      variant="subtitle2"
+                {/* Activated Section */}
+                {childAccounts.filter((account) => getStatusText(account) === 'Activated').length >
+                  0 && (
+                  <Box>
+                    <Box
                       sx={{
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
-                        px: 4,
-                        py: 0.5,
-                        fontSize: '0.75rem',
-                        border: '1px solid',
-                        borderBottom: '3px solid',
-                        borderRadius: 0.8,
-                        bgcolor: 'white',
-                        color: '#1ABF66',
-                        borderColor: '#1ABF66',
-                        width: '100%',
+                        justifyContent: 'flex-start',
                       }}
                     >
-                      <span>ACTIVATED ({childAccounts.filter(account => getStatusText(account) === 'Activated').length})</span>
-                      <Iconify 
-                        icon={expandedSections.activated ? "eva:arrow-ios-downward-fill" : "eva:arrow-ios-forward-fill"} 
-                        width={16} 
-                        sx={{ color: '#1ABF66' }} 
-                      />
-                    </Typography>
-                  </Box>
-                </Box>
-                {expandedSections.activated && (
-                  <Stack spacing={0.5} sx={{ bgcolor: 'white', p: 1, pl: 0, alignItems: 'flex-start', width: { xs: '100%', sm: 360 } }}>
-                    {childAccounts
-                      .filter(account => getStatusText(account) === 'Activated')
-                      .map((account) => (
-                      <Card
-                        key={account.id}
+                      <Box
                         sx={{
-                          width: { xs: '102%', sm: 360 },
-                          height: 100,
-                          p: 2,
-                          borderRadius: 1,
-                          bgcolor: '#FFFFFF',
-                          border: '1px solid #EBEBEB',
-                          boxShadow: '0px -3px 0px 0px #EBEBEB inset',
-                          '&:hover': {
-                            boxShadow: '0px -3px 0px 0px #EBEBEB inset, 0px 2px 4px rgba(0,0,0,0.1)',
-                          },
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          width: { xs: '100%', sm: 320 },
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => toggleSection('activated')}
+                      >
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            textTransform: 'uppercase',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: 1,
+                            py: 1,
+                            fontSize: '0.75rem',
+                            border: '1px solid',
+                            borderBottom: '3px solid',
+                            borderRadius: 0.8,
+                            bgcolor: 'white',
+                            color: '#1ABF66',
+                            borderColor: '#1ABF66',
+                            width: '100%',
+                          }}
+                        >
+                          <span>
+                            ACTIVATED (
+                            {
+                              childAccounts.filter(
+                                (account) => getStatusText(account) === 'Activated'
+                              ).length
+                            }
+                            )
+                          </span>
+                          <Iconify
+                            icon={
+                              expandedSections.activated
+                                ? 'eva:arrow-ios-downward-fill'
+                                : 'eva:arrow-ios-forward-fill'
+                            }
+                            width={16}
+                            sx={{ color: '#1ABF66' }}
+                          />
+                        </Typography>
+                      </Box>
+                    </Box>
+                    {expandedSections.activated && (
+                      <Stack
+                        spacing={1}
+                        sx={{
+                          bgcolor: 'white',
+                          mt: 1,
+                          alignItems: 'center',
+                          width: '100%'
                         }}
                       >
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                          <Stack direction="row" spacing={2} sx={{ flex: 1, minWidth: 0, alignItems: 'flex-start' }}>
-                            <Avatar alt={`${account.firstName} ${account.lastName}`} sx={{ width: 40, height: 40, bgcolor: '#f5f5f5' }}>
-                              {account.firstName?.charAt(0) || account.email.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600, mb: 0.05, color: '#000' }}>
-                                {account.firstName} {account.lastName}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0, fontWeight: 600 }}>
-                                {account.email}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', mt: -3, lineHeight: 0.8, position: 'relative', top: -4 }}>
-                                Activated on {account.activatedAt ? new Date(account.activatedAt).toLocaleDateString() : 'N/A'}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                          <Tooltip title="More actions">
-                            <IconButton
-                              onClick={(e) => handleMenuOpen(e, account)}
+                        {childAccounts
+                          .filter((account) => getStatusText(account) === 'Activated')
+                          .map((account) => (
+                            <Card
+                              key={account.id}
                               sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: '8px',
-                                border: '1px solid #E7E7E7',
-                                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                                background: '#FFFFFF',
+                                p: 1.6,
+                                width: '100%',
+                                borderRadius: 1,
+                                bgcolor: '#FFFFFF',
+                                border: '1px solid #EBEBEB',
+                                boxShadow: '0px -3px 0px 0px #EBEBEB inset',
                                 '&:hover': {
-                                  background: '#F5F5F5',
+                                  boxShadow:
+                                    '0px -3px 0px 0px #EBEBEB inset, 0px 2px 4px rgba(0,0,0,0.1)',
                                 },
                               }}
                             >
-                              <Iconify icon="eva:more-vertical-fill" width={16} />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
-                      </Card>
-                    ))}
-                  </Stack>
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                spacing={2}
+                              >
+                                <Stack
+                                  direction="row"
+                                  spacing={2}
+                                  sx={{ flex: 1, minWidth: 0, alignItems: 'center' }}
+                                >
+                                  <Avatar
+                                    alt={`${account.firstName} ${account.lastName}`}
+                                    sx={{ width: 40, height: 40, bgcolor: '#f5f5f5' }}
+                                  >
+                                    {account.firstName?.charAt(0) ||
+                                      account.email.charAt(0).toUpperCase()}
+                                  </Avatar>
+                                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography
+                                      lineHeight={1.5}
+                                      fontSize={14}
+                                      noWrap
+                                      sx={{ fontWeight: 600, color: '#000' }}
+                                    >
+                                      {account.firstName} {account.lastName}
+                                    </Typography>
+                                    <Typography
+                                      lineHeight={1.5}
+                                      fontSize={12}
+                                      color="text.secondary"
+                                      noWrap
+                                      sx={{ fontWeight: 600 }}
+                                    >
+                                      {account.email}
+                                    </Typography>
+                                    <Typography
+                                      color="text.secondary"
+                                      sx={{
+                                        fontSize: 12,
+                                        lineHeight: 1.5,
+                                      }}
+                                    >
+                                      Activated on{' '}
+                                      {account.activatedAt
+                                        ? new Date(account.activatedAt).toLocaleDateString()
+                                        : 'N/A'}
+                                    </Typography>
+                                  </Box>
+                                </Stack>
+                                <Tooltip title="More actions">
+                                  <IconButton
+                                    onClick={(e) => handleMenuOpen(e, account)}
+                                    sx={{
+                                      width: 36,
+                                      height: 36,
+                                      padding: 1,
+                                      borderRadius: '8px',
+                                      border: '1px solid #E7E7E7',
+                                      boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                                      background: '#FFFFFF',
+                                      '&:hover': {
+                                        background: '#F5F5F5',
+                                      },
+                                    }}
+                                  >
+                                    <Iconify icon="eva:more-horizontal-fill" width={24} color="#000" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </Card>
+                          ))}
+                      </Stack>
+                    )}
+                  </Box>
                 )}
-              </Box>
-            )}
 
-            {/* Deactivated Section */}
-            {childAccounts.filter(account => getStatusText(account) === 'Deactivated').length > 0 && (
-              <Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    mb: 1,
-                    pl: 0,
-                  }}
-                >
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 1, 
-                      width: { xs: '100%', sm: 320 },
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => toggleSection('deactivated')}
-                  >
-                    <Typography
-                      variant="subtitle2"
+                {/* Deactivated Section */}
+                {childAccounts.filter((account) => getStatusText(account) === 'Deactivated')
+                  .length > 0 && (
+                  <Box>
+                    <Box
                       sx={{
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
-                        px: 4,
-                        py: 0.5,
-                        fontSize: '0.75rem',
-                        border: '1px solid',
-                        borderBottom: '3px solid',
-                        borderRadius: 0.8,
-                        bgcolor: 'white',
-                        color: '#d4321c',
-                        borderColor: '#d4321c',
-                        width: '100%',
+                        justifyContent: 'flex-start',
                       }}
                     >
-                      <span>DEACTIVATED ({childAccounts.filter(account => getStatusText(account) === 'Deactivated').length})</span>
-                      <Iconify 
-                        icon={expandedSections.deactivated ? "eva:arrow-ios-downward-fill" : "eva:arrow-ios-forward-fill"} 
-                        width={16} 
-                        sx={{ color: '#d4321c' }} 
-                      />
-                    </Typography>
-                  </Box>
-                </Box>
-                {expandedSections.deactivated && (
-                  <Stack spacing={0.5} sx={{ bgcolor: 'white', p: 1, pl: 0, alignItems: 'flex-start', width: { xs: '100%', sm: 360 } }}>
-                    {childAccounts
-                      .filter(account => getStatusText(account) === 'Deactivated')
-                      .map((account) => (
-                      <Card
-                        key={account.id}
+                      <Box
                         sx={{
-                          width: { xs: '102%', sm: 360 },
-                          height: 100,
-                          p: 2,
-                          borderRadius: 1,
-                          bgcolor: '#FFFFFF',
-                          border: '1px solid #EBEBEB',
-                          boxShadow: '0px -3px 0px 0px #EBEBEB inset',
-                          '&:hover': {
-                            boxShadow: '0px -3px 0px 0px #EBEBEB inset, 0px 2px 4px rgba(0,0,0,0.1)',
-                          },
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          width: { xs: '100%', sm: 320 },
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => toggleSection('deactivated')}
+                      >
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            textTransform: 'uppercase',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: 1,
+                            py: 1,
+                            fontSize: '0.75rem',
+                            border: '1px solid',
+                            borderBottom: '3px solid',
+                            borderRadius: 0.8,
+                            bgcolor: 'white',
+                            color: '#d4321c',
+                            borderColor: '#d4321c',
+                            width: '100%',
+                          }}
+                        >
+                          <span>
+                            DEACTIVATED (
+                            {
+                              childAccounts.filter(
+                                (account) => getStatusText(account) === 'Deactivated'
+                              ).length
+                            }
+                            )
+                          </span>
+                          <Iconify
+                            icon={
+                              expandedSections.deactivated
+                                ? 'eva:arrow-ios-downward-fill'
+                                : 'eva:arrow-ios-forward-fill'
+                            }
+                            width={16}
+                            sx={{ color: '#d4321c' }}
+                          />
+                        </Typography>
+                      </Box>
+                    </Box>
+                    {expandedSections.deactivated && (
+                      <Stack
+                        spacing={1}
+                        sx={{
+                          bgcolor: 'white',
+                          mt: 1,
+                          alignItems: 'center',
+                          width: '100%'
                         }}
                       >
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                          <Stack direction="row" spacing={2} sx={{ flex: 1, minWidth: 0, alignItems: 'flex-start' }}>
-                            <Avatar alt={`${account.firstName} ${account.lastName}`} sx={{ width: 40, height: 40, bgcolor: '#f5f5f5' }}>
-                              {account.firstName?.charAt(0) || account.email.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600, mb: 0.05, color: '#000' }}>
-                                {account.firstName} {account.lastName}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0, fontWeight: 600 }}>
-                                {account.email}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', mt: -3, lineHeight: 0.8, position: 'relative', top: -4 }}>
-                                Activated on {account.activatedAt ? new Date(account.activatedAt).toLocaleDateString() : 'N/A'}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                          <Tooltip title="More actions">
-                            <IconButton
-                              onClick={(e) => handleMenuOpen(e, account)}
+                        {childAccounts
+                          .filter((account) => getStatusText(account) === 'Deactivated')
+                          .map((account) => (
+                            <Card
+                              key={account.id}
                               sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: '8px',
-                                border: '1px solid #E7E7E7',
-                                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                                background: '#FFFFFF',
+                                p: 1.6,
+                                width: '100%',
+                                borderRadius: 1,
+                                bgcolor: '#FFFFFF',
+                                border: '1px solid #EBEBEB',
+                                boxShadow: '0px -3px 0px 0px #EBEBEB inset',
                                 '&:hover': {
-                                  background: '#F5F5F5',
+                                  boxShadow:
+                                    '0px -3px 0px 0px #EBEBEB inset, 0px 2px 4px rgba(0,0,0,0.1)',
                                 },
                               }}
                             >
-                              <Iconify icon="eva:more-vertical-fill" width={16} />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
-                      </Card>
-                    ))}
-                  </Stack>
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                spacing={2}
+                              >
+                                <Stack
+                                  direction="row"
+                                  spacing={2}
+                                  sx={{ flex: 1, minWidth: 0, alignItems: 'center' }}
+                                >
+                                  <Avatar
+                                    alt={`${account.firstName} ${account.lastName}`}
+                                    sx={{ width: 40, height: 40, bgcolor: '#f5f5f5' }}
+                                  >
+                                    {account.firstName?.charAt(0) ||
+                                      account.email.charAt(0).toUpperCase()}
+                                  </Avatar>
+                                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography
+                                      lineHeight={1.5}
+                                      fontSize={14}
+                                      noWrap
+                                      sx={{ fontWeight: 600, color: '#000' }}
+                                    >
+                                      {account.firstName} {account.lastName}
+                                    </Typography>
+                                    <Typography
+                                      lineHeight={1.5}
+                                      fontSize={12}
+                                      color="text.secondary"
+                                      noWrap
+                                      sx={{ fontWeight: 600 }}
+                                    >
+                                      {account.email}
+                                    </Typography>
+                                    <Typography
+                                      color="text.secondary"
+                                      sx={{
+                                        fontSize: 12,
+                                        lineHeight: 1.5,
+                                      }}
+                                    >
+                                      Activated on{' '}
+                                      {account.activatedAt
+                                        ? new Date(account.activatedAt).toLocaleDateString()
+                                        : 'N/A'}
+                                    </Typography>
+                                  </Box>
+                                </Stack>
+                                <Tooltip title="More actions">
+                                  <IconButton
+                                    onClick={(e) => handleMenuOpen(e, account)}
+                                    sx={{
+                                      width: 36,
+                                      height: 36,
+                                      padding: 1,
+                                      borderRadius: '8px',
+                                      border: '1px solid #E7E7E7',
+                                      boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                                      background: '#FFFFFF',
+                                      '&:hover': {
+                                        background: '#F5F5F5',
+                                      },
+                                    }}
+                                  >
+                                    <Iconify icon="eva:more-horizontal-fill" width={24} color="#000" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </Card>
+                          ))}
+                      </Stack>
+                    )}
+                  </Box>
                 )}
-              </Box>
-            )}
-          </Stack>
-        </Box>
-      </Box>
+              </Stack>
+            </Box>
+          </Box>
         </>
       )}
 
@@ -1110,20 +1273,22 @@ export default function ChildAccounts() {
                 sx={{
                   fontFamily: 'Instrument Serif',
                   fontWeight: 400,
-                  fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                  fontSize: { xs: 24, sm: '1.5rem' },
+                  lineHeight: 1.1,
                   color: '#221f20',
                   textAlign: 'center',
                 }}
               >
-                You don't have any child accounts connected.
+                    You don&apos;t have any child accounts connected.
               </Typography>
               <Typography
                 variant="body2"
                 sx={{
                   color: 'text.secondary',
                   textAlign: 'center',
-                  maxWidth: { xs: 300, sm: 400 },
+                  maxWidth: { xs: 300, sm: 500 },
                   fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                  lineHeight: 1.3,
                 }}
               >
                 Connect a child account to grant them access to manage your campaigns.
@@ -1136,8 +1301,8 @@ export default function ChildAccounts() {
               sx={{
                 bgcolor: '#1340FF',
                 color: 'white',
-                px: { xs: 2, sm: 3 },
-                py: 1.5,
+                px: 2,
+                py: 1,
                 borderRadius: '8px',
                 boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                 width: { xs: '100%', sm: 'auto' },
@@ -1147,17 +1312,17 @@ export default function ChildAccounts() {
                 },
               }}
             >
-              Invite Account
+              Invite
             </Button>
           </Stack>
         </Box>
       )}
 
       {/* Invite Dialog */}
-      <Dialog 
-        open={inviteDialogOpen} 
-        onClose={() => setInviteDialogOpen(false)} 
-        maxWidth="sm" 
+      <Dialog
+        open={inviteDialogOpen}
+        onClose={() => setInviteDialogOpen(false)}
+        maxWidth="sm"
         fullWidth
         fullScreen={false}
         PaperProps={{
@@ -1166,9 +1331,9 @@ export default function ChildAccounts() {
             bgcolor: 'rgba(244, 244, 244, 1)',
             color: 'black',
             m: { xs: 2, sm: 2 },
-            maxHeight: { xs: '80vh', sm: '90vh' },
+            maxHeight: { xs: '100vh', sm: '90vh' },
             width: { xs: '90%', sm: 'auto' },
-          }
+          },
         }}
       >
         <DialogTitle
@@ -1176,19 +1341,19 @@ export default function ChildAccounts() {
           sx={{
             fontFamily: 'Instrument Serif',
             fontWeight: 400,
-            fontSize: { xs: '20px !important', sm: '25px !important' },
+            fontSize: { xs: '30px !important', sm: '25px !important' },
             lineHeight: { xs: '28px', sm: '36px' },
             letterSpacing: '0%',
             color: 'black',
             textAlign: 'left',
-            py: { xs: 1.5, sm: 2 },
+            py: 2,
             px: { xs: 2, sm: 3 },
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
-          <Box>Invite Account</Box>
+          Invite Account
           <IconButton
             onClick={() => setInviteDialogOpen(false)}
             sx={{
@@ -1201,8 +1366,11 @@ export default function ChildAccounts() {
             <Iconify icon="eva:close-fill" width={24} />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ px: { xs: 2, sm: 3 }, pb: 2 }}>
-          <Stack spacing={3}>
+
+        <Divider sx={{ mx: 2 }} />
+
+        <DialogContent sx={{ p: { xs: 2, sm: 3 }, pb: 2 }}>
+          <Stack spacing={3} mt={1}>
             <TextField
               label="Email"
               type="email"
@@ -1220,7 +1388,7 @@ export default function ChildAccounts() {
                 },
               }}
             />
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
               <TextField
                 label="First Name"
                 value={formData.firstName}
@@ -1256,7 +1424,9 @@ export default function ChildAccounts() {
             </Stack>
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'center', pb: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 } }}>
+        <DialogActions
+          sx={{ justifyContent: 'center', pb: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 } }}
+        >
           <Button
             onClick={handleInviteChildAccount}
             disabled={submitting}
@@ -1298,12 +1468,9 @@ export default function ChildAccounts() {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={{
           sx: {
-            width: 180,
             height: 'auto',
             pt: '8px',
-            pr: '8px',
             pb: '8px',
-            pl: '8px',
             borderRadius: '8px',
             border: '1px solid #E7E7E7',
             background: '#FFFFFF',
@@ -1317,26 +1484,18 @@ export default function ChildAccounts() {
             ].join(', '),
             '& .MuiMenuItem-root': {
               minHeight: 36,
-              py: 1,
-              px: 1.5,
               fontSize: '0.875rem',
               fontWeight: 500,
+              marginRight: 2,
               '&:hover': {
                 backgroundColor: '#f5f5f5',
               },
-              '& .MuiListItemIcon-root': {
-                minWidth: 32,
-                mr: 1.5,
-                '& .MuiSvgIcon-root': {
-                  fontSize: '1rem',
-                },
-              },
-              '& .MuiListItemText-root': {
-                margin: 0,
-                '& .MuiTypography-root': {
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  lineHeight: 1.4,
+              '& .MuiListItemIcon-root': {     // Match icon width
+                marginRight: 0,    // Gap between icon and text
+                '& svg': {
+                  fontSize: 'inherit',  // Allow custom sizes
+                  width: 20,
+                  height: 20
                 },
               },
             },
@@ -1355,7 +1514,7 @@ export default function ChildAccounts() {
               sx={{ color: 'black' }}
             >
               <ListItemIcon>
-                <Iconify icon="eva:close-fill" sx={{ color: 'black' }} />
+                <Iconify icon="material-symbols:close" sx={{ color: 'black' }} />
               </ListItemIcon>
               <ListItemText>Remove Access</ListItemText>
             </MenuItem>
@@ -1368,9 +1527,9 @@ export default function ChildAccounts() {
               sx={{ color: 'error.main' }}
             >
               <ListItemIcon>
-                <Iconify icon="eva:trash-2-fill" sx={{ color: 'error.main' }} />
+                <Iconify icon="flowbite:trash-bin-outline" sx={{ color: '#D4321C' }} />
               </ListItemIcon>
-              <ListItemText>Delete</ListItemText>
+              <ListItemText sx={{ '& .MuiTypography-root': { color: '#D4321C' } }}>Delete</ListItemText>
             </MenuItem>
           </>
         )}
@@ -1399,9 +1558,9 @@ export default function ChildAccounts() {
               sx={{ color: 'error.main' }}
             >
               <ListItemIcon>
-                <Iconify icon="eva:trash-2-fill" sx={{ color: 'error.main' }} />
+                <Iconify icon="flowbite:trash-bin-outline" sx={{ color: '#D4321C' }} />
               </ListItemIcon>
-              <ListItemText>Delete</ListItemText>
+              <ListItemText sx={{ '& .MuiTypography-root': { color: '#D4321C' } }}>Delete</ListItemText>
             </MenuItem>
           </>
         )}
@@ -1416,7 +1575,7 @@ export default function ChildAccounts() {
               disabled={submitting}
             >
               <ListItemIcon>
-                <Iconify icon="eva:refresh-fill" />
+                <Iconify icon="material-symbols:refresh" />
               </ListItemIcon>
               <ListItemText>Resend Invitation</ListItemText>
             </MenuItem>
@@ -1429,7 +1588,7 @@ export default function ChildAccounts() {
               sx={{ color: 'black' }}
             >
               <ListItemIcon>
-                <Iconify icon="eva:close-fill" sx={{ color: 'black' }} />
+                <Iconify icon="material-symbols:close" sx={{ color: 'black' }} />
               </ListItemIcon>
               <ListItemText>Remove Access</ListItemText>
             </MenuItem>
@@ -1442,9 +1601,9 @@ export default function ChildAccounts() {
               sx={{ color: 'error.main' }}
             >
               <ListItemIcon>
-                <Iconify icon="eva:trash-2-fill" sx={{ color: 'error.main' }} />
+                <Iconify icon="flowbite:trash-bin-outline" sx={{ color: '#D4321C' }} />
               </ListItemIcon>
-              <ListItemText>Delete</ListItemText>
+              <ListItemText sx={{ '& .MuiTypography-root': { color: '#D4321C' } }}>Delete</ListItemText>
             </MenuItem>
           </>
         )}
