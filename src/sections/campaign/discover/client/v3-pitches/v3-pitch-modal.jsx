@@ -205,7 +205,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
             action === 'reject'
               ? 'REJECTED'
               : action === 'approve'
-                ? 'SENT_TO_CLIENT'
+                ? endpoint.includes('client') ? 'APPROVED' : 'SENT_TO_CLIENT'
                 : pitch.status,
         };
         onUpdate(mockUpdatedPitch);

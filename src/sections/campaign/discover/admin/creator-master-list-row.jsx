@@ -2,61 +2,82 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
 
-import {
-  Box,
-  Link,
-  Stack,
-  Avatar,
-  Button,
-  Tooltip,
-  TableRow,
-  TableCell,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typography } from '@mui/material';
 
-import { useCreatorSocialMediaData } from 'src/hooks/use-get-social-media-data';
-
-import { formatNumber } from 'src/utils/media-kit-utils';
+import { formatNumber, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import Iconify from 'src/components/iconify';
 
 /**
  * CreatorMasterListRow component renders a single creator row in the master list table
- * Fetches social media data for the creator and displays it
+ * Displays creator insights sourced directly from pitch payloads
  */
 const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
   const theme = useTheme();
-
-  // Fetch social media data for this creator
-  const { data: socialData, isLoading } = useCreatorSocialMediaData(pitch.user?.id);
+  const profileLink = pitch.user?.profileLink;
+  const profileUsername = extractUsernameFromProfileLink(profileLink);
 
   // Determine what to display for username, engagement rate and follower count
   const getDisplayData = () => {
-    const isGuestCreator = pitch.user?.creator?.isGuest;
+    const instagramStats = pitch?.user?.creator?.instagramUser || null;
+    const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
 
-    // P1: Use data from pitch (for guest creators or manually entered data)
+    const pickValue = (...values) => {
+      for (const value of values) {
+        if (value === 0) return value;
+        if (value !== undefined && value !== null && value !== '') return value;
+      }
+      return null;
+    };
+
+    const pickString = (...values) => {
+      for (const value of values) {
+        if (typeof value === 'string' && value.trim()) {
+          return value.trim();
+        }
+      }
+      return null;
+    };
+
+    // P1: Prioritize connected social media stats delivered with the pitch payload
+    if (instagramStats || tiktokStats) {
+      const usernameFromStats = pickString(
+        instagramStats?.username,
+        tiktokStats?.username,
+        profileUsername,
+        pitch?.username,
+        pitch?.user?.username
+      );
+
+      return {
+        username: usernameFromStats || '-',
+        engagementRate: pickValue(
+          instagramStats?.engagement_rate,
+          tiktokStats?.engagement_rate,
+          pitch?.engagementRate
+        ),
+        followerCount: pickValue(
+          instagramStats?.followers_count,
+          tiktokStats?.follower_count,
+          pitch?.followerCount
+        ),
+      };
+    }
+
+    // P2: Use manually entered data from the pitch
     if (pitch?.username || pitch?.engagementRate || pitch?.followerCount) {
       return {
-        username: pitch?.username || '-',
+        username: pickString(pitch?.username, profileUsername, pitch?.user?.username) || '-',
         engagementRate: pitch?.engagementRate || null,
         followerCount: pitch?.followerCount || null,
       };
     }
 
-    // P2: Use fetched social media data (for platform creators with connected accounts)
-    if (!isGuestCreator && socialData?.isConnected) {
+    // P3: Attempt to derive username from profile link
+    if (profileUsername) {
       return {
-        username: socialData.username || pitch.user?.username || '-',
-        engagementRate: socialData.engagementRate,
-        followerCount: socialData.followerCount,
-      };
-    }
-
-    // P3: Use pitch user data if available (partial data)
-    if (pitch?.username || pitch?.engagementRate || pitch?.followerCount) {
-      return {
-        username: pitch?.username || '-',
-        engagementRate: pitch?.engagementRate || null,
-        followerCount: pitch?.followerCount || null,
+        username: profileUsername,
+        engagementRate: null,
+        followerCount: null,
       };
     }
 
@@ -67,11 +88,8 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
       followerCount: null,
     };
   };
-
   const displayData = getDisplayData();
-
   // Get profile link - prioritize creator.profileLink, fallback to user.guestProfileLink
-  const profileLink = pitch.user?.creator?.profileLink || pitch.user?.guestProfileLink;
   const statusInfo = getStatusInfo(pitch);
 
   return (
@@ -104,8 +122,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
         </Stack>
       </TableCell>
       <TableCell>
-        {isLoading && <CircularProgress size={16} thickness={6} />}
-        {!isLoading && profileLink && (
+        {profileLink && (
           <Link
             href={profileLink}
             target="_blank"
@@ -120,27 +137,19 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
             {displayData.username}
           </Link>
         )}
-        {!isLoading && !profileLink && (
+        {!profileLink && (
           <Typography variant="body2">{displayData.username}</Typography>
         )}
       </TableCell>
       {/* <TableCell>
-        {isLoading ? (
-          <CircularProgress size={16} thickness={6} />
-        ) : (
-          <Typography variant="body2">
-            {displayData.engagementRate ? `${displayData.engagementRate}%` : '-'}
-          </Typography>
-        )}
+        <Typography variant="body2">
+          {displayData.engagementRate ? `${displayData.engagementRate}%` : '-'}
+        </Typography>
       </TableCell> */}
       <TableCell>
-        {isLoading ? (
-          <CircularProgress size={16} thickness={6} />
-        ) : (
-          <Typography variant="body2">
-            {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
-          </Typography>
-        )}
+        <Typography variant="body2">
+          {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
+        </Typography>
       </TableCell>
       <TableCell>
         <Box
@@ -150,7 +159,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 0.25,
-            px: 1.5,
+            px: 1.2,
             py: 0.5,
             fontSize: '0.75rem',
             border: '1px solid',
@@ -164,15 +173,11 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
         >
           {statusInfo.label}
           {statusInfo.normalizedStatus === 'SENT_TO_CLIENT' &&
-            pitch.adminComments &&
-            pitch.adminComments.trim().length > 0 && (
+            pitch.adminComments?.trim().length > 0 && (
               <Tooltip title="CS Comments provided" arrow>
-                <Box
-                  component="img"
-                  src="/assets/icons/components/ic-comments.svg"
-                  alt="Comments"
-                  sx={{ width: 16, height: 16 }}
-                />
+                <Box sx={{ display: 'inline-flex', mb: 0.15 }}>
+                  <Iconify icon="cuida:long-text-outline" width={18} height={18} />
+                </Box>
               </Tooltip>
             )}
         </Box>

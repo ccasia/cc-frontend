@@ -32,6 +32,75 @@ export const formatNumber = (num) => {
 };
 
 /**
+ * Extracts a social username from an Instagram or TikTok profile link.
+ * Returns null when no handle can be derived.
+ */
+export const extractUsernameFromProfileLink = (link) => {
+  if (!link || typeof link !== 'string') return null;
+
+  const normalizedLink = link.trim();
+  if (!normalizedLink) return null;
+
+  const reservedInstagramSegments = new Set(['p', 'reel', 'reels', 'tv', 'stories', 'explore', 'accounts']);
+  const reservedTiktokSegments = new Set(['tag', 'music', 'discover', 'foryou', 'studio', 'page']);
+
+  const sanitizeHandle = (value) => {
+    if (!value) return null;
+    const cleaned = value.replace(/^@/, '').trim();
+    return cleaned || null;
+  };
+
+  const attemptParse = (value) => {
+    try {
+      return new URL(value);
+    } catch (error) {
+      try {
+        return new URL(`https://${value}`);
+      } catch (errorWithScheme) {
+        return null;
+      }
+    }
+  };
+
+  const url = attemptParse(normalizedLink);
+
+  if (url) {
+    const hostname = url.hostname.replace(/^www\./i, '').toLowerCase();
+    const pathSegments = url.pathname.split('/').filter(Boolean);
+
+    if (hostname.includes('instagram.com')) {
+      const candidate = pathSegments.find(
+        (segment) => !reservedInstagramSegments.has(segment.toLowerCase())
+      );
+      const handle = sanitizeHandle(candidate);
+      if (handle) return handle;
+    }
+
+    if (hostname.includes('tiktok.com')) {
+      const candidate = pathSegments.find(
+        (segment) => !reservedTiktokSegments.has(segment.toLowerCase())
+      );
+      const handle = sanitizeHandle(candidate);
+      if (handle) return handle;
+    }
+  }
+
+  const instagramMatch = normalizedLink.match(/instagram\.com\/(?:@)?([^/?#]+)/i);
+  if (instagramMatch?.[1]) {
+    const handle = sanitizeHandle(instagramMatch[1]);
+    if (handle) return handle;
+  }
+
+  const tiktokMatch = normalizedLink.match(/tiktok\.com\/(@)?([^/?#]+)/i);
+  if (tiktokMatch?.[2]) {
+    const handle = sanitizeHandle(tiktokMatch[2]);
+    if (handle) return handle;
+  }
+
+  return null;
+};
+
+/**
  * Calculates engagement rate as a percentage
  */
 export const calculateEngagementRate = (engagement, followers) => {

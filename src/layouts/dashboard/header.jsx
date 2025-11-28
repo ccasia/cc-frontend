@@ -20,6 +20,7 @@ import { varHover } from 'src/components/animate';
 import { useSettingsContext } from 'src/components/settings';
 
 import { HEADER } from '../config-layout';
+import ChatPopover from '../common/chat-popover';
 import AccountPopover from '../common/account-popover';
 import NotificationsPopover from '../common/notifications-popover';
 // import LanguagePopover from '../common/language-popover';
@@ -42,7 +43,7 @@ export default function Header({ onOpenNav, isOnline }) {
   const offsetTop = offset && !isNavHorizontal;
 
   const renderHeader = (
-    <Stack direction="row" alignItems="center" spacing={2}>
+    <Stack direction="row" alignItems="center" spacing={1}>
       {/* <Card
         sx={{
           borderRadius: 1,
@@ -50,6 +51,7 @@ export default function Header({ onOpenNav, isOnline }) {
         }}
       > */}
       <NotificationsPopover />
+      <ChatPopover />
       {/* </Card> */}
       <Divider
         // variant="fullWidth"
@@ -57,6 +59,7 @@ export default function Header({ onOpenNav, isOnline }) {
         sx={{
           height: '28px',
           borderColor: grey[200],
+          mx: 1,
         }}
       />
       <AccountPopover isOnline={isOnline} />
