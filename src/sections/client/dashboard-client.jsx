@@ -1181,7 +1181,8 @@ const ClientDashboard = () => {
                   borderRadius: '15px',
                   border: '1.2px solid',
                   borderColor: 'divider',
-                  height: 240,
+                  maxHeight: 280,
+                  pb:  1,
                   '&:hover': {
                     borderColor: '#1340ff',
                     transform: 'translateY(-2px)',
@@ -1236,7 +1237,7 @@ const ClientDashboard = () => {
                 </Box>
 
                 {/* Campaign Content */}
-                <Box sx={{ position: 'relative', pt: 1, px: 2, pb: 1.5 }}>
+                <Box sx={{ position: 'relative', pt: 2, px: 2 }}>
                   <Avatar
                     src={campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo || campaign?.company?.logo}
                     alt={campaign?.brand?.name || campaign?.company?.name}
