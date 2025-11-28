@@ -1009,7 +1009,7 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
         </Stack>
 
         <Stack direction="row" spacing={2} ml={5.2} sx={{ mt: 0.5 }}>
-          <Stack direction="row" alignItems="center" spacing={0.5}>
+          <Stack direction="row" alignItems="center" spacing={0.5} minWidth={100}>
             <Iconify icon="streamline:user-multiple-group" width={12} sx={{ color: '#637381' }} />
             <Typography variant="caption" sx={{ color: '#637381', fontSize: 12, pt: 0.2 }}>
               {formatFollowerCount(followerCount)} Followers
@@ -1073,7 +1073,7 @@ const MobileSection = ({
     </Button>
 
     <Collapse in={isExpanded}>
-      <Box sx={{ mt: 1.5, px: 0.5 }}>
+      <Box sx={{ mt: 1.5 }}>
         {sectionCreators.length === 0 ? (
           <Box sx={{ py: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">

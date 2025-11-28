@@ -706,7 +706,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Box>
             </Stack>
 
-            <Divider sx={{ my: 1 }} />
+            <Divider />
 
             {/* Pitch Content */}
             <Box>
