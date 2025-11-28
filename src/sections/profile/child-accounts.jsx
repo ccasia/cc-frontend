@@ -272,7 +272,7 @@ export default function ChildAccounts() {
             alignItems={{ xs: 'stretch', sm: 'center' }}
             justifyContent="space-between"
             spacing={{ xs: 2, sm: 0 }}
-            sx={{ mb: 4, ml: { xs: 0, md: -4 }, mr: { xs: 0, md: -4 } }}
+            sx={{ mb: { xs: 3, sm: 4 }, ml: { xs: 0, md: -4 }, mr: { xs: 0, md: -4 } }}
           >
             {/* Header Section */}
             <Box sx={{ textAlign: 'left' }}>
@@ -287,14 +287,14 @@ export default function ChildAccounts() {
                   mb: 1,
                 }}
               >
-                Accounts
+                PIC Accounts
               </Typography>
               <Typography
                 variant="body1"
                 sx={{
                   fontFamily: 'Aileron',
                   fontWeight: 400,
-                  fontSize: { xs: '12px', sm: '13px' },
+                  fontSize: { xs: 12, sm: 14 },
                   lineHeight: 1.2,
                   letterSpacing: '0%',
                   color: 'text.secondary',
@@ -309,19 +309,14 @@ export default function ChildAccounts() {
               onClick={() => setInviteDialogOpen(true)}
               startIcon={<Iconify icon="eva:plus-fill" />}
               sx={{
-                width: { xs: '100%', sm: 108 },
-                height: 44,
-                pt: '10px',
-                pr: '16px',
-                pb: '13px',
-                pl: '16px',
-                gap: '6px',
+                px: 2.5,
+                height: { xs: 44, sm: 40 },
                 borderRadius: '8px',
                 background: 'rgba(19, 64, 255, 1)',
                 boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                 color: 'white',
                 fontWeight: 600,
-                fontSize: '14px',
+                fontSize: 14,
                 textTransform: 'none',
                 '&:hover': {
                   background: 'rgba(19, 64, 255, 0.9)',
@@ -425,7 +420,7 @@ export default function ChildAccounts() {
             justifyContent="space-between"
             sx={{
               display: { xs: 'flex', md: 'none' },
-              mb: 2,
+              mb: 3,
               width: '100%',
             }}
           >
