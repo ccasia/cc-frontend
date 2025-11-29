@@ -26,7 +26,7 @@ import LogisticsAnalytics from './logistics-analytics';
 export default function CampaignLogisticsView({ campaign, campaignMutate }) {
   const settings = useSettingsContext();
 
-  const [isBulkAssigning, setIsBulkAssigning] = useState(false);
+  const [openBulkAssign, setOpenBulkAssign] = useState(false);
   const [date, setDate] = useState(new Date());
   const [filterName, setFilterName] = useState('');
 
@@ -34,19 +34,6 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
     campaign?.id ? `/api/logistics/campaign/${campaign?.id}` : null,
     fetcher
   );
-
-  const handleOpenBulkAssign = useCallback(() => {
-    setIsBulkAssigning(true);
-  }, []);
-
-  const handleCloseBulkAssign = useCallback(() => {
-    setIsBulkAssigning(false);
-    campaignMutate();
-  }, [campaignMutate]);
-
-  if (isBulkAssigning) {
-    return <BulkAssignView campaign={campaign} onBack={handleCloseBulkAssign} />;
-  }
 
   const safeLogistics = logistics || [];
 
@@ -104,7 +91,7 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
         <Button
           variant="contained"
           startIcon={<Iconify icon="eva:edit-2-fill" />}
-          onClick={handleOpenBulkAssign}
+          onClick={() => setOpenBulkAssign(true)}
           sx={{
             bgcolor: '#1340ff',
             '&:hover': { bgcolor: '#0e2fd6' },
@@ -114,6 +101,14 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
         </Button>
       </Box>
       <LogisticsList campaignId={campaign?.id} logistics={safeLogistics} />
+
+      <BulkAssignView
+        open={openBulkAssign}
+        onClose={() => setOpenBulkAssign(false)}
+        campaign={campaign}
+        logistics={safeLogistics}
+        onUpdate={campaignMutate}
+      />
     </>
   );
 }
