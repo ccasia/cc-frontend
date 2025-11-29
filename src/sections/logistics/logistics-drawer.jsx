@@ -19,7 +19,7 @@ import Scrollbar from 'src/components/scrollbar';
 import LogisticsStepper from './logistics-stepper';
 import AssignLogisticDialog from './dialogs/assign-logistic-dialog';
 import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
-// import ReviewIssueDialog from './dialogs/review-issue-dialog';
+import ReviewIssueDialog from './dialogs/review-issue-dialog';
 
 export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId }) {
   const [openAssign, setOpenAssign] = useState(false);
@@ -29,13 +29,14 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
   const status = logistic?.status;
   const creator = logistic?.creator;
   const deliveryDetails = logistic?.deliveryDetails;
-
+  const socialMediaHandle =
+    creator?.creator?.instagramUser?.username || creator?.creator?.tiktokUser?.username;
+  console.log('what does creator have:', creator);
   const buttonSx = {
     width: 'fit-content',
     height: 44,
     padding: { xs: '4px 8px', sm: '6px 10px' },
     borderRadius: '8px',
-    // border: '1px solid #0c2aa6',
     boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
     backgroundColor: '#1340FF',
     color: '#FFFFFF',
@@ -44,7 +45,6 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
     textTransform: 'none',
     '&:hover': {
       backgroundColor: '#133effd3',
-      // border: '1px solid #0c2aa6',
       boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
     },
     '&:active': {
@@ -126,9 +126,7 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
           <Box>
             <Typography variant="subtitle1">{creator?.name}</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {creator?.creator?.instagramUser?.username
-                ? `@${creator.creator.instagramUser.username}`
-                : '-'}
+              {socialMediaHandle ? `@${socialMediaHandle}` : '-'}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.primary', display: 'block' }}>
               {creator?.phoneNumber || '-'}
@@ -301,6 +299,13 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
       <ScheduleDeliveryDialog
         open={openSchedule}
         onClose={() => setOpenSchedule(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
+      <ReviewIssueDialog
+        open={openIssue}
+        onClose={() => setOpenIssue(false)}
         logistic={logistic}
         campaignId={campaignId}
         onUpdate={onUpdate}
