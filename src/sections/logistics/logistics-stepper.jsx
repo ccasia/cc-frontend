@@ -79,36 +79,37 @@ export default function LogisticsStepper({ logistic }) {
   else if (['DELIVERED', 'RECEIVED', 'COMPLETED'].includes(status)) activeStep = 4;
   else if (status === 'ISSUE_REPORTED') activeStep = 3; // Trigger error state on step 3/4
 
-  const isIssue = status === 'ISSUE_REPORTED';
+  const hasIssue = status === 'ISSUE_REPORTED';
 
   const steps = [
     {
       step: 1,
       label: 'Assign Product',
       description: 'Assign product to creator',
-      completedDate: logistic.updatedAt,
+      completedDate: deliveryDetails?.createdAt,
       color: '#FF3500',
     },
     {
       step: 2,
       label: 'Schedule Delivery',
       description: 'Enter delivery details to continue',
-      completedDate: deliveryDetails?.createdAt,
+      completedDate: logistic.shippedAt,
       color: '#FF3500',
     },
     {
       step: 3,
       label: 'Shipped Out',
       description: 'We will update the status when the delivery date comes.',
-      completedDate: logistic.shippedAt,
+      completedDate: logistic.deliveredAt || logistic.receivedAt,
+
       color: '#1340FF',
     },
     {
       step: 4,
-      label: isIssue ? 'Delivery Failed' : 'Received',
-      description: isIssue ? 'Please review issue to continue' : 'Waiting for confirmation...',
+      label: hasIssue ? 'Delivery Failed' : 'Received',
+      description: hasIssue ? 'Please review issue to continue' : 'Waiting for confirmation...',
       completedDate: logistic.deliveredAt || logistic.receivedAt,
-      error: isIssue,
+      error: hasIssue,
       color: '#FF3500',
     },
   ];
