@@ -116,7 +116,11 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
                   transform: 'translate(-50%, -50%)',
                   bgcolor: 'rgba(0, 0, 0, 0.5)',
                   borderRadius: '50%',
-                  p: 1,
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 <CircularProgress size={20} sx={{ color: 'white' }} />
@@ -336,9 +340,14 @@ export default function ChatMessageItem({ message, isGrouped = false }) {
                 position: 'absolute',
                 top: '50%',
                 right: 8,
+                transform: 'translateY(-50%)',
                 bgcolor: 'rgba(0, 0, 0, 0.5)',
                 borderRadius: '50%',
-                p: 0.5,
+                width: 28,
+                height: 28,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               <CircularProgress size={16} sx={{ color: 'white' }} />

@@ -1,8 +1,10 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
 import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 
+// import CustomRHFSelect from './custom-rhf-select'; // Will reuse RHFMultiSelect hook instead
 import { DatePicker } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, TextField, Typography } from '@mui/material';
 
@@ -15,10 +17,7 @@ import { objectivesLists } from 'src/contants/objectives';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Label from 'src/components/label';
-import { RHFTextField } from 'src/components/hook-form';
-// import CustomRHFSelect from './custom-rhf-select'; // Will reuse RHFMultiSelect hook instead
-// import CustomRHFMultiSelect from './custom-rhf-multi-select'; // Will reuse RHFMultiSelect hook instead
-import { RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -30,6 +29,9 @@ const FormField = ({ label, children, required = true }) => (
         color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
         fontSize: '0.875rem', // Smaller font size for labels
         mb: 0.5,
+        '& .MuiFormLabel-asterisk': {
+          color: '#FF3500', // Change this to your desired color
+        },
       }}
     >
       {label}
@@ -37,6 +39,12 @@ const FormField = ({ label, children, required = true }) => (
     {children}
   </Stack>
 );
+
+FormField.propTypes = {
+  label: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+  required: PropTypes.bool,
+};
 
 const ClientCampaignGeneralInfo = () => {
   const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
@@ -52,7 +60,9 @@ const ClientCampaignGeneralInfo = () => {
   useEffect(() => {
     try {
       localStorage.setItem('clientAvailableCredits', String(availableCredits || 0));
-    } catch (e) {}
+    } catch (e) {
+      // Ignore localStorage persistence errors
+    }
   }, [availableCredits]);
 
   // Compute exceed state and notify parent
@@ -60,11 +70,22 @@ const ClientCampaignGeneralInfo = () => {
   const requestedCredits = Number(credits ?? 0);
   const exceedOnly = (numericAvailable <= 0 && requestedCredits > 0) || (numericAvailable > 0 && requestedCredits > numericAvailable);
   const blockInvalid = numericAvailable <= 0 || requestedCredits <= 0 || exceedOnly;
+  let creditHelperText = '';
+
+  if (exceedOnly) {
+    if (numericAvailable <= 0) {
+      creditHelperText = 'No credits available';
+    } else {
+      creditHelperText = `Exceeds limits: available ${numericAvailable}`;
+    }
+  }
 
   useEffect(() => {
     try {
       window.dispatchEvent(new CustomEvent('client-campaign-credits-error', { detail: blockInvalid }));
-    } catch (e) {}
+    } catch (e) {
+      // Ignore failures when notifying window listeners
+    }
   }, [blockInvalid]);
 
   useEffect(() => {
@@ -105,7 +126,7 @@ const ClientCampaignGeneralInfo = () => {
   return (
     <>
       {/* Container to limit width */}
-      <Box sx={{ maxWidth: '650px', mx: 'auto', mb: 10 }}>
+      <Box sx={{ maxWidth: '650px', mx: 'auto', mb: 8 }}>
         <Stack alignItems="self-end" spacing={0.5} mb={2}>
           <Typography variant="subtitle2">Campaign ID</Typography>
           {!isLoading && <Label color="info">C0{data + 1}</Label>}
@@ -119,14 +140,14 @@ const ClientCampaignGeneralInfo = () => {
             inputProps={{
               maxLength: 40,
             }}
-            sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+            sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
           />
         </FormField>
 
         {/* Date Range - Two columns */}
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6}>
               <FormField label="Campaign Start Date">
                 <DatePicker
                   value={startDate}
@@ -139,13 +160,13 @@ const ClientCampaignGeneralInfo = () => {
                       placeholder: 'Select start date',
                       error: false,
                       size: 'small',
-                      sx: { '& .MuiOutlinedInput-root': { height: '40px' } },
+                      sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
                     },
                   }}
                 />
               </FormField>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6}>
               <FormField label="Campaign End Date">
                 <DatePicker
                   value={endDate}
@@ -158,7 +179,7 @@ const ClientCampaignGeneralInfo = () => {
                       placeholder: 'Select end date',
                       error: false,
                       size: 'small',
-                      sx: { '& .MuiOutlinedInput-root': { height: '40px' } },
+                      sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
                     },
                   }}
                 />
@@ -170,7 +191,7 @@ const ClientCampaignGeneralInfo = () => {
         {/* Credits - Two columns */}
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6}>
               <FormField label="Available Credits">
                 <TextField
                   fullWidth
@@ -180,26 +201,25 @@ const ClientCampaignGeneralInfo = () => {
                   InputProps={{
                     readOnly: true,
                   }}
-                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
                 />
               </FormField>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6}>
               <FormField label="Number Of Credits">
                 <RHFTextField
                   name="campaignCredits"
                   placeholder="Enter number of credits"
                   type="number"
-                  size="small"
                   InputProps={{
                     inputProps: {
                       min: 1,
                       max: numericAvailable > 0 ? numericAvailable : 0,
                     },
                   }}
-                  helperText={exceedOnly ? (numericAvailable <= 0 ? 'No credits available' : `Exceeds limits: available ${numericAvailable}`) : ''}
-                  error={exceedOnly}
-                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                  helperText={creditHelperText}
+                  error={Boolean(creditHelperText)}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
                 />
               </FormField>
             </Grid>
@@ -213,7 +233,7 @@ const ClientCampaignGeneralInfo = () => {
               name="campaignDescription"
               placeholder="Explain more about the campaign..."
               multiline
-              rows={3}
+              rows={4}
               size="small"
               sx={{ '& .MuiOutlinedInput-root': { padding: '8px' } }}
             />
@@ -241,7 +261,7 @@ const ClientCampaignGeneralInfo = () => {
               name="productName"
               placeholder="Enter product or service name"
               size="small"
-              sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+              sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
             />
           </FormField>
         </Box>
@@ -260,7 +280,7 @@ const ClientCampaignGeneralInfo = () => {
               checkbox
               // size="small"
               // sx={{
-              //   '& .MuiOutlinedInput-root': { minHeight: '40px' },
+              //   '& .MuiOutlinedInput-root': { minHeight: '50px' },
               // }}
             />
           </FormField>
@@ -277,7 +297,7 @@ const ClientCampaignGeneralInfo = () => {
               chipColor="#8E8E93"
               size="small"
               sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '40px' },
+                '& .MuiOutlinedInput-root': { minHeight: '50px' },
               }}
             /> */}
         {/* {interestsLists.map((item, index) => (

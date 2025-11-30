@@ -27,6 +27,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -36,6 +37,7 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
+import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
 // Import steps from campaign creation
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
 
@@ -43,7 +45,6 @@ import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
-import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -71,6 +72,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   const [pages, setPages] = useState(0);
+
+  const smDown = useResponsive('down', 'sm');
 
   const pdfModal = useBoolean();
 
@@ -415,7 +418,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       
       // Append images if available
       if (data.campaignImages && Array.isArray(data.campaignImages)) {
-        for (let i = 0; i < data.campaignImages.length; i++) {
+        for (let i = 0; i < data.campaignImages.length; i += 1) {
           if (data.campaignImages[i] instanceof File || data.campaignImages[i].type) {
             formData.append('campaignImages', data.campaignImages[i]);
           }
@@ -446,7 +449,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           const currentAvail = Number(localStorage.getItem('clientAvailableCredits') || 0);
           const nextAvail = Math.max(0, currentAvail - requestedCredits);
           localStorage.setItem('clientAvailableCredits', String(nextAvail));
-        } catch {}
+        } catch {
+          // Ignore localStorage errors
+        }
 
         // Revalidate SWR caches for credits
         await globalMutate(endpoints.client.checkCompany);
@@ -456,8 +461,12 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           if (companyId) {
             await globalMutate(`${endpoints.company.getCompany}/${companyId}`);
           }
-        } catch {}
-      } catch {}
+        } catch {
+          // Ignore API errors during revalidation
+        }
+      } catch {
+        // Ignore errors during credit revalidation
+      }
       reset();
       mutate();
       setStatus('');
@@ -499,7 +508,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   };
 
   // Add function to handle final submission
-  const handleFinalSubmit = async () => {
+  const handleFinalSubmit = useCallback(async () => {
     try {
       setIsLoading(true);
       setOpenConfirmModal(false); // Close the modal immediately when submission starts
@@ -530,7 +539,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       setIsLoading(false);
       setIsConfirming(false);
     }
-  };
+  }, [onSubmit, methods]);
   
   // Set up event listeners for custom events - MOVED AFTER handleFinalSubmit
   useEffect(() => {
@@ -579,6 +588,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             sx={{
               boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
               border: 1,
+              pb: 1.3,
               borderRadius: 1,
               borderColor: '#E7E7E7',
             }}
@@ -593,7 +603,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           <Box
             sx={{
               position: 'absolute',
-              top: 20,
+              top: smDown,
               left: '50%',
               bgcolor: 'wheat',
               transform: 'translateX(-50%)',
@@ -612,8 +622,15 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             />
           </Box>
 
-          {/* Modify the navigation buttons */}
-          <Stack direction="row" justifyContent="space-between" sx={{ py: 3 }}>
+          {/* Navigation buttons - Hidden on mobile */}
+          <Stack 
+            direction="row" 
+            justifyContent="space-between" 
+            sx={{ 
+              py: 3,
+              display: { xs: 'none', md: 'flex' },
+            }}
+          >
             <Button
               color="inherit"
               disabled={activeStep === 0 || isLoading || isConfirming}
@@ -661,9 +678,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                 onClick={handleNext}
                 disabled={isLoading || isConfirming}
                 sx={{
-                  bgcolor: '#1340FF',
+                  bgcolor: '#3A3A3C',
                   '&:hover': {
-                    bgcolor: '#0030e0',
+                    bgcolor: '#47474a',
                   },
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
                   fontWeight: 600,
@@ -675,7 +692,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           </Stack>
         </Stack>
 
-        <Box sx={{ height: '85vh', overflow: 'auto', mt: 1, scrollbarWidth: 'thin' }}>
+        <Box sx={{ 
+          height: '85vh', 
+          overflow: 'auto', 
+          mt: 1, 
+          scrollbarWidth: 'thin',
+          pb: { xs: 10, md: 0 }, // Add padding bottom on mobile for button space
+        }}>
           <Box
             sx={{
               display: 'flex',
@@ -709,6 +732,80 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               {getStepContent(activeStep)}
             </Box>
           </Box>
+        </Box>
+
+        {/* Mobile bottom navigation - Only visible on mobile */}
+        <Box
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            bgcolor: 'white',
+            borderTop: '1px solid #E7E7E7',
+            p: 2,
+            zIndex: 1000,
+            boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <Stack direction="row" spacing={2} justifyContent="space-between">
+            <Button
+              color="inherit"
+              disabled={activeStep === 0 || isLoading || isConfirming}
+              onClick={handleBack}
+              fullWidth
+              sx={{ 
+                bgcolor: 'white',
+                border: '1px solid #E7E7E7',
+                color: '#3A3A3C',
+                '&:hover': {
+                  bgcolor: '#F8F8F8',
+                  border: '1px solid #E7E7E7',
+                },
+                fontWeight: 600,
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.05) inset',
+              }}
+            >
+              Back
+            </Button>
+
+            {activeStep === steps.length - 1 ? (
+              <Button 
+                variant="contained" 
+                onClick={handleConfirmCampaign}
+                disabled={isConfirming || isLoading}
+                fullWidth
+                sx={{
+                  bgcolor: '#1340FF',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  fontWeight: 600,
+                }}
+              >
+                {isConfirming ? 'Opening Preview...' : isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                disabled={isLoading || isConfirming}
+                fullWidth
+                sx={{
+                  bgcolor: '#3A3A3C',
+                  '&:hover': {
+                    bgcolor: '#47474a',
+                  },
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  fontWeight: 600,
+                }}
+              >
+                Next
+              </Button>
+            )}
+          </Stack>
         </Box>
 
         <Dialog
