@@ -539,7 +539,38 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                             Credits Utilized
                           </Typography>
                           <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
-                            {campaign?.creditsUtilized || 0} UGC Credits
+                            {campaign?.submissionVersion === 'v4' ? (() => {
+                                
+                                const approvedAgreements = (campaign?.submission || []).filter(sub => {
+                                  const isAgreementForm = sub.content && typeof sub.content === 'string' && 
+                                    sub.content.toLowerCase().includes('agreement');
+                                  const isApproved = sub.status === 'APPROVED';
+                                  return isAgreementForm && isApproved;
+                                });
+                                
+                                if (approvedAgreements.length === 0) {
+                                  return '0 UGC Credits';
+                                }
+
+                                const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
+                                  let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
+                                  
+                                  if (!creator && typeof agreement.userId === 'string') {
+                                    creator = campaign?.shortlisted?.find(c => 
+                                      typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
+                                    );
+                                  }
+                                  
+                                  if (creator) {
+                                    return total + (creator.ugcVideos || 0);
+                                  }
+                                  
+                                  return total;
+                                }, 0);
+                                
+                                return `${utilizedCredits} UGC Credits`;
+                              })() : 
+                              `${campaign?.creditsUtilized || 0} UGC Credits`}
                           </Typography>
                         </Stack>
                         <Divider />
@@ -552,7 +583,22 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                           <Typography
                             sx={{ mb: -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
                           >
-                            {campaign?.creditsPending ?? 0} UGC Credits
+                            {campaign?.submissionVersion === 'v4' ? (() => {
+                               
+                                const approvedAgreements = (campaign?.submission || []).filter(sub => 
+                                  (sub.content && typeof sub.content === 'string' && 
+                                   sub.content.toLowerCase().includes('agreement')) &&
+                                  (sub.status === 'APPROVED')
+                                );
+                                
+                                const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
+                                  const creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
+                                  return total + (creator?.ugcVideos || 0);
+                                }, 0);
+                                
+                                return `${Math.max(0, (campaign?.campaignCredits || 0) - utilizedCredits)} UGC Credits`;
+                              })() : 
+                              `${campaign?.creditsPending ?? 0} UGC Credits`}
                           </Typography>
                         </Stack>
                       </Stack>

@@ -55,8 +55,33 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   // Compute remaining UGC credits from campaign overview
   const ugcLeft = (() => {
     if (!campaign?.campaignCredits) return 0;
-    const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
-    return Math.max(0, campaign.campaignCredits - used);
+    
+    // For V4 campaigns, only count credits as utilized when agreements are approved
+    if (campaign?.submissionVersion === 'v4') {
+      const approvedAgreements = (campaign?.submission || []).filter(sub => 
+        (sub.content && typeof sub.content === 'string' && 
+         sub.content.toLowerCase().includes('agreement')) &&
+        (sub.status === 'APPROVED')
+      );
+      
+      const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
+        let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
+        
+        if (!creator && typeof agreement.userId === 'string') {
+          creator = campaign?.shortlisted?.find(c => 
+            typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
+          );
+        }
+        
+        return total + (creator?.ugcVideos || 0);
+      }, 0);
+      
+      return Math.max(0, campaign.campaignCredits - utilizedCredits);
+    } else {
+      // For non-V4 campaigns, use the original calculation
+      const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
+      return Math.max(0, campaign.campaignCredits - used);
+    }
   })();
   // Normalize admin comments text so UI displays whenever present
   const adminCommentsText = ((currentPitch?.adminComments ?? pitch?.adminComments ?? '') || '')
@@ -200,14 +225,14 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   };
 
   const handleApprove = () => {
+    if (campaign?.campaignCredits && campaign?.submissionVersion !== 'v4' && ugcLeft <= 0) {
+      enqueueSnackbar('No credits left. Cannot approve or assign UGC credits.', {
+        variant: 'warning',
+      });
+      return;
+    }
+
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
-      if (ugcLeft <= 0) {
-        enqueueSnackbar('No credits left. Cannot approve or assign UGC credits.', {
-          variant: 'warning',
-        });
-        return;
-      }
-      // For admin, open UGC credits modal instead of direct approval
       setUgCCreditsModalOpen(true);
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
       handleAction('approve', 'approve/client', { adminComments: comments });
@@ -216,7 +241,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
 
   const handleReject = () => {
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
-      // For admin rejecting from MAYBE status, include the current status for context
       const actionData = {
         rejectionReason,
         previousStatus: displayStatus === 'MAYBE' ? 'MAYBE' : 'PENDING_REVIEW',
@@ -1258,9 +1282,9 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                   onClick={handleApprove}
                   disabled={
                     loading ||
-                    (isAdmin &&
-                      (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE') &&
-                      (campaign?.submissionVersion !== 'v4' && ugcLeft <= 0))
+                    (campaign?.submissionVersion !== 'v4' &&
+                     campaign?.campaignCredits &&
+                     ugcLeft <= 0)
                   }
                   sx={{
                     textTransform: 'none',
