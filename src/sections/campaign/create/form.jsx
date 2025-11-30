@@ -49,6 +49,9 @@ import CampaignImageUpload from './steps/image-upload';
 import CampaignAdminManager from './steps/admin-manager';
 import OtherAttachments from './steps/other-attachments';
 import TimelineTypeModal from './steps/timeline-type-modal';
+import CampaignLogistics from './steps/campaign-logistics';
+import ReservationSlots from './steps/reservation-slots';
+import LogisticRemarks from './steps/logistic-remarks';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 // new URL(
@@ -62,6 +65,9 @@ const steps = [
   { title: 'Creator Persona', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
   { title: 'Campaign Type', logo: '⎏', color: '#8A5AFE' },
+  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
+  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
+  { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
   { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
   { title: 'Select Campaign Manager(s)', logo: '⛑️', color: '#FFF0E5' },
   { title: 'Agreement Form', logo: '✍️', color: '#026D54' },
@@ -258,6 +264,40 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     ads: Yup.boolean(),
   });
 
+  const logisticsSchema = Yup.object().shape({
+    logisticsType: Yup.string(), // Optional
+    productName: Yup.string().when('logisticsType', {
+      is: 'product_delivery',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+    productDescription: Yup.string().when('logisticsType', {
+      is: 'product_delivery',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+    deliveryNotes: Yup.string().when('logisticsType', {
+      is: 'product_delivery',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+    venueName: Yup.string().when('logisticsType', {
+      is: 'reservation',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+    venueAddress: Yup.string().when('logisticsType', {
+      is: 'reservation',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+    reservationNotes: Yup.string().when('logisticsType', {
+      is: 'reservation',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+  });
+
   const getSchemaForStep = (step) => {
     switch (step) {
       case 0:
@@ -271,10 +311,16 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       case 4:
         return campaignTypeSchema;
       case 5:
-        return timelineSchema;
+        return logisticsSchema;
       case 6:
-        return campaignAdminSchema;
+        return Yup.object().shape({}); // No validation for reservation slots
       case 7:
+        return Yup.object().shape({}); // No validation for logistic remarks
+      case 8:
+        return timelineSchema;
+      case 9:
+        return campaignAdminSchema;
+      case 10:
         return agreementSchema;
       default:
         return campaignSchema;
@@ -287,6 +333,11 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     client: null,
     country: '',
     campaignBrand: null,
+    logisticsType: '',
+    logisticRemarks: '',
+    schedulingOption: 'confirmation',
+    products: [{ name: '' }],
+    locations: [{ name: '' }],
     campaignStartDate: null,
     campaignEndDate: null,
     campaignIndustries: '',
@@ -384,20 +435,46 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     }
   }, [brandState, setValue]);
 
-  const isStepOptional = (step) => step === 8;
+  const isStepOptional = (step) => step === 5 || step === 10;
 
   const handleNext = async () => {
     // setActiveStep((prevActiveStep) => prevActiveStep + 1);
     const result = await trigger();
     if (result) {
-      localStorage.setItem('activeStep', activeStep + 1);
-      setActiveStep((prevActiveStep) => prevActiveStep + 1);
+      // Skip Reservation Slots and Logistic Remarks steps if logistics type is not 'reservation'
+      const logisticsType = getValues('logisticsType');
+      let nextStep = activeStep + 1;
+      
+      if (activeStep === 5 && logisticsType !== 'reservation' && nextStep === 6) {
+        nextStep = 8; // Skip to Campaign Timeline (skip both Reservation Slots and Logistic Remarks)
+      } else if (activeStep === 6 && logisticsType === 'reservation') {
+        nextStep = 7; // Go to Logistic Remarks after Reservation Slots
+      }
+      
+      localStorage.setItem('activeStep', nextStep);
+      setActiveStep(nextStep);
     }
   };
 
   const handleBack = () => {
-    localStorage.setItem('activeStep', activeStep - 1);
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    const logisticsType = getValues('logisticsType');
+    let prevStep = activeStep - 1;
+    
+    // If going back from Campaign Timeline (step 8) to Logistics (step 5) when logisticsType is not 'reservation'
+    if (activeStep === 8 && logisticsType !== 'reservation') {
+      prevStep = 5; // Skip back to Logistics page
+    }
+    // If going back from Logistic Remarks (step 7) when logisticsType is not 'reservation'
+    else if (activeStep === 7 && logisticsType !== 'reservation') {
+      prevStep = 5; // Skip back to Logistics page
+    }
+    // If going back from Reservation Slots (step 6) when logisticsType is not 'reservation'
+    else if (activeStep === 6 && logisticsType !== 'reservation') {
+      prevStep = 5; // Skip back to Logistics page
+    }
+    
+    localStorage.setItem('activeStep', prevStep);
+    setActiveStep(prevStep);
   };
 
   const onDrop = useCallback(
@@ -530,12 +607,18 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
         case 4:
           return <CampaignType />;
         case 5:
-          return <SelectTimeline />;
+          return <CampaignLogistics />;
         case 6:
-          return <CampaignAdminManager />;
+          return <ReservationSlots />;
         case 7:
-          return <CampaignFormUpload pdfModal={pdfModal} />;
+          return <LogisticRemarks />;
         case 8:
+          return <SelectTimeline />;
+        case 9:
+          return <CampaignAdminManager />;
+        case 10:
+          return <CampaignFormUpload pdfModal={pdfModal} />;
+        case 11:
           return <OtherAttachments />;
         default:
           return <SelectBrand />;
@@ -717,7 +800,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
               </Typography>
             </Stack>
 
-            <Box my={5} overflow="auto" minHeight={400}>
+            <Box mt={1} mb={5} overflow="auto" minHeight={400}>
               {getStepContent(activeStep)}
             </Box>
           </Box>
