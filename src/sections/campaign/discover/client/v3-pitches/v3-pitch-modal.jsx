@@ -36,7 +36,7 @@ import Iconify from 'src/components/iconify';
 
 import UGCCreditsModal from './ugc-credits-modal';
 
-const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
+const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [] }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const navigate = useNavigate();
@@ -53,35 +53,26 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const isClient = user?.role === 'client';
   // Compute remaining UGC credits from campaign overview
+  // Credits are only utilized when agreements are sent
   const ugcLeft = (() => {
     if (!campaign?.campaignCredits) return 0;
     
-    // For V4 campaigns, only count credits as utilized when agreements are approved
-    if (campaign?.submissionVersion === 'v4') {
-      const approvedAgreements = (campaign?.submission || []).filter(sub => 
-        (sub.content && typeof sub.content === 'string' && 
-         sub.content.toLowerCase().includes('agreement')) &&
-        (sub.status === 'APPROVED')
-      );
-      
-      const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
-        let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
-        
-        if (!creator && typeof agreement.userId === 'string') {
-          creator = campaign?.shortlisted?.find(c => 
-            typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
-          );
-        }
-        
-        return total + (creator?.ugcVideos || 0);
-      }, 0);
-      
-      return Math.max(0, campaign.campaignCredits - utilizedCredits);
-    } else {
-      // For non-V4 campaigns, use the original calculation
-      const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
-      return Math.max(0, campaign.campaignCredits - used);
-    }
+    // Get userIds of creators whose agreements have been sent
+    const sentAgreementUserIds = new Set(
+      (agreements || [])
+        .filter(agreement => agreement.isSent)
+        .map(agreement => agreement.userId)
+    );
+    
+    // Sum credits only for shortlisted creators with sent agreements
+    const utilizedCredits = (campaign?.shortlisted || []).reduce((acc, creator) => {
+      if (sentAgreementUserIds.has(creator.userId)) {
+        return acc + (creator.ugcVideos || 0);
+      }
+      return acc;
+    }, 0);
+    
+    return Math.max(0, campaign.campaignCredits - utilizedCredits);
   })();
   // Normalize admin comments text so UI displays whenever present
   const adminCommentsText = ((currentPitch?.adminComments ?? pitch?.adminComments ?? '') || '')
@@ -1489,6 +1480,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
         pitch={pitch}
         campaign={campaign}
         comments={comments}
+        agreements={agreements}
         onSuccess={handleUGCCreditsSuccess}
       />
     </>
@@ -2080,4 +2072,5 @@ V3PitchModal.propTypes = {
   pitch: PropTypes.object,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
+  agreements: PropTypes.array,
 };

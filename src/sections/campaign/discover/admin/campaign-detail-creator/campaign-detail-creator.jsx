@@ -107,9 +107,10 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     0
   );
 
-
-  const v4UsedCredits = useMemo(() => {
-    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+  // Credits are only utilized when agreement is sent (isSent = true)
+  // This applies to ALL campaign types (both v4 and non-v4)
+  const usedCredits = useMemo(() => {
+    if (!campaign?.campaignCredits) return 0;
     if (!agreements || !campaign?.shortlisted) return 0;
     
     const sentAgreementUserIds = new Set(
@@ -125,8 +126,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     return campaign.shortlisted.reduce((acc, creator) => {
       if (
         sentAgreementUserIds.has(creator.userId) &&
-        creator.user?.creator?.isGuest !== true &&
-        creator.ugcVideos
+        creator.user?.creator?.isGuest !== true
       ) {
         return acc + (creator.ugcVideos || 0);
       }
@@ -134,22 +134,22 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     }, 0);
   }, [campaign, agreements]);
 
+  // Keep v4UsedCredits for backwards compatibility
+  const v4UsedCredits = usedCredits;
+
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
-    if (campaign?.submissionVersion === 'v4') {
-      const remaining = campaign.campaignCredits - (v4UsedCredits ?? 0);
-      console.log('[V4 Credit Calculation]', {
-        totalCredits: campaign.campaignCredits,
-        usedCredits: v4UsedCredits,
-        remaining,
-        shortlistedCount: campaign.shortlisted?.length,
-        agreementsCount: agreements?.length,
-      });
-      return remaining;
-    }
-    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
-    return campaign.campaignCredits - totalUGCs;
-  }, [campaign, v4UsedCredits, agreements]);
+    // Use unified calculation - credits utilized when agreement is sent
+    const remaining = campaign.campaignCredits - usedCredits;
+    console.log('[Credit Calculation]', {
+      totalCredits: campaign.campaignCredits,
+      usedCredits,
+      remaining,
+      shortlistedCount: campaign.shortlisted?.length,
+      agreementsCount: agreements?.length,
+    });
+    return remaining;
+  }, [campaign, usedCredits, agreements]);
 
   const methods = useForm({
     defaultValues: {
@@ -271,8 +271,26 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     // For V2 campaigns (admin-created), use existing logic
     const agreement = agreements.find((a) => a.userId === creator.userId);
 
-    if (!loadingAgreements && (!agreement || agreement.isSent)) {
-      enqueueSnackbar('No editable agreement found for this creator', { variant: 'info' });
+    // If no agreement exists but creator is shortlisted, create a new one
+    if (!loadingAgreements && !agreement) {
+      // Creator is shortlisted but no agreement exists - allow creating new agreement
+      const newAgreement = {
+        userId: creator.userId,
+        campaignId: campaign.id,
+        user: creator.user,
+        shortlistedCreator: {
+          amount: null,
+          currency: 'MYR',
+        },
+        isNew: true,
+      };
+      setSelectedAgreement(newAgreement);
+      editDialog.onTrue();
+      return;
+    }
+
+    if (!loadingAgreements && agreement?.isSent) {
+      enqueueSnackbar('Agreement has already been sent', { variant: 'info' });
       return;
     }
 

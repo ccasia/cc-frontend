@@ -120,32 +120,24 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
     
-    // For V4 campaigns, only count credits as utilized when agreements are approved
-    if (campaign?.submissionVersion === 'v4') {
-      const approvedAgreements = (campaign?.submission || []).filter(sub => 
-        (sub.content && typeof sub.content === 'string' && 
-         sub.content.toLowerCase().includes('agreement')) &&
-        (sub.status === 'APPROVED')
-      );
-      
-      const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
-        let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
-        
-        if (!creator && typeof agreement.userId === 'string') {
-          creator = campaign?.shortlisted?.find(c => 
-            typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
-          );
-        }
-        
-        return total + (creator?.ugcVideos || 0);
-      }, 0);
-      
-      return campaign.campaignCredits - utilizedCredits;
-    } else {
-      // For non-V4 campaigns, use the original calculation
-      const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
-      return campaign?.campaignCredits - totalUGCs;
-    }
+    // Credits are only utilized when agreement is sent (isSent = true)
+    // This applies to ALL campaign types (both v4 and non-v4)
+    const sentAgreementUserIds = new Set(
+      (campaign?.creatorAgreement || [])
+        .filter(a => a.isSent)
+        .map(a => a.userId)
+    );
+    
+    const utilizedCredits = (campaign?.shortlisted || []).reduce((total, creator) => {
+      // Only count if agreement was sent and not a guest creator
+      if (sentAgreementUserIds.has(creator.userId) && 
+          creator.user?.creator?.isGuest !== true) {
+        return total + (creator.ugcVideos || 0);
+      }
+      return total;
+    }, 0);
+    
+    return campaign.campaignCredits - utilizedCredits;
   }, [campaign]);
 
   // Calculate match percentage

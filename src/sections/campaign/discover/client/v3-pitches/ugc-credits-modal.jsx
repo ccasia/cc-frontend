@@ -18,19 +18,30 @@ import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 
-const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }) => {
+const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments, agreements }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [ugcCredits, setUgCCredits] = useState('');
+  
+  // Credits are only utilized when agreement is sent
+  // ugcLeft = total credits - credits from sent agreements (platform creators only)
   const ugcLeft = (() => {
-    if (campaign?.submissionVersion === 'v4') {
-      if (!campaign?.campaignCredits) return 0;
-      const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
-      return Math.max(0, campaign.campaignCredits - used);
-    }
-    
     if (!campaign?.campaignCredits) return 0;
-    const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
-    return Math.max(0, campaign.campaignCredits - used);
+    
+    const sentAgreementUserIds = new Set(
+      (agreements || campaign?.creatorAgreement || [])
+        .filter(a => a.isSent)
+        .map(a => a.userId)
+    );
+    
+    const utilizedCredits = (campaign?.shortlisted || []).reduce((total, creator) => {
+      if (sentAgreementUserIds.has(creator.userId) && 
+          creator.user?.creator?.isGuest !== true) {
+        return total + (creator.ugcVideos || 0);
+      }
+      return total;
+    }, 0);
+    
+    return Math.max(0, campaign.campaignCredits - utilizedCredits);
   })();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -298,6 +309,7 @@ UGCCreditsModal.propTypes = {
   pitch: PropTypes.object,
   campaign: PropTypes.object,
   onSuccess: PropTypes.func,
+  agreements: PropTypes.array,
 };
 
 export default UGCCreditsModal;

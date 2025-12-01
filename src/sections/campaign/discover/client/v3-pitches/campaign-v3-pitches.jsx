@@ -78,11 +78,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     0
   );
 
-  // For v4 campaigns, count credits only from agreements that have been sent (isSent = true)
-  // AND only count Platform Creators (exclude Non-Platform/Guest creators)
-  // Sum the actual ugcVideos values, not just count agreements
-  const v4UsedCredits = useMemo(() => {
-    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+  // Credits are only utilized when agreement is sent (isSent = true)
+  // This applies to ALL campaign types (both v4 and non-v4)
+  // Only count Platform Creators (exclude Non-Platform/Guest creators)
+  const usedCredits = useMemo(() => {
+    if (!campaign?.campaignCredits) return 0;
     if (!agreements || !campaign?.shortlisted) return 0;
     
     // Get userIds of Platform Creators whose agreements have been sent
@@ -99,8 +99,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     return campaign.shortlisted.reduce((acc, creator) => {
       if (
         sentAgreementUserIds.has(creator.userId) &&
-        creator.user?.creator?.isGuest !== true &&
-        creator.ugcVideos
+        creator.user?.creator?.isGuest !== true
       ) {
         return acc + (creator.ugcVideos || 0);
       }
@@ -108,13 +107,14 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     }, 0);
   }, [campaign, agreements]);
 
+  // Keep v4UsedCredits for backwards compatibility with components that use it
+  const v4UsedCredits = usedCredits;
+
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
-    if (campaign?.submissionVersion === 'v4') {
-      return campaign.campaignCredits - (v4UsedCredits ?? 0);
-    }
-    return (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
-  }, [campaign, totalUsedCredits, v4UsedCredits]);
+    // Use unified calculation - credits utilized when agreement is sent
+    return campaign.campaignCredits - usedCredits;
+  }, [campaign, totalUsedCredits, usedCredits]);
 
   // Count pitches by display status
   const pendingReviewCount = countPitchesByStatus(pitches, ['PENDING_REVIEW']);
@@ -491,66 +491,72 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
               {`Pending Review (${pendingReviewCount})`}
             </Button>
 
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('SENT_TO_CLIENT')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'SENT_TO_CLIENT'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor:
-                    selectedFilter === 'SENT_TO_CLIENT' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Sent to Client (${sentToClientCount})`}
-            </Button>
+            {/* Sent to Client filter - only show for v4 campaigns where client approval is required */}
+            {campaign?.submissionVersion === 'v4' && (
+              <Button
+                fullWidth={!mdUp}
+                onClick={() => setSelectedFilter('SENT_TO_CLIENT')}
+                sx={{
+                  px: 1.5,
+                  py: 2.5,
+                  height: '42px',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  borderRadius: 1,
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  ...(selectedFilter === 'SENT_TO_CLIENT'
+                    ? {
+                        color: '#203ff5',
+                        bgcolor: 'rgba(32, 63, 245, 0.04)',
+                      }
+                    : {
+                        color: '#637381',
+                        bgcolor: 'transparent',
+                      }),
+                  '&:hover': {
+                    bgcolor:
+                      selectedFilter === 'SENT_TO_CLIENT' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                  },
+                }}
+              >
+                {`Sent to Client (${sentToClientCount})`}
+              </Button>
+            )}
 
-            <Button
-              fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('MAYBE')}
-              sx={{
-                px: 1.5,
-                py: 2.5,
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                ...(selectedFilter === 'MAYBE'
-                  ? {
-                      color: '#203ff5',
-                      bgcolor: 'rgba(32, 63, 245, 0.04)',
-                    }
-                  : {
-                      color: '#637381',
-                      bgcolor: 'transparent',
-                    }),
-                '&:hover': {
-                  bgcolor: selectedFilter === 'MAYBE' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                },
-              }}
-            >
-              {`Maybe (${maybeCount})`}
-            </Button>
+            {/* Maybe filter - only show for v4 campaigns where client can mark as maybe */}
+            {campaign?.submissionVersion === 'v4' && (
+              <Button
+                fullWidth={!mdUp}
+                onClick={() => setSelectedFilter('MAYBE')}
+                sx={{
+                  px: 1.5,
+                  py: 2.5,
+                  height: '42px',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  borderRadius: 1,
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  ...(selectedFilter === 'MAYBE'
+                    ? {
+                        color: '#203ff5',
+                        bgcolor: 'rgba(32, 63, 245, 0.04)',
+                      }
+                    : {
+                        color: '#637381',
+                        bgcolor: 'transparent',
+                      }),
+                  '&:hover': {
+                    bgcolor: selectedFilter === 'MAYBE' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                  },
+                }}
+              >
+                {`Maybe (${maybeCount})`}
+              </Button>
+            )}
 
             <Button
               fullWidth={!mdUp}
@@ -805,6 +811,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           onClose={() => setBatchCreditsOpen(false)}
           creators={batchCreditCreators}
           campaignId={campaign.id}
+          campaign={campaign}
           adminComments={batchAdminComments}
           creditsLeft={
             campaign?.submissionVersion === 'v4'
@@ -835,6 +842,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           onClose={handleClosePitchModal}
           pitch={selectedPitch}
           campaign={campaign}
+          agreements={agreements}
           onUpdate={handlePitchUpdate}
         />
       )}
@@ -957,9 +965,10 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // For v4 campaigns, calculate credits used only from sent agreements
-  const v4UsedCredits = useMemo(() => {
-    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+  // Credits are only utilized when agreement is sent (isSent = true)
+  // This applies to ALL campaign types (both v4 and non-v4)
+  const usedCredits = useMemo(() => {
+    if (!campaign?.campaignCredits) return 0;
     if (!agreements || !campaign?.shortlisted) return 0;
     
     // Get userIds of Platform Creators whose agreements have been sent
@@ -976,8 +985,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
     return campaign.shortlisted.reduce((acc, creator) => {
       if (
         sentAgreementUserIds.has(creator.userId) &&
-        creator.user?.creator?.isGuest !== true &&
-        creator.ugcVideos
+        creator.user?.creator?.isGuest !== true
       ) {
         return acc + (creator.ugcVideos || 0);
       }
@@ -985,16 +993,14 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
     }, 0);
   }, [campaign, agreements]);
 
+  // Keep v4UsedCredits for backwards compatibility
+  const v4UsedCredits = usedCredits;
+
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
-    // For v4 campaigns, only count credits from sent agreements
-    if (campaign?.submissionVersion === 'v4') {
-      return campaign.campaignCredits - (v4UsedCredits ?? 0);
-    }
-    // For non-v4 campaigns, count all shortlisted creators
-    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
-    return campaign.campaignCredits - totalUGCs;
-  }, [campaign, v4UsedCredits]);
+    // Use unified calculation - credits utilized when agreement is sent
+    return campaign.campaignCredits - usedCredits;
+  }, [campaign, usedCredits]);
 
   const shortlistedCreators = campaign?.shortlisted || [];
   const shortlistedIds = new Set(shortlistedCreators.map((c) => c.userId));
