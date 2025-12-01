@@ -529,7 +529,7 @@ const ReservationSlots = () => {
         display: 'flex',
         flexDirection: 'column',
         gap: 3,
-        p: 3,
+        p: { xs: 2, sm: 3 },
         maxWidth: 900,
         mx: 'auto'
       }}
@@ -557,12 +557,12 @@ const ReservationSlots = () => {
         boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.05)',
         position: 'relative'
       }}>
-        <Grid container>
+        <Grid container spacing={{ xs: 0, md: 0 }}>
           {/* Left side - Date selection */}
           <Grid item xs={12} md={6} sx={{ 
             borderRight: { xs: 'none', md: '1px solid #e0e0e0' },
             borderBottom: { xs: '1px solid #e0e0e0', md: 'none' },
-            p: 4
+            p: { xs: 2, sm: 3, md: 4 }
           }}>
             <Typography sx={{ 
               mb: 2, 
@@ -640,7 +640,7 @@ const ReservationSlots = () => {
               
               <Box sx={{ 
                 width: '100%',
-                maxWidth: '450px',
+                maxWidth: { xs: '100%', sm: '450px' },
                 mx: 'auto',
                 pt: 2,
                 pb: 0
@@ -662,10 +662,11 @@ const ReservationSlots = () => {
                 <Box sx={{ 
                   display: 'grid', 
                   gridTemplateColumns: 'repeat(7, 1fr)',
-                  gap: 0,
+                  gap: { xs: 0, sm: 0 },
                   textAlign: 'center', 
                   mt: 2,
-                  mb: 0
+                  mb: 0,
+                  mx: { xs: -1, sm: 0 }
                 }}>
                   {generateCalendar().map((day, index) => {
                     if (!day.day) {
@@ -681,7 +682,7 @@ const ReservationSlots = () => {
                         sx={{
                           position: 'relative',
                           cursor: 'pointer',
-                          height: 50,
+                          height: { xs: 40, sm: 50 },
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -702,8 +703,8 @@ const ReservationSlots = () => {
                         {day.isRangeEndpoint ? (
                           <Box 
                             sx={{ 
-                              width: 40, 
-                              height: 40, 
+                              width: { xs: 36, sm: 40 }, 
+                              height: { xs: 36, sm: 40 }, 
                               bgcolor: '#3366FF', 
                               borderRadius: '50%', 
                               display: 'flex', 
@@ -712,17 +713,17 @@ const ReservationSlots = () => {
                               mx: 'auto'
                             }}
                           >
-                            <Typography color="white" sx={{ fontSize: '16px' }}>{day.day}</Typography>
+                            <Typography color="white" sx={{ fontSize: { xs: '14px', sm: '16px' } }}>{day.day}</Typography>
                           </Box>
                         ) : (
-                          <Box sx={{ height: 40, width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto' }}>
+                          <Box sx={{ height: { xs: 36, sm: 40 }, width: { xs: 36, sm: 40 }, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto' }}>
                             <Typography 
                               color={day.isPast ? 'text.secondary' : (day.isSelected || day.isInRange) ? '#1340FF' : 'text.primary'} 
                               sx={{ 
                                 fontFamily: 'Inter Display, sans-serif',
-                                fontSize: '16px', 
+                                fontSize: { xs: '14px', sm: '16px' }, 
                                 fontWeight: (day.isSelected || day.isInRange) ? 500 : 400,
-                                lineHeight: '20px',
+                                lineHeight: { xs: '18px', sm: '20px' },
                                 letterSpacing: '0%',
                                 textAlign: 'center'
                               }}
@@ -754,7 +755,7 @@ const ReservationSlots = () => {
           </Grid>
           
           {/* Right side - Time selection */}
-          <Grid item xs={12} md={6} sx={{ p: 3, position: 'relative', minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
+          <Grid item xs={12} md={6} sx={{ p: { xs: 2, sm: 3 }, position: 'relative', minHeight: { xs: 'auto', md: '500px' }, display: 'flex', flexDirection: 'column' }}>
             <Typography sx={{ 
               mb: 2, 
               fontFamily: 'Inter Display, sans-serif',
@@ -811,9 +812,15 @@ const ReservationSlots = () => {
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <Box sx={{
                 display: 'flex', 
+                flexDirection: 'row',
                 gap: 1, 
                 mb: 3, 
                 alignItems: 'center',
+                width: '100%',
+                '& .MuiDesktopTimePicker-root': {
+                  flex: 1,
+                  maxWidth: 'calc(50% - 15px)',
+                },
                 '& .MuiMultiSectionDigitalClockSection-item.Mui-selected': {
                   backgroundColor: '#1340FF !important',
                   color: '#fff !important'
@@ -846,11 +853,12 @@ const ReservationSlots = () => {
                       handleStartTimeChange(new Date(newTime).getTime());
                     }
                   }}
+                  sx={{ width: '100%' }}
                   slotProps={{
                     textField: {
                       fullWidth: true,
                       sx: {
-                        flex: 1,
+                        width: '100%',
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 1,
                         }
@@ -886,7 +894,7 @@ const ReservationSlots = () => {
                   format="h:mm a"
                 />
                 
-                <Typography sx={{ mx: 0.5 }}>to</Typography>
+                <Typography sx={{ mx: 0.5, alignSelf: 'center', textAlign: 'center', width: '20px' }}>to</Typography>
                 
                 <DesktopTimePicker
                   value={endTime ? new Date(endTime) : new Date().setHours(17, 0, 0)}
@@ -895,11 +903,12 @@ const ReservationSlots = () => {
                       handleEndTimeChange(new Date(newTime).getTime());
                     }
                   }}
+                  sx={{ width: '100%' }}
                   slotProps={{
                     textField: {
                       fullWidth: true,
                       sx: {
-                        flex: 1,
+                        width: '100%',
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 1,
                         }
@@ -938,7 +947,13 @@ const ReservationSlots = () => {
             </LocalizationProvider>
             </ThemeProvider>
             
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, position: 'relative' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'row',
+              alignItems: 'center', 
+              mb: 3, 
+              position: 'relative' 
+            }}>
               <Checkbox 
                 size="small" 
                 checked={intervalsChecked}
@@ -959,12 +974,13 @@ const ReservationSlots = () => {
                 <Box 
                   onClick={() => setShowIntervalDropdown(!showIntervalDropdown)}
                   sx={{ 
-                    ml: 2, 
+                    ml: 2,
                     border: '1px solid #e0e0e0', 
                     borderRadius: 1,
                     display: 'flex',
                     alignItems: 'center',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    alignSelf: { xs: 'flex-start', sm: 'center' }
                   }}
                 >
                   <Typography sx={{ px: 2 }}>{interval} hr</Typography>
@@ -977,14 +993,15 @@ const ReservationSlots = () => {
               {showIntervalDropdown && (
                 <Box sx={{
                   position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
+                  top: { xs: '40px', sm: '100%' },
+                  left: { xs: '0', sm: 'auto' },
+                  right: { xs: 'auto', sm: '0' },
                   mt: 1,
                   bgcolor: 'background.paper',
                   boxShadow: 3,
                   borderRadius: 1,
-                  zIndex: 10
+                  zIndex: 10,
+                  width: { xs: '150px', sm: 'auto' }
                 }}>
                   {intervalOptions.map((option) => (
                     <Box 
@@ -1011,7 +1028,7 @@ const ReservationSlots = () => {
             <Box sx={{ mb: 3 }}>
               {intervalsChecked && startTime && endTime ? (
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
                     {generatedTimeSlots.map((slot, index) => (
                       <Box 
                         key={index}
@@ -1020,7 +1037,8 @@ const ReservationSlots = () => {
                           border: `1px solid ${slot.selected ? '#1340FF' : '#e0e0e0'}`,
                           borderRadius: 1,
                           p: 2,
-                          minWidth: '180px',
+                          minWidth: { xs: '140px', sm: '180px' },
+                          width: { xs: 'calc(50% - 8px)', sm: 'auto' },
                           textAlign: 'center',
                           cursor: 'pointer',
                           color: slot.selected ? '#1340FF' : 'text.primary',
@@ -1074,9 +1092,10 @@ const ReservationSlots = () => {
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'flex-end',
-              position: 'absolute',
-              bottom: 20,
-              right: 20
+              position: { xs: 'relative', md: 'absolute' },
+              bottom: { xs: 'auto', md: 20 },
+              right: { xs: 'auto', md: 20 },
+              mt: { xs: 2, md: 0 }
             }}>
               <Button 
                 variant="contained" 
