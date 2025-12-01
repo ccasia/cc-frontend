@@ -884,7 +884,7 @@ const CampaignAgreements = ({ campaign }) => {
                         </Avatar>
                         <Stack spacing={0.5}>
                           <Typography variant="body2">{item?.user?.name}</Typography>
-                          {!smUp && (
+                          {!smUp && !item?.user?.email?.endsWith('@tempmail.com') && (
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                               {item?.user?.email}
                             </Typography>
@@ -892,7 +892,11 @@ const CampaignAgreements = ({ campaign }) => {
                         </Stack>
                       </Stack>
                     </TableCell>
-                    {smUp && <TableCell>{item?.user?.email}</TableCell>}
+                    {smUp && (
+                      <TableCell>
+                        {item?.user?.email?.endsWith('@tempmail.com') ? '' : item?.user?.email}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Stack spacing={0.5} alignItems="start">
                         <Typography
