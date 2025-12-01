@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
-import { useState, useMemo } from 'react';
-import useSWR from 'swr';
+import { useState, useEffect } from 'react';
+import useSWR, { mutate } from 'swr';
+import { useSnackbar } from 'src/components/snackbar';
 
 import {
   Box,
@@ -8,6 +9,9 @@ import {
   Stack,
   Button,
   Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
   Avatar,
   Checkbox,
   TextField,
@@ -22,17 +26,17 @@ import Iconify from 'src/components/iconify';
 import { fetcher } from 'src/utils/axios';
 import axiosInstance from 'src/utils/axios';
 
-// import EditQuantityDialog from './dialogs/edit-quantity-dialog';
-// import DeleteProductDialog from './dialogs/delete-product-dialog';
+import EditQuantityDialog from './dialogs/edit-quantity-dialog';
+import DeleteProductDialog from './dialogs/delete-product-dialog';
 
 export default function BulkAssignView({ open, onClose, campaign, logistics, onUpdate }) {
-  const { data: products } = useSWR(
-    campaign?.id ? `/api/logistics/products/campaign/${campaign.id}` : null,
-    fetcher
-  );
+  const { enqueueSnackbar } = useSnackbar();
+
+  const productsApiUrl = campaign?.id ? `/api/logistics/products/campaign/${campaign.id}` : null;
+  const { data: products } = useSWR(productsApiUrl, fetcher);
 
   const creators =
-    logistics.map((item) => {
+    logistics?.map((item) => {
       const socialMediaHandle =
         item.creator?.creator?.instagramUser?.username ||
         item.creator?.creator?.tiktokUser?.username;
@@ -46,113 +50,128 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
       };
     }) || [];
 
-  const [selectedCreatorIds, setSelectedCreatorIds] = useState([]);
   const [assignments, setAssignments] = useState({});
-  const [openEditQuantity, setOpenEditQuantity] = useState(false);
-  const [productToDelete, setProductToDelete] = useState(null);
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [selectedCreatorIds, setSelectedCreatorIds] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedProductIds, setActiveProductIds] = useState([]);
 
-  //helper function
-  const assignProductsToCreators = (productsList, creatorIds) => {
-    setAssignments((prev) => {
-      const next = { ...prev };
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [openAddProduct, setOpenAddProduct] = useState(false);
+  const [newProductName, setNewProductName] = useState('');
 
-      for (const creatorId of creatorIds) {
-        const currentItems = next[creatorId] || [];
-        const existingIds = new Set(currentItems.map((item) => item.productId));
+  const [openEditQuantity, setOpenEditQuantity] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchCreator, setSearchCreator] = useState('');
 
-        const newItems = productsList
-          .filter((product) => !existingIds.has(product.id))
-          .map((product) => ({
-            productId: product.id,
-            name: product.productName,
-            quantity: 1,
+  useEffect(() => {
+    if (open && logistics) {
+      const initialAssignments = {};
+
+      for (const logistic of logistics) {
+        if (logistic.deliveryDetails?.items?.length > 0) {
+          initialAssignments[logistic.creatorId] = logistic.deliveryDetails.items.map((item) => ({
+            productId: item.productId,
+            name: item.product?.productName,
+            quantity: item.quantity,
           }));
-
-        if (newItems.length > 0) {
-          next[creatorId] = [...currentItems, ...newItems];
         }
       }
-      return next;
-    });
-  };
+      setAssignments(initialAssignments);
+    }
+  }, [logistics, open]);
+
+  const filteredCreators = creators.filter((creator) => {
+    const matchedSearch =
+      creator.name.toLowerCase().includes(searchCreator.toLowerCase()) ||
+      creator.handle.toLowerCase().includes(searchCreator.toLowerCase());
+
+    if (!matchedSearch) return false;
+
+    if (filterStatus === 'selected') {
+      return selectedCreatorIds.includes(creator.id);
+    }
+    if (filterStatus === 'assigned') {
+      return assignments[creator.id] && assignments[creator.id].length > 0;
+    }
+    if (filterStatus === 'unassigned') {
+      return !assignments[creator.id] || assignments[creator.id].length === 0;
+    }
+
+    return true;
+  });
 
   const handleSelectProduct = (product) => {
     const isSelected = selectedProductIds.includes(product.id);
+    let newSelectedIds;
 
-    setActiveProductIds((prev) =>
-      isSelected ? prev.filter((id) => id !== product.id) : [...prev, product.id]
-    );
+    if (isSelected) {
+      newSelectedIds = selectedProductIds.filter((id) => id !== product.id);
+    } else {
+      newSelectedIds = [...selectedProductIds, product.id];
+    }
 
-    setAssignments((prev) => {
-      if (isSelected) {
-        return Object.fromEntries(
-          Object.entries(prev).map(([creatorId, items]) => [
-            creatorId,
-            items.filter((item) => item.productId !== product.id),
-          ])
-        );
-      }
-      const next = { ...prev };
-      const newItem = {
-        productId: product.id,
-        name: product.productName,
-        quantity: 1,
-      };
+    setSelectedProductIds(newSelectedIds);
 
-      selectedCreatorIds.forEach((creatorId) => {
-        const currentItems = next[creatorId] || [];
-        if (!currentItems.some((item) => item.productId === product.id)) {
-          next[creatorId] = [...currentItems, newItem];
-        }
+    if (selectedCreatorIds.length > 0) {
+      setAssignments((prev) => {
+        const next = { ...prev };
+        selectedCreatorIds.forEach((creatorId) => {
+          const currentItems = next[creatorId] || [];
+
+          if (!isSelected) {
+            const exists = currentItems.find((i) => i.productId === product.id);
+            if (!exists) {
+              next[creatorId] = [
+                ...currentItems,
+                {
+                  productId: product.id,
+                  name: product.productName,
+                  quantity: 1,
+                },
+              ];
+            }
+          } else {
+            next[creatorId] = currentItems.filter((i) => i.productId !== product.id);
+          }
+        });
+        return next;
       });
-
-      return next;
-    });
+    }
   };
 
   const handleSelectCreator = (creatorId) => {
     const isSelected = selectedCreatorIds.includes(creatorId);
 
-    setSelectedCreatorIds((prev) =>
-      isSelected ? prev.filter((id) => id !== creatorId) : [...prev, creatorId]
-    );
-
-    setAssignments((prev) => {
-      if (isSelected) {
-        const { [creatorId]: removed, ...rest } = prev;
-        return rest;
-      }
-
-      if (selectedProductIds.length === 0) return prev;
-
-      const productsToAdd = products
-        .filter((p) => selectedProductIds.includes(p.id))
-        .map((p) => ({
-          productId: p.id,
-          name: p.productName,
-          quantity: 1,
-        }));
-
-      return { ...prev, [creatorId]: productsToAdd };
-    });
-  };
-
-  const handleSelectAllCreators = (event) => {
-    if (event.target.checked) {
-      const allIds = creators.filter((creator) => creator.id).map((creator) => creator.id);
-      setSelectedCreatorIds(allIds);
-
-      if (selectedProductIds.length > 0) {
-        const productsToAssign = products.filter((product) =>
-          selectedProductIds.includes(product.id)
-        );
-        assignProductsToCreators(productsToAssign, allIds);
-      }
+    if (isSelected) {
+      setSelectedCreatorIds((prev) => prev.filter((id) => id !== creatorId));
     } else {
-      setSelectedCreatorIds([]);
-      setAssignments({});
+      setSelectedCreatorIds((prev) => [...prev, creatorId]);
+
+      // "Paint" logic: If products are active, assign them to this creator
+      if (selectedProductIds.length > 0) {
+        setAssignments((prev) => {
+          const next = { ...prev };
+          const currentItems = next[creatorId] || [];
+
+          const productsToAdd = products
+            .filter((p) => selectedProductIds.includes(p.id))
+            .map((p) => ({
+              productId: p.id,
+              name: p.productName,
+              quantity: 1,
+            }));
+
+          const mergedItems = [...currentItems];
+          productsToAdd.forEach((newItem) => {
+            if (!mergedItems.find((i) => i.productId === newItem.productId)) {
+              mergedItems.push(newItem);
+            }
+          });
+
+          next[creatorId] = mergedItems;
+          return next;
+        });
+      }
     }
   };
 
@@ -178,7 +197,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
       onClose();
       setAssignments({});
       setSelectedCreatorIds([]);
-      setActiveProductIds([]);
+      setSelectedProductIds([]);
     } catch {
       console.error('Bulk assign failed', error);
     } finally {
@@ -186,36 +205,106 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     }
   };
 
-  const handleUpdateAssignment = (creatorId, productId, actionOrDelta) => {
-    setAssignments((prev) => {
-      const next = { ...prev };
-      const currentItems = next[creatorId] || [];
+  const handleUpdateAssignment = (newAssignments) => {
+    const cleanedAssignments = {};
 
-      if (actionOrDelta === 'remove') {
-        next[creatorId] = currentItems.filter((item) => item.productId !== productId);
-      } else {
-        next[creatorId] = currentItems
-          .map((item) => {
-            if (item.productId === productId) {
-              return { ...item, quantity: Math.max(0, item.quantity + actionOrDelta) };
-            }
-            return item;
-          })
-          .filter((item) => item.quantity > 0);
+    Object.keys(newAssignments).forEach((creatorId) => {
+      const items = newAssignments[creatorId];
+      const validItems = items.filter((item) => item.quantity !== 0 && item.quantity !== '');
+
+      if (validItems.length > 0) {
+        cleanedAssignments[creatorId] = validItems;
       }
     });
+
+    setAssignments(cleanedAssignments);
   };
 
-  const handleDeleteProduct = () => {
-    if (!productToDelete) return;
-    setAssignments((prev) => {
-      const next = { ...prev };
-      Object.keys(next).forEach((creatorId) => {
-        next[creatorId] = next[creatorId].filter((i) => i.productId !== productToDelete.id);
+  const handleAddProduct = async () => {
+    if (!newProductName.trim()) return;
+    try {
+      await axiosInstance.post(`/api/logistics/products/${campaign.id}`, {
+        campaignId: campaign.id,
+        productName: newProductName,
       });
-      return next;
-    });
-    setProductToDelete(null);
+      mutate(productsApiUrl);
+      setNewProductName('');
+      setOpenAddProduct(false);
+      enqueueSnackbar('Product added successfully', { variant: 'success' });
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Failed to add product', { variant: 'error' });
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!productToDelete) return;
+
+    try {
+      await axiosInstance.delete(`/api/logistics/products/${productToDelete.id}`);
+
+      setAssignments((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((creatorId) => {
+          next[creatorId] = next[creatorId].filter((i) => i.productId !== productToDelete.id);
+        });
+        return next;
+      });
+
+      setSelectedProductIds((prev) => prev.filter((id) => id !== productToDelete.id));
+      mutate(productsApiUrl);
+
+      enqueueSnackbar('Product deleted', { variant: 'success' });
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Failed to delete product', { variant: 'error' });
+    } finally {
+      setProductToDelete(null);
+    }
+  };
+
+  const handleSelectAll = (event) => {
+    if (event.target.checked) {
+      // 1. Select All IDs
+      const allCreatorIds = creators.map((creator) => creator.id);
+      setSelectedCreatorIds(allCreatorIds);
+
+      // 2. "Paint" Logic: If products are active in sidebar, assign to EVERYONE
+      if (selectedProductIds.length > 0) {
+        setAssignments((prev) => {
+          const next = { ...prev };
+
+          // Find full product objects for the selected IDs
+          const productsToAdd = products
+            .filter((p) => selectedProductIds.includes(p.id))
+            .map((p) => ({
+              productId: p.id,
+              name: p.productName,
+              quantity: 1,
+            }));
+
+          // Loop through ALL creators and add missing products
+          allCreatorIds.forEach((creatorId) => {
+            const currentItems = next[creatorId] || [];
+            const mergedItems = [...currentItems];
+
+            productsToAdd.forEach((newItem) => {
+              // Only add if not already assigned
+              if (!mergedItems.find((i) => i.productId === newItem.productId)) {
+                mergedItems.push(newItem);
+              }
+            });
+
+            next[creatorId] = mergedItems;
+          });
+
+          return next;
+        });
+      }
+    } else {
+      // Deselect All
+      setSelectedCreatorIds([]);
+    }
   };
 
   return (
@@ -326,10 +415,9 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
             <Grid container spacing={4}>
               <Grid item xs={12} md={4} display="flex" flexDirection="column" alignItems="center">
                 <Button
-                  // fullWidth
                   variant="contained"
                   startIcon={<Iconify icon="mi:edit-alt" width={24} />}
-                  onClick={() => setOpenEditQty(true)}
+                  onClick={() => setOpenEditQuantity(true)}
                   disabled={selectedCreatorIds.length === 0}
                   sx={{
                     mb: 4,
@@ -366,7 +454,6 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                 </Typography>
                 <Stack spacing={1.5}>
                   {products?.map((product) => (
-                    // chip for list of products
                     <Box
                       key={product.id}
                       onClick={() => handleSelectProduct(product)}
@@ -380,7 +467,6 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         cursor: 'pointer',
                         borderRadius: '8px',
                         transition: 'all 0.2s ease',
-                        // Conditional Styles based on selection
                         bgcolor: selectedProductIds.includes(product.id) ? '#1340FF' : '#FFFFFF',
                         color: selectedProductIds.includes(product.id) ? '#FFFFFF' : '#231F20',
                         border: selectedProductIds.includes(product.id)
@@ -389,15 +475,11 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         boxShadow: selectedProductIds.includes(product.id)
                           ? 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)' // Subtle darkened bottom lip
                           : 'inset 0px -3px 0px #D6D6D6',
-
-                        // Hover states
-                        // '&:hover': {
-                        //   bgcolor: selectedProductIds.includes(product.id)
-                        //     ? '#133effd8'
-                        //     : '#F9FAFB',
-                        // },
-
-                        // Click/Active states
+                        '&:hover': {
+                          bgcolor: selectedProductIds.includes(product.id)
+                            ? '#133effd8'
+                            : '#F9FAFB',
+                        },
                         '&:active': {
                           boxShadow: selectedProductIds.includes(product.id)
                             ? '0px 0px 0px 0px #0B2DAD inset'
@@ -405,25 +487,6 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                           transform: 'translateY(1px)',
                         },
                       }}
-                      // {{
-                      //       mb: 4,
-                      //       px: 2,
-                      //       py: 1,
-                      //       boxShadow: '0px -4px 0px 0px #0B2DAD inset',
-                      //       fontSize: '1rem',
-                      //       fontWeight: 700,
-                      //       bgcolor: '#1340FF',
-                      //       color: '#fff',
-                      //       borderRadius: '8px',
-                      //       '&:hover': {
-                      //         bgcolor: '#133effd8',
-                      //         boxShadow: '0px -4px 0px 0px #0B2DAD inset',
-                      //       },
-                      //       '&:active': {
-                      //         boxShadow: '0px 0px 0px 0px #0B2DAD inset',
-                      //         transform: 'translateY(1px)',
-                      //       },
-                      //     }}
                     >
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {product.productName}
@@ -435,6 +498,10 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         <Iconify
                           icon="eva:close-fill"
                           width={16}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProductToDelete({ id: product.id, name: product.productName });
+                          }}
                           sx={{
                             color: selectedProductIds.includes(product.id) ? 'inherit' : '#919EAB',
                             display: 'block',
@@ -443,6 +510,45 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                       </IconButton>
                     </Box>
                   ))}
+                  <Box
+                    onClick={() => setOpenAddProduct(true)}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 'fit-content',
+                      p: 1,
+                      pl: 2,
+                      cursor: 'pointer',
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease',
+                      boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)',
+                      bgcolor: '#FFFFFF',
+                      color: '#B0B0B0',
+                      border: '1px solid #D6D6D6',
+                      '&:hover': {
+                        bgcolor: '#F9FAFB',
+                      },
+                      '&:active': {
+                        boxShadow: '0px 0px 0px 0px #F4F4F4 inset',
+                        transform: 'translateY(1px)',
+                      },
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      New
+                    </Typography>
+                    <IconButton size="small" sx={{ color: '#fff' }}>
+                      <Iconify
+                        icon="eva:plus-outline"
+                        width={16}
+                        sx={{
+                          color: '#919EAB',
+                          display: 'block',
+                        }}
+                      />
+                    </IconButton>
+                  </Box>
                 </Stack>
               </Grid>
               <Grid item xs={12} md={8}>
@@ -450,6 +556,8 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                   <TextField
                     placeholder="Search Creator"
                     size="small"
+                    value={searchCreator}
+                    onChange={(e) => setSearchCreator(e.target.value)}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -465,12 +573,32 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                   />
                   <Select
                     size="small"
-                    value="all"
-                    sx={{ width: 120, bgcolor: '#fff', borderRadius: '8px' }}
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    IconComponent={() => (
+                      <Iconify
+                        icon="material-symbols:filter-list-rounded"
+                        width={20}
+                        sx={{
+                          color: '#231F20',
+                          pointerEvents: 'none', // Allows clicking through to the select
+                          position: 'absolute',
+                          right: 12,
+                        }}
+                      />
+                    )}
+                    sx={{
+                      width: 120,
+                      bgcolor: '#fff',
+                      borderColor: '#EBEBEB',
+                      borderRadius: '8px',
+                      color: '#1340FF',
+                    }}
                   >
-                    <MenuItem value="all" onClick={handleSelectAllCreators}>
-                      All
-                    </MenuItem>
+                    <MenuItem value="all">All</MenuItem>
+                    <MenuItem value="selected">Selected</MenuItem>
+                    <MenuItem value="assigned">Assigned</MenuItem>
+                    <MenuItem value="unassigned">Unassigned</MenuItem>
                   </Select>
                 </Stack>
                 <Stack
@@ -490,7 +618,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                   >
                     <Grid container>
                       <Grid item xs={6} display="flex" alignItems="center">
-                        {/* <Checkbox
+                        <Checkbox
                           checked={
                             selectedCreatorIds.length === creators.length && creators.length > 0
                           }
@@ -498,8 +626,8 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                             selectedCreatorIds.length > 0 &&
                             selectedCreatorIds.length < creators.length
                           }
-                          // onChange={handleSelectAll}
-                        /> */}
+                          onChange={handleSelectAll}
+                        />
                         <Typography variant="subtitle2" sx={{ ml: 1 }}>
                           Assigning to{' '}
                           <Typography component="span" variant="caption">
@@ -513,12 +641,12 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                     </Grid>
                   </Box>
 
-                  {creators.map((creator) => {
+                  {filteredCreators.map((creator) => {
                     const isSelected = selectedCreatorIds.includes(creator.id);
                     const assigned = assignments[creator.id] || [];
                     const assignedString =
                       assigned.length > 0
-                        ? assigned.map((i) => `${i.name} (${i.quantity})`).join(', ')
+                        ? assigned.map((item) => `${item.name} (${item.quantity})`).join(', ')
                         : '-';
 
                     return (
@@ -527,8 +655,6 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         sx={{
                           py: 1,
                           px: 2,
-                          // borderBottom: '1px solid #F4F6F8',
-                          // '&:hover': { bgcolor: '#FAFAFA' },
                         }}
                       >
                         <Grid container alignItems="center">
@@ -567,12 +693,53 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                       </Box>
                     );
                   })}
+
+                  {filteredCreators.length === 0 && (
+                    <Box sx={{ p: 4, textAlign: '', color: 'text.secondary' }}>
+                      <Typography>No creators found.</Typography>
+                    </Box>
+                  )}
                 </Stack>
               </Grid>
             </Grid>
           </Box>
         </Box>
       </Box>
+      <EditQuantityDialog
+        open={openEditQuantity}
+        onClose={() => setOpenEditQuantity(false)}
+        selectedCreatorIds={selectedCreatorIds}
+        creators={creators}
+        assignments={assignments}
+        onSave={handleUpdateAssignment}
+      />
+      <DeleteProductDialog
+        open={Boolean(productToDelete)}
+        onClose={() => setProductToDelete(null)}
+        productName={productToDelete?.name}
+        onConfirm={handleDeleteProduct}
+      />
+      <Dialog open={openAddProduct} onClose={() => setOpenAddProduct(false)}>
+        <DialogTitle>Add New Product</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Product Name"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={newProductName}
+            onChange={(e) => setNewProductName(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenAddProduct(false)}>Cancel</Button>
+          <Button onClick={handleAddProduct} variant="contained" disabled={!newProductName.trim()}>
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

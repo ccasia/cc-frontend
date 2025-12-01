@@ -30,7 +30,7 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
   const [date, setDate] = useState(new Date());
   const [filterName, setFilterName] = useState('');
 
-  const { data: logistics } = useSWR(
+  const { data: logistics, mutate } = useSWR(
     campaign?.id ? `/api/logistics/campaign/${campaign?.id}` : null,
     fetcher
   );
@@ -107,7 +107,7 @@ export default function CampaignLogisticsView({ campaign, campaignMutate }) {
         onClose={() => setOpenBulkAssign(false)}
         campaign={campaign}
         logistics={safeLogistics}
-        onUpdate={campaignMutate}
+        onUpdate={mutate}
       />
     </>
   );
