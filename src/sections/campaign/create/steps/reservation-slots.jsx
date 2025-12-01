@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { format, addDays } from 'date-fns';
 
@@ -13,15 +13,17 @@ import {
   Typography,
   FormControlLabel,
   IconButton,
-  Switch,
-  Popover
+  Switch
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
-import { TimePicker } from '@mui/x-date-pickers';
+import { DesktopTimePicker } from '@mui/x-date-pickers/DesktopTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import dayjs from 'dayjs';
 
 import Iconify from 'src/components/iconify';
 import { Box as MuiBox } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, ThemeProvider, createTheme } from '@mui/material/styles';
 
 const ReservationSlots = () => {
   const theme = useTheme();
@@ -41,10 +43,15 @@ const ReservationSlots = () => {
   const [showIntervalDropdown, setShowIntervalDropdown] = useState(false);
   const [generatedTimeSlots, setGeneratedTimeSlots] = useState([]);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
-  const [timePickerAnchorEl, setTimePickerAnchorEl] = useState(null);
+  // Direct time input - no need for picker state variables
   const [savedTimeSlots, setSavedTimeSlots] = useState([]);
+
+  // Generate time slots when component mounts or when relevant values change
+  useEffect(() => {
+    if (intervalsChecked && startTime && endTime) {
+      generateTimeSlots(startTime, endTime, interval, intervalsChecked);
+    }
+  }, [intervalsChecked, startTime, endTime, interval]);
 
   // Generate calendar data for the current month
   const generateCalendar = () => {
@@ -514,21 +521,7 @@ const ReservationSlots = () => {
     return `${format(slot.start, 'h:mm a')} - ${format(slot.end, 'h:mm a')}`;
   };
 
-  const handleTimePickerClose = () => {
-    setShowStartTimePicker(false);
-    setShowEndTimePicker(false);
-    setTimePickerAnchorEl(null);
-  };
-  
-  const handleStartTimeSelect = (time) => {
-    handleStartTimeChange(time);
-    handleTimePickerClose();
-  };
-  
-  const handleEndTimeSelect = (time) => {
-    handleEndTimeChange(time);
-    handleTimePickerClose();
-  };
+  // Direct time input - no need for popover handlers
 
   return (
     <Box
@@ -773,77 +766,177 @@ const ReservationSlots = () => {
               Select Time Slots:
             </Typography>
             
-            <Box sx={{ display: 'flex', gap: 1, mb: 3, alignItems: 'center' }}>
-              <Box 
-                onClick={(event) => {
-                  setTimePickerAnchorEl(event.currentTarget);
-                  setShowStartTimePicker(true);
-                }}
-                sx={{
-                  flex: 1,
-                  border: '1px solid #e0e0e0',
-                  borderRadius: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  p: 1,
-                  pl: 2,
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.02)'
-                  }
-                }}
-              >
-                <Typography sx={{ flex: 1 }}>
-                  {startTime ? format(new Date(startTime), 'h:mm a') : '9:00 AM'}
-                </Typography>
-                <IconButton 
-                  size="small" 
-                  sx={{ color: '#1340FF' }}
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent triggering the parent onClick
-                    // Just use the same handler as the parent
+            <ThemeProvider theme={createTheme({
+              palette: {
+                primary: {
+                  main: '#1340FF',
+                },
+              },
+              components: {
+                MuiClock: {
+                  styleOverrides: {
+                    pin: {
+                      backgroundColor: '#1340FF',
+                    },
+                    clock: {
+                      '& .MuiClockNumber-root.Mui-selected': {
+                        backgroundColor: '#1340FF',
+                      },
+                    },
+                  },
+                },
+                MuiClockPointer: {
+                  styleOverrides: {
+                    root: {
+                      backgroundColor: '#1340FF',
+                    },
+                    thumb: {
+                      backgroundColor: '#1340FF',
+                      borderColor: '#1340FF',
+                    },
+                  },
+                },
+                MuiMultiSectionDigitalClockSection: {
+                  styleOverrides: {
+                    item: {
+                      '&.Mui-selected': {
+                        backgroundColor: '#1340FF',
+                        color: '#fff',
+                      },
+                    },
+                  },
+                },
+              },
+            })}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <Box sx={{
+                display: 'flex', 
+                gap: 1, 
+                mb: 3, 
+                alignItems: 'center',
+                '& .MuiMultiSectionDigitalClockSection-item.Mui-selected': {
+                  backgroundColor: '#1340FF !important',
+                  color: '#fff !important'
+                },
+                '& .MuiMenuItem-root.Mui-selected': {
+                  backgroundColor: '#1340FF !important',
+                  color: '#fff !important'
+                },
+                '& .MuiClock-clock .MuiClockNumber-root.Mui-selected': {
+                  backgroundColor: '#1340FF !important'
+                },
+                '& .MuiClockPointer-root': { 
+                  backgroundColor: '#1340FF !important' 
+                },
+                '& .MuiClockPointer-thumb': { 
+                  backgroundColor: '#1340FF !important', 
+                  borderColor: '#1340FF !important' 
+                },
+                '& .MuiClock-pin': { 
+                  backgroundColor: '#1340FF !important' 
+                },
+                '& .MuiPickersDay-root.Mui-selected': {
+                  backgroundColor: '#1340FF !important'
+                }
+              }}>
+                <DesktopTimePicker
+                  value={startTime ? new Date(startTime) : new Date().setHours(9, 0, 0)}
+                  onChange={(newTime) => {
+                    if (newTime) {
+                      handleStartTimeChange(new Date(newTime).getTime());
+                    }
                   }}
-                >
-                  <Iconify icon="mdi:clock-outline" width={18} height={18} />
-                </IconButton>
-              </Box>
-              
-              <Typography sx={{ mx: 0.5 }}>to</Typography>
-              
-              <Box 
-                onClick={(event) => {
-                  setTimePickerAnchorEl(event.currentTarget);
-                  setShowEndTimePicker(true);
-                }}
-                sx={{
-                  flex: 1,
-                  border: '1px solid #e0e0e0',
-                  borderRadius: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  p: 1,
-                  pl: 2,
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.02)'
-                  }
-                }}
-              >
-                <Typography sx={{ flex: 1 }}>
-                  {endTime ? format(new Date(endTime), 'h:mm a') : '5:00 PM'}
-                </Typography>
-                <IconButton 
-                  size="small" 
-                  sx={{ color: '#1340FF' }}
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent triggering the parent onClick
-                    // Just use the same handler as the parent
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      sx: {
+                        flex: 1,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        }
+                      }
+                    },
+                    openPickerButton: {
+                      sx: { color: '#1340FF' }
+                    },
+                    digitalClockItem: {
+                      sx: {
+                        '&.MuiMultiSectionDigitalClockSection-item.Mui-selected': {
+                          backgroundColor: '#1340FF !important',
+                          color: '#fff !important'
+                        }
+                      }
+                    },
+                    clock: {
+                      sx: {
+                        '& .MuiClock-clock .MuiClockNumber-root.Mui-selected': {
+                          backgroundColor: '#1340FF !important'
+                        }
+                      }
+                    },
+                    popper: {
+                      sx: {
+                        '& .MuiClockPointer-root': { backgroundColor: '#1340FF' },
+                        '& .MuiClockPointer-thumb': { backgroundColor: '#1340FF', borderColor: '#1340FF' },
+                        '& .MuiClock-pin': { backgroundColor: '#1340FF' },
+                        '& .MuiClockNumber-root.Mui-selected': { backgroundColor: '#1340FF' }
+                      }
+                    }
                   }}
-                >
-                  <Iconify icon="mdi:clock-outline" width={18} height={18} />
-                </IconButton>
+                  format="h:mm a"
+                />
+                
+                <Typography sx={{ mx: 0.5 }}>to</Typography>
+                
+                <DesktopTimePicker
+                  value={endTime ? new Date(endTime) : new Date().setHours(17, 0, 0)}
+                  onChange={(newTime) => {
+                    if (newTime) {
+                      handleEndTimeChange(new Date(newTime).getTime());
+                    }
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      sx: {
+                        flex: 1,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        }
+                      }
+                    },
+                    openPickerButton: {
+                      sx: { color: '#1340FF' }
+                    },
+                    digitalClockItem: {
+                      sx: {
+                        '&.MuiMultiSectionDigitalClockSection-item.Mui-selected': {
+                          backgroundColor: '#1340FF !important',
+                          color: '#fff !important'
+                        }
+                      }
+                    },
+                    clock: {
+                      sx: {
+                        '& .MuiClock-clock .MuiClockNumber-root.Mui-selected': {
+                          backgroundColor: '#1340FF !important'
+                        }
+                      }
+                    },
+                    popper: {
+                      sx: {
+                        '& .MuiClockPointer-root': { backgroundColor: '#1340FF' },
+                        '& .MuiClockPointer-thumb': { backgroundColor: '#1340FF', borderColor: '#1340FF' },
+                        '& .MuiClock-pin': { backgroundColor: '#1340FF' },
+                        '& .MuiClockNumber-root.Mui-selected': { backgroundColor: '#1340FF' }
+                      }
+                    }
+                  }}
+                  format="h:mm a"
+                />
               </Box>
-            </Box>
+            </LocalizationProvider>
+            </ThemeProvider>
             
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, position: 'relative' }}>
               <Checkbox 
@@ -862,22 +955,24 @@ const ReservationSlots = () => {
               />
               <Typography variant="body2">Intervals</Typography>
               
-              <Box 
-                onClick={() => setShowIntervalDropdown(!showIntervalDropdown)}
-                sx={{ 
-                  ml: 2, 
-                  border: '1px solid #e0e0e0', 
-                  borderRadius: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  cursor: 'pointer'
-                }}
-              >
-                <Typography sx={{ px: 2 }}>{interval} hr</Typography>
-                <IconButton size="small" sx={{ color: '#1340FF' }}>
-                  <Iconify icon="mdi:chevron-down" />
-                </IconButton>
-              </Box>
+              {intervalsChecked && (
+                <Box 
+                  onClick={() => setShowIntervalDropdown(!showIntervalDropdown)}
+                  sx={{ 
+                    ml: 2, 
+                    border: '1px solid #e0e0e0', 
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Typography sx={{ px: 2 }}>{interval} hr</Typography>
+                  <IconButton size="small" sx={{ color: '#1340FF' }}>
+                    <Iconify icon="mdi:chevron-down" />
+                  </IconButton>
+                </Box>
+              )}
               
               {showIntervalDropdown && (
                 <Box sx={{
@@ -914,7 +1009,7 @@ const ReservationSlots = () => {
             
             {/* Time slots display area */}
             <Box sx={{ mb: 3 }}>
-              {intervalsChecked && generatedTimeSlots.length > 0 ? (
+              {intervalsChecked && startTime && endTime ? (
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                     {generatedTimeSlots.map((slot, index) => (
@@ -1105,169 +1200,7 @@ const ReservationSlots = () => {
         )}
       </Box>
       
-      {/* Time Picker Popover for Start Time */}
-      <Popover
-        open={showStartTimePicker}
-        anchorEl={timePickerAnchorEl}
-        onClose={handleTimePickerClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-      >
-        <Box sx={{ p: 2, width: 300 }}>
-          <Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'center' }}>
-            Enter start time (format: HH:MM AM/PM)
-          </Typography>
-          <TextField
-            fullWidth
-            defaultValue={startTime ? format(new Date(startTime), 'h:mm a') : '9:00 AM'}
-            placeholder="9:00 AM"
-            sx={{ mb: 2 }}
-            inputRef={(input) => input && input.focus()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                try {
-                  const timeStr = e.target.value;
-                  const [timeValue, period] = timeStr.split(' ');
-                  const [hours, minutes] = timeValue.split(':').map(Number);
-                  
-                  const newTime = new Date();
-                  if (period.toLowerCase() === 'pm' && hours < 12) {
-                    newTime.setHours(hours + 12, minutes);
-                  } else if (period.toLowerCase() === 'am' && hours === 12) {
-                    newTime.setHours(0, minutes);
-                  } else {
-                    newTime.setHours(hours, minutes);
-                  }
-                  
-                  handleStartTimeSelect(newTime.getTime());
-                } catch (error) {
-                  alert('Invalid time format. Please use format like "9:00 AM"');
-                }
-              }
-            }}
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button onClick={handleTimePickerClose}>Cancel</Button>
-            <Button 
-              variant="contained" 
-              color="primary"
-              onClick={() => {
-                const input = document.querySelector('input[placeholder="9:00 AM"]');
-                if (input) {
-                  try {
-                    const timeStr = input.value;
-                    const [timeValue, period] = timeStr.split(' ');
-                    const [hours, minutes] = timeValue.split(':').map(Number);
-                    
-                    const newTime = new Date();
-                    if (period.toLowerCase() === 'pm' && hours < 12) {
-                      newTime.setHours(hours + 12, minutes);
-                    } else if (period.toLowerCase() === 'am' && hours === 12) {
-                      newTime.setHours(0, minutes);
-                    } else {
-                      newTime.setHours(hours, minutes);
-                    }
-                    
-                    handleStartTimeSelect(newTime.getTime());
-                  } catch (error) {
-                    alert('Invalid time format. Please use format like "9:00 AM"');
-                  }
-                }
-              }}
-            >
-              OK
-            </Button>
-          </Box>
-        </Box>
-      </Popover>
-      
-      {/* Time Picker Popover for End Time */}
-      <Popover
-        open={showEndTimePicker}
-        anchorEl={timePickerAnchorEl}
-        onClose={handleTimePickerClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-      >
-        <Box sx={{ p: 2, width: 300 }}>
-          <Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'center' }}>
-            Enter end time (format: HH:MM AM/PM)
-          </Typography>
-          <TextField
-            fullWidth
-            defaultValue={endTime ? format(new Date(endTime), 'h:mm a') : '5:00 PM'}
-            placeholder="5:00 PM"
-            sx={{ mb: 2 }}
-            inputRef={(input) => input && input.focus()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                try {
-                  const timeStr = e.target.value;
-                  const [timeValue, period] = timeStr.split(' ');
-                  const [hours, minutes] = timeValue.split(':').map(Number);
-                  
-                  const newTime = new Date();
-                  if (period.toLowerCase() === 'pm' && hours < 12) {
-                    newTime.setHours(hours + 12, minutes);
-                  } else if (period.toLowerCase() === 'am' && hours === 12) {
-                    newTime.setHours(0, minutes);
-                  } else {
-                    newTime.setHours(hours, minutes);
-                  }
-                  
-                  handleEndTimeSelect(newTime.getTime());
-                } catch (error) {
-                  alert('Invalid time format. Please use format like "5:00 PM"');
-                }
-              }
-            }}
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button onClick={handleTimePickerClose}>Cancel</Button>
-            <Button 
-              variant="contained" 
-              color="primary"
-              onClick={() => {
-                const input = document.querySelector('input[placeholder="5:00 PM"]');
-                if (input) {
-                  try {
-                    const timeStr = input.value;
-                    const [timeValue, period] = timeStr.split(' ');
-                    const [hours, minutes] = timeValue.split(':').map(Number);
-                    
-                    const newTime = new Date();
-                    if (period.toLowerCase() === 'pm' && hours < 12) {
-                      newTime.setHours(hours + 12, minutes);
-                    } else if (period.toLowerCase() === 'am' && hours === 12) {
-                      newTime.setHours(0, minutes);
-                    } else {
-                      newTime.setHours(hours, minutes);
-                    }
-                    
-                    handleEndTimeSelect(newTime.getTime());
-                  } catch (error) {
-                    alert('Invalid time format. Please use format like "5:00 PM"');
-                  }
-                }
-              }}
-            >
-              OK
-            </Button>
-          </Box>
-        </Box>
-      </Popover>
+      {/* No popovers needed - using direct input fields */}
     </Box>
   );
 };
