@@ -630,7 +630,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     <Stack direction="row" spacing={3}>
                       {/* Languages Section */}
                       {derivedLanguages.length > 0 && (
-                        <Stack justifyContent={'space-between'}>
+                        <Stack justifyContent="space-between">
                           <Typography
                             color="#8e8e93"
                             sx={{ fontWeight: 700, fontSize: 12 }}

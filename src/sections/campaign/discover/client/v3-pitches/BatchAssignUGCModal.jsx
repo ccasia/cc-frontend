@@ -87,8 +87,8 @@ const BatchAssignUGCModal = ({ open, onClose, creators = [], campaignId, onAssig
         // For non-v4 campaigns, send guests one-by-one so each can have individual credits
         // For v4 campaigns, batch them (max 3 per request)
         if (!isV4Campaign) {
-          // Send each guest individually with their specific credits
-          for (const guestPayload of guestPayloads) {
+          // Send each guest individually with their specific credits using Promise.all
+          const guestCreatePromises = guestPayloads.map((guestPayload) => {
             const { credits: guestCredits, ...guestData } = guestPayload;
             // eslint-disable-next-line no-console
             console.log('[BatchAssignUGCModal] POST /api/campaign/v3/shortlistCreator/guest (non-v4, individual)', {
@@ -96,18 +96,21 @@ const BatchAssignUGCModal = ({ open, onClose, creators = [], campaignId, onAssig
               guestCreators: [guestData],
               ugcCredits: guestCredits,
             });
-            const res = await axiosInstance.post('/api/campaign/v3/shortlistCreator/guest', {
+            return axiosInstance.post('/api/campaign/v3/shortlistCreator/guest', {
               campaignId,
               guestCreators: [guestData],
               ugcCredits: guestCredits,
             });
-            const created = Array.isArray(res?.data?.createdCreators) ? res.data.createdCreators : [];
-            // eslint-disable-next-line no-console
-            console.log('[BatchAssignUGCModal] created guest id:', created);
-            created.forEach((c) => c?.id && createdIds.push(c.id));
-          }
+          });
+          const results = await Promise.all(guestCreatePromises);
+          const created = results.flatMap((res) => (Array.isArray(res?.data?.createdCreators) ? res.data.createdCreators : []));
+          // eslint-disable-next-line no-console
+          console.log('[BatchAssignUGCModal] created guest ids:', created);
+          created.forEach((c) => c?.id && createdIds.push(c.id));
         } else {
           // V4 campaigns: batch guests (max 3 per request), no credits passed
+          // Build batches and fire requests concurrently
+          const batchRequests = [];
           for (let start = 0; start < guestPayloads.length; start += 3) {
             const batch = guestPayloads.slice(start, start + 3).map(({ credits: _, ...rest }) => rest);
             // eslint-disable-next-line no-console
@@ -115,22 +118,24 @@ const BatchAssignUGCModal = ({ open, onClose, creators = [], campaignId, onAssig
               campaignId,
               guestCreators: batch,
             });
-            const res = await axiosInstance.post('/api/campaign/v3/shortlistCreator/guest', {
+            batchRequests.push(axiosInstance.post('/api/campaign/v3/shortlistCreator/guest', {
               campaignId,
               guestCreators: batch,
-            });
-            const created = Array.isArray(res?.data?.createdCreators) ? res.data.createdCreators : [];
-            // eslint-disable-next-line no-console
-            console.log('[BatchAssignUGCModal] created guest ids:', created);
-            created.forEach((c) => c?.id && createdIds.push(c.id));
+            }));
           }
+          const results = await Promise.all(batchRequests);
+          const created = results.flatMap((res) => (Array.isArray(res?.data?.createdCreators) ? res.data.createdCreators : []));
+          // eslint-disable-next-line no-console
+          console.log('[BatchAssignUGCModal] created guest ids:', created);
+          created.forEach((c) => c?.id && createdIds.push(c.id));
         }
 
         // Merge created ids back in the order of guestIndices
         let idx = 0;
         const merged = values.map((p, i) => {
           if (guestIndices.includes(i)) {
-            const newId = createdIds[idx++];
+            const newId = createdIds[idx];
+            idx += 1;
             return newId ? { ...p, id: newId } : p;
           }
           return p;
@@ -143,8 +148,8 @@ const BatchAssignUGCModal = ({ open, onClose, creators = [], campaignId, onAssig
       const withIds = (workingValues || []).filter((v) => !!v.id && platformIds.includes(v.id));
       if (withIds.length) {
         if (!isV4Campaign) {
-          // For non-v4 campaigns, send each platform creator individually with their specific credits
-          for (const platformCreator of withIds) {
+          // For non-v4 campaigns, send each platform creator individually with their specific credits concurrently
+          const platformRequests = withIds.map((platformCreator) => {
             const creatorCredits = parseInt(platformCreator.credits || 0, 10);
             // eslint-disable-next-line no-console
             console.log('[BatchAssignUGCModal] POST /api/campaign/v3/shortlistCreator (non-v4, individual)', {
@@ -153,13 +158,14 @@ const BatchAssignUGCModal = ({ open, onClose, creators = [], campaignId, onAssig
               adminComments,
               ugcCredits: creatorCredits,
             });
-            await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
+            return axiosInstance.post('/api/campaign/v3/shortlistCreator', {
               campaignId,
               creators: [{ id: platformCreator.id }],
               adminComments: (adminComments || '').trim() || undefined,
               ugcCredits: creatorCredits,
             });
-          }
+          });
+          await Promise.all(platformRequests);
         } else {
           // For v4 campaigns, batch all platform creators (no credits passed at this stage)
           // eslint-disable-next-line no-console

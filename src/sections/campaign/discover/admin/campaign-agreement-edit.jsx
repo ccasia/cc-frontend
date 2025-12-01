@@ -110,14 +110,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
     }
   }, [setValue, isDefault, agreement]);
 
-  const handleSendAgreement = async () => {
-    try {
-      await axiosInstance.patch(endpoints.campaign.sendAgreement, agreement);
-      mutate(endpoints.campaign.creatorAgreement(agreement.campaignId));
-    } catch (error) {
-      enqueueSnackbar('Error', { variant: 'error' });
-    }
-  };
+  // Removed unused handler: inline send flow is handled in onSubmit
 
   const extractAgremmentsInfo = useMemo(() => {
     if (campaign?.agreementTemplate) return campaign.agreementTemplate;
@@ -137,12 +130,8 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
     
     const sentAgreementUserIds = new Set(
       agreements
-        .filter(
-          (agreement) =>
-            agreement.isSent &&
-            agreement.user?.creator?.isGuest !== true
-        )
-        .map((agreement) => agreement.userId)
+        .filter((a) => a.isSent && a.user?.creator?.isGuest !== true)
+        .map((a) => a.userId)
     );
     
     return campaign.shortlisted.reduce((acc, creator) => {

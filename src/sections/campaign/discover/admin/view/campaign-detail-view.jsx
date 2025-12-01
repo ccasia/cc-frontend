@@ -566,21 +566,7 @@ const CampaignDetailView = ({ id }) => {
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
-    pitch:
-      campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4' ? (
-        <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} />
-      ) : (
-        <CampaignDetailPitch
-          pitches={campaign?.pitch}
-          timeline={campaign?.campaignTimeline?.find((elem) => elem.name === 'Open For Pitch')}
-          timelines={campaign?.campaignTimeline?.filter(
-            (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
-          )}
-          shortlisted={campaign?.shortlisted}
-          campaignMutate={campaignMutate}
-          campaign={campaign}
-        />
-      ),
+    pitch: <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} />,
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
     deliverables: isClient ? (
       <CampaignCreatorDeliverablesClient campaign={campaign} campaignMutate={campaignMutate} />

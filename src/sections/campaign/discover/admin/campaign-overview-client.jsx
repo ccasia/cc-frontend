@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   Box,
@@ -68,16 +68,15 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
     if (client && client?.subscriptions?.length) {
       let packageItem = findLatestPackage(client?.subscriptions);
       if (!packageItem) return null;
+      const computedTotalCredits = Number(
+        packageItem.totalCredits ?? packageItem.package?.credits ?? packageItem.customPackage?.customCredits ?? 0
+      );
+      const computedCreditsUsed = Number(packageItem.creditsUsed ?? 0);
+
       packageItem = {
         ...packageItem,
-        totalCredits:
-          packageItem.totalCredits ||
-          packageItem.package?.credits ||
-          packageItem.customPackage?.customCredits,
-        availableCredits:
-          (packageItem.totalCredits ||
-            packageItem.package?.credits ||
-            packageItem.customPackage?.customCredits) - packageItem.creditsUsed,
+        totalCredits: computedTotalCredits,
+        availableCredits: computedTotalCredits - computedCreditsUsed,
       };
       return packageItem;
     }

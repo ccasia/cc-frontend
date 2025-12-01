@@ -21,11 +21,12 @@ import {
   DialogContent,
 } from '@mui/material';
 
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Label from 'src/components/label';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { useShortlistedCreators } from '../hooks/shortlisted-creator';
 

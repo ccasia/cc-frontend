@@ -743,41 +743,60 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               },
             }}
           />
-          {!smUp ? (
-            <IconButton
-              sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
-              onClick={modal.onTrue}
-            >
-              <Iconify icon="fluent:people-add-28-filled" width={18} />
-            </IconButton>
-          ) : campaign?.submissionVersion !== 'v4' ? (
-            <Button
-              onClick={modal.onTrue}
-              disabled={
-                isDisabled ||
-                (campaign?.submissionVersion === 'v4'
-                  ? v4UsedCredits !== null && campaign?.campaignCredits && v4UsedCredits >= campaign.campaignCredits
-                  : totalUsedCredits >= (campaign?.campaignCredits || 0))
+          {(() => {
+            // Compute the disabled state for the shortlist button
+            const buttonDisabled = (() => {
+              if (isDisabled) return true;
+              if (campaign?.submissionVersion === 'v4') {
+                return (
+                  v4UsedCredits !== null &&
+                  campaign?.campaignCredits &&
+                  v4UsedCredits >= campaign.campaignCredits
+                );
               }
-              sx={{
-                bgcolor: '#ffffff',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                height: 44,
-                color: '#203ff5',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                px: 3,
-                '&:hover': {
-                  bgcolor: alpha('#636366', 0.08),
-                  opacity: 0.9,
-                },
-              }}
-              startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
-            >
-              Shortlist New Creators
-            </Button>
-          ) : null}
+              return totalUsedCredits >= (campaign?.campaignCredits || 0);
+            })();
+
+            // For small screens, show the icon button; otherwise show the regular Button when not a v4 campaign
+            if (!smUp) {
+              return (
+                <IconButton
+                  sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
+                  onClick={modal.onTrue}
+                >
+                  <Iconify icon="fluent:people-add-28-filled" width={18} />
+                </IconButton>
+              );
+            }
+
+            if (campaign?.submissionVersion !== 'v4') {
+              return (
+                <Button
+                  onClick={modal.onTrue}
+                  disabled={buttonDisabled}
+                  sx={{
+                    bgcolor: '#ffffff',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    height: 44,
+                    color: '#203ff5',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    px: 3,
+                    '&:hover': {
+                      bgcolor: alpha('#636366', 0.08),
+                      opacity: 0.9,
+                    },
+                  }}
+                  startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
+                >
+                  Shortlist New Creators
+                </Button>
+              );
+            }
+
+            return null;
+          })()}
         </Stack>
 
         {campaign?.shortlisted?.length > 0 ? (
