@@ -993,9 +993,6 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
     }, 0);
   }, [campaign, agreements]);
 
-  // Keep v4UsedCredits for backwards compatibility
-  const v4UsedCredits = usedCredits;
-
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
     // Use unified calculation - credits utilized when agreement is sent
