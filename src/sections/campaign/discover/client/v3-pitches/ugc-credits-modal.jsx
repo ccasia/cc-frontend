@@ -51,16 +51,16 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments, 
       enqueueSnackbar('No credits left. Cannot assign UGC credits.', { variant: 'warning' });
       return;
     }
-    if (campaign?.submissionVersion !== 'v4' && (!ugcCredits || isNaN(ugcCredits) || parseInt(ugcCredits) <= 0)) {
+    if (campaign?.submissionVersion !== 'v4' && (!ugcCredits || Number.isNaN(Number(ugcCredits)) || parseInt(ugcCredits, 10) <= 0)) {
       enqueueSnackbar('Please enter a valid number of UGC credits', { variant: 'error' });
       return;
     }
     
-    if (campaign?.submissionVersion === 'v4' && ugcCredits && (isNaN(ugcCredits) || parseInt(ugcCredits) <= 0)) {
+    if (campaign?.submissionVersion === 'v4' && ugcCredits && (Number.isNaN(Number(ugcCredits)) || parseInt(ugcCredits, 10) <= 0)) {
       enqueueSnackbar('Please enter a valid number of UGC credits or leave empty', { variant: 'error' });
       return;
     }
-    if (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits) > ugcLeft) {
+    if (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits, 10) > ugcLeft) {
       enqueueSnackbar(`You only have ${ugcLeft} credits left. Reduce the assigned credits.`, { variant: 'error' });
       return;
     }
@@ -73,8 +73,8 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments, 
         campaignVersion: campaign?.submissionVersion,
       };
 
-      if (ugcCredits && !isNaN(ugcCredits) && parseInt(ugcCredits) > 0) {
-        payload.ugcCredits = parseInt(ugcCredits);
+      if (ugcCredits && !Number.isNaN(Number(ugcCredits)) && parseInt(ugcCredits, 10) > 0) {
+        payload.ugcCredits = parseInt(ugcCredits, 10);
       } else if (campaign?.submissionVersion === 'v4') {
         payload.ugcCredits = 1;
       }
@@ -263,9 +263,9 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments, 
               isSubmitting ||
               // For non-v4 campaigns, check credit limits
               (campaign?.submissionVersion !== 'v4' && ugcLeft <= 0) ||
-              (ugcCredits && (isNaN(ugcCredits) || parseInt(ugcCredits) <= 0)) ||
+              (ugcCredits && (Number.isNaN(Number(ugcCredits)) || parseInt(ugcCredits, 10) <= 0)) ||
               (campaign?.submissionVersion !== 'v4' && !ugcCredits) ||
-              (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits) > ugcLeft)
+              (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits, 10) > ugcLeft)
             }
             fullWidth
             sx={{
@@ -309,6 +309,7 @@ UGCCreditsModal.propTypes = {
   pitch: PropTypes.object,
   campaign: PropTypes.object,
   onSuccess: PropTypes.func,
+  comments: PropTypes.string,
   agreements: PropTypes.array,
 };
 
