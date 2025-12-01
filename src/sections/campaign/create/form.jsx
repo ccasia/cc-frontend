@@ -313,9 +313,9 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       case 5:
         return logisticsSchema;
       case 6:
-        return Yup.object().shape({}); // No validation for reservation slots
+        return Yup.object().shape({}); 
       case 7:
-        return Yup.object().shape({}); // No validation for logistic remarks
+        return Yup.object().shape({}); 
       case 8:
         return timelineSchema;
       case 9:
@@ -460,17 +460,14 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     const logisticsType = getValues('logisticsType');
     let prevStep = activeStep - 1;
     
-    // If going back from Campaign Timeline (step 8) to Logistics (step 5) when logisticsType is not 'reservation'
     if (activeStep === 8 && logisticsType !== 'reservation') {
-      prevStep = 5; // Skip back to Logistics page
+      prevStep = 5; 
     }
-    // If going back from Logistic Remarks (step 7) when logisticsType is not 'reservation'
     else if (activeStep === 7 && logisticsType !== 'reservation') {
-      prevStep = 5; // Skip back to Logistics page
+      prevStep = 5; 
     }
-    // If going back from Reservation Slots (step 6) when logisticsType is not 'reservation'
     else if (activeStep === 6 && logisticsType !== 'reservation') {
-      prevStep = 5; // Skip back to Logistics page
+      prevStep = 5; 
     }
     
     localStorage.setItem('activeStep', prevStep);
