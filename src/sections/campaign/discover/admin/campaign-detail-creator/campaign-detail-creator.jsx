@@ -107,9 +107,10 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     0
   );
 
-
-  const v4UsedCredits = useMemo(() => {
-    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+  // Credits are only utilized when agreement is sent (isSent = true)
+  // This applies to ALL campaign types (both v4 and non-v4)
+  const usedCredits = useMemo(() => {
+    if (!campaign?.campaignCredits) return 0;
     if (!agreements || !campaign?.shortlisted) return 0;
     
     const sentAgreementUserIds = new Set(
@@ -125,8 +126,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     return campaign.shortlisted.reduce((acc, creator) => {
       if (
         sentAgreementUserIds.has(creator.userId) &&
-        creator.user?.creator?.isGuest !== true &&
-        creator.ugcVideos
+        creator.user?.creator?.isGuest !== true
       ) {
         return acc + (creator.ugcVideos || 0);
       }
@@ -134,22 +134,22 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     }, 0);
   }, [campaign, agreements]);
 
+  // Keep v4UsedCredits for backwards compatibility
+  const v4UsedCredits = usedCredits;
+
   const ugcLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
-    if (campaign?.submissionVersion === 'v4') {
-      const remaining = campaign.campaignCredits - (v4UsedCredits ?? 0);
-      console.log('[V4 Credit Calculation]', {
-        totalCredits: campaign.campaignCredits,
-        usedCredits: v4UsedCredits,
-        remaining,
-        shortlistedCount: campaign.shortlisted?.length,
-        agreementsCount: agreements?.length,
-      });
-      return remaining;
-    }
-    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
-    return campaign.campaignCredits - totalUGCs;
-  }, [campaign, v4UsedCredits, agreements]);
+    // Use unified calculation - credits utilized when agreement is sent
+    const remaining = campaign.campaignCredits - usedCredits;
+    console.log('[Credit Calculation]', {
+      totalCredits: campaign.campaignCredits,
+      usedCredits,
+      remaining,
+      shortlistedCount: campaign.shortlisted?.length,
+      agreementsCount: agreements?.length,
+    });
+    return remaining;
+  }, [campaign, usedCredits, agreements]);
 
   const methods = useForm({
     defaultValues: {
@@ -271,8 +271,26 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     // For V2 campaigns (admin-created), use existing logic
     const agreement = agreements.find((a) => a.userId === creator.userId);
 
-    if (!loadingAgreements && (!agreement || agreement.isSent)) {
-      enqueueSnackbar('No editable agreement found for this creator', { variant: 'info' });
+    // If no agreement exists but creator is shortlisted, create a new one
+    if (!loadingAgreements && !agreement) {
+      // Creator is shortlisted but no agreement exists - allow creating new agreement
+      const newAgreement = {
+        userId: creator.userId,
+        campaignId: campaign.id,
+        user: creator.user,
+        shortlistedCreator: {
+          amount: null,
+          currency: 'MYR',
+        },
+        isNew: true,
+      };
+      setSelectedAgreement(newAgreement);
+      editDialog.onTrue();
+      return;
+    }
+
+    if (!loadingAgreements && agreement?.isSent) {
+      enqueueSnackbar('Agreement has already been sent', { variant: 'info' });
       return;
     }
 
@@ -725,41 +743,60 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               },
             }}
           />
-          {!smUp ? (
-            <IconButton
-              sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
-              onClick={modal.onTrue}
-            >
-              <Iconify icon="fluent:people-add-28-filled" width={18} />
-            </IconButton>
-          ) : campaign?.submissionVersion !== 'v4' ? (
-            <Button
-              onClick={modal.onTrue}
-              disabled={
-                isDisabled ||
-                (campaign?.submissionVersion === 'v4'
-                  ? v4UsedCredits !== null && campaign?.campaignCredits && v4UsedCredits >= campaign.campaignCredits
-                  : totalUsedCredits >= (campaign?.campaignCredits || 0))
+          {(() => {
+            // Compute the disabled state for the shortlist button
+            const buttonDisabled = (() => {
+              if (isDisabled) return true;
+              if (campaign?.submissionVersion === 'v4') {
+                return (
+                  v4UsedCredits !== null &&
+                  campaign?.campaignCredits &&
+                  v4UsedCredits >= campaign.campaignCredits
+                );
               }
-              sx={{
-                bgcolor: '#ffffff',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                height: 44,
-                color: '#203ff5',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                px: 3,
-                '&:hover': {
-                  bgcolor: alpha('#636366', 0.08),
-                  opacity: 0.9,
-                },
-              }}
-              startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
-            >
-              Shortlist New Creators
-            </Button>
-          ) : null}
+              return totalUsedCredits >= (campaign?.campaignCredits || 0);
+            })();
+
+            // For small screens, show the icon button; otherwise show the regular Button when not a v4 campaign
+            if (!smUp) {
+              return (
+                <IconButton
+                  sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
+                  onClick={modal.onTrue}
+                >
+                  <Iconify icon="fluent:people-add-28-filled" width={18} />
+                </IconButton>
+              );
+            }
+
+            if (campaign?.submissionVersion !== 'v4') {
+              return (
+                <Button
+                  onClick={modal.onTrue}
+                  disabled={buttonDisabled}
+                  sx={{
+                    bgcolor: '#ffffff',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    height: 44,
+                    color: '#203ff5',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    px: 3,
+                    '&:hover': {
+                      bgcolor: alpha('#636366', 0.08),
+                      opacity: 0.9,
+                    },
+                  }}
+                  startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
+                >
+                  Shortlist New Creators
+                </Button>
+              );
+            }
+
+            return null;
+          })()}
         </Stack>
 
         {campaign?.shortlisted?.length > 0 ? (

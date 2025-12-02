@@ -110,14 +110,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
     }
   }, [setValue, isDefault, agreement]);
 
-  const handleSendAgreement = async () => {
-    try {
-      await axiosInstance.patch(endpoints.campaign.sendAgreement, agreement);
-      mutate(endpoints.campaign.creatorAgreement(agreement.campaignId));
-    } catch (error) {
-      enqueueSnackbar('Error', { variant: 'error' });
-    }
-  };
+  // Removed unused handler: inline send flow is handled in onSubmit
 
   const extractAgremmentsInfo = useMemo(() => {
     if (campaign?.agreementTemplate) return campaign.agreementTemplate;
@@ -130,17 +123,15 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
 
 
   const v4UsedCredits = React.useMemo(() => {
-    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+    // Unified credit calculation for all campaign types
+    // Credits are only counted as utilized when agreements are sent
+    if (!campaign?.campaignCredits) return null;
     if (!agreements || !campaign?.shortlisted) return 0;
     
     const sentAgreementUserIds = new Set(
       agreements
-        .filter(
-          (agreement) =>
-            agreement.isSent &&
-            agreement.user?.creator?.isGuest !== true
-        )
-        .map((agreement) => agreement.userId)
+        .filter((a) => a.isSent && a.user?.creator?.isGuest !== true)
+        .map((a) => a.userId)
     );
     
     return campaign.shortlisted.reduce((acc, creator) => {
@@ -160,8 +151,8 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
     console.log(agreement);
 
     try {
-      // For v4 campaigns, check if credits are fully utilized before attempting to assign
-      if (campaign?.submissionVersion === 'v4' && campaign?.campaignCredits) {
+      // Check if credits are fully utilized before sending agreement
+      if (campaign?.campaignCredits) {
         // Check if credits are already fully utilized
         if (v4UsedCredits !== null && v4UsedCredits >= campaign.campaignCredits) {
           loading.onFalse();
@@ -172,34 +163,37 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
           return;
         }
 
-        try {
-          const creditAssignment = await axiosInstance.post('/api/campaign/v4/assignCreditOnAgreementSend', {
-            userId: agreement?.user?.id,
-            campaignId: agreement?.campaignId,
-          });
+        // For v4 campaigns, also need to assign credit on agreement send
+        if (campaign?.submissionVersion === 'v4') {
+          try {
+            const creditAssignment = await axiosInstance.post('/api/campaign/v4/assignCreditOnAgreementSend', {
+              userId: agreement?.user?.id,
+              campaignId: agreement?.campaignId,
+            });
 
-          if (creditAssignment?.status !== 200 || creditAssignment?.data?.error) {
+            if (creditAssignment?.status !== 200 || creditAssignment?.data?.error) {
+              loading.onFalse();
+              enqueueSnackbar(
+                creditAssignment?.data?.message || 'Insufficient Credits: All campaign credits have been utilized.',
+                { variant: 'error' }
+              );
+              return; 
+            }
+          } catch (error) {
             loading.onFalse();
-            enqueueSnackbar(
-              creditAssignment?.data?.message || 'Insufficient Credits: All campaign credits have been utilized.',
-              { variant: 'error' }
-            );
-            return; 
+            if (error?.response?.status === 400) {
+              enqueueSnackbar(
+                error?.response?.data?.message || 'Insufficient Credits: Not enough credits available to send this agreement.',
+                { variant: 'error' }
+              );
+            } else {
+              enqueueSnackbar(
+                error?.response?.data?.message || error?.message || 'Cannot send agreement - credits validation failed',
+                { variant: 'error' }
+              );
+            }
+            return;
           }
-        } catch (error) {
-          loading.onFalse();
-          if (error?.response?.status === 400) {
-            enqueueSnackbar(
-              error?.response?.data?.message || 'Insufficient Credits: Not enough credits available to send this agreement.',
-              { variant: 'error' }
-            );
-          } else {
-            enqueueSnackbar(
-              error?.response?.data?.message || error?.message || 'Cannot send agreement - credits validation failed',
-              { variant: 'error' }
-            );
-          }
-          return;
         }
       }
       console.log('Generating PDF with values:', {

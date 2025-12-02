@@ -210,7 +210,6 @@ export const endpoints = {
       detail: (id) => `/api/campaign/pitch/${id}`,
       changeStatus: '/api/campaign/changePitchStatus',
       getCampaign: `/api/campaign/getCampaignPitch`,
-      // V3 endpoints for v4 campaigns
       v3: {
         approve: (pitchId) => `/api/pitch/v3/${pitchId}/approve`,
         reject: (pitchId) => `/api/pitch/v3/${pitchId}/reject`,
@@ -220,6 +219,7 @@ export const endpoints = {
         agreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
         setAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/agreement`,
         submitAgreement: (pitchId) => `/api/pitch/v3/${pitchId}/submit-agreement`,
+        withdraw: (pitchId) => `/api/pitch/v3/${pitchId}/withdraw`,
       },
     },
     draft: {
