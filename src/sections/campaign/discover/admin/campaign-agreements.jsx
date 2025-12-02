@@ -401,6 +401,7 @@ const CampaignAgreements = ({ campaign }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
+  const [sortColumn, setSortColumn] = useState('name'); // 'name', 'date', 'status'
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
   const dialog = useBoolean();
@@ -415,9 +416,58 @@ const CampaignAgreements = ({ campaign }) => {
 
   const smUp = useResponsive('up', 'sm');
 
-  // Toggle sort direction
+  // Handle column sort click
+  const handleColumnSort = (column) => {
+    if (sortColumn === column) {
+      // Same column - toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column - set to asc
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Toggle sort direction (for alphabetical button - legacy)
   const handleToggleSort = () => {
+    setSortColumn('name');
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Sortable header component
+  const SortableHeader = ({ column, label, width, minWidth }) => {
+    const isActive = sortColumn === column;
+    return (
+      <TableCell
+        onClick={() => handleColumnSort(column)}
+        sx={{
+          py: 1,
+          color: '#221f20',
+          fontWeight: 600,
+          width,
+          minWidth,
+          bgcolor: '#f5f5f5',
+          whiteSpace: 'nowrap',
+          cursor: 'pointer',
+          userSelect: 'none',
+          '&:hover': {
+            bgcolor: '#ebebeb',
+          },
+        }}
+      >
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <span>{label}</span>
+          <Iconify
+            icon={isActive && sortDirection === 'desc' ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+            width={16}
+            sx={{
+              color: isActive ? '#203ff5' : '#8E8E93',
+              transition: 'color 0.2s',
+            }}
+          />
+        </Stack>
+      </TableCell>
+    );
   };
 
   const methods = useForm({
@@ -481,14 +531,40 @@ const CampaignAgreements = ({ campaign }) => {
       result = combinedData;
     }
 
-    // Sort by creator name
+    // Sort by selected column
     return [...result].sort((a, b) => {
-      const nameA = (a.user?.name || '').toLowerCase();
-      const nameB = (b.user?.name || '').toLowerCase();
-
-      return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      let comparison = 0;
+      
+      switch (sortColumn) {
+        case 'date': {
+          // Sort by issue date (createdAt or updatedAt)
+          const dateA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+          const dateB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          comparison = dateA - dateB;
+          break;
+        }
+        case 'status': {
+          // Get status priority for sorting
+          const getStatusPriority = (item) => {
+            if (item?.submission?.status === 'PENDING_REVIEW') return 1; // Pending Review first
+            if (item?.isSent) return 2; // Sent
+            return 3; // Not sent
+          };
+          comparison = getStatusPriority(a) - getStatusPriority(b);
+          break;
+        }
+        case 'name':
+        default: {
+          const nameA = (a.user?.name || '').toLowerCase();
+          const nameB = (b.user?.name || '').toLowerCase();
+          comparison = nameA.localeCompare(nameB);
+          break;
+        }
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [combinedData, selectedFilter, sortDirection]);
+  }, [combinedData, selectedFilter, sortColumn, sortDirection]);
 
   const handleViewAgreement = (url, item) => {
     setSelectedUrl(url);
@@ -598,10 +674,9 @@ const CampaignAgreements = ({ campaign }) => {
       <Stack direction="column" spacing={2}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
-          spacing={2}
+          spacing={1}
           justifyContent="flex-start"
           alignItems={{ xs: 'flex-start', md: 'center' }}
-          sx={{ mb: 1 }}
         >
           {/* Alphabetical Sort Button */}
           <Button
@@ -809,32 +884,18 @@ const CampaignAgreements = ({ campaign }) => {
                     Creator&apos;s Email
                   </TableCell>
                 )}
-                <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: { xs: '25%', sm: 120 },
-                    minWidth: { xs: 110, sm: 120 },
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Issue Date
-                </TableCell>
-                <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: { xs: '15%', sm: 75 },
-                    minWidth: { xs: 90, sm: 75 },
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Status
-                </TableCell>
+                <SortableHeader 
+                  column="date" 
+                  label="Issue Date" 
+                  width={{ xs: '25%', sm: 120 }} 
+                  minWidth={{ xs: 110, sm: 120 }} 
+                />
+                <SortableHeader 
+                  column="status" 
+                  label="Status" 
+                  width={{ xs: '15%', sm: 75 }} 
+                  minWidth={{ xs: 90, sm: 75 }} 
+                />
                 <TableCell
                   sx={{
                     py: 1,
@@ -873,7 +934,7 @@ const CampaignAgreements = ({ campaign }) => {
 
                 const isPendingReview = item?.submission?.status === 'PENDING_REVIEW';
 
-                console.log('This is the item: ', !item?.submission)
+                console.log('This is the item: ', !item?.submission);
 
                 return (
                   <TableRow key={item.id}>
