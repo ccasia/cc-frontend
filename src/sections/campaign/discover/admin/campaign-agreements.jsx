@@ -13,6 +13,7 @@ import {
   Button,
   Dialog,
   Avatar,
+  Tooltip,
   TableRow,
   TableCell,
   TableHead,
@@ -871,6 +872,8 @@ const CampaignAgreements = ({ campaign }) => {
 
                 const isPendingReview = item?.submission?.status === 'PENDING_REVIEW';
 
+                console.log('This is the item: ', !item?.submission)
+
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
@@ -1046,42 +1049,54 @@ const CampaignAgreements = ({ campaign }) => {
 
                           {!item.isSent ? (
                             // For pending (not sent) agreements, show Send Agreement button
-                            <Button
-                              onClick={() => handleEditAgreement(item)}
-                              disabled={isDisabled}
-                              size="small"
-                              variant="contained"
-                              startIcon={
-                                <Iconify
-                                  icon="bx:send"
-                                  sx={{
-                                    color: '#fff',
-                                  }}
-                                />
+                            <Tooltip
+                              title={
+                                !item?.submission
+                                  ? 'Creator must be approved before sending agreement'
+                                  : ''
                               }
-                              sx={{
-                                px: 2,
-                                py: 2,
-                                bgcolor: '#1340FF',
-                                color: '#ffffff',
-                                border: '1.5px solid #1340FF',
-                                borderBottom: '3px solid',
-                                borderBottomColor: '#00000073',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                textTransform: 'none',
-                                whiteSpace: 'nowrap',
-                                '&:hover': {
-                                  bgcolor: '#0a2dd9',
-                                },
-                                '&.Mui-disabled': {
-                                  bgcolor: 'rgba(19, 64, 255, 0.5)',
-                                  color: '#ffffff',
-                                },
-                              }}
+                              arrow
                             >
-                              Send Agreement
-                            </Button>
+                              <span>
+                                <Button
+                                  onClick={() => handleEditAgreement(item)}
+                                  disabled={isDisabled || !item?.submission}
+                                  size="small"
+                                  variant="contained"
+                                  startIcon={
+                                    <Iconify
+                                      icon="bx:send"
+                                      sx={{
+                                        color: '#fff',
+                                      }}
+                                    />
+                                  }
+                                  sx={{
+                                    px: 2,
+                                    py: 2,
+                                    bgcolor: '#1340FF',
+                                    color: '#ffffff',
+                                    border: '1.5px solid #1340FF',
+                                    borderBottom: '3px solid',
+                                    borderBottomColor: '#00000073',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                    whiteSpace: 'nowrap',
+                                    '&:hover': {
+                                      bgcolor: '#0a2dd9',
+                                    },
+                                    '&.Mui-disabled': {
+                                      bgcolor: 'rgba(19, 64, 255, 0.5)',
+                                      border: '1px solid rgba(19, 64, 255, 0.5)',
+                                      color: '#ffffff',
+                                    },
+                                  }}
+                                >
+                                  Send Agreement
+                                </Button>
+                              </span>
+                            </Tooltip>
                           ) : (
                             // For sent agreements, show Edit Amount and action buttons
                             <>
