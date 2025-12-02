@@ -366,3 +366,29 @@ export const getCaptionStyles = (contentLength, isMobile) => {
     overflow: 'hidden',
   };
 };
+
+/**
+ * Checks if a user should see the media kit popup
+ * @param {Object} user - The user object from auth context
+ * @param {Array} targetUserIds - Array of user IDs that should see the popup
+ * @returns {boolean} - Whether the user should see the popup
+ */
+export const shouldShowMediaKitPopup = (user, targetUserIds = []) => {
+  if (!user || user.role !== 'creator') {
+    return false;
+  }
+
+  if (targetUserIds.length > 0 && !targetUserIds.includes(user.id)) {
+    return false;
+  }
+
+  const isDismissed = localStorage.getItem(`mediaKitPopupDismissed_${user.id}`) === 'true';
+  if (isDismissed) {
+    return false;
+  }
+
+  const hasMediaKit = user.creator && 
+    (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+
+  return !hasMediaKit;
+};
