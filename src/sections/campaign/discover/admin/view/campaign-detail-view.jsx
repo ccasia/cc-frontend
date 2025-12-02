@@ -345,7 +345,7 @@ const CampaignDetailView = ({ id }) => {
                 { label: 'Campaign Details', value: 'campaign-content' },
                 // { label: 'Client Info', value: 'client' },
                 {
-                  label: `Creator Master List (${campaign?.pitch.length})`,
+                  label: `Creator Master List (${campaign?.pitch?.length || 0})`,
                   value: 'pitch',
                 },
                 {
@@ -358,7 +358,7 @@ const CampaignDetailView = ({ id }) => {
                       (sum, a) => sum + (a.isSent === false ? 1 : 0),
                       0
                     );
-                    return `Agreements (${pendingAgreementApproval + pendingSendAgreement})`;
+                    return `Agreements (${(pendingAgreementApproval + pendingSendAgreement) || 0})`;
                   })(),
                   value: 'agreement',
                 },
