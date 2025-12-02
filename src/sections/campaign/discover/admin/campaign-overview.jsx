@@ -260,7 +260,21 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
 
   useEffect(() => {
     let val = currentCredit || 0;
-    const utilizedCredits = campaign?.creditsUtilized;
+    
+    // Calculate utilized credits based on sent agreements
+    const sentAgreementUserIds = new Set(
+      (campaign?.creatorAgreement || [])
+        .filter(a => a.isSent)
+        .map(a => a.userId)
+    );
+    
+    const utilizedCredits = (campaign?.shortlisted || []).reduce((total, creator) => {
+      if (sentAgreementUserIds.has(creator.userId) && 
+          creator.user?.creator?.isGuest !== true) {
+        return total + (creator.ugcVideos || 0);
+      }
+      return total;
+    }, 0);
 
     // Remove leading zeros (e.g., "012" -> "12")
     if (val.length > 1 && val.startsWith('0')) {
@@ -539,38 +553,26 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                             Credits Utilized
                           </Typography>
                           <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
-                            {campaign?.submissionVersion === 'v4' ? (() => {
+                            {(() => {
+                                // Credits are only utilized when agreement is sent
+                                // Find all creators with sent agreements and sum their ugcVideos
+                                const sentAgreementUserIds = new Set(
+                                  (campaign?.creatorAgreement || [])
+                                    .filter(a => a.isSent)
+                                    .map(a => a.userId)
+                                );
                                 
-                                const approvedAgreements = (campaign?.submission || []).filter(sub => {
-                                  const isAgreementForm = sub.content && typeof sub.content === 'string' && 
-                                    sub.content.toLowerCase().includes('agreement');
-                                  const isApproved = sub.status === 'APPROVED';
-                                  return isAgreementForm && isApproved;
-                                });
-                                
-                                if (approvedAgreements.length === 0) {
-                                  return '0 UGC Credits';
-                                }
-
-                                const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
-                                  let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
-                                  
-                                  if (!creator && typeof agreement.userId === 'string') {
-                                    creator = campaign?.shortlisted?.find(c => 
-                                      typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
-                                    );
-                                  }
-                                  
-                                  if (creator) {
+                                const utilizedCredits = (campaign?.shortlisted || []).reduce((total, creator) => {
+                                  // Only count if agreement was sent and not a guest creator
+                                  if (sentAgreementUserIds.has(creator.userId) && 
+                                      creator.user?.creator?.isGuest !== true) {
                                     return total + (creator.ugcVideos || 0);
                                   }
-                                  
                                   return total;
                                 }, 0);
                                 
                                 return `${utilizedCredits} UGC Credits`;
-                              })() : 
-                              `${campaign?.creditsUtilized || 0} UGC Credits`}
+                              })()}
                           </Typography>
                         </Stack>
                         <Divider />
@@ -583,22 +585,24 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                           <Typography
                             sx={{ mb: -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
                           >
-                            {campaign?.submissionVersion === 'v4' ? (() => {
-                               
-                                const approvedAgreements = (campaign?.submission || []).filter(sub => 
-                                  (sub.content && typeof sub.content === 'string' && 
-                                   sub.content.toLowerCase().includes('agreement')) &&
-                                  (sub.status === 'APPROVED')
+                            {(() => {
+                                // Credits pending = total campaign credits - utilized credits
+                                const sentAgreementUserIds = new Set(
+                                  (campaign?.creatorAgreement || [])
+                                    .filter(a => a.isSent)
+                                    .map(a => a.userId)
                                 );
                                 
-                                const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
-                                  const creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
-                                  return total + (creator?.ugcVideos || 0);
+                                const utilizedCredits = (campaign?.shortlisted || []).reduce((total, creator) => {
+                                  if (sentAgreementUserIds.has(creator.userId) && 
+                                      creator.user?.creator?.isGuest !== true) {
+                                    return total + (creator.ugcVideos || 0);
+                                  }
+                                  return total;
                                 }, 0);
                                 
                                 return `${Math.max(0, (campaign?.campaignCredits || 0) - utilizedCredits)} UGC Credits`;
-                              })() : 
-                              `${campaign?.creditsPending ?? 0} UGC Credits`}
+                              })()}
                           </Typography>
                         </Stack>
                       </Stack>

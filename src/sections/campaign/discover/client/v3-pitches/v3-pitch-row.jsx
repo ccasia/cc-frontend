@@ -11,6 +11,7 @@ import { formatNumber } from 'src/utils/media-kit-utils';
 import Iconify from 'src/components/iconify';
 
 import V3PitchActions from './v3-pitch-actions';
+import { fDate } from 'src/utils/format-time';
 
 const TYPE_LABELS = {
   video: 'Pitch (Video)',
@@ -28,10 +29,10 @@ const PitchTypeCell = React.memo(({ type, isGuestCreator }) => {
 
   return (
     <Stack>
-      <Typography variant="body2" noWrap>
+      <Typography fontSize={13.5} noWrap>
         {label}
       </Typography>
-      {subtitle && <Typography variant="body2" noWrap>{subtitle}</Typography>}
+      {subtitle && <Typography fontSize={13.5} noWrap>{subtitle}</Typography>}
     </Stack>
   );
 });
@@ -68,14 +69,10 @@ const getStatusText = (status, pitch, campaign) => {
   return statusTextMap[status] || status;
 };
 
-/**
- * PitchRow component renders a single pitch row in the table
- * Fetches social media data for the creator and displays it
- */
-const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch }) => {
+const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch, onRemoved }) => {
   const smUp = useResponsive('up', 'sm');
 
-  // Determine what to display for engagement rate and follower count
+
   const getDisplayData = () => {
     // P1: Use data from pitch object (for guest creators or manually entered data)
     const instagramStats = pitch?.user?.creator?.instagramUser || null;
@@ -138,46 +135,36 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
             {pitch.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
           <Stack spacing={0.5}>
-            <Typography variant="body2">{pitch.user?.name}</Typography>
+            <Typography variant="body2" fontSize={13.5}>{pitch.user?.name}</Typography>
           </Stack>
         </Stack>
       </TableCell>
-      {/* <TableCell>
-        {isLoading ? (
-          <CircularProgress size={16} thickness={6} />
-        ) : (
-          <Typography variant="body2">
-            {displayData.engagementRate || '-'}
-            {displayData.engagementRate && '%'}
-          </Typography>
-        )}
-      </TableCell> */}
-      <TableCell>
-        <Typography variant="body2">
+      <TableCell sx={{ px: 1 }}>
+        <Typography variant="body2" fontSize={13.5}>
           {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
         </Typography>
       </TableCell>
-      <TableCell>
-        <Stack spacing={0.5} alignItems="start">
-          <Typography variant="body2" whiteSpace="nowrap">
-            {dayjs(pitch.createdAt).format('LL')}
+      <TableCell sx={{ px: 1 }}>
+        <Stack alignItems="start">
+          <Typography fontSize={13.5} whiteSpace="nowrap">
+            {fDate(pitch.createdAt)}
           </Typography>
           <Typography
             variant="body2"
+            fontSize={13.5}
             sx={{
               color: '#8e8e93',
               display: 'block',
-              mt: '-2px',
             }}
           >
             {dayjs(pitch.createdAt).format('LT')}
           </Typography>
         </Stack>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ px: 1 }}>
         <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} />
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ px: 1 }}>
         <Box
           sx={{
             textTransform: 'uppercase',
@@ -187,7 +174,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
             gap: 0.5,
             py: 0.5,
             px: 1,
-            fontSize: '0.75rem',
+            fontSize: 12,
             border: '1px solid',
             borderBottom: '3px solid',
             borderRadius: 0.8,
@@ -212,7 +199,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
       </TableCell>
       <TableCell sx={{ padding: 0, paddingRight: 1 }}>
         {smUp ? (
-          <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} />
+          <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} campaignId={campaign?.id} onRemoved={onRemoved} />
         ) : (
           <IconButton onClick={() => onViewPitch(pitch)}>
             <Iconify icon="hugeicons:view" />
@@ -230,6 +217,7 @@ PitchRow.propTypes = {
   isGuestCreator: PropTypes.bool,
   campaign: PropTypes.object,
   onViewPitch: PropTypes.func.isRequired,
+  onRemoved: PropTypes.func,
 };
 
 export default PitchRow;

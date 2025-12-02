@@ -100,7 +100,7 @@ export default function FeedbackActions({
               flexDirection="row"
               width="100%"
               gap={{ xs: 0.8, sm: 1 }}
-              mb={{ xs: 0, sm: 1 }}
+              mb={isClient ? 1 : 0}
               justifyContent={{ xs: "space-between", sm: "flex-end" }}
             >
               <Button
@@ -301,7 +301,6 @@ export default function FeedbackActions({
                 p: 0,
                 minWidth: 'auto',
                 textTransform: 'none',
-                minHeight: { xs: 28, sm: 32 },
                 '&:hover': {
                   backgroundColor: 'transparent',
                 },
@@ -318,7 +317,6 @@ export default function FeedbackActions({
             style={{
               backgroundColor: '#fff',
               borderRadius: 10,
-              marginTop: 4,
             }}
             hiddenLabel
             size="small"
@@ -403,7 +401,7 @@ export default function FeedbackActions({
                       variant="caption"
                       fontWeight="bold"
                       color="#636366"
-                      sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                      sx={{ fontSize: { xs: 11, sm: 12 }, }}
                     >
                       Client Feedback
                     </Typography>
@@ -417,7 +415,6 @@ export default function FeedbackActions({
                         p: 0,
                         minWidth: 'auto',
                         textTransform: 'none',
-                        minHeight: { xs: 28, sm: 32 },
                         '&:hover': {
                           backgroundColor: 'transparent',
                         },
@@ -432,7 +429,6 @@ export default function FeedbackActions({
         })()}
 
         <TextField
-          style={{ marginTop: !isClient ? 1 : 8 }}
           multiline
           rows={3}
           fullWidth
@@ -440,6 +436,7 @@ export default function FeedbackActions({
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
           sx={{
+            mt: 1,
             '& .MuiOutlinedInput-root': {
               bgcolor: 'background.paper',
             },

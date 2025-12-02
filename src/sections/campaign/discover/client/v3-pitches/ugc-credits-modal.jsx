@@ -18,19 +18,30 @@ import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 
-const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }) => {
+const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments, agreements }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [ugcCredits, setUgCCredits] = useState('');
+  
+  // Credits are only utilized when agreement is sent
+  // ugcLeft = total credits - credits from sent agreements (platform creators only)
   const ugcLeft = (() => {
-    if (campaign?.submissionVersion === 'v4') {
-      if (!campaign?.campaignCredits) return 0;
-      const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
-      return Math.max(0, campaign.campaignCredits - used);
-    }
-    
     if (!campaign?.campaignCredits) return 0;
-    const used = (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0);
-    return Math.max(0, campaign.campaignCredits - used);
+    
+    const sentAgreementUserIds = new Set(
+      (agreements || campaign?.creatorAgreement || [])
+        .filter(a => a.isSent)
+        .map(a => a.userId)
+    );
+    
+    const utilizedCredits = (campaign?.shortlisted || []).reduce((total, creator) => {
+      if (sentAgreementUserIds.has(creator.userId) && 
+          creator.user?.creator?.isGuest !== true) {
+        return total + (creator.ugcVideos || 0);
+      }
+      return total;
+    }, 0);
+    
+    return Math.max(0, campaign.campaignCredits - utilizedCredits);
   })();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,16 +51,16 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
       enqueueSnackbar('No credits left. Cannot assign UGC credits.', { variant: 'warning' });
       return;
     }
-    if (campaign?.submissionVersion !== 'v4' && (!ugcCredits || isNaN(ugcCredits) || parseInt(ugcCredits) <= 0)) {
+    if (campaign?.submissionVersion !== 'v4' && (!ugcCredits || Number.isNaN(Number(ugcCredits)) || parseInt(ugcCredits, 10) <= 0)) {
       enqueueSnackbar('Please enter a valid number of UGC credits', { variant: 'error' });
       return;
     }
     
-    if (campaign?.submissionVersion === 'v4' && ugcCredits && (isNaN(ugcCredits) || parseInt(ugcCredits) <= 0)) {
+    if (campaign?.submissionVersion === 'v4' && ugcCredits && (Number.isNaN(Number(ugcCredits)) || parseInt(ugcCredits, 10) <= 0)) {
       enqueueSnackbar('Please enter a valid number of UGC credits or leave empty', { variant: 'error' });
       return;
     }
-    if (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits) > ugcLeft) {
+    if (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits, 10) > ugcLeft) {
       enqueueSnackbar(`You only have ${ugcLeft} credits left. Reduce the assigned credits.`, { variant: 'error' });
       return;
     }
@@ -62,8 +73,8 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
         campaignVersion: campaign?.submissionVersion,
       };
 
-      if (ugcCredits && !isNaN(ugcCredits) && parseInt(ugcCredits) > 0) {
-        payload.ugcCredits = parseInt(ugcCredits);
+      if (ugcCredits && !Number.isNaN(Number(ugcCredits)) && parseInt(ugcCredits, 10) > 0) {
+        payload.ugcCredits = parseInt(ugcCredits, 10);
       } else if (campaign?.submissionVersion === 'v4') {
         payload.ugcCredits = 1;
       }
@@ -252,9 +263,9 @@ const UGCCreditsModal = ({ open, onClose, pitch, campaign, onSuccess, comments }
               isSubmitting ||
               // For non-v4 campaigns, check credit limits
               (campaign?.submissionVersion !== 'v4' && ugcLeft <= 0) ||
-              (ugcCredits && (isNaN(ugcCredits) || parseInt(ugcCredits) <= 0)) ||
+              (ugcCredits && (Number.isNaN(Number(ugcCredits)) || parseInt(ugcCredits, 10) <= 0)) ||
               (campaign?.submissionVersion !== 'v4' && !ugcCredits) ||
-              (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits) > ugcLeft)
+              (campaign?.submissionVersion !== 'v4' && parseInt(ugcCredits, 10) > ugcLeft)
             }
             fullWidth
             sx={{
@@ -298,6 +309,8 @@ UGCCreditsModal.propTypes = {
   pitch: PropTypes.object,
   campaign: PropTypes.object,
   onSuccess: PropTypes.func,
+  comments: PropTypes.string,
+  agreements: PropTypes.array,
 };
 
 export default UGCCreditsModal;
