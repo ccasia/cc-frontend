@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import useSWR from 'swr';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
@@ -31,17 +31,22 @@ export default function LogisticsList({ campaignId }) {
     mutate,
   } = useSWR(campaignId ? `/api/logistics/campaign/${campaignId}` : null, fetcher);
 
-  const [selectedLogistic, setSelectedLogistic] = useState(null);
+  const [selectedLogisticId, setSelectedLogisticId] = useState(null);
   const [openDrawer, setOpenDrawer] = useState(false);
 
-  const handleClick = (logistic) => {
-    setSelectedLogistic(logistic);
+  const selectedLogistic = useMemo(
+    () => logistics?.find((item) => item.id === selectedLogisticId),
+    [logistics, selectedLogisticId]
+  );
+
+  const handleClick = (logisticId) => {
+    setSelectedLogisticId(logisticId);
     setOpenDrawer(true);
   };
 
   const handleCloseDrawer = () => {
     setOpenDrawer(false);
-    // setSelectedLogistic(null);
+    // setSelectedLogisticId(null);
   };
 
   if (isLoading) return <LoadingScreen />;
@@ -68,7 +73,7 @@ export default function LogisticsList({ campaignId }) {
 
             <TableBody>
               {logistics?.map((row) => (
-                <LogisticsTableRow key={row.id} row={row} onClick={() => handleClick(row)} />
+                <LogisticsTableRow key={row.id} row={row} onClick={() => handleClick(row.id)} />
               ))}
 
               {notFound && (
