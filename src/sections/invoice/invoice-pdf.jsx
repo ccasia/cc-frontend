@@ -119,17 +119,17 @@ export default function InvoicePDF({ invoice, currentStatus }) {
           </View>
 
           <View style={styles.tableCell_2}>
-            <Text style={styles.subtitle2}>{invoice?.bankAcc.payTo}</Text>
+            <Text style={styles.subtitle2}>{invoice?.bankAcc?.payTo || invoice?.bankAcc?.recipientName || invoice?.bankAcc?.accountName || invoice?.invoiceFrom?.name || 'N/A'}</Text>
           </View>
 
           <View style={[styles.tableCell_2]}>
-            <Text>{invoice?.bankAcc.bankName}</Text>
+            <Text>{invoice?.bankAcc?.bankName || 'N/A'}</Text>
           </View>
           <View style={[styles.tableCell_2]}>
-            <Text>{invoice?.bankAcc.accountNumber}</Text>
+            <Text>{invoice?.bankAcc?.accountNumber || 'N/A'}</Text>
           </View>
           <View style={[styles.tableCell_2]}>
-            <Text>{invoice?.bankAcc.accountEmail}</Text>
+            <Text>{invoice?.bankAcc?.accountEmail || invoice?.bankAcc?.recipientEmail || invoice?.invoiceFrom?.email || 'N/A'}</Text>
           </View>
         </View>
       </View>
@@ -191,7 +191,9 @@ export default function InvoicePDF({ invoice, currentStatus }) {
               <View style={styles.tableCell_2}>
                 <Text style={styles.subtitle2}>Campaign Name</Text>
               </View>
-
+              <View style={styles.tableCell_2}>
+                <Text style={styles.subtitle2}>Deliverables</Text>
+              </View>
               <View style={[styles.tableCell_2]}>
                 <Text style={styles.subtitle2}>Total</Text>
               </View>
@@ -210,21 +212,32 @@ export default function InvoicePDF({ invoice, currentStatus }) {
               <View style={styles.tableCell_2}>
                 <Text>{invoice?.campaign?.name}</Text>
               </View>
-
+              <View style={styles.tableCell_2}>
+                {invoice?.task?.service ? (
+                  <Text>{invoice.task.service}</Text>
+                ) : invoice?.task?.description ? (
+                  <Text>{invoice.task.description}</Text>
+                ) : invoice?.deliverables ? (
+                  <Text>{typeof invoice.deliverables === 'string' ? invoice.deliverables : JSON.stringify(invoice.deliverables)}</Text>
+                ) : (
+                  <Text>None</Text>
+                )}
+              </View>
               <View style={[styles.tableCell_2]}>
-                <Text>{`${invoice.campaign.creatorAgreement[0].currency} ${invoice?.amount}`}</Text>
+                <Text>{`${invoice.task?.currencySymbol || invoice.task?.currency || invoice.campaign.creatorAgreement[0].currency || 'RM'} ${invoice?.amount}`}</Text>
               </View>
             </View>
 
             <View style={[styles.tableRow, styles.noBorder]}>
               <View style={styles.tableCell_1} />
               <View style={styles.tableCell_2} />
-              <View style={styles.tableCell_3} />
-              <View style={styles.tableCell_3}>
+              <View style={styles.tableCell_2} />
+              <View style={styles.tableCell_2} />
+              <View style={styles.tableCell_2}>
                 <Text style={styles.h4}>Total</Text>
               </View>
-              <View style={[styles.tableCell_3, styles.alignRight]}>
-                <Text style={styles.h4}>{`${invoice.campaign.creatorAgreement[0].currency} ${invoice?.amount}`}</Text>
+              <View style={[styles.tableCell_2, styles.alignRight]}>
+                <Text style={styles.h4}>{`${invoice.task?.currencySymbol || invoice.task?.currency || invoice.campaign.creatorAgreement[0].currency || 'RM'} ${invoice?.amount}`}</Text>
               </View>
             </View>
           </View>

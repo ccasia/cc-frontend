@@ -7,6 +7,8 @@ import { useReactToPrint } from 'react-to-print';
 import { Page, pdfjs, Document } from 'react-pdf';
 import React, { useRef, useState, useEffect } from 'react';
 
+import { formatCurrencyAmount } from 'src/utils/currency';
+
 import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -47,7 +49,12 @@ const InvoiceDetail = ({ invoiceId }) => {
         agreement?.userId === invoiceData?.invoiceFrom?.id
     );
 
+    // Get currency from task field first, then fall back to other sources
+    const currencySymbol = invoiceData?.task?.currencySymbol || invoiceData?.currencySymbol;
+    const currencyCode = invoiceData?.task?.currency || invoiceData?.currency;
+    
     const creatorCurrency =
+      currencyCode ||
       creatorAgreement?.user?.shortlisted?.[0]?.currency ||
       creatorAgreement?.currency ||
       invoiceData?.campaign?.subscription?.currency ||
@@ -56,6 +63,7 @@ const InvoiceDetail = ({ invoiceId }) => {
     return {
       ...invoiceData,
       creatorCurrency,
+      currencySymbol,
       campaign: {
         ...invoiceData.campaign,
         subscription: {
@@ -170,15 +178,31 @@ const InvoiceDetail = ({ invoiceId }) => {
             gap: 2,
           }}
         >
-          <Typography
-            variant="h3"
-            sx={{
-              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-              fontWeight: 300,
-            }}
-          >
-            Invoice Details - {data?.invoiceNumber.split('-')[1]}
-          </Typography>
+          <Stack spacing={1}>
+            <Typography
+              variant="h3"
+              sx={{
+                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                fontWeight: 300,
+              }}
+            >
+              Invoice Details - {data?.invoiceNumber.split('-')[1]}
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                fontWeight: 500,
+                color: '#637381',
+              }}
+            >
+              {formatCurrencyAmount(
+                data?.amount, 
+                data?.creatorCurrency, 
+                data?.currencySymbol
+              )}
+            </Typography>
+          </Stack>
 
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <Button
