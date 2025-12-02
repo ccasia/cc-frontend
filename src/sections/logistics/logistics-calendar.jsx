@@ -12,6 +12,8 @@ const getStatusColor = (status) => {
   switch (status) {
     case 'DELIVERED':
       return '#1ABF66';
+    case 'RECEIVED':
+      return '#1ABF66';
     case 'COMPLETED':
       return '#1ABF66';
     case 'ISSUE_REPORTED':
