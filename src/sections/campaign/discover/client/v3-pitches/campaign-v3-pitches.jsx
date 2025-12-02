@@ -352,6 +352,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     }
   };
 
+  const handleRemoveCreator = () => {
+    if (onUpdate) {
+      onUpdate();
+    }
+  };
+
   return (
     <Box sx={{ overflowX: 'auto' }}>
       <Stack direction="column" spacing={2}>
@@ -743,6 +749,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                     isGuestCreator={isGuestCreator}
                     campaign={campaign}
                     onViewPitch={handleViewPitch}
+                    onRemoved={handleRemoveCreator}
                   />
                 );
               })}

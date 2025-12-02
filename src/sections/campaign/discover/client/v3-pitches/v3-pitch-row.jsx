@@ -68,14 +68,10 @@ const getStatusText = (status, pitch, campaign) => {
   return statusTextMap[status] || status;
 };
 
-/**
- * PitchRow component renders a single pitch row in the table
- * Fetches social media data for the creator and displays it
- */
-const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch }) => {
+const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch, onRemoved }) => {
   const smUp = useResponsive('up', 'sm');
 
-  // Determine what to display for engagement rate and follower count
+
   const getDisplayData = () => {
     // P1: Use data from pitch object (for guest creators or manually entered data)
     const instagramStats = pitch?.user?.creator?.instagramUser || null;
@@ -142,16 +138,6 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           </Stack>
         </Stack>
       </TableCell>
-      {/* <TableCell>
-        {isLoading ? (
-          <CircularProgress size={16} thickness={6} />
-        ) : (
-          <Typography variant="body2">
-            {displayData.engagementRate || '-'}
-            {displayData.engagementRate && '%'}
-          </Typography>
-        )}
-      </TableCell> */}
       <TableCell>
         <Typography variant="body2">
           {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
@@ -212,7 +198,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
       </TableCell>
       <TableCell sx={{ padding: 0, paddingRight: 1 }}>
         {smUp ? (
-          <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} />
+          <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} campaignId={campaign?.id} onRemoved={onRemoved} />
         ) : (
           <IconButton onClick={() => onViewPitch(pitch)}>
             <Iconify icon="hugeicons:view" />
@@ -230,6 +216,7 @@ PitchRow.propTypes = {
   isGuestCreator: PropTypes.bool,
   campaign: PropTypes.object,
   onViewPitch: PropTypes.func.isRequired,
+  onRemoved: PropTypes.func,
 };
 
 export default PitchRow;
