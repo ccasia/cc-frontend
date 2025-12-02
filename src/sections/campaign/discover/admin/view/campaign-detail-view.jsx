@@ -349,7 +349,7 @@ const CampaignDetailView = ({ id }) => {
           }}
         >
           {/* Show different tabs based on user role */}
-          {(user?.role === 'client' || user?.admin?.role?.name === 'client'
+          {(user?.role === 'client'
             ? // Client user tabs (no Pitches tab)
               [
                 { label: 'Overview', value: 'overview' },
@@ -368,29 +368,8 @@ const CampaignDetailView = ({ id }) => {
                 { label: 'Campaign Details', value: 'campaign-content' },
                 // { label: 'Client Info', value: 'client' },
                 {
-                  label: `Creator Master List (${
-                    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4'
-                      ? v3Pitches?.filter(
-                          (p) =>
-                            p.status === 'PENDING_REVIEW' ||
-                            p.status === 'SENT_TO_CLIENT' ||
-                            p.status === 'undecided' ||
-                            p.status === 'APPROVED' ||
-                            p.status === 'AGREEMENT_PENDING' ||
-                            p.status === 'AGREEMENT_SUBMITTED'
-                        ).length || 0
-                      : campaign?.pitch.filter(
-                        (p) =>
-                          p.status === 'PENDING_REVIEW' ||
-                          p.status === 'approved' ||
-                          p.status === 'rejected'
-                      ).length || 0
-                  })`,
+                  label: `Creator Master List (${campaign?.pitch.length})`,
                   value: 'pitch',
-                },
-                {
-                  label: `Confirmed Creators (${confirmedCreatorsCount})`,
-                  value: 'creator',
                 },
                 {
                   label: (() => {
@@ -556,7 +535,6 @@ const CampaignDetailView = ({ id }) => {
     'creator-master-list': (
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
-    creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
     logistics: isClient
       ? <CampaignLogisticsClient campaign={campaign} />
