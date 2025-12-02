@@ -813,12 +813,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           campaignId={campaign.id}
           campaign={campaign}
           adminComments={batchAdminComments}
-          creditsLeft={
-            campaign?.submissionVersion === 'v4'
-              ? ugcLeft // For v4 campaigns, use ugcLeft which already counts only sent agreements
-              : (campaign?.campaignCredits ?? 0) -
-                (campaign?.shortlisted || []).reduce((acc, s) => acc + (s?.ugcVideos || 0), 0)
-          }
+          creditsLeft={ugcLeft}
           onAssigned={() => {
             setBatchCreditsOpen(false);
             onUpdate?.();

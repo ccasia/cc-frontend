@@ -231,7 +231,7 @@ const BatchAssignUGCModal = ({ open, onClose, creators = [], campaignId, onAssig
               borderRadius: 1,
             }}
           >
-            UGC Credits: {Math.max(0, (parseInt(creditsLeft, 10) || 0) - totalEntered)} left
+            UGC Credits: {creditsLeft} left
           </Typography>
         </Stack>
       </DialogTitle>
