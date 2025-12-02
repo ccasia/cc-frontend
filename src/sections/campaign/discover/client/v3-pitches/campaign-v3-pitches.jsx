@@ -137,6 +137,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     'AGREEMENT_SUBMITTED',
   ]);
 
+  const withdrawnCount = countPitchesByStatus(pitches, [
+    'WITHDRAWN',
+  ]);
+
   // Toggle sort direction
   const handleToggleSort = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -174,6 +178,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       const isMaybe = ['MAYBE'].includes(status);
       const isApproved = ['approved', 'APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
       const isRejected = ['rejected', 'REJECTED'].includes(status);
+      const withdrawn = ['WITHDRAWN'].includes(status);
 
       // V4: Show all pitches in approval flow
       if (isV4) {
@@ -183,7 +188,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           sentToClientWithComments ||
           isMaybe ||
           isApproved ||
-          isRejected
+          isRejected || 
+          withdrawn
         );
       }
 
@@ -192,7 +198,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         (campaign?.shortlisted || []).filter((s) => (s?.ugcVideos || 0) > 0).map((s) => s.userId)
       );
       const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
-      return isApproved || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected;
+      return isApproved || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected || withdrawn;
     });
 
     if (selectedFilter === 'PENDING_REVIEW') {
@@ -216,6 +222,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     } else if (selectedFilter === 'REJECTED') {
       filtered = filtered?.filter((pitch) =>
         ['REJECTED'].includes(
+          pitch.displayStatus || pitch.status
+        )
+      );
+    } else if (selectedFilter === 'WITHDRAWN') {
+      filtered = filtered?.filter((pitch) =>
+        ['WITHDRAWN'].includes(
           pitch.displayStatus || pitch.status
         )
       );
@@ -319,6 +331,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         color: '#D4321C',
         borderColor: '#D4321C',
         tooltip: 'Pitch has been rejected',
+      },
+      WITHDRAWN: {
+        color: '#000',
+        borderColor: '#000',
+        tooltip: 'Pitch has been withdrawn',
       },
       rejected: {
         color: '#D4321C',
@@ -634,7 +651,39 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
             >
               {`Approved (${approvedCount})`}
             </Button>
+
+            <Button
+              fullWidth={!mdUp}
+              onClick={() => setSelectedFilter('WITHDRAWN')}
+              sx={{
+                px: 1.5,
+                py: 2.5,
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                ...(selectedFilter === 'WITHDRAWN'
+                  ? {
+                      color: '#203ff5',
+                      bgcolor: 'rgba(32, 63, 245, 0.04)',
+                    }
+                  : {
+                      color: '#637381',
+                      bgcolor: 'transparent',
+                    }),
+                '&:hover': {
+                  bgcolor:
+                    selectedFilter === 'WITHDRAWN' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                },
+              }}
+            >
+              {`Withdrawn (${withdrawnCount})`}
+            </Button>
           </Stack>
+
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
             {!smUp ? (
               <IconButton
