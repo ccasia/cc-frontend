@@ -42,11 +42,11 @@ const CampaignLogistics = () => {
 
   // Initialize arrays if needed
   React.useEffect(() => {
-    if (logisticsType === 'product_delivery' && (!productFields || productFields.length === 0)) {
+    if (logisticsType === 'PRODUCT_DELIVERY' && (!productFields || productFields.length === 0)) {
       appendProduct({ name: '' });
       setLastAddedIndex(0);
     }
-    if (logisticsType === 'reservation' && (!locationFields || locationFields.length === 0)) {
+    if (logisticsType === 'RESERVATION' && (!locationFields || locationFields.length === 0)) {
       appendLocation({ name: '' });
       setValue('schedulingOption', 'confirmation');
     }
@@ -120,21 +120,21 @@ const CampaignLogistics = () => {
             onChange={(e) => {
               setValue('logisticsType', e.target.value);
               // Reset fields when logistics type changes
-              if (e.target.value === 'product_delivery') {
+              if (e.target.value === 'PRODUCT_DELIVERY') {
                 setValue('schedulingOption', '');
-              } else if (e.target.value === 'reservation') {
+              } else if (e.target.value === 'RESERVATION') {
                 // Initialize reservation fields
                 setValue('schedulingOption', 'confirmation');
               }
             }}
           >
             <MenuItem value="">Select logistics type</MenuItem>
-            <MenuItem value="product_delivery">Product Delivery</MenuItem>
-            <MenuItem value="reservation">Reservation</MenuItem>
+            <MenuItem value="PRODUCT_DELIVERY">Product Delivery</MenuItem>
+            <MenuItem value="RESERVATION">Reservation</MenuItem>
           </RHFSelect>
         </Stack>
 
-        {logisticsType === 'product_delivery' && (
+        {logisticsType === 'PRODUCT_DELIVERY' && (
           <Stack spacing={3}>
             {productFields.map((field, index) => (
               <Stack key={field.id} spacing={1}>
@@ -267,7 +267,7 @@ const CampaignLogistics = () => {
           </Stack>
         )}
 
-        {logisticsType === 'reservation' && (
+        {logisticsType === 'RESERVATION' && (
           <>
             <Stack spacing={2}>
               <FormLabel
