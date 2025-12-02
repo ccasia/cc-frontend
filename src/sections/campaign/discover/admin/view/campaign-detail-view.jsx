@@ -641,7 +641,7 @@ const CampaignDetailView = ({ id }) => {
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
-        px: { xs: 2, sm: 5 },
+        px: { xs: 2, sm: 4 },
       }}
     >
       <Stack spacing={1}>
@@ -659,6 +659,7 @@ const CampaignDetailView = ({ id }) => {
             alignSelf: 'flex-start',
             color: '#636366',
             fontSize: { xs: '0.875rem', sm: '1rem' },
+            mb: 1,
           }}
         >
           Back
