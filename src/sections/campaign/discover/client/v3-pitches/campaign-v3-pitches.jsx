@@ -126,6 +126,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
 
   const maybeCount = countPitchesByStatus(pitches, ['MAYBE']);
 
+  const rejectedCount = countPitchesByStatus(pitches, [
+    'REJECTED',
+  ]);
+
   const approvedCount = countPitchesByStatus(pitches, [
     'approved',
     'APPROVED',
@@ -198,7 +202,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     } else if (selectedFilter === 'SENT_TO_CLIENT') {
       const sentToClientStatuses = ['SENT_TO_CLIENT'];
       if (isV4) sentToClientStatuses.push('SENT_TO_CLIENT_WITH_COMMENTS');
-
       filtered = filtered?.filter((pitch) =>
         sentToClientStatuses.includes(pitch.displayStatus || pitch.status)
       );
@@ -207,6 +210,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     } else if (selectedFilter === 'APPROVED') {
       filtered = filtered?.filter((pitch) =>
         ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(
+          pitch.displayStatus || pitch.status
+        )
+      );
+    } else if (selectedFilter === 'REJECTED') {
+      filtered = filtered?.filter((pitch) =>
+        ['REJECTED'].includes(
           pitch.displayStatus || pitch.status
         )
       );
@@ -494,7 +503,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 },
               }}
             >
-              {`Pending Review (${pendingReviewCount})`}
+              {`Pending (${pendingReviewCount})`}
             </Button>
 
             {/* Sent to Client filter - only show for v4 campaigns where client approval is required */}
@@ -527,7 +536,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                   },
                 }}
               >
-                {`Sent to Client (${sentToClientCount})`}
+                {`Sent To Client (${sentToClientCount})`}
               </Button>
             )}
 
@@ -563,6 +572,37 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 {`Maybe (${maybeCount})`}
               </Button>
             )}
+
+            <Button
+              fullWidth={!mdUp}
+              onClick={() => setSelectedFilter('REJECTED')}
+              sx={{
+                px: 1.5,
+                py: 2.5,
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                ...(selectedFilter === 'REJECTED'
+                  ? {
+                      color: '#203ff5',
+                      bgcolor: 'rgba(32, 63, 245, 0.04)',
+                    }
+                  : {
+                      color: '#637381',
+                      bgcolor: 'transparent',
+                    }),
+                '&:hover': {
+                  bgcolor:
+                    selectedFilter === 'REJECTED' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                },
+              }}
+            >
+              {`Rejected (${rejectedCount})`}
+            </Button>
 
             <Button
               fullWidth={!mdUp}

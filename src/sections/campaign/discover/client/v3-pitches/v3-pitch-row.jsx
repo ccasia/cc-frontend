@@ -11,6 +11,7 @@ import { formatNumber } from 'src/utils/media-kit-utils';
 import Iconify from 'src/components/iconify';
 
 import V3PitchActions from './v3-pitch-actions';
+import { fDate } from 'src/utils/format-time';
 
 const TYPE_LABELS = {
   video: 'Pitch (Video)',
@@ -28,10 +29,10 @@ const PitchTypeCell = React.memo(({ type, isGuestCreator }) => {
 
   return (
     <Stack>
-      <Typography variant="body2" noWrap>
+      <Typography fontSize={13.5} noWrap>
         {label}
       </Typography>
-      {subtitle && <Typography variant="body2" noWrap>{subtitle}</Typography>}
+      {subtitle && <Typography fontSize={13.5} noWrap>{subtitle}</Typography>}
     </Stack>
   );
 });
@@ -134,26 +135,26 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
             {pitch.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
           <Stack spacing={0.5}>
-            <Typography variant="body2">{pitch.user?.name}</Typography>
+            <Typography variant="body2" fontSize={13.5}>{pitch.user?.name}</Typography>
           </Stack>
         </Stack>
       </TableCell>
       <TableCell>
-        <Typography variant="body2">
+        <Typography variant="body2" fontSize={13.5}>
           {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
         </Typography>
       </TableCell>
       <TableCell>
-        <Stack spacing={0.5} alignItems="start">
-          <Typography variant="body2" whiteSpace="nowrap">
-            {dayjs(pitch.createdAt).format('LL')}
+        <Stack alignItems="start">
+          <Typography fontSize={13.5} whiteSpace="nowrap">
+            {fDate(pitch.createdAt)}
           </Typography>
           <Typography
             variant="body2"
+            fontSize={13.5}
             sx={{
               color: '#8e8e93',
               display: 'block',
-              mt: '-2px',
             }}
           >
             {dayjs(pitch.createdAt).format('LT')}
@@ -173,7 +174,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
             gap: 0.5,
             py: 0.5,
             px: 1,
-            fontSize: '0.75rem',
+            fontSize: 12,
             border: '1px solid',
             borderBottom: '3px solid',
             borderRadius: 0.8,
