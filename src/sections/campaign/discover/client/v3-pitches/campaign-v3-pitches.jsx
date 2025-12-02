@@ -55,6 +55,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
+  const [sortColumn, setSortColumn] = useState('name'); // 'name', 'followers', 'date', 'type', 'status'
   const [sortDirection, setSortDirection] = useState('asc');
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
@@ -141,9 +142,58 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     'WITHDRAWN',
   ]);
 
-  // Toggle sort direction
+  // Handle column sort click
+  const handleColumnSort = (column) => {
+    if (sortColumn === column) {
+      // Same column - toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column - set to asc
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Toggle sort direction (for alphabetical button - legacy)
   const handleToggleSort = () => {
+    setSortColumn('name');
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Sortable header component
+  const SortableHeader = ({ column, label, width }) => {
+    const isActive = sortColumn === column;
+    return (
+      <TableCell
+        onClick={() => handleColumnSort(column)}
+        sx={{
+          py: 1,
+          px: 1,
+          color: '#221f20',
+          fontWeight: 600,
+          width,
+          whiteSpace:'nowrap',
+          bgcolor: '#f5f5f5',
+          cursor: 'pointer',
+          userSelect: 'none',
+          '&:hover': {
+            bgcolor: '#ebebeb',
+          },
+        }}
+      >
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <span>{label}</span>
+          <Iconify
+            icon={isActive && sortDirection === 'desc' ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+            width={16}
+            sx={{
+              color: isActive ? '#203ff5' : '#8E8E93',
+              transition: 'color 0.2s',
+            }}
+          />
+        </Stack>
+      </TableCell>
+    );
   };
 
   const filteredPitches = useMemo(() => {
@@ -236,11 +286,53 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     // Search functionality removed (search state variable removed)
 
     return [...(filtered || [])].sort((a, b) => {
-      const nameA = (a.user?.name || '').toLowerCase();
-      const nameB = (b.user?.name || '').toLowerCase();
-      return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      let comparison = 0;
+      
+      switch (sortColumn) {
+        case 'followers': {
+          // Parse follower count - handle strings like "10.5K", "1.2M", etc.
+          const parseFollowers = (val) => {
+            if (!val) return 0;
+            const str = String(val).toUpperCase().replace(/,/g, '');
+            if (str.includes('M')) return parseFloat(str) * 1000000;
+            if (str.includes('K')) return parseFloat(str) * 1000;
+            return parseInt(str, 10) || 0;
+          };
+          const followersA = parseFollowers(a.user?.creator?.instagram?.follower_count || a.followerCount || 0);
+          const followersB = parseFollowers(b.user?.creator?.instagram?.follower_count || b.followerCount || 0);
+          comparison = followersA - followersB;
+          break;
+        }
+        case 'date': {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          comparison = dateA - dateB;
+          break;
+        }
+        case 'type': {
+          const typeA = (a.type || '').toLowerCase();
+          const typeB = (b.type || '').toLowerCase();
+          comparison = typeA.localeCompare(typeB);
+          break;
+        }
+        case 'status': {
+          const statusA = (a.displayStatus || a.status || '').toLowerCase();
+          const statusB = (b.displayStatus || b.status || '').toLowerCase();
+          comparison = statusA.localeCompare(statusB);
+          break;
+        }
+        case 'name':
+        default: {
+          const nameA = (a.user?.name || '').toLowerCase();
+          const nameB = (b.user?.name || '').toLowerCase();
+          comparison = nameA.localeCompare(nameB);
+          break;
+        }
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [pitches, selectedFilter, sortDirection, campaign]);
+  }, [pitches, selectedFilter, sortColumn, sortDirection, campaign]);
 
   // Reopen modal when returning from media kit if state indicates
   useEffect(() => {
@@ -742,7 +834,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                     px: { xs: 1, sm: 2 },
                     color: '#221f20',
                     fontWeight: 600,
-                    width: '100%',
+                    width: '30%',
                     borderRadius: '10px 0 0 10px',
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
@@ -750,66 +842,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 >
                   Creator
                 </TableCell>
-                {/* <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 80,
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Engagement Rate
-                </TableCell> */}
-                <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 80,
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Follower Count
-                </TableCell>
-                <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 150,
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Date Submitted
-                </TableCell>
-                <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 150,
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Type
-                </TableCell>
-                <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 100,
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Status
-                </TableCell>
+                <SortableHeader column="followers" label="Follower Count" width={'15%'} />
+                <SortableHeader column="date" label="Date Submitted" width={'15%'} />
+                <SortableHeader column="type" label="Type" width={'10%'} />
+                <SortableHeader column="status" label="Status" width={'10%'} />
                 <TableCell
                   sx={{
                     py: 1,

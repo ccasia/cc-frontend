@@ -139,12 +139,12 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           </Stack>
         </Stack>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ px: 1 }}>
         <Typography variant="body2" fontSize={13.5}>
           {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
         </Typography>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ px: 1 }}>
         <Stack alignItems="start">
           <Typography fontSize={13.5} whiteSpace="nowrap">
             {fDate(pitch.createdAt)}
@@ -161,10 +161,10 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           </Typography>
         </Stack>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ px: 1 }}>
         <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} />
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ px: 1 }}>
         <Box
           sx={{
             textTransform: 'uppercase',
