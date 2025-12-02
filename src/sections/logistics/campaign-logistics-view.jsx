@@ -23,7 +23,7 @@ import LogisticsCalendar from './logistics-calendar';
 import LogisticsScheduledList from './logistics-scheduled-list';
 import LogisticsAnalytics from './logistics-analytics';
 
-export default function CampaignLogisticsView({ campaign, campaignMutate }) {
+export default function CampaignLogisticsClient({ campaign, campaignMutate }) {
   const settings = useSettingsContext();
 
   const [openBulkAssign, setOpenBulkAssign] = useState(false);

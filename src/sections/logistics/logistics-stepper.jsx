@@ -1,19 +1,43 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
 import { format } from 'date-fns';
+import { fDate } from 'src/utils/format-time';
 
 import {
   Box,
   Step,
-  Button,
   Stepper,
   StepLabel,
+  StepConnector,
   Typography,
   StepContent,
   styled,
+  stepConnectorClasses,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
+
+const QConnector = styled(StepConnector)(({ theme }) => ({
+  [`&.${stepConnectorClasses.alternativeLabel}`]: {
+    top: 11,
+    left: 'calc(-50% + 11px)',
+    right: 'calc(50% + 11px)',
+  },
+  [`&.${stepConnectorClasses.active}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      borderColor: '#00AB55', // Green
+    },
+  },
+  [`&.${stepConnectorClasses.completed}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      borderColor: '#00AB55', // Green
+    },
+  },
+  [`& .${stepConnectorClasses.line}`]: {
+    borderColor: theme.palette.divider,
+    borderTopWidth: 2,
+    borderRadius: 1,
+  },
+}));
 
 const StepIconRoot = styled('div')(({ theme, ownerState }) => ({
   backgroundColor: '#EFEFEF',
@@ -192,4 +216,105 @@ export default function LogisticsStepper({ logistic }) {
 
 LogisticsStepper.propTypes = {
   logistic: PropTypes.object,
+};
+
+// ----------------------------------------------------------------------
+
+export function CreatorLogisticsStepper({ status, updatedDates }) {
+  let activeStep = 0;
+
+  if (
+    ['SCHEDULED', 'SHIPPED', 'DELIVERED', 'RECEIVED', 'COMPLETED', 'ISSUE_REPORTED'].includes(
+      status
+    )
+  ) {
+    activeStep = 1;
+  }
+  if (['SHIPPED', 'DELIVERED', 'RECEIVED', 'COMPLETED', 'ISSUE_REPORTED'].includes(status)) {
+    activeStep = 2;
+  }
+  if (['RECEIVED', 'COMPLETED'].includes(status)) {
+    activeStep = 3;
+  }
+  const isIssue = status === 'ISSUE_REPORTED';
+
+  const steps = [
+    {
+      step: 1,
+      label: 'Confirm Details',
+      date: updatedDates?.createdAt, // Or specific date if tracked
+      desc: 'Completed on',
+    },
+    {
+      step: 2,
+      label: 'Delivery Scheduled',
+      date: updatedDates?.shippedAt ? updatedDates.createdAt : null, // Use createdAt logic or similar as per requirement
+      desc: 'Completed on',
+    },
+    {
+      step: 3,
+      label: isIssue ? 'Issue Reported' : 'Receive Product',
+      date: updatedDates?.deliveredAt || updatedDates?.receivedAt,
+      desc: isIssue ? 'We’ll review your issue and resolve it shortly.' : 'Completed on',
+      error: isIssue,
+    },
+  ];
+
+  return (
+    <Stepper
+      alternativeLabel
+      activeStep={activeStep}
+      connector={<QConnector />}
+      sx={{
+        ...(isIssue && {
+          '& .MuiStepConnector-root.Mui-active .MuiStepConnector-line': {
+            borderColor: '#FF4842',
+          },
+        }),
+      }}
+    >
+      {steps.map((step, index) => {
+        const isErrorStep = step.error && activeStep === index;
+
+        return (
+          <Step key={step.label}>
+            <StepLabel StepIconComponent={CustomStepIcon} error={isErrorStep}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+                STEP {step.step}
+              </Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#231F20' }}>
+                {step.label}
+              </Typography>
+              {(activeStep > index ||
+                (activeStep === index && step.error) ||
+                (activeStep === index &&
+                  index === 2 &&
+                  ['RECEIVED', 'COMPLETED'].includes(status))) && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: isErrorStep ? '#1340FF' : 'text.secondary',
+                    display: 'block',
+                    // mt: 0.5,
+                  }}
+                >
+                  {step.desc} {step.date && !isErrorStep && fDate(step.date)}
+                </Typography>
+              )}
+              {activeStep === index && !step.error && index !== 2 && (
+                <Typography variant="caption" sx={{ color: '#1340FF', display: 'block' }}>
+                  In Progress
+                </Typography>
+              )}
+            </StepLabel>
+          </Step>
+        );
+      })}
+    </Stepper>
+  );
+}
+
+CreatorLogisticsStepper.propTypes = {
+  status: PropTypes.string,
+  updatedDates: PropTypes.object,
 };

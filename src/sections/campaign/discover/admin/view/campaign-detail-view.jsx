@@ -56,7 +56,7 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
-import CampaignLogisticsClient from '../campaign-logistics-client';
+// import CampaignLogisticsClient from '../campaign-logistics-client';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
@@ -66,6 +66,7 @@ import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
+import CampaignLogisticsClient from 'src/sections/logistics/campaign-logistics-view';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -211,13 +212,17 @@ const CampaignDetailView = ({ id }) => {
   useEffect(() => {
     let allowedTabs = [...clientAllowedTabs];
 
+
     if (campaign?.submissionVersion === 'v4') {
       // For v4: allow submissions-v4, remove deliverables
+      allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
       allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
     } else {
       // For non-v4: allow deliverables, remove submissions-v4
       allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
+      allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
     }
+
 
     if (isClient && !allowedTabs.includes(currentTab)) {
       // If client user tries to access a restricted tab, redirect to overview
@@ -231,13 +236,17 @@ const CampaignDetailView = ({ id }) => {
       // For client users, only allow specific tabs
       let allowedTabs = [...clientAllowedTabs];
 
+
       if (campaign?.submissionVersion === 'v4') {
         // For v4: allow submissions-v4, remove deliverables
+        allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
         allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
       } else {
         // For non-v4: allow deliverables, remove submissions-v4
         allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
+        allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
       }
+
 
       if (isClient && !allowedTabs.includes(newValue)) {
         return;
@@ -255,15 +264,20 @@ const CampaignDetailView = ({ id }) => {
       const targetTab = e?.detail;
       if (typeof targetTab !== 'string') return;
 
+
       let allowedTabs = [...clientAllowedTabs];
+
 
       if (campaign?.submissionVersion === 'v4') {
         // For v4: allow submissions-v4, remove deliverables
         allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
+        allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
       } else {
         // For non-v4: allow deliverables, remove submissions-v4
         allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
+        allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
       }
+
 
       if (isClient && !allowedTabs.includes(targetTab)) return;
 
@@ -356,13 +370,43 @@ const CampaignDetailView = ({ id }) => {
                 { label: 'Campaign Details', value: 'campaign-content' },
                 // { label: 'Client Info', value: 'client' },
                 {
-                  label: `Creator Master List (${campaign?.pitch?.length || 0})`,
+                  label: `Creator Master List (${
+                    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4'
+                      ? v3Pitches?.filter(
+                          (p) =>
+                            p.status === 'PENDING_REVIEW' ||
+                            p.status === 'SENT_TO_CLIENT' ||
+                            p.status === 'undecided' ||
+                            p.status === 'APPROVED' ||
+                            p.status === 'AGREEMENT_PENDING' ||
+                            p.status === 'AGREEMENT_SUBMITTED'
+                        ).length || 0
+                      : campaign?.pitch.filter(
+                          (p) =>
+                            p.status === 'PENDING_REVIEW' ||
+                            p.status === 'approved' ||
+                            p.status === 'rejected'
+                        ).length || 0
+                  })`,
                   value: 'pitch',
                 },
                 {
                   label: getAgreementsLabel(agreementSubmissions, campaignAgreements),
                   value: 'agreement',
                 },
+                ...(campaign?.submissionVersion === 'v4'
+                  ? [
+                      {
+                        label: 'Creator Submissions',
+                        value: 'submissions-v4',
+                      },
+                    ]
+                  : [
+                      {
+                        label: 'Creator Deliverables',
+                        value: 'deliverables',
+                      },
+                    ]),
                 ...(campaign?.submissionVersion === 'v4'
                   ? [
                       {
@@ -522,7 +566,7 @@ const CampaignDetailView = ({ id }) => {
       <CampaignLogisticsClient campaign={campaign} />
     ) : (
       <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
-    ), // admin
+    ), // TODO:admin
     invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
