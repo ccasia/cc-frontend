@@ -40,6 +40,7 @@ import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import CampaignAgreementEdit from './campaign-agreement-edit';
+import { fDate } from 'src/utils/format-time';
 
 // Convert AgreementDialog to a full component with approve/reject functionality
 const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, onReject }) => {
@@ -813,8 +814,8 @@ const CampaignAgreements = ({ campaign }) => {
                     py: 1,
                     color: '#221f20',
                     fontWeight: 600,
-                    width: { xs: '25%', sm: 150 },
-                    minWidth: { xs: 110, sm: 150 },
+                    width: { xs: '25%', sm: 120 },
+                    minWidth: { xs: 110, sm: 120 },
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
                   }}
@@ -826,8 +827,8 @@ const CampaignAgreements = ({ campaign }) => {
                     py: 1,
                     color: '#221f20',
                     fontWeight: 600,
-                    width: { xs: '15%', sm: 80 },
-                    minWidth: { xs: 90, sm: 80 },
+                    width: { xs: '15%', sm: 75 },
+                    minWidth: { xs: 90, sm: 75 },
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
                   }}
@@ -908,8 +909,8 @@ const CampaignAgreements = ({ campaign }) => {
                     )}
                     <TableCell
                       sx={{
-                        width: { xs: '25%', sm: 150 },
-                        minWidth: { xs: 110, sm: 150 },
+                        width: { xs: '25%', sm: 120 },
+                        minWidth: { xs: 110, sm: 120 },
                       }}
                     >
                       <Stack spacing={0.5} alignItems="start">
@@ -919,7 +920,7 @@ const CampaignAgreements = ({ campaign }) => {
                             fontSize: { xs: '0.7rem', sm: '0.875rem' },
                           }}
                         >
-                          {dayjs(item?.updatedAt).format('LL')}
+                          {fDate(item?.updatedAt)}
                         </Typography>
                         <Typography
                           variant="body2"
@@ -969,7 +970,7 @@ const CampaignAgreements = ({ campaign }) => {
                               textTransform: 'uppercase',
                               fontWeight: 700,
                               display: 'inline-block',
-                              px: { xs: 0.6, sm: 1.5 },
+                              px: { xs: 0.6, sm: 1 },
                               py: { xs: 0.2, sm: 0.5 },
                               fontSize: { xs: '0.6rem', sm: '0.75rem' },
                               border: '1px solid',
