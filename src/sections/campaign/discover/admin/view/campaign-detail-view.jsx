@@ -66,13 +66,13 @@ import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
-import CampaignLogisticsClient from 'src/sections/logistics/campaign-logistics-view';
+import CampaignLogisticsClient from 'src/sections/logistics/campaign-logistics-client';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
   if (!window.campaignTabs) {
     try {
-      const storedTabs = localStorage.getItem('campaignTabs');
+      const storedTabs = localStorage.getItem('campaignTabss');
       window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
     } catch (error) {
       console.error('Error loading campaign tabs from localStorage:', error);

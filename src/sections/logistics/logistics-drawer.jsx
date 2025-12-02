@@ -31,7 +31,6 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
   const deliveryDetails = logistic?.deliveryDetails;
   const socialMediaHandle =
     creator?.creator?.instagramUser?.username || creator?.creator?.tiktokUser?.username;
-  console.log('what does creator have:', creator);
   const buttonSx = {
     width: 'fit-content',
     height: 44,

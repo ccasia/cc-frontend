@@ -113,7 +113,7 @@ export default function CampaignLogisticsClient({ campaign, campaignMutate }) {
   );
 }
 
-CampaignLogisticsView.propTypes = {
+CampaignLogisticsClient.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
 };
