@@ -111,7 +111,7 @@ function ScheduledItem({ item }) {
           flexShrink: 0,
         }}
       />
-      <Avatar alt={creator.name} src={creator.photoUrl} sx={{ width: 30, height: 30, mr: 2 }} />
+      <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ width: 30, height: 30, mr: 2 }} />
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="subtitle1" noWrap>
