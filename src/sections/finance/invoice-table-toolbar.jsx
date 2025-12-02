@@ -20,6 +20,16 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 export default function InvoiceTableToolbar({ filters, onFilters, campaigns }) {
   const popover = usePopover();
 
+  // Currency options
+  const currencyOptions = [
+    { code: 'MYR', symbol: 'RM', label: 'MYR (RM)' },
+    { code: 'SGD', symbol: 'S$', label: 'SGD (S$)' },
+    { code: 'USD', symbol: '$', label: 'USD ($)' },
+    { code: 'AUD', symbol: 'A$', label: 'AUD (A$)' },
+    { code: 'JPY', symbol: '¥', label: 'JPY (¥)' },
+    { code: 'IDR', symbol: 'Rp', label: 'IDR (Rp)' },
+  ];
+
   const handleFilterName = useCallback(
     (event) => {
       onFilters('name', event.target.value);
@@ -30,6 +40,13 @@ export default function InvoiceTableToolbar({ filters, onFilters, campaigns }) {
   const handleFilterCampaignName = useCallback(
     (e) => {
       onFilters('campaignName', e.target.value);
+    },
+    [onFilters]
+  );
+  
+  const handleFilterCurrency = useCallback(
+    (e) => {
+      onFilters('currency', e.target.value);
     },
     [onFilters]
   );
@@ -49,17 +66,36 @@ export default function InvoiceTableToolbar({ filters, onFilters, campaigns }) {
         }}
       >
         <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
-          <FormControl sx={{ width: 200 }}>
-            <InputLabel id="demo-simple-select-label">Campaign</InputLabel>
+          <FormControl sx={{ width: 180 }}>
+            <InputLabel id="campaign-select-label">Campaign</InputLabel>
             <Select
-              labelId="demo-simple-select-label"
-              id="demo-simple-select"
+              labelId="campaign-select-label"
+              id="campaign-select"
               label="Campaign"
               value={filters.campaignName}
               onChange={handleFilterCampaignName}
             >
+              <MenuItem value="">All Campaigns</MenuItem>
               {campaigns?.map((campaign) => (
-                <MenuItem value={campaign}>{campaign}</MenuItem>
+                <MenuItem key={campaign} value={campaign}>{campaign}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <FormControl sx={{ width: 140 }}>
+            <InputLabel id="currency-select-label">Currency</InputLabel>
+            <Select
+              labelId="currency-select-label"
+              id="currency-select"
+              label="Currency"
+              value={filters.currency || ''}
+              onChange={handleFilterCurrency}
+            >
+              <MenuItem value="">All Currencies</MenuItem>
+              {currencyOptions.map((currency) => (
+                <MenuItem key={currency.code} value={currency.code}>
+                  {currency.label}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>

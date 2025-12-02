@@ -213,11 +213,11 @@ const InvoicePDF = ({ data }) => {
                     <View style={styles.tableRow}>
                       <Text style={styles.tableItem}>1</Text>
                       <Text style={styles.tableItem}>
-                        {data.bankAcc.accountName ?? data.invoiceFrom.name}
+                        {data.bankAcc?.payTo || data.bankAcc?.recipientName || data.bankAcc?.accountName || data.invoiceFrom?.name || 'N/A'}
                       </Text>
-                      <Text style={styles.tableItem}>{data.bankAcc.bankName}</Text>
-                      <Text style={styles.tableItem}>{data.bankAcc.accountNumber}</Text>
-                      <Text style={styles.tableItem}>{data.invoiceFrom.email}</Text>
+                      <Text style={styles.tableItem}>{data.bankAcc?.bankName || 'N/A'}</Text>
+                      <Text style={styles.tableItem}>{data.bankAcc?.accountNumber || 'N/A'}</Text>
+                      <Text style={styles.tableItem}>{data.bankAcc?.accountEmail || data.bankAcc?.recipientEmail || data.invoiceFrom?.email || 'N/A'}</Text>
                     </View>
                   </View>
                 </View>
@@ -246,10 +246,18 @@ const InvoicePDF = ({ data }) => {
                                 {item.type}
                               </Text>
                             ))
+                          ) : data?.task?.service ? (
+                            <Text style={styles.tableItem}>{data.task.service}</Text>
+                          ) : data?.task?.description ? (
+                            <Text style={styles.tableItem}>{data.task.description}</Text>
                           ) : (
                             <Text style={styles.tableItem}>None</Text>
                           )}
                         </View>
+                      ) : data?.task?.service ? (
+                        <Text style={styles.tableItem}>{data.task.service}</Text>
+                      ) : data?.task?.description ? (
+                        <Text style={styles.tableItem}>{data.task.description}</Text>
                       ) : (
                         <Text style={styles.tableItem}>Video</Text>
                       )}
@@ -285,7 +293,7 @@ const InvoicePDF = ({ data }) => {
                       fontSize: '10px',
                     }}
                   >
-                    {data?.campaign?.creatorAgreement?.[0]?.currency || data?.campaign?.subscription?.currency || 'MYR'} {data?.amount}
+                    {data?.task?.currencySymbol || data?.task?.currency || data?.campaign?.creatorAgreement?.[0]?.currency || data?.campaign?.subscription?.currency || 'RM'} {data?.amount}
                   </Text>
                 </View>
 

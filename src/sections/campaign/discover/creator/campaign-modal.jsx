@@ -157,6 +157,24 @@ const CampaignModal = ({
   }, [imageLoaded]);
 
   const handlePitch = () => {
+    // Check if user is in the target list for media kit requirement
+    const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+    const isTargetUser = targetUserIds.includes(user?.id);
+    
+    // Check if media kit is connected
+    const hasMediaKit = user?.creator && 
+      (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+    
+    const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
+    
+    if (isTargetUser && (!hasMediaKit || !hasPaymentDetails)) {
+      return;
+    }
+    
+    if (!isTargetUser && (!isFormCompleted || !user?.paymentForm?.bankAccountName)) {
+      return;
+    }
+
     setPitchOptionsOpen(true);
   };
 
@@ -661,7 +679,29 @@ const CampaignModal = ({
                   <Button
                     variant="contained"
                     onClick={handlePitch}
-                    disabled={isCreditsFinished}
+                    disabled={(() => {
+                      // Check if campaign credits are finished
+                      if (isCreditsFinished) return true;
+                      
+                      // Check if user is in the target list for media kit requirement
+                      const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+                      const isTargetUser = targetUserIds.includes(user?.id);
+                      
+                      // Check if media kit is connected
+                      const hasMediaKit = user?.creator && 
+                        (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+                      
+                      // Check if payment details are completed
+                      const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
+                      
+                      // For target users, check both media kit and payment details
+                      if (isTargetUser) {
+                        return !hasMediaKit || !hasPaymentDetails;
+                      }
+                      
+                      // For non-target users, only check payment details
+                      return !hasPaymentDetails;
+                    })()}
                     sx={{
                       backgroundColor: '#203ff5',
                       color: 'white',
@@ -713,34 +753,157 @@ const CampaignModal = ({
               </Stack>
             </Grid>
 
-            {(!isFormCompleted || !user?.paymentForm?.bankAccountName) && 
-              <Typography
-                sx={{
-                  flex: 1,
-                  textAlign: 'center',
-                  p: 1,
-                  mt: 2,
-                  borderRadius: 1,
-                  color: '#FF3500',
-                  backgroundColor: '#FFF2F0',
-                  fontWeight: 600,
-                  fontSize: 12,
-                  alignSelf: 'center',
-                }}
-              >
-                Please complete your{' '}
-                <Link
-                  to={paths.dashboard.user.profileTabs.payment}
-                  style={{
-                    color: '#FF3500',
-                    fontWeight: 'inherit',
-                  }}
-                >
-                  payment details
-                </Link>{' '}
-                to access this feature. ☝️
-              </Typography>          
-            }
+            {/* Warning message for incomplete profile */}
+            {(() => {
+              // Check if user is in the target list for media kit requirement
+              const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+              const isTargetUser = targetUserIds.includes(user?.id);
+              
+              // Check if media kit is connected
+              const hasMediaKit = user?.creator && 
+                (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+              
+              // Check if payment details are completed
+              const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
+              
+              if (isTargetUser) {
+                // For target users, check both media kit and payment details
+                if (!hasMediaKit && !hasPaymentDetails) {
+                  return (
+                    <Typography
+                      sx={{
+                        flex: 1,
+                        textAlign: 'center',
+                        p: 1,
+                        mt: 2,
+                        borderRadius: 1,
+                        color: '#FF3500',
+                        backgroundColor: '#FFF2F0',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        alignSelf: 'center',
+                      }}
+                    >
+                      <span role="img" aria-label="warning">😮</span> Oops! You need to {' '}
+                      <Link
+                        to={paths.dashboard.user.profileTabs.payment}
+                        style={{
+                          color: '#FF3500',
+                          fontWeight: 'inherit',
+                        }}
+                      >
+                        add your payment details
+                      </Link>{' '}
+                      and {' '}
+                      <Link
+                        to={paths.dashboard.user.profileTabs.socials}
+                        style={{
+                          color: '#FF3500',
+                          fontWeight: 'inherit',
+                        }}
+                      >
+                        link your media kit
+                      </Link>{' '}
+                      before you can pitch for campaigns.
+                    </Typography>
+                  );
+                } 
+                if (!hasMediaKit) {
+                  return (
+                    <Typography
+                      sx={{
+                        flex: 1,
+                        textAlign: 'center',
+                        p: 1,
+                        mt: 2,
+                        borderRadius: 1,
+                        color: '#FF3500',
+                        backgroundColor: '#FFF2F0',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        alignSelf: 'center',
+                      }}
+                    >
+                      <span role="img" aria-label="warning">😮</span> Oops! You need to {' '}
+                      <Link
+                        to={paths.dashboard.user.profileTabs.socials}
+                        style={{
+                          color: '#FF3500',
+                          fontWeight: 'inherit',
+                        }}
+                      >
+                        link your media kit
+                      </Link>{' '}
+                      before you can pitch for campaigns.
+                    </Typography>
+                  );
+                }
+                if (!hasPaymentDetails) {
+                  return (
+                    <Typography
+                      sx={{
+                        flex: 1,
+                        textAlign: 'center',
+                        p: 1,
+                        mt: 2,
+                        borderRadius: 1,
+                        color: '#FF3500',
+                        backgroundColor: '#FFF2F0',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        alignSelf: 'center',
+                      }}
+                    >
+                      Please complete your{' '}
+                      <Link
+                        to={paths.dashboard.user.profileTabs.payment}
+                        style={{
+                          color: '#FF3500',
+                          fontWeight: 'inherit',
+                        }}
+                      >
+                        payment details
+                      </Link>{' '}
+                      to access this feature. ☝️
+                    </Typography>
+                  );
+                }
+              } else {
+                // For non-target users, only check payment details (original behavior)
+                if (!hasPaymentDetails) {
+                  return (
+                    <Typography
+                      sx={{
+                        flex: 1,
+                        textAlign: 'center',
+                        p: 1,
+                        mt: 2,
+                        borderRadius: 1,
+                        color: '#FF3500',
+                        backgroundColor: '#FFF2F0',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        alignSelf: 'center',
+                      }}
+                    >
+                      Please complete your{' '}
+                      <Link
+                        to={paths.dashboard.user.profileTabs.payment}
+                        style={{
+                          color: '#FF3500',
+                          fontWeight: 'inherit',
+                        }}
+                      >
+                        payment details
+                      </Link>{' '}
+                      to access this feature. ☝️
+                    </Typography>
+                  );
+                }
+              }
+              
+              return null;
+            })()}
           </Grid>
 
           <Divider sx={{ my: 2, mb: 3 }} />

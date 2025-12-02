@@ -249,12 +249,28 @@ export default function CalendarView() {
                       );
                     }
 
-                    const startTime = start
-                      .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-                      .replace(' ', '');
-                    const endTime = end
-                      .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-                      .replace(' ', '');
+                    const isAllDayEvent = eventInfo.event.allDay;
+
+                    const formatTime = (date) =>
+                      date
+                        ? date
+                            .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                            .replace(/\s+/g, '')
+                        : null;
+
+                    const startTime = formatTime(start);
+                    const endTime = formatTime(end);
+
+                    let timeLabel = '';
+                    if (isAllDayEvent) {
+                      timeLabel = 'All day';
+                    } else if (startTime && endTime) {
+                      timeLabel = `${startTime}-${endTime}`;
+                    } else if (startTime) {
+                      timeLabel = `${startTime}`;
+                    } else if (endTime) {
+                      timeLabel = `${endTime}`;
+                    }
 
                     return (
                       <div
@@ -268,7 +284,7 @@ export default function CalendarView() {
                           fontWeight: '500',
                         }}
                       >
-                        ({startTime}-{endTime}) {title}
+                        {timeLabel ? `(${timeLabel}) ` : ''}{title}
                       </div>
                     );
                   }}
