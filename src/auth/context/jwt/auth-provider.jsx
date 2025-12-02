@@ -146,6 +146,9 @@ export function AuthProvider({ children }) {
     const response = await axios.post(endpoints.auth.login, data);
 
     const { accessToken, user } = response.data;
+    
+    // Clear the popup shown flag on login to ensure it shows again
+    sessionStorage.removeItem('mediaKitPopupShown');
 
     dispatch({
       type: 'LOGIN',
@@ -232,6 +235,11 @@ export function AuthProvider({ children }) {
     // Clear profile completion flags on logout
     localStorage.removeItem('profileCompleted');
     sessionStorage.removeItem('profileModalShown');
+    // Clear media kit popup flags so it shows again on next login
+    sessionStorage.removeItem('mediaKitPopupShown');
+    sessionStorage.removeItem('mediaKitPopupPageVisit');
+    // Clear the login session flag to trigger popup on next login
+    sessionStorage.removeItem('currentLoginSession');
     dispatch({
       type: 'LOGOUT',
     });

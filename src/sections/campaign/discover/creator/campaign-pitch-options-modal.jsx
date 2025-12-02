@@ -35,9 +35,34 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
     if (hasDraft) {
       text.onTrue();
     } else {
-      // Open the pitch options
-      // (This is the existing functionality when clicking "Pitch Yourself")
+      handlePitch();
     }
+  };
+
+  const handlePitch = () => {
+    // Check if user is in the target list for media kit requirement
+    const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+    const isTargetUser = targetUserIds.includes(user?.id);
+    
+    // Check if media kit is connected
+    const hasMediaKit = user?.creator && 
+      (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+    
+    // Check if payment details are completed
+    const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
+    
+    // For target users, check both media kit and payment details
+    if (isTargetUser && (!hasMediaKit || !hasPaymentDetails)) {
+      return;
+    }
+    
+    // For non-target users, only check payment details (original behavior)
+    if (!isTargetUser && (!isFormCompleted || !user?.paymentForm?.bankAccountName)) {
+      return;
+    }
+
+    onPitch();
+    onClose();
   };
 
   return (
