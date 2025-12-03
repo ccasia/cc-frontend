@@ -118,6 +118,7 @@ const CampaignDetailView = ({ id }) => {
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
+  const [openBulkAssign, setOpenBulkAssign] = useState(false);
 
   const open = Boolean(anchorEl);
 
@@ -562,7 +563,11 @@ const CampaignDetailView = ({ id }) => {
     ),
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
     logistics: isClient ? (
-      <CampaignLogisticsClient campaign={campaign} />
+      <CampaignLogisticsClient
+        campaign={campaign}
+        openBulkAssign={openBulkAssign}
+        setOpenBulkAssign={setOpenBulkAssign}
+      />
     ) : (
       <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
     ), // TODO:admin
@@ -681,6 +686,117 @@ const CampaignDetailView = ({ id }) => {
     [campaign]
   );
 
+  const renderActionButtons = () => {
+    if (isClient) {
+      if (currentTab === 'logistics') {
+        return (
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
+            onClick={() => setOpenBulkAssign(true)}
+            disabled={isDisabled}
+            sx={{
+              height: 42,
+              borderRadius: 1,
+              color: 'white',
+              bgcolor: '#1340ff',
+              border: '1px solid #1340ff',
+              borderBottom: '4px solid #0e2fd6',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              px: 2,
+              whiteSpace: 'nowrap',
+              '&:hover': { bgcolor: '#0e2fd6' },
+            }}
+          >
+            Edit & Bulk Assign
+          </Button>
+        );
+      }
+      return null;
+    }
+
+    // Admin buttons logic...
+    if (isPendingCampaign) {
+      return (
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
+          onClick={() => {
+            // For superadmin on pending campaigns: use initial activation (admin assignment only)
+            if (
+              canInitialActivate &&
+              (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')
+            ) {
+              console.log('Opening InitialActivateDialog (admin assignment only)');
+              setInitialActivateDialogOpen(true);
+            } else {
+              // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
+              console.log('Opening ActivateDialog (full setup)');
+              setActivateDialogOpen(true);
+            }
+          }}
+          disabled={isDisabled}
+          sx={{
+            height: 42,
+            borderRadius: 1,
+            color: 'white',
+            backgroundColor: '#1340ff',
+            border: '1px solid #1340ff',
+            borderBottom: '4px solid #0e2fd6',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            px: 2,
+            whiteSpace: 'nowrap',
+            '&:hover': {
+              backgroundColor: '#0e2fd6',
+            },
+          }}
+        >
+          Activate Campaign
+        </Button>
+      );
+    }
+
+    return (
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={
+          <img
+            src="/assets/icons/overview/editButton.svg"
+            alt="edit"
+            style={{
+              width: 20,
+              height: 20,
+              opacity: isDisabled ? 0.3 : 1,
+            }}
+          />
+        }
+        onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
+        disabled={isDisabled}
+        sx={{
+          height: 42,
+          borderRadius: 1,
+          color: '#221f20',
+          border: '1px solid #e7e7e7',
+          borderBottom: '4px solid #e7e7e7',
+          fontWeight: 600,
+          fontSize: '0.95rem',
+          px: 2,
+          whiteSpace: 'nowrap',
+          '&:hover': {
+            backgroundColor: 'rgba(34, 31, 32, 0.04)',
+          },
+        }}
+      >
+        Edit Details
+      </Button>
+    );
+  };
+
   return (
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
@@ -796,111 +912,112 @@ const CampaignDetailView = ({ id }) => {
 
             <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
               {/* Only show action buttons for non-client users */}
+              {renderActionButtons()}
               {!isClient && (
-                <>
-                  {isPendingCampaign ? (
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
-                      onClick={() => {
-                        // For superadmin on pending campaigns: use initial activation (admin assignment only)
-                        if (
-                          canInitialActivate &&
-                          (campaign?.status === 'PENDING_CSM_REVIEW' ||
-                            campaign?.status === 'SCHEDULED')
-                        ) {
-                          console.log('Opening InitialActivateDialog (admin assignment only)');
-                          setInitialActivateDialogOpen(true);
-                        } else {
-                          // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
-                          console.log('Opening ActivateDialog (full setup)');
-                          setActivateDialogOpen(true);
-                        }
-                      }}
-                      disabled={isDisabled}
-                      sx={{
-                        height: 42,
-                        borderRadius: 1,
-                        color: 'white',
-                        backgroundColor: '#1340ff',
-                        border: '1px solid #1340ff',
-                        borderBottom: '4px solid #0e2fd6',
-                        fontWeight: 600,
-                        fontSize: '0.95rem',
-                        px: 2,
-                        whiteSpace: 'nowrap',
-                        '&:hover': {
-                          backgroundColor: '#0e2fd6',
-                        },
-                      }}
-                    >
-                      Activate Campaign
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={
-                        <img
-                          src="/assets/icons/overview/editButton.svg"
-                          alt="edit"
-                          style={{
-                            width: 20,
-                            height: 20,
-                            opacity: isDisabled ? 0.3 : 1,
-                          }}
-                        />
-                      }
-                      onClick={() =>
-                        router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))
-                      }
-                      disabled={isDisabled}
-                      sx={{
-                        height: 42,
-                        borderRadius: 1,
-                        color: '#221f20',
-                        border: '1px solid #e7e7e7',
-                        borderBottom: '4px solid #e7e7e7',
-                        fontWeight: 600,
-                        fontSize: '0.95rem',
-                        px: 2,
-                        whiteSpace: 'nowrap',
-                        '&:hover': {
-                          backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                        },
-                      }}
-                    >
-                      Edit Details
-                    </Button>
-                  )}
+                // <>
+                //   {isPendingCampaign ? (
+                //     <Button
+                //       variant="contained"
+                //       size="small"
+                //       startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
+                //       onClick={() => {
+                //         // For superadmin on pending campaigns: use initial activation (admin assignment only)
+                //         if (
+                //           canInitialActivate &&
+                //           (campaign?.status === 'PENDING_CSM_REVIEW' ||
+                //             campaign?.status === 'SCHEDULED')
+                //         ) {
+                //           console.log('Opening InitialActivateDialog (admin assignment only)');
+                //           setInitialActivateDialogOpen(true);
+                //         } else {
+                //           // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
+                //           console.log('Opening ActivateDialog (full setup)');
+                //           setActivateDialogOpen(true);
+                //         }
+                //       }}
+                //       disabled={isDisabled}
+                //       sx={{
+                //         height: 42,
+                //         borderRadius: 1,
+                //         color: 'white',
+                //         backgroundColor: '#1340ff',
+                //         border: '1px solid #1340ff',
+                //         borderBottom: '4px solid #0e2fd6',
+                //         fontWeight: 600,
+                //         fontSize: '0.95rem',
+                //         px: 2,
+                //         whiteSpace: 'nowrap',
+                //         '&:hover': {
+                //           backgroundColor: '#0e2fd6',
+                //         },
+                //       }}
+                //     >
+                //       Activate Campaign
+                //     </Button>
+                //   ) : (
+                //     <Button
+                //       variant="outlined"
+                //       size="small"
+                //       startIcon={
+                //         <img
+                //           src="/assets/icons/overview/editButton.svg"
+                //           alt="edit"
+                //           style={{
+                //             width: 20,
+                //             height: 20,
+                //             opacity: isDisabled ? 0.3 : 1,
+                //           }}
+                //         />
+                //       }
+                //       onClick={() =>
+                //         router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))
+                //       }
+                //       disabled={isDisabled}
+                //       sx={{
+                //         height: 42,
+                //         borderRadius: 1,
+                //         color: '#221f20',
+                //         border: '1px solid #e7e7e7',
+                //         borderBottom: '4px solid #e7e7e7',
+                //         fontWeight: 600,
+                //         fontSize: '0.95rem',
+                //         px: 2,
+                //         whiteSpace: 'nowrap',
+                //         '&:hover': {
+                //           backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                //         },
+                //       }}
+                //     >
+                //       Edit Details
+                //     </Button>
+                //   )}
 
-                  <Box
-                    onClick={handleMenuOpen}
-                    component="button"
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: 42,
-                      width: 42,
-                      borderRadius: 1,
-                      color: '#221f20',
-                      border: '1px solid #e7e7e7',
-                      borderBottom: '4px solid #e7e7e7',
-                      padding: 0,
-                      backgroundColor: 'transparent',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                        border: '1px solid #231F20',
-                        borderBottom: '4px solid #231F20',
-                      },
-                    }}
-                  >
-                    <Iconify icon="eva:more-horizontal-fill" width={24} />
-                  </Box>
-                </>
+                <Box
+                  onClick={handleMenuOpen}
+                  component="button"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: 42,
+                    width: 42,
+                    borderRadius: 1,
+                    color: '#221f20',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '4px solid #e7e7e7',
+                    padding: 0,
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                      border: '1px solid #231F20',
+                      borderBottom: '4px solid #231F20',
+                    },
+                  }}
+                >
+                  <Iconify icon="eva:more-horizontal-fill" width={24} />
+                </Box>
+                // </>
               )}
 
               <Menu

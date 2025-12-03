@@ -23,10 +23,15 @@ import LogisticsCalendar from './logistics-calendar';
 import LogisticsScheduledList from './logistics-scheduled-list';
 import LogisticsAnalytics from './logistics-analytics';
 
-export default function CampaignLogisticsClient({ campaign, campaignMutate }) {
+export default function CampaignLogisticsClient({
+  campaign,
+  campaignMutate,
+  openBulkAssign,
+  setOpenBulkAssign,
+}) {
   const settings = useSettingsContext();
 
-  const [openBulkAssign, setOpenBulkAssign] = useState(false);
+  // const [openBulkAssign, setOpenBulkAssign] = useState(false);
   const [date, setDate] = useState(new Date());
   const [filterName, setFilterName] = useState('');
 
@@ -88,7 +93,7 @@ export default function CampaignLogisticsClient({ campaign, campaignMutate }) {
           mb: 2,
         }}
       >
-        <Button
+        {/* <Button
           variant="contained"
           startIcon={<Iconify icon="eva:edit-2-fill" />}
           onClick={() => setOpenBulkAssign(true)}
@@ -98,17 +103,19 @@ export default function CampaignLogisticsClient({ campaign, campaignMutate }) {
           }}
         >
           Edit & Bulk Assign
-        </Button>
+        </Button> */}
       </Box>
       <LogisticsList campaignId={campaign?.id} logistics={safeLogistics} />
 
-      <BulkAssignView
-        open={openBulkAssign}
-        onClose={() => setOpenBulkAssign(false)}
-        campaign={campaign}
-        logistics={safeLogistics}
-        onUpdate={mutate}
-      />
+      {campaign && (
+        <BulkAssignView
+          open={openBulkAssign}
+          onClose={() => setOpenBulkAssign(false)}
+          campaign={campaign}
+          logistics={safeLogistics}
+          onUpdate={mutate}
+        />
+      )}
     </>
   );
 }
@@ -116,4 +123,6 @@ export default function CampaignLogisticsClient({ campaign, campaignMutate }) {
 CampaignLogisticsClient.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
+  openBulkAssign: PropTypes.bool,
+  setOpenBulkAssign: PropTypes.func,
 };

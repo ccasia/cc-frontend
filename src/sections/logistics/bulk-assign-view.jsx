@@ -198,8 +198,10 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
       setAssignments({});
       setSelectedCreatorIds([]);
       setSelectedProductIds([]);
-    } catch {
+      enqueueSnackbar('Assignments updated successfully', { variant: 'success' });
+    } catch (error) {
       console.error('Bulk assign failed', error);
+      enqueueSnackbar('Failed to update assignments', { variant: 'error' });
     } finally {
       setIsSubmitting(false);
     }
