@@ -195,7 +195,7 @@ export function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId 
                   py: 0.5,
                   color: '#8E8E93',
                   bgcolor: '#F4F6F8',
-                  borderRadius: 1,
+                  borderRadius: '6px',
                   border: '1px solid #919EAB3D',
                   boxShadow: '0px -3px 0px 0px #919EAB3D inset',
                   typography: 'caption',
@@ -431,13 +431,27 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
           variant="contained"
           onClick={() => setOpenReviewIssue(true)}
           sx={{
-            mt: 3,
-            bgcolor: '#FF3500', // Red for issue
-            boxShadow: '0px -4px 0px 0px #B71D1D inset',
-            '&:hover': { bgcolor: '#D32F2F' },
+            width: 'fit-content',
+            height: 44,
+            padding: { xs: '4px 8px', sm: '6px 10px' },
+            borderRadius: '8px',
+            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            backgroundColor: '#1340FF',
+            color: '#FFFFFF',
+            fontSize: { xs: 12, sm: 14, md: 16 },
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#133effd3',
+              boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+              transform: 'translateY(1px)',
+            },
           }}
         >
-          <Iconify icon="material-symbols:report-problem-rounded" width={20} sx={{ mr: 1 }} />
+          <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
           Review Issue
         </Button>
       );
@@ -623,7 +637,7 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
                         py: 0.5,
                         color: '#8E8E93',
                         bgcolor: '#fff',
-                        borderRadius: 1,
+                        borderRadius: '6px',
                         border: '1px solid #919EAB3D',
                         boxShadow: '0px -3px 0px 0px #919EAB3D inset',
                         typography: 'caption',

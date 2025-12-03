@@ -94,17 +94,23 @@ export default function ReviewIssueDialog({ open, onClose, logistic, onUpdate })
           //   onClick={handleRetry}
           disabled={isSubmitting}
           sx={{
-            bgcolor: '#1340FF', // Bright Blue
-            color: '#fff',
-            px: 6,
-            py: 1.5,
+            width: 'fit-content',
+            height: 44,
+            padding: { xs: '4px 8px', sm: '6px 10px' },
             borderRadius: '8px',
+            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            backgroundColor: '#1340FF',
+            color: '#FFFFFF',
+            fontSize: { xs: 12, sm: 14, md: 16 },
+            fontWeight: 600,
             textTransform: 'none',
-            fontSize: '1rem',
-            fontWeight: 700,
-            boxShadow: '0px -4px 0px 0px rgba(0,0,0,0.1) inset',
             '&:hover': {
-              bgcolor: '#0B2DAD',
+              backgroundColor: '#133effd3',
+              boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+              transform: 'translateY(1px)',
             },
           }}
         >
@@ -117,17 +123,14 @@ export default function ReviewIssueDialog({ open, onClose, logistic, onUpdate })
           //   onClick={handleResolve}
           disabled={isSubmitting}
           sx={{
-            bgcolor: '#3A3A3C', // Dark Grey
-            color: '#fff',
-            px: 6,
-            py: 1.5,
             borderRadius: '8px',
-            textTransform: 'none',
-            fontSize: '1rem',
-            fontWeight: 700,
-            boxShadow: '0px -4px 0px 0px rgba(0,0,0,0.2) inset',
-            '&:hover': {
-              bgcolor: '#231F20',
+            boxShadow: '0px -4px 0px 0px #00000073 inset',
+            bgcolor: '#3A3A3C',
+            fontSize: { xs: 12, sm: 14, md: 16 },
+            '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: '0px -4px 0px 0px #000000 inset' },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #000000 inset',
+              transform: 'translateY(1px)',
             },
           }}
         >
