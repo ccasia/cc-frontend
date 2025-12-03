@@ -6,7 +6,7 @@ import { Box, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, IconButto
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import { formatNumber } from 'src/utils/media-kit-utils';
+import { formatNumber, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
@@ -72,12 +72,21 @@ const getStatusText = (status, pitch, campaign) => {
 const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch, onRemoved }) => {
   const smUp = useResponsive('up', 'sm');
 
+  // Extract social media usernames
+  const instagramStats = pitch?.user?.creator?.instagramUser || null;
+  const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
+  const profileLink = pitch.user?.creator?.profileLink || pitch.user?.profileLink;
+  const instagramProfileLink = pitch.user?.creator?.instagramProfileLink;
+  const tiktokProfileLink = pitch.user?.creator?.tiktokProfileLink;
+  
+  const instagramUsername = instagramStats?.username || extractUsernameFromProfileLink(instagramProfileLink);
+  const tiktokUsername = tiktokStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
+  const profileUsername = extractUsernameFromProfileLink(profileLink);
+  
+  // Check if we have any social usernames to display
+  const hasSocialUsernames = instagramUsername || tiktokUsername;
 
   const getDisplayData = () => {
-    // P1: Use data from pitch object (for guest creators or manually entered data)
-    const instagramStats = pitch?.user?.creator?.instagramUser || null;
-    const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
-
     const resolveMetric = (primary, secondary, tertiary) => {
       if (primary != null) return primary;
       if (secondary != null) return secondary;
@@ -120,7 +129,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
   return (
     <TableRow hover>
       <TableCell>
-        <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
+        <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1 }}>
           <Avatar
             src={pitch.user?.photoURL}
             alt={pitch.user?.name}
@@ -134,8 +143,32 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           >
             {pitch.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Stack spacing={0.5}>
+          <Stack spacing={0}>
             <Typography variant="body2" fontSize={13.5}>{pitch.user?.name}</Typography>
+            {hasSocialUsernames ? (
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.25 }}>
+                {instagramUsername && (
+                  <Stack direction="row" alignItems="center" spacing={0.3}>
+                    <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
+                    <Typography variant="caption" sx={{ color: '#636366', fontSize: 12 }}>
+                      {instagramUsername}
+                    </Typography>
+                  </Stack>
+                )}
+                {tiktokUsername && (
+                  <Stack direction="row" alignItems="center" spacing={0.3}>
+                    <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
+                    <Typography variant="caption" sx={{ color: '#636366', fontSize: 12 }}>
+                      {tiktokUsername}
+                    </Typography>
+                  </Stack>
+                )}
+              </Stack>
+            ) : profileUsername && (
+              <Typography variant="caption" sx={{ color: '#636366', fontSize: 12 }}>
+                {profileUsername}
+              </Typography>
+            )}
           </Stack>
         </Stack>
       </TableCell>

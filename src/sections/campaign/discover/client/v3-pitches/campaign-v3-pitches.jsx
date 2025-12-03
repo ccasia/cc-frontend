@@ -42,6 +42,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import BatchAssignUGCModal from './BatchAssignUGCModal';
+import PitchModalMobile from '../../admin/pitch-modal-mobile';
 
 const countPitchesByStatus = (pitches, statusList) => (
     pitches?.filter((pitch) => {
@@ -70,6 +71,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     [user]
   );
   const smUp = useResponsive('up', 'sm');
+  const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');
 
   const { data: agreements } = useGetAgreements(campaign?.id);
@@ -973,6 +975,25 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           onUpdate={handlePitchUpdate}
         />
       )}
+
+      {smDown ? (
+        <PitchModalMobile
+          pitch={selectedPitch}
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          onUpdate={handlePitchUpdate}
+          campaign={campaign}
+        />
+      ) : (
+        <V3PitchModal
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          pitch={selectedPitch}
+          campaign={campaign}
+          agreements={agreements}
+          onUpdate={handlePitchUpdate}
+        />
+      )}
     </Box>
   );
 };
@@ -1388,9 +1409,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
           ...prev.creators,
           {
             name: '',
-            username: '',
             followerCount: '',
-            engagementRate: '',
             profileLink: '',
             adminComments: '',
           },
@@ -1423,9 +1442,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
       creators: [
         {
           name: '',
-          username: '',
           followerCount: '',
-          engagementRate: '',
           profileLink: '',
           adminComments: '',
         },
@@ -1480,35 +1497,19 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
                 />
               </Box>
 
-              <Stack flexDirection="row" flex={1} spacing={2}>
-                {/* Username */}
-                <Box flex={1}>
-                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
-                    Username (Social Media)
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Username"
-                    value={creator.username}
-                    onChange={handleCreatorChange(index, 'username')}
-                  />
-                </Box>
-
-                {/* Profile Link */}
-                <Box flex={1}>
-                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
-                    Profile Link
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Profile Link"
-                    value={creator.profileLink}
-                    onChange={handleCreatorChange(index, 'profileLink')}
-                  />
-                </Box>
-              </Stack>
+              {/* Profile Link */}
+              <Box flex={1}>
+                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
+                  Profile Link
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="https://instagram.com/username or https://tiktok.com/@username"
+                  value={creator.profileLink}
+                  onChange={handleCreatorChange(index, 'profileLink')}
+                />
+              </Box>
             </Stack>
 
             <Box display="flex" gap={2} mb={2}>
