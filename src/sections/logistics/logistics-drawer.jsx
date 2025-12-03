@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useMemo } from 'react';
+import { useSnackbar } from 'src/components/snackbar';
 
 import {
   Box,
@@ -14,14 +15,13 @@ import {
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
-import Scrollbar from 'src/components/scrollbar';
 
 import LogisticsStepper from './logistics-stepper';
 import AssignLogisticDialog from './dialogs/assign-logistic-dialog';
 import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
 import ReviewIssueDialog from './dialogs/review-issue-dialog';
 
-export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId }) {
+export function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId }) {
   const [openAssign, setOpenAssign] = useState(false);
   const [openSchedule, setOpenSchedule] = useState(false);
   const [openIssue, setOpenIssue] = useState(false);
@@ -314,6 +314,208 @@ export default function LogisticsDrawer({ open, onClose, logistic, onUpdate, cam
 }
 
 LogisticsDrawer.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  logistic: PropTypes.object,
+  onUpdate: PropTypes.func,
+  campaignId: PropTypes.string,
+};
+
+// ------------------------------------------------------------------------------------------
+
+export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campaignId }) {
+  const { enqueueSnackbar } = useSnackbar();
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openWithdrawConfirm, setOpenWithdrawConfirm] = useState(false);
+
+  const status = logistic?.status;
+  const creator = logistic?.creator;
+  const deliveryDetails = logistic?.deliveryDetails;
+
+  const handleWithdraw = async () => {
+    try {
+      // await axiosInstance.delete(`/api/logistics/admin/${logistic.id}/withdraw`); // TODO
+      enqueueSnackbar('Creator withdrawn from logistics successfully');
+      onUpdate();
+      setOpenWithdrawConfirm(false);
+      onClose();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Failed to withdraw creator', { variant: 'error' });
+    }
+  };
+
+  const getButtonLabel = () => {
+    if (status === 'PENDING_ASSIGNMENT') return 'Edit or Assign';
+    if (status === 'SCHEDULED') return 'Edit or Schedule';
+    return 'Edit Details';
+  };
+
+  const renderHeader = (
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+      sx={{ py: 2, px: 2.5 }}
+    >
+      <IconButton onClick={onClose}>
+        <Iconify icon="eva:close-fill" width={24} />
+      </IconButton>
+    </Stack>
+  );
+
+  return (
+    <>
+      <Drawer
+        open={open}
+        onClose={onClose}
+        anchor="right"
+        PaperProps={{
+          sx: {
+            width: { xs: 1, sm: 370 },
+            backgroundColor: '#F4F6F8',
+            borderTopLeftRadius: 12,
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        }}
+      >
+        {renderHeader}
+        <Divider sx={{ mb: 3 }} />
+
+        <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+          <Box
+            sx={{
+              p: 2.5,
+              border: '1px solid #919EAB3D',
+              bgcolor: '#fff',
+              borderRadius: 2,
+              mx: 3,
+              mb: 3,
+            }}
+          >
+            <Stack direction="row" alignItems="center">
+              <Avatar src={creator?.photoURL} sx={{ width: 48, height: 48, mr: 2 }} />
+              <Box>
+                <Typography variant="subtitle1">{creator?.name}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {creator?.creator?.instagramUser?.username
+                    ? `@${creator.creator.instagramUser.username}`
+                    : '-'}
+                </Typography>
+              </Box>
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              p: 2.5,
+              border: '1px solid #919EAB3D',
+              bgcolor: '#fff',
+              borderRadius: 2,
+              mx: 3,
+              mb: 3,
+            }}
+          >
+            <LogisticsStepper logistic={logistic} />
+            <Stack alignItems="center" sx={{ mt: 3 }}>
+              <Button
+                variant="contained"
+                onClick={() => setOpenEditDialog(true)}
+                sx={{
+                  bgcolor: '#1340FF',
+                  boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                  '&:hover': { bgcolor: '#0B2DAD' },
+                  width: '100%',
+                }}
+              >
+                <Iconify icon="mi:edit-alt" width={20} sx={{ mr: 1 }} />
+                {getButtonLabel()}
+              </Button>
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              px: 2.5,
+              py: 2,
+              border: '1px solid #919EAB3D',
+              bgcolor: '#fff',
+              borderRadius: 2,
+              mx: 3,
+              mb: 3,
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ mb: 1, color: '#1340FF' }}>
+              DELIVERY DETAILS
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Address
+                </Typography>
+                <Typography variant="body2">{deliveryDetails?.address || '-'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Tracking
+                </Typography>
+                {deliveryDetails?.trackingLink ? (
+                  <Link
+                    href={deliveryDetails.trackingLink}
+                    target="_blank"
+                    rel="noopener"
+                    sx={{ color: '#1340FF' }}
+                  >
+                    {deliveryDetails.trackingLink}
+                  </Link>
+                ) : (
+                  <Typography variant="body2">-</Typography>
+                )}
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Remarks
+                </Typography>
+                <Typography variant="body2">
+                  {deliveryDetails?.dietaryRestrictions || '-'}
+                </Typography>
+              </Box>
+            </Stack>
+          </Box>
+        </Box>
+
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+          <Button
+            color="error"
+            onClick={() => setOpenWithdrawConfirm(true)}
+            sx={{ textDecoration: 'none' }}
+          >
+            Withdraw From Campaign
+          </Button>
+        </Box>
+      </Drawer>
+
+      {/* <AdminEditLogisticDialog
+        open={openEditDialog}
+        onClose={() => setOpenEditDialog(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      /> */}
+
+      {/* <DeleteProductDialog
+        open={openWithdrawConfirm}
+        onClose={() => setOpenWithdrawConfirm(false)}
+        productName="this creator from the logistics list"
+        onConfirm={handleWithdraw}
+      /> */}
+    </>
+  );
+}
+
+LogisticsAdminDrawer.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   logistic: PropTypes.object,

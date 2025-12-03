@@ -66,7 +66,7 @@ import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
-import CampaignLogisticsClient from 'src/sections/logistics/campaign-logistics-client';
+import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -563,13 +563,19 @@ const CampaignDetailView = ({ id }) => {
     ),
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
     logistics: isClient ? (
-      <CampaignLogisticsClient
+      <CampaignLogisticsView
         campaign={campaign}
         openBulkAssign={openBulkAssign}
         setOpenBulkAssign={setOpenBulkAssign}
+        isAdmin={!isClient} // not client > admin
       />
     ) : (
-      <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
+      <CampaignLogisticsView
+        campaign={campaign}
+        openBulkAssign={openBulkAssign}
+        setOpenBulkAssign={setOpenBulkAssign}
+        isAdmin={!isClient}
+      />
     ), // TODO:admin
     invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (

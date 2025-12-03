@@ -2,19 +2,8 @@ import PropTypes from 'prop-types';
 import { useState, useCallback } from 'react';
 import useSWR from 'swr';
 
-import {
-  Box,
-  Card,
-  Grid,
-  Button,
-  Divider,
-  Container,
-  Typography,
-  TextField,
-  InputAdornment,
-} from '@mui/material';
+import { Box, Card, Grid, Divider } from '@mui/material';
 import Iconify from 'src/components/iconify';
-import { useSettingsContext } from 'src/components/settings';
 import { fetcher } from 'src/utils/axios';
 
 import LogisticsList from './logistics-list';
@@ -23,15 +12,13 @@ import LogisticsCalendar from './logistics-calendar';
 import LogisticsScheduledList from './logistics-scheduled-list';
 import LogisticsAnalytics from './logistics-analytics';
 
-export default function CampaignLogisticsClient({
+export default function CampaignLogisticsView({
   campaign,
   campaignMutate,
   openBulkAssign,
   setOpenBulkAssign,
+  isAdmin = false,
 }) {
-  const settings = useSettingsContext();
-
-  // const [openBulkAssign, setOpenBulkAssign] = useState(false);
   const [date, setDate] = useState(new Date());
   const [filterName, setFilterName] = useState('');
 
@@ -92,20 +79,8 @@ export default function CampaignLogisticsClient({
           justifyContent: 'space-between',
           mb: 2,
         }}
-      >
-        {/* <Button
-          variant="contained"
-          startIcon={<Iconify icon="eva:edit-2-fill" />}
-          onClick={() => setOpenBulkAssign(true)}
-          sx={{
-            bgcolor: '#1340ff',
-            '&:hover': { bgcolor: '#0e2fd6' },
-          }}
-        >
-          Edit & Bulk Assign
-        </Button> */}
-      </Box>
-      <LogisticsList campaignId={campaign?.id} logistics={safeLogistics} />
+      ></Box>
+      <LogisticsList campaignId={campaign?.id} logistics={safeLogistics} isAdmin={isAdmin} />
 
       {campaign && (
         <BulkAssignView
@@ -120,9 +95,10 @@ export default function CampaignLogisticsClient({
   );
 }
 
-CampaignLogisticsClient.propTypes = {
+CampaignLogisticsView.propTypes = {
   campaign: PropTypes.object,
   campaignMutate: PropTypes.func,
   openBulkAssign: PropTypes.bool,
   setOpenBulkAssign: PropTypes.func,
+  isAdmin: PropTypes.bool,
 };
