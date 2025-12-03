@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useMemo } from 'react';
+import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 
 import {
@@ -17,7 +18,8 @@ import {
 import Iconify from 'src/components/iconify';
 
 import LogisticsStepper from './logistics-stepper';
-import AssignLogisticDialog from './dialogs/assign-logistic-dialog';
+import AssignLogisticDialog, { AdminAssignLogisticDialog } from './dialogs/assign-logistic-dialog';
+import AdminEditLogisticDialog from './dialogs/admin-edit-logistic-dialog';
 import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
 import ReviewIssueDialog from './dialogs/review-issue-dialog';
 
@@ -191,10 +193,13 @@ export function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId 
                 sx={{
                   px: 1,
                   py: 0.5,
+                  color: '#8E8E93',
                   bgcolor: '#F4F6F8',
                   borderRadius: 1,
                   border: '1px solid #919EAB3D',
+                  boxShadow: '0px -3px 0px 0px #919EAB3D inset',
                   typography: 'caption',
+                  fontWeight: 600,
                 }}
               >
                 {item.product?.productName} ({item.quantity})
@@ -322,10 +327,16 @@ LogisticsDrawer.propTypes = {
 };
 
 // ------------------------------------------------------------------------------------------
+// admin version
 
 export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campaignId }) {
   const { enqueueSnackbar } = useSnackbar();
-  const [openEditDialog, setOpenEditDialog] = useState(false);
+
+  // Dialog States
+  const [openAdminAssign, setOpenAdminAssign] = useState(false); // For Step 1 & 2 Bottom
+  const [openSchedule, setOpenSchedule] = useState(false); // For Step 2 Stepper
+  const [openAdminEdit, setOpenAdminEdit] = useState(false); // For Step 3 & 4
+  const [openReviewIssue, setOpenReviewIssue] = useState(false); // For Issue Stepper
   const [openWithdrawConfirm, setOpenWithdrawConfirm] = useState(false);
 
   const status = logistic?.status;
@@ -334,7 +345,7 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
 
   const handleWithdraw = async () => {
     try {
-      // await axiosInstance.delete(`/api/logistics/admin/${logistic.id}/withdraw`); // TODO
+      // await axiosInstance.delete(`/api/logistics/admin/${logistic.id}/withdraw`);
       enqueueSnackbar('Creator withdrawn from logistics successfully');
       onUpdate();
       setOpenWithdrawConfirm(false);
@@ -345,10 +356,148 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
     }
   };
 
-  const getButtonLabel = () => {
-    if (status === 'PENDING_ASSIGNMENT') return 'Edit or Assign';
-    if (status === 'SCHEDULED') return 'Edit or Schedule';
-    return 'Edit Details';
+  // --- Logic for Buttons ---
+
+  // 1. Stepper Button (Inside the white box with stepper)
+  const renderStepperButton = () => {
+    if (status === 'PENDING_ASSIGNMENT') {
+      return (
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={() => setOpenAdminAssign(true)}
+          sx={{
+            width: 'fit-content',
+            height: 44,
+            padding: { xs: '4px 8px', sm: '6px 10px' },
+            borderRadius: '8px',
+            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            backgroundColor: '#1340FF',
+            color: '#FFFFFF',
+            fontSize: { xs: 12, sm: 14, md: 16 },
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#133effd3',
+              boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+              transform: 'translateY(1px)',
+            },
+          }}
+        >
+          <Iconify icon="mi:edit-alt" width={20} sx={{ mr: 1 }} />
+          Edit or Assign
+        </Button>
+      );
+    }
+    if (status === 'SCHEDULED') {
+      return (
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={() => setOpenSchedule(true)}
+          sx={{
+            width: 'fit-content',
+            height: 44,
+            padding: { xs: '4px 8px', sm: '6px 10px' },
+            borderRadius: '8px',
+            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            backgroundColor: '#1340FF',
+            color: '#FFFFFF',
+            fontSize: { xs: 12, sm: 14, md: 16 },
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#133effd3',
+              boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+              transform: 'translateY(1px)',
+            },
+          }}
+        >
+          <Iconify icon="mi:edit-alt" width={20} sx={{ mr: 1 }} />
+          Schedule Delivery
+        </Button>
+      );
+    }
+    if (status === 'ISSUE_REPORTED') {
+      return (
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={() => setOpenReviewIssue(true)}
+          sx={{
+            mt: 3,
+            bgcolor: '#FF3500', // Red for issue
+            boxShadow: '0px -4px 0px 0px #B71D1D inset',
+            '&:hover': { bgcolor: '#D32F2F' },
+          }}
+        >
+          <Iconify icon="material-symbols:report-problem-rounded" width={20} sx={{ mr: 1 }} />
+          Review Issue
+        </Button>
+      );
+    }
+    return null; // No button in stepper for Shipped/Delivered
+  };
+
+  // 2. Bottom Action Button (Fixed at bottom of drawer content)
+  const renderBottomButton = () => {
+    // Step 2 Extra Button
+    if (status === 'SCHEDULED') {
+      return (
+        <Button
+          variant="outlined"
+          onClick={() => setOpenAdminAssign(true)}
+          sx={{
+            width: '100%',
+            mb: 2,
+            borderColor: '#919EAB',
+            color: '#212B36',
+            '&:hover': { borderColor: '#212B36', bgcolor: 'rgba(33, 43, 54, 0.08)' },
+          }}
+        >
+          Edit or Assign
+        </Button>
+      );
+    }
+    // Step 3 & 4 & Issue -> Edit Details
+    if (['SHIPPED', 'DELIVERED', 'COMPLETED', 'RECEIVED', 'ISSUE_REPORTED'].includes(status)) {
+      return (
+        <Button
+          variant="contained"
+          onClick={() => setOpenAdminEdit(true)}
+          sx={{
+            width: 'fit-content',
+            height: 44,
+            padding: { xs: '4px 8px', sm: '6px 10px' },
+            borderRadius: '8px',
+            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            backgroundColor: '#1340FF',
+            color: '#FFFFFF',
+            fontSize: { xs: 12, sm: 14, md: 16 },
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#133effd3',
+              boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+            },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+              transform: 'translateY(1px)',
+            },
+          }}
+        >
+          <Iconify icon="mi:edit-alt" width={20} sx={{ mr: 1 }} />
+          Edit
+        </Button>
+      );
+    }
+    return null;
   };
 
   const renderHeader = (
@@ -373,7 +522,7 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
         PaperProps={{
           sx: {
             width: { xs: 1, sm: 370 },
-            backgroundColor: '#F4F6F8',
+            backgroundColor: '#fff !important',
             borderTopLeftRadius: 12,
             display: 'flex',
             flexDirection: 'column',
@@ -381,16 +530,18 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
         }}
       >
         {renderHeader}
-        <Divider sx={{ mb: 3 }} />
+        <Divider />
 
-        <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+        <Box sx={{ flexGrow: 1, overflowY: 'auto', px: 3 }}>
+          {/* User Info */}
           <Box
             sx={{
               p: 2.5,
+              mt: 3,
               border: '1px solid #919EAB3D',
               bgcolor: '#fff',
               borderRadius: 2,
-              mx: 3,
+              // mx: 3,
               mb: 3,
             }}
           >
@@ -407,104 +558,189 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
             </Stack>
           </Box>
 
+          {/* Stepper Box */}
           <Box
             sx={{
               p: 2.5,
               border: '1px solid #919EAB3D',
               bgcolor: '#fff',
               borderRadius: 2,
-              mx: 3,
               mb: 3,
             }}
           >
             <LogisticsStepper logistic={logistic} />
             <Stack alignItems="center" sx={{ mt: 3 }}>
-              <Button
-                variant="contained"
-                onClick={() => setOpenEditDialog(true)}
-                sx={{
-                  bgcolor: '#1340FF',
-                  boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-                  '&:hover': { bgcolor: '#0B2DAD' },
-                  width: '100%',
-                }}
-              >
-                <Iconify icon="mi:edit-alt" width={20} sx={{ mr: 1 }} />
-                {getButtonLabel()}
-              </Button>
+              {renderStepperButton()}
             </Stack>
           </Box>
-
           <Box
             sx={{
               px: 2.5,
-              py: 2,
+              py: 1,
               border: '1px solid #919EAB3D',
               bgcolor: '#fff',
               borderRadius: 2,
-              mx: 3,
               mb: 3,
             }}
           >
-            <Typography variant="subtitle2" sx={{ mb: 1, color: '#1340FF' }}>
-              DELIVERY DETAILS
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+              <Iconify icon="material-symbols:clarify-outline-rounded" sx={{ color: '#1340FF' }} />
+              <Typography variant="subtitle2">DIETARY RESTRICTIONS/ALLERGIES</Typography>
+            </Stack>
+            <Divider />
+            <Typography variant="body2" sx={{ color: 'text.secondary', my: 2 }}>
+              {deliveryDetails?.dietaryRestrictions ||
+                'No dietary restrictions or allergies specified.'}
             </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Stack spacing={2}>
+          </Box>
+          {/* Delivery Details (Read-only view) */}
+          <Box
+            sx={{
+              px: 2.5,
+              py: 1,
+              border: '1px solid #919EAB3D',
+              bgcolor: '#fff',
+              borderRadius: 2,
+              mb: 3,
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+              <Iconify icon="material-symbols:clarify-outline-rounded" sx={{ color: '#1340FF' }} />
+              <Typography variant="subtitle2">DELIVERY DETAILS</Typography>
+            </Stack>
+            <Divider />
+            <Stack spacing={2} sx={{ my: 2 }}>
               <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Address
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Product
                 </Typography>
-                <Typography variant="body2">{deliveryDetails?.address || '-'}</Typography>
+                <Stack direction="row" spacing={1}>
+                  {deliveryDetails?.items?.map((item, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        px: 1,
+                        py: 0.5,
+                        color: '#8E8E93',
+                        bgcolor: '#fff',
+                        borderRadius: 1,
+                        border: '1px solid #919EAB3D',
+                        boxShadow: '0px -3px 0px 0px #919EAB3D inset',
+                        typography: 'caption',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {item.product?.productName} ({item.quantity})
+                    </Box>
+                  ))}
+                </Stack>
               </Box>
               <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Tracking
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Tracking Link
                 </Typography>
-                {deliveryDetails?.trackingLink ? (
-                  <Link
-                    href={deliveryDetails.trackingLink}
-                    target="_blank"
-                    rel="noopener"
-                    sx={{ color: '#1340FF' }}
-                  >
-                    {deliveryDetails.trackingLink}
-                  </Link>
-                ) : (
-                  <Typography variant="body2">-</Typography>
-                )}
+                <Box sx={{ mt: 0 }}>
+                  {deliveryDetails?.trackingLink ? (
+                    <Link
+                      variant="body2"
+                      href={deliveryDetails.trackingLink}
+                      target="_blank"
+                      rel="noopener"
+                      sx={{ color: '#1340FF' }}
+                    >
+                      {deliveryDetails.trackingLink}
+                    </Link>
+                  ) : (
+                    <Typography variant="body2">-</Typography>
+                  )}
+                </Box>
               </Box>
               <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Remarks
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Delivery Address
+                </Typography>
+                <Stack>
+                  <Iconify />
+                  <Typography variant="body2">
+                    {deliveryDetails?.address || 'No address provided'}
+                  </Typography>
+                </Stack>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Expected Delivery
                 </Typography>
                 <Typography variant="body2">
-                  {deliveryDetails?.dietaryRestrictions || '-'}
+                  {deliveryDetails?.expectedDeliveryDate
+                    ? new Date(deliveryDetails.expectedDeliveryDate).toLocaleString()
+                    : '-'}
                 </Typography>
               </Box>
             </Stack>
           </Box>
         </Box>
 
-        <Box sx={{ p: 3, textAlign: 'center' }}>
+        {/* Footer Actions */}
+        <Box
+          sx={{
+            p: 3,
+            pt: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            textAlign: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {renderBottomButton()}
+
           <Button
             color="error"
             onClick={() => setOpenWithdrawConfirm(true)}
-            sx={{ textDecoration: 'none' }}
+            sx={{ textDecoration: 'none', mt: 1 }}
           >
             Withdraw From Campaign
           </Button>
         </Box>
       </Drawer>
 
-      {/* <AdminEditLogisticDialog
-        open={openEditDialog}
-        onClose={() => setOpenEditDialog(false)}
+      {/* 1. Admin Assign Dialog (For Step 1 & 2) */}
+      {/* Ensure you have AdminAssignLogisticDialog. If not, use AssignLogisticDialog but it might lack address fields */}
+      <AdminAssignLogisticDialog
+        open={openAdminAssign}
+        onClose={() => setOpenAdminAssign(false)}
         logistic={logistic}
         campaignId={campaignId}
         onUpdate={onUpdate}
-      /> */}
+      />
 
+      {/* 2. Schedule Dialog (For Step 2) */}
+      <ScheduleDeliveryDialog
+        open={openSchedule}
+        onClose={() => setOpenSchedule(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
+
+      {/* 3. Admin Edit Dialog (For Step 3, 4, Issue) */}
+      <AdminEditLogisticDialog
+        open={openAdminEdit}
+        onClose={() => setOpenAdminEdit(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
+
+      {/* 4. Review Issue Dialog */}
+      <ReviewIssueDialog
+        open={openReviewIssue}
+        onClose={() => setOpenReviewIssue(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
+
+      {/* 5. Withdraw Confirmation */}
       {/* <DeleteProductDialog
         open={openWithdrawConfirm}
         onClose={() => setOpenWithdrawConfirm(false)}

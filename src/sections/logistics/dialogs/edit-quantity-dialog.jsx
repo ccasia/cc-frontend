@@ -18,8 +18,8 @@ export default function EditQuantityDialog({
   onClose,
   selectedCreatorIds,
   creators,
-  assignments, // Initial data from parent
-  onSave, // NEW: Replaces onUpdateAssignment
+  assignments,
+  onSave,
 }) {
   // 1. Local State (The Snapshot)
   const [snapshot, setSnapshot] = useState({});
@@ -62,7 +62,7 @@ export default function EditQuantityDialog({
   return (
     <Dialog
       open={open}
-      onClose={onClose} // Clicking outside/X just closes, discarding changes
+      onClose={onClose}
       maxWidth="md"
       PaperProps={{
         sx: {
@@ -104,7 +104,6 @@ export default function EditQuantityDialog({
       <Stack spacing={2} sx={{ maxHeight: '60vh', overflowY: 'auto', pr: 1 }}>
         {selectedCreatorIds.map((creatorId) => {
           const creator = creators.find((c) => c.id === creatorId);
-          // USE SNAPSHOT, NOT PROP
           const creatorAssignments = snapshot[creatorId] || [];
 
           return (
