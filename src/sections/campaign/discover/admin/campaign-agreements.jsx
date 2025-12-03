@@ -1114,7 +1114,7 @@ const CampaignAgreements = ({ campaign }) => {
                             <Tooltip
                               title={
                                 !item?.submission
-                                  ? 'Creator must be approved before sending agreement'
+                                  ? 'Approve (and/or link) creator before sending agreement'
                                   : ''
                               }
                               arrow
