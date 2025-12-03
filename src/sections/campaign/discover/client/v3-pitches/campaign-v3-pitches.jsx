@@ -42,6 +42,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import BatchAssignUGCModal from './BatchAssignUGCModal';
+import PitchModalMobile from '../../admin/pitch-modal-mobile';
 
 const countPitchesByStatus = (pitches, statusList) => (
     pitches?.filter((pitch) => {
@@ -70,6 +71,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     [user]
   );
   const smUp = useResponsive('up', 'sm');
+  const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');
 
   const { data: agreements } = useGetAgreements(campaign?.id);
@@ -964,6 +966,25 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
 
       {/* Pitch Modal */}
       {selectedPitch && (
+        <V3PitchModal
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          pitch={selectedPitch}
+          campaign={campaign}
+          agreements={agreements}
+          onUpdate={handlePitchUpdate}
+        />
+      )}
+
+      {smDown ? (
+        <PitchModalMobile
+          pitch={selectedPitch}
+          open={openPitchModal}
+          onClose={handleClosePitchModal}
+          onUpdate={handlePitchUpdate}
+          campaign={campaign}
+        />
+      ) : (
         <V3PitchModal
           open={openPitchModal}
           onClose={handleClosePitchModal}
