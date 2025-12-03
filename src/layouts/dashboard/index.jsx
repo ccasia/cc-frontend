@@ -30,12 +30,40 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
+import SocialLinksModal from 'src/components/social-links-modal';
 
 import Main from './main';
 import Header from './header';
 // import NavMini from './nav-mini';
 // import NavVertical from './nav-vertical';
 import Nav from './nav-unified';
+
+// ----------------------------------------------------------------------
+
+// List of excluded user IDs who won't see the social links modal
+const EXCLUDED_USER_IDS = [
+  // Add the 20 user IDs here
+  'user-id-1',
+  'user-id-2',
+  'user-id-3',
+  'user-id-4',
+  'user-id-5',
+  'user-id-6',
+  'user-id-7',
+  'user-id-8',
+  'user-id-9',
+  'user-id-10',
+  'user-id-11',
+  'user-id-12',
+  'user-id-13',
+  'user-id-14',
+  'user-id-15',
+  'user-id-16',
+  'user-id-17',
+  'user-id-18',
+  'user-id-19',
+  'user-id-20',
+];
 
 // ----------------------------------------------------------------------
 
@@ -53,6 +81,7 @@ export default function DashboardLayout({ children }) {
   const { user } = useAuthContext();
   const { socket, isOnline } = useSocketContext();
   const [hasSubmittedKWSP, setHasSubmittedKWSP] = useState(false);
+  const [socialLinksModalOpen, setSocialLinksModalOpen] = useState(false);
 
   const bugFormDialog = useBoolean();
   const kwspFormDialog = useBoolean();
@@ -102,6 +131,35 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     if (user?.hasSubmittedKWSP) {
       setHasSubmittedKWSP(true);
+    }
+  }, [user]);
+
+  // Check if creator needs to add social links
+  useEffect(() => {
+    if (user && user.role === 'creator') {
+      const hasInstagramLink = user.creator?.instagramProfileLink;
+      const hasTiktokLink = user.creator?.tiktokProfileLink;
+      const hasMediaKit = user.creator?.instagramUser || user.creator?.tiktokUser;
+      const isExcluded = EXCLUDED_USER_IDS.includes(user.id);
+
+      console.log('Social Links Modal Check:', {
+        userId: user.id,
+        hasInstagramLink,
+        hasTiktokLink,
+        hasMediaKit,
+        isExcluded,
+        shouldShow: !isExcluded && !hasMediaKit && !hasInstagramLink && !hasTiktokLink,
+      });
+
+      // Show social links modal if:
+      // 1. User is a creator
+      // 2. Creator is not in excluded list
+      // 3. Creator doesn't have media kit connected
+      // 4. Creator doesn't have at least one social link
+      if (!isExcluded && !hasMediaKit && !hasInstagramLink && !hasTiktokLink) {
+        console.log('Opening social links modal');
+        setSocialLinksModalOpen(true);
+      }
     }
   }, [user]);
 
@@ -464,6 +522,14 @@ export default function DashboardLayout({ children }) {
         {feedbackForm}
         {kwspForm}
       </Box>
+
+      {/* Social Links Modal for Creators */}
+      {socialLinksModalOpen && (
+        <SocialLinksModal
+          open={socialLinksModalOpen}
+          onClose={() => setSocialLinksModalOpen(false)}
+        />
+      )}
     </Box>
   );
 }

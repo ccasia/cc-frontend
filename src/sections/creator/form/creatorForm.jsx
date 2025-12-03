@@ -106,6 +106,24 @@ const stepSchemas = Yup.object({
   interests: Yup.array().min(3, 'Choose at least three option'),
   languages: Yup.array().min(1, 'Choose at least one option'),
   referralCode: Yup.string().optional(),
+  instagramProfileLink: Yup.string()
+    .test('social-media-required', 'Please provide at least one social media profile', function(value) {
+      const { tiktokProfileLink } = this.parent;
+      return !!(value || tiktokProfileLink);
+    })
+    .test('instagram-format', 'URL must contain www.instagram.com', function(value) {
+      if (!value) return true; // Skip validation if empty (handled by social-media-required)
+      return /instagram\.com/.test(value.toLowerCase());
+    }),
+  tiktokProfileLink: Yup.string()
+    .test('social-media-required', 'Please provide at least one social media profile', function(value) {
+      const { instagramProfileLink } = this.parent;
+      return !!(value || instagramProfileLink);
+    })
+    .test('tiktok-format', 'URL must contain www.tiktok.com', function(value) {
+      if (!value) return true; // Skip validation if empty (handled by social-media-required)
+      return /tiktok\.com/.test(value.toLowerCase());
+    }),
   recaptcha: Yup.string().required('Please complete the reCAPTCHA'),
 });
 
@@ -175,6 +193,8 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       city: '',
       otherPronounce: '',
       referralCode: '',
+      instagramProfileLink: '',
+      tiktokProfileLink: '',
     }),
     []
   );
@@ -276,7 +296,8 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       !currentValues.languages?.length ||
       currentValues.languages.length < 1 ||
       !currentValues.interests?.length ||
-      currentValues.interests.length < 3
+      currentValues.interests.length < 3 ||
+      (!currentValues.instagramProfileLink && !currentValues.tiktokProfileLink)
     ) {
       newStepErrors[2] = true;
     } else {
@@ -658,7 +679,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
         }}
       >
         <FormProvider methods={methods} onSubmit={onSubmit}>
-          <Box sx={{ width: '100%', px: { xs: 2, sm: 0 } }}>{renderForm(steps[activeStep])}</Box>
+          <Box sx={{ width: '100%', maxWidth: '100%', px: { xs: 2, sm: 0 } }}>{renderForm(steps[activeStep])}</Box>
 
           <Box
             sx={{
