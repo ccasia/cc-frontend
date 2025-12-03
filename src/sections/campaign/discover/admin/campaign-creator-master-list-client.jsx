@@ -138,7 +138,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                 creator: pitch.user?.creator,
                 engagementRate: pitch.user?.instagramUser?.engagement_rate,
                 followerCount: pitch.user?.instagramUser?.followers_count,
-                profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
+                profileLink: pitch.user?.creator?.profileLink,
               },
               status: pitch.displayStatus || pitch.status || 'undecided',
               displayStatus: pitch.displayStatus || pitch.status || 'undecided',
@@ -148,7 +148,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               adminComments: pitch.adminComments,
               rejectionReason: pitch.rejectionReason,
               customRejectionText: pitch.customRejectionText,
-              username: pitch.username,
               followerCount: pitch.followerCount,
               engagementRate: pitch.engagementRate,
               isShortlisted: false,
@@ -172,7 +171,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               creator: item.user?.creator,
               engagementRate: item.user?.instagramUser?.engagement_rate,
               followerCount: item.user?.instagramUser?.followers_count,
-              profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
+              profileLink: item.user?.creator?.profileLink,
             },
             status: 'approved', // Shortlisted creators are approved
             createdAt: item.shortlisted_date || new Date().toISOString(),
@@ -203,7 +202,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               creator: pitch.user?.creator,
               engagementRate: pitch.user?.instagramUser?.engagement_rate,
               followerCount: pitch.user?.instagramUser?.followers_count,
-              profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
+              profileLink: pitch.user?.creator?.profileLink,
             },
             status: pitch.status || 'undecided',
             createdAt: pitch.createdAt || new Date().toISOString(),
@@ -980,7 +979,7 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 <Iconify icon="mdi:instagram" width={14} sx={{ color: '#637381' }} />
                 <Typography variant="subtitle" sx={{ color: '#8E8E93', fontSize: 12 }}>
-                  {pitch.user?.ig_username || pitch?.user?.tiktok_username || pitch?.username || extractUsernameFromProfileLink(pitch.user?.profileLink) || 'N/A'}
+                  {pitch.user?.ig_username || pitch?.user?.tiktok_username || extractUsernameFromProfileLink(pitch.user?.creator?.profileLink) || 'N/A'}
                 </Typography>
               </Stack>
             </Stack>
