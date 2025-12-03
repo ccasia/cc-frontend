@@ -18,9 +18,7 @@ const BatchAssignUGCModal = ({ open, onClose, creators = [], campaignId, onAssig
       id: c.id,
       name: c.name,
       profileLink: c.profileLink,
-      username: c.username,
       followerCount: c.followerCount,
-      engagementRate: c.engagementRate,
       adminComments: c.adminComments,
       credits: '',
     })));
@@ -73,9 +71,7 @@ const BatchAssignUGCModal = ({ open, onClose, creators = [], campaignId, onAssig
             guestPayloads.push({
               name: v.name || 'Guest',
               profileLink: v.profileLink || '',
-              username: v.username || '',
               followerCount: v.followerCount || 0,
-              engagementRate: v.engagementRate || 0,
               adminComments: (v.adminComments || adminComments || '').trim() || undefined,
               credits: parseInt(v.credits, 10) || 0, // Include credits for non-v4 campaigns
             });

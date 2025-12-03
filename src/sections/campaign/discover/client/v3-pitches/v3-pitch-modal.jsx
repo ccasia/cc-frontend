@@ -1628,10 +1628,9 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
   // Form state for editable fields
   const [formValues, setFormValues] = React.useState({
     name: pitch?.user?.name || '',
-    username: pitch?.username || '',
     followerCount: pitch?.followerCount || '',
     engagementRate: pitch?.engagementRate || '',
-    profileLink: pitch?.user?.guestProfileLink || '',
+    profileLink: pitch?.user?.creator?.profileLink || '',
     adminComments: pitch?.adminComments || '',
   });
 
@@ -1640,10 +1639,9 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
     if (pitch) {
       setFormValues({
         name: pitch?.user?.name || '',
-        username: pitch?.username || '',
         followerCount: pitch?.followerCount || '',
         engagementRate: pitch?.engagementRate || '',
-        profileLink: pitch?.user?.guestProfileLink || '',
+        profileLink: pitch?.user?.creator?.profileLink || '',
         adminComments: pitch?.adminComments || '',
       });
     }
@@ -1684,7 +1682,6 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
       // Update guest creator information
       const response = await axiosInstance.patch(`/api/pitch/v3/${pitch.id}/updateGuest`, {
         name: formValues.name,
-        username: formValues.username,
         followerCount: formValues.followerCount,
         engagementRate: formValues.engagementRate,
         profileLink: formValues.profileLink,
@@ -1799,31 +1796,6 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
             </Box>
 
             <Stack flex={1} spacing={1} flexDirection="row">
-              {/* Username */}
-              <Box flex={1}>
-                <Typography
-                  variant="caption"
-                  sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
-                >
-                  Username (Social Media)
-                </Typography>
-                {isAdmin ? (
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Username"
-                    value={formValues.username}
-                    onChange={handleFieldChange('username')}
-                    disabled={submitting}
-                    sx={{ bgcolor: '#fff', borderRadius: 1 }}
-                  />
-                ) : (
-                  <Typography variant="body2" sx={{ color: 'text.primary' }}>
-                    {formValues.username || '—'}
-                  </Typography>
-                )}
-              </Box>
-
               {/* Profile Link */}
               <Box flex={1}>
                 <Typography

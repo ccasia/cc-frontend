@@ -1388,9 +1388,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
           ...prev.creators,
           {
             name: '',
-            username: '',
             followerCount: '',
-            engagementRate: '',
             profileLink: '',
             adminComments: '',
           },
@@ -1423,9 +1421,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
       creators: [
         {
           name: '',
-          username: '',
           followerCount: '',
-          engagementRate: '',
           profileLink: '',
           adminComments: '',
         },
@@ -1480,35 +1476,19 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
                 />
               </Box>
 
-              <Stack flexDirection="row" flex={1} spacing={2}>
-                {/* Username */}
-                <Box flex={1}>
-                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
-                    Username (Social Media)
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Username"
-                    value={creator.username}
-                    onChange={handleCreatorChange(index, 'username')}
-                  />
-                </Box>
-
-                {/* Profile Link */}
-                <Box flex={1}>
-                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
-                    Profile Link
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Profile Link"
-                    value={creator.profileLink}
-                    onChange={handleCreatorChange(index, 'profileLink')}
-                  />
-                </Box>
-              </Stack>
+              {/* Profile Link */}
+              <Box flex={1}>
+                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
+                  Profile Link
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="https://instagram.com/username or https://tiktok.com/@username"
+                  value={creator.profileLink}
+                  onChange={handleCreatorChange(index, 'profileLink')}
+                />
+              </Box>
             </Stack>
 
             <Box display="flex" gap={2} mb={2}>
