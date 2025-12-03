@@ -13,8 +13,18 @@ import Iconify from 'src/components/iconify';
  */
 const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
   const theme = useTheme();
-  const profileLink = pitch.user?.profileLink;
+  // Profile link is stored on Creator model
+  const profileLink = pitch.user?.creator?.profileLink || pitch.user?.profileLink;
+  const instagramProfileLink = pitch.user?.creator?.instagramProfileLink;
+  const tiktokProfileLink = pitch.user?.creator?.tiktokProfileLink;
   const profileUsername = extractUsernameFromProfileLink(profileLink);
+
+  // Extract usernames from profile links
+  const instagramUsername = extractUsernameFromProfileLink(instagramProfileLink);
+  const tiktokUsername = extractUsernameFromProfileLink(tiktokProfileLink);
+
+  // Check if we have platform-specific links
+  const hasPlatformLinks = instagramProfileLink || tiktokProfileLink || instagramUsername || tiktokUsername;
 
   // Determine what to display for username, engagement rate and follower count
   const getDisplayData = () => {
@@ -44,12 +54,10 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
         instagramStats?.username,
         tiktokStats?.username,
         profileUsername,
-        pitch?.username,
-        pitch?.user?.username
       );
 
       return {
-        username: usernameFromStats || '-',
+        username: usernameFromStats || profileUsername || '-',
         engagementRate: pickValue(
           instagramStats?.engagement_rate,
           tiktokStats?.engagement_rate,
@@ -63,33 +71,15 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
       };
     }
 
-    // P2: Use manually entered data from the pitch
-    if (pitch?.username || pitch?.engagementRate || pitch?.followerCount) {
-      return {
-        username: pickString(pitch?.username, profileUsername, pitch?.user?.username) || '-',
-        engagementRate: pitch?.engagementRate || null,
-        followerCount: pitch?.followerCount || null,
-      };
-    }
-
-    // P3: Attempt to derive username from profile link
-    if (profileUsername) {
-      return {
-        username: profileUsername,
-        engagementRate: null,
-        followerCount: null,
-      };
-    }
-
-    // Default: No data available
     return {
-      username: '-',
+      username: profileUsername || '-',
       engagementRate: null,
       followerCount: null,
     };
   };
+
   const displayData = getDisplayData();
-  // Get profile link - prioritize creator.profileLink, fallback to user.guestProfileLink
+
   const statusInfo = getStatusInfo(pitch);
 
   return (
@@ -122,23 +112,80 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
         </Stack>
       </TableCell>
       <TableCell>
-        {profileLink && (
-          <Link
-            href={profileLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            underline="hover"
-            sx={{
-              color: 'primary.main',
-              fontWeight: 500,
-              fontSize: '0.875rem',
-            }}
-          >
-            {displayData.username}
-          </Link>
-        )}
-        {!profileLink && (
-          <Typography variant="body2">{displayData.username}</Typography>
+        {hasPlatformLinks ? (
+          <Stack spacing={0.5}>
+            {/* Instagram row */}
+            {(instagramUsername || instagramProfileLink) && (
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Iconify icon="mdi:instagram" width={16} sx={{ color: '#E4405F', flexShrink: 0 }} />
+                {instagramProfileLink ? (
+                  <Link
+                    href={instagramProfileLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="hover"
+                    sx={{
+                      color: 'primary.main',
+                      fontWeight: 500,
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    {instagramUsername || extractUsernameFromProfileLink(instagramProfileLink) || '-'}
+                  </Link>
+                ) : (
+                  <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                    {instagramUsername || '-'}
+                  </Typography>
+                )}
+              </Stack>
+            )}
+            {/* TikTok row */}
+            {(tiktokUsername || tiktokProfileLink) && (
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Iconify icon="ic:baseline-tiktok" width={16} sx={{ color: '#000000', flexShrink: 0 }} />
+                {tiktokProfileLink ? (
+                  <Link
+                    href={tiktokProfileLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="hover"
+                    sx={{
+                      color: 'primary.main',
+                      fontWeight: 500,
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    {tiktokUsername || extractUsernameFromProfileLink(tiktokProfileLink) || '-'}
+                  </Link>
+                ) : (
+                  <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                    {tiktokUsername || '-'}
+                  </Typography>
+                )}
+              </Stack>
+            )}
+          </Stack>
+        ) : (
+          // Fallback to generic profileLink
+          <>
+            {profileLink ? (
+              <Link
+                href={profileLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="hover"
+                sx={{
+                  color: 'primary.main',
+                  fontWeight: 500,
+                  fontSize: '0.875rem',
+                }}
+              >
+                {displayData.username}
+              </Link>
+            ) : (
+              <Typography variant="body2">{displayData.username}</Typography>
+            )}
+          </>
         )}
       </TableCell>
       {/* <TableCell>
