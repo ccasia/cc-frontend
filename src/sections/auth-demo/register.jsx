@@ -274,6 +274,8 @@ const Register = () => {
             Nationality: creatorData.Nationality || '',
             city: creatorData.city || '',
             referralCode: creatorData.referralCode || '',
+            instagramProfileLink: creatorData.instagramProfileLink || '',
+            tiktokProfileLink: creatorData.tiktokProfileLink || '',
           },
         };
 

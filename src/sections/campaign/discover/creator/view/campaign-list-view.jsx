@@ -123,9 +123,19 @@ export default function CampaignListView() {
   
   const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
   
-  // Target all users by using an empty array
-  // This will make the popup show for all creators who haven't connected their media kit
-  const targetUserIds = [];
+  const targetUserIds = [
+    'user-id-1',
+    'user-id-2',
+    'user-id-3',
+    'user-id-4',
+    'user-id-5',
+    'user-id-6',
+    'user-id-7',
+    'user-id-8',
+    'user-id-9',
+    'user-id-10',
+    // Add more user IDs as needed
+  ];
 
   const load = useBoolean();
   const [upload, setUpload] = useState([]);

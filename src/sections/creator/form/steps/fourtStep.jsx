@@ -86,7 +86,7 @@ const FourthStep = ({ item }) => {
         gap={4}
         sx={{
           width: '100%',
-          maxWidth: { xs: '100%', sm: 400 },
+          maxWidth: { xs: '100%', sm: 900 },
           mx: 'auto',
           my: { xs: 4, sm: 5 },
           px: { xs: 1, sm: 0 },
@@ -199,20 +199,109 @@ const FourthStep = ({ item }) => {
             {errors.interests && <ErrorIcon />}
           </Stack>
         </Stack>
-
         <Stack spacing={1}>
           <FormLabel sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}>
             Referral Code
           </FormLabel>
-          <RHFTextField
-            name="referralCode"
-            placeholder="Enter referral code if you have one"
+          <Stack direction="row" alignItems="center">
+            <RHFTextField
+              name="referralCode"
+              placeholder="Enter referral code if you have one"
+              sx={{
+                flex: 1,
+                '& .MuiInputBase-root': {
+                  height: '48px',
+                  borderRadius: '8px',
+                },
+                '& .MuiInputBase-input': {
+                  padding: '12px 14px',
+                },
+              }}
+            />
+          </Stack>
+        </Stack>
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+          <Stack spacing={1} flex={1} width="100%">
+            <FormLabel
+              required
+              sx={{
+                fontWeight: 600,
+                color: 'black',
+                fontFamily: primaryFont,
+                fontSize: '14px',
+                '& .MuiFormLabel-asterisk': {
+                  color: 'red',
+                },
+              }}
+            >
+              Instagram profile link
+            </FormLabel>
+            <Stack direction="row" alignItems="center">
+              <RHFTextField
+                name="instagramProfileLink"
+                placeholder="www.instagram.com/username"
+                sx={{
+                  flex: 1,
+                  '& .MuiInputBase-root': {
+                    height: '48px',
+                    borderRadius: '8px',
+                  },
+                  '& .MuiInputBase-input': {
+                    padding: '12px 14px',
+                  },
+                }}
+              />
+              {errors.instagramProfileLink && <ErrorIcon />}
+            </Stack>
+          </Stack>
+
+          <Box
             sx={{
-              '& .MuiInputBase-root': {
-                p: { xs: '5px 5px 5px 8px', sm: '7px 9px' },
-              },
+              fontFamily: primaryFont,
+              fontSize: '14px',
+              color: '#636366',
+              fontWeight: 500,
+              mt: { xs: 0, sm: 3 },
+              px: { xs: 0, sm: 1 },
             }}
-          />
+          >
+            or
+          </Box>
+
+          <Stack spacing={1} flex={1} width="100%">
+            <FormLabel
+              required
+              sx={{
+                fontWeight: 600,
+                color: 'black',
+                fontFamily: primaryFont,
+                fontSize: '14px',
+                '& .MuiFormLabel-asterisk': {
+                  color: 'red',
+                },
+              }}
+            >
+              TikTok profile link
+            </FormLabel>
+            <Stack direction="row" alignItems="center">
+              <RHFTextField
+                name="tiktokProfileLink"
+                placeholder="www.tiktok.com/username"
+                sx={{
+                  flex: 1,
+                  '& .MuiInputBase-root': {
+                    height: '48px',
+                    borderRadius: '8px',
+                  },
+                  '& .MuiInputBase-input': {
+                    padding: '12px 14px',
+                  },
+                }}
+              />
+              {errors.tiktokProfileLink && <ErrorIcon />}
+            </Stack>
+          </Stack>
         </Stack>
       </Stack>
     </>
