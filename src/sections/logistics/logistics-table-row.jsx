@@ -12,11 +12,9 @@ import { styled } from '@mui/material/styles';
 
 import Iconify from 'src/components/iconify';
 
-export default function LogisticsTableRow({ row, onClick }) {
+export default function LogisticsTableRow({ row, onClick, onEditStatus }) {
   const { creator, status, deliveryDetails } = row;
   const items = deliveryDetails?.items;
-
-  const [openSchedule, setOpenSchedule] = useState(false);
 
   const getStatusConfig = (currentStatus) => {
     switch (currentStatus) {
@@ -65,11 +63,10 @@ export default function LogisticsTableRow({ row, onClick }) {
         };
     }
   };
-  const configCurrentStatus = getStatusConfig(status);
 
+  const configCurrentStatus = getStatusConfig(status);
   const isUnassigned = !items || items.length === 0;
   const finalStatus = isUnassigned ? getStatusConfig('PENDING_ASSIGNMENT') : configCurrentStatus;
-
 
   return (
     <>
@@ -102,22 +99,7 @@ export default function LogisticsTableRow({ row, onClick }) {
         <TableCell sx={{ width: '20%', textAlign: 'right' }}>
           <Box sx={{ display: 'flex', pr: 2 }}>
             <Box
-              onClick={finalStatus.onClick}
-              // sx={{
-              //   position: 'relative',
-              //   display: 'inline-flex',
-              //   alignItems: 'center',
-              //   justifyContent: 'center',
-              //   minWidth: 120,
-              //   height: 36,
-              //   px: 2,
-              //   borderRadius: 1,
-              //   border: `1px solid ${finalStatus.color}`,
-              //   bgcolor: 'transparent',
-              //   cursor: finalStatus.onClick ? 'pointer' : 'default',
-              //   transition: 'all 0.2s',
-              //   '&:hover': finalStatus.onClick ? { bgcolor: `${finalStatus.color}14` } : {},
-              // }}
+              onClick={onEditStatus}
               sx={{
                 position: 'relative',
                 display: 'inline-flex',
@@ -135,44 +117,21 @@ export default function LogisticsTableRow({ row, onClick }) {
                 fontSize: { xs: 8, sm: 10, md: 12 },
                 fontWeight: 600,
                 textTransform: 'uppercase',
-                '&:hover': {
-                  backgroundColor: '#F8F9FA',
-                  border: `1px solid ${finalStatus.color}`,
-                  boxShadow: `0px -2px 0px 0px ${finalStatus.color} inset`,
-                },
-                '&:active': {
-                  boxShadow: `0px -1px 0px 0px ${finalStatus.color} inset`,
-                  transform: 'translateY(1px)',
-                },
+                ...(onEditStatus && {
+                  '&:hover': {
+                    backgroundColor: '#F8F9FA',
+                    border: `1px solid ${finalStatus.color}`,
+                    boxShadow: `0px -2px 0px 0px ${finalStatus.color} inset`,
+                  },
+                  '&:active': {
+                    boxShadow: `0px -1px 0px 0px ${finalStatus.color} inset`,
+                    transform: 'translateY(1px)',
+                  },
+                }),
               }}
             >
-              <Typography
-                variant="subtitle2"
-                // sx={{
-                //   width: { xs: 80, sm: 110, md: 130 },
-                //   height: { xs: 28, sm: 30 },
-                //   padding: { xs: '4px 8px', sm: '6px 10px' },
-                //   borderRadius: '6px',
-                //   border: '1px solid #E7E7E7',
-                //   boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                //   backgroundColor: '#FFFFFF',
-                //   color: finalStatus.color,
-                //   fontSize: { xs: 8, sm: 10, md: 12 },
-                //   fontWeight: 600,
-                //   textTransform: 'uppercase',
-                //   '&:hover': {
-                //     backgroundColor: '#F8F9FA',
-                //     border: '1px solid #E7E7E7',
-                //     boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                //   },
-                //   '&:active': {
-                //     boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
-                //     transform: 'translateY(1px)',
-                //   },
-                // }}
-              >
-                {finalStatus.label}
-              </Typography>
+              <Typography variant="subtitle2">{finalStatus.label}</Typography>
+              {onEditStatus && <Iconify icon="eva:edit-2-outline" width={12} sx={{ ml: 0.5 }} />}
             </Box>
           </Box>
         </TableCell>
@@ -184,4 +143,5 @@ export default function LogisticsTableRow({ row, onClick }) {
 LogisticsTableRow.propTypes = {
   row: PropTypes.object,
   onClick: PropTypes.func,
+  onEditStatus: PropTypes.func,
 };
