@@ -1032,6 +1032,107 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                           </Box>
                         </>
                       )}
+
+                      {/* Social Links - Show when no media kit data */}
+                      {(() => {
+                        const hasInstagramData = !!(
+                          currentPitch?.user?.creator?.instagramUser?.followers_count ||
+                          creatorProfileFull?.creator?.instagramUser?.followers_count ||
+                          creatorProfileFull?.instagramUser?.followers_count
+                        );
+                        const hasTiktokData = !!(
+                          currentPitch?.user?.creator?.tiktokUser?.follower_count ||
+                          creatorProfileFull?.creator?.tiktokUser?.follower_count ||
+                          creatorProfileFull?.tiktokUser?.follower_count
+                        );
+                        const instagramLink =
+                          currentPitch?.user?.creator?.instagramProfileLink ||
+                          creatorProfileFull?.creator?.instagramProfileLink;
+                        const tiktokLink =
+                          currentPitch?.user?.creator?.tiktokProfileLink ||
+                          creatorProfileFull?.creator?.tiktokProfileLink;
+
+                        // Show social links section if there's no media kit but has social links
+                        const shouldShowSocialLinks = 
+                          (!hasInstagramData && instagramLink) || 
+                          (!hasTiktokData && tiktokLink);
+                        
+                        if (shouldShowSocialLinks) {
+                          return (
+                            <Box sx={{ ml: 2, textAlign: 'right' }}>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  fontFamily: 'Inter Display, sans-serif',
+                                  fontWeight: 600,
+                                  fontSize: '12px',
+                                  lineHeight: '16px',
+                                  letterSpacing: '0%',
+                                  color: '#8E8E93',
+                                  display: 'block',
+                                  mb: 1,
+                                }}
+                              >
+                                Social Links
+                              </Typography>
+                              {!hasTiktokData && tiktokLink && (
+                                <Typography
+                                  component="a"
+                                  href={tiktokLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  sx={{
+                                    fontSize: '14px',
+                                    color: '#1340FF',
+                                    textDecoration: 'none',
+                                    display: 'block',
+                                    mb: 0.5,
+                                    '&:hover': {
+                                      textDecoration: 'underline',
+                                    },
+                                  }}
+                                >
+                                  {(() => {
+                                    try {
+                                      const url = new URL(tiktokLink.startsWith('http') ? tiktokLink : `https://${tiktokLink}`);
+                                      return `www.tiktok.com${url.pathname}`;
+                                    } catch {
+                                      return tiktokLink;
+                                    }
+                                  })()}
+                                </Typography>
+                              )}
+                              {!hasInstagramData && instagramLink && (
+                                <Typography
+                                  component="a"
+                                  href={instagramLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  sx={{
+                                    fontSize: '14px',
+                                    color: '#1340FF',
+                                    textDecoration: 'none',
+                                    display: 'block',
+                                    '&:hover': {
+                                      textDecoration: 'underline',
+                                    },
+                                  }}
+                                >
+                                  {(() => {
+                                    try {
+                                      const url = new URL(instagramLink.startsWith('http') ? instagramLink : `https://${instagramLink}`);
+                                      return `www.instagram.com${url.pathname}`;
+                                    } catch {
+                                      return instagramLink;
+                                    }
+                                  })()}
+                                </Typography>
+                              )}
+                            </Box>
+                          );
+                        }
+                        return null;
+                      })()}
                     </Stack>
                   </Stack>
                 </Box>
