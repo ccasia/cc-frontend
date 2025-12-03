@@ -941,6 +941,12 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
   const instagramStats = creatorProfile.instagramUser || {};
   const tiktokStats = creatorProfile.tiktokUser || {};
 
+  // Extract social media usernames
+  const instagramUsername = instagramStats?.username || extractUsernameFromProfileLink(creatorProfile?.instagramProfileLink);
+  const tiktokUsername = tiktokStats?.username || extractUsernameFromProfileLink(creatorProfile?.tiktokProfileLink);
+  const profileUsername = extractUsernameFromProfileLink(creatorProfile?.profileLink);
+  const hasSocialUsernames = instagramUsername || tiktokUsername;
+
   const followerCount = resolveMetric(
     instagramStats.followers_count,
     tiktokStats.follower_count,
@@ -976,12 +982,32 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
                 {pitch?.user?.name || 'Unknown Creator'}
               </Typography>
 
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                <Iconify icon="mdi:instagram" width={14} sx={{ color: '#637381' }} />
-                <Typography variant="subtitle" sx={{ color: '#8E8E93', fontSize: 12 }}>
-                  {pitch.user?.ig_username || pitch?.user?.tiktok_username || extractUsernameFromProfileLink(pitch.user?.creator?.profileLink) || 'N/A'}
-                </Typography>
-              </Stack>
+              {hasSocialUsernames ? (
+                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mt: 0.25 }}>
+                  {instagramUsername && (
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Iconify icon="mdi:instagram" width={14} sx={{ color: '#8E8E93' }} />
+                      <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                        {instagramUsername}
+                      </Typography>
+                    </Stack>
+                  )}
+                  {tiktokUsername && (
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#8E8E93' }} />
+                      <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                        {tiktokUsername}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
+              ) : profileUsername && (
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                    {profileUsername}
+                  </Typography>
+                </Stack>
+              )}
             </Stack>
           </Stack>
 
