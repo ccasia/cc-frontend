@@ -468,11 +468,15 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
           variant="outlined"
           onClick={() => setOpenAdminAssign(true)}
           sx={{
-            width: '100%',
-            mb: 2,
-            borderColor: '#919EAB',
-            color: '#212B36',
-            '&:hover': { borderColor: '#212B36', bgcolor: 'rgba(33, 43, 54, 0.08)' },
+            borderRadius: '8px',
+            boxShadow: '0px -4px 0px 0px #00000073 inset',
+            color: '#FFFFFF',
+            bgcolor: '#3A3A3C',
+            '&:hover': { bgcolor: '#3a3a3cd1', boxShadow: '0px -4px 0px 0px #000000 inset' },
+            '&:active': {
+              boxShadow: '0px 0px 0px 0px #000000 inset',
+              transform: 'translateY(1px)',
+            },
           }}
         >
           Edit or Assign

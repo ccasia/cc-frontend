@@ -20,8 +20,8 @@ function StatusPill({ value }) {
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        px: 1,
-        py: 0.25,
+        px: 0.5,
+        py: 0.5,
         mx: 0.5,
         borderRadius: '6px',
         border: `1px solid ${config.color}`,
@@ -31,6 +31,7 @@ function StatusPill({ value }) {
         fontWeight: 700,
         textTransform: 'uppercase',
         verticalAlign: 'middle',
+        cursor: 'default',
       }}
     >
       {config.label}
@@ -90,11 +91,29 @@ export default function ConfirmStatusChangeDialog({
           😲
         </Box>
 
-        <Typography variant="h3" sx={{ fontFamily: 'instrument serif', color: '#231F20', mb: 1.5 }}>
+        <Typography
+          variant="h2"
+          sx={{
+            fontFamily: 'instrument serif',
+            fontWeight: 400,
+            color: '#231F20',
+            cursor: 'default',
+          }}
+        >
           Change statuses?
         </Typography>
 
-        <Typography variant="body2" sx={{ color: '#636366', mb: 4, lineHeight: 2, maxWidth: 300 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#636366',
+            fontWeight: 400,
+            mb: 4,
+            lineHeight: 1.5,
+            maxWidth: 300,
+            cursor: 'default',
+          }}
+        >
           Changing from
           <StatusPill value={oldStatus} />
           to

@@ -1,18 +1,52 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import axiosInstance from 'src/utils/axios';
+import { useSnackbar } from 'notistack';
 
 import { Box, Stack, Button, Dialog, Avatar, Divider, Typography, IconButton } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
-export default function ReviewIssueDialog({ open, onClose, logistic, onUpdate }) {
+export default function ReviewIssueDialog({ open, onClose, logistic, campaignId, onUpdate }) {
+  const { enqueueSnackbar } = useSnackbar();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const latestIssue =
     logistic?.issues && logistic.issues.length > 0
       ? logistic.issues[logistic.issues.length - 1]
       : { reason: 'No issue description provided.' };
+      
+  const handleRetry = async () => {
+    setIsSubmitting(true);
+
+    try {
+      await axiosInstance.patch(`/api/logistics/campaign/${campaignId}/${logistic.id}/retry`);
+      enqueueSnackbar('Delivery status reverted to Scheduled.');
+      onUpdate();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Failed to retry delivery', { variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResolve = async () => {
+    setIsSubmitting(true);
+    try {
+      await axiosInstance.patch(`/api/logistics/campaign/${campaignId}/${logistic.id}/resolve`);
+      enqueueSnackbar('Issue resolved and marked as Completed.');
+      onUpdate();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Failed to resolve issue', { variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Dialog
@@ -71,7 +105,7 @@ export default function ReviewIssueDialog({ open, onClose, logistic, onUpdate })
       {/* Issue Display Box */}
       <Box
         sx={{
-          bgcolor: '#F9FAFB', // Light background like a disabled input
+          bgcolor: '#F9FAFB',
           border: '1px solid #E0E0E0',
           borderRadius: 1.5,
           p: 2,
@@ -89,9 +123,8 @@ export default function ReviewIssueDialog({ open, onClose, logistic, onUpdate })
       {/* Action Buttons */}
       <Stack direction="row" spacing={2} justifyContent="center">
         <Button
-          //   fullWidth
           variant="contained"
-          //   onClick={handleRetry}
+          onClick={handleRetry}
           disabled={isSubmitting}
           sx={{
             width: 'fit-content',
@@ -118,9 +151,8 @@ export default function ReviewIssueDialog({ open, onClose, logistic, onUpdate })
         </Button>
 
         <Button
-          //   fullWidth
           variant="contained"
-          //   onClick={handleResolve}
+          onClick={handleResolve}
           disabled={isSubmitting}
           sx={{
             borderRadius: '8px',
@@ -145,5 +177,6 @@ ReviewIssueDialog.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   logistic: PropTypes.object,
+  campaignId: PropTypes.string,
   onUpdate: PropTypes.func,
 };
