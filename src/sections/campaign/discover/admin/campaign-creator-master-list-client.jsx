@@ -942,10 +942,10 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
 
   // Helper function to select the account with most followers and highest engagement
   const selectBestAccount = () => {
-    const igFollowers = instagramStats.followers_count || 0;
-    const igEngagement = instagramStats.engagement_rate || 0;
-    const tkFollowers = tiktokStats.follower_count || 0;
-    const tkEngagement = tiktokStats.engagement_rate || 0;
+    const igFollowers = instagramStats?.followers_count || 0;
+    const igEngagement = (instagramStats?.totalLikes + instagramStats?.totalComments) / igFollowers || 0;
+    const tkFollowers = tiktokStats?.follower_count || 0;
+    const tkEngagement = (tiktokStats?.likes_count + tiktokStats?.totalComments + tiktokStats?.totalShares) / tkFollowers || 0;
 
     // If only one account exists, use it
     if (!tkFollowers) return { followers: igFollowers, engagement: igEngagement };
@@ -1053,7 +1053,7 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
           <Stack direction="row" alignItems="center" spacing={0.5}>
             <Iconify icon="mage:chart-up-b" width={16} sx={{ color: '#637381' }} />
             <Typography variant="caption" sx={{ color: '#637381', fontSize: 12, pt: 0.2 }}>
-              {typeof engagementRate === 'number' ? `${engagementRate.toFixed(2)}%` : 'N/A'} Engagement
+              {typeof engagementRate === 'number' ? `${(engagementRate * 100).toFixed(2)}%` : 'N/A'} Engagement
             </Typography>
           </Stack>
         </Stack>

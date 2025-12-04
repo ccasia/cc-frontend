@@ -599,7 +599,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                     )}
                   </Stack>
 
-                  <Stack spacing={0} justifyContent="flex-end">
+                  <Stack spacing={0} direction={'row'} alignItems={'flex-end'}>
                     {/* Social Links - Show when no media kit data */}
                     {(() => {
                       const hasInstagramData = !!(
