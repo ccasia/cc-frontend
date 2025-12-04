@@ -294,6 +294,17 @@ const CampaignDetailView = ({ id }) => {
     return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
+  const getAgreementsLabel = (agreementSubmissions, campaignAgreements) => {
+    const pendingAgreementApproval = agreementSubmissions?.filter(
+      a => a?.status === 'PENDING_REVIEW'
+    ).length || 0;
+    const pendingSendAgreement = (campaignAgreements || []).filter(
+      a => a.isSent === false
+    ).length;
+    const totalPending = pendingAgreementApproval + pendingSendAgreement;
+    return totalPending > 0 ? `Agreements (${totalPending})` : 'Agreements';
+  };
+
   const renderTabs = (
     <Box sx={{ mt: 2, mb: 2.5 }} overflow="hidden">
       <Stack
@@ -349,22 +360,7 @@ const CampaignDetailView = ({ id }) => {
                   value: 'pitch',
                 },
                 {
-                  label: (() => {
-                    const pendingAgreementApproval = agreementSubmissions?.reduce(
-                      (sum, a) => sum + (a?.status === 'PENDING_REVIEW' ? 1 : 0),
-                      0
-                    );
-                    const pendingSendAgreement = (campaignAgreements || []).reduce(
-                      (sum, a) => sum + (a.isSent === false ? 1 : 0),
-                      0
-                    );
-                    const totalPending = pendingAgreementApproval + pendingSendAgreement;
-                    if (totalPending > 0) {
-                      return `Agreements (${totalPending})`
-                    } else {
-                      return 'Agreements'
-                    }
-                  })(),
+                  label: getAgreementsLabel(agreementSubmissions, campaignAgreements),
                   value: 'agreement',
                 },
                 ...(campaign?.submissionVersion === 'v4'
