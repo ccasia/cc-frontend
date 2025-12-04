@@ -936,10 +936,29 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 };
 
 const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
-  const resolveMetric = (...values) => values.find((value) => value != null);
   const creatorProfile = pitch?.user?.creator || {};
   const instagramStats = creatorProfile.instagramUser || {};
   const tiktokStats = creatorProfile.tiktokUser || {};
+
+  // Helper function to select the account with most followers and highest engagement
+  const selectBestAccount = () => {
+    const igFollowers = instagramStats.followers_count || 0;
+    const igEngagement = instagramStats.engagement_rate || 0;
+    const tkFollowers = tiktokStats.follower_count || 0;
+    const tkEngagement = tiktokStats.engagement_rate || 0;
+
+    // If only one account exists, use it
+    if (!tkFollowers) return { followers: igFollowers, engagement: igEngagement };
+    if (!igFollowers) return { followers: tkFollowers, engagement: tkEngagement };
+
+    // If both exist, compare follower count first, then engagement rate
+    if (igFollowers >= tkFollowers) {
+      return { followers: igFollowers, engagement: igEngagement };
+    }
+    return { followers: tkFollowers, engagement: tkEngagement };
+  };
+
+  const bestAccount = selectBestAccount();
 
   // Extract social media usernames
   const instagramUsername = instagramStats?.username || extractUsernameFromProfileLink(creatorProfile?.instagramProfileLink);
@@ -947,17 +966,8 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
   const profileUsername = extractUsernameFromProfileLink(creatorProfile?.profileLink);
   const hasSocialUsernames = instagramUsername || tiktokUsername;
 
-  const followerCount = resolveMetric(
-    instagramStats.followers_count,
-    tiktokStats.follower_count,
-    pitch?.followerCount,
-  );
-
-  const engagementRate = resolveMetric(
-    instagramStats.engagement_rate,
-    tiktokStats.engagement_rate,
-    pitch?.engagementRate,
-  );
+  const followerCount = bestAccount.followers || pitch?.followerCount;
+  const engagementRate = bestAccount.engagement || pitch?.engagementRate;
 
   return (
     <Card
@@ -1043,7 +1053,7 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
           <Stack direction="row" alignItems="center" spacing={0.5}>
             <Iconify icon="mage:chart-up-b" width={16} sx={{ color: '#637381' }} />
             <Typography variant="caption" sx={{ color: '#637381', fontSize: 12, pt: 0.2 }}>
-              {typeof engagementRate === 'number' ? `${(engagementRate * 100).toFixed(2)}%` : 'N/A'} Engagement
+              {typeof engagementRate === 'number' ? `${engagementRate.toFixed(2)}%` : 'N/A'} Engagement
             </Typography>
           </Stack>
         </Stack>

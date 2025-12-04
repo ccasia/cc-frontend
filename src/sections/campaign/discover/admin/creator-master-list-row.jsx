@@ -50,9 +50,29 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
       return null;
     };
 
+    // Select the account with the most followers and highest engagement
+    const selectBestAccount = () => {
+      const igFollowers = instagramStats?.followers_count || 0;
+      const igEngagement = instagramStats?.engagement_rate || 0;
+      const tkFollowers = tiktokStats?.follower_count || 0;
+      const tkEngagement = tiktokStats?.engagement_rate || 0;
+
+      // If only one account exists, use it
+      if (!tkFollowers) return { stats: instagramStats, followers: igFollowers, engagement: igEngagement };
+      if (!igFollowers) return { stats: tiktokStats, followers: tkFollowers, engagement: tkEngagement };
+
+      // If both exist, compare follower count first, then engagement rate
+      if (igFollowers >= tkFollowers) {
+        return { stats: instagramStats, followers: igFollowers, engagement: igEngagement };
+      }
+      return { stats: tiktokStats, followers: tkFollowers, engagement: tkEngagement };
+    };
+
     // P1: Prioritize connected social media stats delivered with the pitch payload
     if (instagramStats || tiktokStats) {
+      const bestAccount = selectBestAccount();
       const usernameFromStats = pickString(
+        bestAccount.stats?.username,
         instagramStats?.username,
         tiktokStats?.username,
         profileUsername,
@@ -60,16 +80,8 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
 
       return {
         username: usernameFromStats || profileUsername || '-',
-        engagementRate: pickValue(
-          instagramStats?.engagement_rate,
-          tiktokStats?.engagement_rate,
-          pitch?.engagementRate
-        ),
-        followerCount: pickValue(
-          instagramStats?.followers_count,
-          tiktokStats?.follower_count,
-          pitch?.followerCount
-        ),
+        engagementRate: pickValue(bestAccount.engagement, pitch?.engagementRate),
+        followerCount: pickValue(bestAccount.followers, pitch?.followerCount),
       };
     }
 
