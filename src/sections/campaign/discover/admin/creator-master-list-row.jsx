@@ -115,7 +115,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
       </TableCell>
       <TableCell>
         {hasPlatformLinks ? (
-          <Stack spacing={0.5}>
+          <Stack spacing={2} direction={'row'}>
             {/* Instagram row */}
             {(instagramUsername || instagramProfileLink) && (
               <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -159,19 +159,27 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
           // Fallback to generic profileLink
           <>
             {profileLink ? (
-              <Link
-                href={profileLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                underline="hover"
-                sx={{
-                  color: 'primary.main',
-                  fontWeight: 500,
-                  fontSize: '0.875rem',
-                }}
-              >
-                {displayData.username}
-              </Link>
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {profileLink?.includes('instagram.com') && (
+                  <Iconify icon="mdi:instagram" width={16} sx={{ color: '#E4405F', flexShrink: 0 }} />
+                )}
+                {profileLink?.includes('tiktok.com') && (
+                  <Iconify icon="ic:baseline-tiktok" width={16} sx={{ color: '#000000', flexShrink: 0 }} />
+                )}
+                <Link
+                  href={profileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  {displayData.username}
+                </Link>
+              </Stack>
             ) : (
               <Typography variant="body2">{displayData.username}</Typography>
             )}
