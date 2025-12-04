@@ -133,7 +133,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 <Iconify icon="mdi:instagram" width={16} sx={{ color: '#E4405F', flexShrink: 0 }} />
                 <Link
-                  href={instagramProfileLink || createSocialProfileUrl(instagramUsername, 'instagram')}
+                  href={createSocialProfileUrl(instagramUsername, 'instagram') || instagramProfileLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   underline="hover"
@@ -152,7 +152,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 <Iconify icon="ic:baseline-tiktok" width={16} sx={{ color: '#000000', flexShrink: 0 }} />
                 <Link
-                  href={tiktokProfileLink || createSocialProfileUrl(tiktokUsername, 'tiktok')}
+                  href={createSocialProfileUrl(tiktokUsername, 'tiktok') || tiktokProfileLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   underline="hover"
