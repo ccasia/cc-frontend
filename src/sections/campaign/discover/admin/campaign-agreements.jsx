@@ -30,6 +30,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
+import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -37,10 +38,10 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { RHFTextField } from 'src/components/hook-form';
+import SortableHeader from 'src/components/table/sortable-header';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import CampaignAgreementEdit from './campaign-agreement-edit';
-import { fDate } from 'src/utils/format-time';
 
 // Convert AgreementDialog to a full component with approve/reject functionality
 const AgreementDialog = ({ open, onClose, url, agreement, campaign, onApprove, onReject }) => {
@@ -398,7 +399,7 @@ AgreementDialog.propTypes = {
 
 const CampaignAgreements = ({ campaign }) => {
   const { data, isLoading } = useGetAgreements(campaign?.id);
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedFilter] = useState('all');
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [sortColumn, setSortColumn] = useState('name'); // 'name', 'date', 'status'
@@ -434,41 +435,7 @@ const CampaignAgreements = ({ campaign }) => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  // Sortable header component
-  const SortableHeader = ({ column, label, width, minWidth }) => {
-    const isActive = sortColumn === column;
-    return (
-      <TableCell
-        onClick={() => handleColumnSort(column)}
-        sx={{
-          py: 1,
-          color: '#221f20',
-          fontWeight: 600,
-          width,
-          minWidth,
-          bgcolor: '#f5f5f5',
-          whiteSpace: 'nowrap',
-          cursor: 'pointer',
-          userSelect: 'none',
-          '&:hover': {
-            bgcolor: '#ebebeb',
-          },
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={0.5}>
-          <span>{label}</span>
-          <Iconify
-            icon={isActive && sortDirection === 'desc' ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-            width={16}
-            sx={{
-              color: isActive ? '#203ff5' : '#8E8E93',
-              transition: 'color 0.2s',
-            }}
-          />
-        </Stack>
-      </TableCell>
-    );
-  };
+  // Using shared SortableHeader component from components/table
 
   const methods = useForm({
     defaultValues: {
@@ -884,17 +851,23 @@ const CampaignAgreements = ({ campaign }) => {
                     Creator&apos;s Email
                   </TableCell>
                 )}
-                <SortableHeader 
-                  column="date" 
-                  label="Issue Date" 
-                  width={{ xs: '25%', sm: 120 }} 
-                  minWidth={{ xs: 110, sm: 120 }} 
+                <SortableHeader
+                  column="date"
+                  label="Issue Date"
+                  width={{ xs: '25%', sm: 120 }}
+                  minWidth={{ xs: 110, sm: 120 }}
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
                 />
-                <SortableHeader 
-                  column="status" 
-                  label="Status" 
-                  width={{ xs: '15%', sm: 75 }} 
-                  minWidth={{ xs: 90, sm: 75 }} 
+                <SortableHeader
+                  column="status"
+                  label="Status"
+                  width={{ xs: '15%', sm: 75 }}
+                  minWidth={{ xs: 90, sm: 75 }}
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
                 />
                 <TableCell
                   sx={{

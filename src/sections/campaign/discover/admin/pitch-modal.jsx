@@ -608,8 +608,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   }}
                 >
                   <Stack direction="row" width="100%" justifyContent="space-between">
-                    {/* Left side: Languages, Age, Pronouns */}
-                    <Stack direction="row" spacing={3}>
+                    {/* Left side: Languages, Age, Pronouns (always render labels) */}
+                    <Stack direction="row" spacing={3} alignItems={'flex-end'}>
                       {/* Languages Section */}
                       {derivedLanguages.length > 0 && (
                         <Stack spacing={1}>
@@ -620,7 +620,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                           >
                             Languages
                           </Typography>
-                          <Box>
+                          <Stack direction={'row'}>
                             {derivedLanguages.slice(0, 2).map((language, index) => (
                               <Chip
                                 key={index}
@@ -631,14 +631,17 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                                 }
                                 size="small"
                                 sx={{
+                                  height: 25,
                                   bgcolor: '#FFF',
                                   border: '1px solid #EBEBEB',
                                   borderRadius: 0.5,
                                   color: '#8E8E93',
-                                  height: '30px',
-                                  boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                                  boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
                                   cursor: 'default',
-                                  mr: 0.5
+                                  mr: 0.5,
+                                  '&:hover': {
+                                    bgcolor: 'transparent',
+                                  },
                                 }}
                               />
                             ))}
@@ -651,61 +654,49 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                                 +{derivedLanguages.length - 2}
                               </Typography>
                             )}
-                          </Box>
+                          </Stack>
                         </Stack>
                       )}
 
-                      <Stack direction="row" spacing={3}>
-                        {/* Age Section */}
-                        {derivedBirthDate && (
-                          <Box>
-                            <Stack alignItems="flex-start" spacing={1}>
-                              <Typography
-                                fontFamily={'Inter Display, sans-serif'}
-                                variant="caption"
-                                color="#8e8e93"
-                                sx={{
-                                  fontWeight: 700,
-                                  fontSize: 12,
-                                }}
-                              >
-                                Age
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 400, fontSize: 14 }}
-                              >
-                                {dayjs().diff(dayjs(derivedBirthDate), 'year')}
-                              </Typography>
-                            </Stack>
-                          </Box>
-                        )}
+                      {/* Age Section */}
+                      {derivedBirthDate && (
+                        <Stack alignItems="flex-start" spacing={1}>
+                          <Typography
+                            fontFamily={'Inter Display, sans-serif'}
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: 12,
+                            }}
+                          >
+                            Age
+                          </Typography>
+                          <Typography height={25} sx={{ fontWeight: 400, fontSize: 14 }}>
+                            {dayjs().diff(dayjs(derivedBirthDate), 'year')}
+                          </Typography>
+                        </Stack>
+                      )}
 
-                        {/* Pronouns Section */}
-                        {derivedPronouns && (
-                          <Box>
-                            <Stack alignItems="flex-start" spacing={1}>
-                              <Typography
-                                fontFamily={'Inter Display, sans-serif'}
-                                variant="caption"
-                                color="#8e8e93"
-                                sx={{
-                                  fontWeight: 700,
-                                  fontSize: 12
-                                }}
-                              >
-                                Pronouns
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 400, fontSize: 14 }}
-                              >
-                                {derivedPronouns}
-                              </Typography>
-                            </Stack>
-                          </Box>
-                        )}
-                      </Stack>
+                      {/* Pronouns Section */}
+                      {derivedPronouns && (
+                        <Stack alignItems="flex-start" spacing={1}>
+                          <Typography
+                            fontFamily={'Inter Display, sans-serif'}
+                            variant="caption"
+                            color="#8e8e93"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: 12,
+                            }}
+                          >
+                            Pronouns
+                          </Typography>
+                          <Typography height={25} sx={{ fontWeight: 400, fontSize: 14 }}>
+                            {derivedPronouns}
+                          </Typography>
+                        </Stack>
+                      )}
                     </Stack>
 
                     {/* Right side: Stats with gap */}
