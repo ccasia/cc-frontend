@@ -101,6 +101,29 @@ export const extractUsernameFromProfileLink = (link) => {
 };
 
 /**
+ * Creates a social media profile URL from a username.
+ * @param {string} username - The social media username (with or without @)
+ * @param {'instagram' | 'tiktok'} platform - The social media platform
+ * @returns {string | null} The full profile URL or null if invalid
+ */
+export const createSocialProfileUrl = (username, platform) => {
+  if (!username || typeof username !== 'string') return null;
+  
+  // Remove @ symbol if present and trim whitespace
+  const cleanUsername = username.replace(/^@/, '').trim();
+  if (!cleanUsername) return null;
+  
+  switch (platform) {
+    case 'instagram':
+      return `https://www.instagram.com/${cleanUsername}/`;
+    case 'tiktok':
+      return `https://www.tiktok.com/@${cleanUsername}`;
+    default:
+      return null;
+  }
+};
+
+/**
  * Calculates engagement rate as a percentage
  */
 export const calculateEngagementRate = (engagement, followers) => {

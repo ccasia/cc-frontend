@@ -140,16 +140,15 @@ const MediaKitCreator = () => {
     return likes + comments;
   }, []);
 
+  console.log("Instagram: ", instagram.medias)
+
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       const totalEngagement =
         (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0);
       return {
         followers: instagram?.instagramUser?.followers_count || 0,
-        engagement_rate: formatNumber(calculateTotalEngagement(
-          instagram?.medias?.totalLikes ?? 0,
-          instagram?.medias?.totalComments ?? 0
-        )),
+        engagement_rate: totalEngagement,
         averageLikes: instagram?.instagramUser?.averageLikes || 0,
         username: instagram?.instagramUser?.username || 'Creator',
         averageComments: instagram?.instagramUser?.averageComments || 0,
@@ -1534,7 +1533,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {formatNumber(socialMediaAnalytics.engagement_total)}
+                        {formatNumber(socialMediaAnalytics.engagement_rate)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1652,7 +1651,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {formatNumber(socialMediaAnalytics.engagement_total)}
+                  {formatNumber(socialMediaAnalytics.engagement_rate)}
                 </Typography>
                 <Typography
                   variant="caption"

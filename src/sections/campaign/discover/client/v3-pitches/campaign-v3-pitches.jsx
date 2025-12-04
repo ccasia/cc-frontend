@@ -37,6 +37,7 @@ import { useGetAllCreators } from 'src/api/creator';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+import SortableHeader from 'src/components/table/sortable-header';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchRow from './v3-pitch-row';
@@ -44,12 +45,13 @@ import V3PitchModal from './v3-pitch-modal';
 import BatchAssignUGCModal from './BatchAssignUGCModal';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 
-const countPitchesByStatus = (pitches, statusList) => (
-    pitches?.filter((pitch) => {
-      const status = pitch.displayStatus || pitch.status;
-      return statusList.includes(status);
-    }).length || 0
-  );
+const countPitchesByStatus = (pitches, statusList) =>
+  pitches?.filter((pitch) => {
+    const status = pitch.displayStatus || pitch.status;
+    return statusList.includes(status);
+  }).length || 0;
+
+// Using SortableHeader component from components/table to avoid defining components during render
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const { user } = useAuthContext();
@@ -87,23 +89,16 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const usedCredits = useMemo(() => {
     if (!campaign?.campaignCredits) return 0;
     if (!agreements || !campaign?.shortlisted) return 0;
-    
+
     // Get userIds of Platform Creators whose agreements have been sent
     const sentAgreementUserIds = new Set(
       agreements
-        .filter(
-          (agreement) =>
-            agreement.isSent &&
-            agreement.user?.creator?.isGuest !== true
-        )
+        .filter((agreement) => agreement.isSent && agreement.user?.creator?.isGuest !== true)
         .map((agreement) => agreement.userId)
     );
-    
+
     return campaign.shortlisted.reduce((acc, creator) => {
-      if (
-        sentAgreementUserIds.has(creator.userId) &&
-        creator.user?.creator?.isGuest !== true
-      ) {
+      if (sentAgreementUserIds.has(creator.userId) && creator.user?.creator?.isGuest !== true) {
         return acc + (creator.ugcVideos || 0);
       }
       return acc;
@@ -114,7 +109,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const v4UsedCredits = usedCredits;
 
   const ugcLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
+    if (!campaign?.campaignCredits)
+      return (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
     // Use unified calculation - credits utilized when agreement is sent
     return campaign.campaignCredits - usedCredits;
   }, [campaign, totalUsedCredits, usedCredits]);
@@ -129,9 +125,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
 
   const maybeCount = countPitchesByStatus(pitches, ['MAYBE']);
 
-  const rejectedCount = countPitchesByStatus(pitches, [
-    'REJECTED',
-  ]);
+  const rejectedCount = countPitchesByStatus(pitches, ['REJECTED']);
 
   const approvedCount = countPitchesByStatus(pitches, [
     'approved',
@@ -140,9 +134,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     'AGREEMENT_SUBMITTED',
   ]);
 
-  const withdrawnCount = countPitchesByStatus(pitches, [
-    'WITHDRAWN',
-  ]);
+  const withdrawnCount = countPitchesByStatus(pitches, ['WITHDRAWN']);
 
   // Handle column sort click
   const handleColumnSort = (column) => {
@@ -162,41 +154,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  // Sortable header component
-  const SortableHeader = ({ column, label, width }) => {
-    const isActive = sortColumn === column;
-    return (
-      <TableCell
-        onClick={() => handleColumnSort(column)}
-        sx={{
-          py: 1,
-          px: 1,
-          color: '#221f20',
-          fontWeight: 600,
-          width,
-          whiteSpace:'nowrap',
-          bgcolor: '#f5f5f5',
-          cursor: 'pointer',
-          userSelect: 'none',
-          '&:hover': {
-            bgcolor: '#ebebeb',
-          },
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={0.5}>
-          <span>{label}</span>
-          <Iconify
-            icon={isActive && sortDirection === 'desc' ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-            width={16}
-            sx={{
-              color: isActive ? '#203ff5' : '#8E8E93',
-              transition: 'color 0.2s',
-            }}
-          />
-        </Stack>
-      </TableCell>
-    );
-  };
+ 
 
   const filteredPitches = useMemo(() => {
     const isV4 = campaign?.submissionVersion === 'v4';
@@ -228,7 +186,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       const sentToClient = ['SENT_TO_CLIENT'].includes(status);
       const sentToClientWithComments = ['SENT_TO_CLIENT_WITH_COMMENTS'].includes(status);
       const isMaybe = ['MAYBE'].includes(status);
-      const isApproved = ['approved', 'APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(status);
+      const isApproved = [
+        'approved',
+        'APPROVED',
+        'AGREEMENT_PENDING',
+        'AGREEMENT_SUBMITTED',
+      ].includes(status);
       const isRejected = ['rejected', 'REJECTED'].includes(status);
       const withdrawn = ['WITHDRAWN'].includes(status);
 
@@ -240,7 +203,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           sentToClientWithComments ||
           isMaybe ||
           isApproved ||
-          isRejected || 
+          isRejected ||
           withdrawn
         );
       }
@@ -250,7 +213,15 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         (campaign?.shortlisted || []).filter((s) => (s?.ugcVideos || 0) > 0).map((s) => s.userId)
       );
       const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
-      return isApproved || hasAssignedCredits || isPending || sentToClient || isMaybe || isRejected || withdrawn;
+      return (
+        isApproved ||
+        hasAssignedCredits ||
+        isPending ||
+        sentToClient ||
+        isMaybe ||
+        isRejected ||
+        withdrawn
+      );
     });
 
     if (selectedFilter === 'PENDING_REVIEW') {
@@ -273,15 +244,11 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       );
     } else if (selectedFilter === 'REJECTED') {
       filtered = filtered?.filter((pitch) =>
-        ['REJECTED'].includes(
-          pitch.displayStatus || pitch.status
-        )
+        ['REJECTED'].includes(pitch.displayStatus || pitch.status)
       );
     } else if (selectedFilter === 'WITHDRAWN') {
       filtered = filtered?.filter((pitch) =>
-        ['WITHDRAWN'].includes(
-          pitch.displayStatus || pitch.status
-        )
+        ['WITHDRAWN'].includes(pitch.displayStatus || pitch.status)
       );
     }
 
@@ -289,7 +256,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
 
     return [...(filtered || [])].sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortColumn) {
         case 'followers': {
           // Parse follower count - handle strings like "10.5K", "1.2M", etc.
@@ -300,8 +267,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
             if (str.includes('K')) return parseFloat(str) * 1000;
             return parseInt(str, 10) || 0;
           };
-          const followersA = parseFollowers(a.user?.creator?.instagram?.follower_count || a.followerCount || 0);
-          const followersB = parseFollowers(b.user?.creator?.instagram?.follower_count || b.followerCount || 0);
+          const followersA = parseFollowers(
+            a.user?.creator?.instagram?.follower_count || a.followerCount || 0
+          );
+          const followersB = parseFollowers(
+            b.user?.creator?.instagram?.follower_count || b.followerCount || 0
+          );
           comparison = followersA - followersB;
           break;
         }
@@ -331,7 +302,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           break;
         }
       }
-      
+
       return sortDirection === 'asc' ? comparison : -comparison;
     });
   }, [pitches, selectedFilter, sortColumn, sortDirection, campaign]);
@@ -643,7 +614,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                       }),
                   '&:hover': {
                     bgcolor:
-                      selectedFilter === 'SENT_TO_CLIENT' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                      selectedFilter === 'SENT_TO_CLIENT'
+                        ? 'rgba(32, 63, 245, 0.04)'
+                        : 'transparent',
                   },
                 }}
               >
@@ -792,7 +765,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 disabled={
                   isDisabled ||
                   (campaign?.submissionVersion === 'v4'
-                    ? v4UsedCredits !== null && campaign?.campaignCredits && v4UsedCredits >= campaign.campaignCredits
+                    ? v4UsedCredits !== null &&
+                      campaign?.campaignCredits &&
+                      v4UsedCredits >= campaign.campaignCredits
                     : typeof ugcLeft === 'number' && ugcLeft <= 0)
                 }
                 sx={{
@@ -844,10 +819,38 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                 >
                   Creator
                 </TableCell>
-                <SortableHeader column="followers" label="Follower Count" width={'15%'} />
-                <SortableHeader column="date" label="Date Submitted" width={'15%'} />
-                <SortableHeader column="type" label="Type" width={'10%'} />
-                <SortableHeader column="status" label="Status" width={'10%'} />
+                <SortableHeader
+                  column="followers"
+                  label="Follower Count"
+                  width="15%"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="date"
+                  label="Date Submitted"
+                  width="15%"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="type"
+                  label="Type"
+                  width="10%"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="status"
+                  label="Status"
+                  width="10%"
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
                 <TableCell
                   sx={{
                     py: 1,
@@ -1118,23 +1121,16 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   const usedCredits = useMemo(() => {
     if (!campaign?.campaignCredits) return 0;
     if (!agreements || !campaign?.shortlisted) return 0;
-    
+
     // Get userIds of Platform Creators whose agreements have been sent
     const sentAgreementUserIds = new Set(
       agreements
-        .filter(
-          (agreement) =>
-            agreement.isSent &&
-            agreement.user?.creator?.isGuest !== true
-        )
+        .filter((agreement) => agreement.isSent && agreement.user?.creator?.isGuest !== true)
         .map((agreement) => agreement.userId)
     );
-    
+
     return campaign.shortlisted.reduce((acc, creator) => {
-      if (
-        sentAgreementUserIds.has(creator.userId) &&
-        creator.user?.creator?.isGuest !== true
-      ) {
+      if (sentAgreementUserIds.has(creator.userId) && creator.user?.creator?.isGuest !== true) {
         return acc + (creator.ugcVideos || 0);
       }
       return acc;
@@ -1484,7 +1480,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
           >
             <Stack flexDirection="row" flex={1} spacing={2} mb={2}>
               {/* Creator Name */}
-              <Box flex={1}>
+              <Box flex={1} alignSelf="flex-end">
                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
                   Creator Name
                 </Typography>
@@ -1499,13 +1495,17 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
 
               {/* Profile Link */}
               <Box flex={1}>
-                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.5 }}>
+                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
                   Profile Link
+                </Typography>
+                <Typography variant="caption" fontStyle="italic" color="#8E8E93">
+                  eg. https://instagram.com/<span style={{ fontWeight: 600 }}>username</span> or
+                  https://tiktok.com/<span style={{ fontWeight: 600 }}>@username</span>
                 </Typography>
                 <TextField
                   fullWidth
                   size="small"
-                  placeholder="https://instagram.com/username or https://tiktok.com/@username"
+                  placeholder="Profile Link"
                   value={creator.profileLink}
                   onChange={handleCreatorChange(index, 'profileLink')}
                 />

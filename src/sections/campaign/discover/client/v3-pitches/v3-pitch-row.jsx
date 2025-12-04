@@ -2,11 +2,11 @@ import React from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, IconButton } from '@mui/material';
+import { Box, Link, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, IconButton } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import { formatNumber, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import { formatNumber, extractUsernameFromProfileLink, createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
@@ -150,24 +150,53 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
                 {instagramUsername && (
                   <Stack direction="row" alignItems="center" spacing={0.3}>
                     <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
-                    <Typography variant="caption" sx={{ color: '#636366', fontSize: 12 }}>
+                    <Link
+                      href={instagramProfileLink || createSocialProfileUrl(instagramUsername, 'instagram')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {instagramUsername}
-                    </Typography>
+                    </Link>
                   </Stack>
                 )}
                 {tiktokUsername && (
                   <Stack direction="row" alignItems="center" spacing={0.3}>
                     <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
-                    <Typography variant="caption" sx={{ color: '#636366', fontSize: 12 }}>
+                    <Link
+                      href={tiktokProfileLink || createSocialProfileUrl(tiktokUsername, 'tiktok')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {tiktokUsername}
-                    </Typography>
+                    </Link>
                   </Stack>
                 )}
               </Stack>
             ) : profileUsername && (
-              <Typography variant="caption" sx={{ color: '#636366', fontSize: 12 }}>
-                {profileUsername}
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={0.3}>
+                {profileLink?.includes('instagram.com') && (
+                  <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
+                )}
+                {profileLink?.includes('tiktok.com') && (
+                  <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
+                )}
+                <Link
+                  href={profileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {profileUsername}
+                </Link>
+              </Stack>
             )}
           </Stack>
         </Stack>
