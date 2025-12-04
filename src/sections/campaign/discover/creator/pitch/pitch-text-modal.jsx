@@ -547,9 +547,6 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
                     <Typography variant="body2" color="#636366" >
                       • Express how your unique style can be incorporated in the campaign
                     </Typography>
-                    <Typography variant="body2" color="#636366" sx={{ fontSize: 14 }}>
-                      • Include your main social media account link (Instagram/TikTok)
-                    </Typography>
                   </Box>
                 }
               />
