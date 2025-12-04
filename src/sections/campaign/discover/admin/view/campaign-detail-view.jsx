@@ -213,7 +213,6 @@ const CampaignDetailView = ({ id }) => {
   useEffect(() => {
     let allowedTabs = [...clientAllowedTabs];
 
-
     if (campaign?.submissionVersion === 'v4') {
       // For v4: allow submissions-v4, remove deliverables
       allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
@@ -223,7 +222,6 @@ const CampaignDetailView = ({ id }) => {
       allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
       allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
     }
-
 
     if (isClient && !allowedTabs.includes(currentTab)) {
       // If client user tries to access a restricted tab, redirect to overview
@@ -237,7 +235,6 @@ const CampaignDetailView = ({ id }) => {
       // For client users, only allow specific tabs
       let allowedTabs = [...clientAllowedTabs];
 
-
       if (campaign?.submissionVersion === 'v4') {
         // For v4: allow submissions-v4, remove deliverables
         allowedTabs = allowedTabs.filter((tab) => tab !== 'deliverables');
@@ -247,7 +244,6 @@ const CampaignDetailView = ({ id }) => {
         allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
         allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
       }
-
 
       if (isClient && !allowedTabs.includes(newValue)) {
         return;
@@ -265,9 +261,7 @@ const CampaignDetailView = ({ id }) => {
       const targetTab = e?.detail;
       if (typeof targetTab !== 'string') return;
 
-
       let allowedTabs = [...clientAllowedTabs];
-
 
       if (campaign?.submissionVersion === 'v4') {
         // For v4: allow submissions-v4, remove deliverables
@@ -278,7 +272,6 @@ const CampaignDetailView = ({ id }) => {
         allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
         allowedTabs = allowedTabs.filter((tab) => tab !== 'submissions-v4');
       }
-
 
       if (isClient && !allowedTabs.includes(targetTab)) return;
 
@@ -371,24 +364,7 @@ const CampaignDetailView = ({ id }) => {
                 { label: 'Campaign Details', value: 'campaign-content' },
                 // { label: 'Client Info', value: 'client' },
                 {
-                  label: `Creator Master List (${
-                    campaign?.origin === 'CLIENT' || campaign?.submissionVersion === 'v4'
-                      ? v3Pitches?.filter(
-                          (p) =>
-                            p.status === 'PENDING_REVIEW' ||
-                            p.status === 'SENT_TO_CLIENT' ||
-                            p.status === 'undecided' ||
-                            p.status === 'APPROVED' ||
-                            p.status === 'AGREEMENT_PENDING' ||
-                            p.status === 'AGREEMENT_SUBMITTED'
-                        ).length || 0
-                      : campaign?.pitch.filter(
-                          (p) =>
-                            p.status === 'PENDING_REVIEW' ||
-                            p.status === 'approved' ||
-                            p.status === 'rejected'
-                        ).length || 0
-                  })`,
+                  label: `Creator Master List (${campaign?.pitch?.length || 0})`,
                   value: 'pitch',
                 },
                 {
