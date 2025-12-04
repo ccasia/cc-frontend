@@ -4,7 +4,7 @@ import { useTheme } from '@emotion/react';
 
 import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typography } from '@mui/material';
 
-import { formatNumber, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import { formatNumber, extractUsernameFromProfileLink, createSocialProfileUrl } from 'src/utils/media-kit-utils';
 import Iconify from 'src/components/iconify';
 
 /**
@@ -14,14 +14,16 @@ import Iconify from 'src/components/iconify';
 const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
   const theme = useTheme();
   // Profile link is stored on Creator model
+  const instagramStats = pitch?.user?.creator?.instagramUser || null;
+  const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
   const profileLink = pitch.user?.creator?.profileLink || pitch.user?.profileLink;
   const instagramProfileLink = pitch.user?.creator?.instagramProfileLink;
   const tiktokProfileLink = pitch.user?.creator?.tiktokProfileLink;
   const profileUsername = extractUsernameFromProfileLink(profileLink);
 
   // Extract usernames from profile links
-  const instagramUsername = extractUsernameFromProfileLink(instagramProfileLink);
-  const tiktokUsername = extractUsernameFromProfileLink(tiktokProfileLink);
+  const instagramUsername = instagramStats?.username || extractUsernameFromProfileLink(instagramProfileLink);
+  const tiktokUsername = tiktokStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
 
   // Check if we have platform-specific links
   const hasPlatformLinks = instagramProfileLink || tiktokProfileLink || instagramUsername || tiktokUsername;
@@ -118,50 +120,38 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
             {(instagramUsername || instagramProfileLink) && (
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 <Iconify icon="mdi:instagram" width={16} sx={{ color: '#E4405F', flexShrink: 0 }} />
-                {instagramProfileLink ? (
-                  <Link
-                    href={instagramProfileLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    underline="hover"
-                    sx={{
-                      color: 'primary.main',
-                      fontWeight: 500,
-                      fontSize: '0.85rem',
-                    }}
-                  >
-                    {instagramUsername || extractUsernameFromProfileLink(instagramProfileLink) || '-'}
-                  </Link>
-                ) : (
-                  <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                    {instagramUsername || '-'}
-                  </Typography>
-                )}
+                <Link
+                  href={instagramProfileLink || createSocialProfileUrl(instagramUsername, 'instagram')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 500,
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {instagramUsername || extractUsernameFromProfileLink(instagramProfileLink) || '-'}
+                </Link>
               </Stack>
             )}
             {/* TikTok row */}
             {(tiktokUsername || tiktokProfileLink) && (
               <Stack direction="row" alignItems="center" spacing={0.5}>
                 <Iconify icon="ic:baseline-tiktok" width={16} sx={{ color: '#000000', flexShrink: 0 }} />
-                {tiktokProfileLink ? (
-                  <Link
-                    href={tiktokProfileLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    underline="hover"
-                    sx={{
-                      color: 'primary.main',
-                      fontWeight: 500,
-                      fontSize: '0.85rem',
-                    }}
-                  >
-                    {tiktokUsername || extractUsernameFromProfileLink(tiktokProfileLink) || '-'}
-                  </Link>
-                ) : (
-                  <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                    {tiktokUsername || '-'}
-                  </Typography>
-                )}
+                <Link
+                  href={tiktokProfileLink || createSocialProfileUrl(tiktokUsername, 'tiktok')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 500,
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {tiktokUsername || extractUsernameFromProfileLink(tiktokProfileLink) || '-'}
+                </Link>
               </Stack>
             )}
           </Stack>
