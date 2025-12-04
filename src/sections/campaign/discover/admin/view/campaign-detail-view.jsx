@@ -72,7 +72,7 @@ import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-vie
 if (typeof window !== 'undefined') {
   if (!window.campaignTabs) {
     try {
-      const storedTabs = localStorage.getItem('campaignTabss');
+      const storedTabs = localStorage.getItem('campaignTabs');
       window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
     } catch (error) {
       console.error('Error loading campaign tabs from localStorage:', error);
