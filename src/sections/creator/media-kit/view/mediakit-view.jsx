@@ -140,8 +140,6 @@ const MediaKitCreator = () => {
     return likes + comments;
   }, []);
 
-  console.log("Instagram: ", instagram.medias)
-
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       const totalEngagement =
@@ -157,13 +155,10 @@ const MediaKitCreator = () => {
 
     if (currentTab === 'tiktok') {
       const totalEngagement =
-        (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0);
+        (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0) + (tiktok?.medias?.totalShares ?? 0);
       return {
         followers: tiktok?.overview?.follower_count || 0,
-        engagement_rate: formatNumber(calculateTotalEngagement(
-          tiktok?.medias?.totalLikes ?? 0,
-          tiktok?.medias?.totalComments ?? 0
-        )),
+        engagement_rate: totalEngagement,
         averageLikes: tiktok?.medias?.averageLikes || 0,
         username: tiktok?.tiktokUser?.display_name || 'Creator',
         averageComments: tiktok?.medias?.averageComments || 0,

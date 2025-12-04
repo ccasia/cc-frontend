@@ -151,7 +151,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
                   <Stack direction="row" alignItems="center" spacing={0.3}>
                     <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
                     <Link
-                      href={instagramProfileLink || createSocialProfileUrl(instagramUsername, 'instagram')}
+                      href={createSocialProfileUrl(instagramUsername, 'instagram') || instagramProfileLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       underline="hover"
@@ -166,7 +166,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
                   <Stack direction="row" alignItems="center" spacing={0.3}>
                     <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
                     <Link
-                      href={tiktokProfileLink || createSocialProfileUrl(tiktokUsername, 'tiktok')}
+                      href={createSocialProfileUrl(tiktokUsername, 'tiktok') || tiktokProfileLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       underline="hover"
