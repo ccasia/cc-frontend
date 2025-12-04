@@ -56,14 +56,14 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
   // Credits are only utilized when agreements are sent
   const ugcLeft = (() => {
     if (!campaign?.campaignCredits) return 0;
-    
+
     // Get userIds of creators whose agreements have been sent
     const sentAgreementUserIds = new Set(
       (agreements || [])
-        .filter(agreement => agreement.isSent)
-        .map(agreement => agreement.userId)
+        .filter((agreement) => agreement.isSent)
+        .map((agreement) => agreement.userId)
     );
-    
+
     // Sum credits only for shortlisted creators with sent agreements
     const utilizedCredits = (campaign?.shortlisted || []).reduce((acc, creator) => {
       if (sentAgreementUserIds.has(creator.userId)) {
@@ -71,7 +71,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
       }
       return acc;
     }, 0);
-    
+
     return Math.max(0, campaign.campaignCredits - utilizedCredits);
   })();
   // Normalize admin comments text so UI displays whenever present
@@ -83,7 +83,8 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
     setCurrentPitch(pitch);
   }, [pitch]);
 
-  const hasSocialMediaConnection = pitch?.user?.creator?.isFacebookConnected || pitch?.user?.creator?.isTiktokConnected;
+  const hasSocialMediaConnection =
+    pitch?.user?.creator?.isFacebookConnected || pitch?.user?.creator?.isTiktokConnected;
 
   // Set default platform when modal opens
   useEffect(() => {
@@ -198,7 +199,9 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
             action === 'reject'
               ? 'REJECTED'
               : action === 'approve'
-                ? endpoint.includes('client') ? 'APPROVED' : 'SENT_TO_CLIENT'
+                ? endpoint.includes('client')
+                  ? 'APPROVED'
+                  : 'SENT_TO_CLIENT'
                 : pitch.status,
         };
         onUpdate(mockUpdatedPitch);
@@ -506,7 +509,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                   }}
                 >
                   {/* Left side: Languages, Age, Pronouns (always render labels) */}
-                  <Stack direction="row" spacing={3}>
+                  <Stack direction="row" spacing={3} alignItems={'flex-end'}>
                     {/* Languages Section */}
                     {derivedLanguages.length > 0 && (
                       <Stack spacing={1}>
@@ -517,7 +520,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                         >
                           Languages
                         </Typography>
-                        <Box>
+                        <Stack direction={'row'}>
                           {derivedLanguages.slice(0, 2).map((language, index) => (
                             <Chip
                               key={index}
@@ -528,14 +531,17 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                               }
                               size="small"
                               sx={{
+                                height: 25,
                                 bgcolor: '#FFF',
                                 border: '1px solid #EBEBEB',
                                 borderRadius: 0.5,
                                 color: '#8E8E93',
-                                height: '30px',
-                                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                                boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
                                 cursor: 'default',
-                                mr: 0.5
+                                mr: 0.5,
+                                '&:hover': {
+                                  bgcolor: 'transparent',
+                                },
                               }}
                             />
                           ))}
@@ -548,61 +554,49 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                               +{derivedLanguages.length - 2}
                             </Typography>
                           )}
-                        </Box>
+                        </Stack>
                       </Stack>
                     )}
 
-                    <Stack direction="row" spacing={3}>
-                      {/* Age Section */}
-                      {derivedBirthDate && (
-                        <Box>
-                          <Stack alignItems="flex-start" spacing={1}>
-                            <Typography
-                              fontFamily={'Inter Display, sans-serif'}
-                              variant="caption"
-                              color="#8e8e93"
-                              sx={{
-                                fontWeight: 700,
-                                fontSize: 12,
-                              }}
-                            >
-                              Age
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 400, fontSize: 14 }}
-                            >
-                              {dayjs().diff(dayjs(derivedBirthDate), 'year')}
-                            </Typography>
-                          </Stack>
-                        </Box>
-                      )}
+                    {/* Age Section */}
+                    {derivedBirthDate && (
+                      <Stack alignItems="flex-start" spacing={1}>
+                        <Typography
+                          fontFamily={'Inter Display, sans-serif'}
+                          variant="caption"
+                          color="#8e8e93"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: 12,
+                          }}
+                        >
+                          Age
+                        </Typography>
+                        <Typography height={25} sx={{ fontWeight: 400, fontSize: 14 }}>
+                          {dayjs().diff(dayjs(derivedBirthDate), 'year')}
+                        </Typography>
+                      </Stack>
+                    )}
 
-                      {/* Pronouns Section */}
-                      {derivedPronouns && (
-                        <Box>
-                          <Stack alignItems="flex-start" spacing={1}>
-                            <Typography
-                              fontFamily={'Inter Display, sans-serif'}
-                              variant="caption"
-                              color="#8e8e93"
-                              sx={{
-                                fontWeight: 700,
-                                fontSize: 12
-                              }}
-                            >
-                              Pronouns
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 400, fontSize: 14 }}
-                            >
-                              {derivedPronouns}
-                            </Typography>
-                          </Stack>
-                        </Box>
-                      )}
-                    </Stack>
+                    {/* Pronouns Section */}
+                    {derivedPronouns && (
+                      <Stack alignItems="flex-start" spacing={1}>
+                        <Typography
+                          fontFamily={'Inter Display, sans-serif'}
+                          variant="caption"
+                          color="#8e8e93"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: 12,
+                          }}
+                        >
+                          Pronouns
+                        </Typography>
+                        <Typography height={25} sx={{ fontWeight: 400, fontSize: 14 }}>
+                          {derivedPronouns}
+                        </Typography>
+                      </Stack>
+                    )}
                   </Stack>
 
                   <Stack spacing={0} justifyContent="flex-end">
@@ -626,10 +620,9 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                         creatorProfileFull?.creator?.tiktokProfileLink;
 
                       // Show social links section if there's no media kit but has social links
-                      const shouldShowSocialLinks = 
-                        (!hasInstagramData && instagramLink) || 
-                        (!hasTiktokData && tiktokLink);
-                      
+                      const shouldShowSocialLinks =
+                        (!hasInstagramData && instagramLink) || (!hasTiktokData && tiktokLink);
+
                       if (shouldShowSocialLinks) {
                         return (
                           <Box sx={{ ml: 2, textAlign: 'right' }}>
@@ -667,7 +660,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                               >
                                 {(() => {
                                   try {
-                                    const url = new URL(tiktokLink.startsWith('http') ? tiktokLink : `https://${tiktokLink}`);
+                                    const url = new URL(
+                                      tiktokLink.startsWith('http')
+                                        ? tiktokLink
+                                        : `https://${tiktokLink}`
+                                    );
                                     return `www.tiktok.com${url.pathname}`;
                                   } catch {
                                     return tiktokLink;
@@ -693,7 +690,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                               >
                                 {(() => {
                                   try {
-                                    const url = new URL(instagramLink.startsWith('http') ? instagramLink : `https://${instagramLink}`);
+                                    const url = new URL(
+                                      instagramLink.startsWith('http')
+                                        ? instagramLink
+                                        : `https://${instagramLink}`
+                                    );
                                     return `www.instagram.com${url.pathname}`;
                                   } catch {
                                     return instagramLink;
@@ -707,327 +708,361 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                       return null;
                     })()}
 
-                    {hasSocialMediaConnection && 
+                    {hasSocialMediaConnection && (
                       <Stack direction="row" mt={3} spacing={1}>
                         {/* Instagram Stats */}
-                        {selectedPlatform === 'instagram' && (() => {
-                          const hasInstagramData = !!(
-                            currentPitch?.user?.creator?.instagramUser?.followers_count ||
-                            creatorProfileFull?.creator?.instagramUser?.followers_count ||
-                            creatorProfileFull?.instagramUser?.followers_count
-                          );
-                          const instagramLink =
-                            currentPitch?.user?.creator?.instagramProfileLink ||
-                            creatorProfileFull?.creator?.instagramProfileLink;
-                          
-                          // Show stats if there's media kit data OR no social link
-                          const shouldShowStats = hasInstagramData || !instagramLink;
-                          
-                          return shouldShowStats && (
-                          <>
-                            <Box
-                              sx={{
-                                flex: 0,
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                minWidth: '80px',
-                              }}
-                            >
-                              <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
-                                <Box
-                                  component="img"
-                                  src="/assets/icons/overview/purpleGroup.svg"
-                                  sx={{ width: 20, height: 20 }}
-                                />
-                                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                                  {(() => {
-                                    // Try multiple possible sources for media kit data
-                                    const followers =
-                                      currentPitch?.user?.creator?.instagramUser?.followers_count ||
-                                      creatorProfileFull?.creator?.instagramUser?.followers_count ||
-                                      creatorProfileFull?.instagramUser?.followers_count;
-                                    if (!followers) return 'N/A';
-                                    if (followers >= 1000) {
-                                      const k = followers / 1000;
-                                      return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
-                                    }
-                                    return followers.toLocaleString();
-                                  })()}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="#8e8e93"
-                                  sx={{
-                                    whiteSpace: 'nowrap',
-                                    fontWeight: 500,
-                                    overflow: 'visible',
-                                    width: '100%',
-                                    fontSize: '12px',
-                                    textAlign: 'right',
-                                  }}
-                                >
-                                  Followers
-                                </Typography>
-                              </Stack>
-                            </Box>
+                        {selectedPlatform === 'instagram' &&
+                          (() => {
+                            const hasInstagramData = !!(
+                              currentPitch?.user?.creator?.instagramUser?.followers_count ||
+                              creatorProfileFull?.creator?.instagramUser?.followers_count ||
+                              creatorProfileFull?.instagramUser?.followers_count
+                            );
+                            const instagramLink =
+                              currentPitch?.user?.creator?.instagramProfileLink ||
+                              creatorProfileFull?.creator?.instagramProfileLink;
 
-                            {/* Divider */}
-                            <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                            // Show stats if there's media kit data OR no social link
+                            const shouldShowStats = hasInstagramData || !instagramLink;
 
-                            <Box
-                              sx={{
-                                flex: 0,
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                minWidth: '120px',
-                              }}
-                            >
-                              <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
-                                <Box
-                                  component="img"
-                                  src="/assets/icons/overview/greenChart.svg"
-                                  sx={{ width: 20, height: 20 }}
-                                />
-                                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                                  {(() => {
-                                    // Try multiple possible sources for media kit data
-                                    const engagementRate =
-                                      currentPitch?.user?.creator?.instagramUser?.engagement_rate ||
-                                      creatorProfileFull?.creator?.instagramUser?.engagement_rate ||
-                                      creatorProfileFull?.instagramUser?.engagement_rate;
-                                    if (!engagementRate) return 'N/A';
-                                    return `${Math.round(engagementRate)}%`;
-                                  })()}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="#8e8e93"
-                                  sx={{
-                                    whiteSpace: 'nowrap',
-                                    fontWeight: 500,
-                                    overflow: 'visible',
-                                    width: '100%',
-                                    fontSize: '12px',
-                                    textAlign: 'right',
-                                  }}
-                                >
-                                  Engagement Rate
-                                </Typography>
-                              </Stack>
-                            </Box>
+                            return (
+                              shouldShowStats && (
+                                <>
+                                  <Box
+                                    sx={{
+                                      flex: 0,
+                                      display: 'flex',
+                                      justifyContent: 'flex-end',
+                                      minWidth: '80px',
+                                    }}
+                                  >
+                                    <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                                      <Box
+                                        component="img"
+                                        src="/assets/icons/overview/purpleGroup.svg"
+                                        sx={{ width: 20, height: 20 }}
+                                      />
+                                      <Typography
+                                        variant="body1"
+                                        sx={{ fontWeight: 600, fontSize: '14px' }}
+                                      >
+                                        {(() => {
+                                          // Try multiple possible sources for media kit data
+                                          const followers =
+                                            currentPitch?.user?.creator?.instagramUser
+                                              ?.followers_count ||
+                                            creatorProfileFull?.creator?.instagramUser
+                                              ?.followers_count ||
+                                            creatorProfileFull?.instagramUser?.followers_count;
+                                          if (!followers) return 'N/A';
+                                          if (followers >= 1000) {
+                                            const k = followers / 1000;
+                                            return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
+                                          }
+                                          return followers.toLocaleString();
+                                        })()}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="#8e8e93"
+                                        sx={{
+                                          whiteSpace: 'nowrap',
+                                          fontWeight: 500,
+                                          overflow: 'visible',
+                                          width: '100%',
+                                          fontSize: '12px',
+                                          textAlign: 'right',
+                                        }}
+                                      >
+                                        Followers
+                                      </Typography>
+                                    </Stack>
+                                  </Box>
 
-                            {/* Divider */}
-                            <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                                  {/* Divider */}
+                                  <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
 
-                            <Box
-                              sx={{
-                                flex: 0,
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                minWidth: '105px',
-                              }}
-                            >
-                              <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
-                                <Box
-                                  component="img"
-                                  src="/assets/icons/overview/bubbleHeart.svg"
-                                  sx={{ width: 20, height: 20 }}
-                                />
-                                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                                  {(() => {
-                                    // Try multiple possible sources for media kit data
-                                    const likes =
-                                      currentPitch?.user?.creator?.instagramUser?.averageLikes ||
-                                      creatorProfileFull?.creator?.instagramUser?.averageLikes ||
-                                      creatorProfileFull?.instagramUser?.averageLikes;
-                                    if (!likes) return 'N/A';
-                                    if (likes >= 1000) {
-                                      const k = likes / 1000;
-                                      return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
-                                    }
-                                    return Math.round(likes).toLocaleString();
-                                  })()}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="#8e8e93"
-                                  sx={{
-                                    whiteSpace: 'nowrap',
-                                    fontWeight: 500,
-                                    overflow: 'visible',
-                                    width: '100%',
-                                    fontSize: '12px',
-                                    textAlign: 'right',
-                                  }}
-                                >
-                                  Average Likes
-                                </Typography>
-                              </Stack>
-                            </Box>
-                          </>
-                          );
-                        })()}
+                                  <Box
+                                    sx={{
+                                      flex: 0,
+                                      display: 'flex',
+                                      justifyContent: 'flex-end',
+                                      minWidth: '120px',
+                                    }}
+                                  >
+                                    <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                                      <Box
+                                        component="img"
+                                        src="/assets/icons/overview/greenChart.svg"
+                                        sx={{ width: 20, height: 20 }}
+                                      />
+                                      <Typography
+                                        variant="body1"
+                                        sx={{ fontWeight: 600, fontSize: '14px' }}
+                                      >
+                                        {(() => {
+                                          // Try multiple possible sources for media kit data
+                                          const engagementRate =
+                                            currentPitch?.user?.creator?.instagramUser
+                                              ?.engagement_rate ||
+                                            creatorProfileFull?.creator?.instagramUser
+                                              ?.engagement_rate ||
+                                            creatorProfileFull?.instagramUser?.engagement_rate;
+                                          if (!engagementRate) return 'N/A';
+                                          return `${Math.round(engagementRate)}%`;
+                                        })()}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="#8e8e93"
+                                        sx={{
+                                          whiteSpace: 'nowrap',
+                                          fontWeight: 500,
+                                          overflow: 'visible',
+                                          width: '100%',
+                                          fontSize: '12px',
+                                          textAlign: 'right',
+                                        }}
+                                      >
+                                        Engagement Rate
+                                      </Typography>
+                                    </Stack>
+                                  </Box>
+
+                                  {/* Divider */}
+                                  <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                                  <Box
+                                    sx={{
+                                      flex: 0,
+                                      display: 'flex',
+                                      justifyContent: 'flex-end',
+                                      minWidth: '105px',
+                                    }}
+                                  >
+                                    <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                                      <Box
+                                        component="img"
+                                        src="/assets/icons/overview/bubbleHeart.svg"
+                                        sx={{ width: 20, height: 20 }}
+                                      />
+                                      <Typography
+                                        variant="body1"
+                                        sx={{ fontWeight: 600, fontSize: '14px' }}
+                                      >
+                                        {(() => {
+                                          // Try multiple possible sources for media kit data
+                                          const likes =
+                                            currentPitch?.user?.creator?.instagramUser
+                                              ?.averageLikes ||
+                                            creatorProfileFull?.creator?.instagramUser
+                                              ?.averageLikes ||
+                                            creatorProfileFull?.instagramUser?.averageLikes;
+                                          if (!likes) return 'N/A';
+                                          if (likes >= 1000) {
+                                            const k = likes / 1000;
+                                            return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
+                                          }
+                                          return Math.round(likes).toLocaleString();
+                                        })()}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="#8e8e93"
+                                        sx={{
+                                          whiteSpace: 'nowrap',
+                                          fontWeight: 500,
+                                          overflow: 'visible',
+                                          width: '100%',
+                                          fontSize: '12px',
+                                          textAlign: 'right',
+                                        }}
+                                      >
+                                        Average Likes
+                                      </Typography>
+                                    </Stack>
+                                  </Box>
+                                </>
+                              )
+                            );
+                          })()}
 
                         {/* TikTok Stats */}
-                        {selectedPlatform === 'tiktok' && (() => {
-                          const hasTiktokData = !!(
-                            currentPitch?.user?.creator?.tiktokUser?.follower_count ||
-                            creatorProfileFull?.creator?.tiktokUser?.follower_count ||
-                            creatorProfileFull?.tiktokUser?.follower_count
-                          );
-                          const tiktokLink =
-                            currentPitch?.user?.creator?.tiktokProfileLink ||
-                            creatorProfileFull?.creator?.tiktokProfileLink;
-                          
-                          // Show stats if there's media kit data OR no social link
-                          const shouldShowStats = hasTiktokData || !tiktokLink;
-                          
-                          return shouldShowStats && (
-                          <>
-                            <Box
-                              sx={{
-                                flex: 0,
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                minWidth: '80px',
-                              }}
-                            >
-                              <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
-                                <Box
-                                  component="img"
-                                  src="/assets/icons/overview/purpleGroup.svg"
-                                  sx={{ width: 20, height: 20 }}
-                                />
-                                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                                  {(() => {
-                                    // Try multiple possible sources for media kit data
-                                    const followers =
-                                      currentPitch?.user?.creator?.tiktokUser?.follower_count ||
-                                      creatorProfileFull?.creator?.tiktokUser?.follower_count ||
-                                      creatorProfileFull?.tiktokUser?.follower_count;
-                                    if (!followers) return 'N/A';
-                                    if (followers >= 1000) {
-                                      const k = followers / 1000;
-                                      return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
-                                    }
-                                    return followers.toLocaleString();
-                                  })()}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="#8e8e93"
-                                  sx={{
-                                    whiteSpace: 'nowrap',
-                                    fontWeight: 500,
-                                    overflow: 'visible',
-                                    width: '100%',
-                                    fontSize: '12px',
-                                    textAlign: 'right',
-                                  }}
-                                >
-                                  Followers
-                                </Typography>
-                              </Stack>
-                            </Box>
+                        {selectedPlatform === 'tiktok' &&
+                          (() => {
+                            const hasTiktokData = !!(
+                              currentPitch?.user?.creator?.tiktokUser?.follower_count ||
+                              creatorProfileFull?.creator?.tiktokUser?.follower_count ||
+                              creatorProfileFull?.tiktokUser?.follower_count
+                            );
+                            const tiktokLink =
+                              currentPitch?.user?.creator?.tiktokProfileLink ||
+                              creatorProfileFull?.creator?.tiktokProfileLink;
 
-                            {/* Divider */}
-                            <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                            // Show stats if there's media kit data OR no social link
+                            const shouldShowStats = hasTiktokData || !tiktokLink;
 
-                            <Box
-                              sx={{
-                                flex: 0,
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                minWidth: '120px',
-                              }}
-                            >
-                              <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
-                                <Box
-                                  component="img"
-                                  src="/assets/icons/overview/greenChart.svg"
-                                  sx={{ width: 20, height: 20 }}
-                                />
-                                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                                  {(() => {
-                                    // Try multiple possible sources for media kit data
-                                    const engagementRate =
-                                      currentPitch?.user?.creator?.tiktokUser?.engagement_rate ||
-                                      creatorProfileFull?.creator?.tiktokUser?.engagement_rate ||
-                                      creatorProfileFull?.tiktokUser?.engagement_rate;
-                                    if (!engagementRate) return 'N/A';
-                                    return `${Math.round(engagementRate)}%`;
-                                  })()}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="#8e8e93"
-                                  sx={{
-                                    whiteSpace: 'nowrap',
-                                    fontWeight: 500,
-                                    overflow: 'visible',
-                                    width: '100%',
-                                    fontSize: '12px',
-                                    textAlign: 'right',
-                                  }}
-                                >
-                                  Engagement Rate
-                                </Typography>
-                              </Stack>
-                            </Box>
+                            return (
+                              shouldShowStats && (
+                                <>
+                                  <Box
+                                    sx={{
+                                      flex: 0,
+                                      display: 'flex',
+                                      justifyContent: 'flex-end',
+                                      minWidth: '80px',
+                                    }}
+                                  >
+                                    <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                                      <Box
+                                        component="img"
+                                        src="/assets/icons/overview/purpleGroup.svg"
+                                        sx={{ width: 20, height: 20 }}
+                                      />
+                                      <Typography
+                                        variant="body1"
+                                        sx={{ fontWeight: 600, fontSize: '14px' }}
+                                      >
+                                        {(() => {
+                                          // Try multiple possible sources for media kit data
+                                          const followers =
+                                            currentPitch?.user?.creator?.tiktokUser
+                                              ?.follower_count ||
+                                            creatorProfileFull?.creator?.tiktokUser
+                                              ?.follower_count ||
+                                            creatorProfileFull?.tiktokUser?.follower_count;
+                                          if (!followers) return 'N/A';
+                                          if (followers >= 1000) {
+                                            const k = followers / 1000;
+                                            return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
+                                          }
+                                          return followers.toLocaleString();
+                                        })()}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="#8e8e93"
+                                        sx={{
+                                          whiteSpace: 'nowrap',
+                                          fontWeight: 500,
+                                          overflow: 'visible',
+                                          width: '100%',
+                                          fontSize: '12px',
+                                          textAlign: 'right',
+                                        }}
+                                      >
+                                        Followers
+                                      </Typography>
+                                    </Stack>
+                                  </Box>
 
-                            {/* Divider */}
-                            <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                                  {/* Divider */}
+                                  <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
 
-                            <Box
-                              sx={{
-                                flex: 0,
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                minWidth: '105px',
-                              }}
-                            >
-                              <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
-                                <Box
-                                  component="img"
-                                  src="/assets/icons/overview/bubbleHeart.svg"
-                                  sx={{ width: 20, height: 20 }}
-                                />
-                                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>
-                                  {(() => {
-                                    // Try multiple possible sources for media kit data
-                                    const likes =
-                                      currentPitch?.user?.creator?.tiktokUser?.averageLikes ||
-                                      creatorProfileFull?.creator?.tiktokUser?.averageLikes ||
-                                      creatorProfileFull?.tiktokUser?.averageLikes;
-                                    if (!likes) return 'N/A';
-                                    if (likes >= 1000) {
-                                      const k = likes / 1000;
-                                      return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
-                                    }
-                                    return Math.round(likes).toLocaleString();
-                                  })()}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="#8e8e93"
-                                  sx={{
-                                    whiteSpace: 'nowrap',
-                                    fontWeight: 500,
-                                    overflow: 'visible',
-                                    width: '100%',
-                                    fontSize: '12px',
-                                    textAlign: 'right',
-                                  }}
-                                >
-                                  Average Likes
-                                </Typography>
-                              </Stack>
-                            </Box>
-                          </>
-                          );
-                        })()}                        
+                                  <Box
+                                    sx={{
+                                      flex: 0,
+                                      display: 'flex',
+                                      justifyContent: 'flex-end',
+                                      minWidth: '120px',
+                                    }}
+                                  >
+                                    <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                                      <Box
+                                        component="img"
+                                        src="/assets/icons/overview/greenChart.svg"
+                                        sx={{ width: 20, height: 20 }}
+                                      />
+                                      <Typography
+                                        variant="body1"
+                                        sx={{ fontWeight: 600, fontSize: '14px' }}
+                                      >
+                                        {(() => {
+                                          // Try multiple possible sources for media kit data
+                                          const engagementRate =
+                                            currentPitch?.user?.creator?.tiktokUser
+                                              ?.engagement_rate ||
+                                            creatorProfileFull?.creator?.tiktokUser
+                                              ?.engagement_rate ||
+                                            creatorProfileFull?.tiktokUser?.engagement_rate;
+                                          if (!engagementRate) return 'N/A';
+                                          return `${Math.round(engagementRate)}%`;
+                                        })()}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="#8e8e93"
+                                        sx={{
+                                          whiteSpace: 'nowrap',
+                                          fontWeight: 500,
+                                          overflow: 'visible',
+                                          width: '100%',
+                                          fontSize: '12px',
+                                          textAlign: 'right',
+                                        }}
+                                      >
+                                        Engagement Rate
+                                      </Typography>
+                                    </Stack>
+                                  </Box>
+
+                                  {/* Divider */}
+                                  <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+
+                                  <Box
+                                    sx={{
+                                      flex: 0,
+                                      display: 'flex',
+                                      justifyContent: 'flex-end',
+                                      minWidth: '105px',
+                                    }}
+                                  >
+                                    <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                                      <Box
+                                        component="img"
+                                        src="/assets/icons/overview/bubbleHeart.svg"
+                                        sx={{ width: 20, height: 20 }}
+                                      />
+                                      <Typography
+                                        variant="body1"
+                                        sx={{ fontWeight: 600, fontSize: '14px' }}
+                                      >
+                                        {(() => {
+                                          // Try multiple possible sources for media kit data
+                                          const likes =
+                                            currentPitch?.user?.creator?.tiktokUser?.averageLikes ||
+                                            creatorProfileFull?.creator?.tiktokUser?.averageLikes ||
+                                            creatorProfileFull?.tiktokUser?.averageLikes;
+                                          if (!likes) return 'N/A';
+                                          if (likes >= 1000) {
+                                            const k = likes / 1000;
+                                            return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`;
+                                          }
+                                          return Math.round(likes).toLocaleString();
+                                        })()}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="#8e8e93"
+                                        sx={{
+                                          whiteSpace: 'nowrap',
+                                          fontWeight: 500,
+                                          overflow: 'visible',
+                                          width: '100%',
+                                          fontSize: '12px',
+                                          textAlign: 'right',
+                                        }}
+                                      >
+                                        Average Likes
+                                      </Typography>
+                                    </Stack>
+                                  </Box>
+                                </>
+                              )
+                            );
+                          })()}
                       </Stack>
-                    }
+                    )}
                   </Stack>
                 </Box>
               </Grid>
@@ -1354,8 +1389,8 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                   disabled={
                     loading ||
                     (campaign?.submissionVersion !== 'v4' &&
-                     campaign?.campaignCredits &&
-                     ugcLeft <= 0)
+                      campaign?.campaignCredits &&
+                      ugcLeft <= 0)
                   }
                   sx={{
                     textTransform: 'none',
@@ -1779,7 +1814,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
                 ) : (
                   <Typography variant="body2">—</Typography>
                 )}
-              </Box>              
+              </Box>
             </Stack>
           </Box>
 
