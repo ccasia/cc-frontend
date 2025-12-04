@@ -358,7 +358,12 @@ const CampaignDetailView = ({ id }) => {
                       (sum, a) => sum + (a.isSent === false ? 1 : 0),
                       0
                     );
-                    return `Agreements (${(pendingAgreementApproval + pendingSendAgreement) || 0})`;
+                    const totalPending = pendingAgreementApproval + pendingSendAgreement;
+                    if (totalPending > 0) {
+                      return `Agreements (${totalPending})`
+                    } else {
+                      return 'Agreements'
+                    }
                   })(),
                   value: 'agreement',
                 },
