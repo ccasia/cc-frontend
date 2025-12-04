@@ -5,6 +5,7 @@ import { useSnackbar } from 'src/components/snackbar';
 
 import {
   Box,
+  Badge,
   Stack,
   Drawer,
   Avatar,
@@ -60,24 +61,35 @@ export function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId 
     switch (status) {
       case 'PENDING_ASSIGNMENT':
         return (
-          <Button fullWidth variant="contained" onClick={() => setOpenAssign(true)} sx={buttonSx}>
-            <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
-            Assign
-          </Button>
+          <Badge color="error" variant="dot">
+            <Button fullWidth variant="contained" onClick={() => setOpenAssign(true)} sx={buttonSx}>
+              <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
+              Assign
+            </Button>
+          </Badge>
         );
       case 'SCHEDULED':
         return (
-          <Button fullWidth variant="contained" onClick={() => setOpenSchedule(true)} sx={buttonSx}>
-            <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
-            Schedule Delivery
-          </Button>
+          <Badge color="error" variant="dot">
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => setOpenSchedule(true)}
+              sx={buttonSx}
+            >
+              <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
+              Schedule Delivery
+            </Button>
+          </Badge>
         );
       case 'ISSUE_REPORTED':
         return (
-          <Button fullWidth variant="contained" onClick={() => setOpenIssue(true)} sx={buttonSx}>
-            <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
-            Review Issue
-          </Button>
+          <Badge color="error" variant="dot">
+            <Button fullWidth variant="contained" onClick={() => setOpenIssue(true)} sx={buttonSx}>
+              <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
+              Review Issue
+            </Button>
+          </Badge>
         );
       case 'SHIPPED':
       case 'DELIVERED':
@@ -362,98 +374,104 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
   const renderStepperButton = () => {
     if (status === 'PENDING_ASSIGNMENT') {
       return (
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={() => setOpenAdminAssign(true)}
-          sx={{
-            width: 'fit-content',
-            height: 44,
-            padding: { xs: '4px 8px', sm: '6px 10px' },
-            borderRadius: '8px',
-            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-            backgroundColor: '#1340FF',
-            color: '#FFFFFF',
-            fontSize: { xs: 12, sm: 14, md: 16 },
-            fontWeight: 600,
-            textTransform: 'none',
-            '&:hover': {
-              backgroundColor: '#133effd3',
+        <Badge color="error" variant="dot">
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => setOpenAdminAssign(true)}
+            sx={{
+              width: 'fit-content',
+              height: 44,
+              padding: { xs: '4px 8px', sm: '6px 10px' },
+              borderRadius: '8px',
               boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-            },
-            '&:active': {
-              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
-              transform: 'translateY(1px)',
-            },
-          }}
-        >
-          <Iconify icon="mi:edit-alt" width={20} sx={{ mr: 1 }} />
-          Edit or Assign
-        </Button>
+              backgroundColor: '#1340FF',
+              color: '#FFFFFF',
+              fontSize: { xs: 12, sm: 14, md: 16 },
+              fontWeight: 600,
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: '#133effd3',
+                boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+              },
+              '&:active': {
+                boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                transform: 'translateY(1px)',
+              },
+            }}
+          >
+            <Iconify icon="mi:edit-alt" width={20} sx={{ mr: 1 }} />
+            Edit or Assign
+          </Button>
+        </Badge>
       );
     }
     if (status === 'SCHEDULED') {
       return (
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={() => setOpenSchedule(true)}
-          sx={{
-            width: 'fit-content',
-            height: 44,
-            padding: { xs: '4px 8px', sm: '6px 10px' },
-            borderRadius: '8px',
-            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-            backgroundColor: '#1340FF',
-            color: '#FFFFFF',
-            fontSize: { xs: 12, sm: 14, md: 16 },
-            fontWeight: 600,
-            textTransform: 'none',
-            '&:hover': {
-              backgroundColor: '#133effd3',
+        <Badge color="error" variant="dot">
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => setOpenSchedule(true)}
+            sx={{
+              width: 'fit-content',
+              height: 44,
+              padding: { xs: '4px 8px', sm: '6px 10px' },
+              borderRadius: '8px',
               boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-            },
-            '&:active': {
-              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
-              transform: 'translateY(1px)',
-            },
-          }}
-        >
-          <Iconify icon="mi:edit-alt" width={20} sx={{ mr: 1 }} />
-          Schedule Delivery
-        </Button>
+              backgroundColor: '#1340FF',
+              color: '#FFFFFF',
+              fontSize: { xs: 12, sm: 14, md: 16 },
+              fontWeight: 600,
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: '#133effd3',
+                boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+              },
+              '&:active': {
+                boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                transform: 'translateY(1px)',
+              },
+            }}
+          >
+            <Iconify icon="mi:edit-alt" width={20} sx={{ mr: 1 }} />
+            Schedule Delivery
+          </Button>
+        </Badge>
       );
     }
     if (status === 'ISSUE_REPORTED') {
       return (
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={() => setOpenReviewIssue(true)}
-          sx={{
-            width: 'fit-content',
-            height: 44,
-            padding: { xs: '4px 8px', sm: '6px 10px' },
-            borderRadius: '8px',
-            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-            backgroundColor: '#1340FF',
-            color: '#FFFFFF',
-            fontSize: { xs: 12, sm: 14, md: 16 },
-            fontWeight: 600,
-            textTransform: 'none',
-            '&:hover': {
-              backgroundColor: '#133effd3',
+        <Badge color="error" variant="dot">
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => setOpenReviewIssue(true)}
+            sx={{
+              width: 'fit-content',
+              height: 44,
+              padding: { xs: '4px 8px', sm: '6px 10px' },
+              borderRadius: '8px',
               boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-            },
-            '&:active': {
-              boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
-              transform: 'translateY(1px)',
-            },
-          }}
-        >
-          <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
-          Review Issue
-        </Button>
+              backgroundColor: '#1340FF',
+              color: '#FFFFFF',
+              fontSize: { xs: 12, sm: 14, md: 16 },
+              fontWeight: 600,
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: '#133effd3',
+                boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+              },
+              '&:active': {
+                boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                transform: 'translateY(1px)',
+              },
+            }}
+          >
+            <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
+            Review Issue
+          </Button>
+        </Badge>
       );
     }
     return null; // No button in stepper for Shipped/Delivered
@@ -571,6 +589,9 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
                   {creator?.creator?.instagramUser?.username
                     ? `@${creator.creator.instagramUser.username}`
                     : '-'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.primary', display: 'block' }}>
+                  {creator?.phoneNumber || '-'}
                 </Typography>
               </Box>
             </Stack>

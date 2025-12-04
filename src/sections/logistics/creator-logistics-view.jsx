@@ -214,33 +214,35 @@ export default function CreatorLogisticsView({ campaign }) {
 
           {status === 'SHIPPED' && (
             <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-              <Button
-                // fullWidth
-                variant="contained"
-                onClick={handleMarkReceived}
-                sx={{
-                  padding: { xs: '4px 8px', sm: '6px 10px' },
-                  height: 44,
-                  bgcolor: '#1340FF',
-                  px: 4,
-                  py: 1,
-                  borderRadius: '8px',
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-                  '&:hover': {
-                    backgroundColor: '#133effd3',
+              <Badge color="error" variant="dot" invisible={status !== 'SHIPPED'}>
+                <Button
+                  // fullWidth
+                  variant="contained"
+                  onClick={handleMarkReceived}
+                  sx={{
+                    padding: { xs: '4px 8px', sm: '6px 10px' },
+                    height: 44,
+                    bgcolor: '#1340FF',
+                    px: 4,
+                    py: 1,
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    textTransform: 'none',
                     boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-                  },
-                  '&:active': {
-                    boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
-                    transform: 'translateY(1px)',
-                  },
-                }}
-              >
-                Products Received
-              </Button>
+                    '&:hover': {
+                      backgroundColor: '#133effd3',
+                      boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                    },
+                    '&:active': {
+                      boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                      transform: 'translateY(1px)',
+                    },
+                  }}
+                >
+                  Products Received
+                </Button>
+              </Badge>
               <Button
                 // fullWidth
                 variant="outlined"

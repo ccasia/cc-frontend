@@ -72,20 +72,21 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus }) {
     <>
       <TableRow hover onClick={onClick} sx={{ cursor: 'pointer' }}>
         {/* Column 1: Name */}
-        <TableCell sx={{ display: 'flex', alignItems: 'center', width: '40%' }}>
+        <TableCell sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
           <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ mr: 2 }} />
           <ListItemText
             primary={creator?.name}
-            primaryTypographyProps={{ typography: 'subtitle2' }}
+            primaryTypographyProps={{ typography: 'subtitle2', noWrap: true }}
+            sx={{ minWidth: 0 }}
           />
         </TableCell>
         {/* Column 2: Products */}
         <TableCell sx={{ width: '40%' }}>
           {items && items.length > 0 ? (
-            <Box display="flex" flexDirection="column">
+            <Box display="flex" flexDirection="row">
               {items.map((item, index) => (
                 <Typography key={index} variant="body2">
-                  {item.product?.productName} ({item.quantity})
+                  {item.product?.productName} ({item.quantity}){index < items.length - 1 && ',\u00A0'}
                 </Typography>
               ))}
             </Box>
@@ -105,7 +106,6 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus }) {
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                // minWidth: { xs: 80, sm: 110, md: 130 },
                 width: 'fit-content',
                 height: { xs: 28, sm: 30 },
                 padding: { xs: '4px 8px', sm: '6px 10px' },
