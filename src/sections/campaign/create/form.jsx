@@ -96,7 +96,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   const [pages, setPages] = useState(0);
-  const [hasCreditError, setHasCreditError] = useState(false)
+  const [hasCreditError, setHasCreditError] = useState(false);
 
   const pdfModal = useBoolean();
 
@@ -265,34 +265,34 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
   });
 
   const logisticsSchema = Yup.object().shape({
-    logisticsType: Yup.string(), // Optional
-    productName: Yup.string().when('logisticsType', {
-      is: 'product_delivery',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
+    logisticsType: Yup.string(),
+    products: Yup.array().when('logisticsType', {
+      is: 'PRODUCT_DELIVERY',
+      then: (schema) =>
+        schema
+          .of(
+            Yup.object().shape({
+              name: Yup.string().required('Product name is required'),
+            })
+          )
+          .min(1, 'At least one product is required'),
+      otherwise: (schema) => schema.notRequired(),
     }),
-    productDescription: Yup.string().when('logisticsType', {
-      is: 'product_delivery',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
-    }),
-    deliveryNotes: Yup.string().when('logisticsType', {
-      is: 'product_delivery',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
-    }),
+    logisticRemarks: Yup.string(),
+    locations: Yup.array().notRequired(),
+
     venueName: Yup.string().when('logisticsType', {
-      is: 'reservation',
+      is: 'RESERVATION',
       then: (schema) => schema,
       otherwise: (schema) => schema,
     }),
     venueAddress: Yup.string().when('logisticsType', {
-      is: 'reservation',
+      is: 'RESERVATION',
       then: (schema) => schema,
       otherwise: (schema) => schema,
     }),
     reservationNotes: Yup.string().when('logisticsType', {
-      is: 'reservation',
+      is: 'RESERVATION',
       then: (schema) => schema,
       otherwise: (schema) => schema,
     }),
@@ -313,9 +313,9 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       case 5:
         return logisticsSchema;
       case 6:
-        return Yup.object().shape({}); 
+        return Yup.object().shape({});
       case 7:
-        return Yup.object().shape({}); 
+        return Yup.object().shape({});
       case 8:
         return timelineSchema;
       case 9:
@@ -444,13 +444,13 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       // Skip Reservation Slots and Logistic Remarks steps if logistics type is not 'reservation'
       const logisticsType = getValues('logisticsType');
       let nextStep = activeStep + 1;
-      
-      if (activeStep === 5 && logisticsType !== 'reservation' && nextStep === 6) {
+
+      if (activeStep === 5 && logisticsType !== 'RESERVATION' && nextStep === 6) {
         nextStep = 8; // Skip to Campaign Timeline (skip both Reservation Slots and Logistic Remarks)
-      } else if (activeStep === 6 && logisticsType === 'reservation') {
+      } else if (activeStep === 6 && logisticsType === 'RESERVATION') {
         nextStep = 7; // Go to Logistic Remarks after Reservation Slots
       }
-      
+
       localStorage.setItem('activeStep', nextStep);
       setActiveStep(nextStep);
     }
@@ -459,17 +459,15 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
   const handleBack = () => {
     const logisticsType = getValues('logisticsType');
     let prevStep = activeStep - 1;
-    
-    if (activeStep === 8 && logisticsType !== 'reservation') {
-      prevStep = 5; 
+
+    if (activeStep === 8 && logisticsType !== 'RESERVATION') {
+      prevStep = 5;
+    } else if (activeStep === 7 && logisticsType !== 'RESERVATION') {
+      prevStep = 5;
+    } else if (activeStep === 6 && logisticsType !== 'RESERVATION') {
+      prevStep = 5;
     }
-    else if (activeStep === 7 && logisticsType !== 'reservation') {
-      prevStep = 5; 
-    }
-    else if (activeStep === 6 && logisticsType !== 'reservation') {
-      prevStep = 5; 
-    }
-    
+
     localStorage.setItem('activeStep', prevStep);
     setActiveStep(prevStep);
   };
@@ -628,15 +626,15 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     const currentClientId = getValues('client')?.id;
 
     openPackage.onFalse();
-    enqueueSnackbar('Package linked successfully!', {variant: 'success'});
-    
+    enqueueSnackbar('Package linked successfully!', { variant: 'success' });
+
     const newCompanyList = await mutateCompanyList();
 
     if (newCompanyList && currentClientId) {
       const updatedClient = newCompanyList.find((c) => c.id === currentClientId);
 
       if (updatedClient) {
-        setValue('client', updatedClient, {shouldValidate:true});
+        setValue('client', updatedClient, { shouldValidate: true });
       }
     }
   };

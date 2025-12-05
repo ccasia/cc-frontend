@@ -14,6 +14,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import CampaignInfo from './campaign-info';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignLogistics from './campaign-logistics';
+import CampaignLogisticsView from 'src/sections/logistics/creator-logistics-view';
 import CampaignV4Activity from './v4/campaign-v4-activity';
 
 const CampaignDetailItem = ({ campaign }) => {
@@ -156,7 +157,7 @@ const CampaignDetailItem = ({ campaign }) => {
           {currentTab === 'tasks-v4' && <CampaignV4Activity campaign={campaign} />}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
           {/* {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />} */}
-          {currentTab === 'logistics' && <CampaignLogistics campaign={campaign} />}
+          {currentTab === 'logistics' && <CampaignLogisticsView campaign={campaign} />}
         </Box>
       </Stack>
     </Stack>
