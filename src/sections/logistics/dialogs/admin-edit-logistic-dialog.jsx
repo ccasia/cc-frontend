@@ -283,7 +283,6 @@ export default function AdminEditLogisticDialog({ open, onClose, logistic, campa
             size="large"
             loading={isSubmitting}
             sx={{
-              bgcolor: '#3A3A3C',
               color: '#fff',
               px: 6,
               py: 1.5,
