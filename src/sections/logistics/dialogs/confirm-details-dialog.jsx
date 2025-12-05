@@ -19,7 +19,6 @@ import {
 import LoadingButton from '@mui/lab/LoadingButton';
 
 import Iconify from 'src/components/iconify';
-import { Button3D } from 'src/components/custom-button';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
@@ -152,9 +151,9 @@ export default function ConfirmDetailsDialog({ open, onClose, logistic, onUpdate
         </DialogContent>
 
         <DialogActions>
-          <Button3D variant="contained" onClick={onClose}>
+          <Button variant="contained" onClick={onClose}>
             Cancel
-          </Button3D>
+          </Button>
           <LoadingButton
             type="submit"
             variant="contained"
