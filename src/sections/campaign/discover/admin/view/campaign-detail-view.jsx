@@ -383,19 +383,6 @@ const CampaignDetailView = ({ id }) => {
                         value: 'deliverables',
                       },
                     ]),
-                ...(campaign?.submissionVersion === 'v4'
-                  ? [
-                      {
-                        label: 'Creator Submissions',
-                        value: 'submissions-v4',
-                      },
-                    ]
-                  : [
-                      {
-                        label: 'Creator Deliverables',
-                        value: 'deliverables',
-                      },
-                    ]),
                 {
                   label: 'Campaign Analytics',
                   value: 'analytics',
@@ -741,7 +728,7 @@ const CampaignDetailView = ({ id }) => {
         </Button>
       );
     }
-    
+
     if (currentTab === 'logistics') {
       return (
         <Button
