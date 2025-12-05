@@ -43,13 +43,15 @@ const STATUS_OPTIONS = [
   { value: 'ISSUE_REPORTED', label: 'FAILED', color: '#D4321C' },
 ];
 
-export default function LogisticsList({ campaignId, isAdmin }) {
+export default function LogisticsList({ campaignId, isAdmin, logistics: propLogistics }) {
   const { enqueueSnackbar } = useSnackbar();
   const {
-    data: logistics,
+    data: fetchedLogistics,
     isLoading,
     mutate,
   } = useSWR(campaignId ? `/api/logistics/campaign/${campaignId}` : null, fetcher);
+
+  const logistics = propLogistics || fetchedLogistics;
 
   const [selectedLogisticId, setSelectedLogisticId] = useState(null);
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -301,5 +303,6 @@ export default function LogisticsList({ campaignId, isAdmin }) {
 
 LogisticsList.propTypes = {
   campaignId: PropTypes.string,
+  logistics: PropTypes.string,
   isAdmin: PropTypes.bool,
 };

@@ -36,19 +36,21 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
   const { data: products } = useSWR(productsApiUrl, fetcher);
 
   const creators =
-    logistics?.map((item) => {
-      const socialMediaHandle =
-        item.creator?.creator?.instagramUser?.username ||
-        item.creator?.creator?.tiktokUser?.username;
+    logistics
+      ?.filter((item) => ['PENDING_ASSIGNMENT', 'SCHEDULED'].includes(item.status))
+      .map((item) => {
+        const socialMediaHandle =
+          item.creator?.creator?.instagramUser?.username ||
+          item.creator?.creator?.tiktokUser?.username;
 
-      return {
-        id: item.creatorId,
-        name: item.creator?.name,
-        photoURL: item.creator?.photoURL,
-        handle: socialMediaHandle ? `@${socialMediaHandle}` : '-',
-        existingItems: item.deliveryDetails?.items || [],
-      };
-    }) || [];
+        return {
+          id: item.creatorId,
+          name: item.creator?.name,
+          photoURL: item.creator?.photoURL,
+          handle: socialMediaHandle ? `@${socialMediaHandle}` : '-',
+          existingItems: item.deliveryDetails?.items || [],
+        };
+      }) || [];
 
   const [assignments, setAssignments] = useState({});
   const [selectedProductIds, setSelectedProductIds] = useState([]);
@@ -67,7 +69,12 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     if (open && logistics) {
       const initialAssignments = {};
 
+      // creators valid for editing
+      const validCreatorIds = creators.map((creator) => creator.id);
+
       for (const logistic of logistics) {
+        if (!validCreatorIds.includes(logistic.creatorId)) continue;
+
         if (logistic.deliveryDetails?.items?.length > 0) {
           initialAssignments[logistic.creatorId] = logistic.deliveryDetails.items.map((item) => ({
             productId: item.productId,
