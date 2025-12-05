@@ -437,7 +437,7 @@ export default function ChildAccountSetup() {
           sx={{
             boxShadow: { md: 'none' },
             overflow: { md: 'unset' },
-            bgcolor: { md: 'background.default' },
+            // bgcolor: { md: 'background.default' },
             mt: { md: 5 },
             p: 3,
             bgcolor: '#F4F4F4',

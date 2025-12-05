@@ -209,7 +209,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
             type: pitch.type || 'text',
             content: pitch.content || pitch.user?.creator?.about || 'No content available',
             isShortlisted: false,
-            pitchId: pitch.id,
+            // pitchId: pitch.id,
             isV3: false,
           }))
           .filter((creator) => creator.user && creator.user.creator)

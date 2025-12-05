@@ -210,7 +210,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
         {
           campaignName: '',
           clientName: '',
-          currency: '',
+          // currency: '',
           // title: '',
           // description: '',
           service: '',
@@ -253,13 +253,13 @@ export default function InvoiceNewEditForm({ id, creators }) {
     const newAmount = data.totalAmount || 0;
     const isApprovedInvoice = invoice?.status === 'approved';
     const hasAmountChanged = Math.abs(originalAmount - newAmount) > 0.01; // Using small threshold for floating point comparison
-    
+
     // If approved invoice amount changed, set status to draft
     if (isApprovedInvoice && hasAmountChanged) {
       data.status = 'draft';
-      enqueueSnackbar('Amount changed on approved invoice. Status automatically set to draft.', { 
+      enqueueSnackbar('Amount changed on approved invoice. Status automatically set to draft.', {
         variant: 'warning',
-        autoHideDuration: 4000
+        autoHideDuration: 4000,
       });
     }
 
