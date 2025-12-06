@@ -303,11 +303,10 @@ const CampaignDetailView = ({ id }) => {
   }, []);
 
   const getAgreementsLabel = (agreementSubmissions, campaignAgreements) => {
-    const pendingAgreementApproval = agreementSubmissions?.filter(
-      a => a?.status === 'PENDING_REVIEW'
-    ).length || 0;
+    const pendingAgreementApproval =
+      agreementSubmissions?.filter((a) => a?.status === 'PENDING_REVIEW').length || 0;
     const pendingSendAgreement = (campaignAgreements || []).filter(
-      a => a.isSent === false
+      (a) => a.isSent === false
     ).length;
     const totalPending = pendingAgreementApproval + pendingSendAgreement;
     return totalPending > 0 ? `Agreements (${totalPending})` : 'Agreements';
@@ -371,19 +370,6 @@ const CampaignDetailView = ({ id }) => {
                   label: getAgreementsLabel(agreementSubmissions, campaignAgreements),
                   value: 'agreement',
                 },
-                ...(campaign?.submissionVersion === 'v4'
-                  ? [
-                      {
-                        label: 'Creator Submissions',
-                        value: 'submissions-v4',
-                      },
-                    ]
-                  : [
-                      {
-                        label: 'Creator Deliverables',
-                        value: 'deliverables',
-                      },
-                    ]),
                 ...(campaign?.submissionVersion === 'v4'
                   ? [
                       {
@@ -739,6 +725,33 @@ const CampaignDetailView = ({ id }) => {
           }}
         >
           Activate Campaign
+        </Button>
+      );
+    }
+
+    if (currentTab === 'logistics') {
+      return (
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
+          onClick={() => setOpenBulkAssign(true)}
+          disabled={isDisabled}
+          sx={{
+            height: 42,
+            borderRadius: 1,
+            color: 'white',
+            bgcolor: '#1340ff',
+            border: '1px solid #1340ff',
+            borderBottom: '4px solid #0e2fd6',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            px: 2,
+            whiteSpace: 'nowrap',
+            '&:hover': { bgcolor: '#0e2fd6' },
+          }}
+        >
+          Edit & Bulk Assign
         </Button>
       );
     }

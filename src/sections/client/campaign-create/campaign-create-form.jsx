@@ -45,6 +45,9 @@ import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
+import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
+import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
+import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -53,6 +56,9 @@ const steps = [
   { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
   { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
+  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
+  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
+  { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
   { title: 'Other Attachment ( Optional )', logo: '🖇️', color: '#FF3500' },
 ];
 
@@ -81,12 +87,16 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
 
   const campaignSchema = Yup.object().shape({
-    campaignIndustries: Yup.array().min(1, 'At least one industry is required').required('Campaign Industry is required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required')
+      .required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string()
       .required('Campaign title is required')
       .max(40, 'Campaign title must be 40 characters or less'),
-    campaignObjectives: Yup.array().min(1, 'At least one objective is required').required('Campaign objectives is required'),
+    campaignObjectives: Yup.array()
+      .min(1, 'At least one objective is required')
+      .required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
     audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
     audienceGender: Yup.array()
@@ -126,16 +136,20 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     campaignCredits: Yup.number()
       .min(1, 'Minimum need to be 1')
       .required('Campaign credits is required'),
-      otherAttachments: Yup.array(),
+    otherAttachments: Yup.array(),
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    campaignIndustries: Yup.array().min(1, 'At least one industry is required').required('Campaign industry is required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required')
+      .required('Campaign industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string()
       .required('Campaign title is required')
       .max(40, 'Campaign title must be 40 characters or less'),
-    campaignObjectives: Yup.array().min(1, 'At least one objective is required').required('Campaign objectives is required'),
+    campaignObjectives: Yup.array()
+      .min(1, 'At least one objective is required')
+      .required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
     productName: Yup.string(),
   });
@@ -180,6 +194,40 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       .max(5, 'Must have at most 5 images'),
   });
 
+  const logisticsSchema = Yup.object().shape({
+    logisticsType: Yup.string(),
+    products: Yup.array().when('logisticsType', {
+      is: 'PRODUCT_DELIVERY',
+      then: (schema) =>
+        schema
+          .of(
+            Yup.object().shape({
+              name: Yup.string().required('Product name is required'),
+            })
+          )
+          .min(1, 'At least on product is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    logisticRemarks: Yup.string(),
+    locations: Yup.array().notRequired(),
+
+    venueName: Yup.string().when('logisticType', {
+      is: 'RESERVATION',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+    venueAddress: Yup.string().when('logisticsType', {
+      is: 'RESERVATION',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+    reservationNotes: Yup.string().when('logisticsType', {
+      is: 'RESERVATION',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+  });
+
   const campaignAdminSchema = Yup.object().shape({
     adminManager: Yup.array()
       .min(1, 'At least One Admin is required')
@@ -213,11 +261,16 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 2:
         return campaignImagesSchema;
       case 3:
+        return logisticsSchema;
+      case 4:
+      case 5:
+        return Yup.object().shape({});
+      case 6:
         return Yup.object().shape({
           otherAttachments: Yup.array(),
           referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
         });
-      default: 
+      default:
         return campaignSchema;
     }
   };
@@ -252,6 +305,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     otherAttachments: [],
     referencesLinks: [],
     submissionVersion: 'v3',
+    logisticsType: '',
+    logisticRemarks: '',
+    schedulingOption: 'confirmation',
+    products: [{ name: '' }],
+    locations: [{ name: '' }],
+    venueName: '',
+    venueAddress: '',
+    reservationNotes: '',
   };
 
   const methods = useForm({
@@ -323,19 +384,43 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     const isGeneralInfoStep = steps[activeStep]?.title === 'General Campaign Information';
     const requestedCredits = Number(getValues('campaignCredits') || 0);
     const availableCredits = Number(localStorage.getItem('clientAvailableCredits') || 0);
-    const isExceed = isGeneralInfoStep && (availableCredits <= 0 || requestedCredits <= 0 || requestedCredits > availableCredits);
+    const isExceed =
+      isGeneralInfoStep &&
+      (availableCredits <= 0 || requestedCredits <= 0 || requestedCredits > availableCredits);
 
     if (result && !creditsErrorRef.current && !isExceed) {
-      localStorage.setItem('clientActiveStep', activeStep + 1);
-      setActiveStep((prevActiveStep) => prevActiveStep + 1);
+      const logisticsType = getValues('logisticsType');
+      let nextStep = activeStep + 1;
+
+      if (activeStep === 3 && logisticsType !== 'RESERVATION' && nextStep === 4) {
+        nextStep = 6;
+      } else if (activeStep === 4 && logisticsType === 'RESERVATION') {
+        nextStep = 5;
+      }
+
+      localStorage.setItem('clientActiveStep', nextStep);
+      setActiveStep(nextStep);
     } else if (isExceed) {
-      enqueueSnackbar('Please include or adjust Number Of Credits based on available credits', { variant: 'error' });
+      enqueueSnackbar('Please include or adjust Number Of Credits based on available credits', {
+        variant: 'error',
+      });
     }
   };
 
   const handleBack = () => {
-    localStorage.setItem('clientActiveStep', activeStep - 1);
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    const logisticType = getValues('logisticsType');
+    let prevStep = activeStep - 1;
+
+    if (activeStep === 6) {
+      if (logisticType !== 'RESERVATION') {
+        prevStep = 3;
+      } else {
+        prevStep = 5;
+      }
+    }
+
+    localStorage.setItem('clientActiveStep', prevStep);
+    setActiveStep(prevStep);
   };
 
   const onDrop = useCallback(
@@ -372,13 +457,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const onSubmit = handleSubmit(async (data, stage) => {
     try {
       setIsLoading(true);
-      
+
       // Debug: Log user info to check role
       console.log('Current user info:', user);
       console.log('User role:', user?.role);
-      
+
       const formData = new FormData();
-      
+
       // Create client campaign data object with all necessary fields
       const clientCampaignData = {
         campaignTitle: data.campaignTitle || '',
@@ -392,30 +477,48 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         campaignObjectives: Array.isArray(data.campaignObjectives) ? data.campaignObjectives : [],
         audienceGender: Array.isArray(data.audienceGender) ? data.audienceGender : [],
         audienceAge: Array.isArray(data.audienceAge) ? data.audienceAge : [],
-        audienceLocation: Array.isArray(data.audienceLocation) 
-          ? data.audienceLocation.filter(item => item !== 'Others') 
+        audienceLocation: Array.isArray(data.audienceLocation)
+          ? data.audienceLocation.filter((item) => item !== 'Others')
           : [],
         audienceLanguage: Array.isArray(data.audienceLanguage) ? data.audienceLanguage : [],
-        audienceCreatorPersona: Array.isArray(data.audienceCreatorPersona) ? data.audienceCreatorPersona : [],
+        audienceCreatorPersona: Array.isArray(data.audienceCreatorPersona)
+          ? data.audienceCreatorPersona
+          : [],
         audienceUserPersona: data.audienceUserPersona || '',
-        socialMediaPlatform: Array.isArray(data.socialMediaPlatform) ? data.socialMediaPlatform : [],
+        socialMediaPlatform: Array.isArray(data.socialMediaPlatform)
+          ? data.socialMediaPlatform
+          : [],
         videoAngle: Array.isArray(data.videoAngle) ? data.videoAngle : [],
         campaignDo: Array.isArray(data.campaignDo)
-          ? data.campaignDo.filter(Boolean).map(item => typeof item === 'object' ? item : { value: item }).filter(item => item.value)
+          ? data.campaignDo
+              .filter(Boolean)
+              .map((item) => (typeof item === 'object' ? item : { value: item }))
+              .filter((item) => item.value)
           : [],
         campaignDont: Array.isArray(data.campaignDont)
-          ? data.campaignDont.filter(Boolean).map(item => typeof item === 'object' ? item : { value: item }).filter(item => item.value)
+          ? data.campaignDont
+              .filter(Boolean)
+              .map((item) => (typeof item === 'object' ? item : { value: item }))
+              .filter((item) => item.value)
           : [],
         referencesLinks: Array.isArray(data.referencesLinks) ? data.referencesLinks : [],
         submissionVersion: data.submissionVersion || 'v3',
+        logisticsType: data.logisticsType || '',
+        logisticRemarks: data.logisticRemarks || '',
+        products: data.products || [],
+        locations: data.locations || [],
+        venueName: data.venueName || '',
+        venueAddress: data.venueAddress || '',
+        reservationNotes: data.reservationNotes || '',
+        schedulingOption: data.schedulingOption || 'confirmation',
       };
-      
+
       console.log('Client campaign data:', clientCampaignData);
-      
+
       // Convert to JSON string and append to FormData
       const jsonString = JSON.stringify(clientCampaignData);
       formData.append('data', jsonString);
-      
+
       // Append images if available
       if (data.campaignImages && Array.isArray(data.campaignImages)) {
         for (let i = 0; i < data.campaignImages.length; i += 1) {
@@ -429,17 +532,20 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       for (const i in data.otherAttachments) {
         formData.append('otherAttachments', data.otherAttachments[i]);
       }
-      
+
       // Use the client-specific endpoint
       const endpoint = endpoints.client.createCampaign;
       console.log('Using endpoint:', endpoint);
-      
+
       const res = await axiosInstance.post(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      
+
       setIsLoading(false);
-      enqueueSnackbar('Campaign submitted successfully! CSM will review and activate your campaign.', { variant: 'success' });
+      enqueueSnackbar(
+        'Campaign submitted successfully! CSM will review and activate your campaign.',
+        { variant: 'success' }
+      );
 
       // Revalidate client credits so dashboard reflects deduction immediately
       try {
@@ -476,17 +582,18 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       onClose();
     } catch (error) {
       console.error('API Error:', error);
-      
+
       // Extract detailed error information
       let errorMessage = 'Error creating campaign. Contact our admin';
-      
+
       if (error.response) {
         console.error('Error response status:', error.response.status);
         console.error('Error response headers:', error.response.headers);
         console.error('Error response data:', error.response.data);
-        
-        errorMessage = error.response.data?.message || 
-                      `Error ${error.response.status}: ${error.response.statusText}`;
+
+        errorMessage =
+          error.response.data?.message ||
+          `Error ${error.response.status}: ${error.response.statusText}`;
       } else if (error.request) {
         console.error('Error request:', error.request);
         errorMessage = 'No response received from server';
@@ -494,7 +601,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         console.error('Error message:', error.message);
         errorMessage = error.message || errorMessage;
       }
-      
+
       enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       setIsLoading(false);
@@ -512,7 +619,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     try {
       setIsLoading(true);
       setOpenConfirmModal(false); // Close the modal immediately when submission starts
-      
+
       // Try to create client record and associate with company first
       try {
         console.log('Creating client record with company if needed...');
@@ -522,14 +629,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         console.error('Error setting up client account:', setupError);
         // Continue anyway, as the main submission might still work
       }
-      
+
       // Get form values
       const formValues = methods.getValues();
       console.log('Form values before submission:', formValues);
-      
+
       // Use the existing onSubmit logic for actual submission
       await onSubmit(formValues);
-      
+
       // Reset form or redirect as needed
       // setActiveStep(0);
     } catch (error) {
@@ -540,26 +647,26 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       setIsConfirming(false);
     }
   }, [onSubmit, methods]);
-  
+
   // Set up event listeners for custom events - MOVED AFTER handleFinalSubmit
   useEffect(() => {
     const handleConfirm = () => {
       handleFinalSubmit();
     };
-    
+
     const handleCancel = () => {
       setOpenConfirmModal(false);
     };
-    
+
     window.addEventListener('confirmCampaign', handleConfirm);
     window.addEventListener('cancelCampaign', handleCancel);
-    
+
     // Clean up event listeners when component unmounts
     return () => {
       window.removeEventListener('confirmCampaign', handleConfirm);
       window.removeEventListener('cancelCampaign', handleCancel);
     };
-  }, [handleFinalSubmit, setOpenConfirmModal]);  // Include dependencies
+  }, [handleFinalSubmit, setOpenConfirmModal]); // Include dependencies
 
   // Modify the step content function to handle client flow
   const getStepContent = (step) => {
@@ -571,6 +678,12 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 2:
         return <CampaignUploadPhotos isLoading={isLoading} />;
       case 3:
+        return <CampaignLogistics />;
+      case 4:
+        return <ReservationSlots />;
+      case 5:
+        return <LogisticRemarks />;
+      case 6:
         return <OtherAttachments />;
       default:
         return null;
@@ -623,10 +736,10 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           </Box>
 
           {/* Navigation buttons - Hidden on mobile */}
-          <Stack 
-            direction="row" 
-            justifyContent="space-between" 
-            sx={{ 
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            sx={{
               py: 3,
               display: { xs: 'none', md: 'flex' },
             }}
@@ -635,7 +748,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               color="inherit"
               disabled={activeStep === 0 || isLoading || isConfirming}
               onClick={handleBack}
-              sx={{ 
+              sx={{
                 mr: 1,
                 bgcolor: 'white',
                 border: '1px solid #E7E7E7',
@@ -655,9 +768,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
             {activeStep === steps.length - 1 ? (
               <Stack direction="row" spacing={2}>
-                
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   onClick={handleConfirmCampaign}
                   disabled={isConfirming || isLoading}
                   sx={{
@@ -669,7 +781,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                     fontWeight: 600,
                   }}
                 >
-                  {isConfirming ? 'Opening Preview...' : isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
+                  {isConfirming
+                    ? 'Opening Preview...'
+                    : isLoading
+                      ? 'Creating Campaign...'
+                      : 'Confirm Campaign'}
                 </Button>
               </Stack>
             ) : (
@@ -692,13 +808,15 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           </Stack>
         </Stack>
 
-        <Box sx={{ 
-          height: '85vh', 
-          overflow: 'auto', 
-          mt: 1, 
-          scrollbarWidth: 'thin',
-          pb: { xs: 10, md: 0 }, // Add padding bottom on mobile for button space
-        }}>
+        <Box
+          sx={{
+            height: '85vh',
+            overflow: 'auto',
+            mt: 1,
+            scrollbarWidth: 'thin',
+            pb: { xs: 10, md: 0 }, // Add padding bottom on mobile for button space
+          }}
+        >
           <Box
             sx={{
               display: 'flex',
@@ -755,7 +873,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               disabled={activeStep === 0 || isLoading || isConfirming}
               onClick={handleBack}
               fullWidth
-              sx={{ 
+              sx={{
                 bgcolor: 'white',
                 border: '1px solid #E7E7E7',
                 color: '#3A3A3C',
@@ -771,8 +889,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             </Button>
 
             {activeStep === steps.length - 1 ? (
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 onClick={handleConfirmCampaign}
                 disabled={isConfirming || isLoading}
                 fullWidth
@@ -785,7 +903,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                   fontWeight: 600,
                 }}
               >
-                {isConfirming ? 'Opening Preview...' : isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
+                {isConfirming
+                  ? 'Opening Preview...'
+                  : isLoading
+                    ? 'Creating Campaign...'
+                    : 'Confirm Campaign'}
               </Button>
             ) : (
               <Button
@@ -874,8 +996,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               <Button
                 variant="outlined"
                 fullWidth
-                sx={{ 
-                  fontWeight: 600, 
+                sx={{
+                  fontWeight: 600,
                   py: 1,
                   bgcolor: 'white',
                   border: '1px solid #E7E7E7',
@@ -911,7 +1033,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         >
           <DialogContent sx={{ overflow: 'auto', maxHeight: 'calc(90vh - 64px)', p: 0 }}>
             <CampaignUploadPhotos isPreview isLoading={isLoading} />
-            
+
             {/* Loading overlay for confirmation modal */}
             {isLoading && (
               <Box
@@ -929,8 +1051,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                   borderRadius: 2,
                 }}
               >
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     textAlign: 'center',
                     bgcolor: 'white',
                     borderRadius: 2,
@@ -976,10 +1098,10 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                       ⏳
                     </Typography>
                   </Box>
-                  <Typography 
-                    variant="subtitle1" 
-                    sx={{ 
-                      color: '#3A3A3C', 
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      color: '#3A3A3C',
                       fontWeight: 600,
                       fontSize: '1rem',
                       mb: 1,
@@ -987,9 +1109,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                   >
                     Processing
                   </Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
+                  <Typography
+                    variant="caption"
+                    sx={{
                       color: '#8E8E93',
                       fontSize: '0.8rem',
                     }}
@@ -1001,7 +1123,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             )}
           </DialogContent>
         </Dialog>
-
       </FormProvider>
 
       <PackageCreateDialog
@@ -1019,106 +1140,106 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         setAgreementForm={setValue}
       />
 
-        {/* Loading Overlay for Campaign Creation */}
-        {isLoading && (
+      {/* Loading Overlay for Campaign Creation */}
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+            bgcolor: 'white',
+            borderRadius: 3,
+            boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+            border: '1px solid #E7E7E7',
+            p: 4,
+            minWidth: 320,
+            maxWidth: 400,
+            textAlign: 'center',
+          }}
+        >
+          {/* Loading Icon */}
           <Box
             sx={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 9999,
-              bgcolor: 'white',
-              borderRadius: 3,
-              boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-              border: '1px solid #E7E7E7',
-              p: 4,
-              minWidth: 320,
-              maxWidth: 400,
-              textAlign: 'center',
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              bgcolor: '#FFD700',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 3,
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: -2,
+                left: -2,
+                right: -2,
+                bottom: -2,
+                borderRadius: '50%',
+                background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                zIndex: -1,
+                animation: 'rotate 2s linear infinite',
+              },
             }}
           >
-            {/* Loading Icon */}
-            <Box
-              sx={{
-                width: 64,
-                height: 64,
-                borderRadius: '50%',
-                bgcolor: '#FFD700',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 3,
-                position: 'relative',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: -2,
-                  left: -2,
-                  right: -2,
-                  bottom: -2,
-                  borderRadius: '50%',
-                  background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                  zIndex: -1,
-                  animation: 'rotate 2s linear infinite',
-                },
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: 32,
-                  lineHeight: 1,
-                  userSelect: 'none',
-                }}
-              >
-                ⏳
-              </Typography>
-            </Box>
-            
-            {/* Loading Text */}
             <Typography
-              variant="h4"
               sx={{
-                fontWeight: 600,
-                color: '#3A3A3C',
-                mb: 1.5,
-                fontSize: '1.1rem',
-                fontFamily: 'Instrument Serif, serif',
+                fontSize: 32,
+                lineHeight: 1,
+                userSelect: 'none',
               }}
             >
-              Creating Your Campaign
-            </Typography>
-            
-            {/* Progress Bar */}
-            <Box sx={{ width: '100%', mb: 2 }}>
-              <LinearProgress
-                sx={{
-                  height: 6,
-                  borderRadius: 3,
-                  bgcolor: '#F2F2F7',
-                  '& .MuiLinearProgress-bar': {
-                    bgcolor: '#1340FF',
-                    borderRadius: 3,
-                    background: 'linear-gradient(90deg, #1340FF, #4A90E2)',
-                  },
-                }}
-              />
-            </Box>
-            
-            {/* Status Text */}
-            <Typography
-              variant="caption"
-              sx={{
-                color: '#8E8E93',
-                fontSize: '0.75rem',
-                fontStyle: 'italic',
-              }}
-            >
-              This may take a few moments...
+              ⏳
             </Typography>
           </Box>
-        )}
+
+          {/* Loading Text */}
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 600,
+              color: '#3A3A3C',
+              mb: 1.5,
+              fontSize: '1.1rem',
+              fontFamily: 'Instrument Serif, serif',
+            }}
+          >
+            Creating Your Campaign
+          </Typography>
+
+          {/* Progress Bar */}
+          <Box sx={{ width: '100%', mb: 2 }}>
+            <LinearProgress
+              sx={{
+                height: 6,
+                borderRadius: 3,
+                bgcolor: '#F2F2F7',
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: '#1340FF',
+                  borderRadius: 3,
+                  background: 'linear-gradient(90deg, #1340FF, #4A90E2)',
+                },
+              }}
+            />
+          </Box>
+
+          {/* Status Text */}
+          <Typography
+            variant="caption"
+            sx={{
+              color: '#8E8E93',
+              fontSize: '0.75rem',
+              fontStyle: 'italic',
+            }}
+          >
+            This may take a few moments...
+          </Typography>
+        </Box>
+      )}
 
       <style>
         {`
@@ -1127,7 +1248,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               100% { transform: rotate(360deg); }
             }
           `}
-        </style>
+      </style>
     </Box>
   );
 }
@@ -1137,4 +1258,4 @@ export default ClientCampaignCreateForm;
 ClientCampaignCreateForm.propTypes = {
   onClose: PropTypes.func,
   mutate: PropTypes.func,
-}; 
+};
