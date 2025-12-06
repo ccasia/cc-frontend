@@ -1,19 +1,19 @@
 import React, { memo, useState } from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 
-import { 
-  Box, 
-  Stack, 
+import {
+  Box,
+  Stack,
   Radio,
   Button,
   MenuItem,
-  TextField, 
+  TextField,
   FormLabel,
   RadioGroup,
   Typography,
   IconButton,
   FormControl,
-  FormControlLabel
+  FormControlLabel,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
@@ -29,15 +29,23 @@ const CampaignLogistics = () => {
   const schedulingOption = watch('schedulingOption');
 
   // For product delivery - multiple products
-  const { fields: productFields, append: appendProduct, remove: removeProduct } = useFieldArray({
+  const {
+    fields: productFields,
+    append: appendProduct,
+    remove: removeProduct,
+  } = useFieldArray({
     control,
-    name: 'products'
+    name: 'products',
   });
 
   // For reservation - multiple locations
-  const { fields: locationFields, append: appendLocation, remove: removeLocation } = useFieldArray({
+  const {
+    fields: locationFields,
+    append: appendLocation,
+    remove: removeLocation,
+  } = useFieldArray({
     control,
-    name: 'locations'
+    name: 'locations',
   });
 
   // Initialize arrays if needed
@@ -51,7 +59,7 @@ const CampaignLogistics = () => {
       setValue('schedulingOption', 'confirmation');
     }
   }, [logisticsType, productFields, locationFields, appendProduct, appendLocation, setValue]);
-  
+
   const handleEdit = (index, value) => {
     setEditingIndex(index);
     setEditValue(value);
@@ -65,7 +73,7 @@ const CampaignLogistics = () => {
   const handleCancel = () => {
     setEditingIndex(-1);
   };
-  
+
   const handleAddProduct = () => {
     appendProduct({ name: '' });
     setLastAddedIndex(productFields.length);
@@ -82,25 +90,23 @@ const CampaignLogistics = () => {
         gap: 3,
         p: 3,
         maxWidth: 600,
-        mx: 'auto'
+        mx: 'auto',
       }}
     >
-
-
-      <Typography 
-        textAlign="center" 
-        sx={{ 
+      <Typography
+        textAlign="center"
+        sx={{
           mb: 2,
           fontFamily: 'Inter Display, sans-serif',
           fontWeight: 400,
           fontSize: '16px',
           lineHeight: '20px',
           letterSpacing: '0%',
-          color: '#231F20'
+          color: '#231F20',
         }}
       >
-        This includes examples like sending products to creators through a courier service, 
-        or setting a reservation for a restaurant
+        This includes examples like sending products to creators through a courier service, or
+        setting a reservation for a restaurant
       </Typography>
 
       <Stack spacing={3}>
@@ -113,8 +119,8 @@ const CampaignLogistics = () => {
           >
             Logistics Type
           </FormLabel>
-          <RHFSelect 
-            name="logisticsType" 
+          <RHFSelect
+            name="logisticsType"
             placeholder="Select logistics type"
             sx={{ boxShadow: 'none' }}
             onChange={(e) => {
@@ -139,15 +145,17 @@ const CampaignLogistics = () => {
             {productFields.map((field, index) => (
               <Stack key={field.id} spacing={1}>
                 <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Typography sx={{ 
-                    fontWeight: 600,
-                    color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                    mb: 1
-                  }}>
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                      mb: 1,
+                    }}
+                  >
                     {index === 0 ? 'Product' : `Product ${index + 1}`}
                   </Typography>
                 </Box>
-                
+
                 {editingIndex === index ? (
                   <Box>
                     <TextField
@@ -159,37 +167,37 @@ const CampaignLogistics = () => {
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 1,
                         },
-                        mb: 1
+                        mb: 1,
                       }}
                       autoFocus
                     />
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                       <Button
                         onClick={() => handleCancel()}
-                        sx={{ 
-                          height: 38, 
+                        sx={{
+                          height: 38,
                           borderRadius: '8px',
                           padding: '8px 12px',
                           background: '#FFFFFF',
                           border: '1px solid #E7E7E7',
                           boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                           color: 'text.primary',
-                          '&:hover': { bgcolor: '#f5f5f5' }
+                          '&:hover': { bgcolor: '#f5f5f5' },
                         }}
                       >
                         Cancel
                       </Button>
                       <Button
                         onClick={() => handleSave(index)}
-                        sx={{ 
-                          height: 38, 
+                        sx={{
+                          height: 38,
                           borderRadius: '8px',
                           padding: '8px 12px',
                           background: '#FFFFFF',
                           border: '1px solid #E7E7E7',
                           boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                           color: 'text.primary',
-                          '&:hover': { bgcolor: '#f5f5f5' }
+                          '&:hover': { bgcolor: '#f5f5f5' },
                         }}
                       >
                         Save
@@ -198,25 +206,29 @@ const CampaignLogistics = () => {
                   </Box>
                 ) : (
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <TextField
+                    <RHFTextField
                       fullWidth
                       placeholder="Product Name"
-                      value={field.name}
+                      name={`products.${index}.name`}
+                      // value={field.name}
                       disabled={index !== lastAddedIndex && editingIndex !== index}
-                      onChange={(e) => {
-                        const newProducts = [...productFields];
-                        newProducts[index].name = e.target.value;
-                        setValue(`products.${index}.name`, e.target.value);
-                      }}
+                      // onChange={(e) => {
+                      //   const newProducts = [...productFields];
+                      //   newProducts[index].name = e.target.value;
+                      //   setValue(`products.${index}.name`, e.target.value, {
+                      //     shouldValidate: true,
+                      //     shouldDirty: true,
+                      //   });
+                      // }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 1,
-                        }
+                        },
                       }}
                     />
                     {index !== lastAddedIndex && (
-                      <IconButton 
-                        onClick={() => handleEdit(index, field.name)}
+                      <IconButton
+                        onClick={() => handleEdit(index, getValues(`products.${index}.name`))}
                         sx={{ ml: 1 }}
                       >
                         <Iconify icon="eva:edit-fill" />
@@ -226,30 +238,30 @@ const CampaignLogistics = () => {
                 )}
               </Stack>
             ))}
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
               {productFields.length > 1 && (
                 <Button
                   onClick={() => removeProduct(productFields.length - 1)}
-                  sx={{ 
-                    height: 38, 
+                  sx={{
+                    height: 38,
                     borderRadius: '8px',
                     padding: '8px 12px',
                     background: '#FFFFFF',
                     border: '1px solid #E7E7E7',
                     boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                     color: '#FF3030',
-                    '&:hover': { bgcolor: '#f5f5f5' }
+                    '&:hover': { bgcolor: '#f5f5f5' },
                   }}
                 >
                   Remove
                 </Button>
               )}
-              <IconButton 
+              <IconButton
                 onClick={handleAddProduct}
-                sx={{ 
-                  width: 38, 
-                  height: 38, 
+                sx={{
+                  width: 38,
+                  height: 38,
                   gap: '4px',
                   opacity: 1,
                   borderRadius: '8px',
@@ -258,7 +270,7 @@ const CampaignLogistics = () => {
                   background: '#FFFFFF',
                   border: '1px solid #E7E7E7',
                   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  '&:hover': { bgcolor: '#f5f5f5' }
+                  '&:hover': { bgcolor: '#f5f5f5' },
                 }}
               >
                 <Iconify icon="eva:plus-fill" sx={{ color: '#1340FF' }} />
@@ -276,11 +288,14 @@ const CampaignLogistics = () => {
                   color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
                 }}
               >
-                Scheduling Option <Typography component="span" color="error">*</Typography>
+                Scheduling Option{' '}
+                <Typography component="span" color="error">
+                  *
+                </Typography>
               </FormLabel>
-              
+
               <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <Box 
+                <Box
                   sx={{
                     flex: 1,
                     p: 2,
@@ -293,7 +308,7 @@ const CampaignLogistics = () => {
                   onClick={() => setValue('schedulingOption', 'confirmation')}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <Radio 
+                    <Radio
                       checked={schedulingOption === 'confirmation'}
                       sx={{
                         p: 0,
@@ -305,17 +320,30 @@ const CampaignLogistics = () => {
                       }}
                     />
                     <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: schedulingOption === 'confirmation' ? '#1340FF' : 'text.primary' }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: 600,
+                          mb: 0.5,
+                          color: schedulingOption === 'confirmation' ? '#1340FF' : 'text.primary',
+                        }}
+                      >
                         Ask for my confirmation
                       </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '14px', color: schedulingOption === 'confirmation' ? '#1340FF' : 'text.secondary' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: '14px',
+                          color: schedulingOption === 'confirmation' ? '#1340FF' : 'text.secondary',
+                        }}
+                      >
                         Prompt me for confirmation each time the creator requests a reschedule.
                       </Typography>
                     </Box>
                   </Box>
                 </Box>
-                
-                <Box 
+
+                <Box
                   sx={{
                     flex: 1,
                     p: 2,
@@ -328,7 +356,7 @@ const CampaignLogistics = () => {
                   onClick={() => setValue('schedulingOption', 'auto')}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <Radio 
+                    <Radio
                       checked={schedulingOption === 'auto'}
                       sx={{
                         p: 0,
@@ -339,10 +367,23 @@ const CampaignLogistics = () => {
                       }}
                     />
                     <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: schedulingOption === 'auto' ? '#1340FF' : 'text.primary' }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: 600,
+                          mb: 0.5,
+                          color: schedulingOption === 'auto' ? '#1340FF' : 'text.primary',
+                        }}
+                      >
                         Auto-Schedule
                       </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '14px', color: schedulingOption === 'auto' ? '#1340FF' : 'text.secondary' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: '14px',
+                          color: schedulingOption === 'auto' ? '#1340FF' : 'text.secondary',
+                        }}
+                      >
                         Allow creators to schedule their time slots without needing confirmation.
                       </Typography>
                     </Box>
@@ -350,7 +391,7 @@ const CampaignLogistics = () => {
                 </Box>
               </Box>
             </Stack>
-            
+
             <Stack spacing={2}>
               <FormLabel
                 sx={{
@@ -360,18 +401,22 @@ const CampaignLogistics = () => {
               >
                 Location
               </FormLabel>
-              
+
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                 {locationFields.map((field, index) => (
-                  <Box 
-                    key={field.id} 
-                    sx={{ 
+                  <Box
+                    key={field.id}
+                    sx={{
                       width: { xs: '100%', sm: 'calc(50% - 8px)' },
                     }}
                   >
                     <TextField
                       fullWidth
-                      placeholder={index === locationFields.length - 1 && locationFields.length % 2 === 0 ? "Add an outlet" : ""}
+                      placeholder={
+                        index === locationFields.length - 1 && locationFields.length % 2 === 0
+                          ? 'Add an outlet'
+                          : ''
+                      }
                       value={field.name}
                       onChange={(e) => {
                         const newLocations = [...locationFields];
@@ -381,19 +426,19 @@ const CampaignLogistics = () => {
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 1,
-                        }
+                        },
                       }}
                     />
                   </Box>
                 ))}
               </Box>
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <IconButton 
+                <IconButton
                   onClick={() => appendLocation({ name: '' })}
-                  sx={{ 
-                    width: 38, 
-                    height: 38, 
+                  sx={{
+                    width: 38,
+                    height: 38,
                     gap: '4px',
                     opacity: 1,
                     borderRadius: '8px',
@@ -402,7 +447,7 @@ const CampaignLogistics = () => {
                     background: '#FFFFFF',
                     border: '1px solid #E7E7E7',
                     boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                    '&:hover': { bgcolor: '#f5f5f5' }
+                    '&:hover': { bgcolor: '#f5f5f5' },
                   }}
                 >
                   <Iconify icon="eva:plus-fill" sx={{ color: '#1340FF' }} />
