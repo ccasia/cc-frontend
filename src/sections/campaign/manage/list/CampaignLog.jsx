@@ -37,6 +37,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
         datePerformed: dayjs(log.createdAt).format('MMM D, YYYY • h:mm A'),
         action: log.message,
         performedBy: log.admin.name,
+        performerRole: log.admin.role, // Add role to determine if client or admin
       }));
 
   // Filter invoice-related logs
@@ -56,6 +57,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
       ?.filter(
         (row) =>
           row.action.includes('pitched for') ||
+          row.action.includes('submitted a pitch for') ||
           row.action.includes('submitted the Agreement') ||
           row.action.includes('submitted First Draft') ||
           row.action.includes('submitted Final Draft') ||
@@ -82,28 +84,27 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
         };
       }) || [];
 
-  // Filter client activity logs (V4 campaigns)
+  // Filter client activity logs (V4 campaigns) - based on performer role
   const clientRows =
     allRows
       ?.filter(
         (row) =>
-          // Catch all logs that start with "Client"
+          // Filter by performer role = 'client'
+          row.performerRole === 'client' ||
+          // Legacy filters for backward compatibility
           row.action.toLowerCase().startsWith('client') ||
           // User login and account activation
           row.action.toLowerCase().includes('user logs in') ||
           row.action.toLowerCase().includes('client logged in') ||
           row.action.toLowerCase().includes('first time login') ||
           row.action.toLowerCase().includes('activated account') ||
-          // Campaign creation and activation
-          row.action.toLowerCase().includes('submitted campaign') ||
-          row.action.toLowerCase().includes('campaign created by client') ||
-          row.action.toLowerCase().includes('campaign activated') ||
-          row.action.toLowerCase().includes('client activated') ||
-          // Creator actions
-          row.action.toLowerCase().includes('approve creator') ||
-          row.action.toLowerCase().includes('reject creator') ||
-          row.action.toLowerCase().includes('maybe') ||
-          row.action.toLowerCase().includes('set pitch') ||
+          // Campaign creation and activation (only if by client)
+          (row.action.toLowerCase().includes('submitted campaign') && row.performerRole === 'client') ||
+          (row.action.toLowerCase().includes('campaign created') && row.performerRole === 'client') ||
+          // Creator actions by client
+          (row.action.includes('profile has been approved') && row.performerRole === 'client') ||
+          (row.action.includes('profile has been rejected') && row.performerRole === 'client') ||
+          (row.action.includes('maybe') && row.performerRole === 'client') ||
           // Draft actions
           row.action.toLowerCase().includes('receive draft') ||
           row.action.toLowerCase().includes('received draft') ||
@@ -191,13 +192,14 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
         };
       }) || [];
 
-  // Filter admin activity logs
+  // Filter admin activity logs - based on performer role
   const adminRows =
     (
       allRows?.filter(
         (row) =>
-          !row.action.toLowerCase().includes('by client') && // Exclude client actions
-          !row.action.toLowerCase().startsWith('client') && // Exclude logs that start with "Client"
+          // Filter by performer role != 'client' (admin, superadmin, etc.)
+          (row.performerRole && row.performerRole !== 'client') ||
+          // Include specific admin actions
           ((row.action.includes('approved') &&
             (row.action.includes('pitch') ||
               row.action.includes('Agreement') ||
@@ -206,19 +208,45 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
               row.action.includes('Posting Link'))) ||
           (row.action.includes('rejected') && row.action.includes('pitch')) ||
           row.action.includes('sent the Agreement to') ||
-          (row.action.includes('withdrew') && row.action.includes('from the campaign')) ||
+          row.action.includes('withdrawn from the campaign') ||
+          row.action.includes('removed from the campaign') ||
           row.action.includes('requested changes on') ||
           row.action.includes('requested changes to') ||
           row.action.includes('changed the amount from') ||
           row.action.includes('resent the Agreement to') ||
-          (row.action.includes('created') && !row.action.includes('Created the Campaign') && !row.action.toLowerCase().includes('by client')) ||
-          row.action.includes('edited the Campaign Details'))
+          row.action.includes('has been shortlisted') ||
+          row.action.includes('pitch has been approved') ||
+          row.action.includes('pitch has been rejected') ||
+          row.action.includes('Campaign Details edited') ||
+          (row.action.includes('Campaign Created') && row.performerRole !== 'client') ||
+          (row.action.includes('Campaign Activated') && row.performerRole !== 'client'))
       ) || []
     ).map((row) => {
       // Extract submission type from the action text
       let submissionType = 'Unknown';
 
-      if (row.action.includes('pitch')) {
+      if (row.action.includes('Campaign Details edited')) {
+        submissionType = 'Campaign Details';
+      } else if (row.action.includes('Campaign Created') || row.action.includes('Campaign Activated')) {
+        submissionType = 'Campaign';
+      } else if (row.action.includes('has been shortlisted')) {
+        submissionType = 'Creator Masterlist';
+      } else if (row.action.includes('pitch has been approved') || row.action.includes('profile has been approved')) {
+        submissionType = 'Creator Masterlist';
+      } else if (row.action.includes('pitch has been rejected') || row.action.includes('profile has been rejected')) {
+        submissionType = 'Creator Masterlist';
+      } else if (row.action.includes('Chose maybe for') || row.action.includes('chose maybe for')) {
+        submissionType = 'Creator Masterlist';
+      } else if (row.action.includes('submitted a pitch for')) {
+        submissionType = 'Creator Masterlist';
+      } else if (row.action.includes('withdrawn from the campaign') || row.action.includes('removed from the campaign')) {
+        submissionType = 'Creator Masterlist';
+      } else if (row.action.includes('Agreement has been sent to') || 
+                 row.action.includes('submitted agreement') || 
+                 row.action.includes('agreement has been approved') || 
+                 row.action.includes('agreement has been rejected')) {
+        submissionType = 'Agreements';
+      } else if (row.action.includes('pitch')) {
         submissionType = 'Pitch';
       } else if (row.action.includes('Agreement')) {
         submissionType = 'Agreement';
@@ -228,8 +256,6 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
         submissionType = 'Final Draft';
       } else if (row.action.includes('Posting Link')) {
         submissionType = 'Posting Link';
-      } else if (row.action.includes('withdrew')) {
-        submissionType = 'Withdrawal';
       } else if (row.action.includes('created') || row.action.includes('edited')) {
         submissionType = 'Campaign';
       } else if (row.action.includes('changed the amount')) {

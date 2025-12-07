@@ -18,6 +18,11 @@ import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Checkbox from '@mui/material/Checkbox';
+import ListItemText from '@mui/material/ListItemText';
+import Chip from '@mui/material/Chip';
 
 // hooks
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
@@ -446,7 +451,12 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
     const filteredOptions = options;
     
     // Handle selection change
-    const handleSelect = (optionValue) => {
+    const handleSelect = (optionValue, event) => {
+      // Prevent event bubbling to avoid triggering outside click
+      if (event) {
+        event.stopPropagation();
+      }
+      
       if (!multiple) {
         // For single selection, close dropdown after selecting
         onChange(optionValue);
@@ -465,10 +475,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
         }
         
         onChange(newValues);
-        // Explicitly keep dropdown open for multiple selections
-        setTimeout(() => {
-          setIsOpen(true);
-        }, 0);
+        // Keep dropdown open - no need to close it
       }
     };
     
@@ -532,7 +539,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                   onMouseDown={(e) => {
                     e.preventDefault(); // Prevent blur event which closes dropdown
                     e.stopPropagation(); // Prevent event bubbling
-                    handleSelect(option.value);
+                    handleSelect(option.value, e);
                   }}
                   sx={{
                     display: 'flex',
@@ -659,18 +666,71 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
               }}>
                 Select Service
               </Typography>
-              <CustomDropdown
-                label="Select Service"
+              <Select
+                multiple
+                fullWidth
                 value={service}
-                options={[
-                  { value: 'Ads', label: 'Ads' },
-                  { value: 'Cross Posting', label: 'Cross Posting' },
-                  { value: 'Reinbursement', label: 'Reinbursement' },
-                  { value: 'Other', label: 'Others' }
-                ]}
-                onChange={(value) => setService(value)}
-                multiple={true}
-              />
+                onChange={(e) => setService(e.target.value)}
+                displayEmpty
+                renderValue={(selected) => {
+                  if (selected.length === 0) {
+                    return <Typography sx={{ color: '#888888' }}>Select options</Typography>;
+                  }
+                  return selected.join(', ');
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300,
+                    },
+                  },
+                }}
+                sx={{
+                  height: 48,
+                  backgroundColor: '#FFFFFF',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#E0E0E0',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#C4CDD5',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340FF',
+                  },
+                }}
+              >
+                {['Ads', 'Cross Posting', 'Reinbursement', 'Other'].map((option) => (
+                  <MenuItem 
+                    key={option} 
+                    value={option}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      '&.Mui-selected': {
+                        backgroundColor: 'transparent',
+                        '&:hover': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemText 
+                      primary={option === 'Other' ? 'Others' : option}
+                      primaryTypographyProps={{
+                        fontWeight: 400,
+                      }}
+                    />
+                    {service.indexOf(option) > -1 && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M10.834 6.25016L7.08398 10.8335L5.41732 9.16683M15.834 8.3335C15.834 12.4756 12.4761 15.8335 8.33398 15.8335C4.19185 15.8335 0.833984 12.4756 0.833984 8.3335C0.833984 4.19136 4.19185 0.833496 8.33398 0.833496C12.4761 0.833496 15.834 4.19136 15.834 8.3335Z" stroke="#1340FF" strokeWidth="1.66667" strokeLinecap="square"/>
+                        </svg>
+                      </Box>
+                    )}
+                  </MenuItem>
+                ))}
+              </Select>
             </Box>
 
             <Box sx={{ width: '100%' }}>
