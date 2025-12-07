@@ -293,7 +293,7 @@ const CampaignPitchDetail = ({ pitch }) => {
                 if (amount && agreementTemplateId) {
                   setAgreement({ 
                     pitchId: pitch?.id, 
-                    amount: parseInt(amount), 
+                    amount: parseInt(amount, 10), 
                     agreementTemplateId 
                   });
                 }

@@ -261,8 +261,8 @@ function CreatorAccordion({ creator, campaign }) {
                 sx={{ 
                   maxWidth: { xs: 60, sm: 210 },
                 }}
-                textOverflow={'ellipsis'}
-                overflow={'hidden'}
+                textOverflow="ellipsis"
+                overflow="hidden"
               >
                 {getClientStatusLabel(videoSubmission.status, 'video')}
               </Typography>
@@ -387,8 +387,8 @@ function CreatorAccordion({ creator, campaign }) {
                 sx={{ 
                   maxWidth: { xs: 60, sm: 210 },
                 }}
-                textOverflow={'ellipsis'}
-                overflow={'hidden'}
+                textOverflow="ellipsis"
+                overflow="hidden"
               >
                 {getClientStatusLabel(photoSubmission.status, 'photo')}
               </Typography>
@@ -507,8 +507,8 @@ function CreatorAccordion({ creator, campaign }) {
                 sx={{ 
                   maxWidth: { xs: 60, sm: 210 },
                 }}
-                textOverflow={'ellipsis'}
-                overflow={'hidden'}
+                textOverflow="ellipsis"
+                overflow="hidden"
               >
                 {getClientStatusLabel(rawFootageSubmission.status, 'rawFootage')}
               </Typography>

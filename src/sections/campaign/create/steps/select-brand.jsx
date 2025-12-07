@@ -60,9 +60,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
   const brand = getValues('campaignBrand');
   const campaignCredits = watch('campaignCredits');
 
-  const creditSummary = useMemo(() => {
-    return client?.creditSummary || null;
-  }, [client])
+  const creditSummary = useMemo(() => client?.creditSummary || null, [client])
 
   const requestedCredits = Number(campaignCredits || 0);
   const availableCredits = creditSummary?.remainingCredits ?? 0;
@@ -71,6 +69,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
   let creditHelperText = '';
 
   if (requestedCredits <= 0) {
+    // No credits requested
   } else if (requestedCredits > availableCredits) {
     creditError = true;
     creditHelperText = `Exceeds limit - credits available: ${availableCredits}`;

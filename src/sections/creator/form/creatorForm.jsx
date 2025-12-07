@@ -107,20 +107,20 @@ const stepSchemas = Yup.object({
   languages: Yup.array().min(1, 'Choose at least one option'),
   referralCode: Yup.string().optional(),
   instagramProfileLink: Yup.string()
-    .test('social-media-required', 'Please provide at least one social media profile', function(value) {
-      const { tiktokProfileLink } = this.parent;
+    .test('social-media-required', 'Please provide at least one social media profile', (value, context) => {
+      const { tiktokProfileLink } = context.parent;
       return !!(value || tiktokProfileLink);
     })
-    .test('instagram-format', 'URL must contain www.instagram.com', function(value) {
+    .test('instagram-format', 'URL must contain www.instagram.com', (value) => {
       if (!value) return true; // Skip validation if empty (handled by social-media-required)
       return /instagram\.com/.test(value.toLowerCase());
     }),
   tiktokProfileLink: Yup.string()
-    .test('social-media-required', 'Please provide at least one social media profile', function(value) {
-      const { instagramProfileLink } = this.parent;
+    .test('social-media-required', 'Please provide at least one social media profile', (value, context) => {
+      const { instagramProfileLink } = context.parent;
       return !!(value || instagramProfileLink);
     })
-    .test('tiktok-format', 'URL must contain www.tiktok.com', function(value) {
+    .test('tiktok-format', 'URL must contain www.tiktok.com', (value) => {
       if (!value) return true; // Skip validation if empty (handled by social-media-required)
       return /tiktok\.com/.test(value.toLowerCase());
     }),

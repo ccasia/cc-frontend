@@ -28,6 +28,8 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
+import PropTypes from 'prop-types';
+
 import Iconify from 'src/components/iconify';
 import { useResponsive } from 'src/hooks/use-responsive';
 
@@ -81,8 +83,8 @@ const CampaignAnalytics = ({ campaign }) => {
   const platformCounts = useMemo(() => {
     const counts = { Instagram: 0, TikTok: 0 };
     postingSubmissions.forEach((sub) => {
-      if (sub && sub.platform === 'Instagram') counts.Instagram++;
-      if (sub && sub.platform === 'TikTok') counts.TikTok++;
+      if (sub && sub.platform === 'Instagram') counts.Instagram += 1;
+      if (sub && sub.platform === 'TikTok') counts.TikTok += 1;
     });
     return counts;
   }, [postingSubmissions]);
@@ -164,8 +166,8 @@ const CampaignAnalytics = ({ campaign }) => {
   const PlatformToggle = () => {
     const platformConfig = [
       { key: 'ALL', label: 'Overview', icon: null, color: '#1340FF', display: true },
-      { key: 'Instagram', label: 'Instagram', icon: 'prime:instagram', color: '#C13584', display: lgUp ? true : false },
-      { key: 'TikTok', label: 'TikTok', icon: 'prime:tiktok', color: '#000000', display: lgUp ? true : false },
+      { key: 'Instagram', label: 'Instagram', icon: 'prime:instagram', color: '#C13584', display: lgUp },
+      { key: 'TikTok', label: 'TikTok', icon: 'prime:tiktok', color: '#000000', display: lgUp },
     ];
 
     // Filter to only show platforms that exist in the campaign
@@ -2159,6 +2161,13 @@ const CampaignAnalytics = ({ campaign }) => {
       )}
     </Box>
   );
+};
+
+CampaignAnalytics.propTypes = {
+  campaign: PropTypes.shape({
+    id: PropTypes.string,
+    submission: PropTypes.array,
+  }),
 };
 
 export default CampaignAnalytics;

@@ -69,9 +69,9 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
   }, [shortlistedCreators, sortDirection]);
 
   // Submissions removed - using empty data
-  const submissions = [];
+  const submissions = useMemo(() => [], []);
   const loadingSubmissions = false;
-  const submissionMutate = () => {};
+  const submissionMutate = useCallback(() => {}, []);
 
   // Debug logging for submissions
   useEffect(() => {
@@ -233,12 +233,12 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
         const statusPromises = shortlistedCreators.map(async (creator) => {
           try {
             // Submissions removed - using empty data
-            const submissions = [];
+            const creatorSubmissions = [];
 
             // Get the most relevant submission status for display
-            const firstDraft = submissions.find((s) => s.submissionType?.type === 'FIRST_DRAFT');
-            const finalDraft = submissions.find((s) => s.submissionType?.type === 'FINAL_DRAFT');
-            const posting = submissions.find((s) => s.submissionType?.type === 'POSTING');
+            const firstDraft = creatorSubmissions.find((s) => s.submissionType?.type === 'FIRST_DRAFT');
+            const finalDraft = creatorSubmissions.find((s) => s.submissionType?.type === 'FINAL_DRAFT');
+            const posting = creatorSubmissions.find((s) => s.submissionType?.type === 'POSTING');
 
             // Debug logging
             console.log(`Creator ${creator.userId} submissions:`, {

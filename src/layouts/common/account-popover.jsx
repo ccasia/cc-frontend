@@ -73,7 +73,9 @@ export default function AccountPopover({ isOnline }) {
           return companyLogo;
         }
       }
-    } catch {}
+    } catch {
+      // Intentionally ignore localStorage errors
+    }
     return user?.photoURL;
   };
 

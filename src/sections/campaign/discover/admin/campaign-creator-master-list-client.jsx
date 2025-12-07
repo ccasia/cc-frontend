@@ -943,9 +943,9 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
   // Helper function to select the account with most followers and highest engagement
   const selectBestAccount = () => {
     const igFollowers = instagramStats?.followers_count || 0;
-    const igEngagement = (instagramStats?.totalLikes + instagramStats?.totalComments) / igFollowers || 0;
+    const igEngagement = ((instagramStats?.totalLikes || 0) + (instagramStats?.totalComments || 0)) / igFollowers || 0;
     const tkFollowers = tiktokStats?.follower_count || 0;
-    const tkEngagement = (tiktokStats?.likes_count + tiktokStats?.totalComments + tiktokStats?.totalShares) / tkFollowers || 0;
+    const tkEngagement = ((tiktokStats?.likes_count || 0) + (tiktokStats?.totalComments || 0) + (tiktokStats?.totalShares || 0)) / tkFollowers || 0;
 
     // If only one account exists, use it
     if (!tkFollowers) return { followers: igFollowers, engagement: igEngagement };
@@ -1146,7 +1146,10 @@ const pitchPropType = PropTypes.shape({
     photoURL: PropTypes.string,
     followerCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     engagementRate: PropTypes.number,
+    creator: PropTypes.object,
   }),
+  followerCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  engagementRate: PropTypes.number,
 });
 
 MobileCreatorCard.propTypes = {

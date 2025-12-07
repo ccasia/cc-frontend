@@ -27,7 +27,7 @@ export default function ConfirmDialogV2({
       PaperProps={{ sx: { padding: 2, width: 380 } }}
     >
       {emoji && (
-        <Box display={'flex'} justifyContent={'center'}>
+        <Box display="flex" justifyContent="center">
           {emoji}
         </Box>
       )}

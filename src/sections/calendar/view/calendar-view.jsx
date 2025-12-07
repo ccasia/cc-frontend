@@ -251,9 +251,9 @@ export default function CalendarView() {
 
                     const isAllDayEvent = eventInfo.event.allDay;
 
-                    const formatTime = (date) =>
-                      date
-                        ? date
+                    const formatTime = (dateValue) =>
+                      dateValue
+                        ? dateValue
                             .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
                             .replace(/\s+/g, '')
                         : null;
