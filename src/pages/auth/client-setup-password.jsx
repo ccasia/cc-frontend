@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -32,15 +32,7 @@ export default function ClientSetupPassword() {
   const navigate = useNavigate();
   const token = new URLSearchParams(window.location.search).get('token');
 
-  useEffect(() => {
-    if (token) {
-      verifyToken();
-    } else {
-      setError('No invitation token provided');
-    }
-  }, [token]);
-
-  const verifyToken = async () => {
+  const verifyToken = useCallback(async () => {
     try {
       const response = await fetch(`/api/auth/verify-client-invite?token=${token}`);
       if (response.ok) {
@@ -52,10 +44,18 @@ export default function ClientSetupPassword() {
         const errorData = await response.json();
         setError(errorData.message || 'Invalid or expired invitation link');
       }
-    } catch (error) {
+    } catch (err) {
       setError('Error verifying invitation');
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      verifyToken();
+    } else {
+      setError('No invitation token provided');
+    }
+  }, [token, verifyToken]);
 
   const PasswordSchema = Yup.object().shape({
     password: Yup.string()
@@ -105,10 +105,10 @@ export default function ClientSetupPassword() {
       if (response.ok) {
         navigate('/dashboard');
       } else {
-        const error = await response.json();
-        setError(error.message || 'Error setting up password');
+        const errorData = await response.json();
+        setError(errorData.message || 'Error setting up password');
       }
-    } catch (error) {
+    } catch (err) {
       setError('Network error occurred');
     }
   });

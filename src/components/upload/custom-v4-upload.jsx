@@ -93,7 +93,7 @@ const CustomV4Upload = ({
     return { hasVideo, videoToShow, isLocalVideo, videoUrl };
   }, [files, submittedVideo, uploading, hasSubmitted]);
 
-  const { hasVideo, videoToShow, isLocalVideo, videoUrl } = videoDisplayData;
+  const { hasVideo, isLocalVideo, videoUrl } = videoDisplayData;
 
   // Cleanup object URLs to prevent memory leaks
   useEffect(() => () => {
@@ -102,61 +102,6 @@ const CustomV4Upload = ({
       }
     }, [videoUrl, isLocalVideo]);
 
-  const openPreview = useCallback(() => {
-    // Create preview dialog
-    const video = document.createElement('video');
-    video.src = videoUrl;
-    video.controls = true;
-    video.autoplay = true;
-    video.style.width = '100%';
-    video.style.height = 'auto';
-    video.style.maxHeight = '80vh';
-    
-    // Create modal dialog
-    const dialog = document.createElement('div');
-    dialog.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      cursor: pointer;
-    `;
-    
-    const container = document.createElement('div');
-    container.style.cssText = `
-      position: relative;
-      max-width: 90%;
-      max-height: 90%;
-    `;
-    
-    dialog.appendChild(container);
-    container.appendChild(video);
-    
-    // Close handlers
-    const closeDialog = () => {
-      if (document.body.contains(dialog)) {
-        document.body.removeChild(dialog);
-      }
-      document.removeEventListener('keydown', handleEscape);
-    };
-    
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') closeDialog();
-    };
-    
-    dialog.addEventListener('click', (e) => {
-      if (e.target === dialog) closeDialog();
-    });
-    
-    document.addEventListener('keydown', handleEscape);
-    document.body.appendChild(dialog);
-  }, [videoUrl]);
 
   return (
     <Box>
@@ -300,7 +245,9 @@ const CustomV4Upload = ({
                   position: 'relative',
                   zIndex: 1,
                 }}
-              />
+              >
+                <track kind="captions" />
+              </video>
 
               {/* Remove Button - Only show for local files */}
               {isLocalVideo && (

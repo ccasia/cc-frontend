@@ -64,7 +64,7 @@ const ReservationSlots = () => {
     // Create array for all days in the month
     const days = [];
 
-    for (let i = 0; i < firstDay; i++) {
+    for (let i = 0; i < firstDay; i += 1) {
       days.push({ day: null, date: null });
     }
 
@@ -88,11 +88,11 @@ const ReservationSlots = () => {
       
       selectedDatesMap[key] = {
         selected: true,
-        isRangeEndpoint: isRangeEndpoint
+        isRangeEndpoint
       };
     });
     
-    for (let i = 1; i <= daysInMonth; i++) {
+    for (let i = 1; i <= daysInMonth; i += 1) {
       const date = new Date(year, month, i);
       const isToday = (
         date.getDate() === today.getDate() &&
@@ -103,7 +103,7 @@ const ReservationSlots = () => {
       const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
       const dateInfo = selectedDatesMap[dateKey] || { selected: false, isRangeEndpoint: false };
       const isSelected = dateInfo.selected;
-      const isRangeEndpoint = dateInfo.isRangeEndpoint;
+      const { isRangeEndpoint } = dateInfo;
       
       const isInRange = rangeStartDate && rangeEndDate && 
         date >= rangeStartDate && date <= rangeEndDate;
@@ -114,7 +114,6 @@ const ReservationSlots = () => {
       if (isInRange) {
         const prevDate = new Date(date);
         prevDate.setDate(date.getDate() - 1);
-        const prevDateKey = `${prevDate.getFullYear()}-${prevDate.getMonth()}-${prevDate.getDate()}`;
         const isPrevInRange = prevDate.getMonth() === month && 
                             prevDate.getDate() >= 1 &&
                             rangeStartDate && rangeEndDate && 
@@ -122,7 +121,6 @@ const ReservationSlots = () => {
         
         const nextDate = new Date(date);
         nextDate.setDate(date.getDate() + 1);
-        const nextDateKey = `${nextDate.getFullYear()}-${nextDate.getMonth()}-${nextDate.getDate()}`;
         const isNextInRange = nextDate.getMonth() === month && 
                             nextDate.getDate() <= daysInMonth &&
                             rangeStartDate && rangeEndDate && 
@@ -180,8 +178,7 @@ const ReservationSlots = () => {
         const sortedDates = [...newSelectedDates].sort((a, b) => a.getTime() - b.getTime());
         setDateRange([sortedDates[0], sortedDates[sortedDates.length - 1]]);
       }
-    } else {
-      if (dateRange[0] && !dateRange[1]) {
+    } else if (dateRange[0] && !dateRange[1]) {
         if (date < dateRange[0]) {
           setDateRange([date, dateRange[0]]);
         } else {
@@ -202,11 +199,10 @@ const ReservationSlots = () => {
         
         console.log('All dates in range:', allDatesInRange.map(d => format(d, 'yyyy-MM-dd')));
         setSelectedDates(allDatesInRange);
-      } else {
-        setDateRange([date, null]);
-        setSelectedDates([date]);
-        console.log('Started new selection with date:', format(date, 'yyyy-MM-dd'));
-      }
+    } else {
+      setDateRange([date, null]);
+      setSelectedDates([date]);
+      console.log('Started new selection with date:', format(date, 'yyyy-MM-dd'));
     }
   };
   
@@ -248,7 +244,7 @@ const ReservationSlots = () => {
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       
       const dates = [];
-      for (let i = 1; i <= daysInMonth; i++) {
+      for (let i = 1; i <= daysInMonth; i += 1) {
         dates.push(new Date(year, month, i));
       }
       
@@ -300,16 +296,16 @@ const ReservationSlots = () => {
     console.log(`Generating time slots from ${format(new Date(start), 'h:mm a')} to ${format(new Date(end), 'h:mm a')} with interval ${intervalHours} hours`);
     
     const slots = [];
-    const startDate = new Date(start);
-    const endDate = new Date(end);
+    const slotStartDate = new Date(start);
+    const slotEndDate = new Date(end);
     
-    let currentTime = new Date(startDate);
-    while (currentTime < endDate) {
+    let currentTime = new Date(slotStartDate);
+    while (currentTime < slotEndDate) {
       const slotEnd = new Date(currentTime);
       slotEnd.setHours(currentTime.getHours() + Math.floor(intervalHours));
       slotEnd.setMinutes(currentTime.getMinutes() + (intervalHours % 1) * 60);
       
-      if (slotEnd > endDate) {
+      if (slotEnd > slotEndDate) {
         break;
       }
       
@@ -390,32 +386,28 @@ const ReservationSlots = () => {
         };
         console.log('Initialized current group with dates:', 
           currentGroup.dates.map(d => format(d, 'yyyy-MM-dd')));
+      } else if (dateSlot.dates) {
+        consecutiveGroups.push(currentGroup);
+        currentGroup = {
+          dates: dateSlot.dates,
+          slots: dateSlot.slots
+        };
+        console.log('Added pre-built date range:', 
+          dateSlot.dates.map(d => format(d, 'yyyy-MM-dd')));
       } else {
-        if (dateSlot.dates) {
+        const lastDate = currentGroup.dates[currentGroup.dates.length - 1];
+        const dayDiff = Math.round((dateSlot.date - lastDate) / (1000 * 60 * 60 * 24));
+        
+        if (dayDiff === 1 && haveSameTimeSlots(currentGroup.slots, dateSlot.slots)) {
+          currentGroup.dates.push(dateSlot.date);
+          console.log(`Added ${format(dateSlot.date, 'yyyy-MM-dd')} to existing group`);
+        } else {
           consecutiveGroups.push(currentGroup);
+          console.log(`Created new group for ${format(dateSlot.date, 'yyyy-MM-dd')}`);
           currentGroup = {
-            dates: dateSlot.dates,
+            dates: [dateSlot.date],
             slots: dateSlot.slots
           };
-          console.log('Added pre-built date range:', 
-            dateSlot.dates.map(d => format(d, 'yyyy-MM-dd')));
-        } else {
-
-          const lastDate = currentGroup.dates[currentGroup.dates.length - 1];
-          const dayDiff = Math.round((dateSlot.date - lastDate) / (1000 * 60 * 60 * 24));
-          
-          if (dayDiff === 1 && haveSameTimeSlots(currentGroup.slots, dateSlot.slots)) {
-
-            currentGroup.dates.push(dateSlot.date);
-            console.log(`Added ${format(dateSlot.date, 'yyyy-MM-dd')} to existing group`);
-          } else {
-            consecutiveGroups.push(currentGroup);
-            console.log(`Created new group for ${format(dateSlot.date, 'yyyy-MM-dd')}`);
-            currentGroup = {
-              dates: [dateSlot.date],
-              slots: dateSlot.slots
-            };
-          }
         }
       }
     });
@@ -477,7 +469,7 @@ const ReservationSlots = () => {
     let rangeStart = sortedDates[0];
     let rangeEnd = sortedDates[0];
     
-    for (let i = 1; i < sortedDates.length; i++) {
+    for (let i = 1; i < sortedDates.length; i += 1) {
       const prevDate = sortedDates[i-1];
       const currDate = sortedDates[i];
       const dayDiff = Math.round((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -501,25 +493,20 @@ const ReservationSlots = () => {
     const formattedRanges = ranges.map(([start, end]) => {
       if (start.getTime() === end.getTime()) {
         return format(start, 'd MMM');
-      } else {
-        return `${format(start, 'd MMM')} - ${format(end, 'd MMM')}`;
       }
+      return `${format(start, 'd MMM')} - ${format(end, 'd MMM')}`;
     }).join(', ');
     
     console.log('Formatted date range:', formattedRanges);
     return formattedRanges;
   };
   
-  const formatTimeSlotsForDisplay = (slots) => {
-    return slots
-      .sort((a, b) => a.start - b.start)
-      .map(slot => `${format(slot.start, 'h:mm a')} - ${format(slot.end, 'h:mm a')}`)
-      .join(', ');
-  };
+  const formatTimeSlotsForDisplay = (slots) => slots
+    .sort((a, b) => a.start - b.start)
+    .map(slot => `${format(slot.start, 'h:mm a')} - ${format(slot.end, 'h:mm a')}`)
+    .join(', ');
   
-  const formatTimeSlot = (slot) => {
-    return `${format(slot.start, 'h:mm a')} - ${format(slot.end, 'h:mm a')}`;
-  };
+  const formatTimeSlot = (slot) => `${format(slot.start, 'h:mm a')} - ${format(slot.end, 'h:mm a')}`;
 
   // Direct time input - no need for popover handlers
 
@@ -671,7 +658,7 @@ const ReservationSlots = () => {
                   {generateCalendar().map((day, index) => {
                     if (!day.day) {
                       // Empty cell
-                      return <Box key={`empty-${index}`}></Box>;
+                      return <Box key={`empty-${index}`} />;
                     }
                     
                     return (
@@ -718,7 +705,7 @@ const ReservationSlots = () => {
                         ) : (
                           <Box sx={{ height: { xs: 36, sm: 40 }, width: { xs: 36, sm: 40 }, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto' }}>
                             <Typography 
-                              color={day.isPast ? 'text.secondary' : (day.isSelected || day.isInRange) ? '#1340FF' : 'text.primary'} 
+                              color={day.isPast ? 'text.secondary' : ((day.isSelected || day.isInRange) ? '#1340FF' : 'text.primary')} 
                               sx={{ 
                                 fontFamily: 'Inter Display, sans-serif',
                                 fontSize: { xs: '14px', sm: '16px' }, 

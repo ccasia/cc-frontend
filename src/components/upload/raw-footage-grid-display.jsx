@@ -4,8 +4,6 @@ import React, { useMemo, useEffect, useCallback } from 'react';
 import { Box } from '@mui/material';
 
 const RawFootageGridDisplay = ({ files, onRemoveVideo, height = { xs: 320, md: 480 } }) => {
-  if (files.length === 0) return null;
-
   // Memoize video URLs to prevent recreation on every render
   const videoUrls = useMemo(() => files.map(file => {
       if (typeof file === 'string') return file; // Already a URL string
@@ -110,6 +108,9 @@ const RawFootageGridDisplay = ({ files, onRemoveVideo, height = { xs: 320, md: 4
       )}
     </Box>
   ), [videoUrls, onRemoveVideo]);
+
+  // Early return if no files
+  if (files.length === 0) return null;
 
   const containerHeight = typeof height === 'object' ? height : { xs: height, md: height };
 

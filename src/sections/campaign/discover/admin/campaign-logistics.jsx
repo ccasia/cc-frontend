@@ -15,11 +15,10 @@ import {
   TableContainer,
 } from '@mui/material';
 
-import { endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { confirmItemDelivered } from 'src/api/logistic';
-import axiosInstance from 'src/utils/axios';
 
 import Scrollbar from 'src/components/scrollbar';
 import TextField from '@mui/material/TextField';
@@ -81,7 +80,7 @@ const CampaignLogistics = ({ campaign, campaignMutate }) => {
         }
       );
       enqueueSnackbar('Sheet link updated', { variant: 'success' });
-      campaignMutate && campaignMutate();
+      if (campaignMutate) campaignMutate();
       mutate(`/api/campaign/${campaign?.id}`);
       setIsEditing(false);
       setOrigSheetLink(sheetLink); // update original value
@@ -217,4 +216,5 @@ export default CampaignLogistics;
 
 CampaignLogistics.propTypes = {
   campaign: PropTypes.object,
+  campaignMutate: PropTypes.func,
 };
