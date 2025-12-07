@@ -265,8 +265,8 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
   }
 
   // Render a single photo tile
-  const renderPhotoTile = (photos, photo, photoIndex, size = 'normal') => {
-    const photosLength = photos.length;
+  const renderPhotoTile = (photosList, photo, photoIndex, size = 'normal') => {
+    const photosLength = photosList.length;
 
     const sizeStyles = {
       large: { width: '100%', height: '100%' },

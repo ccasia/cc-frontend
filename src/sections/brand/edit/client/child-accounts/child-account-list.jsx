@@ -66,7 +66,7 @@ const ChildAccountList = ({ companyId, company }) => {
     } finally {
       setLoading(false);
     }
-  }, [clientId, enqueueSnackbar]);
+  }, [clientId]);
 
   useEffect(() => {
     if (clientId) {

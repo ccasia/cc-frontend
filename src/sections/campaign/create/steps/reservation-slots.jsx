@@ -705,7 +705,11 @@ const ReservationSlots = () => {
                         ) : (
                           <Box sx={{ height: { xs: 36, sm: 40 }, width: { xs: 36, sm: 40 }, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto' }}>
                             <Typography 
-                              color={day.isPast ? 'text.secondary' : ((day.isSelected || day.isInRange) ? '#1340FF' : 'text.primary')} 
+                              color={(() => {
+                                if (day.isPast) return 'text.secondary';
+                                if (day.isSelected || day.isInRange) return '#1340FF';
+                                return 'text.primary';
+                              })()} 
                               sx={{ 
                                 fontFamily: 'Inter Display, sans-serif',
                                 fontSize: { xs: '14px', sm: '16px' }, 

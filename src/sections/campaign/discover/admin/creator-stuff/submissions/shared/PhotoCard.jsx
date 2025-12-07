@@ -386,7 +386,7 @@ const PhotoCard = ({
         <Box sx={{ position: 'relative' }}>
           <img
             src={photoItem.url}
-            alt={`Photo ${index + 1}`}
+            alt={`Item ${index + 1}`}
             style={{
               width: '100%',
               height: '200px',
@@ -394,6 +394,10 @@ const PhotoCard = ({
               cursor: 'pointer',
             }}
             onClick={() => onImageClick(photoItem)}
+            onKeyDown={(e) => e.key === 'Enter' && onImageClick(photoItem)}
+            role="presentation"
+            tabIndex={0}
+            aria-label={`View item ${index + 1}`}
           />
 
           {/* Status badge */}
@@ -409,14 +413,11 @@ const PhotoCard = ({
               label={currentStatus}
               size="small"
               sx={{
-                bgcolor:
-                  currentStatus === 'SENT_TO_CLIENT'
-                    ? '#1ABF66'
-                    : currentStatus === 'APPROVED'
-                      ? '#1ABF66'
-                      : currentStatus === 'REVISION_REQUESTED'
-                        ? '#D4321C'
-                        : '#666666',
+                bgcolor: (() => {
+                  if (currentStatus === 'SENT_TO_CLIENT' || currentStatus === 'APPROVED') return '#1ABF66';
+                  if (currentStatus === 'REVISION_REQUESTED') return '#D4321C';
+                  return '#666666';
+                })(),
                 color: 'white',
                 fontWeight: 600,
                 fontSize: '0.7rem',

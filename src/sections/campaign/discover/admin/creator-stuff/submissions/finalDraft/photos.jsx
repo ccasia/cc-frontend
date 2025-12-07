@@ -134,7 +134,7 @@ const PhotoCard = ({
 
     // Remove duplicates based on ID and filter out empty comments
     const uniqueFeedbacks = allFeedbacks
-      .filter((feedback, index, self) => index === self.findIndex((f) => f.id === feedback.id))
+      .filter((feedback, idx, self) => idx === self.findIndex((f) => f.id === feedback.id))
       .filter((feedback) => {
         // Check if it's client feedback
         const isClient = feedback?.admin?.role === 'client' || feedback?.role === 'client';
@@ -406,92 +406,74 @@ const PhotoCard = ({
                   </Button>
                 )}
 
-                {isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW' ? (
-                  <Stack direction="row" spacing={2}>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={handleApproveClick}
-                      disabled={isSubmitting || isProcessing}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        color: '#1ABF66',
-                        border: '1.5px solid',
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        borderRadius: 1.15,
-                        py: 1.2,
-                        fontWeight: 600,
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#1ABF66',
-                        },
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        textTransform: 'none',
-                      }}
-                    >
-                      Approve
-                    </Button>
-                  </Stack>
-                ) : isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_ADMIN' ? (
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => {
-                      console.log('[Send to Client Button Click] submission:', submission);
-                      if (!submission || !submission.id) {
-                        console.error(
-                          '[Send to Client Button] submission or submission.id is missing!',
-                          submission
-                        );
-                        enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
-                        return;
-                      }
-                      handleSendToClient(submission.id);
-                    }}
-                    disabled={isSubmitting || isProcessing}
-                    sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
-                  >
-                    Send to Client
-                  </Button>
-                ) : false &&
-                  userRole === 'client' &&
-                  (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
-                  <Stack direction="row" spacing={1.5}>
-                    <Button
-                      onClick={() => handleOpenClientRequestModal(photoItem.id)}
-                      size="small"
-                      variant="contained"
-                      disabled={isSubmitting || isProcessing}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        border: 1.5,
-                        borderRadius: 1.15,
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        color: '#D4321C',
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#D4321C',
-                        },
-                        textTransform: 'none',
-                        py: 1.2,
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        flex: 1,
-                      }}
-                    >
-                      Request a change
-                    </Button>
+{(() => {
+                  // V3 Admin - Pending Review
+                  if (isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW') {
+                    return (
+                      <Stack direction="row" spacing={2}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={handleApproveClick}
+                          disabled={isSubmitting || isProcessing}
+                          sx={{
+                            bgcolor: '#FFFFFF',
+                            color: '#1ABF66',
+                            border: '1.5px solid',
+                            borderColor: '#e7e7e7',
+                            borderBottom: 3,
+                            borderBottomColor: '#e7e7e7',
+                            borderRadius: 1.15,
+                            py: 1.2,
+                            fontWeight: 600,
+                            '&:hover': {
+                              bgcolor: '#f5f5f5',
+                              borderColor: '#1ABF66',
+                            },
+                            fontSize: '0.9rem',
+                            height: '40px',
+                            textTransform: 'none',
+                          }}
+                        >
+                          Approve
+                        </Button>
+                      </Stack>
+                    );
+                  }
+                  
+                  // V3 Admin - Sent to Admin
+                  if (isV3 && userRole === 'admin' && submission?.status === 'SENT_TO_ADMIN') {
+                    return (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                          console.log('[Send to Client Button Click] submission:', submission);
+                          if (!submission || !submission.id) {
+                            console.error(
+                              '[Send to Client Button] submission or submission.id is missing!',
+                              submission
+                            );
+                            enqueueSnackbar('Submission ID is missing!', { variant: 'error' });
+                            return;
+                          }
+                          handleSendToClient(submission.id);
+                        }}
+                        disabled={isSubmitting || isProcessing}
+                        sx={{ bgcolor: '#203ff5', color: 'white', borderRadius: 1.5, px: 2.5, py: 1.2 }}
+                      >
+                        Send to Client
+                      </Button>
+                    );
+                  }
+                  
+                  // Default - Approve Button
+                  return (
                     <LoadingButton
-                      onClick={() => handleClientApprove && handleClientApprove(photoItem.id)}
+                      onClick={handleApproveClick}
                       variant="contained"
                       size="small"
                       loading={isSubmitting || isProcessing}
-                      disabled={isPhotoApprovedByClient}
                       sx={{
                         bgcolor: '#FFFFFF',
                         color: '#1ABF66',
@@ -502,44 +484,16 @@ const PhotoCard = ({
                         borderRadius: 1.15,
                         py: 1.2,
                         fontWeight: 600,
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#1ABF66',
-                        },
                         fontSize: '0.9rem',
                         height: '40px',
                         textTransform: 'none',
                         flex: 1,
                       }}
                     >
-                      {isPhotoApprovedByClient ? 'Approved' : 'Approve'}
+                      Approve
                     </LoadingButton>
-                  </Stack>
-                ) : (
-                  <LoadingButton
-                    onClick={handleApproveClick}
-                    variant="contained"
-                    size="small"
-                    loading={isSubmitting || isProcessing}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      color: '#1ABF66',
-                      border: '1.5px solid',
-                      borderColor: '#e7e7e7',
-                      borderBottom: 3,
-                      borderBottomColor: '#e7e7e7',
-                      borderRadius: 1.15,
-                      py: 1.2,
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                      height: '40px',
-                      textTransform: 'none',
-                      flex: 1,
-                    }}
-                  >
-                    Approve
-                  </LoadingButton>
-                )}
+                  );
+                })()}
               </Stack>
             </Stack>
           </Stack>
