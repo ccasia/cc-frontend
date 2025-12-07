@@ -269,8 +269,43 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
       bgcolor: 'background.neutral'
     }}>
       <Box>
-        {clientVisible ? (
-          rawFootages.length > 0 ? (
+        {(() => {
+          // Not visible to client - show processing message
+          if (!clientVisible) {
+            return (
+              <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
+                <Stack spacing={2} alignItems="center">
+                  <Iconify icon="eva:film-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Raw footage content is being processed.
+                  </Typography>
+                  <Chip
+                    label="In Progress"
+                    color="info"
+                    size="small"
+                  />
+                </Stack>
+              </Card>
+            );
+          }
+
+          // No raw footages - show empty state
+          if (rawFootages.length === 0) {
+            return (
+              <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
+                <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                  No deliverables found
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={4}>
+                  This submission doesn't have any deliverables to review yet.
+                </Typography>
+              </Box>
+            );
+          }
+
+          // Has raw footages - show content
+          return (
             <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
               <Box sx={{
                 display: 'flex',
@@ -710,32 +745,8 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                 </Box>
               </Box>
             </Box>
-          ) : (
-            <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
-              <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                No deliverables found
-              </Typography>
-              <Typography variant="body2" color="text.secondary" mb={4}>
-                This submission doesn't have any deliverables to review yet.
-              </Typography>
-            </Box>
-          )
-        ) : (
-          <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
-            <Stack spacing={2} alignItems="center">
-              <Iconify icon="eva:film-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
-              <Typography variant="body2" color="text.secondary">
-                Raw footage content is being processed.
-              </Typography>
-              <Chip
-                label="In Progress"
-                color="info"
-                size="small"
-              />
-            </Stack>
-          </Card>
-        )}
+          );
+        })()}
       </Box>
 
       {rawFootages.length > 0 && (

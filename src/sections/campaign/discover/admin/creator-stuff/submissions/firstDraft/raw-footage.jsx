@@ -85,7 +85,9 @@ const RawFootageCard = ({
   const saveOverrides = (overrides) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-    } catch {}
+    } catch {
+      // Ignore localStorage errors
+    }
   };
   useEffect(() => {
     const stored = loadOverrides();
@@ -187,11 +189,11 @@ const RawFootageCard = ({
         const override = localFeedbackUpdates[fb.id] ?? localFeedbackUpdates[compositeKey];
         const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
         const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
-        const fallbackDisplay = hasText
-          ? fb.content
-          : hasReasons
-            ? `Reasons: ${fb.reasons.join(', ')}`
-            : '';
+        const fallbackDisplay = (() => {
+          if (hasText) return fb.content;
+          if (hasReasons) return `Reasons: ${fb.reasons.join(', ')}`;
+          return '';
+        })();
         return {
           ...fb,
           displayContent: override ?? fallbackDisplay,
@@ -201,14 +203,14 @@ const RawFootageCard = ({
       .filter((fb) => fb && fb.displayContent.trim().length > 0);
 
     const seen = new Set();
-    const deduped = [];
-    for (const fb of normalized) {
+    const deduped = normalized.filter((fb) => {
       const key = fb.id ? `id:${fb.id}` : `c:${fb.displayContent}|t:${fb.createdAt}`;
       if (!seen.has(key)) {
         seen.add(key);
-        deduped.push(fb);
+        return true;
       }
-    }
+      return false;
+    });
 
     return deduped.sort((a, b) => dayjs(b?.createdAt).diff(dayjs(a?.createdAt)));
   };
@@ -429,36 +431,34 @@ const RawFootageCard = ({
                   </Button>
                 )}
 
-                {isPendingReview ? ( // V2 logic - show approval button when pending review
-                  <>
-                    {/* V2 logic - show approval button */}
-                    <LoadingButton
-                      onClick={handleApproveClick}
-                      variant="contained"
-                      size="small"
-                      loading={isSubmitting || isProcessing}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        color: '#1ABF66',
-                        border: '1.5px solid',
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        borderRadius: 1.15,
-                        py: 1.2,
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        textTransform: 'none',
-                        flex: 1,
-                      }}
-                    >
-                      Approve
-                    </LoadingButton>
-                  </>
-                ) : false &&
+{isPendingReview && (
+                  <LoadingButton
+                    onClick={handleApproveClick}
+                    variant="contained"
+                    size="small"
+                    loading={isSubmitting || isProcessing}
+                    sx={{
+                      bgcolor: '#FFFFFF',
+                      color: '#1ABF66',
+                      border: '1.5px solid',
+                      borderColor: '#e7e7e7',
+                      borderBottom: 3,
+                      borderBottomColor: '#e7e7e7',
+                      borderRadius: 1.15,
+                      py: 1.2,
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      height: '40px',
+                      textTransform: 'none',
+                      flex: 1,
+                    }}
+                  >
+                    Approve
+                  </LoadingButton>
+                )}
+                {false &&
                   userRole === 'client' &&
-                  (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
+                  (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') && ( // V3 removed
                   <Stack direction="row" spacing={1.5}>
                     <Button
                       onClick={() => handleClientReject && handleClientReject(rawFootageItem.id)}
@@ -515,30 +515,6 @@ const RawFootageCard = ({
                       {isRawFootageApprovedByClient ? 'Approved' : 'Approve'}
                     </LoadingButton>
                   </Stack>
-                ) : (
-                  <LoadingButton
-                    onClick={handleApproveClick}
-                    variant="contained"
-                    size="small"
-                    loading={isSubmitting || isProcessing}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      color: '#1ABF66',
-                      border: '1.5px solid',
-                      borderColor: '#e7e7e7',
-                      borderBottom: 3,
-                      borderBottomColor: '#e7e7e7',
-                      borderRadius: 1.15,
-                      py: 1.2,
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                      height: '40px',
-                      textTransform: 'none',
-                      flex: 1,
-                    }}
-                  >
-                    Approve
-                  </LoadingButton>
                 )}
               </Stack>
             </Stack>

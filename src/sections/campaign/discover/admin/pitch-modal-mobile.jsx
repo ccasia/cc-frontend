@@ -139,7 +139,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
       instagram: collect('instagram'),
       tiktok: collect('tiktok'),
     };
-  }, [currentPitch]);
+  }, [currentPitch, creatorProfileFull]);
 
   const activePlatform = selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram';
   const activeStats = platformStats[activePlatform] || {};
@@ -357,8 +357,8 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Typography>
                 {(() => {
                   const email = accountUser?.email;
-                  const isGuest = email?.includes('@tempmail.com') || email?.startsWith('guest_');
-                  return email && !isGuest ? (
+                  const isGuestEmail = email?.includes('@tempmail.com') || email?.startsWith('guest_');
+                  return email && !isGuestEmail ? (
                     <Typography
                       sx={{
                         fontSize: 14,

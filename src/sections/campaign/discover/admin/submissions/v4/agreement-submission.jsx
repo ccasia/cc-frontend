@@ -64,8 +64,14 @@ export default function V4AgreementSubmission({ submission, campaign, onUpdate }
         reasons: [],
       });
 
+      const getActionText = (act) => {
+        if (act === 'approve') return 'approved';
+        if (act === 'reject') return 'rejected';
+        return 'revision requested';
+      };
+      
       enqueueSnackbar(
-        `Agreement ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'revision requested'} successfully`,
+        `Agreement ${getActionText(action)} successfully`,
         { variant: 'success' }
       );
       
@@ -134,12 +140,11 @@ export default function V4AgreementSubmission({ submission, campaign, onUpdate }
                       size="small"
                     />
                     <Typography variant="body2" color="text.secondary">
-                      {submission.status === 'APPROVED' ? 
-                        'Creator can proceed with content creation' :
-                        submission.status === 'PENDING_REVIEW' ?
-                        'Waiting for admin review' :
-                        'Action required'
-                      }
+                      {(() => {
+                        if (submission.status === 'APPROVED') return 'Creator can proceed with content creation';
+                        if (submission.status === 'PENDING_REVIEW') return 'Waiting for admin review';
+                        return 'Action required';
+                      })()}
                     </Typography>
                   </Stack>
 
@@ -251,8 +256,11 @@ export default function V4AgreementSubmission({ submission, campaign, onUpdate }
       {/* Feedback Dialog */}
       <Dialog open={feedbackDialog} onClose={() => setFeedbackDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {action === 'approve' ? 'Approve Agreement' : 
-           action === 'reject' ? 'Reject Agreement' : 'Request Changes'}
+          {(() => {
+            if (action === 'approve') return 'Approve Agreement';
+            if (action === 'reject') return 'Reject Agreement';
+            return 'Request Changes';
+          })()}
         </DialogTitle>
         <DialogContent>
           <TextField
@@ -262,11 +270,11 @@ export default function V4AgreementSubmission({ submission, campaign, onUpdate }
             label={action === 'approve' ? 'Approval message (optional)' : 'Feedback'}
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            placeholder={
-              action === 'approve' ? 'Add any additional comments...' :
-              action === 'reject' ? 'Please explain why this agreement is being rejected...' :
-              'Please specify what changes are needed...'
-            }
+            placeholder={(() => {
+              if (action === 'approve') return 'Add any additional comments...';
+              if (action === 'reject') return 'Please explain why this agreement is being rejected...';
+              return 'Please specify what changes are needed...';
+            })()}
             required={action === 'reject'}
             sx={{ mt: 1 }}
           />
@@ -279,9 +287,17 @@ export default function V4AgreementSubmission({ submission, campaign, onUpdate }
             onClick={handleSubmitFeedback}
             variant="contained"
             loading={loading}
-            color={action === 'approve' ? 'success' : action === 'reject' ? 'error' : 'warning'}
+            color={(() => {
+              if (action === 'approve') return 'success';
+              if (action === 'reject') return 'error';
+              return 'warning';
+            })()}
           >
-            {action === 'approve' ? 'Approve' : action === 'reject' ? 'Reject' : 'Request Changes'}
+            {(() => {
+              if (action === 'approve') return 'Approve';
+              if (action === 'reject') return 'Reject';
+              return 'Request Changes';
+            })()}
           </Button>
         </DialogActions>
       </Dialog>

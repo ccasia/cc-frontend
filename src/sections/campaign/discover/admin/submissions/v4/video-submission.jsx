@@ -52,7 +52,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
       isClientFeedback,
       clientVisible
     };
-  }, [submission.video, submission.status, submission.content]);
+  }, [submission.video, submission.status, submission.content, isClient]);
 
   const { video, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
 
@@ -267,8 +267,43 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
       bgcolor: 'background.neutral',
     }}>
       <Box>
-        {clientVisible ? (
-          video?.url ? (
+        {(() => {
+          // Not visible to client - show processing message
+          if (!clientVisible) {
+            return (
+              <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
+                <Stack spacing={2} alignItems="center">
+                  <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Video content is being processed.
+                  </Typography>
+                  <Chip
+                    label="In Progress"
+                    color="info"
+                    size="small"
+                  />
+                </Stack>
+              </Card>
+            );
+          }
+
+          // No video - show empty state
+          if (!video?.url) {
+            return (
+              <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
+                <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                  No deliverables found
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={4}>
+                  This submission doesn't have any deliverables to review yet.
+                </Typography>
+              </Box>
+            );
+          }
+
+          // Has video - show content
+          return (
             <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
               <Box sx={{
                 display: 'flex',
@@ -705,32 +740,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                 </Box>
               </Box>
             </Box>
-          ) : (
-            <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
-              <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                No deliverables found
-              </Typography>
-              <Typography variant="body2" color="text.secondary" mb={4}>
-                This submission doesn't have any deliverables to review yet.
-              </Typography>
-            </Box>
-          )
-        ) : (
-          <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
-            <Stack spacing={2} alignItems="center">
-              <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
-              <Typography variant="body2" color="text.secondary">
-                Video content is being processed.
-              </Typography>
-              <Chip
-                label="In Progress"
-                color="info"
-                size="small"
-              />
-            </Stack>
-          </Card>
-        )}
+          );
+        })()}
       </Box>
 
       {video?.url && (

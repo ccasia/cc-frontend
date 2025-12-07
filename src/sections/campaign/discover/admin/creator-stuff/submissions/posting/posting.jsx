@@ -271,11 +271,11 @@ const Posting = ({
                     variant="caption"
                     sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
                   >
-                    {submission?.completedAt
-                      ? dayjs(submission?.completedAt).format('ddd, D MMM YYYY')
-                      : submission?.isReview
-                      ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
-                      : '-'}
+                    {(() => {
+                      if (submission?.completedAt) return dayjs(submission.completedAt).format('ddd, D MMM YYYY');
+                      if (submission?.isReview) return dayjs(submission.updatedAt).format('ddd, D MMM YYYY');
+                      return '-';
+                    })()}
                   </Typography>
                 </Stack>
               </Stack>
@@ -426,73 +426,83 @@ const Posting = ({
                         }}
                       >
    
-                        {submission?.videos && submission.videos.length > 0 ? (
-                          <Stack spacing={1.5} sx={{ mt: 1, mb: 2 }}>
-                            {submission.videos.map((link, index) => (
-                              <Box 
-                                key={index} 
+{(() => {
+                          if (submission?.videos && submission.videos.length > 0) {
+                            return (
+                              <Stack spacing={1.5} sx={{ mt: 1, mb: 2 }}>
+                                {submission.videos.map((link, index) => (
+                                  <Box 
+                                    key={index} 
+                                    sx={{
+                                      padding: '8px 12px',
+                                      backgroundColor: '#f8f9fa',
+                                      borderRadius: '8px',
+                                      border: '1px solid #e9ecef',
+                                      transition: 'all 0.2s ease',
+                                      '&:hover': {
+                                        backgroundColor: '#e3f2fd',
+                                        borderColor: '#2196f3',
+                                        transform: 'translateY(-1px)',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                      }
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="body2"
+                                      component="a"
+                                      href={link}
+                                      target="_blank"
+                                      rel="noopener"
+                                      sx={{
+                                        wordBreak: 'break-all',
+                                        overflowWrap: 'break-word',
+                                        color: 'primary.main',
+                                        textDecoration: 'none',
+                                        fontWeight: 500,
+                                        fontSize: 14,
+                                        '&:hover': {
+                                          textDecoration: 'underline',
+                                          color: 'primary.dark',
+                                        },
+                                        maxWidth: '100%',
+                                        display: 'inline-block',
+                                      }}
+                                    >
+                                      {link}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Stack>
+                            );
+                          }
+                          
+                          if (submission?.content) {
+                            return (
+                              <Typography
+                                variant="body2"
+                                component="a"
+                                href={submission.content}
+                                target="_blank"
+                                rel="noopener"
                                 sx={{
-                                  padding: '8px 12px',
-                                  backgroundColor: '#f8f9fa',
-                                  borderRadius: '8px',
-                                  border: '1px solid #e9ecef',
-                                  transition: 'all 0.2s ease',
+                                  wordBreak: 'break-all',
+                                  overflowWrap: 'break-word',
+                                  color: 'primary.main',
+                                  textDecoration: 'none',
                                   '&:hover': {
-                                    backgroundColor: '#e3f2fd',
-                                    borderColor: '#2196f3',
-                                    transform: 'translateY(-1px)',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                  }
+                                    textDecoration: 'underline',
+                                  },
+                                  maxWidth: '100%',
+                                  display: 'inline-block',
                                 }}
                               >
-                                <Typography
-                                  variant="body2"
-                                  component="a"
-                                  href={link}
-                                  target="_blank"
-                                  rel="noopener"
-                                  sx={{
-                                    wordBreak: 'break-all',
-                                    overflowWrap: 'break-word',
-                                    color: 'primary.main',
-                                    textDecoration: 'none',
-                                    fontWeight: 500,
-                                    fontSize: 14,
-                                    '&:hover': {
-                                      textDecoration: 'underline',
-                                      color: 'primary.dark',
-                                    },
-                                    maxWidth: '100%',
-                                    display: 'inline-block',
-                                  }}
-                                >
-                                  {link}
-                                </Typography>
-                              </Box>
-                            ))}
-                          </Stack>
-                        ) : submission?.content ? (
-                          <Typography
-                            variant="body2"
-                            component="a"
-                            href={submission?.content}
-                            target="_blank"
-                            rel="noopener"
-                            sx={{
-                              wordBreak: 'break-all',
-                              overflowWrap: 'break-word',
-                              color: 'primary.main',
-                              textDecoration: 'none',
-                              '&:hover': {
-                                textDecoration: 'underline',
-                              },
-                              maxWidth: '100%',
-                              display: 'inline-block',
-                            }}
-                          >
-                            {submission?.content}
-                          </Typography>
-                        ) : null}
+                                {submission.content}
+                              </Typography>
+                            );
+                          }
+                          
+                          return null;
+                        })()}
                         {false && userRole === 'admin' && (submission?.status === 'PENDING_REVIEW' || submission?.status === 'CHANGES_REQUIRED') && (
                           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 1.5 }}>
                             <TextField fullWidth placeholder="Paste posting link" value={csmLink} onChange={(e) => setCsmLink(e.target.value)} />
