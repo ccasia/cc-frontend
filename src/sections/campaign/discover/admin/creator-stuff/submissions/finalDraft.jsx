@@ -582,6 +582,8 @@ const FinalDraft = ({
         if (hasPhotosChangesRequired()) return '#D4321C'; // Red for changes required
         if (isPhotosApproved()) return '#1ABF66'; // Green for all approved
         break;
+      default:
+        break;
     }
 
     // If submission is pending review and no items are approved, show yellow

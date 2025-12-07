@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Navigate } from 'react-router-dom';
 
 import { useAuthContext } from '../hooks/use-auth-context';
@@ -11,3 +12,7 @@ export default function ClientGuard({ children }) {
 
   return children;
 }
+
+ClientGuard.propTypes = {
+  children: PropTypes.node,
+};

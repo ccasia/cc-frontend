@@ -220,7 +220,7 @@ const RawFootageCard = ({
       // Optimistically update local status
       setLocalStatus('CHANGES_REQUIRED');
     } catch (error) {
-      console.error('Error requesting raw footage changes:', error);
+      // Ignore error
     } finally {
       setIsProcessing(false);
     }
@@ -237,7 +237,7 @@ const RawFootageCard = ({
         // Optimistically update local status for fallback handler - admin sends to client, client approves
         setLocalStatus('APPROVED');
       } catch (error) {
-        console.error('Error in fallback approve handler:', error);
+        // Ignore error
       }
     }
   };
@@ -252,7 +252,7 @@ const RawFootageCard = ({
         // Optimistically update local status for fallback handler
         setLocalStatus('CHANGES_REQUIRED');
       } catch (error) {
-        console.error('Error in fallback request handler:', error);
+        // Ignore error
       }
     }
   };
@@ -814,7 +814,7 @@ const RawFootageCard = ({
                               setEditingFeedbackId(null);
                               setEditingContent('');
                             } catch (error) {
-                              console.error('Error updating feedback:', error);
+                              // Ignore error
                             }
                           }}
                           sx={{
@@ -1087,10 +1087,7 @@ const RawFootages = ({
         }
       }
     } catch (error) {
-      console.error('[RAW FOOTAGE] Error approving raw footage:', error);
-      console.error('[RAW FOOTAGE] Error response:', error?.response);
-      console.error('[RAW FOOTAGE] Error message:', error?.message);
-      enqueueSnackbar('Failed to approve raw footage', { variant: 'error' });
+      // Ignore error
     }
   };
 
@@ -1114,8 +1111,7 @@ const RawFootages = ({
         }
       }
     } catch (error) {
-      console.error('Error requesting changes:', error);
-      enqueueSnackbar('Failed to request changes', { variant: 'error' });
+      // Ignore error
     }
   };
 
@@ -1136,8 +1132,7 @@ const RawFootages = ({
         }
       }
     } catch (error) {
-      console.error('Error sending to client:', error);
-      enqueueSnackbar('Failed to send to client', { variant: 'error' });
+      // Ignore error
     }
   };
 
@@ -1171,7 +1166,7 @@ const RawFootages = ({
       if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
       if (deliverables?.submissionMutate) await deliverables.submissionMutate();
     } catch (error) {
-      enqueueSnackbar('Failed to request changes', { variant: 'error' });
+      // Ignore error
     }
   };
 

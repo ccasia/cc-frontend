@@ -19,7 +19,9 @@ const InstagramOAuthWarning = ({
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!autoRedirect) return;
+    if (!autoRedirect) {
+      return undefined;
+    }
 
     const timer = setInterval(() => {
       setCountdown((prev) => {

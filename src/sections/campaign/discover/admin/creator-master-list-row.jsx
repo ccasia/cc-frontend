@@ -30,51 +30,44 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
 
   // Determine what to display for username, engagement rate and follower count
   const getDisplayData = () => {
-    const instagramStats = pitch?.user?.creator?.instagramUser || null;
-    const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
+    const igStats = pitch?.user?.creator?.instagramUser || null;
+    const tkStats = pitch?.user?.creator?.tiktokUser || null;
 
     const pickValue = (...values) => {
-      for (const value of values) {
-        if (value === 0) return value;
-        if (value !== undefined && value !== null && value !== '') return value;
-      }
-      return null;
+      const foundValue = values.find(value => value === 0 || (value !== undefined && value !== null && value !== ''));
+      return foundValue !== undefined ? foundValue : null;
     };
 
     const pickString = (...values) => {
-      for (const value of values) {
-        if (typeof value === 'string' && value.trim()) {
-          return value.trim();
-        }
-      }
-      return null;
+      const foundValue = values.find(value => typeof value === 'string' && value.trim());
+      return foundValue ? foundValue.trim() : null;
     };
 
     // Select the account with the most followers and highest engagement
     const selectBestAccount = () => {
-      const igFollowers = instagramStats?.followers_count || 0;
-      const igEngagement = instagramStats?.engagement_rate || 0;
-      const tkFollowers = tiktokStats?.follower_count || 0;
-      const tkEngagement = tiktokStats?.engagement_rate || 0;
+      const igFollowers = igStats?.followers_count || 0;
+      const igEngagement = igStats?.engagement_rate || 0;
+      const tkFollowers = tkStats?.follower_count || 0;
+      const tkEngagement = tkStats?.engagement_rate || 0;
 
       // If only one account exists, use it
-      if (!tkFollowers) return { stats: instagramStats, followers: igFollowers, engagement: igEngagement };
-      if (!igFollowers) return { stats: tiktokStats, followers: tkFollowers, engagement: tkEngagement };
+      if (!tkFollowers) return { stats: igStats, followers: igFollowers, engagement: igEngagement };
+      if (!igFollowers) return { stats: tkStats, followers: tkFollowers, engagement: tkEngagement };
 
       // If both exist, compare follower count first, then engagement rate
       if (igFollowers >= tkFollowers) {
-        return { stats: instagramStats, followers: igFollowers, engagement: igEngagement };
+        return { stats: igStats, followers: igFollowers, engagement: igEngagement };
       }
-      return { stats: tiktokStats, followers: tkFollowers, engagement: tkEngagement };
+      return { stats: tkStats, followers: tkFollowers, engagement: tkEngagement };
     };
 
     // P1: Prioritize connected social media stats delivered with the pitch payload
-    if (instagramStats || tiktokStats) {
+    if (igStats || tkStats) {
       const bestAccount = selectBestAccount();
       const usernameFromStats = pickString(
         bestAccount.stats?.username,
-        instagramStats?.username,
-        tiktokStats?.username,
+        igStats?.username,
+        tkStats?.username,
         profileUsername,
       );
 
@@ -127,7 +120,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
       </TableCell>
       <TableCell>
         {hasPlatformLinks ? (
-          <Stack spacing={2} direction={'row'}>
+          <Stack spacing={2} direction="row">
             {/* Instagram row */}
             {(instagramUsername || instagramProfileLink) && (
               <Stack direction="row" alignItems="center" spacing={0.5}>

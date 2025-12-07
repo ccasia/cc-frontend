@@ -24,17 +24,9 @@ const MonthlyInteractionsChart = ({
   const maxValue = Math.max(...chartData.map(item => item.interactions), 1);
   
   // Responsive dimensions
-  const maxBarHeight = isMobile 
-    ? (isTablet ? 140 : 110) 
-    : 160;
-
-  const barWidth = isMobile 
-    ? (isTablet ? '40px' : '36px') 
-    : '60px';
-
-  const borderRadius = isMobile 
-    ? (isTablet ? '20px' : '18px') 
-    : '30px';
+  const maxBarHeight = isMobile ? (isTablet ? 140 : 110) : 160;
+  const barWidth = isMobile ? (isTablet ? '40px' : '36px') : '60px';
+  const borderRadius = isMobile ? (isTablet ? '20px' : '18px') : '30px';
 
   return (
     <Box
@@ -72,9 +64,7 @@ const MonthlyInteractionsChart = ({
             {/* Value above bar */}
             <Typography
               sx={{
-                fontSize: isMobile 
-                  ? (isTablet ? 13 : 10) 
-                  : 16,
+                fontSize: isMobile ? (isTablet ? 13 : 10) : 16,
                 fontWeight: 400,
                 color: 'black',
                 fontFamily: 'Aileron, sans-serif',
@@ -90,7 +80,7 @@ const MonthlyInteractionsChart = ({
             <Box
               sx={{
                 width: barWidth,
-                height: `${Math.max(barHeight, parseInt(minHeight))}px`,
+                height: `${Math.max(barHeight, parseInt(minHeight, 10))}px`,
                 backgroundColor: '#1340FF',
                 borderRadius,
                 transition: 'all 0.3s ease',
@@ -104,9 +94,7 @@ const MonthlyInteractionsChart = ({
             {/* Month label */}
             <Typography
               sx={{
-                fontSize: isMobile 
-                  ? (isTablet ? 12 : 9) 
-                  : 12,
+                fontSize: isMobile ? (isTablet ? 12 : 9) : 12,
                 fontWeight: 400,
                 color: 'black',
                 fontStyle: 'italic',

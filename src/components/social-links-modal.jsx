@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -18,27 +19,27 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 // Validation schema
 const SocialLinksSchema = Yup.object().shape({
   instagramProfileLink: Yup.string()
-    .test('social-media-required', 'Please provide at least one social media profile', function(value) {
-      const { tiktokProfileLink } = this.parent;
+    .test('social-media-required', 'Please provide at least one social media profile', (value, context) => {
+      const { tiktokProfileLink } = context.parent;
       return !!(value || tiktokProfileLink);
     })
-    .test('instagram-format', 'URL must contain www.instagram.com or instagram.com', function(value) {
+    .test('instagram-format', 'URL must contain www.instagram.com or instagram.com', (value) => {
       if (!value) return true;
       return /instagram\.com/.test(value.toLowerCase());
     }),
   tiktokProfileLink: Yup.string()
-    .test('social-media-required', 'Please provide at least one social media profile', function(value) {
-      const { instagramProfileLink } = this.parent;
+    .test('social-media-required', 'Please provide at least one social media profile', (value, context) => {
+      const { instagramProfileLink } = context.parent;
       return !!(value || instagramProfileLink);
     })
-    .test('tiktok-format', 'URL must contain www.tiktok.com or tiktok.com', function(value) {
+    .test('tiktok-format', 'URL must contain www.tiktok.com or tiktok.com', (value) => {
       if (!value) return true;
       return /tiktok\.com/.test(value.toLowerCase());
     }),
 });
 
 export default function SocialLinksModal({ open, onClose }) {
-  const { user, initialize } = useAuthContext();
+  const { initialize } = useAuthContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -142,7 +143,7 @@ export default function SocialLinksModal({ open, onClose }) {
                 color: '#8E8E93',
               }}
             >
-              Looks like your social links are missing. We'll need them before you can start joining campaigns.
+              Looks like your social links are missing. We&apos;ll need them before you can start joining campaigns.
             </Typography>
 
             {/* Divider */}
@@ -331,3 +332,8 @@ export default function SocialLinksModal({ open, onClose }) {
     </Dialog>
   );
 }
+
+SocialLinksModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+};

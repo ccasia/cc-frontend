@@ -1039,4 +1039,5 @@ ActivateCampaignDialog.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   campaignId: PropTypes.string,
+  onSuccess: PropTypes.func,
 }; 

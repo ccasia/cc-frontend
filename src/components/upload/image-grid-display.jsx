@@ -370,6 +370,7 @@ const ImageGridDisplay = ({ files, onRemoveAll, onRemoveImage, height = { xs: 32
 
 ImageGridDisplay.propTypes = {
   files: PropTypes.array.isRequired,
+  onRemoveAll: PropTypes.func,
   onRemoveImage: PropTypes.func,
   height: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
 };

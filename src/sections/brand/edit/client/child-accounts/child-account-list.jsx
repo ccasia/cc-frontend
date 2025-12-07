@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import {
@@ -55,11 +55,24 @@ const ChildAccountList = ({ companyId, company }) => {
   console.log('Company data:', company);
   console.log('Client ID being used:', clientId);
 
+  const fetchChildAccounts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get(`/api/child-account/client/${clientId}`);
+      setChildAccounts(response.data);
+    } catch (error) {
+      console.error('Error fetching child accounts:', error);
+      enqueueSnackbar('Error fetching child accounts', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [clientId, enqueueSnackbar]);
+
   useEffect(() => {
     if (clientId) {
       fetchChildAccounts();
     }
-  }, [clientId]);
+  }, [clientId, fetchChildAccounts]);
 
   // Refresh when page becomes visible (user comes back from activation)
   useEffect(() => {
@@ -71,20 +84,7 @@ const ChildAccountList = ({ companyId, company }) => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
-
-  const fetchChildAccounts = async () => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.get(`/api/child-account/client/${clientId}`);
-      setChildAccounts(response.data);
-    } catch (error) {
-      console.error('Error fetching child accounts:', error);
-      enqueueSnackbar('Error fetching child accounts', { variant: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchChildAccounts]);
 
   const handleInviteChildAccount = async () => {
     try {
