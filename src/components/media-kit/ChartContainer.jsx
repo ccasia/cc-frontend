@@ -32,9 +32,24 @@ const ChartContainer = ({
       };
 
   // Calculate responsive values
-  const fontSize = isMobile ? (isTablet ? '16px' : '14px') : '18px';
-  const topPosition = isMobile ? (isTablet ? 16 : 12) : 24;
-  const leftPosition = isMobile ? (isTablet ? 20 : 16) : 28;
+  const getFontSize = () => {
+    if (!isMobile) return '18px';
+    return isTablet ? '16px' : '14px';
+  };
+  
+  const getTopPosition = () => {
+    if (!isMobile) return 24;
+    return isTablet ? 16 : 12;
+  };
+  
+  const getLeftPosition = () => {
+    if (!isMobile) return 28;
+    return isTablet ? 20 : 16;
+  };
+  
+  const fontSize = getFontSize();
+  const topPosition = getTopPosition();
+  const leftPosition = getLeftPosition();
 
   const titleStyles = {
     color: 'black',

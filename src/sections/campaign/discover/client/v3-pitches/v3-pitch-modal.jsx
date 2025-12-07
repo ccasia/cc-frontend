@@ -509,18 +509,18 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                   }}
                 >
                   {/* Left side: Languages, Age, Pronouns (always render labels) */}
-                  <Stack direction="row" spacing={3} alignItems={'flex-end'}>
+                  <Stack direction="row" spacing={3} alignItems="flex-end">
                     {/* Languages Section */}
                     {derivedLanguages.length > 0 && (
                       <Stack spacing={1}>
                         <Typography
-                          fontFamily={'Inter Display, sans-serif'}
+                          fontFamily="Inter Display, sans-serif"
                           color="#8e8e93"
                           sx={{ fontWeight: 700, fontSize: 12 }}
                         >
                           Languages
                         </Typography>
-                        <Stack direction={'row'}>
+                        <Stack direction="row">
                           {derivedLanguages.slice(0, 2).map((language, index) => (
                             <Chip
                               key={index}
@@ -562,7 +562,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                     {derivedBirthDate && (
                       <Stack alignItems="flex-start" spacing={1}>
                         <Typography
-                          fontFamily={'Inter Display, sans-serif'}
+                          fontFamily="Inter Display, sans-serif"
                           variant="caption"
                           color="#8e8e93"
                           sx={{
@@ -582,7 +582,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                     {derivedPronouns && (
                       <Stack alignItems="flex-start" spacing={1}>
                         <Typography
-                          fontFamily={'Inter Display, sans-serif'}
+                          fontFamily="Inter Display, sans-serif"
                           variant="caption"
                           color="#8e8e93"
                           sx={{
@@ -599,7 +599,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                     )}
                   </Stack>
 
-                  <Stack spacing={0} direction={'row'} alignItems={'flex-end'}>
+                  <Stack spacing={0} direction="row" alignItems="flex-end">
                     {/* Social Links - Show when no media kit data */}
                     {(() => {
                       const hasInstagramData = !!(

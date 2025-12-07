@@ -24,9 +24,24 @@ const MonthlyInteractionsChart = ({
   const maxValue = Math.max(...chartData.map(item => item.interactions), 1);
   
   // Responsive dimensions
-  const maxBarHeight = isMobile ? (isTablet ? 140 : 110) : 160;
-  const barWidth = isMobile ? (isTablet ? '40px' : '36px') : '60px';
-  const borderRadius = isMobile ? (isTablet ? '20px' : '18px') : '30px';
+  const getMaxBarHeight = () => {
+    if (!isMobile) return 160;
+    return isTablet ? 140 : 110;
+  };
+  
+  const getBarWidth = () => {
+    if (!isMobile) return '60px';
+    return isTablet ? '40px' : '36px';
+  };
+  
+  const getBorderRadius = () => {
+    if (!isMobile) return '30px';
+    return isTablet ? '20px' : '18px';
+  };
+  
+  const maxBarHeight = getMaxBarHeight();
+  const barWidth = getBarWidth();
+  const borderRadius = getBorderRadius();
 
   return (
     <Box
@@ -34,7 +49,10 @@ const MonthlyInteractionsChart = ({
         display: 'flex',
         alignItems: 'end',
         justifyContent: isMobile ? 'center' : 'space-between',
-        gap: isMobile ? (isTablet ? 1.5 : 1) : 2,
+        gap: (() => {
+          if (!isMobile) return 2;
+          return isTablet ? 1.5 : 1;
+        })(),
         height: '100%',
         ...containerStyle,
       }}
@@ -64,7 +82,10 @@ const MonthlyInteractionsChart = ({
             {/* Value above bar */}
             <Typography
               sx={{
-                fontSize: isMobile ? (isTablet ? 13 : 10) : 16,
+                fontSize: (() => {
+                  if (!isMobile) return 16;
+                  return isTablet ? 13 : 10;
+                })(),
                 fontWeight: 400,
                 color: 'black',
                 fontFamily: 'Aileron, sans-serif',
@@ -94,7 +115,10 @@ const MonthlyInteractionsChart = ({
             {/* Month label */}
             <Typography
               sx={{
-                fontSize: isMobile ? (isTablet ? 12 : 9) : 12,
+                fontSize: (() => {
+                  if (!isMobile) return 12;
+                  return isTablet ? 12 : 9;
+                })(),
                 fontWeight: 400,
                 color: 'black',
                 fontStyle: 'italic',

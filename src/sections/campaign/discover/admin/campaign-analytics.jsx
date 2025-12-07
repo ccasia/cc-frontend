@@ -414,38 +414,38 @@ const CampaignAnalytics = ({ campaign }) => {
   };
 
   const PlatformOverviewLayout = ({
-    insightsData,
-    summaryStats,
-    platformCounts,
-    selectedPlatform,
+    insightsData: componentInsightsData,
+    summaryStats: componentSummaryStats,
+    platformCounts: componentPlatformCounts,
+    selectedPlatform: componentSelectedPlatform,
   }) => {
     const calculateAdditionalMetrics = () => {
       const metrics = {};
 
       // Calculate metrics based on current insights data (filtered or all)
-      metrics.totalShares = insightsData.reduce(
+      metrics.totalShares = componentInsightsData.reduce(
         (sum, item) => sum + getMetricValue(item.insight, 'shares'),
         0
       );
-      metrics.totalReach = insightsData.reduce(
+      metrics.totalReach = componentInsightsData.reduce(
         (sum, item) => sum + getMetricValue(item.insight, 'reach'),
         0
       );
-      metrics.totalInteractions = insightsData.reduce(
+      metrics.totalInteractions = componentInsightsData.reduce(
         (sum, item) => sum + getMetricValue(item.insight, 'total_interactions'),
         0
       );
 
       // Calculate average engagement rate
       const avgEngagement =
-        insightsData.length > 0
-          ? insightsData.reduce((sum, item) => {
+        componentInsightsData.length > 0
+          ? componentInsightsData.reduce((sum, item) => {
               const views = getMetricValue(item.insight, 'views');
               const likes = getMetricValue(item.insight, 'likes');
               const comments = getMetricValue(item.insight, 'comments');
               const engagementRate = views > 0 ? ((likes + comments) / views) * 100 : 0;
               return sum + engagementRate;
-            }, 0) / insightsData.length
+            }, 0) / componentInsightsData.length
           : 0;
 
       metrics.avgEngagement = avgEngagement;
@@ -1422,6 +1422,13 @@ const CampaignAnalytics = ({ campaign }) => {
         </Grid>
       </Box>
     );
+  };
+
+  PlatformOverviewLayout.propTypes = {
+    insightsData: PropTypes.array.isRequired,
+    summaryStats: PropTypes.object.isRequired,
+    platformCounts: PropTypes.object.isRequired,
+    selectedPlatform: PropTypes.string.isRequired,
   };
 
   // Add this new function before CoreMetricsSection

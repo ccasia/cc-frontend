@@ -85,7 +85,9 @@ const PhotoCard = ({
   const saveOverrides = (overrides) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-    } catch {}
+    } catch {
+      // Ignore localStorage errors
+    }
   };
   useEffect(() => {
     const stored = loadOverrides();
@@ -194,11 +196,11 @@ const PhotoCard = ({
         const override = localFeedbackUpdates[fb.id] ?? localFeedbackUpdates[compositeKey];
         const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
         const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
-        const fallbackDisplay = hasText
-          ? fb.content
-          : hasReasons
-            ? `Reasons: ${fb.reasons.join(', ')}`
-            : '';
+        const fallbackDisplay = (() => {
+          if (hasText) return fb.content;
+          if (hasReasons) return `Reasons: ${fb.reasons.join(', ')}`;
+          return '';
+        })();
         return {
           ...fb,
           displayContent: override ?? fallbackDisplay,
@@ -210,14 +212,12 @@ const PhotoCard = ({
 
     // Dedupe by (id if exists) else by content+createdAt
     const seen = new Set();
-    const deduped = [];
-    for (const fb of normalized) {
+    const deduped = normalized.filter((fb) => {
       const key = fb.id ? `id:${fb.id}` : `c:${fb.displayContent}|t:${fb.createdAt}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        deduped.push(fb);
-      }
-    }
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
     // Sort newest first and return full history
     return deduped.sort((a, b) => dayjs(b?.createdAt).diff(dayjs(a?.createdAt)));
@@ -1325,13 +1325,13 @@ const Photos = ({
       // Non-blocking SWR revalidation
       try {
         if (deliverables?.deliverableMutate) deliverables.deliverableMutate();
-      } catch {}
+      } catch { /* Ignore SWR errors */ }
       try {
         if (deliverables?.submissionMutate) deliverables.submissionMutate();
-      } catch {}
+      } catch { /* Ignore SWR errors */ }
       try {
         if (mutateSubmission) mutateSubmission();
-      } catch {}
+      } catch { /* Ignore SWR errors */ }
       try {
         mutate(
           (key) =>
