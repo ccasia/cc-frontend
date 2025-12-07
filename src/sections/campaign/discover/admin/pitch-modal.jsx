@@ -720,10 +720,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                           currentPitch?.user?.creator?.tiktokProfileLink ||
                           creatorProfileFull?.creator?.tiktokProfileLink;
 
-                        // Show social links section if there's no media kit but has social links
+                        // Show social links section ONLY if there's no media kit data at all
                         const shouldShowSocialLinks = 
-                          (!hasInstagramData && instagramLink) || 
-                          (!hasTiktokData && tiktokLink);
+                          !hasInstagramData && !hasTiktokData && (instagramLink || tiktokLink);
                         
                         if (shouldShowSocialLinks) {
                           return (
