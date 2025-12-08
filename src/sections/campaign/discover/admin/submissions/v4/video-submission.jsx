@@ -493,7 +493,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                         onLoadedMetadata={handleLoadedMetadata}
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
-                      />
+                      >
+                        <track kind="captions" />
+                      </video>
                       <Box
                         sx={{
                           position: 'absolute',

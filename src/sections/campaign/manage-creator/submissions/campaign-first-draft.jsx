@@ -1067,22 +1067,26 @@ const CampaignFirstDraft = ({
                   <Stack gap={2}>
                     <Box>
                       <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                        {submission?.status === 'CHANGES_REQUIRED'
-                          ? 'Please review the feedback below and resubmit your first draft with the requested changes.'
-                          : submission?.status === 'NOT_STARTED' &&
-                              feedbacksTesting &&
-                              feedbacksTesting.length > 0
-                            ? 'Please review the feedback below and submit your first draft with the requested changes.'
-                            : "It's time to submit your first draft for this campaign!"}
+                        {(() => {
+                          if (submission?.status === 'CHANGES_REQUIRED') {
+                            return 'Please review the feedback below and resubmit your first draft with the requested changes.';
+                          }
+                          if (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0) {
+                            return 'Please review the feedback below and submit your first draft with the requested changes.';
+                          }
+                          return "It's time to submit your first draft for this campaign!";
+                        })()}
                       </Typography>
                       <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                        {submission?.status === 'CHANGES_REQUIRED'
-                          ? 'Make sure to address all the feedback points mentioned in the review.'
-                          : submission?.status === 'NOT_STARTED' &&
-                              feedbacksTesting &&
-                              feedbacksTesting.length > 0
-                            ? 'Make sure to address all the feedback points mentioned in the review.'
-                            : "Do ensure to read through the brief, and the do's and dont's for the creatives over at the"}
+                        {(() => {
+                          if (submission?.status === 'CHANGES_REQUIRED') {
+                            return 'Make sure to address all the feedback points mentioned in the review.';
+                          }
+                          if (submission?.status === 'NOT_STARTED' && feedbacksTesting && feedbacksTesting.length > 0) {
+                            return 'Make sure to address all the feedback points mentioned in the review.';
+                          }
+                          return "Do ensure to read through the brief, and the do's and dont's for the creatives over at the";
+                        })()}
                         {submission?.status !== 'CHANGES_REQUIRED' &&
                           submission?.status !== 'NOT_STARTED' && (
                             <>

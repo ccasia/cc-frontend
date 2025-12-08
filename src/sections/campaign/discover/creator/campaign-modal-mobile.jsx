@@ -97,7 +97,7 @@ const CampaignModalMobile = ({ campaign }) => {
   const renderAccordionSummary = (panelName, iconPath, title, color) => (
     <AccordionSummary
       expandIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
-      aria-contols={`${panelName}-content`}
+      aria-controls={`${panelName}-content`}
       id={`${panelName}-header`}
       sx={{
         border: `1.5px solid ${color}`,

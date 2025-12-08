@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import { Box, Button, Typography } from '@mui/material';
 
@@ -34,6 +35,10 @@ const V3PitchesTest = ({ campaignId }) => {
       ))}
     </Box>
   );
+};
+
+V3PitchesTest.propTypes = {
+  campaignId: PropTypes.string.isRequired,
 };
 
 export default V3PitchesTest; 

@@ -7,11 +7,11 @@ import { Box, Link, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, Ico
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { formatNumber, extractUsernameFromProfileLink, createSocialProfileUrl } from 'src/utils/media-kit-utils';
+import { fDate } from 'src/utils/format-time';
 
 import Iconify from 'src/components/iconify';
 
 import V3PitchActions from './v3-pitch-actions';
-import { fDate } from 'src/utils/format-time';
 
 const TYPE_LABELS = {
   video: 'Pitch (Video)',

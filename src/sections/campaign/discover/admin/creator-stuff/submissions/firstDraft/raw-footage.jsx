@@ -789,10 +789,14 @@ const RawFootageCard = ({
                               try {
                                 if (deliverables?.deliverableMutate)
                                   deliverables.deliverableMutate();
-                              } catch {}
+                              } catch {
+                                // Ignore revalidation errors - non-blocking
+                              }
                               try {
                                 if (deliverables?.submissionMutate) deliverables.submissionMutate();
-                              } catch {}
+                              } catch {
+                                // Ignore revalidation errors - non-blocking
+                              }
                             }, 500);
                           }
                           setEditingFeedbackId(null);
@@ -1119,19 +1123,18 @@ const RawFootages = ({
 
       console.log('V3 submissions removed - API call disabled');
 
-      if (response.status === 200) {
-        enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
-        // Refresh data - ensure proper SWR revalidation
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
-        }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
-        }
-        // Also refresh any SWR submission data if available
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
-        }
+      // V3 API call removed - keeping success notification for now
+      enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
+      // Refresh data - ensure proper SWR revalidation
+      if (deliverables?.deliverableMutate) {
+        await deliverables.deliverableMutate();
+      }
+      if (deliverables?.submissionMutate) {
+        await deliverables.submissionMutate();
+      }
+      // Also refresh any SWR submission data if available
+      if (deliverables?.submissionMutate) {
+        await deliverables.submissionMutate();
       }
     } catch (error) {
       console.error('Error approving raw footage:', error);
@@ -1150,15 +1153,14 @@ const RawFootages = ({
 
       console.log('V3 submissions removed - API call disabled');
 
-      if (response.status === 200) {
-        enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
-        }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
-        }
+      // V3 API call removed - keeping success notification for now
+      enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
+      // Refresh data
+      if (deliverables?.deliverableMutate) {
+        await deliverables.deliverableMutate();
+      }
+      if (deliverables?.submissionMutate) {
+        await deliverables.submissionMutate();
       }
     } catch (error) {
       console.error('Error requesting changes:', error);
@@ -1267,13 +1269,19 @@ const RawFootages = ({
       // Non-blocking SWR revalidation
       try {
         if (deliverables?.deliverableMutate) deliverables.deliverableMutate();
-      } catch {}
+      } catch {
+        // Ignore revalidation errors - non-blocking
+      }
       try {
         if (deliverables?.submissionMutate) deliverables.submissionMutate();
-      } catch {}
+      } catch {
+        // Ignore revalidation errors - non-blocking
+      }
       try {
         if (mutateSubmission) mutateSubmission();
-      } catch {}
+      } catch {
+        // Ignore revalidation errors - non-blocking
+      }
       try {
         mutate(
           (key) =>
@@ -1284,7 +1292,9 @@ const RawFootages = ({
           undefined,
           { revalidate: true }
         );
-      } catch {}
+      } catch {
+        // Ignore revalidation errors - non-blocking
+      }
       return true;
     } catch (error) {
       console.error('Error updating feedback:', error);
@@ -1324,7 +1334,7 @@ const RawFootages = ({
       const allItemsSent =
         itemsWithClientFeedback.size === 0 ||
         Array.from(itemsWithClientFeedback).every(
-          (itemKey) => sentToCreatorItems.has(itemKey) || itemKey === `rawFootage_${mediaId}`
+          (key) => sentToCreatorItems.has(key) || key === `rawFootage_${mediaId}`
         );
 
       // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed

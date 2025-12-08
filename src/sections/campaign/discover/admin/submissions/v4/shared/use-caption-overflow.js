@@ -6,7 +6,13 @@ export default function useCaptionOverflow(captionMeasureRef, caption) {
   useEffect(() => {
     if (captionMeasureRef.current && caption) {
       const element = captionMeasureRef.current;
-      const maxHeight = window.innerWidth < 600 ? 80 : window.innerWidth < 900 ? 100 : 120;
+      // Determine max height based on window width
+      let maxHeight = 120; // default for large screens
+      if (window.innerWidth < 600) {
+        maxHeight = 80;
+      } else if (window.innerWidth < 900) {
+        maxHeight = 100;
+      }
       setCaptionOverflows(element.scrollHeight > maxHeight);
     }
   }, [caption, captionMeasureRef]);
