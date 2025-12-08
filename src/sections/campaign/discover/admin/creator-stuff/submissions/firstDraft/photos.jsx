@@ -764,10 +764,14 @@ const PhotoCard = ({
                               try {
                                 if (deliverables?.deliverableMutate)
                                   deliverables.deliverableMutate();
-                              } catch {}
+                              } catch {
+                                // Ignore mutate errors - non-critical
+                              }
                               try {
                                 if (deliverables?.submissionMutate) deliverables.submissionMutate();
-                              } catch {}
+                              } catch {
+                                // Ignore mutate errors - non-critical
+                              }
                             }, 500);
                           }
                           setEditingFeedbackId(null);
@@ -1281,7 +1285,9 @@ const Photos = ({
           undefined,
           { revalidate: true }
         );
-      } catch {}
+      } catch {
+        // Ignore cache revalidation errors
+      }
       return true;
     } catch (error) {
       console.error('Error updating feedback:', error);
@@ -1332,7 +1338,7 @@ const Photos = ({
         const allItemsSent =
           itemsWithClientFeedback.size === 0 ||
           Array.from(itemsWithClientFeedback).every(
-            (itemKey) => sentToCreatorItems.has(itemKey) || itemKey === `photo_${mediaId}`
+            (key) => sentToCreatorItems.has(key) || key === `photo_${mediaId}`
           );
 
         // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
@@ -1373,6 +1379,7 @@ const Photos = ({
 
         return true;
       }
+      return false;
     } catch (error) {
       console.error('❌ Error sending to creator:', error);
       enqueueSnackbar('Failed to send to creator', { variant: 'error' });

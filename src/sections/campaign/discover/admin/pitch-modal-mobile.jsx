@@ -375,7 +375,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
             </Stack>
 
             {/* Age, Pronouns, Languages */}
-						<Stack direction={'row'} justifyContent={'space-between'}>
+						<Stack direction="row" justifyContent="space-between">
 							<Stack flex={1}>
 								{derivedBirthDate && (
 									<Box>
@@ -451,7 +451,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
 							</Stack>
               
               {!isGuest && 
-                <Stack justifyContent={'space-between'} gap={2} alignItems={'flex-end'}>
+                <Stack justifyContent="space-between" gap={2} alignItems="flex-end">
                   {/* Media Kit Button */}
                   <Button
                     onClick={handleMediaKitClick}
@@ -555,7 +555,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Box>
 
                 {/* Engagement */}
-                <Box borderLeft={'1px solid #D3D3D3'} pl={2}>
+                <Box borderLeft="1px solid #D3D3D3" pl={2}>
                   <Box
                     component="img"
                     src="/assets/icons/overview/greenChart.svg"
@@ -570,7 +570,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Box>
 
                 {/* Average Likes */}
-                <Box borderLeft={'1px solid #D3D3D3'} pl={2}>
+                <Box borderLeft="1px solid #D3D3D3" pl={2}>
                   <Box
                     component="img"
                     src="/assets/icons/overview/bubbleHeart.svg"
@@ -648,7 +648,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
             </Stack>
 
             {/* Submitted On and Status */}
-            <Stack direction="row" spacing={4} justifyContent={'space-between'}>
+            <Stack direction="row" spacing={4} justifyContent="space-between">
               <Box>
                 <Typography
                   variant="caption"
@@ -671,7 +671,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Typography>
               </Box>
 
-              <Box alignItems={'flex-end'} textAlign={'end'}>
+              <Box alignItems="flex-end" textAlign="end">
                 <Typography
                   variant="caption"
                   sx={{

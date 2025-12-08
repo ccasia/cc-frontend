@@ -384,21 +384,25 @@ const PhotoCard = ({
         }}
       >
         <Box sx={{ position: 'relative' }}>
-          <img
-            src={photoItem.url}
-            alt={`Item ${index + 1}`}
-            style={{
-              width: '100%',
-              height: '200px',
-              objectFit: 'cover',
-              cursor: 'pointer',
-            }}
+          <Box
             onClick={() => onImageClick(photoItem)}
             onKeyDown={(e) => e.key === 'Enter' && onImageClick(photoItem)}
-            role="presentation"
+            role="button"
             tabIndex={0}
             aria-label={`View item ${index + 1}`}
-          />
+            sx={{ cursor: 'pointer' }}
+          >
+            <img
+              src={photoItem.url}
+              alt={`Item ${index + 1}`}
+              style={{
+                width: '100%',
+                height: '200px',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+          </Box>
 
           {/* Status badge */}
           <Box

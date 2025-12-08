@@ -75,29 +75,10 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   const dependency = getDependency(submission?.id);
   const dialog = useBoolean();
   const { user, dispatch } = useAuthContext();
-
-  // Simple test to see if component is working
-  if (!submission) {
-    console.log('No submission provided');
-    return <div>No submission data</div>;
-  }
-
-  console.log('CampaignPosting received:', {
-    submission,
-    submissionStatus: submission?.status,
-    submissionId: submission?.id,
-  });
-
-  console.log('Checking submission status conditions:', {
-    isInProgress: submission?.status === 'IN_PROGRESS',
-    isPendingReview: submission?.status === 'PENDING_REVIEW',
-    isApproved: submission?.status === 'APPROVED',
-    isRejected: submission?.status === 'REJECTED',
-  });
-
-  const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
-
   const router = useRouter();
+  const [openPostingModal, setOpenPostingModal] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState('');
 
   const previewSubmission = useMemo(() => {
     const finalDraftSubmission = fullSubmission?.find(
@@ -169,8 +150,6 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     watch: !!watch,
   });
 
-  const [openPostingModal, setOpenPostingModal] = useState(false);
-
   // Ensure at least one field exists
   useEffect(() => {
     if (fields.length === 0) {
@@ -178,12 +157,30 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     }
   }, [fields.length, append]);
 
+  // Simple test to see if component is working
+  if (!submission) {
+    console.log('No submission provided');
+    return <div>No submission data</div>;
+  }
+
+  console.log('CampaignPosting received:', {
+    submission,
+    submissionStatus: submission?.status,
+    submissionId: submission?.id,
+  });
+
+  console.log('Checking submission status conditions:', {
+    isInProgress: submission?.status === 'IN_PROGRESS',
+    isPendingReview: submission?.status === 'PENDING_REVIEW',
+    isApproved: submission?.status === 'APPROVED',
+    isRejected: submission?.status === 'REJECTED',
+  });
+
+  const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
+
   const postingLinksValue = watch('postingLinks');
   const hasValidLinks =
     postingLinksValue && postingLinksValue.some((link) => link && link.trim() !== '');
-
-  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState('');
 
   const renderGuide = (
     <Dialog open={dialog.value} onClose={dialog.onFalse}>
@@ -363,7 +360,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     // Force field array to have one empty field
     setTimeout(() => {
       if (fields.length > 1) {
-        for (let i = fields.length - 1; i > 0; i--) {
+        for (let i = fields.length - 1; i > 0; i -= 1) {
           remove(i);
         }
       }
