@@ -293,8 +293,16 @@ const CampaignDetailView = ({ id }) => {
 
     const handleWheel = (e) => {
       if (container.scrollWidth > container.clientWidth) {
+        // Check if it's a horizontal scroll attempt (touchpad horizontal swipe)
+        // or if deltaX is significant, let it scroll naturally
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+          // Horizontal scroll - let it work naturally
+          return;
+        }
+        
+        // For vertical scroll (mouse wheel), convert to horizontal
         e.preventDefault();
-        container.scrollLeft += e.deltaY > 0 ? 50 : -50;
+        container.scrollLeft += e.deltaY;
       }
     };
 
@@ -322,7 +330,13 @@ const CampaignDetailView = ({ id }) => {
           position: 'relative',
           width: '100%',
           overflowX: 'auto',
+          overflowY: 'hidden',
           scrollbarWidth: 'none',
+          scrollBehavior: 'smooth',
+          WebkitOverflowScrolling: 'touch',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
           '&::after': {
             content: '""',
             position: 'absolute',

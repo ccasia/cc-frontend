@@ -86,11 +86,11 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
         }) || false;
         
         // Check if the agreement has any approved field
-        const hasApprovedField = Object.entries(agreement).some(([key, value]) => {
-          return typeof value === 'string' && 
-                 key.toLowerCase().includes('status') && 
-                 value.toUpperCase().includes('APPROVE');
-        });
+        const hasApprovedField = Object.entries(agreement).some(([key, value]) => 
+          typeof value === 'string' && 
+          key.toLowerCase().includes('status') && 
+          value.toUpperCase().includes('APPROVE')
+        );
         
         const isApproved = isStatusApproved || hasApprovedSubmission || hasApprovedField;
         console.log('Agreement ID:', agreement.id, 'Status:', status, 'Is Approved:', isApproved);
@@ -652,11 +652,6 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
               Select Creator
             </Typography>
             <CreatorDropdown />
-            {approvedCreators.length === 0 && (
-              <Typography variant="caption" sx={{ mt: 1, color: 'text.secondary' }}>
-                {isLoading ? 'Loading creators...' : 'No creators with approved agreements found'}
-              </Typography>
-            )}
           </Box>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -725,6 +720,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                       primary={option === 'Other' ? 'Others' : option}
                       primaryTypographyProps={{
                         fontWeight: 400,
+                        fontSize: '14px',
                       }}
                     />
                     {service.indexOf(option) > -1 && (

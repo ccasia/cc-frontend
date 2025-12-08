@@ -12,7 +12,9 @@ export default function useSubmissionSocket({
   hasRawFootage = false
 }) {
   useEffect(() => {
-    if (!socket || !campaign?.id) return;
+    if (!socket || !campaign?.id) {
+      return undefined;
+    }
 
     const handleSubmissionUpdate = (data) => {
       if (data.submissionId === submission.id) {

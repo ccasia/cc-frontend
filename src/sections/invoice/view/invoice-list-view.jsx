@@ -414,11 +414,13 @@ export default function InvoiceListView({ campId, invoices }) {
       // Show success message
       enqueueSnackbar('Invoice created successfully', { variant: 'success' });
       
+      // Add the new invoice to the table data
+      if (response.data) {
+        setTableData((prevData) => [response.data, ...prevData]);
+      }
+      
       // Close the modal
       handleCloseNewInvoiceModal();
-      
-      // Refresh the page to show the new invoice
-      window.location.reload();
       
       return response.data;
     } catch (err) {

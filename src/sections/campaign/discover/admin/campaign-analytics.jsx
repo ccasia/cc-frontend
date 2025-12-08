@@ -246,6 +246,14 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   };
 
+  // Helper function to get platform label - shared across components
+  const getPlatformLabel = (platform) => {
+    if (platform === 'ALL') return 'Total Creators';
+    if (platform === 'Instagram') return 'Instagram Posts';
+    if (platform === 'TikTok') return 'TikTok Posts';
+    return '';
+  };
+
   const CoreMetricsSection = ({ summaryStats }) => {
     if (!summaryStats) return null;
 
@@ -281,7 +289,7 @@ const CampaignAnalytics = ({ campaign }) => {
       },
     ].filter((metric) => metric.condition !== false);
 
-    const renderEngagementCard = ({ title, value, metricKey }) => {
+    const RenderEngagementCard = ({ title, value, metricKey }) => {
       // Find top performer for this metric
       const topPerformer = findTopPerformerByMetric(
         metricKey,
@@ -401,11 +409,11 @@ const CampaignAnalytics = ({ campaign }) => {
         <Grid container spacing={{ xs: 1, sm: 2 }}>
           {metricsConfig.map((metric) => (
             <Grid item xs={6} sm={6} md={3} key={metric.key}>
-              {renderEngagementCard({
-                title: metric.label,
-                value: metric.value,
-                metricKey: metric.metricKey,
-              })}
+              <RenderEngagementCard
+                title={metric.label}
+                value={metric.value}
+                metricKey={metric.metricKey}
+              />
             </Grid>
           ))}
         </Grid>
@@ -624,7 +632,7 @@ const CampaignAnalytics = ({ campaign }) => {
         });
 
         return topCreator;
-      }, [filteredInsightsData, filteredSubmissions]);
+      }, []);
 
       const { data: creator } = useGetCreatorById(topEngagementCreator?.user);
 
@@ -972,14 +980,7 @@ const CampaignAnalytics = ({ campaign }) => {
                       fontFamily: 'Aileron',
                     }}
                   >
-                    {availablePlatforms.length > 1 &&
-                      (selectedPlatform === 'ALL'
-                        ? 'Total Creators'
-                        : selectedPlatform === 'Instagram'
-                          ? 'Instagram Posts'
-                          : selectedPlatform === 'TikTok'
-                            ? 'TikTok Posts'
-                            : '')}
+                    {availablePlatforms.length > 1 && getPlatformLabel(selectedPlatform)}
                     {availablePlatforms.length < 2 && insightsData.length > 0 && `${insightsData[0].platform} Posts`}
                   </Typography>
                 </Box>
@@ -1305,14 +1306,7 @@ const CampaignAnalytics = ({ campaign }) => {
                         fontSize={18}
                         color="#1340FF"
                       >
-                        {availablePlatforms.length > 1 &&
-                          (selectedPlatform === 'ALL'
-                            ? 'Total Creators'
-                            : selectedPlatform === 'Instagram'
-                              ? 'Instagram Posts'
-                              : selectedPlatform === 'TikTok'
-                                ? 'TikTok Posts'
-                                : '')}
+                        {availablePlatforms.length > 1 && getPlatformLabel(selectedPlatform)}
                         {availablePlatforms.length < 2 && insightsData.length > 0 && `${insightsData[0].platform} Posts`}
                       </Typography>
                     </Box>
@@ -1432,14 +1426,14 @@ const CampaignAnalytics = ({ campaign }) => {
   };
 
   // Add this new function before CoreMetricsSection
-  const findTopPerformerByMetric = (metricKey, insightsData, filteredSubmissions) => {
+  const findTopPerformerByMetric = (metricKey, insightsData, submissions) => {
     if (!insightsData || insightsData.length === 0) return null;
 
     let topPerformer = null;
     let highestValue = 0;
 
     insightsData.forEach((insightData) => {
-      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+      const submission = submissions.find((sub) => sub.id === insightData.submissionId);
       if (submission) {
         const value = getMetricValue(insightData.insight, metricKey);
         if (value > highestValue) {

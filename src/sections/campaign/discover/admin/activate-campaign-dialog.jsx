@@ -502,7 +502,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {selected.map((value) => {
-                      const admin = adminOptions.find(admin => admin.userId === value);
+                      const admin = adminOptions.find(a => a.userId === value);
                       return (
                         <Chip 
                           key={value} 
