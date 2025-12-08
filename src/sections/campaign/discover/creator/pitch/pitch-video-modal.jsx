@@ -308,7 +308,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
               </Button>
               <Stack direction="row" alignItems="center" gap={2}>
                 <ListItemText
-                  primary={<Typography fontSize={36} fontFamily={'Instrument Serif'}>Video Pitch</Typography>}
+                  primary={<Typography fontSize={36} fontFamily="Instrument Serif">Video Pitch</Typography>}
                   secondary={
                     <Typography variant="body1" color="#636366" sx={{ fontSize: 16 }}>
                       Upload your pitching video!

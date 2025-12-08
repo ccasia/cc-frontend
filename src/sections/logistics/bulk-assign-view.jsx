@@ -23,8 +23,7 @@ import {
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
-import { fetcher } from 'src/utils/axios';
-import axiosInstance from 'src/utils/axios';
+import axiosInstance, { fetcher } from 'src/utils/axios';
 
 import EditQuantityDialog from './dialogs/edit-quantity-dialog';
 import DeleteProductDialog from './dialogs/delete-product-dialog';
@@ -35,22 +34,25 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
   const productsApiUrl = campaign?.id ? `/api/logistics/products/campaign/${campaign.id}` : null;
   const { data: products } = useSWR(productsApiUrl, fetcher);
 
-  const creators =
-    logistics
-      ?.filter((item) => ['PENDING_ASSIGNMENT', 'SCHEDULED'].includes(item.status))
-      .map((item) => {
-        const socialMediaHandle =
-          item.creator?.creator?.instagramUser?.username ||
-          item.creator?.creator?.tiktokUser?.username;
+  const creators = useMemo(
+    () =>
+      logistics
+        ?.filter((item) => ['PENDING_ASSIGNMENT', 'SCHEDULED'].includes(item.status))
+        .map((item) => {
+          const socialMediaHandle =
+            item.creator?.creator?.instagramUser?.username ||
+            item.creator?.creator?.tiktokUser?.username;
 
-        return {
-          id: item.creatorId,
-          name: item.creator?.name,
-          photoURL: item.creator?.photoURL,
-          handle: socialMediaHandle ? `@${socialMediaHandle}` : '-',
-          existingItems: item.deliveryDetails?.items || [],
-        };
-      }) || [];
+          return {
+            id: item.creatorId,
+            name: item.creator?.name,
+            photoURL: item.creator?.photoURL,
+            handle: socialMediaHandle ? `@${socialMediaHandle}` : '-',
+            existingItems: item.deliveryDetails?.items || [],
+          };
+        }) || [],
+    [logistics]
+  );
 
   const [assignments, setAssignments] = useState({});
   const [selectedProductIds, setSelectedProductIds] = useState([]);
@@ -72,20 +74,21 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
       // creators valid for editing
       const validCreatorIds = creators.map((creator) => creator.id);
 
-      for (const logistic of logistics) {
-        if (!validCreatorIds.includes(logistic.creatorId)) continue;
+      logistics
+        .filter((logistic) => validCreatorIds.includes(logistic.creatorId))
+        .forEach((logistic) => {
+          if (logistic.deliveryDetails?.items?.length > 0) {
+            initialAssignments[logistic.creatorId] = logistic.deliveryDetails.items.map((item) => ({
+              productId: item.productId,
+              name: item.product?.productName,
+              quantity: item.quantity,
+            }));
+          }
+        });
 
-        if (logistic.deliveryDetails?.items?.length > 0) {
-          initialAssignments[logistic.creatorId] = logistic.deliveryDetails.items.map((item) => ({
-            productId: item.productId,
-            name: item.product?.productName,
-            quantity: item.quantity,
-          }));
-        }
-      }
       setAssignments(initialAssignments);
     }
-  }, [logistics, open]);
+  }, [logistics, open, creators]);
 
   const filteredCreators = creators.filter((creator) => {
     const matchedSearch =

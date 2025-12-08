@@ -4,8 +4,7 @@ import useSWR from 'swr';
 
 import { Box, Stack, Button, Divider, Typography, Link, Badge } from '@mui/material';
 
-import { fetcher } from 'src/utils/axios';
-import axiosInstance from 'src/utils/axios';
+import axiosInstance, { fetcher } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import { fDate } from 'src/utils/format-time';
 import { useSnackbar } from 'src/components/snackbar';
@@ -339,5 +338,7 @@ export default function CreatorLogisticsView({ campaign }) {
 }
 
 CreatorLogisticsView.propTypes = {
-  campaignId: PropTypes.string,
+  campaign: PropTypes.shape({
+    id: PropTypes.string,
+  }),
 };

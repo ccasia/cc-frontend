@@ -11,16 +11,15 @@ const SubmissionCaptionField = ({
   isEditable, 
   disabled = false,
   required = true 
-}) => {
-  return (
-    <Box sx={{ mb: 2 }}>
-      <Typography
-        variant="body2"
-        fontWeight={'bold'}
-        color={'#636366'}
-      >
-        Post Caption {required && <span style={{ color: 'red' }}>*</span>}
-      </Typography>
+}) => (
+  <Box sx={{ mb: 2 }}>
+    <Typography
+      variant="body2"
+      fontWeight="bold"
+      color="#636366"
+    >
+      Post Caption {required && <span style={{ color: 'red' }}>*</span>}
+    </Typography>
 
       {isEditable ? (
         <TextField
@@ -68,9 +67,8 @@ const SubmissionCaptionField = ({
           {caption || 'No caption provided'}
         </Typography>
       )}
-    </Box>
-  );
-};
+  </Box>
+);
 
 SubmissionCaptionField.propTypes = {
   caption: PropTypes.string.isRequired,

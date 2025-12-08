@@ -34,26 +34,29 @@ export function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId 
   const deliveryDetails = logistic?.deliveryDetails;
   const socialMediaHandle =
     creator?.creator?.instagramUser?.username || creator?.creator?.tiktokUser?.username;
-  const buttonSx = {
-    width: 'fit-content',
-    height: 44,
-    padding: { xs: '4px 8px', sm: '6px 10px' },
-    borderRadius: '8px',
-    boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-    backgroundColor: '#1340FF',
-    color: '#FFFFFF',
-    fontSize: { xs: 12, sm: 14, md: 16 },
-    fontWeight: 600,
-    textTransform: 'none',
-    '&:hover': {
-      backgroundColor: '#133effd3',
+  const buttonSx = useMemo(
+    () => ({
+      width: 'fit-content',
+      height: 44,
+      padding: { xs: '4px 8px', sm: '6px 10px' },
+      borderRadius: '8px',
       boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-    },
-    '&:active': {
-      boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
-      transform: 'translateY(1px)',
-    },
-  };
+      backgroundColor: '#1340FF',
+      color: '#FFFFFF',
+      fontSize: { xs: 12, sm: 14, md: 16 },
+      fontWeight: 600,
+      textTransform: 'none',
+      '&:hover': {
+        backgroundColor: '#133effd3',
+        boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+      },
+      '&:active': {
+        boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+        transform: 'translateY(1px)',
+      },
+    }),
+    []
+  );
 
   const actionButton = useMemo(() => {
     if (!logistic) return null;
@@ -98,7 +101,7 @@ export function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId 
       default:
         return null;
     }
-  }, [status, logistic]);
+  }, [status, logistic, buttonSx]);
 
   const renderHeader = (
     <Stack

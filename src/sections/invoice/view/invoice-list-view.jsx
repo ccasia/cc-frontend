@@ -36,8 +36,6 @@ import { fDate, fTime, isAfter, isBetween } from 'src/utils/format-time';
 import { _invoices } from 'src/_mock';
 import { useAuthContext } from 'src/auth/hooks';
 
-import NewInvoiceModal from '../new-invoice-modal';
-
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { useSnackbar } from 'src/components/snackbar';
@@ -53,6 +51,7 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
+import NewInvoiceModal from '../new-invoice-modal';
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';
 
 // ----------------------------------------------------------------------
@@ -267,33 +266,32 @@ export default function InvoiceListView({ campId, invoices }) {
     setOpenNewInvoiceModal(false);
   };
 
-  const handleCreateInvoice = async (data) => {
+  const handleCreateInvoice = async (formData) => {
     try {
       // Format the services for the deliverables field
-      const deliverables = data.service.map(service => {
+      const deliverables = formData.service.map(service => {
         // If service is 'Other', use the otherService value
-        if (service === 'Other' && data.otherService) {
-          return data.otherService;
+        if (service === 'Other' && formData.otherService) {
+          return formData.otherService;
         }
         return service;
       }).join(', ');
 
       // Get the selected creator from the data passed from the modal
-      console.log('Creator ID:', data.creatorId);
-      console.log('Creator Data:', data.creatorData);
-      console.log('Agreement Data:', data.agreementData);
+      console.log('Creator ID:', formData.creatorId);
+      console.log('Creator Data:', formData.creatorData);
+      console.log('Agreement Data:', formData.agreementData);
       
       // Use the complete creator data passed from the modal
-      const selectedCreator = data.agreementData || 
-        (data.creatorId ? 
-          Array.isArray(agreementsData) ? 
-            agreementsData.find(agreement => 
-              agreement?.user?.id === data.creatorId || 
-              agreement?.userId === data.creatorId ||
-              agreement?.creatorId === data.creatorId
-            )
-          : null 
-        : null);
+      let selectedCreator = formData.agreementData;
+      
+      if (!selectedCreator && formData.creatorId && Array.isArray(data)) {
+        selectedCreator = data.find(agreement => 
+          agreement?.user?.id === formData.creatorId || 
+          agreement?.userId === formData.creatorId ||
+          agreement?.creatorId === formData.creatorId
+        );
+      }
       
       console.log('Selected Creator:', selectedCreator);
       
@@ -303,7 +301,7 @@ export default function InvoiceListView({ campId, invoices }) {
       console.log('Payment Form:', selectedCreator?.user?.paymentForm || selectedCreator?.user?.creator?.paymentForm);
       
       // Get the creator details from the data passed from the modal
-      const creatorDetails = data.creatorDetails;
+      const creatorDetails = formData.creatorDetails;
       console.log('Creator Details:', creatorDetails);
       
       // Get the payment form from the creator details or other locations
@@ -329,7 +327,7 @@ export default function InvoiceListView({ campId, invoices }) {
       };
       
       // Get the currency symbol based on selected currency
-      const currencySymbol = currencySymbols[data.currency] || '';
+      const currencySymbol = currencySymbols[formData.currency] || '';
       
       // Prepare invoice data to match the backend's expected structure
       const invoiceData = {
@@ -341,8 +339,8 @@ export default function InvoiceListView({ campId, invoices }) {
         
         // Creator information
         invoiceFrom: {
-          id: data.creatorId,
-          name: data.creator,
+          id: formData.creatorId,
+          name: formData.creator,
           email: selectedCreator?.user?.email || '',
           phoneNumber: selectedCreator?.user?.phoneNumber || '',
           fullAddress: selectedCreator?.user?.creator?.fullAddress || '',
@@ -367,12 +365,12 @@ export default function InvoiceListView({ campId, invoices }) {
         items: [
           {
             title: 'Service',
-            description: data.otherService || deliverables, // Use otherService if available
+            description: formData.otherService || deliverables, // Use otherService if available
             service: deliverables,
             quantity: 1,
-            price: parseFloat(data.amount) || 0,
-            total: parseFloat(data.amount) || 0,
-            currency: data.currency, // Add currency to the item
+            price: parseFloat(formData.amount) || 0,
+            total: parseFloat(formData.amount) || 0,
+            currency: formData.currency, // Add currency to the item
             currencySymbol // Add currency symbol to the item
           }
         ],
@@ -381,27 +379,27 @@ export default function InvoiceListView({ campId, invoices }) {
         bankInfo: {
           // Use the payment form we found
           bankName: paymentForm.bankName || '',
-          accountName: paymentForm.bankAccountName || data.creator,
-          payTo: data.creator,
+          accountName: paymentForm.bankAccountName || formData.creator,
+          payTo: formData.creator,
           accountNumber: paymentForm.bankAccountNumber || '',
           
           // Email from the creator data
           accountEmail: creatorDetails?.email || 
                        selectedCreator?.user?.email || 
                        selectedCreator?.email || 
-                       data.creatorData?.email || '',
+                       formData.creatorData?.email || '',
           
           // Add these fields to match what's expected in the invoice PDF
-          recipientName: data.creator,
+          recipientName: formData.creator,
           recipientEmail: creatorDetails?.email || 
                          selectedCreator?.user?.email || 
                          selectedCreator?.email || 
-                         data.creatorData?.email || ''
+                         formData.creatorData?.email || ''
         },
         
-        subTotal: parseFloat(data.amount) || 0,
-        totalAmount: parseFloat(data.amount) || 0,
-        currency: data.currency, // Add currency to the invoice
+        subTotal: parseFloat(formData.amount) || 0,
+        totalAmount: parseFloat(formData.amount) || 0,
+        currency: formData.currency, // Add currency to the invoice
         currencySymbol // Add currency symbol to the invoice
       };
       
@@ -423,9 +421,10 @@ export default function InvoiceListView({ campId, invoices }) {
       window.location.reload();
       
       return response.data;
-    } catch (error) {
-      console.error('Error creating invoice:', error);
+    } catch (err) {
+      console.error('Error creating invoice:', err);
       enqueueSnackbar('Failed to create invoice', { variant: 'error' });
+      return null;
     }
   };
 

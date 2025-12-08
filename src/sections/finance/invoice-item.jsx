@@ -96,6 +96,7 @@ export default InvoiceItem;
 
 InvoiceItem.propTypes = {
   invoice: PropTypes.object,
+  onChangeStatus: PropTypes.func,
   selected: PropTypes.string,
   onSelectRow: PropTypes.func,
   openEditInvoice: PropTypes.func,

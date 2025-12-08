@@ -39,19 +39,19 @@ import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
 
 import CreateBrand from './brandDialog';
-import SelectBrand from './steps/select-brand';
+import CampaignAdminManager from './steps/admin-manager';
+import CampaignDetails from './steps/campaign-details';
+import CampaignLogistics from './steps/campaign-logistics';
 import CampaignType from './steps/campaign-type';
-import SelectTimeline from './steps/select-timeline';
 import CampaignFormUpload from './steps/form-upload';
 import GeneralCampaign from './steps/general-campaign';
-import CampaignDetails from './steps/campaign-details';
 import CampaignImageUpload from './steps/image-upload';
-import CampaignAdminManager from './steps/admin-manager';
-import OtherAttachments from './steps/other-attachments';
-import TimelineTypeModal from './steps/timeline-type-modal';
-import CampaignLogistics from './steps/campaign-logistics';
-import ReservationSlots from './steps/reservation-slots';
 import LogisticRemarks from './steps/logistic-remarks';
+import OtherAttachments from './steps/other-attachments';
+import ReservationSlots from './steps/reservation-slots';
+import SelectBrand from './steps/select-brand';
+import SelectTimeline from './steps/select-timeline';
+import TimelineTypeModal from './steps/timeline-type-modal';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 // new URL(

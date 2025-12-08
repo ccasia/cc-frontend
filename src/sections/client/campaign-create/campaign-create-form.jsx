@@ -40,14 +40,14 @@ import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
 // Import steps from campaign creation
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
+import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
+import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
+import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
 
 import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
-import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
-import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
-import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 

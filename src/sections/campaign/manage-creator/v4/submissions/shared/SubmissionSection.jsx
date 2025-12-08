@@ -32,38 +32,36 @@ const SubmissionSection = ({
   // General state
   uploading = false,
   postingLoading = false,
-}) => {
-  return (
-    <Box>
-      {/* Caption Field */}
-      {hasCaption && (
-        <SubmissionCaptionField
-          caption={caption}
-          onCaptionChange={onCaptionChange}
-          isEditable={isCaptionEditable}
-          disabled={uploading}
-        />
-      )}
-
-      {/* Posting Link Field */}
-      {hasPostingLink && (
-        <SubmissionPostingLinkField
-          postingLink={postingLink}
-          onPostingLinkChange={onPostingLinkChange}
-          isEditable={isPostingLinkEditable}
-          disabled={postingLoading}
-          submissionContent={submissionContent}
-        />
-      )}
-
-      {/* Feedback Section */}
-      <SubmissionFeedback
-        feedback={feedback}
-        hasChangesRequired={hasChangesRequired}
+}) => (
+  <Box>
+    {/* Caption Field */}
+    {hasCaption && (
+      <SubmissionCaptionField
+        caption={caption}
+        onCaptionChange={onCaptionChange}
+        isEditable={isCaptionEditable}
+        disabled={uploading}
       />
-    </Box>
-  );
-};
+    )}
+
+    {/* Posting Link Field */}
+    {hasPostingLink && (
+      <SubmissionPostingLinkField
+        postingLink={postingLink}
+        onPostingLinkChange={onPostingLinkChange}
+        isEditable={isPostingLinkEditable}
+        disabled={postingLoading}
+        submissionContent={submissionContent}
+      />
+    )}
+
+    {/* Feedback Section */}
+    <SubmissionFeedback
+      feedback={feedback}
+      hasChangesRequired={hasChangesRequired}
+    />
+  </Box>
+);
 
 SubmissionSection.propTypes = {
   // Caption props

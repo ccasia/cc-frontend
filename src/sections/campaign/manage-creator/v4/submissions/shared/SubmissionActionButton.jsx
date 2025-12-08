@@ -5,6 +5,7 @@ import { Box, Typography, LinearProgress, Stack } from '@mui/material';
 /**
  * Shared submit/reupload button component for all submission types
  */
+// eslint-disable-next-line arrow-body-style
 const SubmissionActionButton = ({
   // Button state
   isDisabled,
@@ -31,8 +32,17 @@ const SubmissionActionButton = ({
   uploadingText = 'Uploading...',
   postingText = 'Submitting...'
 }) => {
-  const buttonColor = isDisabled ? '#A8A8A8' : isReuploadButton ? '#1340FF' : '#3A3A3C';
-  const buttonBorderColor = isDisabled ? '#0000001A' : isReuploadButton ? '#00000073' : '#000';
+  const buttonColor = (() => {
+    if (isDisabled) return '#A8A8A8';
+    if (isReuploadButton) return '#1340FF';
+    return '#3A3A3C';
+  })();
+  
+  const buttonBorderColor = (() => {
+    if (isDisabled) return '#0000001A';
+    if (isReuploadButton) return '#00000073';
+    return '#000';
+  })();
 
   const getButtonText = () => {
     if (uploading) return uploadingText;
