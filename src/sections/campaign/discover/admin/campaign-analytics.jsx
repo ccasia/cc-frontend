@@ -35,7 +35,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 const CampaignAnalytics = ({ campaign }) => {
   const campaignId = campaign?.id;
-  const submissions = campaign?.submission || [];
+  const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
   const [selectedPlatform, setSelectedPlatform] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -254,33 +254,33 @@ const CampaignAnalytics = ({ campaign }) => {
     return '';
   };
 
-  const CoreMetricsSection = ({ summaryStats }) => {
-    if (!summaryStats) return null;
+  const CoreMetricsSection = ({ summaryStats: stats }) => {
+    if (!stats) return null;
 
     // Define metrics configuration
     const metricsConfig = [
       {
         key: 'views',
         label: 'Views',
-        value: summaryStats.totalViews,
+        value: stats.totalViews,
         metricKey: 'views',
       },
       {
         key: 'likes',
         label: 'Likes',
-        value: summaryStats.totalLikes,
+        value: stats.totalLikes,
         metricKey: 'likes',
       },
       {
         key: 'comments',
         label: 'Comments',
-        value: summaryStats.totalComments,
+        value: stats.totalComments,
         metricKey: 'comments',
       },
       {
         key: 'saved',
         label: 'Saved',
-        value: summaryStats.totalSaved,
+        value: stats.totalSaved,
         metricKey: 'saved',
         // Only show for Instagram
         condition:
@@ -404,6 +404,12 @@ const CampaignAnalytics = ({ campaign }) => {
       );
     };
 
+    RenderEngagementCard.propTypes = {
+      title: PropTypes.string.isRequired,
+      value: PropTypes.number.isRequired,
+      metricKey: PropTypes.string.isRequired,
+    };
+
     return (
       <Box sx={{ mb: 3 }}>
         <Grid container spacing={{ xs: 1, sm: 2 }}>
@@ -419,6 +425,15 @@ const CampaignAnalytics = ({ campaign }) => {
         </Grid>
       </Box>
     );
+  };
+
+  CoreMetricsSection.propTypes = {
+    summaryStats: PropTypes.shape({
+      totalViews: PropTypes.number,
+      totalLikes: PropTypes.number,
+      totalComments: PropTypes.number,
+      totalSaved: PropTypes.number,
+    }).isRequired,
   };
 
   const PlatformOverviewLayout = ({
@@ -1426,14 +1441,14 @@ const CampaignAnalytics = ({ campaign }) => {
   };
 
   // Add this new function before CoreMetricsSection
-  const findTopPerformerByMetric = (metricKey, insightsData, submissions) => {
-    if (!insightsData || insightsData.length === 0) return null;
+  const findTopPerformerByMetric = (metricKey, insights, submissionsList) => {
+    if (!insights || insights.length === 0) return null;
 
     let topPerformer = null;
     let highestValue = 0;
 
-    insightsData.forEach((insightData) => {
-      const submission = submissions.find((sub) => sub.id === insightData.submissionId);
+    insights.forEach((insightData) => {
+      const submission = submissionsList.find((sub) => sub.id === insightData.submissionId);
       if (submission) {
         const value = getMetricValue(insightData.insight, metricKey);
         if (value > highestValue) {
@@ -1450,7 +1465,7 @@ const CampaignAnalytics = ({ campaign }) => {
     return topPerformer;
   };
 
-  const UserPerformanceCard = ({ engagementRate, submission, insightData, loadingInsights }) => {
+  const UserPerformanceCard = ({ engagementRate, submission, insightData, loadingInsights: isLoadingInsights }) => {
     const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
 
     return (
@@ -1491,95 +1506,103 @@ const CampaignAnalytics = ({ campaign }) => {
               </Stack>
 
               {/* Center: Metrics Display */}
-              {insightData ? (
-                <Box display="flex" alignItems="center" mr="auto" ml={2}>
-                  {/* Engagement Rate */}
-                  <Box>
-                    <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
-                      Engagement Rate
-                    </Typography>
-                    <Typography
-                      fontFamily="Instrument Serif"
-                      fontSize={40}
-                      fontWeight={400}
-                      color="#1340FF"
-                    >
-                      {engagementRate}%
-                    </Typography>
-                  </Box>
+              {(() => {
+                if (insightData) {
+                  return (
+                    <Box display="flex" alignItems="center" mr="auto" ml={2}>
+                      {/* Engagement Rate */}
+                      <Box>
+                        <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
+                          Engagement Rate
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={40}
+                          fontWeight={400}
+                          color="#1340FF"
+                        >
+                          {engagementRate}%
+                        </Typography>
+                      </Box>
 
-                  {/* Divider */}
-                  <Divider
-                    sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }}
-                  />
+                      {/* Divider */}
+                      <Divider
+                        sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }}
+                      />
 
-                  {/* Views */}
-                  <Box sx={{ width: 80 }}>
-                    <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
-                      Views
-                    </Typography>
-                    <Typography
-                      fontFamily="Instrument Serif"
-                      fontSize={40}
-                      fontWeight={400}
-                      color="#1340FF"
-                    >
-                      {formatNumber(getMetricValue(insightData.insight, 'views'))}
-                    </Typography>
-                  </Box>
+                      {/* Views */}
+                      <Box sx={{ width: 80 }}>
+                        <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
+                          Views
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={40}
+                          fontWeight={400}
+                          color="#1340FF"
+                        >
+                          {formatNumber(getMetricValue(insightData.insight, 'views'))}
+                        </Typography>
+                      </Box>
 
-                  {/* Divider */}
-                  <Divider
-                    sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }}
-                  />
+                      {/* Divider */}
+                      <Divider
+                        sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }}
+                      />
 
-                  {/* Likes */}
-                  <Box>
-                    <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
-                      Likes
-                    </Typography>
-                    <Typography
-                      fontFamily="Instrument Serif"
-                      fontSize={40}
-                      fontWeight={400}
-                      color="#1340FF"
-                    >
-                      {formatNumber(getMetricValue(insightData.insight, 'likes'))}
-                    </Typography>
-                  </Box>
+                      {/* Likes */}
+                      <Box>
+                        <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
+                          Likes
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={40}
+                          fontWeight={400}
+                          color="#1340FF"
+                        >
+                          {formatNumber(getMetricValue(insightData.insight, 'likes'))}
+                        </Typography>
+                      </Box>
 
-                  {/* Divider */}
-                  <Divider
-                    sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }}
-                  />
+                      {/* Divider */}
+                      <Divider
+                        sx={{ width: '1px', height: '80px', backgroundColor: '#1340FF', mx: 2 }}
+                      />
 
-                  {/* Comments */}
-                  <Box>
-                    <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
-                      Comments
-                    </Typography>
-                    <Typography
-                      fontFamily="Instrument Serif"
-                      fontSize={40}
-                      fontWeight={400}
-                      color="#1340FF"
-                    >
-                      {formatNumber(getMetricValue(insightData.insight, 'comments'))}
-                    </Typography>
-                  </Box>
-                </Box>
-              ) : loadingInsights ? (
-                <Box display="flex" alignItems="center" py={2} ml={4}>
-                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Loading metrics...
-                  </Typography>
-                </Box>
-              ) : (
-                <Alert severity="info" sx={{ m: 1 }}>
-                  Analytics data not available for this post.
-                </Alert>
-              )}
+                      {/* Comments */}
+                      <Box>
+                        <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
+                          Comments
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={40}
+                          fontWeight={400}
+                          color="#1340FF"
+                        >
+                          {formatNumber(getMetricValue(insightData.insight, 'comments'))}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                }
+                if (loadingInsights) {
+                  return (
+                    <Box display="flex" alignItems="center" py={2} ml={4}>
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        Loading metrics...
+                      </Typography>
+                    </Box>
+                  );
+                }
+                return (
+                  <Alert severity="info" sx={{ m: 1 }}>
+                    Analytics data not available for this post.
+                  </Alert>
+                );
+              })()}
 
               {/* Right Side: Thumbnail Preview */}
               {insightData ? (
@@ -1673,95 +1696,103 @@ const CampaignAnalytics = ({ campaign }) => {
               </Box>
 
               {/* Middle: Metrics */}
-              {insightData ? (
-                <Box display="flex" justifyContent="center" alignItems="center" mb={2}>
-                  {/* Engagement Rate */}
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
-                      Engagement
-                    </Typography>
-                    <Typography
-                      fontFamily="Instrument Serif"
-                      fontSize={28}
-                      fontWeight={400}
-                      color="#1340FF"
-                    >
-                      {engagementRate}%
-                    </Typography>
-                  </Box>
+              {(() => {
+                if (insightData) {
+                  return (
+                    <Box display="flex" justifyContent="center" alignItems="center" mb={2}>
+                      {/* Engagement Rate */}
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
+                          Engagement
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={28}
+                          fontWeight={400}
+                          color="#1340FF"
+                        >
+                          {engagementRate}%
+                        </Typography>
+                      </Box>
 
-                  {/* Divider */}
-                  <Divider
-                    sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }}
-                  />
+                      {/* Divider */}
+                      <Divider
+                        sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }}
+                      />
 
-                  {/* Views */}
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
-                      Views
-                    </Typography>
-                    <Typography
-                      fontFamily="Instrument Serif"
-                      fontSize={28}
-                      fontWeight={400}
-                      color="#1340FF"
-                    >
-                      {formatNumber(getMetricValue(insightData.insight, 'views'))}
-                    </Typography>
-                  </Box>
+                      {/* Views */}
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
+                          Views
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={28}
+                          fontWeight={400}
+                          color="#1340FF"
+                        >
+                          {formatNumber(getMetricValue(insightData.insight, 'views'))}
+                        </Typography>
+                      </Box>
 
-                  {/* Divider */}
-                  <Divider
-                    sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }}
-                  />
+                      {/* Divider */}
+                      <Divider
+                        sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }}
+                      />
 
-                  {/* Likes */}
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
-                      Likes
-                    </Typography>
-                    <Typography
-                      fontFamily="Instrument Serif"
-                      fontSize={28}
-                      fontWeight={400}
-                      color="#1340FF"
-                    >
-                      {formatNumber(getMetricValue(insightData.insight, 'likes'))}
-                    </Typography>
-                  </Box>
+                      {/* Likes */}
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
+                          Likes
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={28}
+                          fontWeight={400}
+                          color="#1340FF"
+                        >
+                          {formatNumber(getMetricValue(insightData.insight, 'likes'))}
+                        </Typography>
+                      </Box>
 
-                  {/* Divider */}
-                  <Divider
-                    sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }}
-                  />
+                      {/* Divider */}
+                      <Divider
+                        sx={{ width: '1px', height: '50px', backgroundColor: '#1340FF', mx: 2 }}
+                      />
 
-                  {/* Comments */}
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
-                      Comments
-                    </Typography>
-                    <Typography
-                      fontFamily="Instrument Serif"
-                      fontSize={28}
-                      fontWeight={400}
-                      color="#1340FF"
-                    >
-                      {formatNumber(getMetricValue(insightData.insight, 'comments'))}
-                    </Typography>
-                  </Box>
-                </Box>
-              ) : loadingInsights ? (
-                <Box display="flex" alignItems="center" justifyContent="center" py={3}>
-                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Loading metrics...
-                  </Typography>
-                </Box>
-              ) : (
-                <Alert severity="info" sx={{ my: 2 }}>
-                  Analytics data not available for this post.
-                </Alert>
-              )}
+                      {/* Comments */}
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
+                          Comments
+                        </Typography>
+                        <Typography
+                          fontFamily="Instrument Serif"
+                          fontSize={28}
+                          fontWeight={400}
+                          color="#1340FF"
+                        >
+                          {formatNumber(getMetricValue(insightData.insight, 'comments'))}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                }
+                if (loadingInsights) {
+                  return (
+                    <Box display="flex" alignItems="center" justifyContent="center" py={3}>
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        Loading metrics...
+                      </Typography>
+                    </Box>
+                  );
+                }
+                return (
+                  <Alert severity="info" sx={{ my: 2 }}>
+                    Analytics data not available for this post.
+                  </Alert>
+                );
+              })()}
 
               {/* Bottom: Thumbnail */}
               {insightData ? (
@@ -1820,6 +1851,25 @@ const CampaignAnalytics = ({ campaign }) => {
         </Box>
       </Grid>
     );
+  };
+
+  UserPerformanceCard.propTypes = {
+    engagementRate: PropTypes.number,
+    submission: PropTypes.shape({
+      id: PropTypes.string,
+      postUrl: PropTypes.string,
+      user: PropTypes.string,
+      platform: PropTypes.string,
+    }).isRequired,
+    insightData: PropTypes.shape({
+      insight: PropTypes.object,
+      postUrl: PropTypes.string,
+      thumbnail: PropTypes.string,
+      video: PropTypes.shape({
+        media_url: PropTypes.string,
+      }),
+    }),
+    loadingInsights: PropTypes.bool,
   };
 
   return (
@@ -1911,8 +1961,10 @@ const CampaignAnalytics = ({ campaign }) => {
       </Box>
 
       <Grid container spacing={1}>
+        {/* eslint-disable react/prop-types */}
         {paginationData.displayedSubmissions.map((submission) => {
           const insightData = insightsData.find((data) => data.submissionId === submission.id);
+          // insightData is from hook data, not props - PropTypes validated in UserPerformanceCard
           const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
 
           return (
@@ -1925,6 +1977,7 @@ const CampaignAnalytics = ({ campaign }) => {
             />
           );
         })}
+        {/* eslint-enable react/prop-types */}
 
         {postingSubmissions.length === 0 && (
           <Grid item xs={12}>
@@ -2015,7 +2068,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
             if (!showEllipsis) {
               // Show all pages if 3 or fewer
-              for (let i = 1; i <= paginationData.totalPages; i++) {
+              for (let i = 1; i <= paginationData.totalPages; i += 1) {
                 pageButtons.push(
                   <Button
                     key={i}
@@ -2074,7 +2127,7 @@ const CampaignAnalytics = ({ campaign }) => {
               for (
                 let i = Math.max(2, currentPage - 1);
                 i <= Math.min(paginationData.totalPages - 1, currentPage + 1);
-                i++
+                i += 1
               ) {
                 pageButtons.push(
                   <Button
@@ -2167,7 +2220,14 @@ const CampaignAnalytics = ({ campaign }) => {
 CampaignAnalytics.propTypes = {
   campaign: PropTypes.shape({
     id: PropTypes.string,
-    submission: PropTypes.array,
+    submission: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string,
+        postUrl: PropTypes.string,
+        user: PropTypes.string,
+        platform: PropTypes.string,
+      })
+    ),
   }),
 };
 

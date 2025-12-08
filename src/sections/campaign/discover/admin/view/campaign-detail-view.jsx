@@ -46,6 +46,7 @@ import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
+import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignLogistics from '../campaign-logistics';
@@ -66,7 +67,6 @@ import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
-import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -310,10 +310,10 @@ const CampaignDetailView = ({ id }) => {
     return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
-  const getAgreementsLabel = (agreementSubmissions, campaignAgreements) => {
+  const getAgreementsLabel = (submissions, agreements) => {
     const pendingAgreementApproval =
-      agreementSubmissions?.filter((a) => a?.status === 'PENDING_REVIEW').length || 0;
-    const pendingSendAgreement = (campaignAgreements || []).filter(
+      submissions?.filter((a) => a?.status === 'PENDING_REVIEW').length || 0;
+    const pendingSendAgreement = (agreements || []).filter(
       (a) => a.isSent === false
     ).length;
     const totalPending = pendingAgreementApproval + pendingSendAgreement;

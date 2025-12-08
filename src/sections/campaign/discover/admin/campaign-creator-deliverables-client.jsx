@@ -303,27 +303,27 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
         }
 
         // Find submissions by type
-        const firstDraftSubmission = relevantSubmissions.find(
+        const firstDraftSub = relevantSubmissions.find(
           (item) => item.submissionType.type === 'FIRST_DRAFT'
         );
-        const finalDraftSubmission = relevantSubmissions.find(
+        const finalDraftSub = relevantSubmissions.find(
           (item) => item.submissionType.type === 'FINAL_DRAFT'
         );
-        const postingSubmission = relevantSubmissions.find(
+        const postingSub = relevantSubmissions.find(
           (item) => item.submissionType.type === 'POSTING'
         );
 
         // Determine the status based on the latest stage in the workflow
         // Priority: Posting > Final Draft > First Draft
-        if (postingSubmission) {
+        if (postingSub) {
           newStatuses[selectedCreator.userId] =
-            postingSubmission.displayStatus || postingSubmission.status;
-        } else if (finalDraftSubmission) {
+            postingSub.displayStatus || postingSub.status;
+        } else if (finalDraftSub) {
           newStatuses[selectedCreator.userId] =
-            finalDraftSubmission.displayStatus || finalDraftSubmission.status;
-        } else if (firstDraftSubmission) {
+            finalDraftSub.displayStatus || finalDraftSub.status;
+        } else if (firstDraftSub) {
           newStatuses[selectedCreator.userId] =
-            firstDraftSubmission.displayStatus || firstDraftSubmission.status;
+            firstDraftSub.displayStatus || firstDraftSub.status;
         } else {
           newStatuses[selectedCreator.userId] = 'NOT_STARTED';
         }
@@ -425,10 +425,10 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     // Special handling for posting submissions: show "POSTED" when status is "APPROVED"
     // We need to check if this is a posting status by looking at the submissions
     if (status === 'APPROVED' && submissions) {
-      const postingSubmission = submissions.find((s) => s.submissionType?.type === 'POSTING');
+      const postingSub = submissions.find((s) => s.submissionType?.type === 'POSTING');
       if (
-        postingSubmission &&
-        (postingSubmission.displayStatus === 'APPROVED' || postingSubmission.status === 'APPROVED')
+        postingSub &&
+        (postingSub.displayStatus === 'APPROVED' || postingSub.status === 'APPROVED')
       ) {
         statusText = 'POSTED';
       }
@@ -912,7 +912,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
                           overflow: 'hidden',
                           position: 'relative',
                           bgcolor: 'background.paper',
-                          boxShadow: (theme) => theme.customShadows.z8,
+                          boxShadow: (t) => t.customShadows.z8,
                         }}
                       >
                         <Box

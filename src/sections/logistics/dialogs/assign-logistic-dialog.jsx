@@ -164,7 +164,7 @@ export default function AssignLogisticDialog({ open, onClose, logistic, campaign
 
           <Typography variant="body2" sx={{ color: '#636366', lineHeight: 1.6 }}>
             {logistic?.deliveryDetails?.dietaryRestrictions ||
-              "This is a paragraph field about creator's personalized requests, preferences or any additional notes filled by the admin.\nDietary: Halal/Vegetarian/Vegan/No Beef/No Peanuts\nReligious Concerns: Muslim\nMedical Conditions: Eczema"}
+              "This is a paragraph field about creator&apos;s personalized requests, preferences or any additional notes filled by the admin.\nDietary: Halal/Vegetarian/Vegan/No Beef/No Peanuts\nReligious Concerns: Muslim\nMedical Conditions: Eczema"}
           </Typography>
         </Grid>
 

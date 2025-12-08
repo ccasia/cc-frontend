@@ -1141,7 +1141,7 @@ const ReservationSlots = () => {
         boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.05)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <MuiBox
+          <Box
             component="img"
             src="/assets/icons/components/event_note.svg"
             alt="Reservation Slots"
@@ -1166,7 +1166,7 @@ const ReservationSlots = () => {
           <Box sx={{ mt: 2 }}>
             {savedTimeSlots.map((group, index) => (
               <Box key={index} sx={{ mb: 2, display: 'flex', alignItems: 'flex-start' }}>
-                <MuiBox
+                <Box
                   component="img"
                   src="/assets/icons/components/slotscom.svg"
                   alt="Time Slot"

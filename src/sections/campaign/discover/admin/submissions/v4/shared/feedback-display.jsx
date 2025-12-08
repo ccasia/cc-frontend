@@ -181,4 +181,5 @@ FeedbackDisplay.propTypes = {
   feedback: PropTypes.object,
   submission: PropTypes.object.isRequired,
   isClient: PropTypes.bool.isRequired,
+  onViewLogs: PropTypes.func.isRequired,
 };

@@ -868,38 +868,36 @@ const CampaignModal = ({
                     </Typography>
                   );
                 }
-              } else {
+              } else if (!hasPaymentDetails) {
                 // For non-target users, only check payment details (original behavior)
-                if (!hasPaymentDetails) {
-                  return (
-                    <Typography
-                      sx={{
-                        flex: 1,
-                        textAlign: 'center',
-                        p: 1,
-                        mt: 2,
-                        borderRadius: 1,
+                return (
+                  <Typography
+                    sx={{
+                      flex: 1,
+                      textAlign: 'center',
+                      p: 1,
+                      mt: 2,
+                      borderRadius: 1,
+                      color: '#FF3500',
+                      backgroundColor: '#FFF2F0',
+                      fontWeight: 600,
+                      fontSize: 12,
+                      alignSelf: 'center',
+                    }}
+                  >
+                    Please complete your{' '}
+                    <Link
+                      to={paths.dashboard.user.profileTabs.payment}
+                      style={{
                         color: '#FF3500',
-                        backgroundColor: '#FFF2F0',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        alignSelf: 'center',
+                        fontWeight: 'inherit',
                       }}
                     >
-                      Please complete your{' '}
-                      <Link
-                        to={paths.dashboard.user.profileTabs.payment}
-                        style={{
-                          color: '#FF3500',
-                          fontWeight: 'inherit',
-                        }}
-                      >
-                        payment details
-                      </Link>{' '}
-                      to access this feature. ☝️
-                    </Typography>
-                  );
-                }
+                      payment details
+                    </Link>{' '}
+                    to access this feature. ☝️
+                  </Typography>
+                );
               }
               
               return null;
