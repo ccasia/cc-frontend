@@ -20,7 +20,7 @@ import Iconify from 'src/components/iconify';
 import { RHFSelect, RHFTextField, RHFRadioGroup } from 'src/components/hook-form';
 
 const CampaignLogistics = () => {
-  const { watch, setValue, control } = useFormContext();
+  const { watch, setValue, control, getValues } = useFormContext();
   const [editingIndex, setEditingIndex] = useState(-1);
   const [editValue, setEditValue] = useState('');
   const [lastAddedIndex, setLastAddedIndex] = useState(0);
