@@ -569,17 +569,13 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           setSelectedCreator(targetCreator);
           // Clear the target creator ID after using it
           localStorage.removeItem('targetCreatorId');
-        } else {
+        } else if (sortedCreators[0]?.userId && sortedCreators[0]?.user) {
           // Fallback to first creator if target not found
-          if (sortedCreators[0]?.userId && sortedCreators[0]?.user) {
-            setSelectedCreator(sortedCreators[0]);
-          }
-        }
-      } else {
-        // Default behavior - select first creator
-        if (sortedCreators[0]?.userId && sortedCreators[0]?.user) {
           setSelectedCreator(sortedCreators[0]);
         }
+      } else if (sortedCreators[0]?.userId && sortedCreators[0]?.user) {
+        // Default behavior - select first creator
+        setSelectedCreator(sortedCreators[0]);
       }
     }
   }, [filteredCreators, selectedCreator, sortedCreators]);

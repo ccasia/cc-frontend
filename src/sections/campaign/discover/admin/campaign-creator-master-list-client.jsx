@@ -29,6 +29,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
+import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -37,7 +39,6 @@ import PitchModal from './pitch-modal';
 import MediaKitModal from './media-kit-modal';
 import PitchModalMobile from './pitch-modal-mobile';
 import CreatorMasterListRow from './creator-master-list-row';
-import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 // Status display helper function
 const getStatusInfo = (pitch) => {

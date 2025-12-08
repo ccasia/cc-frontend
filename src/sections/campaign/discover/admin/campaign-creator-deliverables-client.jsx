@@ -127,7 +127,7 @@ const CampaignCreatorDeliverablesClient = ({ campaign, campaignMutate }) => {
     return () => {
       socket.off('progress', handleProgress);
     };
-  }, [socket, isProcessing]);
+  }, [isProcessing]);
 
   // Check if all uploads are complete
   const checkProgress = useCallback(() => {

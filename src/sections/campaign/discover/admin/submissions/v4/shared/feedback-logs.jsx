@@ -47,6 +47,99 @@ export default function FeedbackLogs({ submission, onClose }) {
     setActiveTab(newValue);
   };
 
+  // Helper function to render caption history content
+  const renderCaptionHistoryContent = () => {
+    if (loadingHistory) {
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Loading caption history...
+          </Typography>
+        </Box>
+      );
+    }
+
+    if (captionHistory.length > 0) {
+      return (
+        <Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ mt: { xs: 1.5, sm: 2 } }}>
+          {/* Caption History */}
+          {captionHistory.map((log, index) => (
+            <Box key={log.id} sx={{ mb: { xs: 0.8, sm: 1 } }}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: { xs: 'flex-start', sm: 'center' }, 
+                justifyContent: 'space-between', 
+                mb: { xs: 0.8, sm: 1 },
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: { xs: 0.3, sm: 0 }
+              }}>
+                <Typography 
+                  fontSize={{ xs: 11, sm: 12 }} 
+                  fontWeight="bold" 
+                  color="#636366"
+                >
+                  Caption
+                </Typography>
+                <Typography 
+                  fontSize={{ xs: 10, sm: 12 }} 
+                  fontWeight="bold" 
+                  color="#636366"
+                  sx={{ 
+                    textAlign: { xs: 'left', sm: 'right' },
+                    minWidth: 0
+                  }}
+                >
+                  Edited by {log.authorType === 'admin' ? 'Admin' : 'Creator'} {formatDateTime(log.createdAt)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography 
+                  variant="body2" 
+                  color="text.primary" 
+                  sx={{ 
+                    whiteSpace: 'pre-wrap', 
+                    lineHeight: { xs: 1.4, sm: 1.5 },
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                  }}
+                >
+                  {log.caption || '(empty)'}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Stack>
+      );
+    }
+
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          textAlign: 'center',
+        }}
+      >
+        <Iconify
+          icon="eva:file-text-outline"
+          sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }}
+        />
+        <Typography variant="body2" color="text.secondary">
+          No caption history available
+        </Typography>
+      </Box>
+    );
+  };
+
   const getFeedbackLabel = (type, sentToCreator = false, adminRole) => {
     const isClientFeedback = adminRole === 'client';
 
@@ -348,87 +441,7 @@ export default function FeedbackLogs({ submission, onClose }) {
           )
         ) : (
           // Caption History Tab
-          loadingHistory ? (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-              }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                Loading caption history...
-              </Typography>
-            </Box>
-          ) : captionHistory.length > 0 ? (
-            <Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ mt: { xs: 1.5, sm: 2 } }}>
-              {/* Caption History */}
-              {captionHistory.map((log, index) => (
-                <Box key={log.id} sx={{ mb: { xs: 0.8, sm: 1 } }}>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: { xs: 'flex-start', sm: 'center' }, 
-                    justifyContent: 'space-between', 
-                    mb: { xs: 0.8, sm: 1 },
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    gap: { xs: 0.3, sm: 0 }
-                  }}>
-                    <Typography 
-                      fontSize={{ xs: 11, sm: 12 }} 
-                      fontWeight="bold" 
-                      color="#636366"
-                    >
-                      Caption
-                    </Typography>
-                    <Typography 
-                      fontSize={{ xs: 10, sm: 12 }} 
-                      fontWeight="bold" 
-                      color="#636366"
-                      sx={{ 
-                        textAlign: { xs: 'left', sm: 'right' },
-                        minWidth: 0
-                      }}
-                    >
-                      Edited by {log.authorType === 'admin' ? 'Admin' : 'Creator'} {formatDateTime(log.createdAt)}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography 
-                      variant="body2" 
-                      color="text.primary" 
-                      sx={{ 
-                        whiteSpace: 'pre-wrap', 
-                        lineHeight: { xs: 1.4, sm: 1.5 },
-                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
-                      }}
-                    >
-                      {log.caption || '(empty)'}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Stack>
-          ) : (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                textAlign: 'center',
-              }}
-            >
-              <Iconify
-                icon="eva:file-text-outline"
-                sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }}
-              />
-              <Typography variant="body2" color="text.secondary">
-                No caption history available
-              </Typography>
-            </Box>
-          )
+          renderCaptionHistoryContent()
         )}
       </Box>
     </Box>
