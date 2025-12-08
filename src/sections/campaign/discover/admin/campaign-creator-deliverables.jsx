@@ -214,6 +214,9 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     creatorStatuses,
     isV3,
     loadingStatuses,
+    campaign?.id,
+    campaign?.origin,
+    campaign?.shortlisted?.length,
   ]);
 
   // Fetch all creator statuses using the existing hook
@@ -445,6 +448,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
     submissions,
     loadingSubmissions,
     campaign?.origin,
+    campaign?.id,
     shortlistedCreators,
     creatorStatuses,
     isV3,

@@ -296,7 +296,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                   No deliverables found
                 </Typography>
                 <Typography variant="body2" color="text.secondary" mb={4}>
-                  This submission doesn't have any deliverables to review yet.
+                  This submission doesn&apos;t have any deliverables to review yet.
                 </Typography>
               </Box>
             );
@@ -334,72 +334,80 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                     <>
                       <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
                         <Typography variant='caption' fontWeight="bold" color="#636366" mb={0.5}>Caption</Typography>
-                        {pendingReview ? (
-                          <Box>
-                            <TextField
-                              fullWidth
-                              multiline
-                              rows={3}
-                              placeholder="Enter caption here..."
-                              value={caption}
-                              onChange={(e) => setCaption(e.target.value)}
-                              size="small"
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  bgcolor: 'background.paper',
-                                },
-                              }}
-                            />
-                          </Box>
-                        ) : submission.caption ? (
-                          <>
-                            <Box
-                              ref={captionMeasureRef}
-                              sx={{
-                                visibility: 'hidden',
-                                position: 'absolute',
-                                width: '100%',
-                                maxWidth: 400,
-                                pointerEvents: 'none'
-                              }}
-                            >
-                              <Typography fontSize={14} sx={{
-                                wordWrap: 'break-word',
-                                overflowWrap: 'break-word',
-                                lineHeight: 1.5
-                              }}>
-                                {submission.caption}
-                              </Typography>
-                            </Box>
-
-                            {captionOverflows ? (
-                              <Box sx={{
-                                maxHeight: { xs: 80, sm: 100, md: 120 },
-                                overflow: 'auto',
-                                border: '1px solid #E7E7E7',
-                                borderRadius: 0.5,
-                                p: 1,
-                                bgcolor: 'background.paper',
-                              }}>
-                                <Typography fontSize={14} color="#636366" sx={{
-                                  wordWrap: 'break-word',
-                                  overflowWrap: 'break-word',
-                                  lineHeight: 1.5
-                                }}>
-                                  {submission.caption}
-                                </Typography>
+                        {(() => {
+                          if (pendingReview) {
+                            return (
+                              <Box>
+                                <TextField
+                                  fullWidth
+                                  multiline
+                                  rows={3}
+                                  placeholder="Enter caption here..."
+                                  value={caption}
+                                  onChange={(e) => setCaption(e.target.value)}
+                                  size="small"
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      bgcolor: 'background.paper',
+                                    },
+                                  }}
+                                />
                               </Box>
-                            ) : (
-                              <Typography fontSize={14} color="#636366" sx={{
-                                wordWrap: 'break-word',
-                                overflowWrap: 'break-word',
-                                lineHeight: 1.5
-                              }}>
-                                {submission.caption}
-                              </Typography>
-                            )}
-                          </>
-                        ) : null}
+                            );
+                          }
+                          if (submission.caption) {
+                            return (
+                              <>
+                                <Box
+                                  ref={captionMeasureRef}
+                                  sx={{
+                                    visibility: 'hidden',
+                                    position: 'absolute',
+                                    width: '100%',
+                                    maxWidth: 400,
+                                    pointerEvents: 'none'
+                                  }}
+                                >
+                                  <Typography fontSize={14} sx={{
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'break-word',
+                                    lineHeight: 1.5
+                                  }}>
+                                    {submission.caption}
+                                  </Typography>
+                                </Box>
+
+                                {captionOverflows ? (
+                                  <Box sx={{
+                                    maxHeight: { xs: 80, sm: 100, md: 120 },
+                                    overflow: 'auto',
+                                    border: '1px solid #E7E7E7',
+                                    borderRadius: 0.5,
+                                    p: 1,
+                                    bgcolor: 'background.paper',
+                                  }}>
+                                    <Typography fontSize={14} color="#636366" sx={{
+                                      wordWrap: 'break-word',
+                                      overflowWrap: 'break-word',
+                                      lineHeight: 1.5
+                                    }}>
+                                      {submission.caption}
+                                    </Typography>
+                                  </Box>
+                                ) : (
+                                  <Typography fontSize={14} color="#636366" sx={{
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'break-word',
+                                    lineHeight: 1.5
+                                  }}>
+                                    {submission.caption}
+                                  </Typography>
+                                )}
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
                       </Box>
 
                       <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>

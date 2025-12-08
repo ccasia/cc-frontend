@@ -145,9 +145,9 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
   const filteredCreators = useMemo(() => {
     if (!searchTerm) return approvedCreators;
     
-    return approvedCreators.filter(creator => 
-      creator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      creator.email.toLowerCase().includes(searchTerm.toLowerCase())
+    return approvedCreators.filter(c => 
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [approvedCreators, searchTerm]);
   
