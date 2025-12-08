@@ -1,5 +1,5 @@
-import PropTypes from 'prop-types';
 import Chart from 'react-apexcharts';
+import PropTypes from 'prop-types';
 import { useTheme } from '@mui/material/styles';
 
 import { Box, Card, alpha, Stack, Divider, Typography } from '@mui/material';
@@ -32,7 +32,7 @@ export default function LogisticsAnalytics({ logistics = [] }) {
           acc.failed += 1;
           break;
         default:
-          acc.unassigned + 1;
+          acc.unassigned += 1;
       }
       return acc;
     },
@@ -93,7 +93,7 @@ export default function LogisticsAnalytics({ logistics = [] }) {
           borderRadius: '4px',
           backgroundColor: bgColor,
           border: `1px solid ${bgColor}`,
-          color: color,
+          color,
           typography: 'caption',
           fontWeight: 600,
           fontSize: '10px',

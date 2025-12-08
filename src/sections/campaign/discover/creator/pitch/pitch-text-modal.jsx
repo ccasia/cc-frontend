@@ -538,7 +538,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
             </Button>
             <Stack direction="row" alignItems="center" gap={2}>
               <ListItemText
-                primary={<Typography fontSize={36} fontFamily={'Instrument Serif'}>Letter Pitch</Typography>}
+                primary={<Typography fontSize={36} fontFamily="Instrument Serif">Letter Pitch</Typography>}
                 secondary={
                   <Box>
                     <Typography variant="body1" color="#636366" sx={{ fontSize: 16 }}>

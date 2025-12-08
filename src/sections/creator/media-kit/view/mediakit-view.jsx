@@ -170,7 +170,7 @@ const MediaKitCreator = () => {
       engagement_rate: '0',
       averageLikes: 0,
     };
-  }, [currentTab, tiktok, instagram, calculateTotalEngagement]);
+  }, [currentTab, tiktok, instagram]);
 
   // Helper function to detect iOS Safari specifically (not other browsers on iOS)
   const isIOSSafari = useCallback(() => {

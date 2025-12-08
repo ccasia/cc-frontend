@@ -516,6 +516,7 @@ const CampaignFinalDraft = ({
           createdAt: item?.createdAt,
         };
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submission, previousSubmission, creatorFeedbackResp]);
 
   // Auto-expand all panels when server-provided creator feedback is present
@@ -553,7 +554,7 @@ const CampaignFinalDraft = ({
     const handleNewFeedback = () => {
       // Refresh submission data when new feedback is received
       mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-      if (creatorFeedbackKey) mutate(creatorFeedbackKey);
+      // creatorFeedbackKey is not defined - removed
     };
 
     socket.on('progress', handleProgress);

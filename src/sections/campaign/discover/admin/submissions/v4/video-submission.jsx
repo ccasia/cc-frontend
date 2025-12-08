@@ -480,7 +480,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                       <video
                         ref={videoRef}
                         style={{
-                          maxWidth: videoDimensions.aspectRatio > 1 ? '100%' : window.innerWidth < 600 ? 200 : 240,
+                          maxWidth: (() => {
+                            if (videoDimensions.aspectRatio > 1) return '100%';
+                            return window.innerWidth < 600 ? 200 : 240;
+                          })(),
                           height: 'auto',
                           display: 'block',
                           pointerEvents: 'none'

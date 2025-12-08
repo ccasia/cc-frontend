@@ -224,7 +224,7 @@ export default function LogisticsScheduledList({ date, logistics }) {
         sx={{
           flexGrow: 0,
           overflowY: 'auto',
-          height: 250, //TODO adjust list height
+          height: 250, // TODO adjust list height
           px: 0.5,
         }}
       >

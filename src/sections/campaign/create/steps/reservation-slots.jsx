@@ -13,7 +13,10 @@ import {
   Typography,
   FormControlLabel,
   IconButton,
-  Switch
+  Switch,
+  useTheme,
+  ThemeProvider,
+  createTheme,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { DesktopTimePicker } from '@mui/x-date-pickers/DesktopTimePicker';
@@ -22,8 +25,6 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import dayjs from 'dayjs';
 
 import Iconify from 'src/components/iconify';
-import { Box as MuiBox } from '@mui/material';
-import { useTheme, ThemeProvider, createTheme } from '@mui/material/styles';
 
 const ReservationSlots = () => {
   const theme = useTheme();

@@ -49,7 +49,7 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
       (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
     
     // Check if payment details are completed
-    const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
+    const hasPaymentDetails = user?.creator?.isFormCompleted && user?.paymentForm?.bankAccountName;
     
     // For target users, check both media kit and payment details
     if (isTargetUser && (!hasMediaKit || !hasPaymentDetails)) {
@@ -57,12 +57,12 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
     }
     
     // For non-target users, only check payment details (original behavior)
-    if (!isTargetUser && (!isFormCompleted || !user?.paymentForm?.bankAccountName)) {
+    if (!isTargetUser && (!user?.creator?.isFormCompleted || !user?.paymentForm?.bankAccountName)) {
       return;
     }
 
-    onPitch();
-    onClose();
+    text.onTrue();
+    handleClose();
   };
 
   return (

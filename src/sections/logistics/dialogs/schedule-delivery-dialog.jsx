@@ -41,7 +41,7 @@ export default function ScheduleDeliveryDialog({ open, onClose, logistic, campai
       await axiosInstance.patch(`/api/logistics/campaign/${campaignId}/${logistic.id}/schedule`, {
         trackingLink,
         expectedDeliveryDate: expectedDate,
-        address: address,
+        address,
       });
       onUpdate();
       onClose();
@@ -79,7 +79,7 @@ export default function ScheduleDeliveryDialog({ open, onClose, logistic, campai
             We’ll notify the creator and update your logistics dashboard.
           </Typography>
           <Typography variant="body2" sx={{ color: '#FF3500' }}>
-            Once submitted, you won't be able to make any edits.{' '}
+            Once submitted, you won&apos;t be able to make any edits.{' '}
           </Typography>
         </Box>
         <IconButton onClick={onClose}>
@@ -223,5 +223,6 @@ ScheduleDeliveryDialog.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   logistic: PropTypes.object,
+  campaignId: PropTypes.string,
   onUpdate: PropTypes.func,
 };

@@ -23,8 +23,7 @@ import { LoadingButton } from '@mui/lab';
 import { DatePicker } from '@mui/x-date-pickers';
 
 import Iconify from 'src/components/iconify';
-import { fetcher } from 'src/utils/axios';
-import axiosInstance from 'src/utils/axios';
+import axiosInstance, { fetcher } from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 
 export default function AdminEditLogisticDialog({ open, onClose, logistic, campaignId, onUpdate }) {
@@ -145,7 +144,7 @@ export default function AdminEditLogisticDialog({ open, onClose, logistic, campa
             Edit Details
           </Typography>
           <Typography variant="body2" sx={{ color: '#636366', mt: 0.5 }}>
-            We'll notify the creator and update your logistics dashboard.
+            We&apos;ll notify the creator and update your logistics dashboard.
           </Typography>
         </Box>
         <IconButton onClick={onClose}>
