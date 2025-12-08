@@ -97,7 +97,7 @@ const MediaKitPopup = ({ open, onClose, userId }) => {
               mx: 'auto'
             }}
           >
-            Hold up! Don't leave us guessing
+            Hold up! Don&apos;t leave us guessing
           </Typography>
           
           <Typography 

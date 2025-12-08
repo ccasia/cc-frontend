@@ -47,11 +47,11 @@ export default function CampaignLogisticsView({
     fetcher
   );
 
-  const safeLogistics = logistics || [];
+  const safeLogistics = useMemo(() => logistics || [], [logistics]);
 
-  const filteredLogistics = useMemo(() => {
-    return safeLogistics.filter(
-      (item) => {
+  const filteredLogistics = useMemo(
+    () =>
+      safeLogistics.filter((item) => {
         const creatorName = item.creator?.name || '';
         const matchedName = creatorName.toLowerCase().includes(filterName.toLowerCase());
 
@@ -65,10 +65,9 @@ export default function CampaignLogisticsView({
         }
 
         return matchedName && matchedStatus;
-      },
-      [safeLogistics, filterName, filterStatus]
-    );
-  });
+      }),
+    [safeLogistics, filterName, filterStatus]
+  );
 
   const handleFilterName = (event) => {
     setFilterName(event.target.value);

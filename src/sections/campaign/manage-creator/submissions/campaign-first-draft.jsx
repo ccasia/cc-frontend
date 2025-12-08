@@ -352,7 +352,8 @@ const CampaignFirstDraft = ({
       socket.off('draftVideoProgress', handleProgress);
       socket.off('uploadProgress', handleProgress);
     };
-  }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   const checkProgress = useCallback(() => {
     if (uploadProgress?.length && uploadProgress?.every((x) => Number(x?.serverProgress || 0) >= 100)) {
@@ -870,7 +871,7 @@ const CampaignFirstDraft = ({
                           transform: 'scale(1.02)',
                         },
                       }}
-                      onClick={() => setPhotoModalOpen(true)}
+                      onClick={() => setPhotosModalOpen(true)}
                     >
                       {submission?.photos?.length > 0 && (
                         <Box

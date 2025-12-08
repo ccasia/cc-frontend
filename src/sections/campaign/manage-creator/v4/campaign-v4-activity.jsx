@@ -227,7 +227,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
 
-      for (const annotation of annotations) {
+      annotations.forEach((annotation) => {
         const page = pdfDoc.getPage(annotation.page - 1);
         const { width, height } = page.getSize();
 
@@ -237,7 +237,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           width: annotation.width,
           height: annotation.height,
         });
-      }
+      });
 
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -332,7 +332,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
         )}
 
         {/* Instructions */}
-        <Stack display={'flex'} flexDirection={'column'}>
+        <Stack display="flex" flexDirection="column">
           <Box>
             <Typography variant="body1" mb={1} sx={{ color: '#221f20' }}>
               Before starting the campaign, you must sign the standard agreement submission
@@ -344,7 +344,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           </Box>
 
           {/* Action Buttons - Bottom Right */}
-          <Box display={'flex'} flexDirection={{ xs: 'row', md: 'column' }} flex={1} justifyContent={'space-between'}
+          <Box display="flex" flexDirection={{ xs: 'row', md: 'column' }} flex={1} justifyContent="space-between"
           sx={{gap: 2}}>
             {/* Download Agreement Button */}
             {agreementUrl && (
@@ -807,8 +807,8 @@ const CampaignV4Activity = ({ campaign }) => {
     setNumPages(pages);
   };
 
-  const onDocumentLoadError = (error) => {
-    console.error('Error loading PDF:', error);
+  const onDocumentLoadError = (err) => {
+    console.error('Error loading PDF:', err);
   };
 
   const handleDownload = async (url) => {
@@ -825,8 +825,8 @@ const CampaignV4Activity = ({ campaign }) => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
-    } catch (error) {
-      console.error('Download failed:', error);
+    } catch (err) {
+      console.error('Download failed:', err);
       enqueueSnackbar('Failed to download agreement', { variant: 'error' });
     }
   };
@@ -933,6 +933,7 @@ const CampaignV4Activity = ({ campaign }) => {
     socket.on('v4:content:processed', handleContentProcessed);
 
     // Cleanup
+    // eslint-disable-next-line consistent-return
     return () => {
       // Clear any pending updates
       if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
@@ -1850,7 +1851,29 @@ const CampaignV4Activity = ({ campaign }) => {
 };
 
 CampaignV4Activity.propTypes = {
-  campaign: PropTypes.object.isRequired,
+  campaign: PropTypes.shape({
+    id: PropTypes.string,
+    name: PropTypes.string,
+    campaignType: PropTypes.string,
+    agreement: PropTypes.shape({
+      agreementUrl: PropTypes.string,
+    }),
+  }).isRequired,
+};
+
+AgreementSubmission.propTypes = {
+  campaign: PropTypes.shape({
+    id: PropTypes.string,
+    name: PropTypes.string,
+    agreement: PropTypes.shape({
+      agreementUrl: PropTypes.string,
+    }),
+  }).isRequired,
+  agreementSubmission: PropTypes.shape({
+    id: PropTypes.string,
+    status: PropTypes.string,
+  }),
+  onUpdate: PropTypes.func,
 };
 
 export default CampaignV4Activity;

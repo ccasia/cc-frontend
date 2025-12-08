@@ -11,16 +11,15 @@ const SubmissionPostingLinkField = ({
   isEditable, 
   disabled = false,
   submissionContent = null 
-}) => {
-  return (
-    <>
-      <Typography
-        variant="body2"
-        fontWeight={'bold'}
-        color={'#636366'}
-      >
-        Posting Link
-      </Typography>
+}) => (
+  <>
+    <Typography
+      variant="body2"
+      fontWeight="bold"
+      color="#636366"
+    >
+      Posting Link
+    </Typography>
 
       {isEditable ? (
         <TextField
@@ -66,9 +65,8 @@ const SubmissionPostingLinkField = ({
           {submissionContent || 'No posting link provided'}
         </Typography>
       )}
-    </>
-  );
-};
+  </>
+);
 
 SubmissionPostingLinkField.propTypes = {
   postingLink: PropTypes.string.isRequired,

@@ -123,7 +123,7 @@ export default function CampaignListView() {
   
   const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
   
-  const targetUserIds = [
+  const targetUserIds = useMemo(() => [
     'user-id-1',
     'user-id-2',
     'user-id-3',
@@ -135,7 +135,7 @@ export default function CampaignListView() {
     'user-id-9',
     'user-id-10',
     // Add more user IDs as needed
-  ];
+  ], []);
 
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
@@ -177,8 +177,6 @@ export default function CampaignListView() {
       setShowMediaKitPopup(true);
       sessionStorage.setItem('mediaKitPopupShown', 'true');
     }
-    
-    return () => {};
   }, [user, targetUserIds]);
 
   const handleScrollTop = () => {

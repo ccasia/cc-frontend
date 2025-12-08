@@ -71,15 +71,16 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   console.log('=== CAMPAIGN POSTING COMPONENT STARTED ===');
   console.log('Props received:', { campaign, submission, getDependency, fullSubmission });
 
+  // All hooks must be called before any conditional returns
+  const dependency = getDependency(submission?.id);
+  const dialog = useBoolean();
+  const { user, dispatch } = useAuthContext();
+
   // Simple test to see if component is working
   if (!submission) {
     console.log('No submission provided');
     return <div>No submission data</div>;
   }
-
-  const dependency = getDependency(submission?.id);
-  const dialog = useBoolean();
-  const { user, dispatch } = useAuthContext();
 
   console.log('CampaignPosting received:', {
     submission,
@@ -327,7 +328,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
       // Force field array to have one empty field
       setTimeout(() => {
         if (fields.length > 1) {
-          for (let i = fields.length - 1; i > 0; i--) {
+          for (let i = fields.length - 1; i > 0; i -= 1) {
             remove(i);
           }
         }
@@ -724,7 +725,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                 // Force field array to have one empty field
                 setTimeout(() => {
                   if (fields.length > 1) {
-                    for (let i = fields.length - 1; i > 0; i--) {
+                    for (let i = fields.length - 1; i > 0; i -= 1) {
                       remove(i);
                     }
                   }

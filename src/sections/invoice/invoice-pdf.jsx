@@ -213,15 +213,20 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 <Text>{invoice?.campaign?.name}</Text>
               </View>
               <View style={styles.tableCell_2}>
-                {invoice?.task?.service ? (
-                  <Text>{invoice.task.service}</Text>
-                ) : invoice?.task?.description ? (
-                  <Text>{invoice.task.description}</Text>
-                ) : invoice?.deliverables ? (
-                  <Text>{typeof invoice.deliverables === 'string' ? invoice.deliverables : JSON.stringify(invoice.deliverables)}</Text>
-                ) : (
-                  <Text>None</Text>
-                )}
+                <Text>
+                  {(() => {
+                    if (invoice?.task?.service) {
+                      return invoice.task.service;
+                    }
+                    if (invoice?.task?.description) {
+                      return invoice.task.description;
+                    }
+                    if (invoice?.deliverables) {
+                      return typeof invoice.deliverables === 'string' ? invoice.deliverables : JSON.stringify(invoice.deliverables);
+                    }
+                    return 'None';
+                  })()}
+                </Text>
               </View>
               <View style={[styles.tableCell_2]}>
                 <Text>{`${invoice.task?.currencySymbol || invoice.task?.currency || invoice.campaign.creatorAgreement[0].currency || 'RM'} ${invoice?.amount}`}</Text>

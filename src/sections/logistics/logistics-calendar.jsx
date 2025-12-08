@@ -122,6 +122,7 @@ ServerDay.propTypes = {
   day: PropTypes.object,
   highlightedDays: PropTypes.array,
   outsideCurrentMonth: PropTypes.bool,
+  logistics: PropTypes.array,
 };
 
 export default function LogisticsCalendar({ date, onChange, logistics }) {

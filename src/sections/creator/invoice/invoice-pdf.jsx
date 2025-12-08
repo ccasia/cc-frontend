@@ -238,29 +238,37 @@ const InvoicePDF = ({ data }) => {
                       <Text style={styles.tableItem}>1</Text>
                       <Text style={styles.tableItem}>{data.campaign.name}</Text>
 
-                      {data?.campaign?.campaignCredits ? (
-                        <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
-                          {data?.deliverables?.length ? (
-                            data?.deliverables?.map((item, index) => (
-                              <Text key={index} style={{ marginBottom: 5 }}>
-                                {item.type}
-                              </Text>
-                            ))
-                          ) : data?.task?.service ? (
-                            <Text style={styles.tableItem}>{data.task.service}</Text>
-                          ) : data?.task?.description ? (
-                            <Text style={styles.tableItem}>{data.task.description}</Text>
-                          ) : (
-                            <Text style={styles.tableItem}>None</Text>
-                          )}
-                        </View>
-                      ) : data?.task?.service ? (
-                        <Text style={styles.tableItem}>{data.task.service}</Text>
-                      ) : data?.task?.description ? (
-                        <Text style={styles.tableItem}>{data.task.description}</Text>
-                      ) : (
-                        <Text style={styles.tableItem}>Video</Text>
-                      )}
+                      {(() => {
+                        if (data?.campaign?.campaignCredits) {
+                          return (
+                            <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
+                              {(() => {
+                                if (data?.deliverables?.length) {
+                                  return data.deliverables.map((item, index) => (
+                                    <Text key={index} style={{ marginBottom: 5 }}>
+                                      {item.type}
+                                    </Text>
+                                  ));
+                                }
+                                if (data?.task?.service) {
+                                  return <Text style={styles.tableItem}>{data.task.service}</Text>;
+                                }
+                                if (data?.task?.description) {
+                                  return <Text style={styles.tableItem}>{data.task.description}</Text>;
+                                }
+                                return <Text style={styles.tableItem}>None</Text>;
+                              })()}
+                            </View>
+                          );
+                        }
+                        if (data?.task?.service) {
+                          return <Text style={styles.tableItem}>{data.task.service}</Text>;
+                        }
+                        if (data?.task?.description) {
+                          return <Text style={styles.tableItem}>{data.task.description}</Text>;
+                        }
+                        return <Text style={styles.tableItem}>Video</Text>;
+                      })()}
 
                       {data?.campaign?.campaignCredits ? (
                         <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>

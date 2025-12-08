@@ -91,10 +91,12 @@ const UploadDraftVideoModal = ({
 
     socket.on('progress', handleProgress);
 
+    // eslint-disable-next-line consistent-return
     return () => {
       socket.off('progress', handleProgress);
     };
-  }, [socket, submissionId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submissionId]);
 
   // Check if all uploads are complete
   const checkProgress = useCallback(() => {

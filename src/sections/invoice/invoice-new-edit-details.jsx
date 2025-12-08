@@ -88,7 +88,7 @@ export default function InvoiceNewEditDetails() {
   // Initialize selectedServicesList with the parsed services when component mounts
   useEffect(() => {
     setSelectedServicesList(selectedServices);
-  }, []);
+  }, [selectedServices]);
   
   // Handle clicking outside to close dropdown
   useEffect(() => {

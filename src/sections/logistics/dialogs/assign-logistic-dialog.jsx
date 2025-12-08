@@ -1,9 +1,9 @@
+import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as Yup from 'yup';
 
 import {
   Box,
@@ -22,8 +22,7 @@ import {
 import { LoadingButton } from '@mui/lab';
 
 import Iconify from 'src/components/iconify';
-import { fetcher } from 'src/utils/axios';
-import axiosInstance from 'src/utils/axios';
+import axiosInstance, { fetcher } from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 
 export default function AssignLogisticDialog({ open, onClose, logistic, campaignId, onUpdate }) {

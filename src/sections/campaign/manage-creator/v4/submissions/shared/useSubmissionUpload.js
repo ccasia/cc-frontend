@@ -96,6 +96,7 @@ export const useSubmissionUpload = (submission, onUpdate, options = {}) => {
    * @param {string} endpoint - The API endpoint
    * @returns {Promise} Upload promise
    */
+  // eslint-disable-next-line arrow-body-style
   const uploadWithProgress = useCallback((formData, endpoint) => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();

@@ -70,15 +70,19 @@ const StepIconRoot = styled('div')(({ theme, ownerState }) => ({
 function CustomStepIcon(props) {
   const { active, completed, error } = props;
 
+  const getIcon = () => {
+    if (error) {
+      return <Iconify icon="eva:close-fill" width={16} />;
+    }
+    if (completed) {
+      return <Iconify icon="eva:checkmark-fill" width={16} />;
+    }
+    return <Iconify icon="solar:clock-circle-bold" width={16} />;
+  };
+
   return (
     <StepIconRoot ownerState={{ active, completed, error }}>
-      {error ? (
-        <Iconify icon="eva:close-fill" width={16} />
-      ) : completed ? (
-        <Iconify icon="eva:checkmark-fill" width={16} />
-      ) : (
-        <Iconify icon="solar:clock-circle-bold" width={16} />
-      )}
+      {getIcon()}
     </StepIconRoot>
   );
 }
@@ -139,78 +143,76 @@ export default function LogisticsStepper({ logistic }) {
   ];
 
   return (
-    <>
-      <Stepper
-        activeStep={activeStep}
-        orientation="vertical"
-        sx={{
-          '& .MuiStepLabel-root': {
-            padding: 0,
-          },
-          '& .MuiStepConnector-line': {
-            display: 'none',
-          },
-        }}
-      >
-        {steps.map((step, index) => {
-          const isStepCompleted = activeStep > index;
-          const isLastStep = index === steps.length - 1;
+    <Stepper
+      activeStep={activeStep}
+      orientation="vertical"
+      sx={{
+        '& .MuiStepLabel-root': {
+          padding: 0,
+        },
+        '& .MuiStepConnector-line': {
+          display: 'none',
+        },
+      }}
+    >
+      {steps.map((step, index) => {
+        const isStepCompleted = activeStep > index;
+        const isLastStep = index === steps.length - 1;
 
-          return (
-            <Step key={step.label} expanded>
-              <StepLabel
-                StepIconComponent={CustomStepIcon}
-                error={step.error && activeStep === index}
-                sx={{
-                  py: 0,
-                  '& .MuiStepLabel-label': {
-                    color: 'text.primary', // Always Black
-                    fontWeight: 600,
-                  },
-                  '& .MuiStepLabel-iconContainer': {
-                    paddingRight: 2,
-                  },
-                }}
-              >
-                <Typography variant="caption" component="span" sx={{ color: 'text.secondary' }}>
-                  STEP {step.step}
+        return (
+          <Step key={step.label} expanded>
+            <StepLabel
+              StepIconComponent={CustomStepIcon}
+              error={step.error && activeStep === index}
+              sx={{
+                py: 0,
+                '& .MuiStepLabel-label': {
+                  color: 'text.primary', // Always Black
+                  fontWeight: 600,
+                },
+                '& .MuiStepLabel-iconContainer': {
+                  paddingRight: 2,
+                },
+              }}
+            >
+              <Typography variant="caption" component="span" sx={{ color: 'text.secondary' }}>
+                STEP {step.step}
+              </Typography>
+            </StepLabel>
+            <StepContent
+              sx={{
+                mt: 0,
+                borderLeft: isLastStep ? 'none' : '2px solid',
+                borderColor: isStepCompleted ? '#1ABF66' : '#EFEFEF',
+                pb: isLastStep ? 0 : 2,
+                pl: 3.5,
+                ml: '11px',
+              }}
+            >
+              <Box display="flex" flexDirection="column">
+                <Typography variant="subtitle2" component="span" sx={{ fontWeight: 700 }}>
+                  {step.label}
                 </Typography>
-              </StepLabel>
-              <StepContent
-                sx={{
-                  mt: 0,
-                  borderLeft: isLastStep ? 'none' : '2px solid',
-                  borderColor: isStepCompleted ? '#1ABF66' : '#EFEFEF',
-                  pb: isLastStep ? 0 : 2,
-                  pl: 3.5,
-                  ml: '11px',
-                }}
-              >
-                <Box display="flex" flexDirection="column">
-                  <Typography variant="subtitle2" component="span" sx={{ fontWeight: 700 }}>
-                    {step.label}
+
+                {/* Show Button if it's the current step and has a button */}
+                {isStepCompleted && step.completedDate && (
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    Completed on {format(new Date(step.completedDate), 'dd/MM/yyyy')}
                   </Typography>
+                )}
 
-                  {/* Show Button if it's the current step and has a button */}
-                  {isStepCompleted && step.completedDate && (
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      Completed on {format(new Date(step.completedDate), 'dd/MM/yyyy')}
-                    </Typography>
-                  )}
-
-                  {/* 2. Current Active Step */}
-                  {activeStep === index && (
-                    <Typography variant="caption" sx={{ color: step.color, fontWeight: 400 }}>
-                      {step.description}
-                    </Typography>
-                  )}
-                </Box>
-              </StepContent>
-            </Step>
-          );
-        })}
-      </Stepper>
-    </>
+                {/* 2. Current Active Step */}
+                {activeStep === index && (
+                  <Typography variant="caption" sx={{ color: step.color, fontWeight: 400 }}>
+                    {step.description}
+                  </Typography>
+                )}
+              </Box>
+            </StepContent>
+          </Step>
+        );
+      })}
+    </Stepper>
   );
 }
 

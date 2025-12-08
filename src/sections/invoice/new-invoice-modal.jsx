@@ -179,15 +179,16 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
     }, []);
     
     // Filter creators based on search input
-    const filteredCreators = useMemo(() => {
+    const searchFilteredCreators = useMemo(() => {
       if (!searchInput) return approvedCreators;
       
       const lowerCaseSearch = searchInput.toLowerCase();
-      return approvedCreators.filter(creator => 
-        creator.name.toLowerCase().includes(lowerCaseSearch) ||
-        creator.email.toLowerCase().includes(lowerCaseSearch)
+      return approvedCreators.filter(c => 
+        c.name.toLowerCase().includes(lowerCaseSearch) ||
+        c.email.toLowerCase().includes(lowerCaseSearch)
       );
-    }, [approvedCreators, searchInput]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchInput]);
     
     const selectedCreator = approvedCreators.find(c => c.id === creatorId);
     
@@ -260,13 +261,13 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
               overflowY: 'auto',
             }}
           >
-            {filteredCreators.length > 0 ? (
-              filteredCreators.map((creator) => (
+            {searchFilteredCreators.length > 0 ? (
+              searchFilteredCreators.map((creatorItem) => (
                 <Box
-                  key={creator.id}
+                  key={creatorItem.id}
                   onClick={() => {
-                    setCreatorId(creator.id);
-                    setSearchInput(creator.name); // Set search input to selected creator name
+                    setCreatorId(creatorItem.id);
+                    setSearchInput(creatorItem.name); // Set search input to selected creator name
                     setIsOpen(false);
                   }}
                   sx={{
@@ -281,16 +282,16 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                   }}
                 >
                   <Avatar
-                    src={creator.avatarUrl}
-                    alt={creator.name}
+                    src={creatorItem.avatarUrl}
+                    alt={creatorItem.name}
                     sx={{ width: 36, height: 36, mr: 2 }}
                   />
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                      {creator.name}
+                      {creatorItem.name}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      {creator.email}
+                      {creatorItem.email}
                     </Typography>
                   </Box>
                 </Box>
@@ -320,10 +321,10 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
   }, [creatorId, approvedCreators]);
 
   // Function to fetch creator payment details
-  const fetchCreatorPaymentDetails = async (creatorId) => {
+  const fetchCreatorPaymentDetails = async (selectedCreatorId) => {
     try {
       // Use the getCreatorFullInfo endpoint to get complete creator details
-      const response = await axiosInstance.get(endpoints.creator.getCreatorFullInfo(creatorId));
+      const response = await axiosInstance.get(endpoints.creator.getCreatorFullInfo(selectedCreatorId));
       console.log('Creator full info response:', response.data);
       return response.data;
     } catch (error) {
@@ -360,7 +361,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
       // Pass the complete agreement data
       agreementData: creatorAgreement,
       // Pass the detailed creator information
-      creatorDetails: creatorDetails,
+      creatorDetails,
     });
     handleClose();
   };
@@ -426,25 +427,30 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
     }, []);
     
     // For multiple selection, value is an array
-    const selectedValues = multiple ? (Array.isArray(value) ? value : []) : (value ? [value] : []);
+    let selectedValues = [];
+    if (multiple) {
+      selectedValues = Array.isArray(value) ? value : [];
+    } else {
+      selectedValues = value ? [value] : [];
+    }
     
     // Get display text for selected options
     const getSelectedText = () => {
       if (!multiple) {
         const selectedOption = options.find(option => option.value === value);
         return selectedOption ? selectedOption.label : 'Select an option';
-      } else {
-        if (selectedValues.length === 0) return 'Select options';
-        
-        // Get labels of selected options
-        const selectedLabels = selectedValues.map(val => {
-          const option = options.find(opt => opt.value === val);
-          return option ? option.label : '';
-        }).filter(label => label !== '');
-        
-        // Join with commas
-        return selectedLabels.join(', ');
       }
+      
+      if (selectedValues.length === 0) return 'Select options';
+      
+      // Get labels of selected options
+      const selectedLabels = selectedValues.map(val => {
+        const option = options.find(opt => opt.value === val);
+        return option ? option.label : '';
+      }).filter(lbl => lbl !== '');
+      
+      // Join with commas
+      return selectedLabels.join(', ');
     };
     
     // No filtering, use all options

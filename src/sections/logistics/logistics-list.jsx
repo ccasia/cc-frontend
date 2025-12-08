@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import useSWR from 'swr';
 import { useState, useMemo } from 'react';
-import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 
 import {
@@ -20,7 +19,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { fetcher } from 'src/utils/axios';
+import axiosInstance, { fetcher } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import { LoadingScreen } from 'src/components/loading-screen';
 import EmptyContent from 'src/components/empty-content';
