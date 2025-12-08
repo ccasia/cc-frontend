@@ -292,6 +292,8 @@ const CampaignDetailView = ({ id }) => {
     if (!container) return () => {};
 
     const handleWheel = (e) => {
+      const isHorizontalSwipe = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+
       if (container.scrollWidth > container.clientWidth) {
         // Check if it's a horizontal scroll attempt (touchpad horizontal swipe)
         // or if deltaX is significant, let it scroll naturally
@@ -366,10 +368,16 @@ const CampaignDetailView = ({ id }) => {
                   ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
                   : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
                 { label: 'Campaign Analytics', value: 'analytics' },
-                {
-                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                  value: 'logistics',
-                },
+                campaign?.logisticsType && campaign.logisticsType !== ''
+                  ? {
+                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                      value: 'logistics',
+                    }
+                  : null,
+                // {
+                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                //   value: 'logistics',
+                // },
               ]
             : // Admin/other user tabs
               [
@@ -405,67 +413,75 @@ const CampaignDetailView = ({ id }) => {
                   label: `Invoices (${campaignInvoices?.length || 0})`,
                   value: 'invoices',
                 },
-                {
-                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                  value: 'logistics',
-                },
+                campaign?.logisticsType && campaign.logisticsType !== ''
+                  ? {
+                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                      value: 'logistics',
+                    }
+                  : null,
+                // {
+                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                //   value: 'logistics',
+                // },
                 // {
                 //   label: `Logistics (${campaign?.logistic?.length || 0})`,
                 //   value: 'logistics',
                 // },
               ]
-          ).map((tab) => (
-            <Button
-              key={tab.value}
-              disableRipple
-              size="large"
-              onClick={() => handleChangeTab(null, tab.value)}
-              sx={{
-                px: { xs: 1, sm: 1.2 },
-                py: 0.5,
-                pb: 1,
-                minWidth: !lgUp && 'fit-content',
-                color: currentTab === tab.value ? '#221f20' : '#8e8e93',
-                position: 'relative',
-                fontSize: { xs: '0.9rem', sm: '1.05rem' },
-                fontWeight: 650,
-                whiteSpace: 'nowrap',
-                mr: { xs: 1, sm: 2 },
-                transition: 'transform 0.1s ease-in-out',
-                '&:focus': {
-                  outline: 'none',
-                  bgcolor: 'transparent',
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                  bgcolor: 'transparent',
-                },
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: '2px',
-                  width: currentTab === tab.value ? '100%' : '0%',
-                  bgcolor: '#1340ff',
-                  transition: 'all 0.3s ease-in-out',
-                  transform: 'scaleX(1)',
-                  transformOrigin: 'left',
-                },
-                '&:hover': {
-                  bgcolor: 'transparent',
-                  '&::after': {
-                    width: '100%',
-                    opacity: currentTab === tab.value ? 1 : 0.5,
+          )
+            .filter(Boolean)
+            .map((tab) => (
+              <Button
+                key={tab.value}
+                disableRipple
+                size="large"
+                onClick={() => handleChangeTab(null, tab.value)}
+                sx={{
+                  px: { xs: 1, sm: 1.2 },
+                  py: 0.5,
+                  pb: 1,
+                  minWidth: !lgUp && 'fit-content',
+                  color: currentTab === tab.value ? '#221f20' : '#8e8e93',
+                  position: 'relative',
+                  fontSize: { xs: '0.9rem', sm: '1.05rem' },
+                  fontWeight: 650,
+                  whiteSpace: 'nowrap',
+                  mr: { xs: 1, sm: 2 },
+                  transition: 'transform 0.1s ease-in-out',
+                  '&:focus': {
+                    outline: 'none',
+                    bgcolor: 'transparent',
                   },
-                },
-                // mr: 2,
-              }}
-            >
-              {tab.label}
-            </Button>
-          ))}
+                  '&:active': {
+                    transform: 'scale(0.95)',
+                    bgcolor: 'transparent',
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '2px',
+                    width: currentTab === tab.value ? '100%' : '0%',
+                    bgcolor: '#1340ff',
+                    transition: 'all 0.3s ease-in-out',
+                    transform: 'scaleX(1)',
+                    transformOrigin: 'left',
+                  },
+                  '&:hover': {
+                    bgcolor: 'transparent',
+                    '&::after': {
+                      width: '100%',
+                      opacity: currentTab === tab.value ? 1 : 0.5,
+                    },
+                  },
+                  // mr: 2,
+                }}
+              >
+                {tab.label}
+              </Button>
+            ))}
         </Stack>
       </Stack>
     </Box>
