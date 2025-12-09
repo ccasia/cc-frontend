@@ -73,45 +73,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');
 
-  const { data: agreements } = useGetAgreements(campaign?.id);
-
-  const totalUsedCredits = campaign?.shortlisted?.reduce(
-    (acc, creator) => acc + (creator?.ugcVideos ?? 0),
-    0
-  );
-
-  // Credits are only utilized when agreement is sent (isSent = true)
-  // This applies to ALL campaign types (both v4 and non-v4)
-  // Only count Platform Creators (exclude Non-Platform/Guest creators)
-  const usedCredits = useMemo(() => {
-    if (!campaign?.campaignCredits) return 0;
-    if (!agreements || !campaign?.shortlisted) return 0;
-
-    // Get userIds of Platform Creators whose agreements have been sent
-    const sentAgreementUserIds = new Set(
-      agreements
-        .filter((agreement) => agreement.isSent && agreement.user?.creator?.isGuest !== true)
-        .map((agreement) => agreement.userId)
-    );
-
-    return campaign.shortlisted.reduce((acc, creator) => {
-      if (sentAgreementUserIds.has(creator.userId) && creator.user?.creator?.isGuest !== true) {
-        return acc + (creator.ugcVideos || 0);
-      }
-      return acc;
-    }, 0);
-  }, [campaign, agreements]);
-
-  // Keep v4UsedCredits for backwards compatibility with components that use it
-  const v4UsedCredits = usedCredits;
-
-  const ugcLeft = useMemo(() => {
-    if (!campaign?.campaignCredits)
-      return (campaign?.campaignCredits ?? 0) - (totalUsedCredits ?? 0);
-    // Use unified calculation - credits utilized when agreement is sent
-    return campaign.campaignCredits - usedCredits;
-  }, [campaign, totalUsedCredits, usedCredits]);
-
   // Count pitches by display status
   const pendingReviewCount = countPitchesByStatus(pitches, ['PENDING_REVIEW']);
 
@@ -176,7 +137,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
     // Determine which pitches to show based on version
     let filtered = (pitches || []).filter((pitch) => {
       const status = pitch.displayStatus || pitch.status || '';
-      const userId = pitch?.user?.id;
 
       // Define status checks
       const isPending = ['PENDING_REVIEW'].includes(status);
@@ -205,14 +165,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         );
       }
 
-      // V3: Only show if credits assigned or already approved
-      const creditedUserIds = new Set(
-        (campaign?.shortlisted || []).filter((s) => (s?.ugcVideos || 0) > 0).map((s) => s.userId)
-      );
-      const hasAssignedCredits = userId ? creditedUserIds.has(userId) : false;
       return (
         isApproved ||
-        hasAssignedCredits ||
         isPending ||
         sentToClient ||
         isMaybe ||
