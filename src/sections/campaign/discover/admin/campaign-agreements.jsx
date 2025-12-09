@@ -485,17 +485,38 @@ const CampaignAgreements = ({ campaign }) => {
     });
   }, [data, submissions, loadingSubmissions]);
 
-  const filteredData = useMemo(() => {
+  const pitchApprovedAgreements = useMemo(() => {
     if (!combinedData) return [];
+
+    if (!Array.isArray(campaign?.pitch)) {
+      return combinedData;
+    }
+
+    const approvedPitches = campaign.pitch
+      .filter((pitchItem) => pitchItem?.status === 'APPROVED')
+      .map((pitchItem) => pitchItem?.userId)
+      .filter(Boolean);
+
+    if (!approvedPitches.length) {
+      return [];
+    }
+
+    const approvedCreatorSet = new Set(approvedPitches);
+
+    return combinedData.filter((agreement) => approvedCreatorSet.has(agreement.userId));
+  }, [combinedData, campaign?.pitch]);
+
+  const filteredData = useMemo(() => {
+    if (!pitchApprovedAgreements) return [];
 
     let result = [];
 
     if (selectedFilter === 'pending') {
-      result = combinedData.filter((item) => !item.isSent);
+      result = pitchApprovedAgreements.filter((item) => !item.isSent);
     } else if (selectedFilter === 'sent') {
-      result = combinedData.filter((item) => item.isSent);
+      result = pitchApprovedAgreements.filter((item) => item.isSent);
     } else {
-      result = combinedData;
+      result = pitchApprovedAgreements;
     }
 
     // Sort by selected column
