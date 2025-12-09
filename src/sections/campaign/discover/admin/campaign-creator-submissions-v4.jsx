@@ -65,6 +65,8 @@ function CreatorAccordion({ creator, campaign }) {
     submissionsMutate 
   } = useGetV4Submissions(campaign?.id, creator?.userId);
 
+  const onlyAgreement = submissions.length === 1 && submissions[0].submissionType.type === 'AGREEMENT_FORM';
+
   const handleSubmissionToggle = useCallback(async (submissionType, submissionId) => {
     const key = `${submissionType}-${submissionId}`;
     const isCurrentlyExpanded = expandedSubmission === key;
@@ -608,7 +610,7 @@ function CreatorAccordion({ creator, campaign }) {
           alignItems: 'center',
           pr: { xs: 0, sm: 2 },
           minWidth: 0,
-          maxWidth: { xs: '100%', sm: 300 },
+          maxWidth: { xs: '100%', sm: onlyAgreement ? '100%' : 300 },
           width: { xs: '100%', sm: 'auto' },
           justifyContent: { xs: 'flex-start', sm: 'flex-start' },
         }}>
@@ -670,10 +672,10 @@ function CreatorAccordion({ creator, campaign }) {
                 </Typography>
               );
             }
-            if (submissions.length === 0) {
+            if (submissions.length === 1) {
               return (
-                <Typography variant="body2" color="text.secondary">
-                  No content submissions found
+                <Typography variant="body2" color="text.secondary" p={2}>
+                  Set agreement and assign UGC Videos to creator
                 </Typography>
               );
             }
