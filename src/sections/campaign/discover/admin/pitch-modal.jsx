@@ -120,29 +120,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
     [user]
   );
 
-  const ugcLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
-    
-    // Credits are only utilized when agreement is sent (isSent = true)
-    // This applies to ALL campaign types (both v4 and non-v4)
-    const sentAgreementUserIds = new Set(
-      (campaign?.creatorAgreement || [])
-        .filter(a => a.isSent)
-        .map(a => a.userId)
-    );
-    
-    const utilizedCredits = (campaign?.shortlisted || []).reduce((total, creator) => {
-      // Only count if agreement was sent and not a guest creator
-      if (sentAgreementUserIds.has(creator.userId) && 
-          creator.user?.creator?.isGuest !== true) {
-        return total + (creator.ugcVideos || 0);
-      }
-      return total;
-    }, 0);
-    
-    return campaign.campaignCredits - utilizedCredits;
-  }, [campaign]);
-
   // Calculate match percentage
   // const matchPercentage = useMemo(() => {
   //   // if (!pitch?.user?.creator || !campaign?.campaignRequirement) return 0;
@@ -1505,13 +1482,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialog.open} onClose={handleCloseConfirmDialog} maxWidth="xs" fullWidth>
         <DialogContent>
-          {/* Credits badge (only useful for approve view) */}
-          {campaign?.campaignCredits && confirmDialog.type === 'approve' && (
-            <Box mt={2} textAlign="end">
-              <Label color="info">{ugcLeft} Credits left</Label>
-            </Box>
-          )}
-
           {/* CONDITIONAL BODY */}
           {confirmDialog.type === 'decline' && user?.role === 'client' ? (
             // --- Client Decline: reason UI (reusing the dialog) ---
@@ -1602,27 +1572,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     : 'Are you sure you want to decline this pitch?'}
                 </Typography>
               </Stack>
-
-              {/* UGC input (approve, admin-created only) */}
-              {campaign?.campaignCredits &&
-                confirmDialog.type === 'approve' &&
-                campaign?.submissionVersion !== 'v4' && (
-                  <Box mt={2} width={1}>
-                    <TextField
-                      value={totalUGCVideos}
-                      size="small"
-                      placeholder="UGC Videos"
-                      type="number"
-                      fullWidth
-                      onKeyDown={(e) => {
-                        if (e.key === '0' && totalUGCVideos?.length === 0) e.preventDefault();
-                      }}
-                      onChange={(e) => setTotalUGCVideos(e.currentTarget.value)}
-                      error={totalUGCVideos > ugcLeft}
-                      helperText={totalUGCVideos > ugcLeft && `Maximum of ${ugcLeft} UGC Videos`}
-                    />
-                  </Box>
-                )}
             </Stack>
           )}
         </DialogContent>
@@ -1662,18 +1611,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   ? handleApprove
                   : handleDecline
             }
-            disabled={
-              isSubmitting ||
-              // approve guard: only check UGC videos for non-v4 campaigns (where the input field is shown)
-              (confirmDialog.type === 'approve' &&
-                campaign?.campaignCredits &&
-                campaign?.submissionVersion !== 'v4' &&
-                (!totalUGCVideos || totalUGCVideos > ugcLeft)) ||
-              // client-decline guard: require reason & if others then note
-              (confirmDialog.type === 'decline' &&
-                user?.role === 'client' &&
-                (!maybeReason || (maybeReason === 'others' && !maybeNote.trim())))
-            }
+            disabled={isSubmitting}
             sx={{
               bgcolor: confirmDialog.type === 'approve' ? '#026D54' : '#ffffff',
               color:
