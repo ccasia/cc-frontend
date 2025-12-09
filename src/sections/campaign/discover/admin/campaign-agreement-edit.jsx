@@ -501,8 +501,7 @@ const CampaignAgreementEdit = ({
                     helperText={
                       maxCreditsAllowed !== null ? (
                         <Typography noWrap whiteSpace={'none'} variant="caption">
-                          {campaign?.creditsPending} credit(s) remaining. (max change allowed:{' '}
-                          {maxCreditsAllowed})
+                          {campaign?.creditsPending} credit(s) remaining
                         </Typography>
                       ) : undefined
                     }
