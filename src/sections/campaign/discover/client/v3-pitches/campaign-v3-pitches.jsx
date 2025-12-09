@@ -42,7 +42,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
-import BatchAssignUGCModal from './BatchAssignUGCModal';
+import axiosInstance from 'src/utils/axios';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 
 const countPitchesByStatus = (pitches, statusList) =>
@@ -63,9 +63,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
-  const [batchCreditsOpen, setBatchCreditsOpen] = useState(false);
-  const [batchCreditCreators, setBatchCreditCreators] = useState([]);
-  const [batchAdminComments, setBatchAdminComments] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const isDisabled = useMemo(
@@ -762,14 +759,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
             ) : (
               <Button
                 onClick={handleModalOpen}
-                disabled={
-                  isDisabled ||
-                  (campaign?.submissionVersion === 'v4'
-                    ? v4UsedCredits !== null &&
-                      campaign?.campaignCredits &&
-                      v4UsedCredits >= campaign.campaignCredits
-                    : typeof ugcLeft === 'number' && ugcLeft <= 0)
-                }
+                disabled={isDisabled}
                 sx={{
                   bgcolor: '#ffffff',
                   border: '1px solid #e7e7e7',
@@ -892,25 +882,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         open={addCreatorOpen}
         onClose={() => setAddCreatorOpen(false)}
         onSelect={handleCreatorTypeSelect}
-        ugcLeft={ugcLeft}
       />
 
       <PlatformCreatorModal
         open={platformCreatorOpen}
         onClose={() => setPlatformCreatorOpen(false)}
         campaign={campaign}
-        onUpdated={(payload) => {
-          if (payload?.openBatchCredits) {
-            setBatchCreditCreators(
-              (payload.creators || []).map((c) => ({
-                id: c.id,
-                name: c.name || 'Creator',
-                credits: '',
-              }))
-            );
-            setBatchAdminComments(payload?.adminComments || '');
-            setBatchCreditsOpen(true);
-          }
+        onUpdated={() => {
           onUpdate?.();
         }}
       />
@@ -919,44 +897,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         open={nonPlatformOpen}
         onClose={() => setNonPlatformOpen(false)}
         campaignId={campaign.id}
-        onUpdated={(payload) => {
-          if (payload?.openBatchCredits) {
-            setBatchCreditCreators(
-              (payload.creators || []).map((c) => ({
-                id: c.id,
-                name: c.name || 'Creator',
-                profileLink: c.profileLink || '',
-                username: c.username || '',
-                followerCount: c.followerCount || '',
-                engagementRate: c.engagementRate || '',
-                adminComments: c.adminComments || '',
-                credits: '',
-              }))
-            );
-            setBatchAdminComments(payload?.adminComments || '');
-            setBatchCreditsOpen(true);
-            setNonPlatformOpen(false);
-          }
+        onUpdated={() => {
           onUpdate?.();
         }}
       />
-
-      {/* Batch Assign UGC Credits Modal */}
-      {batchCreditsOpen ? (
-        <BatchAssignUGCModal
-          open={batchCreditsOpen}
-          onClose={() => setBatchCreditsOpen(false)}
-          creators={batchCreditCreators}
-          campaignId={campaign.id}
-          campaign={campaign}
-          adminComments={batchAdminComments}
-          creditsLeft={ugcLeft}
-          onAssigned={() => {
-            setBatchCreditsOpen(false);
-            onUpdate?.();
-          }}
-        />
-      ) : null}
 
       {/* Empty state */}
       {(!filteredPitches || filteredPitches.length === 0) && (
@@ -974,7 +918,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           onClose={handleClosePitchModal}
           pitch={selectedPitch}
           campaign={campaign}
-          agreements={agreements}
           onUpdate={handlePitchUpdate}
         />
       )}
@@ -993,7 +936,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           onClose={handleClosePitchModal}
           pitch={selectedPitch}
           campaign={campaign}
-          agreements={agreements}
           onUpdate={handlePitchUpdate}
         />
       )}
@@ -1002,7 +944,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
 };
 
 // eslint-disable-next-line react/prop-types
-export function AddCreatorModal({ open, onClose, onSelect, ugcLeft }) {
+export function AddCreatorModal({ open, onClose, onSelect }) {
   return (
     <Dialog
       open={open}
@@ -1022,22 +964,6 @@ export function AddCreatorModal({ open, onClose, onSelect, ugcLeft }) {
         }}
       >
         Add Creators
-        {typeof ugcLeft === 'number' && (
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 600,
-              color: 'text.secondary',
-              border: '1px solid #e7e7e7',
-              px: 1,
-              py: 0.25,
-              borderRadius: 1,
-              fontSize: '0.7rem',
-            }}
-          >
-            UGC Credits: {ugcLeft} left
-          </Typography>
-        )}
       </DialogTitle>
 
       <DialogContent sx={{ pt: 0 }}>
@@ -1105,43 +1031,16 @@ AddCreatorModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSelect: PropTypes.func.isRequired,
-  ugcLeft: PropTypes.number,
 };
 
 export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
   const { data: agreements } = useGetAgreements(campaign?.id);
+  const { enqueueSnackbar } = useSnackbar();
   const [selected, setSelected] = useState([]);
   const [commentOpen, setCommentOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  // Credits are only utilized when agreement is sent (isSent = true)
-  // This applies to ALL campaign types (both v4 and non-v4)
-  const usedCredits = useMemo(() => {
-    if (!campaign?.campaignCredits) return 0;
-    if (!agreements || !campaign?.shortlisted) return 0;
-
-    // Get userIds of Platform Creators whose agreements have been sent
-    const sentAgreementUserIds = new Set(
-      agreements
-        .filter((agreement) => agreement.isSent && agreement.user?.creator?.isGuest !== true)
-        .map((agreement) => agreement.userId)
-    );
-
-    return campaign.shortlisted.reduce((acc, creator) => {
-      if (sentAgreementUserIds.has(creator.userId) && creator.user?.creator?.isGuest !== true) {
-        return acc + (creator.ugcVideos || 0);
-      }
-      return acc;
-    }, 0);
-  }, [campaign, agreements]);
-
-  const ugcLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
-    // Use unified calculation - credits utilized when agreement is sent
-    return campaign.campaignCredits - usedCredits;
-  }, [campaign, usedCredits]);
 
   const shortlistedCreators = campaign?.shortlisted || [];
   const shortlistedIds = new Set(shortlistedCreators.map((c) => c.userId));
@@ -1168,18 +1067,32 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   };
 
   const handleSubmitWithComment = async () => {
+    if (!selected.length || !campaign?.id) return;
+
     try {
       setSubmitting(true);
 
-      // Do NOT shortlist yet; open batch credits modal first.
-      onUpdated?.({
-        openBatchCredits: true,
-        creators: selected.map((c) => ({ id: c.id, name: c.name || c.email || 'Creator' })),
-        adminComments: commentText,
+      await axiosInstance.post('/api/campaign/v3/shortlistCreator', {
+        campaignId: campaign.id,
+        creators: selected.map((c) => ({ id: c.id })),
+        adminComments: commentText?.trim() || undefined,
       });
+
+      enqueueSnackbar(
+        selected.length > 1
+          ? 'Creators shortlisted successfully.'
+          : 'Creator shortlisted successfully.',
+        { variant: 'success' }
+      );
+
+      onUpdated?.();
       handleCloseAll();
-    } catch (e) {
-      console.error('Error shortlisting creators:', e);
+    } catch (error) {
+      console.error('Error shortlisting creators:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to shortlist creators.', {
+        variant: 'error',
+      });
+    } finally {
       setSubmitting(false);
     }
   };
@@ -1202,11 +1115,6 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
         >
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             Shortlist Creators
-            {typeof ugcLeft === 'number' && (
-              <Label sx={{ fontFamily: (theme) => theme.typography.fontFamily }}>
-                UGC Credits: {ugcLeft} left
-              </Label>
-            )}
           </Stack>
         </DialogTitle>
 
@@ -1368,7 +1276,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
               },
             }}
           >
-            {submitting ? 'Adding Creators…' : 'Continue'}
+            {submitting ? 'Adding Creators…' : 'Confirm'}
           </LoadingButton>
         </DialogActions>
       </Dialog>
@@ -1383,7 +1291,7 @@ PlatformCreatorModal.propTypes = {
   onUpdated: PropTypes.func,
 };
 
-export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
+export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaignId }) {
   const [formValues, setFormValues] = useState({
     creators: [{ name: '', followerCount: '', profileLink: '', adminComments: '' }],
   });
@@ -1431,19 +1339,55 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated }) {
       return;
     }
 
-    // Do NOT shortlist yet; pass the entered creators to parent to open credits modal
-    onUpdated?.({ openBatchCredits: true, creators: formValues.creators });
-    onClose();
-    setFormValues({
-      creators: [
-        {
-          name: '',
-          followerCount: '',
-          profileLink: '',
-          adminComments: '',
-        },
-      ],
-    });
+    if (!campaignId) {
+      enqueueSnackbar('Missing campaign information. Please reload and try again.', {
+        variant: 'error',
+      });
+      return;
+    }
+
+    const guestCreators = formValues.creators.map((creator) => ({
+      name: creator.name.trim(),
+      profileLink: creator.profileLink.trim(),
+      followerCount: creator.followerCount || undefined,
+      adminComments: creator.adminComments?.trim() || undefined,
+    }));
+
+    try {
+      loading.onTrue();
+
+      await axiosInstance.post('/api/campaign/v3/shortlistCreator/guest', {
+        campaignId,
+        guestCreators,
+      });
+
+      enqueueSnackbar(
+        guestCreators.length > 1
+          ? 'Guest creators shortlisted successfully.'
+          : 'Guest creator shortlisted successfully.',
+        { variant: 'success' }
+      );
+
+      onUpdated?.();
+      onClose();
+      setFormValues({
+        creators: [
+          {
+            name: '',
+            followerCount: '',
+            profileLink: '',
+            adminComments: '',
+          },
+        ],
+      });
+    } catch (error) {
+      console.error('Error adding guest creators:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Failed to add non-platform creator.', {
+        variant: 'error',
+      });
+    } finally {
+      loading.onFalse();
+    }
   };
 
   return (
@@ -1636,6 +1580,7 @@ NonPlatformCreatorFormDialog.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onUpdated: PropTypes.func,
+  campaignId: PropTypes.string,
 };
 
 // View-only modal for Non-Platform Creator form values
