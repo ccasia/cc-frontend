@@ -76,7 +76,13 @@ const formatAmount = (value) => {
   }).format(cleanValue);
 };
 
-const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, agreementsMutate }) => {
+const CampaignAgreementEdit = ({
+  dialog,
+  agreement,
+  campaign,
+  campaignMutate,
+  agreementsMutate,
+}) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
   const { data: agreements } = useGetAgreements(campaign?.id);
@@ -109,7 +115,8 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
       currency: agreement?.shortlistedCreator?.currency || 'MYR',
       default: false,
       ugcCredits:
-        agreement?.shortlistedCreator?.ugcVideos !== undefined && agreement?.shortlistedCreator?.ugcVideos !== null
+        agreement?.shortlistedCreator?.ugcVideos !== undefined &&
+        agreement?.shortlistedCreator?.ugcVideos !== null
           ? String(agreement.shortlistedCreator.ugcVideos)
           : '',
     },
@@ -124,7 +131,8 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
 
   useEffect(() => {
     const currentCredits =
-      agreement?.shortlistedCreator?.ugcVideos !== undefined && agreement?.shortlistedCreator?.ugcVideos !== null
+      agreement?.shortlistedCreator?.ugcVideos !== undefined &&
+      agreement?.shortlistedCreator?.ugcVideos !== null
         ? String(agreement.shortlistedCreator.ugcVideos)
         : '';
 
@@ -148,8 +156,9 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
       null
     );
   }, [campaign]);
-  const usedCredits = React.useMemo(() => {
-    // Credits are only counted as utilized when agreements are sent
+
+  // Calculate used credits by OTHER creators (excluding current creator)
+  const usedCreditsByOthers = React.useMemo(() => {
     if (!campaign?.campaignCredits) return null;
     if (!agreements || !campaign?.shortlisted) return 0;
 
@@ -158,6 +167,9 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
     );
 
     return campaign.shortlisted.reduce((acc, creator) => {
+      // Exclude the current creator from the calculation
+      if (creator.userId === agreement?.user?.id) return acc;
+
       if (
         sentAgreementUserIds.has(creator.userId) &&
         creator.user?.creator?.isGuest !== true &&
@@ -167,41 +179,36 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
       }
       return acc;
     }, 0);
-  }, [campaign, agreements]);
+  }, [campaign, agreements, agreement?.user?.id]);
+
+  // Max credits user can enter = total - usedByOthers
+  const maxCreditsAllowed = useMemo(() => {
+    if (!campaign?.campaignCredits) return null;
+    if (usedCreditsByOthers === null) return null;
+
+    return Math.max(0, Number(campaign.campaignCredits) - usedCreditsByOthers);
+  }, [campaign, usedCreditsByOthers]);
 
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
     const creditsToAssign = requiresUGCCredits ? Number(ugcCreditsValue) : null;
 
     try {
-      // Check if credits are fully utilized before sending agreement
-      if (campaign?.campaignCredits) {
-        const totalCampaignCredits = Number(campaign.campaignCredits);
-
-        if (usedCredits !== null && usedCredits >= totalCampaignCredits) {
+      // Validate credits against max allowed
+      if (campaign?.campaignCredits && requiresUGCCredits) {
+        if (!Number.isFinite(creditsToAssign) || creditsToAssign <= 0) {
           loading.onFalse();
-          enqueueSnackbar(
-            'Insufficient Credits: All campaign credits have been utilized. Cannot generate and send agreement.',
-            { variant: 'error' }
-          );
+          enqueueSnackbar('UGC credits must be a positive number.', { variant: 'error' });
           return;
         }
 
-        if (requiresUGCCredits) {
-          if (!Number.isFinite(creditsToAssign) || creditsToAssign <= 0) {
-            loading.onFalse();
-            enqueueSnackbar('UGC credits must be a positive number.', { variant: 'error' });
-            return;
-          }
-
-          if (usedCredits !== null && usedCredits + creditsToAssign > totalCampaignCredits) {
-            loading.onFalse();
-            enqueueSnackbar(
-              `Insufficient Credits: Only ${Math.max(totalCampaignCredits - usedCredits, 0)} credits remaining.`,
-              { variant: 'error' }
-            );
-            return;
-          }
+        if (maxCreditsAllowed !== null && creditsToAssign > maxCreditsAllowed) {
+          loading.onFalse();
+          enqueueSnackbar(
+            `Insufficient Credits: Maximum ${maxCreditsAllowed} credits can be assigned.`,
+            { variant: 'error' }
+          );
+          return;
         }
       }
       console.log('Generating PDF with values:', {
@@ -244,7 +251,8 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
         user: agreement?.user,
         campaignId: agreement?.campaignId,
         id: agreement?.id,
-        isNew: agreement?.isNew || false, 
+        isNew: agreement?.isNew || false,
+        credits: creditsToAssign, // Include credits for V4 submission updates
       };
 
       console.log('Sending data to backend:', requestData);
@@ -266,7 +274,6 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
       };
 
       await axiosInstance.patch(endpoints.campaign.sendAgreement, sendAgreementPayload);
-
 
       if (agreementsMutate) {
         await agreementsMutate();
@@ -340,10 +347,8 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
 
             <Box sx={{ borderBottom: '1px solid #e7e7e7' }} />
 
-            {/* Show Insufficient Credits warning when credits are fully utilized */}
-            {campaign?.campaignCredits &&
-              usedCredits !== null &&
-              usedCredits >= campaign.campaignCredits && (
+            {/* Show Insufficient Credits warning when no credits available for this creator */}
+            {campaign?.campaignCredits && maxCreditsAllowed === 0 && (
               <Box
                 sx={{
                   p: 2,
@@ -354,15 +359,21 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
                 }}
               >
                 <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 600 }}>
-                  ⚠️ Insufficient Credits: All campaign credits ({campaign.campaignCredits}) have been utilized. 
+                  ⚠️ Insufficient Credits: All campaign credits ({campaign.campaignCredits}) have
+                  been utilized by other creators.
                 </Typography>
               </Box>
             )}
 
             <Stack spacing={1}>
-              <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
-                Recipient
-              </Typography>
+              <Stack direction={'row'} justifyContent={'space-between'}>
+                <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
+                  Recipient
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
+                  Credits Assigned: {agreement?.user?.shortlisted[0].ugcVideos || 0}
+                </Typography>
+              </Stack>
 
               <Stack direction="row" alignItems="center" spacing={2}>
                 {agreement?.user?.photoURL ? (
@@ -467,14 +478,34 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
                     type="number"
                     label="UGC Credits"
                     InputLabelProps={{ shrink: true }}
-                    inputProps={{ min: 1 }}
-                    disabled={
-                      campaign?.campaignCredits && usedCredits !== null && usedCredits >= campaign.campaignCredits
-                    }
+                    inputProps={{
+                      min: 1,
+                      ...(maxCreditsAllowed !== null && { max: maxCreditsAllowed }),
+                    }}
+                    disabled={maxCreditsAllowed === 0}
                     onChange={(e) => {
-                      setValue('ugcCredits', e.target.value);
+                      const value = e.target.value;
+                      // Allow empty value (user is deleting)
+                      if (value === '') {
+                        setValue('ugcCredits', '');
+                        return;
+                      }
+                      // Enforce max credits limit
+                      if (maxCreditsAllowed !== null && Number(value) > maxCreditsAllowed) {
+                        setValue('ugcCredits', String(maxCreditsAllowed));
+                      } else {
+                        setValue('ugcCredits', value);
+                      }
                     }}
                     value={ugcCreditsValue}
+                    helperText={
+                      maxCreditsAllowed !== null ? (
+                        <Typography noWrap whiteSpace={'none'} variant="caption">
+                          {campaign?.creditsPending} credit(s) remaining. (max change allowed:{' '}
+                          {maxCreditsAllowed})
+                        </Typography>
+                      ) : undefined
+                    }
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 1,
@@ -522,11 +553,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign, campaignMutate, ag
             type="submit"
             variant="contained"
             loading={loading.value}
-            disabled={
-              campaign?.campaignCredits &&
-              usedCredits !== null &&
-              usedCredits >= campaign.campaignCredits
-            }
+            disabled={campaign?.campaignCredits && maxCreditsAllowed === 0}
             loadingIndicator={
               <SyncLoader color={settings.themeMode === 'light' ? 'black' : 'white'} size={5} />
             }
