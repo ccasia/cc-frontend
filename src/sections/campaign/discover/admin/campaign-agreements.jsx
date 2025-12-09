@@ -928,8 +928,6 @@ const CampaignAgreements = ({ campaign }) => {
 
                 const isPendingReview = item?.submission?.status === 'PENDING_REVIEW';
 
-                console.log('This is the item: ', !item?.submission);
-
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
