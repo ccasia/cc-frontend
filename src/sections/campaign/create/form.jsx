@@ -65,9 +65,10 @@ const steps = [
   { title: 'Creator Persona', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
   { title: 'Campaign Type', logo: '⎏', color: '#8A5AFE' },
-  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
-  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
-  { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
+  // HIDE: logistics
+  // { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
+  // { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
+  // { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
   { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
   { title: 'Select Campaign Manager(s)', logo: '⛑️', color: '#FFF0E5' },
   { title: 'Agreement Form', logo: '✍️', color: '#026D54' },
@@ -310,17 +311,27 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
         return campaignImagesSchema;
       case 4:
         return campaignTypeSchema;
+      // HIDE: Logistics
+
+      // case 5:
+      //   return logisticsSchema;
+      // case 6:
+      //   return Yup.object().shape({});
+      // case 7:
+      //   return Yup.object().shape({});
+      // case 8:
+      //   return timelineSchema;
+      // case 9:
+      //   return campaignAdminSchema;
+      // case 10:
+      //   return agreementSchema;
+      // default:
+      //   return campaignSchema;
       case 5:
-        return logisticsSchema;
-      case 6:
-        return Yup.object().shape({});
-      case 7:
-        return Yup.object().shape({});
-      case 8:
         return timelineSchema;
-      case 9:
+      case 6:
         return campaignAdminSchema;
-      case 10:
+      case 7:
         return agreementSchema;
       default:
         return campaignSchema;
@@ -443,13 +454,15 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     if (result) {
       // Skip Reservation Slots and Logistic Remarks steps if logistics type is not 'reservation'
       const logisticsType = getValues('logisticsType');
-      let nextStep = activeStep + 1;
+      const nextStep = activeStep + 1; // HIDE: logistics
 
-      if (activeStep === 5 && logisticsType !== 'RESERVATION' && nextStep === 6) {
-        nextStep = 8; // Skip to Campaign Timeline (skip both Reservation Slots and Logistic Remarks)
-      } else if (activeStep === 6 && logisticsType === 'RESERVATION') {
-        nextStep = 7; // Go to Logistic Remarks after Reservation Slots
-      }
+      // HIDE: Logistics
+      // let nextStep = activeStep + 1;
+      // if (activeStep === 5 && logisticsType !== 'RESERVATION' && nextStep === 6) {
+      //   nextStep = 8; // Skip to Campaign Timeline (skip both Reservation Slots and Logistic Remarks)
+      // } else if (activeStep === 6 && logisticsType === 'RESERVATION') {
+      //   nextStep = 7; // Go to Logistic Remarks after Reservation Slots
+      // }
 
       localStorage.setItem('activeStep', nextStep);
       setActiveStep(nextStep);
@@ -458,15 +471,17 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
 
   const handleBack = () => {
     const logisticsType = getValues('logisticsType');
-    let prevStep = activeStep - 1;
+    const prevStep = activeStep - 1; // HIDE: Logistics
 
-    if (activeStep === 8 && logisticsType !== 'RESERVATION') {
-      prevStep = 5;
-    } else if (activeStep === 7 && logisticsType !== 'RESERVATION') {
-      prevStep = 5;
-    } else if (activeStep === 6 && logisticsType !== 'RESERVATION') {
-      prevStep = 5;
-    }
+    // HIDE: Logistics
+    // let prevStep = activeStep - 1;
+    // if (activeStep === 8 && logisticsType !== 'RESERVATION') {
+    //   prevStep = 5;
+    // } else if (activeStep === 7 && logisticsType !== 'RESERVATION') {
+    //   prevStep = 5;
+    // } else if (activeStep === 6 && logisticsType !== 'RESERVATION') {
+    //   prevStep = 5;
+    // }
 
     localStorage.setItem('activeStep', prevStep);
     setActiveStep(prevStep);
@@ -601,19 +616,30 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
           return <CampaignImageUpload />;
         case 4:
           return <CampaignType />;
+        // HIDE: logistics
+        // case 5:
+        //   return <CampaignLogistics />;
+        // case 6:
+        //   return <ReservationSlots />;
+        // case 7:
+        //   return <LogisticRemarks />;
+        // case 8:
+        //   return <SelectTimeline />;
+        // case 9:
+        //   return <CampaignAdminManager />;
+        // case 10:
+        //   return <CampaignFormUpload pdfModal={pdfModal} />;
+        // case 11:
+        //   return <OtherAttachments />;
+        // default:
+        //   return <SelectBrand />;
         case 5:
-          return <CampaignLogistics />;
-        case 6:
-          return <ReservationSlots />;
-        case 7:
-          return <LogisticRemarks />;
-        case 8:
           return <SelectTimeline />;
-        case 9:
+        case 6:
           return <CampaignAdminManager />;
-        case 10:
+        case 7:
           return <CampaignFormUpload pdfModal={pdfModal} />;
-        case 11:
+        case 8:
           return <OtherAttachments />;
         default:
           return <SelectBrand />;

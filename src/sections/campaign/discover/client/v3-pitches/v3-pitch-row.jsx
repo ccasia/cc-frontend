@@ -108,7 +108,9 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
   const displayData = getDisplayData();
 
   return (
-    <TableRow hover>
+    <TableRow
+    // hover
+    >
       <TableCell>
         <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1 }}>
           <Avatar
