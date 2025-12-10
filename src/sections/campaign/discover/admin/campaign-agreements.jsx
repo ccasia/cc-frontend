@@ -493,7 +493,13 @@ const CampaignAgreements = ({ campaign }) => {
     }
 
     const approvedPitches = campaign.pitch
-      .filter((pitchItem) => pitchItem?.status === 'APPROVED')
+      .filter(
+        (pitchItem) =>
+          pitchItem?.status === 'APPROVED' ||
+          pitchItem?.status === 'AGREEMENT_SUBMITTED' ||
+          pitchItem?.status === 'AGREEMENT_PENDING' ||
+          pitchItem?.status === 'approved'
+      )
       .map((pitchItem) => pitchItem?.userId)
       .filter(Boolean);
 
@@ -522,7 +528,7 @@ const CampaignAgreements = ({ campaign }) => {
     // Sort by selected column
     return [...result].sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortColumn) {
         case 'date': {
           // Sort by issue date (createdAt or updatedAt)
@@ -549,7 +555,7 @@ const CampaignAgreements = ({ campaign }) => {
           break;
         }
       }
-      
+
       return sortDirection === 'asc' ? comparison : -comparison;
     });
   }, [combinedData, selectedFilter, sortColumn, sortDirection]);
@@ -1105,9 +1111,7 @@ const CampaignAgreements = ({ campaign }) => {
                             // For pending (not sent) agreements, show Send Agreement button
                             <Tooltip
                               title={
-                                !item?.submission
-                                  ? 'Link creator before sending agreement'
-                                  : ''
+                                !item?.submission ? 'Link creator before sending agreement' : ''
                               }
                               arrow
                             >
