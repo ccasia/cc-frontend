@@ -6,8 +6,8 @@ import { Box, Link, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, Ico
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import { formatNumber, extractUsernameFromProfileLink, createSocialProfileUrl } from 'src/utils/media-kit-utils';
 import { fDate } from 'src/utils/format-time';
+import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
@@ -72,55 +72,36 @@ const getStatusText = (status, pitch, campaign) => {
 const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch, onRemoved }) => {
   const smUp = useResponsive('up', 'sm');
 
-  // Extract social media usernames
+  // Helper to extract username from stats or profile link
+  const getUsername = (stats, profileLink) => stats?.username || (profileLink ? extractUsernameFromProfileLink(profileLink) : undefined);
+
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
   const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
   const profileLink = pitch.user?.creator?.profileLink || pitch.user?.profileLink;
   const instagramProfileLink = pitch.user?.creator?.instagramProfileLink;
   const tiktokProfileLink = pitch.user?.creator?.tiktokProfileLink;
-  
-  const instagramUsername = instagramStats?.username || extractUsernameFromProfileLink(instagramProfileLink);
-  const tiktokUsername = tiktokStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
-  const profileUsername = extractUsernameFromProfileLink(profileLink);
+
+  const instagramUsername = getUsername(instagramStats, instagramProfileLink);
+  const tiktokUsername = getUsername(tiktokStats, tiktokProfileLink);
+  const profileUsername = profileLink ? extractUsernameFromProfileLink(profileLink) : undefined;
   
   // Check if we have any social usernames to display
   const hasSocialUsernames = instagramUsername || tiktokUsername;
 
   const getDisplayData = () => {
-    const resolveMetric = (primary, secondary, tertiary) => {
-      if (primary != null) return primary;
-      if (secondary != null) return secondary;
-      if (tertiary != null) return tertiary;
-      return null;
-    };
+    const resolveMetric = (...args) => args.find(val => val != null) ?? null;
 
-    if (pitch.engagementRate && pitch.followerCount) {
-      return {
-        engagementRate: pitch.engagementRate,
-        followerCount: pitch.followerCount,
-      };
-    }
-
-    // P2: Use pitch data if available (partial data)
-    if (instagramStats || tiktokStats) {
-      return {
-        engagementRate: resolveMetric(
-          instagramStats?.engagement_rate,
-          tiktokStats?.engagement_rate,
-          pitch.engagementRate
-        ),
-        followerCount: resolveMetric(
-          instagramStats?.followers_count,
-          tiktokStats?.follower_count,
-          pitch.followerCount
-        ),
-      };
-    }
-
-    // Default: No data available
     return {
-      engagementRate: null,
-      followerCount: null,
+      engagementRate: resolveMetric(
+        instagramStats?.engagement_rate,
+        tiktokStats?.engagement_rate,
+        pitch.engagementRate
+      ),
+      followerCount: resolveMetric(
+        instagramStats?.followers_count,
+        tiktokStats?.follower_count,
+        pitch.followerCount
+      ),
     };
   };
 

@@ -49,7 +49,6 @@ import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
 import CampaignOverview from '../campaign-overview';
-import CampaignLogistics from '../campaign-logistics';
 import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
@@ -96,7 +95,6 @@ const CampaignDetailView = ({ id }) => {
   const router = useRouter();
   // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
-
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
@@ -292,8 +290,6 @@ const CampaignDetailView = ({ id }) => {
     if (!container) return () => {};
 
     const handleWheel = (e) => {
-      const isHorizontalSwipe = Math.abs(e.deltaX) > Math.abs(e.deltaY);
-
       if (container.scrollWidth > container.clientWidth) {
         // Check if it's a horizontal scroll attempt (touchpad horizontal swipe)
         // or if deltaX is significant, let it scroll naturally
@@ -312,11 +308,16 @@ const CampaignDetailView = ({ id }) => {
     return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
-  const getAgreementsLabel = (submissions, agreements) => {
+  const getAgreementsLabel = (submissions, agreements, pitches) => {
     const pendingAgreementApproval =
       submissions?.filter((a) => a?.status === 'PENDING_REVIEW').length || 0;
+    const approvedPitchUsers = new Set(
+      (pitches || [])
+        .filter((pitch) => pitch?.status === 'APPROVED' && pitch?.userId)
+        .map((pitch) => pitch.userId)
+    );
     const pendingSendAgreement = (agreements || []).filter(
-      (a) => a.isSent === false
+      (a) => a.isSent === false && approvedPitchUsers.has(a.userId)
     ).length;
     const totalPending = pendingAgreementApproval + pendingSendAgreement;
     return totalPending > 0 ? `Agreements (${totalPending})` : 'Agreements';
@@ -389,7 +390,11 @@ const CampaignDetailView = ({ id }) => {
                   value: 'pitch',
                 },
                 {
-                  label: getAgreementsLabel(agreementSubmissions, campaignAgreements),
+                  label: getAgreementsLabel(
+                    agreementSubmissions,
+                    campaignAgreements,
+                    campaign?.pitch
+                  ),
                   value: 'agreement',
                 },
                 ...(campaign?.submissionVersion === 'v4'

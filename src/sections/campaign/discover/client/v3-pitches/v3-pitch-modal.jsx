@@ -34,9 +34,8 @@ import { useGetAllCreators } from 'src/api/creator';
 
 import Iconify from 'src/components/iconify';
 
-import UGCCreditsModal from './ugc-credits-modal';
 
-const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [] }) => {
+const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const navigate = useNavigate();
@@ -44,7 +43,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
-  const [ugcCreditsModalOpen, setUgCCreditsModalOpen] = useState(false);
   const [comments, setComments] = useState('');
   const [creatorProfileFull, setCreatorProfileFull] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState('instagram'); // 'instagram', 'tiktok', or 'both'
@@ -52,28 +50,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
   const displayStatus = pitch?.displayStatus || pitch?.status;
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const isClient = user?.role === 'client';
-  // Compute remaining UGC credits from campaign overview
-  // Credits are only utilized when agreements are sent
-  const ugcLeft = (() => {
-    if (!campaign?.campaignCredits) return 0;
-
-    // Get userIds of creators whose agreements have been sent
-    const sentAgreementUserIds = new Set(
-      (agreements || [])
-        .filter((agreement) => agreement.isSent)
-        .map((agreement) => agreement.userId)
-    );
-
-    // Sum credits only for shortlisted creators with sent agreements
-    const utilizedCredits = (campaign?.shortlisted || []).reduce((acc, creator) => {
-      if (sentAgreementUserIds.has(creator.userId)) {
-        return acc + (creator.ugcVideos || 0);
-      }
-      return acc;
-    }, 0);
-
-    return Math.max(0, campaign.campaignCredits - utilizedCredits);
-  })();
   // Normalize admin comments text so UI displays whenever present
   const adminCommentsText = ((currentPitch?.adminComments ?? pitch?.adminComments ?? '') || '')
     .toString()
@@ -221,15 +197,8 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
   };
 
   const handleApprove = () => {
-    if (campaign?.campaignCredits && campaign?.submissionVersion !== 'v4' && ugcLeft <= 0) {
-      enqueueSnackbar('No credits left. Cannot approve or assign UGC credits.', {
-        variant: 'warning',
-      });
-      return;
-    }
-
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
-      setUgCCreditsModalOpen(true);
+      handleAction('approve', 'approve', { adminComments: comments });
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
       handleAction('approve', 'approve/client', { adminComments: comments });
     }
@@ -249,11 +218,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
 
   const handleSetAgreement = () => {
     enqueueSnackbar('Agreement setup feature coming soon', { variant: 'info' });
-  };
-
-  const handleUGCCreditsSuccess = (updatedPitch) => {
-    onUpdate(updatedPitch);
-    setUgCCreditsModalOpen(false);
   };
 
   const getAvailableActions = () => {
@@ -1386,12 +1350,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
                 <Button
                   variant="contained"
                   onClick={handleApprove}
-                  disabled={
-                    loading ||
-                    (campaign?.submissionVersion !== 'v4' &&
-                      campaign?.campaignCredits &&
-                      ugcLeft <= 0)
-                  }
+                  disabled={loading}
                   sx={{
                     textTransform: 'none',
                     minHeight: 42,
@@ -1588,16 +1547,6 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, agreements = [
         </DialogActions>
       </Dialog>
 
-      {/* UGC Credits Assignment Modal */}
-      <UGCCreditsModal
-        open={ugcCreditsModalOpen}
-        onClose={() => setUgCCreditsModalOpen(false)}
-        pitch={pitch}
-        campaign={campaign}
-        comments={comments}
-        agreements={agreements}
-        onSuccess={handleUGCCreditsSuccess}
-      />
     </>
   );
 };
@@ -2159,5 +2108,4 @@ V3PitchModal.propTypes = {
   pitch: PropTypes.object,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
-  agreements: PropTypes.array,
 };

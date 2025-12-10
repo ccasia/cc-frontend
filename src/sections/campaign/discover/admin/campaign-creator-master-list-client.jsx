@@ -980,7 +980,7 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
       }}
     >
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        <Stack flex={1} direction="row" spacing={1}>
+        <Stack flex={1} spacing={1}>
           <Stack flex={3} direction="row" spacing={1}>
             <Avatar
               src={pitch?.user?.photoURL}
@@ -988,60 +988,59 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
               sx={{ width: 35, height: 35 }}
             />
 
-            <Stack>
-              <Typography variant="subtitle2" fontWeight="bold" lineHeight={1.4} sx={{ color: '#221f20' }}>
-                {pitch?.user?.name || 'Unknown Creator'}
-              </Typography>
+            <Typography variant="subtitle2" fontWeight="bold" lineHeight={1.4} sx={{ color: '#221f20' }} flex={3} alignSelf="center">
+              {pitch?.user?.name || 'Unknown Creator'}
+            </Typography>
 
-              {hasSocialUsernames ? (
-                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mt: 0.25 }}>
-                  {instagramUsername && (
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <Iconify icon="mdi:instagram" width={14} sx={{ color: '#8E8E93' }} />
-                      <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
-                        {instagramUsername}
-                      </Typography>
-                    </Stack>
-                  )}
-                  {tiktokUsername && (
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#8E8E93' }} />
-                      <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
-                        {tiktokUsername}
-                      </Typography>
-                    </Stack>
-                  )}
-                </Stack>
-              ) : profileUsername && (
+            <Button
+              onClick={() => onViewPitch(pitch)}
+              sx={{
+                flex: 1,
+                px: 1,
+                height: 30,
+                minWidth: 90,
+                color: '#203ff5',
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                textTransform: 'none',
+                fontSize: 12,
+                fontWeight: 600,
+                '&:hover': {
+                  border: '1px solid #E7E7E7',
+                  bgcolor: '#E7E7E7',
+                },
+              }}
+            >
+              View Profile
+            </Button>
+          </Stack>
+
+          {hasSocialUsernames ? (
+            <Stack direction="row" alignItems="center" mt={-0.5} ml={5.2} spacing={1}>
+              {instagramUsername && (
                 <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify icon="mdi:instagram" width={14} sx={{ color: '#8E8E93' }} />
                   <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
-                    {profileUsername}
+                    {instagramUsername}
+                  </Typography>
+                </Stack>
+              )}
+              {tiktokUsername && (
+                <Stack direction="row" alignItems="center" spacing={0}>
+                  <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#8E8E93' }} />
+                  <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                    {tiktokUsername}
                   </Typography>
                 </Stack>
               )}
             </Stack>
-          </Stack>
-
-          <Button
-            onClick={() => onViewPitch(pitch)}
-            sx={{
-              flex: 1,
-              px: 1,
-              height: 30,
-              color: '#203ff5',
-              border: '1px solid #E7E7E7',
-              boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-              textTransform: 'none',
-              fontSize: 12,
-              fontWeight: 600,
-              '&:hover': {
-                border: '1px solid #E7E7E7',
-                bgcolor: '#E7E7E7',
-              },
-            }}
-          >
-            View Profile
-          </Button>
+          ) : profileUsername && (
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                {profileUsername}
+              </Typography>
+            </Stack>
+        )}
         </Stack>
 
         <Stack direction="row" spacing={2} ml={5.2} sx={{ mt: 0.5 }}>
