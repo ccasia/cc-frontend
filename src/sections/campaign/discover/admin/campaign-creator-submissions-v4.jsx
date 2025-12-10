@@ -599,9 +599,9 @@ function CreatorAccordion({ creator, campaign }) {
         boxShadow: '0px 4px 4px 0px #8E8E9340',
         borderRadius: 1,
         pl: { xs: 0.8, sm: 1 },
-        pr: { xs: 0.5, sm: 0 },
+        pr: { xs: 0.5, sm: onlyAgreement ? 1 : 0 },
         flexDirection: { xs: 'column', sm: 'row' },
-        py: { xs: 1, sm: 0 },
+        py: { xs: 1, sm: onlyAgreement ? 1 : 0 },
         gap: { xs: 1, sm: 0 },
       }}>
         {/* Creator Info Section */}
@@ -672,9 +672,9 @@ function CreatorAccordion({ creator, campaign }) {
                 </Typography>
               );
             }
-            if (submissions.length === 1) {
+            if (submissions.length === 1 && !isClient) {
               return (
-                <Typography variant="body2" color="text.secondary" p={2}>
+                <Typography variant="body2" color="text.secondary">
                   Set agreement and assign UGC Videos to creator
                 </Typography>
               );

@@ -56,9 +56,10 @@ const steps = [
   { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
   { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
-  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
-  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
-  { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
+  // HIDE: logistics
+  // { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
+  // { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
+  // { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
   { title: 'Other Attachment ( Optional )', logo: '🖇️', color: '#FF3500' },
 ];
 
@@ -260,12 +261,21 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return campaignRequirementSchema;
       case 2:
         return campaignImagesSchema;
+
+      // HIDE: logistics
+      // case 3:
+      //   return logisticsSchema;
+      // case 4:
+      // case 5:
+      //   return Yup.object().shape({});
+      // case 6:
+      //   return Yup.object().shape({
+      //     otherAttachments: Yup.array(),
+      //     referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
+      //   });
+      // default:
+      //   return campaignSchema;
       case 3:
-        return logisticsSchema;
-      case 4:
-      case 5:
-        return Yup.object().shape({});
-      case 6:
         return Yup.object().shape({
           otherAttachments: Yup.array(),
           referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
@@ -677,13 +687,18 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return <CampaignTargetAudience />;
       case 2:
         return <CampaignUploadPhotos isLoading={isLoading} />;
+      // HIDE: logistics
+      // case 3:
+      //   return <CampaignLogistics />;
+      // case 4:
+      //   return <ReservationSlots />;
+      // case 5:
+      //   return <LogisticRemarks />;
+      // case 6:
+      //   return <OtherAttachments />;
+      // default:
+      //   return null;
       case 3:
-        return <CampaignLogistics />;
-      case 4:
-        return <ReservationSlots />;
-      case 5:
-        return <LogisticRemarks />;
-      case 6:
         return <OtherAttachments />;
       default:
         return null;
