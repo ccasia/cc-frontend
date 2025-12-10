@@ -30,6 +30,7 @@ export default function CreatorLogisticsView({ campaign }) {
   const status = logistic?.status;
   const deliveryDetails = logistic?.deliveryDetails;
   const creator = logistic?.creator;
+  const isConfirmed = logistic?.deliveryDetails?.isConfirmed;
 
   const handleMarkReceived = async () => {
     try {
@@ -89,7 +90,7 @@ export default function CreatorLogisticsView({ campaign }) {
       </Stack>
 
       {/* Action Button: Confirm Details */}
-      {(status === 'PENDING_ASSIGNMENT' || status === 'SCHEDULED') && (
+      {(status === 'PENDING_ASSIGNMENT' || status === 'SCHEDULED') && !isConfirmed && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Badge color="error" variant="dot" invisible={status !== 'PENDING_ASSIGNMENT'}>
             <Button

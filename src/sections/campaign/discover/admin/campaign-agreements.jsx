@@ -488,29 +488,44 @@ const CampaignAgreements = ({ campaign }) => {
   const pitchApprovedAgreements = useMemo(() => {
     if (!combinedData) return [];
 
-    if (!Array.isArray(campaign?.pitch)) {
-      return combinedData;
+    // Collect approved user IDs from pitches
+    const approvedPitchUserIds = new Set();
+    if (Array.isArray(campaign?.pitch)) {
+      campaign.pitch
+        .filter(
+          (pitchItem) =>
+            pitchItem?.status === 'APPROVED' ||
+            pitchItem?.status === 'AGREEMENT_SUBMITTED' ||
+            pitchItem?.status === 'AGREEMENT_PENDING' ||
+            pitchItem?.status === 'approved'
+        )
+        .forEach((pitchItem) => {
+          if (pitchItem?.userId) {
+            approvedPitchUserIds.add(pitchItem.userId);
+          }
+        });
     }
 
-    const approvedPitches = campaign.pitch
-      .filter(
-        (pitchItem) =>
-          pitchItem?.status === 'APPROVED' ||
-          pitchItem?.status === 'AGREEMENT_SUBMITTED' ||
-          pitchItem?.status === 'AGREEMENT_PENDING' ||
-          pitchItem?.status === 'approved'
-      )
-      .map((pitchItem) => pitchItem?.userId)
-      .filter(Boolean);
+    // Also include shortlisted creators who may not have a pitch record
+    // This handles backwards compatibility for creators shortlisted before the pitch system
+    const shortlistedUserIds = new Set();
+    if (Array.isArray(campaign?.shortlisted)) {
+      campaign.shortlisted.forEach((shortlistedItem) => {
+        if (shortlistedItem?.userId) {
+          shortlistedUserIds.add(shortlistedItem.userId);
+        }
+      });
+    }
 
-    if (!approvedPitches.length) {
+    // Combine both sets - approved pitches and shortlisted creators
+    const approvedCreatorSet = new Set([...approvedPitchUserIds, ...shortlistedUserIds]);
+
+    if (!approvedCreatorSet.size) {
       return [];
     }
 
-    const approvedCreatorSet = new Set(approvedPitches);
-
     return combinedData.filter((agreement) => approvedCreatorSet.has(agreement.userId));
-  }, [combinedData, campaign?.pitch]);
+  }, [combinedData, campaign?.pitch, campaign?.shortlisted]);
 
   const filteredData = useMemo(() => {
     if (!pitchApprovedAgreements) return [];
