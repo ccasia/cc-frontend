@@ -146,10 +146,7 @@ const MediaKitCreator = () => {
         (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0);
       return {
         followers: instagram?.instagramUser?.followers_count || 0,
-        engagement_rate: formatNumber(calculateTotalEngagement(
-          instagram?.medias?.totalLikes ?? 0,
-          instagram?.medias?.totalComments ?? 0
-        )),
+        engagement_rate: totalEngagement,
         averageLikes: instagram?.instagramUser?.averageLikes || 0,
         username: instagram?.instagramUser?.username || 'Creator',
         averageComments: instagram?.instagramUser?.averageComments || 0,
@@ -158,13 +155,10 @@ const MediaKitCreator = () => {
 
     if (currentTab === 'tiktok') {
       const totalEngagement =
-        (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0);
+        (tiktok?.medias?.totalLikes ?? 0) + (tiktok?.medias?.totalComments ?? 0) + (tiktok?.medias?.totalShares ?? 0);
       return {
         followers: tiktok?.overview?.follower_count || 0,
-        engagement_rate: formatNumber(calculateTotalEngagement(
-          tiktok?.medias?.totalLikes ?? 0,
-          tiktok?.medias?.totalComments ?? 0
-        )),
+        engagement_rate: totalEngagement,
         averageLikes: tiktok?.medias?.averageLikes || 0,
         username: tiktok?.tiktokUser?.display_name || 'Creator',
         averageComments: tiktok?.medias?.averageComments || 0,
@@ -176,7 +170,7 @@ const MediaKitCreator = () => {
       engagement_rate: '0',
       averageLikes: 0,
     };
-  }, [currentTab, tiktok, instagram, calculateTotalEngagement]);
+  }, [currentTab, tiktok, instagram]);
 
   // Helper function to detect iOS Safari specifically (not other browsers on iOS)
   const isIOSSafari = useCallback(() => {
@@ -1534,7 +1528,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {formatNumber(socialMediaAnalytics.engagement_total)}
+                        {formatNumber(socialMediaAnalytics.engagement_rate)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1652,7 +1646,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {formatNumber(socialMediaAnalytics.engagement_total)}
+                  {formatNumber(socialMediaAnalytics.engagement_rate)}
                 </Typography>
                 <Typography
                   variant="caption"

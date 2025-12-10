@@ -31,19 +31,33 @@ const ChartContainer = ({
         p: 3,
       };
 
+  // Calculate responsive values
+  const getFontSize = () => {
+    if (!isMobile) return '18px';
+    return isTablet ? '16px' : '14px';
+  };
+  
+  const getTopPosition = () => {
+    if (!isMobile) return 24;
+    return isTablet ? 16 : 12;
+  };
+  
+  const getLeftPosition = () => {
+    if (!isMobile) return 28;
+    return isTablet ? 20 : 16;
+  };
+  
+  const fontSize = getFontSize();
+  const topPosition = getTopPosition();
+  const leftPosition = getLeftPosition();
+
   const titleStyles = {
     color: 'black',
     fontWeight: 600,
-    fontSize: isMobile 
-      ? (isTablet ? '16px' : '14px') 
-      : '18px',
+    fontSize,
     position: 'absolute',
-    top: isMobile 
-      ? (isTablet ? 16 : 12) 
-      : 24,
-    left: isMobile 
-      ? (isTablet ? 20 : 16) 
-      : 28,
+    top: topPosition,
+    left: leftPosition,
     ...(isMobile && { zIndex: 2 }),
   };
 

@@ -538,7 +538,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
             </Button>
             <Stack direction="row" alignItems="center" gap={2}>
               <ListItemText
-                primary={<Typography fontSize={36} fontFamily={'Instrument Serif'}>Letter Pitch</Typography>}
+                primary={<Typography fontSize={36} fontFamily="Instrument Serif">Letter Pitch</Typography>}
                 secondary={
                   <Box>
                     <Typography variant="body1" color="#636366" sx={{ fontSize: 16 }}>
@@ -546,9 +546,6 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
                     </Typography>
                     <Typography variant="body2" color="#636366" >
                       • Express how your unique style can be incorporated in the campaign
-                    </Typography>
-                    <Typography variant="body2" color="#636366" sx={{ fontSize: 14 }}>
-                      • Include your main social media account link (Instagram/TikTok)
                     </Typography>
                   </Box>
                 }

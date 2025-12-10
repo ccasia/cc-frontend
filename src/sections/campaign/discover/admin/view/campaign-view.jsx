@@ -589,17 +589,13 @@ const CampaignView = () => {
           </Box>
         ) : (
           <EmptyContent
-            title={`No ${
-              filter === 'active'
-                ? 'active'
-                : filter === 'completed'
-                ? 'completed'
-                : filter === 'pending'
-                ? 'pending'
-                : filter === 'paused'
-                ? 'paused'
-                : filter
-            } campaigns available`}
+            title={`No ${(() => {
+              if (filter === 'active') return 'active';
+              if (filter === 'completed') return 'completed';
+              if (filter === 'pending') return 'pending';
+              if (filter === 'paused') return 'paused';
+              return filter;
+            })()} campaigns available`}
           />
         ))}
       {/* <CampaignFilter

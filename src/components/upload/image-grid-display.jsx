@@ -4,8 +4,6 @@ import React, { useMemo, useEffect, useCallback } from 'react';
 import { Box } from '@mui/material';
 
 const ImageGridDisplay = ({ files, onRemoveAll, onRemoveImage, height = { xs: 320, md: 480 } }) => {
-  if (files.length === 0) return null;
-
   // Memoize image URLs to prevent recreation on every render
   const imageUrls = useMemo(() => files.map(file => {
       if (typeof file === 'string') return file; // Already a URL string
@@ -103,6 +101,9 @@ const ImageGridDisplay = ({ files, onRemoveAll, onRemoveImage, height = { xs: 32
       )}
     </Box>
   ), [imageUrls, onRemoveImage]);
+
+  // Early return after all hooks are defined
+  if (files.length === 0) return null;
 
   return (
     <Box sx={{ 
@@ -370,6 +371,7 @@ const ImageGridDisplay = ({ files, onRemoveAll, onRemoveImage, height = { xs: 32
 
 ImageGridDisplay.propTypes = {
   files: PropTypes.array.isRequired,
+  onRemoveAll: PropTypes.func,
   onRemoveImage: PropTypes.func,
   height: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
 };

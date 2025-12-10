@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   Box,
@@ -68,16 +68,15 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
     if (client && client?.subscriptions?.length) {
       let packageItem = findLatestPackage(client?.subscriptions);
       if (!packageItem) return null;
+      const computedTotalCredits = Number(
+        packageItem.totalCredits ?? packageItem.package?.credits ?? packageItem.customPackage?.customCredits ?? 0
+      );
+      const computedCreditsUsed = Number(packageItem.creditsUsed ?? 0);
+
       packageItem = {
         ...packageItem,
-        totalCredits:
-          packageItem.totalCredits ||
-          packageItem.package?.credits ||
-          packageItem.customPackage?.customCredits,
-        availableCredits:
-          (packageItem.totalCredits ||
-            packageItem.package?.credits ||
-            packageItem.customPackage?.customCredits) - packageItem.creditsUsed,
+        totalCredits: computedTotalCredits,
+        availableCredits: computedTotalCredits - computedCreditsUsed,
       };
       return packageItem;
     }
@@ -600,32 +599,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                         Credits Utilized
                       </Typography>
                       <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
-                        {campaign?.submissionVersion === 'v4' ? (() => {
-                            const approvedAgreements = (campaign?.submission || []).filter(sub => 
-                              (sub.content && typeof sub.content === 'string' && 
-                               sub.content.toLowerCase().includes('agreement')) &&
-                              (sub.status === 'APPROVED')
-                            );
-                            
-                            if (approvedAgreements.length === 0) {
-                              return '0 UGC Credits';
-                            }
-                            
-                            const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
-                              let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
-                              
-                              if (!creator && typeof agreement.userId === 'string') {
-                                creator = campaign?.shortlisted?.find(c => 
-                                  typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
-                                );
-                              }
-                              
-                              return total + (creator?.ugcVideos || 0);
-                            }, 0);
-                            
-                            return `${utilizedCredits} UGC Credits`;
-                          })() : 
-                          `${campaign?.creditsUtilized || 0} UGC Credits`}
+                        {campaign?.creditsUtilized ?? 0} UGC Credits
                       </Typography>
                     </Stack>
                     <Divider />
@@ -634,29 +608,7 @@ const CampaignOverviewClient = ({ campaign, onUpdate }) => {
                         Credits Pending
                       </Typography>
                       <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#636366' }}>
-                        {campaign?.submissionVersion === 'v4' ? (() => {
-                            const approvedAgreements = (campaign?.submission || []).filter(sub => 
-                              // Check if content contains 'agreement' since type might be undefined
-                              (sub.content && typeof sub.content === 'string' && 
-                               sub.content.toLowerCase().includes('agreement')) &&
-                              (sub.status === 'APPROVED')
-                            );
-                            
-                            const utilizedCredits = approvedAgreements.reduce((total, agreement) => {
-                              let creator = campaign?.shortlisted?.find(c => c.userId === agreement.userId);
-                              
-                              if (!creator && typeof agreement.userId === 'string') {
-                                creator = campaign?.shortlisted?.find(c => 
-                                  typeof c.userId === 'string' && c.userId.toLowerCase() === agreement.userId.toLowerCase()
-                                );
-                              }
-                              
-                              return total + (creator?.ugcVideos || 0);
-                            }, 0);
-                            
-                            return `${Math.max(0, (campaign?.campaignCredits || 0) - utilizedCredits)} UGC Credits`;
-                          })() : 
-                          `${campaign?.creditsPending ?? 0} UGC Credits`}
+                        {campaign?.creditsPending ?? 0} UGC Credits
                       </Typography>
                     </Stack>
                   </Stack>

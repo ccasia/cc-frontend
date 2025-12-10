@@ -13,6 +13,7 @@ import {
   Button,
   Dialog,
   Avatar,
+  Tooltip,
   TableRow,
   TableCell,
   TableHead,
@@ -29,6 +30,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
+import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -36,6 +38,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { RHFTextField } from 'src/components/hook-form';
+import SortableHeader from 'src/components/table/sortable-header';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import CampaignAgreementEdit from './campaign-agreement-edit';
@@ -396,9 +399,10 @@ AgreementDialog.propTypes = {
 
 const CampaignAgreements = ({ campaign }) => {
   const { data, isLoading } = useGetAgreements(campaign?.id);
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedFilter] = useState('all');
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
+  const [sortColumn, setSortColumn] = useState('name'); // 'name', 'date', 'status'
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
   const dialog = useBoolean();
@@ -413,10 +417,25 @@ const CampaignAgreements = ({ campaign }) => {
 
   const smUp = useResponsive('up', 'sm');
 
-  // Toggle sort direction
+  // Handle column sort click
+  const handleColumnSort = (column) => {
+    if (sortColumn === column) {
+      // Same column - toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column - set to asc
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Toggle sort direction (for alphabetical button - legacy)
   const handleToggleSort = () => {
+    setSortColumn('name');
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
+
+  // Using shared SortableHeader component from components/table
 
   const methods = useForm({
     defaultValues: {
@@ -466,27 +485,80 @@ const CampaignAgreements = ({ campaign }) => {
     });
   }, [data, submissions, loadingSubmissions]);
 
-  const filteredData = useMemo(() => {
+  const pitchApprovedAgreements = useMemo(() => {
     if (!combinedData) return [];
+
+    if (!Array.isArray(campaign?.pitch)) {
+      return combinedData;
+    }
+
+    const approvedPitches = campaign.pitch
+      .filter(
+        (pitchItem) =>
+          pitchItem?.status === 'APPROVED' ||
+          pitchItem?.status === 'AGREEMENT_SUBMITTED' ||
+          pitchItem?.status === 'AGREEMENT_PENDING' ||
+          pitchItem?.status === 'approved'
+      )
+      .map((pitchItem) => pitchItem?.userId)
+      .filter(Boolean);
+
+    if (!approvedPitches.length) {
+      return [];
+    }
+
+    const approvedCreatorSet = new Set(approvedPitches);
+
+    return combinedData.filter((agreement) => approvedCreatorSet.has(agreement.userId));
+  }, [combinedData, campaign?.pitch]);
+
+  const filteredData = useMemo(() => {
+    if (!pitchApprovedAgreements) return [];
 
     let result = [];
 
     if (selectedFilter === 'pending') {
-      result = combinedData.filter((item) => !item.isSent);
+      result = pitchApprovedAgreements.filter((item) => !item.isSent);
     } else if (selectedFilter === 'sent') {
-      result = combinedData.filter((item) => item.isSent);
+      result = pitchApprovedAgreements.filter((item) => item.isSent);
     } else {
-      result = combinedData;
+      result = pitchApprovedAgreements;
     }
 
-    // Sort by creator name
+    // Sort by selected column
     return [...result].sort((a, b) => {
-      const nameA = (a.user?.name || '').toLowerCase();
-      const nameB = (b.user?.name || '').toLowerCase();
+      let comparison = 0;
 
-      return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      switch (sortColumn) {
+        case 'date': {
+          // Sort by issue date (createdAt or updatedAt)
+          const dateA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+          const dateB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          comparison = dateA - dateB;
+          break;
+        }
+        case 'status': {
+          // Get status priority for sorting
+          const getStatusPriority = (item) => {
+            if (item?.submission?.status === 'PENDING_REVIEW') return 1; // Pending Review first
+            if (item?.isSent) return 2; // Sent
+            return 3; // Not sent
+          };
+          comparison = getStatusPriority(a) - getStatusPriority(b);
+          break;
+        }
+        case 'name':
+        default: {
+          const nameA = (a.user?.name || '').toLowerCase();
+          const nameB = (b.user?.name || '').toLowerCase();
+          comparison = nameA.localeCompare(nameB);
+          break;
+        }
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [combinedData, selectedFilter, sortDirection]);
+  }, [selectedFilter, sortColumn, sortDirection, pitchApprovedAgreements]);
 
   const handleViewAgreement = (url, item) => {
     setSelectedUrl(url);
@@ -596,10 +668,9 @@ const CampaignAgreements = ({ campaign }) => {
       <Stack direction="column" spacing={2}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
-          spacing={2}
+          spacing={1}
           justifyContent="flex-start"
           alignItems={{ xs: 'flex-start', md: 'center' }}
-          sx={{ mb: 1 }}
         >
           {/* Alphabetical Sort Button */}
           <Button
@@ -783,7 +854,8 @@ const CampaignAgreements = ({ campaign }) => {
                     px: { xs: 1, sm: 2 },
                     color: '#221f20',
                     fontWeight: 600,
-                    width: 220,
+                    width: { xs: '25%', sm: 220 },
+                    minWidth: { xs: 120, sm: 220 },
                     borderRadius: '10px 0 0 10px',
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
@@ -797,7 +869,8 @@ const CampaignAgreements = ({ campaign }) => {
                       py: 1,
                       color: '#221f20',
                       fontWeight: 600,
-                      width: 220,
+                      width: { xs: '20%', sm: 220 },
+                      minWidth: { xs: 140, sm: 220 },
                       bgcolor: '#f5f5f5',
                       whiteSpace: 'nowrap',
                     }}
@@ -805,36 +878,31 @@ const CampaignAgreements = ({ campaign }) => {
                     Creator&apos;s Email
                   </TableCell>
                 )}
+                <SortableHeader
+                  column="date"
+                  label="Issue Date"
+                  width={{ xs: '25%', sm: 120 }}
+                  minWidth={{ xs: 110, sm: 120 }}
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
+                <SortableHeader
+                  column="status"
+                  label="Status"
+                  width={{ xs: '15%', sm: 75 }}
+                  minWidth={{ xs: 90, sm: 75 }}
+                  sortColumn={sortColumn}
+                  sortDirection={sortDirection}
+                  onSort={handleColumnSort}
+                />
                 <TableCell
                   sx={{
                     py: 1,
                     color: '#221f20',
                     fontWeight: 600,
-                    width: 150,
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Issue Date
-                </TableCell>
-                <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 100,
-                    bgcolor: '#f5f5f5',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Status
-                </TableCell>
-                <TableCell
-                  sx={{
-                    py: 1,
-                    color: '#221f20',
-                    fontWeight: 600,
-                    width: 100,
+                    width: { xs: '20%', sm: 95 },
+                    minWidth: { xs: 85, sm: 95 },
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
                   }}
@@ -846,7 +914,8 @@ const CampaignAgreements = ({ campaign }) => {
                     py: 1,
                     color: '#221f20',
                     fontWeight: 600,
-                    width: 80,
+                    width: { xs: '15%', sm: 80 },
+                    minWidth: { xs: 70, sm: 80 },
                     borderRadius: '0 10px 10px 0',
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
@@ -868,7 +937,7 @@ const CampaignAgreements = ({ campaign }) => {
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
+                      <Stack direction="row" alignItems="center" spacing={{ xs: 1 }}>
                         <Avatar
                           src={item?.user?.photoURL}
                           alt={item?.user?.name}
@@ -884,7 +953,7 @@ const CampaignAgreements = ({ campaign }) => {
                         </Avatar>
                         <Stack spacing={0.5}>
                           <Typography variant="body2">{item?.user?.name}</Typography>
-                          {!smUp && (
+                          {!smUp && !item?.user?.email?.endsWith('@tempmail.com') && (
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                               {item?.user?.email}
                             </Typography>
@@ -892,23 +961,32 @@ const CampaignAgreements = ({ campaign }) => {
                         </Stack>
                       </Stack>
                     </TableCell>
-                    {smUp && <TableCell>{item?.user?.email}</TableCell>}
-                    <TableCell>
+                    {smUp && (
+                      <TableCell>
+                        {item?.user?.email?.endsWith('@tempmail.com') ? '' : item?.user?.email}
+                      </TableCell>
+                    )}
+                    <TableCell
+                      sx={{
+                        width: { xs: '25%', sm: 120 },
+                        minWidth: { xs: 110, sm: 120 },
+                      }}
+                    >
                       <Stack spacing={0.5} alignItems="start">
                         <Typography
                           variant="body2"
                           sx={{
-                            fontSize: '0.875rem',
+                            fontSize: { xs: '0.7rem', sm: '0.875rem' },
                           }}
                         >
-                          {dayjs(item?.updatedAt).format('LL')}
+                          {fDate(item?.updatedAt)}
                         </Typography>
                         <Typography
                           variant="body2"
                           sx={{
                             color: '#8e8e93',
                             display: 'block',
-                            fontSize: '0.875rem',
+                            fontSize: { xs: '0.7rem', sm: '0.875rem' },
                             mt: '-2px',
                           }}
                         >
@@ -951,9 +1029,9 @@ const CampaignAgreements = ({ campaign }) => {
                               textTransform: 'uppercase',
                               fontWeight: 700,
                               display: 'inline-block',
-                              px: 1.5,
-                              py: 0.5,
-                              fontSize: '0.75rem',
+                              px: { xs: 0.6, sm: 1 },
+                              py: { xs: 0.2, sm: 0.5 },
+                              fontSize: { xs: '0.6rem', sm: '0.75rem' },
                               border: '1px solid',
                               borderBottom: '3px solid',
                               borderRadius: 0.8,
@@ -967,21 +1045,33 @@ const CampaignAgreements = ({ campaign }) => {
                         );
                       })()}
                     </TableCell>
-                    <TableCell>
-                      {isAmountValid ? (
-                        <>
-                          {item?.user?.shortlisted[0]?.currency ? (
-                            <>
-                              {`${item?.user?.shortlisted[0]?.currency} 
-                              ${parseFloat(item?.amount?.toString()) || parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}`}
-                            </>
-                          ) : (
-                            <>{`${item?.user?.shortlisted[0]?.currency} ${parseFloat(item?.amount?.toString())}`}</>
-                          )}
-                        </>
-                      ) : (
-                        'Not Set'
-                      )}
+                    <TableCell
+                      sx={{
+                        width: { xs: '20%', sm: 95 },
+                        minWidth: { xs: 85, sm: 95 },
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                        }}
+                      >
+                        {isAmountValid ? (
+                          <>
+                            {item?.user?.shortlisted[0]?.currency ? (
+                              <>
+                                {`${item?.user?.shortlisted[0]?.currency} 
+                                ${parseFloat(item?.amount?.toString()) || parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}`}
+                              </>
+                            ) : (
+                              <>{`${item?.user?.shortlisted[0]?.currency} ${parseFloat(item?.amount?.toString())}`}</>
+                            )}
+                          </>
+                        ) : (
+                          'Not Set'
+                        )}
+                      </Typography>
                     </TableCell>
                     <TableCell>
                       {smUp ? (
@@ -1016,67 +1106,83 @@ const CampaignAgreements = ({ campaign }) => {
                               View
                             </Button>
                           )}
-                          <Button
-                            onClick={() => handleEditAgreement(item)}
-                            disabled={isDisabled}
-                            size="small"
-                            variant="contained"
-                            sx={{
-                              px: 1.5,
-                              py: 2,
-                              bgcolor: '#ffffff',
-                              color: '#221f20',
-                              border: '1.5px solid',
-                              borderColor: '#e7e7e7',
-                              borderBottom: '3px solid',
-                              borderBottomColor: '#e7e7e7',
-                              borderRadius: 1.15,
-                              fontSize: '0.85rem',
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              whiteSpace: 'nowrap',
-                              '&:hover': {
-                                bgcolor: '#f5f5f5',
-                                border: '1.5px solid',
-                                borderColor: '#221f20',
-                                borderBottom: '3px solid',
-                                borderBottomColor: '#221f20',
-                              },
-                              '&.Mui-disabled': {
-                                border: '1.5px solid #e7e7e7',
-                                borderBottom: '3px solid #e7e7e7',
-                              },
-                            }}
-                          >
-                            Edit Amount
-                          </Button>
 
-                          {isPendingReview ? (
+                          {!item.isSent ? (
+                            // For pending (not sent) agreements, show Send Agreement button
+                            <Tooltip
+                              title={
+                                !item?.submission ? 'Link creator before sending agreement' : ''
+                              }
+                              arrow
+                            >
+                              <span>
+                                <Button
+                                  onClick={() => handleEditAgreement(item)}
+                                  disabled={isDisabled || !item?.submission}
+                                  size="small"
+                                  variant="contained"
+                                  startIcon={
+                                    <Iconify
+                                      icon="bx:send"
+                                      sx={{
+                                        color: '#fff',
+                                      }}
+                                    />
+                                  }
+                                  sx={{
+                                    px: 2,
+                                    py: 2,
+                                    bgcolor: '#1340FF',
+                                    color: '#ffffff',
+                                    border: '1.5px solid #1340FF',
+                                    borderBottom: '3px solid',
+                                    borderBottomColor: '#00000073',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                    whiteSpace: 'nowrap',
+                                    '&:hover': {
+                                      bgcolor: '#0a2dd9',
+                                    },
+                                    '&.Mui-disabled': {
+                                      bgcolor: 'rgba(19, 64, 255, 0.5)',
+                                      border: '1px solid rgba(19, 64, 255, 0.5)',
+                                      color: '#ffffff',
+                                    },
+                                  }}
+                                >
+                                  Send Agreement
+                                </Button>
+                              </span>
+                            </Tooltip>
+                          ) : (
+                            // For sent agreements, show Edit Amount and action buttons
                             <>
                               <Button
-                                onClick={() => handleOpenRejectDialog(item)}
+                                onClick={() => handleEditAgreement(item)}
+                                disabled={isDisabled}
                                 size="small"
                                 variant="contained"
-                                disabled={isDisabled || rejectLoading}
                                 sx={{
-                                  px: 2,
+                                  px: 1.5,
                                   py: 2,
                                   bgcolor: '#ffffff',
-                                  color: '#D4321C',
+                                  color: '#221f20',
                                   border: '1.5px solid',
                                   borderColor: '#e7e7e7',
                                   borderBottom: '3px solid',
                                   borderBottomColor: '#e7e7e7',
-                                  borderRadius: 1,
+                                  borderRadius: 1.15,
                                   fontSize: '0.85rem',
                                   fontWeight: 600,
                                   textTransform: 'none',
+                                  whiteSpace: 'nowrap',
                                   '&:hover': {
                                     bgcolor: '#f5f5f5',
                                     border: '1.5px solid',
-                                    borderColor: '#D4321C',
+                                    borderColor: '#221f20',
                                     borderBottom: '3px solid',
-                                    borderBottomColor: '#D4321C',
+                                    borderBottomColor: '#221f20',
                                   },
                                   '&.Mui-disabled': {
                                     border: '1.5px solid #e7e7e7',
@@ -1084,89 +1190,127 @@ const CampaignAgreements = ({ campaign }) => {
                                   },
                                 }}
                               >
-                                Reject
+                                Edit Amount
                               </Button>
-                              <LoadingButton
-                                onClick={() => handleApproveAgreement(item)}
-                                size="small"
-                                variant="contained"
-                                loading={approveLoading}
-                                disabled={isDisabled}
-                                sx={{
-                                  px: 2,
-                                  py: 2,
-                                  bgcolor: '#FFFFFF',
-                                  color: '#1ABF66',
-                                  border: '1.5px solid',
-                                  borderColor: '#E7E7E7',
-                                  borderBottom: '3px solid',
-                                  borderBottomColor: '#E7E7E7',
-                                  borderRadius: 1,
-                                  fontSize: '0.85rem',
-                                  fontWeight: 600,
-                                  textTransform: 'none',
-                                  '&:hover': {
-                                    bgcolor: '#f5f5f5',
-                                    border: '1.5px solid',
-                                    borderColor: '#1ABF66',
-                                    borderBottom: '3px solid',
-                                    borderBottomColor: '#1ABF66',
-                                  },
-                                  '&.Mui-disabled': {
-                                    border: '1.5px solid #e7e7e7',
-                                    borderBottom: '3px solid #e7e7e7',
-                                  },
-                                }}
-                              >
-                                Approve
-                              </LoadingButton>
-                            </>
-                          ) : (
-                            <Button
-                              onClick={() => handleSendAgreement(item)}
-                              size="small"
-                              variant="contained"
-                              startIcon={
-                                <Iconify
-                                  icon="bx:send"
+
+                              {isPendingReview ? (
+                                <>
+                                  <Button
+                                    onClick={() => handleOpenRejectDialog(item)}
+                                    size="small"
+                                    variant="contained"
+                                    disabled={isDisabled || rejectLoading}
+                                    sx={{
+                                      px: 2,
+                                      py: 2,
+                                      bgcolor: '#ffffff',
+                                      color: '#D4321C',
+                                      border: '1.5px solid',
+                                      borderColor: '#e7e7e7',
+                                      borderBottom: '3px solid',
+                                      borderBottomColor: '#e7e7e7',
+                                      borderRadius: 1,
+                                      fontSize: '0.85rem',
+                                      fontWeight: 600,
+                                      textTransform: 'none',
+                                      '&:hover': {
+                                        bgcolor: '#f5f5f5',
+                                        border: '1.5px solid',
+                                        borderColor: '#D4321C',
+                                        borderBottom: '3px solid',
+                                        borderBottomColor: '#D4321C',
+                                      },
+                                      '&.Mui-disabled': {
+                                        border: '1.5px solid #e7e7e7',
+                                        borderBottom: '3px solid #e7e7e7',
+                                      },
+                                    }}
+                                  >
+                                    Reject
+                                  </Button>
+                                  <LoadingButton
+                                    onClick={() => handleApproveAgreement(item)}
+                                    size="small"
+                                    variant="contained"
+                                    loading={approveLoading}
+                                    disabled={isDisabled}
+                                    sx={{
+                                      px: 2,
+                                      py: 2,
+                                      bgcolor: '#FFFFFF',
+                                      color: '#1ABF66',
+                                      border: '1.5px solid',
+                                      borderColor: '#E7E7E7',
+                                      borderBottom: '3px solid',
+                                      borderBottomColor: '#E7E7E7',
+                                      borderRadius: 1,
+                                      fontSize: '0.85rem',
+                                      fontWeight: 600,
+                                      textTransform: 'none',
+                                      '&:hover': {
+                                        bgcolor: '#f5f5f5',
+                                        border: '1.5px solid',
+                                        borderColor: '#1ABF66',
+                                        borderBottom: '3px solid',
+                                        borderBottomColor: '#1ABF66',
+                                      },
+                                      '&.Mui-disabled': {
+                                        border: '1.5px solid #e7e7e7',
+                                        borderBottom: '3px solid #e7e7e7',
+                                      },
+                                    }}
+                                  >
+                                    Approve
+                                  </LoadingButton>
+                                </>
+                              ) : (
+                                <Button
+                                  onClick={() => handleSendAgreement(item)}
+                                  size="small"
+                                  variant="contained"
+                                  startIcon={
+                                    <Iconify
+                                      icon="bx:send"
+                                      sx={{
+                                        color:
+                                          isDisabled || !isAmountValid
+                                            ? 'rgba(19, 64, 255, 0.5)'
+                                            : '#1340FF',
+                                      }}
+                                    />
+                                  }
+                                  disabled={isDisabled || !isAmountValid}
                                   sx={{
-                                    color:
-                                      isDisabled || !isAmountValid
-                                        ? 'rgba(19, 64, 255, 0.5)'
-                                        : '#1340FF',
+                                    px: 1.5,
+                                    py: 2,
+                                    bgcolor: '#FFFFFF',
+                                    color: '#1340FF',
+                                    border: '1.5px solid',
+                                    borderColor: '#E7E7E7',
+                                    borderBottom: '3px solid',
+                                    borderBottomColor: '#E7E7E7',
+                                    borderRadius: 1.15,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                    '&:hover': {
+                                      bgcolor: '#f5f5f5',
+                                      border: '1.5px solid',
+                                      borderColor: '#1340FF',
+                                      borderBottom: '3px solid',
+                                      borderBottomColor: '#1340FF',
+                                    },
+                                    '&.Mui-disabled': {
+                                      border: '1.5px solid #e7e7e7',
+                                      borderBottom: '3px solid #e7e7e7',
+                                      color: 'rgba(19, 64, 255, 0.5)',
+                                    },
                                   }}
-                                />
-                              }
-                              disabled={isDisabled || !isAmountValid}
-                              sx={{
-                                px: 1.5,
-                                py: 2,
-                                bgcolor: '#FFFFFF',
-                                color: '#1340FF',
-                                border: '1.5px solid',
-                                borderColor: '#E7E7E7',
-                                borderBottom: '3px solid',
-                                borderBottomColor: '#E7E7E7',
-                                borderRadius: 1.15,
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                textTransform: 'none',
-                                '&:hover': {
-                                  bgcolor: '#f5f5f5',
-                                  border: '1.5px solid',
-                                  borderColor: '#1340FF',
-                                  borderBottom: '3px solid',
-                                  borderBottomColor: '#1340FF',
-                                },
-                                '&.Mui-disabled': {
-                                  border: '1.5px solid #e7e7e7',
-                                  borderBottom: '3px solid #e7e7e7',
-                                  color: 'rgba(19, 64, 255, 0.5)',
-                                },
-                              }}
-                            >
-                              {item.isSent ? 'Resend' : 'Send'}
-                            </Button>
+                                >
+                                  {item.isSent ? 'Resend' : 'Send'}
+                                </Button>
+                              )}
+                            </>
                           )}
                         </Stack>
                       ) : (

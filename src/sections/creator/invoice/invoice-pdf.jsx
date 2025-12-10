@@ -213,11 +213,11 @@ const InvoicePDF = ({ data }) => {
                     <View style={styles.tableRow}>
                       <Text style={styles.tableItem}>1</Text>
                       <Text style={styles.tableItem}>
-                        {data.bankAcc.accountName ?? data.invoiceFrom.name}
+                        {data.bankAcc?.payTo || data.bankAcc?.recipientName || data.bankAcc?.accountName || data.invoiceFrom?.name || 'N/A'}
                       </Text>
-                      <Text style={styles.tableItem}>{data.bankAcc.bankName}</Text>
-                      <Text style={styles.tableItem}>{data.bankAcc.accountNumber}</Text>
-                      <Text style={styles.tableItem}>{data.invoiceFrom.email}</Text>
+                      <Text style={styles.tableItem}>{data.bankAcc?.bankName || 'N/A'}</Text>
+                      <Text style={styles.tableItem}>{data.bankAcc?.accountNumber || 'N/A'}</Text>
+                      <Text style={styles.tableItem}>{data.bankAcc?.accountEmail || data.bankAcc?.recipientEmail || data.invoiceFrom?.email || 'N/A'}</Text>
                     </View>
                   </View>
                 </View>
@@ -238,21 +238,37 @@ const InvoicePDF = ({ data }) => {
                       <Text style={styles.tableItem}>1</Text>
                       <Text style={styles.tableItem}>{data.campaign.name}</Text>
 
-                      {data?.campaign?.campaignCredits ? (
-                        <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
-                          {data?.deliverables?.length ? (
-                            data?.deliverables?.map((item, index) => (
-                              <Text key={index} style={{ marginBottom: 5 }}>
-                                {item.type}
-                              </Text>
-                            ))
-                          ) : (
-                            <Text style={styles.tableItem}>None</Text>
-                          )}
-                        </View>
-                      ) : (
-                        <Text style={styles.tableItem}>Video</Text>
-                      )}
+                      {(() => {
+                        if (data?.campaign?.campaignCredits) {
+                          return (
+                            <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
+                              {(() => {
+                                if (data?.deliverables?.length) {
+                                  return data.deliverables.map((item, index) => (
+                                    <Text key={index} style={{ marginBottom: 5 }}>
+                                      {item.type}
+                                    </Text>
+                                  ));
+                                }
+                                if (data?.task?.service) {
+                                  return <Text style={styles.tableItem}>{data.task.service}</Text>;
+                                }
+                                if (data?.task?.description) {
+                                  return <Text style={styles.tableItem}>{data.task.description}</Text>;
+                                }
+                                return <Text style={styles.tableItem}>None</Text>;
+                              })()}
+                            </View>
+                          );
+                        }
+                        if (data?.task?.service) {
+                          return <Text style={styles.tableItem}>{data.task.service}</Text>;
+                        }
+                        if (data?.task?.description) {
+                          return <Text style={styles.tableItem}>{data.task.description}</Text>;
+                        }
+                        return <Text style={styles.tableItem}>Video</Text>;
+                      })()}
 
                       {data?.campaign?.campaignCredits ? (
                         <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
@@ -285,7 +301,7 @@ const InvoicePDF = ({ data }) => {
                       fontSize: '10px',
                     }}
                   >
-                    {data?.campaign?.creatorAgreement?.[0]?.currency || data?.campaign?.subscription?.currency || 'MYR'} {data?.amount}
+                    {data?.task?.currencySymbol || data?.task?.currency || data?.campaign?.creatorAgreement?.[0]?.currency || data?.campaign?.subscription?.currency || 'RM'} {data?.amount}
                   </Text>
                 </View>
 

@@ -4,7 +4,7 @@ import { useTheme } from '@emotion/react';
 
 import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typography } from '@mui/material';
 
-import { formatNumber, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import { formatNumber, extractUsernameFromProfileLink, createSocialProfileUrl } from 'src/utils/media-kit-utils';
 import Iconify from 'src/components/iconify';
 
 /**
@@ -13,88 +13,85 @@ import Iconify from 'src/components/iconify';
  */
 const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
   const theme = useTheme();
-  const profileLink = pitch.user?.profileLink;
+  // Profile link is stored on Creator model
+  const instagramStats = pitch?.user?.creator?.instagramUser || null;
+  const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
+  const profileLink = pitch.user?.creator?.profileLink || pitch.user?.profileLink;
+  const instagramProfileLink = pitch.user?.creator?.instagramProfileLink;
+  const tiktokProfileLink = pitch.user?.creator?.tiktokProfileLink;
   const profileUsername = extractUsernameFromProfileLink(profileLink);
+
+  // Extract usernames from profile links
+  const instagramUsername = instagramStats?.username || extractUsernameFromProfileLink(instagramProfileLink);
+  const tiktokUsername = tiktokStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
+
+  // Check if we have platform-specific links
+  const hasPlatformLinks = instagramProfileLink || tiktokProfileLink || instagramUsername || tiktokUsername;
 
   // Determine what to display for username, engagement rate and follower count
   const getDisplayData = () => {
-    const instagramStats = pitch?.user?.creator?.instagramUser || null;
-    const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
+    const igStats = pitch?.user?.creator?.instagramUser || null;
+    const tkStats = pitch?.user?.creator?.tiktokUser || null;
 
     const pickValue = (...values) => {
-      for (const value of values) {
-        if (value === 0) return value;
-        if (value !== undefined && value !== null && value !== '') return value;
-      }
-      return null;
+      const foundValue = values.find(value => value === 0 || (value !== undefined && value !== null && value !== ''));
+      return foundValue !== undefined ? foundValue : null;
     };
 
     const pickString = (...values) => {
-      for (const value of values) {
-        if (typeof value === 'string' && value.trim()) {
-          return value.trim();
-        }
+      const foundValue = values.find(value => typeof value === 'string' && value.trim());
+      return foundValue ? foundValue.trim() : null;
+    };
+
+    // Select the account with the most followers and highest engagement
+    const selectBestAccount = () => {
+      const igFollowers = igStats?.followers_count || 0;
+      const igEngagement = igStats?.engagement_rate || 0;
+      const tkFollowers = tkStats?.follower_count || 0;
+      const tkEngagement = tkStats?.engagement_rate || 0;
+
+      // If only one account exists, use it
+      if (!tkFollowers) return { stats: igStats, followers: igFollowers, engagement: igEngagement };
+      if (!igFollowers) return { stats: tkStats, followers: tkFollowers, engagement: tkEngagement };
+
+      // If both exist, compare follower count first, then engagement rate
+      if (igFollowers >= tkFollowers) {
+        return { stats: igStats, followers: igFollowers, engagement: igEngagement };
       }
-      return null;
+      return { stats: tkStats, followers: tkFollowers, engagement: tkEngagement };
     };
 
     // P1: Prioritize connected social media stats delivered with the pitch payload
-    if (instagramStats || tiktokStats) {
+    if (igStats || tkStats) {
+      const bestAccount = selectBestAccount();
       const usernameFromStats = pickString(
-        instagramStats?.username,
-        tiktokStats?.username,
+        bestAccount.stats?.username,
+        igStats?.username,
+        tkStats?.username,
         profileUsername,
-        pitch?.username,
-        pitch?.user?.username
       );
 
       return {
-        username: usernameFromStats || '-',
-        engagementRate: pickValue(
-          instagramStats?.engagement_rate,
-          tiktokStats?.engagement_rate,
-          pitch?.engagementRate
-        ),
-        followerCount: pickValue(
-          instagramStats?.followers_count,
-          tiktokStats?.follower_count,
-          pitch?.followerCount
-        ),
+        username: usernameFromStats || profileUsername || '-',
+        engagementRate: pickValue(bestAccount.engagement, pitch?.engagementRate),
+        followerCount: pickValue(bestAccount.followers, pitch?.followerCount),
       };
     }
 
-    // P2: Use manually entered data from the pitch
-    if (pitch?.username || pitch?.engagementRate || pitch?.followerCount) {
-      return {
-        username: pickString(pitch?.username, profileUsername, pitch?.user?.username) || '-',
-        engagementRate: pitch?.engagementRate || null,
-        followerCount: pitch?.followerCount || null,
-      };
-    }
-
-    // P3: Attempt to derive username from profile link
-    if (profileUsername) {
-      return {
-        username: profileUsername,
-        engagementRate: null,
-        followerCount: null,
-      };
-    }
-
-    // Default: No data available
     return {
-      username: '-',
-      engagementRate: null,
-      followerCount: null,
+      username: profileUsername || '-',
+      engagementRate: pitch?.engagementRate ?? null,
+      followerCount: pitch?.followerCount ?? null,
     };
   };
+
   const displayData = getDisplayData();
-  // Get profile link - prioritize creator.profileLink, fallback to user.guestProfileLink
+
   const statusInfo = getStatusInfo(pitch);
 
   return (
     <TableRow
-      hover
+      // hover
       sx={{
         bgcolor: 'transparent',
         '& td': {
@@ -122,23 +119,76 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
         </Stack>
       </TableCell>
       <TableCell>
-        {profileLink && (
-          <Link
-            href={profileLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            underline="hover"
-            sx={{
-              color: 'primary.main',
-              fontWeight: 500,
-              fontSize: '0.875rem',
-            }}
-          >
-            {displayData.username}
-          </Link>
-        )}
-        {!profileLink && (
-          <Typography variant="body2">{displayData.username}</Typography>
+        {hasPlatformLinks ? (
+          <Stack spacing={2} direction="row">
+            {/* Instagram row */}
+            {(instagramUsername || instagramProfileLink) && (
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Iconify icon="mdi:instagram" width={16} sx={{ color: '#E4405F', flexShrink: 0 }} />
+                <Link
+                  href={createSocialProfileUrl(instagramUsername, 'instagram') || instagramProfileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 500,
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {instagramUsername || extractUsernameFromProfileLink(instagramProfileLink) || '-'}
+                </Link>
+              </Stack>
+            )}
+            {/* TikTok row */}
+            {(tiktokUsername || tiktokProfileLink) && (
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Iconify icon="ic:baseline-tiktok" width={16} sx={{ color: '#000000', flexShrink: 0 }} />
+                <Link
+                  href={createSocialProfileUrl(tiktokUsername, 'tiktok') || tiktokProfileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 500,
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {tiktokUsername || extractUsernameFromProfileLink(tiktokProfileLink) || '-'}
+                </Link>
+              </Stack>
+            )}
+          </Stack>
+        ) : (
+          // Fallback to generic profileLink
+          <>
+            {profileLink ? (
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {profileLink?.includes('instagram.com') && (
+                  <Iconify icon="mdi:instagram" width={16} sx={{ color: '#E4405F', flexShrink: 0 }} />
+                )}
+                {profileLink?.includes('tiktok.com') && (
+                  <Iconify icon="ic:baseline-tiktok" width={16} sx={{ color: '#000000', flexShrink: 0 }} />
+                )}
+                <Link
+                  href={profileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  {displayData.username}
+                </Link>
+              </Stack>
+            ) : (
+              <Typography variant="body2">{displayData.username}</Typography>
+            )}
+          </>
         )}
       </TableCell>
       {/* <TableCell>

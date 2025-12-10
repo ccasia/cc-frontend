@@ -7,6 +7,8 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
 import React, { useMemo, useState, useEffect } from 'react';
+import * as Yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -18,6 +20,7 @@ import {
   Dialog,
   Divider,
   Collapse,
+  MenuItem,
   Typography,
   IconButton,
   DialogTitle,
@@ -36,9 +39,12 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { RHFUpload } from 'src/components/hook-form';
+import { RHFUpload, RHFTextField, RHFSelect } from 'src/components/hook-form';
 import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
 import FormProvider from 'src/components/hook-form/form-provider';
+
+import { regions } from 'src/assets/data/regions';
+import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
 
 import V4VideoSubmission from './submissions/v4-video-submission';
 import V4PhotoSubmission from './submissions/v4-photo-submission';
@@ -134,8 +140,6 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
     }
   };
 
-
-
   const handleRemove = () => {
     setValue('agreementForm', null, {shouldValidate: true});
   };
@@ -227,7 +231,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
 
-      for (const annotation of annotations) {
+      annotations.forEach((annotation) => {
         const page = pdfDoc.getPage(annotation.page - 1);
         const { width, height } = page.getSize();
 
@@ -237,7 +241,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           width: annotation.width,
           height: annotation.height,
         });
-      }
+      });
 
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -332,7 +336,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
         )}
 
         {/* Instructions */}
-        <Stack display={'flex'} flexDirection={'column'}>
+        <Stack display="flex" flexDirection="column">
           <Box>
             <Typography variant="body1" mb={1} sx={{ color: '#221f20' }}>
               Before starting the campaign, you must sign the standard agreement submission
@@ -344,7 +348,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           </Box>
 
           {/* Action Buttons - Bottom Right */}
-          <Box display={'flex'} flexDirection={{ xs: 'row', md: 'column' }} flex={1} justifyContent={'space-between'}
+          <Box display="flex" flexDirection={{ xs: 'row', md: 'column' }} flex={1} justifyContent="space-between"
           sx={{gap: 2}}>
             {/* Download Agreement Button */}
             {agreementUrl && (
@@ -729,6 +733,279 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   );
 };
 
+const LogisticsForm = ({ user, campaignId, onUpdate }) => {
+  const LogisticsSchema = Yup.object().shape({
+    country: Yup.string().required('Country is required'),
+    state: Yup.string().required('State/Region is required'),
+    address: Yup.string().required('Address is required'),
+    location: Yup.string(),
+    postcode: Yup.string().required('Postcode is required'),
+    city: Yup.string().required('City is required'),
+    dietaryRestrictions: Yup.string(),
+  });
+
+  const defaultValues = useMemo(() => {
+    const creator = user?.creator || {};
+    return {
+      country: creator.country || '',
+      state: creator.state || '',
+      address: creator.address || '',
+      location: creator.location || '',
+      postcode: creator.postcode || '',
+      city: creator.city || '',
+      dietaryRestrictions: creator.defaultDietaryRestrictions || '',
+    };
+  }, [user]);
+
+  const methods = useForm({
+    resolver: yupResolver(LogisticsSchema),
+    defaultValues,
+  });
+
+  const {
+    watch,
+    setValue,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = methods;
+
+  const selectedCountry = watch('country');
+
+  const availableStates = useMemo(() => {
+    const countryData = regions.find((region) => region.countryName === selectedCountry);
+    return countryData ? countryData.regions : [];
+  }, [selectedCountry]);
+
+  useEffect(() => {
+    if (selectedCountry && selectedCountry !== user?.creator?.country) {
+      setValue('state', '');
+    }
+  }, [selectedCountry, setValue, user?.creator?.country, user?.creator?.state]);
+
+  const onSubmit = handleSubmit(async (data) => {
+    try {
+      const response = await fetch(
+        `/api/logistics/creator/campaign/${campaignId}/onboarding-details`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to save logistics information');
+      }
+
+      enqueueSnackbar('Logistics information saved!', { variant: 'success' });
+
+      if (onUpdate) {
+        onUpdate();
+      }
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Failed to save information', { variant: 'error' });
+    }
+  });
+
+  const countryOptions = useMemo(() => {
+    const allCountries = regions.map((region) => region.countryName);
+
+    const priorityCountries = ['Malaysia', 'Singapore'];
+
+    const otherCountries = allCountries
+      .filter((country) => !priorityCountries.includes(country))
+      .sort();
+
+    return [...priorityCountries, ...otherCountries];
+  }, []);
+
+  return (
+    <>
+      {/* Form Content */}
+      <Box sx={{ p: 3 }}>
+        <FormProvider methods={methods} onSubmit={onSubmit}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={4}>
+            {/* Left Column: Address Details */}
+            <Stack spacing={2.5} sx={{ width: 1 }}>
+              <Stack direction="row" spacing={2}>
+                <Stack spacing={1} sx={{ width: 1 }}>
+                  <Typography variant="caption" sx={{ color: '#636366' }}>
+                    Country of Residence <span style={{ color: '#FF4842' }}>*</span>
+                  </Typography>
+                  <RHFSelect
+                    name="country"
+                    placeholder="Select Country"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: '#fff',
+                        borderRadius: 1,
+                      },
+                    }}
+                  >
+                    <MenuItem value="" disabled>
+                      Select Country
+                    </MenuItem>
+                    {countryOptions.map((country) => (
+                      <MenuItem key={country} value={country}>
+                        {country}
+                      </MenuItem>
+                    ))}
+                  </RHFSelect>
+                </Stack>
+
+                <Stack spacing={1} sx={{ width: 1 }}>
+                  <Typography variant="caption" sx={{ color: '#636366' }}>
+                    State/Territory <span style={{ color: '#FF4842' }}>*</span>
+                  </Typography>
+                  <RHFSelect
+                    name="state"
+                    placeholder="Select State"
+                    disabled={!selectedCountry || availableStates.length === 0}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: '#fff',
+                        borderRadius: 1,
+                      },
+                    }}
+                  >
+                    <MenuItem value="" disabled>
+                      Select State
+                    </MenuItem>
+                    {availableStates.map((region) => (
+                      <MenuItem key={region.shortCode || region.name} value={region.name}>
+                        {region.name}
+                      </MenuItem>
+                    ))}
+                  </RHFSelect>
+                </Stack>
+              </Stack>
+
+              <Stack spacing={1}>
+                <Typography variant="caption" sx={{ color: '#636366' }}>
+                  Address <span style={{ color: '#FF4842' }}>*</span>
+                </Typography>
+                <RHFTextField
+                  name="address"
+                  placeholder="Address"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#fff',
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+              </Stack>
+
+              <Stack spacing={1}>
+                <Typography variant="caption" sx={{ color: '#636366' }}>
+                  Apartment, suite, etc.
+                </Typography>
+                <RHFTextField
+                  name="unitNumber"
+                  placeholder="Apartment, suite, etc."
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#fff',
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+              </Stack>
+
+              <Stack direction="row" spacing={2}>
+                <Stack spacing={1} sx={{ width: 1 }}>
+                  <Typography variant="caption" sx={{ color: '#636366' }}>
+                    Postcode <span style={{ color: '#FF4842' }}>*</span>
+                  </Typography>
+                  <RHFTextField
+                    name="postcode"
+                    placeholder="Enter Postcode"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: '#fff',
+                        borderRadius: 1,
+                      },
+                    }}
+                  />
+                </Stack>
+
+                <Stack spacing={1} sx={{ width: 1 }}>
+                  <Typography variant="caption" sx={{ color: '#636366' }}>
+                    City <span style={{ color: '#FF4842' }}>*</span>
+                  </Typography>
+                  <RHFTextField
+                    name="city"
+                    placeholder="Enter City"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: '#fff',
+                        borderRadius: 1,
+                      },
+                    }}
+                  />
+                </Stack>
+              </Stack>
+            </Stack>
+
+            {/* Right Column: Dietary */}
+            <Stack spacing={2.5} sx={{ width: 1 }}>
+              <Stack spacing={1} sx={{ height: '100%' }}>
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#636366', display: 'block' }}>
+                    Dietary Restrictions/Allergies
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#919EAB', display: 'block', lineHeight: 1.2, mt: 0.5 }}
+                  >
+                    Please provide any dietary restrictions, or allergies to help us ensure your
+                    safety and suitability for this campaign
+                  </Typography>
+                </Box>
+
+                <RHFTextField
+                  name="dietaryRestrictions"
+                  placeholder="Dietary Restrictions/Allergies"
+                  multiline
+                  rows={8}
+                  sx={{
+                    bgcolor: '#fff',
+                    borderRadius: 1,
+                    height: '40%',
+                    '& .MuiOutlinedInput-root': {
+                      height: '100%',
+                      alignItems: 'flex-start',
+                    },
+                  }}
+                />
+              </Stack>
+            </Stack>
+          </Stack>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
+            <LoadingButton
+              type="submit"
+              variant="contained"
+              loading={isSubmitting}
+              sx={{
+                bgcolor: '#333333',
+                color: '#fff',
+                px: 4,
+                '&:hover': { bgcolor: '#000000' },
+              }}
+            >
+              Submit
+            </LoadingButton>
+          </Box>
+        </FormProvider>
+      </Box>
+    </>
+  );
+};
+
 const CampaignV4Activity = ({ campaign }) => {
   const [expandedSections, setExpandedSections] = useState({});
   const [numPages, setNumPages] = useState(null);
@@ -741,6 +1018,10 @@ const CampaignV4Activity = ({ campaign }) => {
   // Socket integration for real-time updates
   const { socket } = useSocketContext();
   const { user } = useAuthContext();
+
+  // Fetch logistics data
+  const { logistic, logisticLoading, mutate: mutateLogistic } = useGetCreatorLogistic(campaign?.id);
+  const isLogisticsCompleted = !!logistic;
 
   // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
   const originalAgreementUrl = campaign?.agreement?.agreementUrl;
@@ -807,8 +1088,8 @@ const CampaignV4Activity = ({ campaign }) => {
     setNumPages(pages);
   };
 
-  const onDocumentLoadError = (error) => {
-    console.error('Error loading PDF:', error);
+  const onDocumentLoadError = (err) => {
+    console.error('Error loading PDF:', err);
   };
 
   const handleDownload = async (url) => {
@@ -825,8 +1106,8 @@ const CampaignV4Activity = ({ campaign }) => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
-    } catch (error) {
-      console.error('Download failed:', error);
+    } catch (err) {
+      console.error('Download failed:', err);
       enqueueSnackbar('Failed to download agreement', { variant: 'error' });
     }
   };
@@ -933,6 +1214,7 @@ const CampaignV4Activity = ({ campaign }) => {
     socket.on('v4:content:processed', handleContentProcessed);
 
     // Cleanup
+    // eslint-disable-next-line consistent-return
     return () => {
       // Clear any pending updates
       if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
@@ -1065,6 +1347,15 @@ const CampaignV4Activity = ({ campaign }) => {
     }
   };
 
+  // Check if creator's agreement has been approved
+  const isAgreementApproved = overviewData?.isAgreementApproved;
+
+  useEffect(() => {
+    if (isAgreementApproved && !isLogisticsCompleted && !expandedSections.logistics) {
+      setExpandedSections((prev) => ({ ...prev, logistics: true }));
+    }
+  }, [isAgreementApproved, isLogisticsCompleted, expandedSections.logistics]);
+
   if (error) {
     return (
       <Box textAlign="center" py={4}>
@@ -1087,9 +1378,6 @@ const CampaignV4Activity = ({ campaign }) => {
   const { grouped, progress, total, completed } = submissionsData;
 
   console.log(submissionsData);
-
-  // Check if creator's agreement has been approved
-  const isAgreementApproved = overviewData?.isAgreementApproved;
 
   // If agreement hasn't been approved, show agreement submission
   if (!isAgreementApproved && overviewData?.agreementStatus) {
@@ -1167,6 +1455,262 @@ const CampaignV4Activity = ({ campaign }) => {
                 }}
               />
             </Box>
+          </Collapse>
+        </Card>
+      </Box>
+    );
+  }
+
+  if (isAgreementApproved && !isLogisticsCompleted) {
+    return (
+      <Box>
+        <Card
+          sx={{
+            overflow: 'visible',
+            bgcolor: '#F5F5F5',
+            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+            borderRadius: 2,
+            border: 'none',
+            mb: 1,
+          }}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ p: 2, cursor: 'pointer' }}
+            onClick={() =>
+              setExpandedSections((prev) => ({
+                ...prev,
+                approvedAgreement: !prev.approvedAgreement,
+              }))
+            }
+          >
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  color: 'black',
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                }}
+              >
+                Agreement
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  fontWeight: 600,
+                  border: '1px solid',
+                  borderBottom: '3px solid',
+                  borderRadius: 0.8,
+                  bgcolor: 'white',
+                  whiteSpace: 'nowrap',
+                  color: '#00AB55',
+                  borderColor: '#00AB55',
+                  fontSize: '0.75rem',
+                }}
+              >
+                APPROVED
+              </Typography>
+            </Stack>
+            <Iconify
+              icon={
+                expandedSections.approvedAgreement ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'
+              }
+              width={20}
+            />
+          </Stack>
+
+          <Collapse in={expandedSections.approvedAgreement}>
+            <Box sx={{ p: 2, pt: 0 }}>
+              <Stack spacing={2}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontFamily:
+                      'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    fontWeight: 500,
+                  }}
+                >
+                  ✅ Your agreement has been approved!{' '}
+                  {signedAgreementUrl ? 'Below is your signed agreement.' : ''} You can now proceed
+                  with the campaign submissions.
+                </Typography>
+
+                {/* Agreement PDF Preview */}
+                {(signedAgreementUrl || agreementUrl) && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'column', md: 'row' },
+                      gap: 2,
+                      mt: 1,
+                    }}
+                  >
+                    {/* PDF Preview */}
+                    <Box sx={{ flex: 1 }}>
+                      <Box
+                        sx={{
+                          width: '100%',
+                          height: { xs: '250px', sm: '300px' },
+                          borderRadius: 1,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          overflow: 'auto',
+                          bgcolor: 'background.neutral',
+                          '& .react-pdf__Document': {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                          },
+                          '&::-webkit-scrollbar': {
+                            width: '8px',
+                          },
+                          '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: 'rgba(0,0,0,0.2)',
+                            borderRadius: '4px',
+                          },
+                          '&::-webkit-scrollbar-track': {
+                            backgroundColor: 'rgba(0,0,0,0.1)',
+                          },
+                        }}
+                      >
+                        <Document
+                          file={signedAgreementUrl || agreementUrl}
+                          onLoadSuccess={onDocumentLoadSuccess}
+                          onLoadError={onDocumentLoadError}
+                        >
+                          {Array.from(new Array(numPages), (el, index) => (
+                            <Box
+                              key={index}
+                              sx={{
+                                p: 1,
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                '&:not(:last-child)': {
+                                  borderBottom: '1px solid',
+                                  borderColor: 'divider',
+                                },
+                              }}
+                            >
+                              <Page
+                                key={`page-${index + 1}`}
+                                pageNumber={index + 1}
+                                scale={isSmallScreen ? 0.3 : 0.4}
+                                renderAnnotationLayer={false}
+                                renderTextLayer={false}
+                              />
+                            </Box>
+                          ))}
+                        </Document>
+                      </Box>
+                    </Box>
+
+                    {/* Download Button */}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: { xs: 'center', md: 'flex-start' },
+                      }}
+                    >
+                      <Button
+                        variant="contained"
+                        startIcon={<Iconify icon="material-symbols:download" width={20} />}
+                        onClick={() => handleDownload(signedAgreementUrl || agreementUrl)}
+                        sx={{
+                          bgcolor: '#203ff5',
+                          color: 'white',
+                          borderBottom: 3,
+                          borderBottomColor: '#112286',
+                          borderRadius: 1.5,
+                          px: 2.5,
+                          py: 1.2,
+                          '&:hover': {
+                            bgcolor: '#203ff5',
+                            opacity: 0.9,
+                          },
+                        }}
+                      >
+                        {signedAgreementUrl ? 'Download Signed Agreement' : 'Download Agreement'}
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </Stack>
+            </Box>
+          </Collapse>
+        </Card>
+        <Card
+          sx={{
+            overflow: 'visible',
+            bgcolor: '#F5F5F5',
+            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+            borderRadius: 2,
+            border: 'none',
+            mb: 3,
+          }}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ p: 2, cursor: 'pointer' }}
+            onClick={() => setExpandedSections((prev) => ({ ...prev, logistics: !prev.logistics }))}
+          >
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  color: 'black',
+                  fontFamily: 'Inter Display, sans-serif',
+                }}
+              >
+                Logistics Information
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  px: 1.5,
+                  py: 0.5,
+                  fontWeight: 600,
+                  border: '1px solid',
+                  borderBottom: '3px solid',
+                  borderRadius: 0.8,
+                  bgcolor: 'white',
+                  whiteSpace: 'nowrap',
+                  color: '#8B5CF6',
+                  borderColor: '#8B5CF6', // Purple for Action Required
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'inherit' }}
+                >
+                  NOT STARTED
+                </Typography>
+              </Box>
+            </Stack>
+            <Iconify
+              icon={expandedSections.logistics ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+              width={20}
+            />
+          </Stack>
+
+          <Collapse in={expandedSections.logistics}>
+            <Divider />
+            {/* The Form Component */}
+            <LogisticsForm user={user} campaignId={campaign.id} onUpdate={() => mutateLogistic()} />
           </Collapse>
         </Card>
       </Box>
@@ -1393,6 +1937,74 @@ const CampaignV4Activity = ({ campaign }) => {
                 )}
               </Stack>
             </Box>
+          </Collapse>
+        </Card>
+      )}
+
+      {isLogisticsCompleted && (
+        <Card
+          sx={{
+            overflow: 'visible',
+            bgcolor: '#F5F5F5',
+            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+            borderRadius: 2,
+            border: 'none',
+            mb: 3,
+          }}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ p: 2, cursor: 'pointer' }}
+            onClick={() => setExpandedSections((prev) => ({ ...prev, logistics: !prev.logistics }))}
+          >
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  color: 'black',
+                  fontFamily: 'Inter Display, sans-serif',
+                }}
+              >
+                Logistics Information
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  px: 1.5,
+                  py: 0.5,
+                  fontWeight: 600,
+                  border: '1px solid',
+                  borderBottom: '3px solid',
+                  borderRadius: 0.8,
+                  bgcolor: 'white',
+                  whiteSpace: 'nowrap',
+                  color: '#00AB55',
+                  borderColor: '#00AB55',
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'inherit' }}
+                >
+                  COMPLETED{' '}
+                </Typography>
+              </Box>
+            </Stack>
+            <Iconify
+              icon={expandedSections.logistics ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+              width={20}
+            />
+          </Stack>
+
+          <Collapse in={expandedSections.logistics}>
+            <Divider />
+            {/* The Form Component */}
+            <LogisticsForm user={user} campaignId={campaign.id} onUpdate={() => mutateLogistic()} />
           </Collapse>
         </Card>
       )}
@@ -1850,7 +2462,35 @@ const CampaignV4Activity = ({ campaign }) => {
 };
 
 CampaignV4Activity.propTypes = {
-  campaign: PropTypes.object.isRequired,
+  campaign: PropTypes.shape({
+    id: PropTypes.string,
+    name: PropTypes.string,
+    campaignType: PropTypes.string,
+    agreement: PropTypes.shape({
+      agreementUrl: PropTypes.string,
+    }),
+  }).isRequired,
+};
+
+AgreementSubmission.propTypes = {
+  campaign: PropTypes.shape({
+    id: PropTypes.string,
+    name: PropTypes.string,
+    agreement: PropTypes.shape({
+      agreementUrl: PropTypes.string,
+    }),
+  }).isRequired,
+  agreementSubmission: PropTypes.shape({
+    id: PropTypes.string,
+    status: PropTypes.string,
+  }),
+  onUpdate: PropTypes.func,
+};
+
+LogisticsForm.propTypes = {
+  user: PropTypes.object,
+  campaignId: PropTypes.string,
+  onUpdate: PropTypes.func,
 };
 
 export default CampaignV4Activity;

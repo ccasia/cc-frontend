@@ -242,8 +242,7 @@ const V4RawFootageSubmission = ({ submission, onUpdate }) => {
         {/* RIGHT SIDE - Additional Upload & Feedback Area */}
         <Box
           sx={{
-            width: { xs: '100%', md: 'min(325px, 35%)' },
-            maxWidth: { xs: '100%', md: '325px' },
+            width: { xs: '100%', md: '35%' },
             order: { xs: 2, md: 2 },
             '@media (max-width: 1200px)': {
               width: '100%',

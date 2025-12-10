@@ -31,8 +31,11 @@ const CampaignV3PitchesWrapper = ({ campaign, campaignMutate }) => {
       return updatedPitches;
     });
 
-    // If the pitch was approved by client, also trigger campaign data revalidation
-    if (updatedPitch.status === 'APPROVED') {
+    // Trigger campaign data revalidation for:
+    // - APPROVED status (client approved for v4, or admin approved for non-v4)
+    // - SENT_TO_CLIENT status (admin approved for v4)
+    // This ensures credits and shortlisted data are refreshed
+    if (updatedPitch.status === 'APPROVED' || updatedPitch.status === 'SENT_TO_CLIENT') {
       campaignMutate?.();
     }
   };

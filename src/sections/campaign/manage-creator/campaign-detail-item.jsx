@@ -11,6 +11,9 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+// HIDE: logistics
+// import CampaignLogisticsView from 'src/sections/logistics/creator-logistics-view';
+
 import CampaignInfo from './campaign-info';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignLogistics from './campaign-logistics';
@@ -156,6 +159,8 @@ const CampaignDetailItem = ({ campaign }) => {
           {currentTab === 'tasks-v4' && <CampaignV4Activity campaign={campaign} />}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
           {/* {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />} */}
+          {/* HIDE: logistics */}
+          {/* {currentTab === 'logistics' && <CampaignLogisticsView campaign={campaign} />} */}
           {currentTab === 'logistics' && <CampaignLogistics campaign={campaign} />}
         </Box>
       </Stack>

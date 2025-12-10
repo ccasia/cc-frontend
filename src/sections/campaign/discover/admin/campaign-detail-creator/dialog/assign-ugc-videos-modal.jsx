@@ -21,11 +21,12 @@ import {
   DialogContent,
 } from '@mui/material';
 
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Label from 'src/components/label';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { useShortlistedCreators } from '../hooks/shortlisted-creator';
 
@@ -60,9 +61,9 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
     formState: { isValid, isSubmitting },
   } = methods;
 
-  // For v4 campaigns, calculate credits used only from sent agreements
+  // Unified credit calculation - credits only count when agreements are sent
   const v4UsedCredits = useMemo(() => {
-    if (campaign?.submissionVersion !== 'v4' || !campaign?.campaignCredits) return null;
+    if (!campaign?.campaignCredits) return null;
     if (!agreements || !campaign?.shortlisted) return 0;
     
     // Get userIds of Platform Creators whose agreements have been sent
@@ -93,27 +94,14 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
   const realTimeCreditsLeft = useMemo(() => {
     if (!campaign?.campaignCredits) return null;
     
-    // For v4 campaigns, only count credits from sent agreements
-    if (campaign?.submissionVersion === 'v4') {
-      const alreadyUtilized = v4UsedCredits ?? 0;
-      const newlyAssigned = watchedCreators?.reduce(
-        (acc, creator) => acc + (creator?.credits || 0),
-        0
-      ) || 0;
-      return campaign.campaignCredits - alreadyUtilized - newlyAssigned;
-    }
-    
-    // For non-v4 campaigns, count all shortlisted creators
-    const alreadyUtilized = (campaign?.shortlisted || []).reduce(
-      (acc, item) => acc + (item?.ugcVideos || 0),
-      0
-    );
+    // Unified calculation: only count credits from sent agreements
+    const alreadyUtilized = v4UsedCredits ?? 0;
     const newlyAssigned = watchedCreators?.reduce(
       (acc, creator) => acc + (creator?.credits || 0),
       0
     ) || 0;
     return campaign.campaignCredits - alreadyUtilized - newlyAssigned;
-  }, [watchedCreators, campaign?.campaignCredits, campaign?.shortlisted, campaign?.submissionVersion, v4UsedCredits]);
+  }, [watchedCreators, campaign?.campaignCredits, v4UsedCredits]);
 
   const { fields } = useFieldArray({
     control,

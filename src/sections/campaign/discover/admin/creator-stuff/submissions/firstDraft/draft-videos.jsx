@@ -402,94 +402,35 @@ const VideoCard = ({
                   </Button>
                 )}
 
-                {isPendingReview ? ( // V2 logic - show approval button when pending review
-                  <>
-                    {/* V2 logic - show approval button */}
-                    <LoadingButton
-                      onClick={handleApproveClick}
-                      variant="contained"
-                      size="small"
-                      loading={isSubmitting || isProcessing}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        color: '#1ABF66',
-                        border: '1.5px solid',
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        borderRadius: 1.15,
-                        py: 1.2,
-                        fontWeight: 600,
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#1ABF66',
-                        },
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        textTransform: 'none',
-                        flex: 1,
-                      }}
-                    >
-                      Approve
-                    </LoadingButton>
-                  </>
-                ) : false && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
-                  <Stack direction="row" spacing={1.5}>
-                    <Button
-                      onClick={() => handleClientReject && handleClientReject(videoItem.id)}
-                      size="small"
-                      variant="contained"
-                      disabled={isSubmitting || isProcessing}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        border: 1.5,
-                        borderRadius: 1.15,
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        color: '#D4321C',
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#D4321C',
-                        },
-                        textTransform: 'none',
-                        py: 1.2,
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        flex: 1,
-                      }}
-                    >
-                      Request a change
-                    </Button>
-                    <LoadingButton
-                      onClick={() => handleClientApprove && handleClientApprove(videoItem.id)}
-                      variant="contained"
-                      size="small"
-                      loading={isSubmitting || isProcessing}
-                      disabled={isVideoApprovedByClient}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        color: '#1ABF66',
-                        border: '1.5px solid',
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        borderRadius: 1.15,
-                        py: 1.2,
-                        fontWeight: 600,
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#1ABF66',
-                        },
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        textTransform: 'none',
-                        flex: 1,
-                      }}
-                    >
-                      {isVideoApprovedByClient ? 'Approved' : 'Approve'}
-                    </LoadingButton>
-                  </Stack>
+{isPendingReview ? (
+                  // V2 logic - show approval button when pending review
+                  <LoadingButton
+                    onClick={handleApproveClick}
+                    variant="contained"
+                    size="small"
+                    loading={isSubmitting || isProcessing}
+                    sx={{
+                      bgcolor: '#FFFFFF',
+                      color: '#1ABF66',
+                      border: '1.5px solid',
+                      borderColor: '#e7e7e7',
+                      borderBottom: 3,
+                      borderBottomColor: '#e7e7e7',
+                      borderRadius: 1.15,
+                      py: 1.2,
+                      fontWeight: 600,
+                      '&:hover': {
+                        bgcolor: '#f5f5f5',
+                        borderColor: '#1ABF66',
+                      },
+                      fontSize: '0.9rem',
+                      height: '40px',
+                      textTransform: 'none',
+                      flex: 1,
+                    }}
+                  >
+                    Approve
+                  </LoadingButton>
                 ) : (
                   <LoadingButton
                     onClick={handleApproveClick}
@@ -761,10 +702,10 @@ const VideoCard = ({
                             // Defer background revalidation slightly to avoid visible jump
                             try {
                               setTimeout(() => {
-                                try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}
-                                try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch {}
+                                try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch { /* Ignore SWR errors */ }
+                                try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch { /* Ignore SWR errors */ }
                               }, 500);
-                            } catch {}
+                            } catch { /* Ignore timeout errors */ }
                           }
                           setEditingFeedbackId(null);
                           setEditingContent('');
@@ -1197,9 +1138,9 @@ const DraftVideos = ({
       await axiosInstance.patch(`/api/submission/feedback/${  feedbackId}`, { content: adminFeedback });
       enqueueSnackbar('Feedback updated successfully!', { variant: 'success' });
       // Non-blocking SWR revalidation to avoid remount
-      try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch {}
-      try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch {}
-      try { if (mutateSubmission) mutateSubmission(); } catch {}
+      try { if (deliverables?.deliverableMutate) deliverables.deliverableMutate(); } catch { /* Ignore SWR errors */ }
+      try { if (deliverables?.submissionMutate) deliverables.submissionMutate(); } catch { /* Ignore SWR errors */ }
+      try { if (mutateSubmission) mutateSubmission(); } catch { /* Ignore SWR errors */ }
       try {
         mutate(
           (key) => typeof key === 'string' && (
@@ -1210,7 +1151,7 @@ const DraftVideos = ({
           undefined,
           { revalidate: true }
         );
-      } catch {}
+      } catch { /* Ignore SWR errors */ }
       return true;
     } catch (error) {
       console.error('Error updating feedback:', error);
@@ -1256,8 +1197,8 @@ const DraftVideos = ({
         });
         
         const allItemsSent = itemsWithClientFeedback.size === 0 || 
-          Array.from(itemsWithClientFeedback).every(itemKey => 
-            sentToCreatorItems.has(itemKey) || itemKey === `video_${mediaId}`
+          Array.from(itemsWithClientFeedback).every(key => 
+            sentToCreatorItems.has(key) || key === `video_${mediaId}`
           );
         
         // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
@@ -1294,6 +1235,7 @@ const DraftVideos = ({
         
         return true;
       }
+      return false;
     } catch (error) {
       console.error('❌ Error sending to creator:', error);
       enqueueSnackbar('Failed to send to creator', { variant: 'error' });

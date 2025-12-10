@@ -144,8 +144,8 @@ const RawFootageCard = ({
 
     // Remove duplicates based on ID and filter out empty comments
     const uniqueFeedbacks = allFeedbacks
-      .filter((feedback, index, self) => 
-        index === self.findIndex((f) => f.id === feedback.id)
+      .filter((feedback, idx, self) => 
+        idx === self.findIndex((f) => f.id === feedback.id)
       )
       .filter(feedback => {
         // Check if it's client feedback
@@ -220,7 +220,7 @@ const RawFootageCard = ({
       // Optimistically update local status
       setLocalStatus('CHANGES_REQUIRED');
     } catch (error) {
-      console.error('Error requesting raw footage changes:', error);
+      // Ignore error
     } finally {
       setIsProcessing(false);
     }
@@ -237,7 +237,7 @@ const RawFootageCard = ({
         // Optimistically update local status for fallback handler - admin sends to client, client approves
         setLocalStatus('APPROVED');
       } catch (error) {
-        console.error('Error in fallback approve handler:', error);
+        // Ignore error
       }
     }
   };
@@ -252,7 +252,7 @@ const RawFootageCard = ({
         // Optimistically update local status for fallback handler
         setLocalStatus('CHANGES_REQUIRED');
       } catch (error) {
-        console.error('Error in fallback request handler:', error);
+        // Ignore error
       }
     }
   };
@@ -425,21 +425,21 @@ const RawFootageCard = ({
                   </Button>
                 )}
 
-                {isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW' ? (
-                  <>
-                    {/* Check if all media items are approved */}
-                    {(() => {
-                      const allVideosApproved = deliverables?.videos?.length > 0 &&
-                        deliverables.videos.every(v => v.status === 'APPROVED');
-                      const allPhotosApproved = deliverables?.photos?.length > 0 &&
-                        deliverables.photos.every(p => p.status === 'APPROVED');
-                      const allRawFootagesApproved = deliverables?.rawFootages?.length > 0 &&
-                        deliverables.rawFootages.every(r => r.status === 'APPROVED');
-                      
-                      const allApproved = allVideosApproved && allPhotosApproved && allRawFootagesApproved;
-                      
-                      return allApproved ? (
-                    <Button
+{(() => {
+                  // V3 Admin - Pending Review
+                  if (isV3 && userRole === 'admin' && submission?.status === 'PENDING_REVIEW') {
+                    const allVideosApproved = deliverables?.videos?.length > 0 &&
+                      deliverables.videos.every(v => v.status === 'APPROVED');
+                    const allPhotosApproved = deliverables?.photos?.length > 0 &&
+                      deliverables.photos.every(p => p.status === 'APPROVED');
+                    const allRawFootagesApproved = deliverables?.rawFootages?.length > 0 &&
+                      deliverables.rawFootages.every(r => r.status === 'APPROVED');
+                    
+                    const allApproved = allVideosApproved && allPhotosApproved && allRawFootagesApproved;
+                    
+                    if (allApproved) {
+                      return (
+                        <Button
                           variant="contained"
                           color="primary"
                           onClick={() => {
@@ -456,20 +456,36 @@ const RawFootageCard = ({
                         >
                           Send to Client
                         </Button>
-                      ) : (
-                        <LoadingButton
-                          onClick={handleApproveClick}
-                          variant="contained"
-                          size="small"
-                          loading={isSubmitting || isProcessing}
-                          sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
-                        >
-                          Approve
-                        </LoadingButton>
                       );
-                    })()}
-                  </>
-                ) : false && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
+                    }
+                    
+                    return (
+                      <LoadingButton
+                        onClick={handleApproveClick}
+                        variant="contained"
+                        size="small"
+                        loading={isSubmitting || isProcessing}
+                        sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
+                      >
+                        Approve
+                      </LoadingButton>
+                    );
+                  }
+                  
+                  // Default - Approve Button
+                  return (
+                    <LoadingButton
+                      onClick={handleApproveClick}
+                      variant="contained"
+                      size="small"
+                      loading={isSubmitting || isProcessing}
+                      sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
+                    >
+                      Approve
+                    </LoadingButton>
+                  );
+                })()}
+                {false && userRole === 'client' && (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') && ( // V3 removed
                   <Stack direction="row" spacing={1.5}>
                     <Button
                       onClick={() => handleClientReject && handleClientReject(rawFootageItem.id)}
@@ -526,16 +542,6 @@ const RawFootageCard = ({
                       {isRawFootageApprovedByClient ? 'Approved' : 'Approve'}
                     </LoadingButton>
                   </Stack>
-                ) : (
-                    <LoadingButton
-                    onClick={handleApproveClick}
-                      variant="contained"
-                      size="small"
-                      loading={isSubmitting || isProcessing}
-                    sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
-                  >
-                    Approve
-                  </LoadingButton>
                 )}
               </Stack>
             </Stack>
@@ -814,7 +820,7 @@ const RawFootageCard = ({
                               setEditingFeedbackId(null);
                               setEditingContent('');
                             } catch (error) {
-                              console.error('Error updating feedback:', error);
+                              // Ignore error
                             }
                           }}
                           sx={{
@@ -1087,10 +1093,7 @@ const RawFootages = ({
         }
       }
     } catch (error) {
-      console.error('[RAW FOOTAGE] Error approving raw footage:', error);
-      console.error('[RAW FOOTAGE] Error response:', error?.response);
-      console.error('[RAW FOOTAGE] Error message:', error?.message);
-      enqueueSnackbar('Failed to approve raw footage', { variant: 'error' });
+      // Ignore error
     }
   };
 
@@ -1114,8 +1117,7 @@ const RawFootages = ({
         }
       }
     } catch (error) {
-      console.error('Error requesting changes:', error);
-      enqueueSnackbar('Failed to request changes', { variant: 'error' });
+      // Ignore error
     }
   };
 
@@ -1136,8 +1138,7 @@ const RawFootages = ({
         }
       }
     } catch (error) {
-      console.error('Error sending to client:', error);
-      enqueueSnackbar('Failed to send to client', { variant: 'error' });
+      // Ignore error
     }
   };
 
@@ -1171,7 +1172,7 @@ const RawFootages = ({
       if (deliverables?.deliverableMutate) await deliverables.deliverableMutate();
       if (deliverables?.submissionMutate) await deliverables.submissionMutate();
     } catch (error) {
-      enqueueSnackbar('Failed to request changes', { variant: 'error' });
+      // Ignore error
     }
   };
 

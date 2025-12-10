@@ -312,7 +312,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
       const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
 
-      for (const annotation of annotations) {
+      annotations.forEach((annotation) => {
         const page = pdfDoc.getPage(annotation.page - 1);
 
         const y = page.getHeight() - annotation.y - annotation.height;
@@ -323,7 +323,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           width: annotation.width,
           height: annotation.height,
         });
-      }
+      });
 
       const pdfBytes = await pdfDoc.save();
 
@@ -785,7 +785,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     },
                   }}
                 >
-                  <Typography variant='body2' fontWeight={'bold'} sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
                   <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>
@@ -1031,7 +1031,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     },
                   }}
                 >
-                  <Typography variant='body2' fontWeight={'bold'} sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
+                  <Typography variant='body2' fontWeight="bold" sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }}>Download Agreement</Typography>
                   <Iconify icon="material-symbols:download" width={25} />
                 </Button>
               </Box>

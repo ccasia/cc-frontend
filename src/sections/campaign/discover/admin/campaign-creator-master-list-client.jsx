@@ -29,6 +29,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
+import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -37,7 +39,6 @@ import PitchModal from './pitch-modal';
 import MediaKitModal from './media-kit-modal';
 import PitchModalMobile from './pitch-modal-mobile';
 import CreatorMasterListRow from './creator-master-list-row';
-import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 // Status display helper function
 const getStatusInfo = (pitch) => {
@@ -138,7 +139,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
                 creator: pitch.user?.creator,
                 engagementRate: pitch.user?.instagramUser?.engagement_rate,
                 followerCount: pitch.user?.instagramUser?.followers_count,
-                profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
+                profileLink: pitch.user?.creator?.profileLink,
               },
               status: pitch.displayStatus || pitch.status || 'undecided',
               displayStatus: pitch.displayStatus || pitch.status || 'undecided',
@@ -148,7 +149,6 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               adminComments: pitch.adminComments,
               rejectionReason: pitch.rejectionReason,
               customRejectionText: pitch.customRejectionText,
-              username: pitch.username,
               followerCount: pitch.followerCount,
               engagementRate: pitch.engagementRate,
               isShortlisted: false,
@@ -172,7 +172,7 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               creator: item.user?.creator,
               engagementRate: item.user?.instagramUser?.engagement_rate,
               followerCount: item.user?.instagramUser?.followers_count,
-              profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
+              profileLink: item.user?.creator?.profileLink,
             },
             status: 'approved', // Shortlisted creators are approved
             createdAt: item.shortlisted_date || new Date().toISOString(),
@@ -203,14 +203,14 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
               creator: pitch.user?.creator,
               engagementRate: pitch.user?.instagramUser?.engagement_rate,
               followerCount: pitch.user?.instagramUser?.followers_count,
-              profileLink: pitch.user?.guestProfileLink || pitch.user?.creator?.profileLink,
+              profileLink: pitch.user?.creator?.profileLink,
             },
             status: pitch.status || 'undecided',
             createdAt: pitch.createdAt || new Date().toISOString(),
             type: pitch.type || 'text',
             content: pitch.content || pitch.user?.creator?.about || 'No content available',
             isShortlisted: false,
-            pitchId: pitch.id,
+            // pitchId: pitch.id,
             isV3: false,
           }))
           .filter((creator) => creator.user && creator.user.creator)
@@ -937,22 +937,38 @@ const CampaignCreatorMasterListClient = ({ campaign, campaignMutate }) => {
 };
 
 const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
-  const resolveMetric = (...values) => values.find((value) => value != null);
   const creatorProfile = pitch?.user?.creator || {};
   const instagramStats = creatorProfile.instagramUser || {};
   const tiktokStats = creatorProfile.tiktokUser || {};
 
-  const followerCount = resolveMetric(
-    instagramStats.followers_count,
-    tiktokStats.follower_count,
-    pitch?.followerCount,
-  );
+  // Helper function to select the account with most followers and highest engagement
+  const selectBestAccount = () => {
+    const igFollowers = instagramStats?.followers_count || 0;
+    const igEngagement = ((instagramStats?.totalLikes || 0) + (instagramStats?.totalComments || 0)) / igFollowers || 0;
+    const tkFollowers = tiktokStats?.follower_count || 0;
+    const tkEngagement = ((tiktokStats?.likes_count || 0) + (tiktokStats?.totalComments || 0) + (tiktokStats?.totalShares || 0)) / tkFollowers || 0;
 
-  const engagementRate = resolveMetric(
-    instagramStats.engagement_rate,
-    tiktokStats.engagement_rate,
-    pitch?.engagementRate,
-  );
+    // If only one account exists, use it
+    if (!tkFollowers) return { followers: igFollowers, engagement: igEngagement };
+    if (!igFollowers) return { followers: tkFollowers, engagement: tkEngagement };
+
+    // If both exist, compare follower count first, then engagement rate
+    if (igFollowers >= tkFollowers) {
+      return { followers: igFollowers, engagement: igEngagement };
+    }
+    return { followers: tkFollowers, engagement: tkEngagement };
+  };
+
+  const bestAccount = selectBestAccount();
+
+  // Extract social media usernames
+  const instagramUsername = instagramStats?.username || extractUsernameFromProfileLink(creatorProfile?.instagramProfileLink);
+  const tiktokUsername = tiktokStats?.username || extractUsernameFromProfileLink(creatorProfile?.tiktokProfileLink);
+  const profileUsername = extractUsernameFromProfileLink(creatorProfile?.profileLink);
+  const hasSocialUsernames = instagramUsername || tiktokUsername;
+
+  const followerCount = bestAccount.followers || pitch?.followerCount;
+  const engagementRate = bestAccount.engagement || pitch?.engagementRate;
 
   return (
     <Card
@@ -964,7 +980,7 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
       }}
     >
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        <Stack flex={1} direction="row" spacing={1}>
+        <Stack flex={1} spacing={1}>
           <Stack flex={3} direction="row" spacing={1}>
             <Avatar
               src={pitch?.user?.photoURL}
@@ -972,40 +988,59 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
               sx={{ width: 35, height: 35 }}
             />
 
-            <Stack>
-              <Typography variant="subtitle2" fontWeight="bold" lineHeight={1.4} sx={{ color: '#221f20' }}>
-                {pitch?.user?.name || 'Unknown Creator'}
-              </Typography>
+            <Typography variant="subtitle2" fontWeight="bold" lineHeight={1.4} sx={{ color: '#221f20' }} flex={3} alignSelf="center">
+              {pitch?.user?.name || 'Unknown Creator'}
+            </Typography>
 
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                <Iconify icon="mdi:instagram" width={14} sx={{ color: '#637381' }} />
-                <Typography variant="subtitle" sx={{ color: '#8E8E93', fontSize: 12 }}>
-                  {pitch.user?.ig_username || pitch?.user?.tiktok_username || pitch?.username || extractUsernameFromProfileLink(pitch.user?.profileLink) || 'N/A'}
-                </Typography>
-              </Stack>
-            </Stack>
+            <Button
+              onClick={() => onViewPitch(pitch)}
+              sx={{
+                flex: 1,
+                px: 1,
+                height: 30,
+                minWidth: 90,
+                color: '#203ff5',
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                textTransform: 'none',
+                fontSize: 12,
+                fontWeight: 600,
+                '&:hover': {
+                  border: '1px solid #E7E7E7',
+                  bgcolor: '#E7E7E7',
+                },
+              }}
+            >
+              View Profile
+            </Button>
           </Stack>
 
-          <Button
-            onClick={() => onViewPitch(pitch)}
-            sx={{
-              flex: 1,
-              px: 1,
-              height: 30,
-              color: '#203ff5',
-              border: '1px solid #E7E7E7',
-              boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-              textTransform: 'none',
-              fontSize: 12,
-              fontWeight: 600,
-              '&:hover': {
-                border: '1px solid #E7E7E7',
-                bgcolor: '#E7E7E7',
-              },
-            }}
-          >
-            View Profile
-          </Button>
+          {hasSocialUsernames ? (
+            <Stack direction="row" alignItems="center" mt={-0.5} ml={5.2} spacing={1}>
+              {instagramUsername && (
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify icon="mdi:instagram" width={14} sx={{ color: '#8E8E93' }} />
+                  <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                    {instagramUsername}
+                  </Typography>
+                </Stack>
+              )}
+              {tiktokUsername && (
+                <Stack direction="row" alignItems="center" spacing={0}>
+                  <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#8E8E93' }} />
+                  <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                    {tiktokUsername}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          ) : profileUsername && (
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: 12 }}>
+                {profileUsername}
+              </Typography>
+            </Stack>
+        )}
         </Stack>
 
         <Stack direction="row" spacing={2} ml={5.2} sx={{ mt: 0.5 }}>
@@ -1111,7 +1146,10 @@ const pitchPropType = PropTypes.shape({
     photoURL: PropTypes.string,
     followerCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     engagementRate: PropTypes.number,
+    creator: PropTypes.object,
   }),
+  followerCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  engagementRate: PropTypes.number,
 });
 
 MobileCreatorCard.propTypes = {

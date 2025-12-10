@@ -113,8 +113,11 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
           batches.push(uncachedSubmissions.slice(i, i + batchSize));
         }
 
+        // Process batches sequentially to respect rate limits
+        // eslint-disable-next-line no-restricted-syntax
         for (const batch of batches) {
-          const batchPromises = batch.map(async ({ submission, cacheKey }) => {
+          // eslint-disable-next-line no-await-in-loop
+          const batchPromises = batch.map(async ({ submission, cacheKey: submissionCacheKey }) => {
             if (!submission.user || !submission.postUrl) {
               return {
                 failed: {
@@ -159,13 +162,14 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
                 };
 
                 // Cache individual insight
-                insightsCache.set(cacheKey, {
+                insightsCache.set(submissionCacheKey, {
                   data: insightData,
                   timestamp: Date.now()
                 });
 
                 return { insight: insightData };
               }
+              return { failed: { submissionId: submission.id, reason: 'No endpoint found', url: submission.postUrl } };
             } catch (fetchError) {
               console.error(`Error fetching insight for ${submission.postUrl}:`, fetchError);
               return {
@@ -181,9 +185,8 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
             }
           });
 
+          // eslint-disable-next-line no-await-in-loop
           const batchResults = await Promise.all(batchPromises);
-          
-          // Process batch results
           const batchInsights = [];
           const batchFailed = [];
 
@@ -198,14 +201,16 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
           // Update state with new batch data
           insights.push(...batchInsights);
           failed.push(...batchFailed);
-          
           setData([...insights]);
           setFailedUrls([...failed]);
           setLoadingProgress({ loaded: insights.length, total: postingSubmissions.length });
 
           // Small delay between batches to respect rate limits
           if (batches.indexOf(batch) < batches.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 200));
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise(resolve => {
+              setTimeout(resolve, 200);
+            });
           }
         }
       }
@@ -242,6 +247,7 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
     insightsCache.delete(cacheKey);
     // Also clear individual submission caches for this campaign
     const keysToDelete = [];
+    // eslint-disable-next-line no-restricted-syntax
     for (const [key] of insightsCache.entries()) {
       if (key.includes(campaignId)) {
         keysToDelete.push(key);

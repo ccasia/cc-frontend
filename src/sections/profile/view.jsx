@@ -1278,11 +1278,15 @@ const Profile = () => {
         )
       )}
 
-      {['admin', 'superadmin'].includes(user?.role)
-        ? adminContents
-        : user?.role === 'client'
-          ? clientContents
-          : creatorContents}
+      {(() => {
+        if (['admin', 'superadmin'].includes(user?.role)) {
+          return adminContents;
+        }
+        if (user?.role === 'client') {
+          return clientContents;
+        }
+        return creatorContents;
+      })()}
 
       {/* <Toaster /> */}
     </Container>

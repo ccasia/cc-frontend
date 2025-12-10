@@ -101,6 +101,29 @@ export const extractUsernameFromProfileLink = (link) => {
 };
 
 /**
+ * Creates a social media profile URL from a username.
+ * @param {string} username - The social media username (with or without @)
+ * @param {'instagram' | 'tiktok'} platform - The social media platform
+ * @returns {string | null} The full profile URL or null if invalid
+ */
+export const createSocialProfileUrl = (username, platform) => {
+  if (!username || typeof username !== 'string') return null;
+  
+  // Remove @ symbol if present and trim whitespace
+  const cleanUsername = username.replace(/^@/, '').trim();
+  if (!cleanUsername) return null;
+  
+  switch (platform) {
+    case 'instagram':
+      return `https://www.instagram.com/${cleanUsername}/`;
+    case 'tiktok':
+      return `https://www.tiktok.com/@${cleanUsername}`;
+    default:
+      return null;
+  }
+};
+
+/**
  * Calculates engagement rate as a percentage
  */
 export const calculateEngagementRate = (engagement, followers) => {
@@ -365,4 +388,30 @@ export const getCaptionStyles = (contentLength, isMobile) => {
     WebkitBoxOrient: 'vertical',
     overflow: 'hidden',
   };
+};
+
+/**
+ * Checks if a user should see the media kit popup
+ * @param {Object} user - The user object from auth context
+ * @param {Array} targetUserIds - Array of user IDs that should see the popup
+ * @returns {boolean} - Whether the user should see the popup
+ */
+export const shouldShowMediaKitPopup = (user, targetUserIds = []) => {
+  if (!user || user.role !== 'creator') {
+    return false;
+  }
+
+  if (targetUserIds.length > 0 && !targetUserIds.includes(user.id)) {
+    return false;
+  }
+
+  const isDismissed = localStorage.getItem(`mediaKitPopupDismissed_${user.id}`) === 'true';
+  if (isDismissed) {
+    return false;
+  }
+
+  const hasMediaKit = user.creator && 
+    (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+
+  return !hasMediaKit;
 };

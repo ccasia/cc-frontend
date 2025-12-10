@@ -85,7 +85,9 @@ const RawFootageCard = ({
   const saveOverrides = (overrides) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-    } catch {}
+    } catch {
+      // Ignore localStorage errors
+    }
   };
   useEffect(() => {
     const stored = loadOverrides();
@@ -187,11 +189,11 @@ const RawFootageCard = ({
         const override = localFeedbackUpdates[fb.id] ?? localFeedbackUpdates[compositeKey];
         const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
         const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
-        const fallbackDisplay = hasText
-          ? fb.content
-          : hasReasons
-            ? `Reasons: ${fb.reasons.join(', ')}`
-            : '';
+        const fallbackDisplay = (() => {
+          if (hasText) return fb.content;
+          if (hasReasons) return `Reasons: ${fb.reasons.join(', ')}`;
+          return '';
+        })();
         return {
           ...fb,
           displayContent: override ?? fallbackDisplay,
@@ -201,14 +203,14 @@ const RawFootageCard = ({
       .filter((fb) => fb && fb.displayContent.trim().length > 0);
 
     const seen = new Set();
-    const deduped = [];
-    for (const fb of normalized) {
+    const deduped = normalized.filter((fb) => {
       const key = fb.id ? `id:${fb.id}` : `c:${fb.displayContent}|t:${fb.createdAt}`;
       if (!seen.has(key)) {
         seen.add(key);
-        deduped.push(fb);
+        return true;
       }
-    }
+      return false;
+    });
 
     return deduped.sort((a, b) => dayjs(b?.createdAt).diff(dayjs(a?.createdAt)));
   };
@@ -429,36 +431,34 @@ const RawFootageCard = ({
                   </Button>
                 )}
 
-                {isPendingReview ? ( // V2 logic - show approval button when pending review
-                  <>
-                    {/* V2 logic - show approval button */}
-                    <LoadingButton
-                      onClick={handleApproveClick}
-                      variant="contained"
-                      size="small"
-                      loading={isSubmitting || isProcessing}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        color: '#1ABF66',
-                        border: '1.5px solid',
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        borderRadius: 1.15,
-                        py: 1.2,
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        textTransform: 'none',
-                        flex: 1,
-                      }}
-                    >
-                      Approve
-                    </LoadingButton>
-                  </>
-                ) : false &&
+{isPendingReview && (
+                  <LoadingButton
+                    onClick={handleApproveClick}
+                    variant="contained"
+                    size="small"
+                    loading={isSubmitting || isProcessing}
+                    sx={{
+                      bgcolor: '#FFFFFF',
+                      color: '#1ABF66',
+                      border: '1.5px solid',
+                      borderColor: '#e7e7e7',
+                      borderBottom: 3,
+                      borderBottomColor: '#e7e7e7',
+                      borderRadius: 1.15,
+                      py: 1.2,
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      height: '40px',
+                      textTransform: 'none',
+                      flex: 1,
+                    }}
+                  >
+                    Approve
+                  </LoadingButton>
+                )}
+                {false &&
                   userRole === 'client' &&
-                  (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
+                  (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') && ( // V3 removed
                   <Stack direction="row" spacing={1.5}>
                     <Button
                       onClick={() => handleClientReject && handleClientReject(rawFootageItem.id)}
@@ -515,30 +515,6 @@ const RawFootageCard = ({
                       {isRawFootageApprovedByClient ? 'Approved' : 'Approve'}
                     </LoadingButton>
                   </Stack>
-                ) : (
-                  <LoadingButton
-                    onClick={handleApproveClick}
-                    variant="contained"
-                    size="small"
-                    loading={isSubmitting || isProcessing}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      color: '#1ABF66',
-                      border: '1.5px solid',
-                      borderColor: '#e7e7e7',
-                      borderBottom: 3,
-                      borderBottomColor: '#e7e7e7',
-                      borderRadius: 1.15,
-                      py: 1.2,
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                      height: '40px',
-                      textTransform: 'none',
-                      flex: 1,
-                    }}
-                  >
-                    Approve
-                  </LoadingButton>
                 )}
               </Stack>
             </Stack>
@@ -813,10 +789,14 @@ const RawFootageCard = ({
                               try {
                                 if (deliverables?.deliverableMutate)
                                   deliverables.deliverableMutate();
-                              } catch {}
+                              } catch {
+                                // Ignore revalidation errors - non-blocking
+                              }
                               try {
                                 if (deliverables?.submissionMutate) deliverables.submissionMutate();
-                              } catch {}
+                              } catch {
+                                // Ignore revalidation errors - non-blocking
+                              }
                             }, 500);
                           }
                           setEditingFeedbackId(null);
@@ -1143,19 +1123,18 @@ const RawFootages = ({
 
       console.log('V3 submissions removed - API call disabled');
 
-      if (response.status === 200) {
-        enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
-        // Refresh data - ensure proper SWR revalidation
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
-        }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
-        }
-        // Also refresh any SWR submission data if available
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
-        }
+      // V3 API call removed - keeping success notification for now
+      enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
+      // Refresh data - ensure proper SWR revalidation
+      if (deliverables?.deliverableMutate) {
+        await deliverables.deliverableMutate();
+      }
+      if (deliverables?.submissionMutate) {
+        await deliverables.submissionMutate();
+      }
+      // Also refresh any SWR submission data if available
+      if (deliverables?.submissionMutate) {
+        await deliverables.submissionMutate();
       }
     } catch (error) {
       console.error('Error approving raw footage:', error);
@@ -1174,15 +1153,14 @@ const RawFootages = ({
 
       console.log('V3 submissions removed - API call disabled');
 
-      if (response.status === 200) {
-        enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
-        // Refresh data
-        if (deliverables?.deliverableMutate) {
-          await deliverables.deliverableMutate();
-        }
-        if (deliverables?.submissionMutate) {
-          await deliverables.submissionMutate();
-        }
+      // V3 API call removed - keeping success notification for now
+      enqueueSnackbar('Changes requested successfully!', { variant: 'success' });
+      // Refresh data
+      if (deliverables?.deliverableMutate) {
+        await deliverables.deliverableMutate();
+      }
+      if (deliverables?.submissionMutate) {
+        await deliverables.submissionMutate();
       }
     } catch (error) {
       console.error('Error requesting changes:', error);
@@ -1291,13 +1269,19 @@ const RawFootages = ({
       // Non-blocking SWR revalidation
       try {
         if (deliverables?.deliverableMutate) deliverables.deliverableMutate();
-      } catch {}
+      } catch {
+        // Ignore revalidation errors - non-blocking
+      }
       try {
         if (deliverables?.submissionMutate) deliverables.submissionMutate();
-      } catch {}
+      } catch {
+        // Ignore revalidation errors - non-blocking
+      }
       try {
         if (mutateSubmission) mutateSubmission();
-      } catch {}
+      } catch {
+        // Ignore revalidation errors - non-blocking
+      }
       try {
         mutate(
           (key) =>
@@ -1308,7 +1292,9 @@ const RawFootages = ({
           undefined,
           { revalidate: true }
         );
-      } catch {}
+      } catch {
+        // Ignore revalidation errors - non-blocking
+      }
       return true;
     } catch (error) {
       console.error('Error updating feedback:', error);
@@ -1348,7 +1334,7 @@ const RawFootages = ({
       const allItemsSent =
         itemsWithClientFeedback.size === 0 ||
         Array.from(itemsWithClientFeedback).every(
-          (itemKey) => sentToCreatorItems.has(itemKey) || itemKey === `rawFootage_${mediaId}`
+          (key) => sentToCreatorItems.has(key) || key === `rawFootage_${mediaId}`
         );
 
       // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed

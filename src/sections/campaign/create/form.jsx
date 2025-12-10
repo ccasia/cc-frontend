@@ -39,15 +39,18 @@ import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
 
 import CreateBrand from './brandDialog';
-import SelectBrand from './steps/select-brand';
+import CampaignAdminManager from './steps/admin-manager';
+import CampaignDetails from './steps/campaign-details';
+import CampaignLogistics from './steps/campaign-logistics';
 import CampaignType from './steps/campaign-type';
-import SelectTimeline from './steps/select-timeline';
 import CampaignFormUpload from './steps/form-upload';
 import GeneralCampaign from './steps/general-campaign';
-import CampaignDetails from './steps/campaign-details';
 import CampaignImageUpload from './steps/image-upload';
-import CampaignAdminManager from './steps/admin-manager';
+import LogisticRemarks from './steps/logistic-remarks';
 import OtherAttachments from './steps/other-attachments';
+import ReservationSlots from './steps/reservation-slots';
+import SelectBrand from './steps/select-brand';
+import SelectTimeline from './steps/select-timeline';
 import TimelineTypeModal from './steps/timeline-type-modal';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
@@ -62,6 +65,10 @@ const steps = [
   { title: 'Creator Persona', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
   { title: 'Campaign Type', logo: '⎏', color: '#8A5AFE' },
+  // HIDE: logistics
+  // { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
+  // { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
+  // { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
   { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
   { title: 'Select Campaign Manager(s)', logo: '⛑️', color: '#FFF0E5' },
   { title: 'Agreement Form', logo: '✍️', color: '#026D54' },
@@ -90,7 +97,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   const [pages, setPages] = useState(0);
-  const [hasCreditError, setHasCreditError] = useState(false)
+  const [hasCreditError, setHasCreditError] = useState(false);
 
   const pdfModal = useBoolean();
 
@@ -258,6 +265,40 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     ads: Yup.boolean(),
   });
 
+  const logisticsSchema = Yup.object().shape({
+    logisticsType: Yup.string(),
+    products: Yup.array().when('logisticsType', {
+      is: 'PRODUCT_DELIVERY',
+      then: (schema) =>
+        schema
+          .of(
+            Yup.object().shape({
+              name: Yup.string().required('Product name is required'),
+            })
+          )
+          .min(1, 'At least one product is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    logisticRemarks: Yup.string(),
+    locations: Yup.array().notRequired(),
+
+    venueName: Yup.string().when('logisticsType', {
+      is: 'RESERVATION',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+    venueAddress: Yup.string().when('logisticsType', {
+      is: 'RESERVATION',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+    reservationNotes: Yup.string().when('logisticsType', {
+      is: 'RESERVATION',
+      then: (schema) => schema,
+      otherwise: (schema) => schema,
+    }),
+  });
+
   const getSchemaForStep = (step) => {
     switch (step) {
       case 0:
@@ -270,6 +311,22 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
         return campaignImagesSchema;
       case 4:
         return campaignTypeSchema;
+      // HIDE: Logistics
+
+      // case 5:
+      //   return logisticsSchema;
+      // case 6:
+      //   return Yup.object().shape({});
+      // case 7:
+      //   return Yup.object().shape({});
+      // case 8:
+      //   return timelineSchema;
+      // case 9:
+      //   return campaignAdminSchema;
+      // case 10:
+      //   return agreementSchema;
+      // default:
+      //   return campaignSchema;
       case 5:
         return timelineSchema;
       case 6:
@@ -287,6 +344,11 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     client: null,
     country: '',
     campaignBrand: null,
+    logisticsType: '',
+    logisticRemarks: '',
+    schedulingOption: 'confirmation',
+    products: [{ name: '' }],
+    locations: [{ name: '' }],
     campaignStartDate: null,
     campaignEndDate: null,
     campaignIndustries: '',
@@ -384,20 +446,45 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     }
   }, [brandState, setValue]);
 
-  const isStepOptional = (step) => step === 8;
+  const isStepOptional = (step) => step === 5 || step === 10;
 
   const handleNext = async () => {
     // setActiveStep((prevActiveStep) => prevActiveStep + 1);
     const result = await trigger();
     if (result) {
-      localStorage.setItem('activeStep', activeStep + 1);
-      setActiveStep((prevActiveStep) => prevActiveStep + 1);
+      // Skip Reservation Slots and Logistic Remarks steps if logistics type is not 'reservation'
+      const logisticsType = getValues('logisticsType');
+      const nextStep = activeStep + 1; // HIDE: logistics
+
+      // HIDE: Logistics
+      // let nextStep = activeStep + 1;
+      // if (activeStep === 5 && logisticsType !== 'RESERVATION' && nextStep === 6) {
+      //   nextStep = 8; // Skip to Campaign Timeline (skip both Reservation Slots and Logistic Remarks)
+      // } else if (activeStep === 6 && logisticsType === 'RESERVATION') {
+      //   nextStep = 7; // Go to Logistic Remarks after Reservation Slots
+      // }
+
+      localStorage.setItem('activeStep', nextStep);
+      setActiveStep(nextStep);
     }
   };
 
   const handleBack = () => {
-    localStorage.setItem('activeStep', activeStep - 1);
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    const logisticsType = getValues('logisticsType');
+    const prevStep = activeStep - 1; // HIDE: Logistics
+
+    // HIDE: Logistics
+    // let prevStep = activeStep - 1;
+    // if (activeStep === 8 && logisticsType !== 'RESERVATION') {
+    //   prevStep = 5;
+    // } else if (activeStep === 7 && logisticsType !== 'RESERVATION') {
+    //   prevStep = 5;
+    // } else if (activeStep === 6 && logisticsType !== 'RESERVATION') {
+    //   prevStep = 5;
+    // }
+
+    localStorage.setItem('activeStep', prevStep);
+    setActiveStep(prevStep);
   };
 
   const onDrop = useCallback(
@@ -529,6 +616,23 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
           return <CampaignImageUpload />;
         case 4:
           return <CampaignType />;
+        // HIDE: logistics
+        // case 5:
+        //   return <CampaignLogistics />;
+        // case 6:
+        //   return <ReservationSlots />;
+        // case 7:
+        //   return <LogisticRemarks />;
+        // case 8:
+        //   return <SelectTimeline />;
+        // case 9:
+        //   return <CampaignAdminManager />;
+        // case 10:
+        //   return <CampaignFormUpload pdfModal={pdfModal} />;
+        // case 11:
+        //   return <OtherAttachments />;
+        // default:
+        //   return <SelectBrand />;
         case 5:
           return <SelectTimeline />;
         case 6:
@@ -548,15 +652,15 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     const currentClientId = getValues('client')?.id;
 
     openPackage.onFalse();
-    enqueueSnackbar('Package linked successfully!', {variant: 'success'});
-    
+    enqueueSnackbar('Package linked successfully!', { variant: 'success' });
+
     const newCompanyList = await mutateCompanyList();
 
     if (newCompanyList && currentClientId) {
       const updatedClient = newCompanyList.find((c) => c.id === currentClientId);
 
       if (updatedClient) {
-        setValue('client', updatedClient, {shouldValidate:true});
+        setValue('client', updatedClient, { shouldValidate: true });
       }
     }
   };
@@ -717,7 +821,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
               </Typography>
             </Stack>
 
-            <Box my={5} overflow="auto" minHeight={400}>
+            <Box mt={1} mb={5} overflow="auto" minHeight={400}>
               {getStepContent(activeStep)}
             </Box>
           </Box>

@@ -221,14 +221,21 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     // Skip admin manager validation for admin/CSM users completing activation
     const skipAdminValidation = (isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION';
     
+    const getCampaignManagersError = () => {
+      if (skipAdminValidation) return '';
+      if (adminOptions.length === 0) {
+        return 'No CSM admins available in the system. Please create a CSM role admin first.';
+      }
+      if (campaignManagers.length === 0) {
+        return 'At least one admin manager is required';
+      }
+      return '';
+    };
+
     const newErrors = {
       campaignType: !campaignType ? 'Campaign type is required' : '',
       deliverables: deliverables.length === 0 ? 'At least one deliverable is required' : '',
-      campaignManagers: skipAdminValidation ? '' : (adminOptions.length === 0 
-        ? 'No CSM admins available in the system. Please create a CSM role admin first.'
-        : campaignManagers.length === 0 
-          ? 'At least one admin manager is required' 
-          : ''),
+      campaignManagers: getCampaignManagersError(),
       agreementTemplateId: !agreementTemplateId ? 'Agreement template is required' : '',
     };
     
@@ -502,7 +509,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {selected.map((value) => {
-                      const admin = adminOptions.find(admin => admin.userId === value);
+                      const admin = adminOptions.find(a => a.userId === value);
                       return (
                         <Chip 
                           key={value} 
@@ -1039,4 +1046,5 @@ ActivateCampaignDialog.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   campaignId: PropTypes.string,
+  onSuccess: PropTypes.func,
 }; 

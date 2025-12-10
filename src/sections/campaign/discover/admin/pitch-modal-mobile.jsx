@@ -17,14 +17,13 @@ import {
   Button,
   Select,
   Divider,
+  Tooltip,
   MenuItem,
   TextField,
   IconButton,
   Typography,
-  FormControl,
   DialogContent,
   DialogActions,
-	Tooltip,
 } from '@mui/material';
 
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
@@ -33,7 +32,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
@@ -42,7 +40,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
-  const [totalUGCVideos, setTotalUGCVideos] = useState(null);
+  const [totalUGCVideos] = useState(null);
   const { mutate } = useGetCampaignById(campaign.id);
   const navigate = useNavigate();
 
@@ -60,6 +58,9 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   useEffect(() => {
     setCurrentPitch(pitch);
   }, [pitch]);
+
+  const hasSocialMediaConnection =
+    pitch?.user?.creator?.isFacebookConnected || pitch?.user?.creator?.isTiktokConnected;
 
   // Set default platform when modal opens
   useEffect(() => {
@@ -104,7 +105,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const derivedBirthDate = creatorProfile.birthDate || accountUser.birthDate || null;
   const derivedPronouns =
     creatorProfile.pronounce || accountUser.pronounce || accountUser.pronouns || null;
-  
+
   const isGuest = accountUser.status === 'guest';
 
   const resolveNumber = (value) =>
@@ -130,8 +131,8 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
         username:
           base.username ??
           (platform === 'instagram'
-            ? creator?.instagram ?? account?.instagram
-            : creator?.tiktok ?? account?.tiktok),
+            ? (creator?.instagram ?? account?.instagram)
+            : (creator?.tiktok ?? account?.tiktok)),
       };
     };
 
@@ -139,7 +140,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
       instagram: collect('instagram'),
       tiktok: collect('tiktok'),
     };
-  }, [currentPitch]);
+  }, [currentPitch, creatorProfileFull]);
 
   const activePlatform = selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram';
   const activeStats = platformStats[activePlatform] || {};
@@ -171,12 +172,6 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
-
-  const ugcLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
-    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
-    return campaign?.campaignCredits - totalUGCs;
-  }, [campaign]);
 
   const handleApprove = async () => {
     try {
@@ -312,7 +307,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
         onClose={onClose}
         PaperProps={{
           sx: {
-						width: '90%',
+            width: '90%',
             bgcolor: '#F5F5F5',
           },
         }}
@@ -321,9 +316,9 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
         <IconButton
           onClick={onClose}
           sx={{
-						paddingTop: 2,
+            paddingTop: 2,
             paddingRight: 2,
-						alignSelf: 'flex-end',
+            alignSelf: 'flex-end',
             color: '#8E8E93',
           }}
         >
@@ -331,7 +326,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
         </IconButton>
 
         {/* Scrollable Content */}
-        <DialogContent sx={{ px: 2, mb: 2, }}>
+        <DialogContent sx={{ px: 2, mb: 2 }}>
           <Stack spacing={2}>
             {/* Creator Info Section */}
             <Stack direction="row" spacing={2} alignItems="center">
@@ -357,8 +352,9 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Typography>
                 {(() => {
                   const email = accountUser?.email;
-                  const isGuest = email?.includes('@tempmail.com') || email?.startsWith('guest_');
-                  return email && !isGuest ? (
+                  const isGuestEmail =
+                    email?.includes('@tempmail.com') || email?.startsWith('guest_');
+                  return email && !isGuestEmail ? (
                     <Typography
                       sx={{
                         fontSize: 14,
@@ -371,87 +367,202 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     </Typography>
                   ) : null;
                 })()}
+                {/* Social Links - Show when no media kit data */}
+                {(() => {
+                  const hasInstagramData = !!(
+                    currentPitch?.user?.creator?.instagramUser?.followers_count ||
+                    creatorProfileFull?.creator?.instagramUser?.followers_count ||
+                    creatorProfileFull?.instagramUser?.followers_count
+                  );
+                  const hasTiktokData = !!(
+                    currentPitch?.user?.creator?.tiktokUser?.follower_count ||
+                    creatorProfileFull?.creator?.tiktokUser?.follower_count ||
+                    creatorProfileFull?.tiktokUser?.follower_count
+                  );
+                  const instagramLink =
+                    currentPitch?.user?.creator?.instagramProfileLink ||
+                    creatorProfileFull?.creator?.instagramProfileLink;
+                  const tiktokLink =
+                    currentPitch?.user?.creator?.tiktokProfileLink ||
+                    creatorProfileFull?.creator?.tiktokProfileLink;
+
+                  const isGuestCreator = creatorProfile?.isGuest;
+                  const profileLink = creatorProfile?.profileLink;
+
+                  // Show social links section ONLY if there's no media kit data at all
+                  const shouldShowSocialLinks =
+                    (!hasInstagramData && !hasTiktokData && (instagramLink || tiktokLink)) ||
+                    profileLink;
+
+                  if (shouldShowSocialLinks) {
+                    return (
+                      <Box>
+                        {!hasTiktokData && tiktokLink && (
+                          <Typography
+                            component="a"
+                            href={tiktokLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              fontSize: '12px',
+                              color: '#1340FF',
+                              textDecoration: 'none',
+                              display: 'block',
+                              mb: 0.5,
+                              '&:hover': {
+                                textDecoration: 'underline',
+                              },
+                            }}
+                          >
+                            {(() => {
+                              try {
+                                const url = new URL(
+                                  tiktokLink.startsWith('http')
+                                    ? tiktokLink
+                                    : `https://${tiktokLink}`
+                                );
+                                return `www.tiktok.com${url.pathname}`;
+                              } catch {
+                                return tiktokLink;
+                              }
+                            })()}
+                          </Typography>
+                        )}
+                        {!hasInstagramData && instagramLink && (
+                          <Typography
+                            component="a"
+                            href={instagramLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              fontSize: '12px',
+                              color: '#1340FF',
+                              textDecoration: 'none',
+                              display: 'block',
+                              '&:hover': {
+                                textDecoration: 'underline',
+                              },
+                            }}
+                          >
+                            {(() => {
+                              try {
+                                const url = new URL(
+                                  instagramLink.startsWith('http')
+                                    ? instagramLink
+                                    : `https://${instagramLink}`
+                                );
+                                return `www.instagram.com${url.pathname}`;
+                              } catch {
+                                return instagramLink;
+                              }
+                            })()}
+                          </Typography>
+                        )}
+                        {isGuestCreator && (
+                          <Typography
+                            component="a"
+                            href={profileLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              fontSize: '12px',
+                              color: '#1340FF',
+                              textDecoration: 'none',
+                              display: 'block',
+                              '&:hover': {
+                                textDecoration: 'underline',
+                              },
+                            }}
+                          >
+                            {profileLink}
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  }
+                  return null;
+                })()}
               </Stack>
             </Stack>
 
             {/* Age, Pronouns, Languages */}
-						<Stack direction={'row'} justifyContent={'space-between'}>
-							<Stack flex={1}>
-								{derivedBirthDate && (
-									<Box>
-										<Typography
-											sx={{
-												color: '#8E8E93',
-												fontWeight: 700,
-												fontSize: 14
-											}}
-										>
-											Age
-										</Typography>
-										<Typography sx={{ fontSize: 14, fontWeight: 400, color: '#231F20' }}>
-											{dayjs().diff(dayjs(derivedBirthDate), 'year')}
-										</Typography>
-									</Box>
-								)}
+            <Stack direction="row" justifyContent="space-between">
+              <Stack flex={1}>
+                {derivedBirthDate && (
+                  <Box>
+                    <Typography
+                      sx={{
+                        color: '#8E8E93',
+                        fontWeight: 700,
+                        fontSize: 14,
+                      }}
+                    >
+                      Age
+                    </Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 400, color: '#231F20' }}>
+                      {dayjs().diff(dayjs(derivedBirthDate), 'year')}
+                    </Typography>
+                  </Box>
+                )}
 
-								{derivedPronouns && (
-									<Box>
-										<Typography
-											sx={{
-												color: '#8E8E93',
-												fontWeight: 700,
-												fontSize: 14
-											}}
-										>
-											Pronouns
-										</Typography>
-										<Typography sx={{ fontSize: 14, fontWeight: 400, color: '#231F20' }}>
-											{derivedPronouns}
-										</Typography>
-									</Box>
-								)}
+                {derivedPronouns && (
+                  <Box>
+                    <Typography
+                      sx={{
+                        color: '#8E8E93',
+                        fontWeight: 700,
+                        fontSize: 14,
+                      }}
+                    >
+                      Pronouns
+                    </Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 400, color: '#231F20' }}>
+                      {derivedPronouns}
+                    </Typography>
+                  </Box>
+                )}
 
-								{derivedLanguages.length > 0 && (
-									<Box>
-										<Typography
-											sx={{
-												color: '#8E8E93',
-												fontWeight: 700,
-												my: 0.5,
-												display: 'block',
-												fontSize: 14
-											}}
-										>
-											Languages
-										</Typography>
-										<Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-											{derivedLanguages.map((language, index) => (
-												<Chip
-													key={index}
-													label={
-														typeof language === 'string'
-															? language.toUpperCase()
-															: String(language).toUpperCase()
-													}
-													size="small"
-													sx={{
-														bgcolor: '#FFF',
-														border: '1px solid #EBEBEB',
-														borderRadius: '6px',
-														color: '#8E8E93',
-														fontSize: 12,
-														fontWeight: 600,
-														height: '28px',
-													}}
-												/>
-											))}
-										</Stack>
-									</Box>
-								)}
-							</Stack>
-              
-              {!isGuest && 
-                <Stack justifyContent={'space-between'} gap={2} alignItems={'flex-end'}>
+                {derivedLanguages.length > 0 && (
+                  <Box>
+                    <Typography
+                      sx={{
+                        color: '#8E8E93',
+                        fontWeight: 700,
+                        my: 0.5,
+                        display: 'block',
+                        fontSize: 14,
+                      }}
+                    >
+                      Languages
+                    </Typography>
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                      {derivedLanguages.map((language, index) => (
+                        <Chip
+                          key={index}
+                          label={
+                            typeof language === 'string'
+                              ? language.toUpperCase()
+                              : String(language).toUpperCase()
+                          }
+                          size="small"
+                          sx={{
+                            bgcolor: '#FFF',
+                            border: '1px solid #EBEBEB',
+                            borderRadius: '6px',
+                            color: '#8E8E93',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            height: '28px',
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+              </Stack>
+
+              {!isGuest && hasSocialMediaConnection && (
+                <Stack justifyContent="space-between" gap={2} alignItems="flex-end">
                   {/* Media Kit Button */}
                   <Button
                     onClick={handleMediaKitClick}
@@ -525,10 +636,9 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       </IconButton>
                     </Tooltip>
                   </Stack>
-                </Stack>              
-              }
-
-						</Stack>
+                </Stack>
+              )}
+            </Stack>
 
             {/* Stats Section */}
             <Stack spacing={2}>
@@ -555,7 +665,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Box>
 
                 {/* Engagement */}
-                <Box borderLeft={'1px solid #D3D3D3'} pl={2}>
+                <Box borderLeft="1px solid #D3D3D3" pl={2}>
                   <Box
                     component="img"
                     src="/assets/icons/overview/greenChart.svg"
@@ -570,7 +680,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Box>
 
                 {/* Average Likes */}
-                <Box borderLeft={'1px solid #D3D3D3'} pl={2}>
+                <Box borderLeft="1px solid #D3D3D3" pl={2}>
                   <Box
                     component="img"
                     src="/assets/icons/overview/bubbleHeart.svg"
@@ -639,16 +749,16 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     height: 28,
                     border: '1px solid #ebebeb',
                     mt: 0.5,
-										'&:hover': {
-											bgcolor: '#fff'
-										}
+                    '&:hover': {
+                      bgcolor: '#fff',
+                    },
                   }}
                 />
               </Stack>
             </Stack>
 
             {/* Submitted On and Status */}
-            <Stack direction="row" spacing={4} justifyContent={'space-between'}>
+            <Stack direction="row" spacing={4} justifyContent="space-between">
               <Box>
                 <Typography
                   variant="caption"
@@ -671,7 +781,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Typography>
               </Box>
 
-              <Box alignItems={'flex-end'} textAlign={'end'}>
+              <Box alignItems="flex-end" textAlign="end">
                 <Typography
                   variant="caption"
                   sx={{
@@ -840,13 +950,6 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialog.open} onClose={handleCloseConfirmDialog} maxWidth="xs" fullWidth>
         <DialogContent>
-          {/* Credits badge (only useful for approve view) */}
-          {campaign?.campaignCredits && confirmDialog.type === 'approve' && (
-            <Box mt={2} textAlign="end">
-              <Label color="info">{ugcLeft} Credits left</Label>
-            </Box>
-          )}
-
           {/* CONDITIONAL BODY */}
           {confirmDialog.type === 'decline' && user?.role === 'client' ? (
             // --- Client Decline: reason UI (reusing the dialog) ---
@@ -938,26 +1041,6 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     : 'Are you sure you want to decline this pitch?'}
                 </Typography>
               </Stack>
-
-              {campaign?.campaignCredits &&
-                confirmDialog.type === 'approve' &&
-                campaign?.submissionVersion !== 'v4' && (
-                  <Box mt={2} width={1}>
-                    <TextField
-                      value={totalUGCVideos}
-                      size="small"
-                      placeholder="UGC Videos"
-                      type="number"
-                      fullWidth
-                      onKeyDown={(e) => {
-                        if (e.key === '0' && totalUGCVideos?.length === 0) e.preventDefault();
-                      }}
-                      onChange={(e) => setTotalUGCVideos(e.currentTarget.value)}
-                      error={totalUGCVideos > ugcLeft}
-                      helperText={totalUGCVideos > ugcLeft && `Maximum of ${ugcLeft} UGC Videos`}
-                    />
-                  </Box>
-                )}
             </Stack>
           )}
         </DialogContent>
@@ -996,18 +1079,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   ? handleApprove
                   : handleDecline
             }
-            disabled={
-              isSubmitting ||
-              // approve guard (unchanged)
-              (confirmDialog.type === 'approve' &&
-                campaign?.campaignCredits &&
-                campaign?.submissionVersion === 'v4' &&
-                totalUGCVideos > ugcLeft) ||
-              // client-decline guard: require reason & if others then note
-              (confirmDialog.type === 'decline' &&
-                user?.role === 'client' &&
-                (!maybeReason || (maybeReason === 'others' && !maybeNote.trim())))
-            }
+            disabled={isSubmitting}
             sx={{
               bgcolor: confirmDialog.type === 'approve' ? '#026D54' : '#ffffff',
               color:
@@ -1046,8 +1118,6 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      
     </>
   );
 };

@@ -35,7 +35,7 @@ export default function PostingLinkSuperadminView() {
   };
 
   useEffect(() => {
-    if (!socketCtx?.socket) return;
+    if (!socketCtx?.socket) return undefined;
     const handler = () => {
       mutate((key) => typeof key === 'string' && key.includes(endpoints.submission.root) && key.includes(`campaignId=${campaignId}`));
     };

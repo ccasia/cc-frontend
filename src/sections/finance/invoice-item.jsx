@@ -10,6 +10,20 @@ import Label from 'src/components/label';
 
 const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
   const [value, setValue] = useState(invoice?.status);
+  
+  // Get currency information
+  const currencyCode = invoice?.currency || 'MYR';
+  const currencySymbol = invoice?.task?.currencySymbol || invoice?.currencySymbol;
+  
+  // Debug log currency information
+  console.log('Invoice Currency Info:', {
+    invoiceId: invoice?.invoiceNumber,
+    currencyCode,
+    currencySymbol,
+    taskCurrency: invoice?.task?.currency,
+    taskCurrencySymbol: invoice?.task?.currencySymbol,
+    topLevelCurrencySymbol: invoice?.currencySymbol
+  });
 
   useEffect(() => {
     setValue(invoice?.status);
@@ -44,7 +58,11 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       </TableCell>
       <TableCell>
         <Typography variant="subtitle2">
-          {formatCurrencyAmount(invoice?.amount, invoice?.currency || 'MYR')}
+          {formatCurrencyAmount(
+            invoice?.amount, 
+            currencyCode,
+            currencySymbol
+          )}
         </Typography>
       </TableCell>
       <TableCell>
@@ -78,6 +96,7 @@ export default InvoiceItem;
 
 InvoiceItem.propTypes = {
   invoice: PropTypes.object,
+  onChangeStatus: PropTypes.func,
   selected: PropTypes.string,
   onSelectRow: PropTypes.func,
   openEditInvoice: PropTypes.func,

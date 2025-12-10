@@ -38,6 +38,7 @@ const defaultFilters = {
   campaignName: '',
   role: [],
   status: 'all',
+  currency: '',
 };
 
 const TABLE_HEAD = [
@@ -294,7 +295,7 @@ function descendingComparator(a, b, orderBy) {
 }
 
 function applyFilter({ inputData, comparator, filters }) {
-  const { name, status, campaignName } = filters;
+  const { name, status, campaignName, currency } = filters;
 
   const stabilizedThis = inputData?.map((el, index) => [el, index]);
 
@@ -323,6 +324,17 @@ function applyFilter({ inputData, comparator, filters }) {
 
   if (status !== 'all') {
     inputData = inputData.filter((item) => item.status === status);
+  }
+  
+  // Filter by currency
+  if (currency) {
+    inputData = inputData.filter((item) => {
+      // Check for currency in different possible locations
+      const invoiceCurrency = item.currency || 
+                            item.task?.currency || 
+                            (item.items && item.items[0]?.currency);
+      return invoiceCurrency === currency;
+    });
   }
 
   return inputData;

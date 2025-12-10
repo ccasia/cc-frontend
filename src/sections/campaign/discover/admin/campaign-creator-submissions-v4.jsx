@@ -65,6 +65,8 @@ function CreatorAccordion({ creator, campaign }) {
     submissionsMutate 
   } = useGetV4Submissions(campaign?.id, creator?.userId);
 
+  const onlyAgreement = submissions.length === 1 && submissions[0].submissionType.type === 'AGREEMENT_FORM';
+
   const handleSubmissionToggle = useCallback(async (submissionType, submissionId) => {
     const key = `${submissionType}-${submissionId}`;
     const isCurrentlyExpanded = expandedSubmission === key;
@@ -177,7 +179,7 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
-            width: { xs: 140, sm: 160, md: 180, lg: 200 },
+            width: { xs: 140, sm: 210 },
             minWidth: { xs: 120, sm: 140 },
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10,
@@ -255,14 +257,14 @@ function CreatorAccordion({ creator, campaign }) {
               <Typography 
                 fontWeight="SemiBold" 
                 pb={0.2} 
-                fontSize={{ xs: 8, sm: 9, md: 10, lg: 10.5 }} 
+                fontSize={{ xs: 8, sm: 12 }} 
                 color={getClientStatusColor(videoSubmission.status, 'video')}
                 noWrap
                 sx={{ 
-                  maxWidth: { xs: 60, sm: 80, md: 100 },
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden'
+                  maxWidth: { xs: 60, sm: 210 },
                 }}
+                textOverflow="ellipsis"
+                overflow="hidden"
               >
                 {getClientStatusLabel(videoSubmission.status, 'video')}
               </Typography>
@@ -303,7 +305,7 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
-            width: { xs: 140, sm: 160, md: 180, lg: 200 },
+            width: { xs: 140, sm: 210 },
             minWidth: { xs: 120, sm: 140 },
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10,
@@ -381,14 +383,14 @@ function CreatorAccordion({ creator, campaign }) {
               <Typography 
                 fontWeight="SemiBold" 
                 pb={0.2} 
-                fontSize={{ xs: 8, sm: 9, md: 10, lg: 10.5 }}  
+                fontSize={{ xs: 8, sm: 12 }} 
                 color={getClientStatusColor(photoSubmission.status, 'photo')}
                 noWrap
                 sx={{ 
-                  maxWidth: { xs: 60, sm: 80, md: 100 },
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden'
+                  maxWidth: { xs: 60, sm: 210 },
                 }}
+                textOverflow="ellipsis"
+                overflow="hidden"
               >
                 {getClientStatusLabel(photoSubmission.status, 'photo')}
               </Typography>
@@ -423,7 +425,7 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
-            width: { xs: 140, sm: 160, md: 180, lg: 200 },
+            width: { xs: 140, sm: 210 },
             minWidth: { xs: 120, sm: 140 },
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10,
@@ -501,14 +503,14 @@ function CreatorAccordion({ creator, campaign }) {
               <Typography 
                 fontWeight="SemiBold" 
                 pb={0.2} 
-                fontSize={{ xs: 8, sm: 9, md: 10, lg: 10.5 }} 
+                fontSize={{ xs: 8, sm: 12 }} 
                 color={getClientStatusColor(rawFootageSubmission.status, 'rawFootage')}
                 noWrap
                 sx={{ 
-                  maxWidth: { xs: 60, sm: 80, md: 100 },
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden'
+                  maxWidth: { xs: 60, sm: 210 },
                 }}
+                textOverflow="ellipsis"
+                overflow="hidden"
               >
                 {getClientStatusLabel(rawFootageSubmission.status, 'rawFootage')}
               </Typography>
@@ -597,9 +599,9 @@ function CreatorAccordion({ creator, campaign }) {
         boxShadow: '0px 4px 4px 0px #8E8E9340',
         borderRadius: 1,
         pl: { xs: 0.8, sm: 1 },
-        pr: { xs: 0.5, sm: 0 },
+        pr: { xs: 0.5, sm: onlyAgreement ? 1 : 0 },
         flexDirection: { xs: 'column', sm: 'row' },
-        py: { xs: 1, sm: 0 },
+        py: { xs: 1, sm: onlyAgreement ? 1 : 0 },
         gap: { xs: 1, sm: 0 },
       }}>
         {/* Creator Info Section */}
@@ -608,7 +610,7 @@ function CreatorAccordion({ creator, campaign }) {
           alignItems: 'center',
           pr: { xs: 0, sm: 2 },
           minWidth: 0,
-          maxWidth: { xs: '100%', sm: 300 },
+          maxWidth: { xs: '100%', sm: onlyAgreement ? '100%' : 300 },
           width: { xs: '100%', sm: 'auto' },
           justifyContent: { xs: 'flex-start', sm: 'flex-start' },
         }}>
@@ -670,10 +672,10 @@ function CreatorAccordion({ creator, campaign }) {
                 </Typography>
               );
             }
-            if (submissions.length === 0) {
+            if (submissions.length === 1 && !isClient) {
               return (
                 <Typography variant="body2" color="text.secondary">
-                  No content submissions found
+                  Set agreement and assign UGC Videos to creator
                 </Typography>
               );
             }
@@ -684,7 +686,7 @@ function CreatorAccordion({ creator, campaign }) {
 
       {/* Expanded Submission Content */}
       {expandedSubmission && (
-        <Box sx={{ p: 0 }}>
+        <Box sx={{ p: 0, overflow: 'hidden' }}>
           {renderExpandedSubmission()}
         </Box>
       )}

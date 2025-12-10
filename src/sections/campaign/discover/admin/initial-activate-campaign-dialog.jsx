@@ -131,12 +131,18 @@ export default function InitialActivateCampaignDialog({ open, onClose, campaignI
   };
 
   const validateForm = () => {
+    const getCampaignManagersError = () => {
+      if (adminOptions.length === 0) {
+        return 'No CSM admins available in the system. Please create a CSM role admin first.';
+      }
+      if (campaignManagers.length === 0) {
+        return 'At least one admin manager is required';
+      }
+      return '';
+    };
+    
     const newErrors = {
-      campaignManagers: adminOptions.length === 0 
-        ? 'No CSM admins available in the system. Please create a CSM role admin first.'
-        : campaignManagers.length === 0 
-          ? 'At least one admin manager is required' 
-          : '',
+      campaignManagers: getCampaignManagersError(),
     };
     
     setErrors(newErrors);

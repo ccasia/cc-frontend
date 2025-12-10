@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -35,6 +35,19 @@ export default function ChildAccountSetup() {
   const { enqueueSnackbar } = useSnackbar();
   const { login } = useAuthContext();
 
+  const fetchChildAccount = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get(`/api/child-account/token/${token}`);
+      setChildAccount(response.data);
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 'Invalid or expired invitation';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (token) {
       fetchChildAccount();
@@ -42,20 +55,7 @@ export default function ChildAccountSetup() {
       setError('No invitation token provided');
       setLoading(false);
     }
-  }, [token]);
-
-  const fetchChildAccount = async () => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.get(`/api/child-account/token/${token}`);
-      setChildAccount(response.data);
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Invalid or expired invitation';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [token, fetchChildAccount]);
 
   const PasswordSchema = Yup.object().shape({
     password: Yup.string()
@@ -112,8 +112,8 @@ export default function ChildAccountSetup() {
         });
         navigate('/auth/login');
       }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error activating account';
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 'Error activating account';
       enqueueSnackbar(errorMessage, { variant: 'error' });
     }
   });
@@ -437,7 +437,7 @@ export default function ChildAccountSetup() {
           sx={{
             boxShadow: { md: 'none' },
             overflow: { md: 'unset' },
-            bgcolor: { md: 'background.default' },
+            // bgcolor: { md: 'background.default' },
             mt: { md: 5 },
             p: 3,
             bgcolor: '#F4F4F4',

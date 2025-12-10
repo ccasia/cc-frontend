@@ -52,7 +52,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
       isClientFeedback,
       clientVisible
     };
-  }, [submission.video, submission.status, submission.content]);
+  }, [submission.video, submission.status, submission.content, isClient]);
 
   const { video, pendingReview, hasPostingLink, isClientFeedback, clientVisible } = submissionProps;
 
@@ -267,8 +267,43 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
       bgcolor: 'background.neutral',
     }}>
       <Box>
-        {clientVisible ? (
-          video?.url ? (
+        {(() => {
+          // Not visible to client - show processing message
+          if (!clientVisible) {
+            return (
+              <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
+                <Stack spacing={2} alignItems="center">
+                  <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Video content is being processed.
+                  </Typography>
+                  <Chip
+                    label="In Progress"
+                    color="info"
+                    size="small"
+                  />
+                </Stack>
+              </Card>
+            );
+          }
+
+          // No video - show empty state
+          if (!video?.url) {
+            return (
+              <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
+                <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                  No deliverables found
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={4}>
+                  This submission doesn&apos;t have any deliverables to review yet.
+                </Typography>
+              </Box>
+            );
+          }
+
+          // Has video - show content
+          return (
             <Box sx={{ p: 2, bgcolor: 'background.neutral' }}>
               <Box sx={{
                 display: 'flex',
@@ -299,72 +334,80 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                     <>
                       <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}>
                         <Typography variant='caption' fontWeight="bold" color="#636366" mb={0.5}>Caption</Typography>
-                        {pendingReview ? (
-                          <Box>
-                            <TextField
-                              fullWidth
-                              multiline
-                              rows={3}
-                              placeholder="Enter caption here..."
-                              value={caption}
-                              onChange={(e) => setCaption(e.target.value)}
-                              size="small"
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  bgcolor: 'background.paper',
-                                },
-                              }}
-                            />
-                          </Box>
-                        ) : submission.caption ? (
-                          <>
-                            <Box
-                              ref={captionMeasureRef}
-                              sx={{
-                                visibility: 'hidden',
-                                position: 'absolute',
-                                width: '100%',
-                                maxWidth: 400,
-                                pointerEvents: 'none'
-                              }}
-                            >
-                              <Typography fontSize={14} sx={{
-                                wordWrap: 'break-word',
-                                overflowWrap: 'break-word',
-                                lineHeight: 1.5
-                              }}>
-                                {submission.caption}
-                              </Typography>
-                            </Box>
-
-                            {captionOverflows ? (
-                              <Box sx={{
-                                maxHeight: { xs: 80, sm: 100, md: 120 },
-                                overflow: 'auto',
-                                border: '1px solid #E7E7E7',
-                                borderRadius: 0.5,
-                                p: 1,
-                                bgcolor: 'background.paper',
-                              }}>
-                                <Typography fontSize={14} color="#636366" sx={{
-                                  wordWrap: 'break-word',
-                                  overflowWrap: 'break-word',
-                                  lineHeight: 1.5
-                                }}>
-                                  {submission.caption}
-                                </Typography>
+                        {(() => {
+                          if (pendingReview) {
+                            return (
+                              <Box>
+                                <TextField
+                                  fullWidth
+                                  multiline
+                                  rows={3}
+                                  placeholder="Enter caption here..."
+                                  value={caption}
+                                  onChange={(e) => setCaption(e.target.value)}
+                                  size="small"
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      bgcolor: 'background.paper',
+                                    },
+                                  }}
+                                />
                               </Box>
-                            ) : (
-                              <Typography fontSize={14} color="#636366" sx={{
-                                wordWrap: 'break-word',
-                                overflowWrap: 'break-word',
-                                lineHeight: 1.5
-                              }}>
-                                {submission.caption}
-                              </Typography>
-                            )}
-                          </>
-                        ) : null}
+                            );
+                          }
+                          if (submission.caption) {
+                            return (
+                              <>
+                                <Box
+                                  ref={captionMeasureRef}
+                                  sx={{
+                                    visibility: 'hidden',
+                                    position: 'absolute',
+                                    width: '100%',
+                                    maxWidth: 400,
+                                    pointerEvents: 'none'
+                                  }}
+                                >
+                                  <Typography fontSize={14} sx={{
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'break-word',
+                                    lineHeight: 1.5
+                                  }}>
+                                    {submission.caption}
+                                  </Typography>
+                                </Box>
+
+                                {captionOverflows ? (
+                                  <Box sx={{
+                                    maxHeight: { xs: 80, sm: 100, md: 120 },
+                                    overflow: 'auto',
+                                    border: '1px solid #E7E7E7',
+                                    borderRadius: 0.5,
+                                    p: 1,
+                                    bgcolor: 'background.paper',
+                                  }}>
+                                    <Typography fontSize={14} color="#636366" sx={{
+                                      wordWrap: 'break-word',
+                                      overflowWrap: 'break-word',
+                                      lineHeight: 1.5
+                                    }}>
+                                      {submission.caption}
+                                    </Typography>
+                                  </Box>
+                                ) : (
+                                  <Typography fontSize={14} color="#636366" sx={{
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'break-word',
+                                    lineHeight: 1.5
+                                  }}>
+                                    {submission.caption}
+                                  </Typography>
+                                )}
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
                       </Box>
 
                       <Box sx={{ flex: 'auto 0 1', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -445,7 +488,10 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                       <video
                         ref={videoRef}
                         style={{
-                          maxWidth: videoDimensions.aspectRatio > 1 ? '100%' : window.innerWidth < 600 ? 200 : 240,
+                          maxWidth: (() => {
+                            if (videoDimensions.aspectRatio > 1) return '100%';
+                            return window.innerWidth < 600 ? 200 : 240;
+                          })(),
                           height: 'auto',
                           display: 'block',
                           pointerEvents: 'none'
@@ -455,7 +501,9 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                         onLoadedMetadata={handleLoadedMetadata}
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
-                      />
+                      >
+                        <track kind="captions" />
+                      </video>
                       <Box
                         sx={{
                           position: 'absolute',
@@ -705,32 +753,8 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                 </Box>
               </Box>
             </Box>
-          ) : (
-            <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" sx={{p: 8, justifyContent: 'center' }}>
-              <Box component="img" src="/assets/icons/empty/ic_content.svg" alt="No content" sx={{ width: 150, height: 150, mb: 3, opacity: 0.6 }} />
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                No deliverables found
-              </Typography>
-              <Typography variant="body2" color="text.secondary" mb={4}>
-                This submission doesn't have any deliverables to review yet.
-              </Typography>
-            </Box>
-          )
-        ) : (
-          <Card sx={{ p: 3, bgcolor: 'background.neutral', textAlign: 'center' }}>
-            <Stack spacing={2} alignItems="center">
-              <Iconify icon="eva:video-fill" sx={{ color: 'text.disabled', fontSize: 48 }} />
-              <Typography variant="body2" color="text.secondary">
-                Video content is being processed.
-              </Typography>
-              <Chip
-                label="In Progress"
-                color="info"
-                size="small"
-              />
-            </Stack>
-          </Card>
-        )}
+          );
+        })()}
       </Box>
 
       {video?.url && (

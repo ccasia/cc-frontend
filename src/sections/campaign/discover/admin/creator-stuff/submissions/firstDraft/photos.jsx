@@ -85,7 +85,9 @@ const PhotoCard = ({
   const saveOverrides = (overrides) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-    } catch {}
+    } catch {
+      // Ignore localStorage errors
+    }
   };
   useEffect(() => {
     const stored = loadOverrides();
@@ -194,11 +196,11 @@ const PhotoCard = ({
         const override = localFeedbackUpdates[fb.id] ?? localFeedbackUpdates[compositeKey];
         const hasText = typeof fb.content === 'string' && fb.content.trim().length > 0;
         const hasReasons = Array.isArray(fb.reasons) && fb.reasons.length > 0;
-        const fallbackDisplay = hasText
-          ? fb.content
-          : hasReasons
-            ? `Reasons: ${fb.reasons.join(', ')}`
-            : '';
+        const fallbackDisplay = (() => {
+          if (hasText) return fb.content;
+          if (hasReasons) return `Reasons: ${fb.reasons.join(', ')}`;
+          return '';
+        })();
         return {
           ...fb,
           displayContent: override ?? fallbackDisplay,
@@ -210,14 +212,12 @@ const PhotoCard = ({
 
     // Dedupe by (id if exists) else by content+createdAt
     const seen = new Set();
-    const deduped = [];
-    for (const fb of normalized) {
+    const deduped = normalized.filter((fb) => {
       const key = fb.id ? `id:${fb.id}` : `c:${fb.displayContent}|t:${fb.createdAt}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        deduped.push(fb);
-      }
-    }
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
     // Sort newest first and return full history
     return deduped.sort((a, b) => dayjs(b?.createdAt).diff(dayjs(a?.createdAt)));
@@ -454,92 +454,31 @@ const PhotoCard = ({
                   </Button>
                 )}
 
-                {isPendingReview ? ( // V2 logic - show approval button when pending review
-                  <>
-                    {/* V2 logic - show approval button */}
-                    <LoadingButton
-                      onClick={handleApproveClick}
-                      variant="contained"
-                      size="small"
-                      loading={isSubmitting || isProcessing}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        color: '#1ABF66',
-                        border: '1.5px solid',
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        borderRadius: 1.15,
-                        py: 1.2,
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        textTransform: 'none',
-                        flex: 1,
-                      }}
-                    >
-                      Approve
-                    </LoadingButton>
-                  </>
-                ) : false &&
-                  userRole === 'client' &&
-                  (submission?.status === 'PENDING_REVIEW' || currentStatus === 'APPROVED') ? ( // V3 removed
-                  <Stack direction="row" spacing={1.5}>
-                    <Button
-                      onClick={() => setCardType('request')}
-                      size="small"
-                      variant="contained"
-                      disabled={isSubmitting || isProcessing}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        border: 1.5,
-                        borderRadius: 1.15,
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        color: '#D4321C',
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#D4321C',
-                        },
-                        textTransform: 'none',
-                        py: 1.2,
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        flex: 1,
-                      }}
-                    >
-                      Request a change
-                    </Button>
-                    <LoadingButton
-                      onClick={() => handleClientApprove && handleClientApprove(photoItem.id)}
-                      variant="contained"
-                      size="small"
-                      loading={isSubmitting || isProcessing}
-                      disabled={isPhotoApprovedByClient}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        color: '#1ABF66',
-                        border: '1.5px solid',
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        borderRadius: 1.15,
-                        py: 1.2,
-                        fontWeight: 600,
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#1ABF66',
-                        },
-                        fontSize: '0.9rem',
-                        height: '40px',
-                        textTransform: 'none',
-                        flex: 1,
-                      }}
-                    >
-                      {isPhotoApprovedByClient ? 'Approved' : 'Approve'}
-                    </LoadingButton>
-                  </Stack>
+                {isPendingReview ? (
+                  // V2 logic - show approval button when pending review
+                  <LoadingButton
+                    onClick={handleApproveClick}
+                    variant="contained"
+                    size="small"
+                    loading={isSubmitting || isProcessing}
+                    sx={{
+                      bgcolor: '#FFFFFF',
+                      color: '#1ABF66',
+                      border: '1.5px solid',
+                      borderColor: '#e7e7e7',
+                      borderBottom: 3,
+                      borderBottomColor: '#e7e7e7',
+                      borderRadius: 1.15,
+                      py: 1.2,
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      height: '40px',
+                      textTransform: 'none',
+                      flex: 1,
+                    }}
+                  >
+                    Approve
+                  </LoadingButton>
                 ) : (
                   <LoadingButton
                     onClick={handleApproveClick}
@@ -825,10 +764,14 @@ const PhotoCard = ({
                               try {
                                 if (deliverables?.deliverableMutate)
                                   deliverables.deliverableMutate();
-                              } catch {}
+                              } catch {
+                                // Ignore mutate errors - non-critical
+                              }
                               try {
                                 if (deliverables?.submissionMutate) deliverables.submissionMutate();
-                              } catch {}
+                              } catch {
+                                // Ignore mutate errors - non-critical
+                              }
                             }, 500);
                           }
                           setEditingFeedbackId(null);
@@ -1325,13 +1268,13 @@ const Photos = ({
       // Non-blocking SWR revalidation
       try {
         if (deliverables?.deliverableMutate) deliverables.deliverableMutate();
-      } catch {}
+      } catch { /* Ignore SWR errors */ }
       try {
         if (deliverables?.submissionMutate) deliverables.submissionMutate();
-      } catch {}
+      } catch { /* Ignore SWR errors */ }
       try {
         if (mutateSubmission) mutateSubmission();
-      } catch {}
+      } catch { /* Ignore SWR errors */ }
       try {
         mutate(
           (key) =>
@@ -1342,7 +1285,9 @@ const Photos = ({
           undefined,
           { revalidate: true }
         );
-      } catch {}
+      } catch {
+        // Ignore cache revalidation errors
+      }
       return true;
     } catch (error) {
       console.error('Error updating feedback:', error);
@@ -1393,7 +1338,7 @@ const Photos = ({
         const allItemsSent =
           itemsWithClientFeedback.size === 0 ||
           Array.from(itemsWithClientFeedback).every(
-            (itemKey) => sentToCreatorItems.has(itemKey) || itemKey === `photo_${mediaId}`
+            (key) => sentToCreatorItems.has(key) || key === `photo_${mediaId}`
           );
 
         // Use the shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
@@ -1434,6 +1379,7 @@ const Photos = ({
 
         return true;
       }
+      return false;
     } catch (error) {
       console.error('❌ Error sending to creator:', error);
       enqueueSnackbar('Failed to send to creator', { variant: 'error' });

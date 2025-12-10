@@ -34,8 +34,11 @@ import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
+import { shouldShowMediaKitPopup } from 'src/utils/media-kit-utils';
+
 import CreatorForm from 'src/sections/creator/form/creatorForm';
 
+import MediaKitPopup from '../media-kit-popup';
 import CampaignLists from '../campaign-list';
 
 // ----------------------------------------------------------------------
@@ -117,6 +120,22 @@ export default function CampaignListView() {
   const { user } = useAuthContext();
   const dialog = useBoolean(!user?.creator?.isOnBoardingFormCompleted);
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
+  
+  const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
+  
+  const targetUserIds = useMemo(() => [
+    'user-id-1',
+    'user-id-2',
+    'user-id-3',
+    'user-id-4',
+    'user-id-5',
+    'user-id-6',
+    'user-id-7',
+    'user-id-8',
+    'user-id-9',
+    'user-id-10',
+    // Add more user IDs as needed
+  ], []);
 
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
@@ -145,6 +164,20 @@ export default function CampaignListView() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+  
+  // Check if the media kit popup should be shown when the component mounts
+  useEffect(() => {
+    // Only proceed if user is logged in
+    if (!user) return;
+    
+    const popupShownInSession = sessionStorage.getItem('mediaKitPopupShown');
+    const shouldShow = shouldShowMediaKitPopup(user, targetUserIds);
+    
+    if (shouldShow && !popupShownInSession) {
+      setShowMediaKitPopup(true);
+      sessionStorage.setItem('mediaKitPopupShown', 'true');
+    }
+  }, [user, targetUserIds]);
 
   const handleScrollTop = () => {
     window.scrollTo({
@@ -963,8 +996,6 @@ export default function CampaignListView() {
 
       {upload.length > 0 && renderUploadProgress}
 
-      {/* <CreatorForm dialog={dialog} user={user} backdrop={backdrop} /> */}
-
       {showScrollTop && (
         <Fab
           color="primary"
@@ -980,6 +1011,12 @@ export default function CampaignListView() {
           <Iconify icon="mdi:arrow-up" />
         </Fab>
       )}
+
+      <MediaKitPopup 
+        open={showMediaKitPopup} 
+        onClose={() => setShowMediaKitPopup(false)} 
+        userId={user?.id || ''}
+      />
 
       <CreatorForm open={dialog.value} onClose={dialog.onFalse} />
     </Container>

@@ -46,4 +46,5 @@ FeedbackSection.propTypes = {
   submission: PropTypes.object.isRequired,
   isVisible: PropTypes.bool.isRequired,
   isClient: PropTypes.bool.isRequired,
+  onViewLogs: PropTypes.func.isRequired,
 };

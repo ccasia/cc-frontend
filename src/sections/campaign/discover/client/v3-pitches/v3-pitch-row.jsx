@@ -2,11 +2,12 @@ import React from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, IconButton } from '@mui/material';
+import { Box, Link, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, IconButton } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import { formatNumber } from 'src/utils/media-kit-utils';
+import { fDate } from 'src/utils/format-time';
+import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
@@ -28,10 +29,10 @@ const PitchTypeCell = React.memo(({ type, isGuestCreator }) => {
 
   return (
     <Stack>
-      <Typography variant="body2" noWrap>
+      <Typography fontSize={13.5} noWrap>
         {label}
       </Typography>
-      {subtitle && <Typography variant="body2" noWrap>{subtitle}</Typography>}
+      {subtitle && <Typography fontSize={13.5} noWrap>{subtitle}</Typography>}
     </Stack>
   );
 });
@@ -68,62 +69,50 @@ const getStatusText = (status, pitch, campaign) => {
   return statusTextMap[status] || status;
 };
 
-/**
- * PitchRow component renders a single pitch row in the table
- * Fetches social media data for the creator and displays it
- */
-const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch }) => {
+const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch, onRemoved }) => {
   const smUp = useResponsive('up', 'sm');
 
-  // Determine what to display for engagement rate and follower count
+  // Helper to extract username from stats or profile link
+  const getUsername = (stats, profileLink) => stats?.username || (profileLink ? extractUsernameFromProfileLink(profileLink) : undefined);
+
+  const instagramStats = pitch?.user?.creator?.instagramUser || null;
+  const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
+  const profileLink = pitch.user?.creator?.profileLink || pitch.user?.profileLink;
+  const instagramProfileLink = pitch.user?.creator?.instagramProfileLink;
+  const tiktokProfileLink = pitch.user?.creator?.tiktokProfileLink;
+
+  const instagramUsername = getUsername(instagramStats, instagramProfileLink);
+  const tiktokUsername = getUsername(tiktokStats, tiktokProfileLink);
+  const profileUsername = profileLink ? extractUsernameFromProfileLink(profileLink) : undefined;
+  
+  // Check if we have any social usernames to display
+  const hasSocialUsernames = instagramUsername || tiktokUsername;
+
   const getDisplayData = () => {
-    // P1: Use data from pitch object (for guest creators or manually entered data)
-    const instagramStats = pitch?.user?.creator?.instagramUser || null;
-    const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
+    const resolveMetric = (...args) => args.find(val => val != null) ?? null;
 
-    const resolveMetric = (primary, secondary, tertiary) => {
-      if (primary != null) return primary;
-      if (secondary != null) return secondary;
-      if (tertiary != null) return tertiary;
-      return null;
-    };
-
-    if (pitch.engagementRate && pitch.followerCount) {
-      return {
-        engagementRate: pitch.engagementRate,
-        followerCount: pitch.followerCount,
-      };
-    }
-
-    // P2: Use pitch data if available (partial data)
-    if (instagramStats || tiktokStats) {
-      return {
-        engagementRate: resolveMetric(
-          instagramStats?.engagement_rate,
-          tiktokStats?.engagement_rate,
-          pitch.engagementRate
-        ),
-        followerCount: resolveMetric(
-          instagramStats?.followers_count,
-          tiktokStats?.follower_count,
-          pitch.followerCount
-        ),
-      };
-    }
-
-    // Default: No data available
     return {
-      engagementRate: null,
-      followerCount: null,
+      engagementRate: resolveMetric(
+        instagramStats?.engagement_rate,
+        tiktokStats?.engagement_rate,
+        pitch.engagementRate
+      ),
+      followerCount: resolveMetric(
+        instagramStats?.followers_count,
+        tiktokStats?.follower_count,
+        pitch.followerCount
+      ),
     };
   };
 
   const displayData = getDisplayData();
 
   return (
-    <TableRow hover>
+    <TableRow
+    // hover
+    >
       <TableCell>
-        <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
+        <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1 }}>
           <Avatar
             src={pitch.user?.photoURL}
             alt={pitch.user?.name}
@@ -137,47 +126,90 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           >
             {pitch.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Stack spacing={0.5}>
-            <Typography variant="body2">{pitch.user?.name}</Typography>
+          <Stack spacing={0}>
+            <Typography variant="body2" fontSize={13.5}>{pitch.user?.name}</Typography>
+            {hasSocialUsernames ? (
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.25 }}>
+                {instagramUsername && (
+                  <Stack direction="row" alignItems="center" spacing={0.3}>
+                    <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
+                    <Link
+                      href={createSocialProfileUrl(instagramUsername, 'instagram') || instagramProfileLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {instagramUsername}
+                    </Link>
+                  </Stack>
+                )}
+                {tiktokUsername && (
+                  <Stack direction="row" alignItems="center" spacing={0.3}>
+                    <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
+                    <Link
+                      href={createSocialProfileUrl(tiktokUsername, 'tiktok') || tiktokProfileLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {tiktokUsername}
+                    </Link>
+                  </Stack>
+                )}
+              </Stack>
+            ) : profileUsername && (
+              <Stack direction="row" alignItems="center" spacing={0.3}>
+                {profileLink?.includes('instagram.com') && (
+                  <Iconify icon="mdi:instagram" width={14} sx={{ color: '#636366' }} />
+                )}
+                {profileLink?.includes('tiktok.com') && (
+                  <Iconify icon="ic:baseline-tiktok" width={14} sx={{ color: '#636366' }} />
+                )}
+                <Link
+                  href={profileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{ color: '#636366', fontSize: 12, '&:hover': { color: '#1877F2' } }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {profileUsername}
+                </Link>
+              </Stack>
+            )}
           </Stack>
         </Stack>
       </TableCell>
-      {/* <TableCell>
-        {isLoading ? (
-          <CircularProgress size={16} thickness={6} />
-        ) : (
-          <Typography variant="body2">
-            {displayData.engagementRate || '-'}
-            {displayData.engagementRate && '%'}
-          </Typography>
-        )}
-      </TableCell> */}
-      <TableCell>
-        <Typography variant="body2">
+      <TableCell sx={{ px: 1 }}>
+        <Typography variant="body2" fontSize={13.5}>
           {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
         </Typography>
       </TableCell>
-      <TableCell>
-        <Stack spacing={0.5} alignItems="start">
-          <Typography variant="body2" whiteSpace="nowrap">
-            {dayjs(pitch.createdAt).format('LL')}
+      <TableCell sx={{ px: 1 }}>
+        <Stack alignItems="start">
+          <Typography fontSize={13.5} whiteSpace="nowrap">
+            {fDate(pitch.createdAt)}
           </Typography>
           <Typography
             variant="body2"
+            fontSize={13.5}
             sx={{
               color: '#8e8e93',
               display: 'block',
-              mt: '-2px',
             }}
           >
             {dayjs(pitch.createdAt).format('LT')}
           </Typography>
         </Stack>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ px: 1 }}>
         <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} />
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ px: 1 }}>
         <Box
           sx={{
             textTransform: 'uppercase',
@@ -187,7 +219,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
             gap: 0.5,
             py: 0.5,
             px: 1,
-            fontSize: '0.75rem',
+            fontSize: 12,
             border: '1px solid',
             borderBottom: '3px solid',
             borderRadius: 0.8,
@@ -212,7 +244,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
       </TableCell>
       <TableCell sx={{ padding: 0, paddingRight: 1 }}>
         {smUp ? (
-          <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} />
+          <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} campaignId={campaign?.id} onRemoved={onRemoved} />
         ) : (
           <IconButton onClick={() => onViewPitch(pitch)}>
             <Iconify icon="hugeicons:view" />
@@ -230,6 +262,7 @@ PitchRow.propTypes = {
   isGuestCreator: PropTypes.bool,
   campaign: PropTypes.object,
   onViewPitch: PropTypes.func.isRequired,
+  onRemoved: PropTypes.func,
 };
 
 export default PitchRow;

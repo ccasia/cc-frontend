@@ -487,7 +487,7 @@ export default function PostingLinkSection({ submission, onUpdate, onViewLogs })
           open={confirmDialogOpen}
           onClose={() => setConfirmDialogOpen(false)}
           title={actionText}
-          isPosting={true}
+          isPosting
           emoji={
             <Avatar
               src="/assets/images/modals/approve.png"
