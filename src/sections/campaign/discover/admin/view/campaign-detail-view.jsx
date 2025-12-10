@@ -46,6 +46,7 @@ import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
+
 import CampaignLogistics from '../campaign-logistics';
 // HIDE: logistics
 // import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
@@ -310,17 +311,32 @@ const CampaignDetailView = ({ id }) => {
     return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
-  const getAgreementsLabel = (submissions, agreements, pitches) => {
+  const getAgreementsLabel = (submissions, agreements, pitches, shortlisted) => {
     const pendingAgreementApproval =
       submissions?.filter((a) => a?.status === 'PENDING_REVIEW').length || 0;
-    const approvedPitchUsers = new Set(
+
+    // Get approved pitch user IDs
+    const approvedPitchUserIds = new Set(
       (pitches || [])
         .filter((pitch) => pitch?.status === 'APPROVED' && pitch?.userId)
         .map((pitch) => pitch.userId)
     );
+
+    // Get shortlisted user IDs where agreement is not ready
+    const shortlistedPendingUserIds = new Set(
+      (shortlisted || [])
+        .filter((s) => s?.userId && s?.isAgreementReady === false)
+        .map((s) => s.userId)
+    );
+
+    // Combine both sets for users who need agreements sent
+    const usersNeedingAgreement = new Set([...approvedPitchUserIds, ...shortlistedPendingUserIds]);
+
+    // Count agreements not sent for users in the combined set (no duplicates)
     const pendingSendAgreement = (agreements || []).filter(
-      (a) => a.isSent === false && approvedPitchUsers.has(a.userId)
+      (a) => a.isSent === false && usersNeedingAgreement.has(a.userId)
     ).length;
+
     const totalPending = pendingAgreementApproval + pendingSendAgreement;
     return totalPending > 0 ? `Agreements (${totalPending})` : 'Agreements';
   };
@@ -396,7 +412,8 @@ const CampaignDetailView = ({ id }) => {
                   label: getAgreementsLabel(
                     agreementSubmissions,
                     campaignAgreements,
-                    campaign?.pitch
+                    campaign?.pitch,
+                    campaign?.shortlisted
                   ),
                   value: 'agreement',
                 },
