@@ -91,7 +91,7 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
 
   return (
     <TableRow
-      hover
+      // hover
       sx={{
         bgcolor: 'transparent',
         '& td': {
