@@ -63,7 +63,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
     setCurrentPitch(pitch);
   }, [pitch]);
 
-  const hasSocialMediaConnection = pitch?.user?.creator?.isFacebookConnected || pitch?.user?.creator?.isTiktokConnected;
+  const hasSocialMediaConnection =
+    pitch?.user?.creator?.isFacebookConnected || pitch?.user?.creator?.isTiktokConnected;
 
   // Set default platform when modal opens
   useEffect(() => {
@@ -97,6 +98,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
 
   // Derive creator profile data from multiple possible sources
   const creatorProfile = creatorProfileFull?.creator || currentPitch?.user?.creator || {};
+
   const accountUser = creatorProfileFull || currentPitch?.user || {};
   const derivedLanguages = (
     Array.isArray(creatorProfile.languages) && creatorProfile.languages.length
@@ -346,7 +348,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         setMaybeNote('');
       } else {
         console.warn('Maybe action is only available for client-created campaigns by clients');
-        
       }
     } catch (error) {
       console.error('Error setting maybe:', error);
@@ -420,12 +421,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           <Stack spacing={3}>
             {/* Creator Info and Social Media */}
             <Box>
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                spacing={2}
-              >
+              <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                 <Stack direction="row" spacing={2} alignItems="center">
                   <Avatar
                     src={currentPitch?.user?.photoURL}
@@ -483,7 +479,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Stack>
 
                 <Stack direction="row" spacing={1.5} alignItems="center">
-                  {hasSocialMediaConnection && 
+                  {hasSocialMediaConnection && (
                     <>
                       <Tooltip title="Instagram Stats">
                         <IconButton
@@ -536,9 +532,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                         >
                           <Iconify icon="ic:baseline-tiktok" width={24} />
                         </IconButton>
-                      </Tooltip>                    
+                      </Tooltip>
                     </>
-                  }
+                  )}
 
                   {currentPitch?.status === 'approved' && (
                     <Tooltip title="View Shortlisted Profile">
@@ -696,10 +692,14 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                           currentPitch?.user?.creator?.tiktokProfileLink ||
                           creatorProfileFull?.creator?.tiktokProfileLink;
 
+                        const isGuestCreator = creatorProfile?.isGuest;
+                        const profileLink = creatorProfile?.profileLink;
+
                         // Show social links section ONLY if there's no media kit data at all
-                        const shouldShowSocialLinks = 
-                          !hasInstagramData && !hasTiktokData && (instagramLink || tiktokLink);
-                        
+                        const shouldShowSocialLinks =
+                          (!hasInstagramData && !hasTiktokData && (instagramLink || tiktokLink)) ||
+                          (isGuestCreator && profileLink);
+
                         if (shouldShowSocialLinks) {
                           return (
                             <Box sx={{ ml: 2, textAlign: 'right' }}>
@@ -737,7 +737,11 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                                 >
                                   {(() => {
                                     try {
-                                      const url = new URL(tiktokLink.startsWith('http') ? tiktokLink : `https://${tiktokLink}`);
+                                      const url = new URL(
+                                        tiktokLink.startsWith('http')
+                                          ? tiktokLink
+                                          : `https://${tiktokLink}`
+                                      );
                                       return `www.tiktok.com${url.pathname}`;
                                     } catch {
                                       return tiktokLink;
@@ -763,12 +767,35 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                                 >
                                   {(() => {
                                     try {
-                                      const url = new URL(instagramLink.startsWith('http') ? instagramLink : `https://${instagramLink}`);
+                                      const url = new URL(
+                                        instagramLink.startsWith('http')
+                                          ? instagramLink
+                                          : `https://${instagramLink}`
+                                      );
                                       return `www.instagram.com${url.pathname}`;
                                     } catch {
                                       return instagramLink;
                                     }
                                   })()}
+                                </Typography>
+                              )}
+                              {isGuestCreator && (
+                                <Typography
+                                  component="a"
+                                  href={profileLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  sx={{
+                                    fontSize: '14px',
+                                    color: '#1340FF',
+                                    textDecoration: 'none',
+                                    display: 'block',
+                                    '&:hover': {
+                                      textDecoration: 'underline',
+                                    },
+                                  }}
+                                >
+                                  {profileLink}
                                 </Typography>
                               )}
                             </Box>
@@ -777,7 +804,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                         return null;
                       })()}
 
-                      {hasSocialMediaConnection && 
+                      {hasSocialMediaConnection && (
                         <Stack direction="row" mt={3} spacing={1}>
                           {/* Instagram Stats */}
                           {selectedPlatform === 'instagram' && (
@@ -803,8 +830,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                                     {(() => {
                                       // Try multiple possible sources for media kit data
                                       const followers =
-                                        currentPitch?.user?.creator?.instagramUser?.followers_count ||
-                                        creatorProfileFull?.creator?.instagramUser?.followers_count ||
+                                        currentPitch?.user?.creator?.instagramUser
+                                          ?.followers_count ||
+                                        creatorProfileFull?.creator?.instagramUser
+                                          ?.followers_count ||
                                         creatorProfileFull?.instagramUser?.followers_count;
                                       if (!followers) return 'N/A';
                                       if (followers >= 1000) {
@@ -855,8 +884,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                                     {(() => {
                                       // Try multiple possible sources for media kit data
                                       const engagementRate =
-                                        currentPitch?.user?.creator?.instagramUser?.engagement_rate ||
-                                        creatorProfileFull?.creator?.instagramUser?.engagement_rate ||
+                                        currentPitch?.user?.creator?.instagramUser
+                                          ?.engagement_rate ||
+                                        creatorProfileFull?.creator?.instagramUser
+                                          ?.engagement_rate ||
                                         creatorProfileFull?.instagramUser?.engagement_rate;
                                       if (!engagementRate) return 'N/A';
                                       return `${Math.round(engagementRate)}%`;
@@ -1086,9 +1117,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                               </Box>
                             </>
                           )}
-                        </Stack>                      
-                      }
-
+                        </Stack>
+                      )}
                     </Stack>
                   </Stack>
                 </Box>
@@ -1248,7 +1278,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       >
                         {currentPitch?.status
                           ?.split('_')
-                          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                           .join(' ')}
                       </Typography>
                     </Stack>
@@ -1386,7 +1416,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         </DialogContent>
 
         {/* Action Buttons - Only show if pitch hasn't been acted upon */}
-        {(currentPitch?.status === 'PENDING_REVIEW' || currentPitch?.displayStatus === 'PENDING_REVIEW' || currentPitch?.status === 'undecided' || currentPitch?.displayStatus === 'undecided') && (
+        {(currentPitch?.status === 'PENDING_REVIEW' ||
+          currentPitch?.displayStatus === 'PENDING_REVIEW' ||
+          currentPitch?.status === 'undecided' ||
+          currentPitch?.displayStatus === 'undecided') && (
           <DialogActions sx={{ px: 3, pb: 3, gap: -1, mt: -3 }}>
             <Button
               variant="contained"
@@ -1613,9 +1646,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             disabled={isSubmitting}
             sx={{
               bgcolor: confirmDialog.type === 'approve' ? '#026D54' : '#ffffff',
-              color:
-                confirmDialog.type === 'approve'
-                  ? '#fff' : '#000',
+              color: confirmDialog.type === 'approve' ? '#fff' : '#000',
               border: confirmDialog.type === 'approve' ? 'none' : '1.5px solid #e7e7e7',
               borderBottom: '3px solid',
               borderBottomColor: confirmDialog.type === 'approve' ? '#202021' : '#e7e7e7',
