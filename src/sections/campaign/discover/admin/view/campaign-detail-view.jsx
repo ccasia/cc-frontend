@@ -49,7 +49,6 @@ import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
 import CampaignOverview from '../campaign-overview';
-import CampaignLogistics from '../campaign-logistics';
 import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
@@ -291,8 +290,6 @@ const CampaignDetailView = ({ id }) => {
     if (!container) return () => {};
 
     const handleWheel = (e) => {
-      const isHorizontalSwipe = Math.abs(e.deltaX) > Math.abs(e.deltaY);
-
       if (container.scrollWidth > container.clientWidth) {
         // Check if it's a horizontal scroll attempt (touchpad horizontal swipe)
         // or if deltaX is significant, let it scroll naturally

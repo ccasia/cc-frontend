@@ -34,7 +34,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
@@ -43,7 +42,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const { user } = useAuthContext();
-  const [totalUGCVideos, setTotalUGCVideos] = useState(null);
+  const [totalUGCVideos] = useState(null);
   const { mutate } = useGetCampaignById(campaign.id);
   const navigate = useNavigate();
 

@@ -43,7 +43,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
 import UploadPhotoModal from './components/photo';

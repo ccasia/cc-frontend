@@ -6,8 +6,8 @@ import { Box, Link, Stack, Avatar, Tooltip, TableRow, TableCell, Typography, Ico
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import { formatNumber, extractUsernameFromProfileLink, createSocialProfileUrl } from 'src/utils/media-kit-utils';
 import { fDate } from 'src/utils/format-time';
+import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
 
@@ -73,9 +73,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
   const smUp = useResponsive('up', 'sm');
 
   // Helper to extract username from stats or profile link
-  const getUsername = (stats, profileLink) => {
-    return stats?.username || (profileLink ? extractUsernameFromProfileLink(profileLink) : undefined);
-  };
+  const getUsername = (stats, profileLink) => stats?.username || (profileLink ? extractUsernameFromProfileLink(profileLink) : undefined);
 
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
   const tiktokStats = pitch?.user?.creator?.tiktokUser || null;
@@ -91,12 +89,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
   const hasSocialUsernames = instagramUsername || tiktokUsername;
 
   const getDisplayData = () => {
-    const resolveMetric = (...args) => {
-      for (const val of args) {
-        if (val != null) return val;
-      }
-      return null;
-    };
+    const resolveMetric = (...args) => args.find(val => val != null) ?? null;
 
     return {
       engagementRate: resolveMetric(

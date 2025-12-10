@@ -30,19 +30,18 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+
+import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import SortableHeader from 'src/components/table/sortable-header';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
-import axiosInstance from 'src/utils/axios';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 
 const countPitchesByStatus = (pitches, statusList) =>
@@ -989,7 +988,6 @@ AddCreatorModal.propTypes = {
 
 export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
-  const { data: agreements } = useGetAgreements(campaign?.id);
   const { enqueueSnackbar } = useSnackbar();
   const [selected, setSelected] = useState([]);
   const [commentOpen, setCommentOpen] = useState(false);

@@ -558,7 +558,7 @@ const CampaignAgreements = ({ campaign }) => {
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [combinedData, selectedFilter, sortColumn, sortDirection]);
+  }, [selectedFilter, sortColumn, sortDirection, pitchApprovedAgreements]);
 
   const handleViewAgreement = (url, item) => {
     setSelectedUrl(url);

@@ -366,7 +366,7 @@ const CampaignAgreementEdit = ({
             )}
 
             <Stack spacing={1}>
-              <Stack direction={'row'} justifyContent={'space-between'}>
+              <Stack direction="row" justifyContent="space-between">
                 <Typography variant="body2" sx={{ color: '#637381', fontWeight: 600 }}>
                   Recipient
                 </Typography>
@@ -484,7 +484,7 @@ const CampaignAgreementEdit = ({
                     }}
                     disabled={maxCreditsAllowed === 0}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const {value} = e.target;
                       // Allow empty value (user is deleting)
                       if (value === '') {
                         setValue('ugcCredits', '');
@@ -500,7 +500,7 @@ const CampaignAgreementEdit = ({
                     value={ugcCreditsValue}
                     helperText={
                       maxCreditsAllowed !== null ? (
-                        <Typography noWrap whiteSpace={'none'} variant="caption">
+                        <Typography noWrap whiteSpace="none" variant="caption">
                           {campaign?.creditsPending} credit(s) remaining
                         </Typography>
                       ) : undefined

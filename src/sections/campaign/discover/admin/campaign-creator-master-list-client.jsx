@@ -988,7 +988,7 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount }) => {
               sx={{ width: 35, height: 35 }}
             />
 
-            <Typography variant="subtitle2" fontWeight="bold" lineHeight={1.4} sx={{ color: '#221f20' }} flex={3} alignSelf={'center'}>
+            <Typography variant="subtitle2" fontWeight="bold" lineHeight={1.4} sx={{ color: '#221f20' }} flex={3} alignSelf="center">
               {pitch?.user?.name || 'Unknown Creator'}
             </Typography>
 

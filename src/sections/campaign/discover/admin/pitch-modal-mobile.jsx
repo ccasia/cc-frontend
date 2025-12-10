@@ -17,14 +17,13 @@ import {
   Button,
   Select,
   Divider,
+  Tooltip,
   MenuItem,
   TextField,
   IconButton,
   Typography,
-  FormControl,
   DialogContent,
-  DialogActions,
-	Tooltip,
+	DialogActions,
 } from '@mui/material';
 
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
@@ -33,7 +32,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
@@ -42,7 +40,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
-  const [totalUGCVideos, setTotalUGCVideos] = useState(null);
+  const [totalUGCVideos] = useState(null);
   const { mutate } = useGetCampaignById(campaign.id);
   const navigate = useNavigate();
 
@@ -171,12 +169,6 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
-
-  const ugcLeft = useMemo(() => {
-    if (!campaign?.campaignCredits) return null;
-    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
-    return campaign?.campaignCredits - totalUGCs;
-  }, [campaign]);
 
   const handleApprove = async () => {
     try {

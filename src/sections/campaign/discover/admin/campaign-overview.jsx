@@ -128,7 +128,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   });
 
   const [animation, setCreditAnimation] = useState(undefined);
-  const [error, setError] = useState();
+  const [, setError] = useState();
   const approveCreditModal = useBoolean();
   const { mutate } = useGetCampaignById(campaign.id);
   
