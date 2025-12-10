@@ -259,7 +259,12 @@ export function LogisticsDrawer({ open, onClose, logistic, onUpdate, campaignId 
           </Typography>
           <Typography variant="body2">
             {deliveryDetails?.expectedDeliveryDate
-              ? new Date(deliveryDetails.expectedDeliveryDate).toLocaleString()
+              ? new Date(deliveryDetails.expectedDeliveryDate).toLocaleDateString('en-GB', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'numeric',
+                  day: 'numeric',
+                })
               : '-'}
           </Typography>
         </Box>
@@ -714,7 +719,12 @@ export function LogisticsAdminDrawer({ open, onClose, logistic, onUpdate, campai
                 </Typography>
                 <Typography variant="body2">
                   {deliveryDetails?.expectedDeliveryDate
-                    ? new Date(deliveryDetails.expectedDeliveryDate).toLocaleString()
+                    ? new Date(deliveryDetails.expectedDeliveryDate).toLocaleDateString('en-GB', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'numeric',
+                        day: 'numeric',
+                      })
                     : '-'}
                 </Typography>
               </Box>
