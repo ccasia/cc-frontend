@@ -72,26 +72,59 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');
 
-  // Count pitches by display status
-  const pendingReviewCount = countPitchesByStatus(pitches, ['PENDING_REVIEW']);
+  const shortlistedCreators = campaign?.shortlisted;
 
-  const sentToClientCount = countPitchesByStatus(pitches, [
+  // Merge pitches with shortlisted creators for backwards compatibility
+  // Before the new system, creators could be shortlisted without having a pitch record
+  // We need to display them as "APPROVED" rows to avoid missing data
+  const mergedPitchesAndShortlisted = useMemo(() => {
+    const pitchUserIds = new Set((pitches || []).map((p) => p.userId));
+    
+    // Transform shortlisted creators (without pitch records) into pitch-like objects
+    const shortlistedWithoutPitch = (shortlistedCreators || [])
+      .filter((sc) => sc.userId && !pitchUserIds.has(sc.userId))
+      .map((sc) => ({
+        // Generate a synthetic pitch object for display
+        id: `shortlisted-${sc.id}`,
+        type: 'shortlisted',
+        campaignId: campaign?.id,
+        userId: sc.userId,
+        status: 'APPROVED',
+        displayStatus: 'APPROVED',
+        content: `Creator ${sc.user?.name || 'Unknown'} was shortlisted`,
+        createdAt: sc.shortlisted_date || sc.createdAt || new Date().toISOString(),
+        completedAt: null,
+        ugcCredits: sc.ugcVideos,
+        adminComments: sc.adminComments,
+        // User data from shortlisted record
+        user: sc.user,
+        // Mark as synthetic for identification
+        _isShortlistedOnly: true,
+      }));
+
+    return [...(pitches || []), ...shortlistedWithoutPitch];
+  }, [pitches, shortlistedCreators, campaign?.id]);
+
+  // Count pitches by display status (using merged array)
+  const pendingReviewCount = countPitchesByStatus(mergedPitchesAndShortlisted, ['PENDING_REVIEW']);
+
+  const sentToClientCount = countPitchesByStatus(mergedPitchesAndShortlisted, [
     'SENT_TO_CLIENT',
     'SENT_TO_CLIENT_WITH_COMMENTS',
   ]);
 
-  const maybeCount = countPitchesByStatus(pitches, ['MAYBE']);
+  const maybeCount = countPitchesByStatus(mergedPitchesAndShortlisted, ['MAYBE']);
 
-  const rejectedCount = countPitchesByStatus(pitches, ['REJECTED']);
+  const rejectedCount = countPitchesByStatus(mergedPitchesAndShortlisted, ['REJECTED', 'rejected']);
 
-  const approvedCount = countPitchesByStatus(pitches, [
+  const approvedCount = countPitchesByStatus(mergedPitchesAndShortlisted, [
     'approved',
     'APPROVED',
     'AGREEMENT_PENDING',
     'AGREEMENT_SUBMITTED',
   ]);
 
-  const withdrawnCount = countPitchesByStatus(pitches, ['WITHDRAWN']);
+  const withdrawnCount = countPitchesByStatus(mergedPitchesAndShortlisted, ['WITHDRAWN']);
 
   // Handle column sort click
   const handleColumnSort = (column) => {
@@ -116,25 +149,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const filteredPitches = useMemo(() => {
     const isV4 = campaign?.submissionVersion === 'v4';
 
-    if (isV4) {
-      console.log('🔍 V4 Campaign Pitches Debug:', {
-        campaignId: campaign?.id,
-        submissionVersion: campaign?.submissionVersion,
-        totalPitches: pitches?.length,
-        selectedFilter,
-        pitches: pitches?.map((p) => ({
-          id: p.id,
-          status: p.status,
-          displayStatus: p.displayStatus,
-          userName: p.user?.name,
-          ugcCredits: p.ugcCredits,
-          isGuestCreator: p.user?.creator?.isGuest,
-        })),
-      });
-    }
-
+    // Use merged array that includes shortlisted creators without pitch records
     // Determine which pitches to show based on version
-    let filtered = (pitches || []).filter((pitch) => {
+    let filtered = (mergedPitchesAndShortlisted || []).filter((pitch) => {
       const status = pitch.displayStatus || pitch.status || '';
 
       // Define status checks
@@ -188,13 +205,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       filtered = filtered?.filter((pitch) => (pitch.displayStatus || pitch.status) === 'MAYBE');
     } else if (selectedFilter === 'APPROVED') {
       filtered = filtered?.filter((pitch) =>
-        ['APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(
+        ['approved', 'APPROVED', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'].includes(
           pitch.displayStatus || pitch.status
         )
       );
     } else if (selectedFilter === 'REJECTED') {
       filtered = filtered?.filter((pitch) =>
-        ['REJECTED'].includes(pitch.displayStatus || pitch.status)
+        ['REJECTED', 'rejected'].includes(pitch.displayStatus || pitch.status)
       );
     } else if (selectedFilter === 'WITHDRAWN') {
       filtered = filtered?.filter((pitch) =>
@@ -255,13 +272,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [pitches, selectedFilter, sortColumn, sortDirection, campaign]);
+  }, [mergedPitchesAndShortlisted, selectedFilter, sortColumn, sortDirection, campaign]);
 
   // Reopen modal when returning from media kit if state indicates
   useEffect(() => {
     const reopen = location?.state?.reopenModal;
-    if (reopen?.isV3 && reopen?.pitchId && pitches?.length) {
-      const pitch = pitches.find((p) => p.id === reopen.pitchId);
+    if (reopen?.isV3 && reopen?.pitchId && mergedPitchesAndShortlisted?.length) {
+      const pitch = mergedPitchesAndShortlisted.find((p) => p.id === reopen.pitchId);
       if (pitch) {
         setSelectedPitch(pitch);
         setOpenPitchModal(true);
@@ -269,7 +286,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
         navigate(location.pathname + location.search, { replace: true, state: {} });
       }
     }
-  }, [location?.state, pitches, navigate, location?.pathname, location?.search]);
+  }, [location?.state, mergedPitchesAndShortlisted, navigate, location?.pathname, location?.search]);
 
   const handleViewPitch = (pitch) => {
     setSelectedPitch(pitch);
