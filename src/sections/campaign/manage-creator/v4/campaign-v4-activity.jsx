@@ -43,12 +43,12 @@ import { RHFUpload, RHFTextField, RHFSelect } from 'src/components/hook-form';
 import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
 import FormProvider from 'src/components/hook-form/form-provider';
 
+import { regions } from 'src/assets/data/regions';
+import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
+
 import V4VideoSubmission from './submissions/v4-video-submission';
 import V4PhotoSubmission from './submissions/v4-photo-submission';
 import V4RawFootageSubmission from './submissions/v4-raw-footage-submission';
-
-import { regions } from 'src/assets/data/regions';
-import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
 
 // Configure PDF.js worker
 try {
