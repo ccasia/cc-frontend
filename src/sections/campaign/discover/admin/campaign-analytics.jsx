@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
 
 import { PieChart } from '@mui/x-charts';
@@ -17,6 +18,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useResponsive } from 'src/hooks/use-responsive';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
@@ -28,10 +30,231 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
-import PropTypes from 'prop-types';
-
 import Iconify from 'src/components/iconify';
-import { useResponsive } from 'src/hooks/use-responsive';
+
+const PlatformToggle = ({ lgUp, availablePlatforms, selectedPlatform, handlePlatformChange }) => {
+  const platformConfig = [
+    { key: 'ALL', label: 'Overview', icon: null, color: '#1340FF', display: true },
+    {
+      key: 'Instagram',
+      label: 'Instagram',
+      icon: 'prime:instagram',
+      color: '#C13584',
+      display: lgUp,
+    },
+    { key: 'TikTok', label: 'TikTok', icon: 'prime:tiktok', color: '#000000', display: lgUp },
+  ];
+
+  const availablePlatformConfig = platformConfig.filter(
+    (config) => config.key === 'ALL' || availablePlatforms.includes(config.key)
+  );
+
+  return (
+    <Box sx={{ mb: 3 }}>
+      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+        {availablePlatformConfig.map((config) => (
+          <Button
+            key={config.key}
+            onClick={() => handlePlatformChange(config.key)}
+            sx={{
+              width: 135,
+              height: 40,
+              borderRadius: '8px',
+              borderWidth: '2px',
+              bgcolor: 'transparent',
+              color: selectedPlatform === config.key ? config.color : '#9E9E9E',
+              border:
+                selectedPlatform === config.key ? `2px solid ${config.color}` : '2px solid #9E9E9E',
+              fontWeight: 600,
+              fontSize: 16,
+              alignItems: 'center',
+              justifyContent: 'center',
+              textTransform: 'none',
+              '&:hover': {
+                bgcolor: 'transparent',
+                border: `2px solid ${config.color}`,
+                color: config.color,
+                '& .iconify': {
+                  color: config.color,
+                },
+              },
+            }}
+          >
+            {config.display ? (
+              <>
+                {config.icon && (
+                  <Iconify
+                    icon={config.icon}
+                    className="iconify"
+                    sx={{
+                      height: 30,
+                      width: 30,
+                      mr: config.key === 'TikTok' ? 0 : 0.5,
+                      color: selectedPlatform === config.key ? config.color : '#9E9E9E',
+                    }}
+                  />
+                )}
+                {config.label}
+              </>
+            ) : (
+              <>
+                {config.icon && (
+                  <Iconify
+                    icon={config.icon}
+                    className="iconify"
+                    sx={{
+                      height: 35,
+                      width: 35,
+                      color: selectedPlatform === config.key ? config.color : '#9E9E9E',
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </Button>
+        ))}
+      </Box>
+    </Box>
+  );
+};
+
+PlatformToggle.propTypes = {
+  lgUp: PropTypes.bool.isRequired,
+  availablePlatforms: PropTypes.arrayOf(PropTypes.string).isRequired,
+  selectedPlatform: PropTypes.string.isRequired,
+  handlePlatformChange: PropTypes.func.isRequired,
+};
+
+// Helper function to get platform label
+const getPlatformLabel = (platform) => {
+  if (platform === 'ALL') return 'Total Creators';
+  if (platform === 'Instagram') return 'Instagram Posts';
+  if (platform === 'TikTok') return 'TikTok Posts';
+  return '';
+};
+
+const RenderEngagementCard = ({
+  title,
+  value,
+  metricKey,
+  filteredInsightsData,
+  filteredSubmissions,
+  findTopPerformerByMetric,
+}) => {
+  const topPerformer = findTopPerformerByMetric(
+    metricKey,
+    filteredInsightsData,
+    filteredSubmissions
+  );
+  const { data: topCreator } = useGetCreatorById(topPerformer?.submission?.user);
+  const percentage = topPerformer && value > 0 ? Math.round((topPerformer.value / value) * 100) : 0;
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        px: 2,
+        height: { xs: 100, sm: 116 },
+        background: '#F5F5F5',
+        boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+        borderRadius: '20px',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-around',
+            height: { xs: 70, sm: 85 },
+            minWidth: 0,
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 400,
+              fontSize: { xs: 16, sm: 18 },
+              color: '#636366',
+              maxWidth: { xs: 70, sm: 120, md: 200 },
+            }}
+          >
+            {title}
+          </Typography>
+
+          {topPerformer && (
+            <Box>
+              <Typography
+                fontSize={{ xs: 12, sm: 14 }}
+                component="span"
+                color="#1340FF"
+                fontWeight={600}
+              >
+                {percentage}%{' '}
+                <Typography fontSize={{ xs: 12, sm: 14 }} color="#000" component="span">
+                  from
+                </Typography>
+              </Typography>
+              <Typography
+                fontSize={{ xs: 12, sm: 14 }}
+                color="#000"
+                sx={{
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: { xs: 85, sm: 120, md: 140 },
+                  display: 'block',
+                }}
+              >
+                {topCreator?.user?.name || 'Unknown'}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: { xs: 60, sm: 70, md: 79 },
+            height: { xs: 60, sm: 70, md: 79 },
+            background: '#1340FF',
+            borderRadius: '8px',
+            flexShrink: 0,
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 400,
+              fontSize: { xs: 16, sm: 20, md: 24 },
+              color: '#FFFFFF',
+            }}
+          >
+            {typeof value === 'number' ? formatNumber(value) : value}
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+RenderEngagementCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.number.isRequired,
+  metricKey: PropTypes.string.isRequired,
+  filteredInsightsData: PropTypes.arrayOf(PropTypes.object).isRequired,
+  filteredSubmissions: PropTypes.arrayOf(PropTypes.object).isRequired,
+  findTopPerformerByMetric: PropTypes.func.isRequired,
+};
 
 const CampaignAnalytics = ({ campaign }) => {
   const campaignId = campaign?.id;
@@ -51,7 +274,9 @@ const CampaignAnalytics = ({ campaign }) => {
       // Return default platforms for empty state display
       return ['Instagram', 'TikTok'];
     }
-    const platforms = [...new Set(postingSubmissions.map((sub) => sub && sub.platform).filter(Boolean))];
+    const platforms = [
+      ...new Set(postingSubmissions.map((sub) => sub && sub.platform).filter(Boolean)),
+    ];
     return platforms.length > 0 ? platforms : ['Instagram', 'TikTok'];
   }, [postingSubmissions]);
 
@@ -144,7 +369,6 @@ const CampaignAnalytics = ({ campaign }) => {
     setCurrentPage(1);
   };
 
-
   // No campaign
   if (!campaign) {
     return (
@@ -163,97 +387,7 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   }
 
-  const PlatformToggle = () => {
-    const platformConfig = [
-      { key: 'ALL', label: 'Overview', icon: null, color: '#1340FF', display: true },
-      { key: 'Instagram', label: 'Instagram', icon: 'prime:instagram', color: '#C13584', display: lgUp },
-      { key: 'TikTok', label: 'TikTok', icon: 'prime:tiktok', color: '#000000', display: lgUp },
-    ];
-
-    // Filter to only show platforms that exist in the campaign
-    const availablePlatformConfig = platformConfig.filter(
-      (config) => config.key === 'ALL' || availablePlatforms.includes(config.key)
-    );
-
-    return (
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-          {availablePlatformConfig.map((config) => (
-            <Button
-              key={config.key}
-              onClick={() => handlePlatformChange(config.key)}
-              sx={{
-                width: 135,
-                height: 40,
-                borderRadius: '8px',
-                borderWidth: '2px',
-                bgcolor: 'transparent',
-                color: selectedPlatform === config.key ? config.color : '#9E9E9E',
-                border:
-                  selectedPlatform === config.key
-                    ? `2px solid ${config.color}`
-                    : '2px solid #9E9E9E',
-                fontWeight: 600,
-                fontSize: 16,
-                alignItems: 'center',
-                justifyContent: 'center',
-                textTransform: 'none',
-                '&:hover': {
-                  bgcolor: 'transparent',
-                  border: `2px solid ${config.color}`,
-                  color: config.color,
-                  // Target the icon inside the button on hover
-                  '& .iconify': {
-                    color: config.color,
-                  },
-                },
-              }}
-            >
-              {config.display ? 
-                <>
-                  {config.icon && (
-                    <Iconify
-                      icon={config.icon}
-                      className="iconify"
-                      sx={{
-                        height: 30,
-                        width: 30,
-                        mr: config.key === 'TikTok' ? 0 : 0.5,
-                        color: selectedPlatform === config.key ? config.color : '#9E9E9E',
-                      }}
-                    />
-                  )}
-                  {config.label}   
-                </> :
-                <>
-                  {config.icon && (
-                    <Iconify
-                      icon={config.icon}
-                      className="iconify"
-                      sx={{
-                        height: 35,
-                        width: 35,
-                        color: selectedPlatform === config.key ? config.color : '#9E9E9E',
-                      }}
-                    />
-                  )}
-                </>         
-              }
-            </Button>
-          ))}
-        </Box>
-      </Box>
-    );
-  };
-
-  // Helper function to get platform label - shared across components
-  const getPlatformLabel = (platform) => {
-    if (platform === 'ALL') return 'Total Creators';
-    if (platform === 'Instagram') return 'Instagram Posts';
-    if (platform === 'TikTok') return 'TikTok Posts';
-    return '';
-  };
-
+  // eslint-disable-next-line react/no-unstable-nested-components
   const CoreMetricsSection = ({ summaryStats: stats }) => {
     if (!stats) return null;
 
@@ -289,127 +423,6 @@ const CampaignAnalytics = ({ campaign }) => {
       },
     ].filter((metric) => metric.condition !== false);
 
-    const RenderEngagementCard = ({ title, value, metricKey }) => {
-      // Find top performer for this metric
-      const topPerformer = findTopPerformerByMetric(
-        metricKey,
-        filteredInsightsData,
-        filteredSubmissions
-      );
-
-      // Get creator data for top performer
-      const { data: topCreator } = useGetCreatorById(topPerformer?.submission?.user);
-
-      // Calculate percentage contribution
-      const percentage =
-        topPerformer && value > 0 ? Math.round((topPerformer.value / value) * 100) : 0;
-
-      return (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            px: 2,
-            height: { xs: 100, sm: 116 },
-            background: '#F5F5F5',
-            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-            borderRadius: '20px',
-          }}
-        >
-          {/* Main content container */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            {/* Left side - Title and top performer info */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-around',
-                height: { xs: 70, sm: 85 },
-                minWidth: 0, // allow children to shrink
-              }}
-            >
-              <Typography
-                sx={{
-                  fontWeight: 400,
-                  fontSize: { xs: 16, sm: 18 },
-                  color: '#636366',
-                  maxWidth: { xs: 70, sm: 120, md: 200 },
-                }}
-              >
-                {title}
-              </Typography>
-
-              {topPerformer && (
-                <Box>
-                  <Typography
-                    fontSize={{ xs: 12, sm: 14 }}
-                    component="span"
-                    color="#1340FF"
-                    fontWeight={600}
-                  >
-                    {percentage}%{' '}
-                    <Typography fontSize={{ xs: 12, sm: 14 }} color="#000" component="span">
-                      from
-                    </Typography>
-                  </Typography>
-                  <Typography
-                    fontSize={{ xs: 12, sm: 14 }}
-                    color="#000"
-                    sx={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: { xs: 85, sm: 120, md: 140 }, // Adjust these values as needed
-                      display: 'block',
-                    }}
-                  >
-                    {topCreator?.user?.name || 'Unknown'}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                width: { xs: 60, sm: 70, md: 79 },
-                height: { xs: 60, sm: 70, md: 79 },
-                background: '#1340FF',
-                borderRadius: '8px',
-                flexShrink: 0,
-              }}
-            >
-              <Typography
-                sx={{
-                  fontWeight: 400,
-                  fontSize: { xs: 16, sm: 20, md: 24 },
-                  color: '#FFFFFF',
-                }}
-              >
-                {typeof value === 'number' ? formatNumber(value) : value}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      );
-    };
-
-    RenderEngagementCard.propTypes = {
-      title: PropTypes.string.isRequired,
-      value: PropTypes.number.isRequired,
-      metricKey: PropTypes.string.isRequired,
-    };
-
     return (
       <Box sx={{ mb: 3 }}>
         <Grid container spacing={{ xs: 1, sm: 2 }}>
@@ -419,6 +432,9 @@ const CampaignAnalytics = ({ campaign }) => {
                 title={metric.label}
                 value={metric.value}
                 metricKey={metric.metricKey}
+                filteredInsightsData={filteredInsightsData}
+                filteredSubmissions={filteredSubmissions}
+                findTopPerformerByMetric={findTopPerformerByMetric}
               />
             </Grid>
           ))}
@@ -436,48 +452,17 @@ const CampaignAnalytics = ({ campaign }) => {
     }).isRequired,
   };
 
+  // eslint-disable-next-line react/no-unstable-nested-components
   const PlatformOverviewLayout = ({
     insightsData: componentInsightsData,
     summaryStats: componentSummaryStats,
     platformCounts: componentPlatformCounts,
     selectedPlatform: componentSelectedPlatform,
   }) => {
-    const calculateAdditionalMetrics = () => {
-      const metrics = {};
+    // calculateAdditionalMetrics removed because componentSummaryStats already provides
+    // totalShares, totalReach, totalInteractions, and avgEngagementRate.
 
-      // Calculate metrics based on current insights data (filtered or all)
-      metrics.totalShares = componentInsightsData.reduce(
-        (sum, item) => sum + getMetricValue(item.insight, 'shares'),
-        0
-      );
-      metrics.totalReach = componentInsightsData.reduce(
-        (sum, item) => sum + getMetricValue(item.insight, 'reach'),
-        0
-      );
-      metrics.totalInteractions = componentInsightsData.reduce(
-        (sum, item) => sum + getMetricValue(item.insight, 'total_interactions'),
-        0
-      );
-
-      // Calculate average engagement rate
-      const avgEngagement =
-        componentInsightsData.length > 0
-          ? componentInsightsData.reduce((sum, item) => {
-              const views = getMetricValue(item.insight, 'views');
-              const likes = getMetricValue(item.insight, 'likes');
-              const comments = getMetricValue(item.insight, 'comments');
-              const engagementRate = views > 0 ? ((likes + comments) / views) * 100 : 0;
-              return sum + engagementRate;
-            }, 0) / componentInsightsData.length
-          : 0;
-
-      metrics.avgEngagement = avgEngagement;
-
-      return metrics;
-    };
-
-    const additionalMetrics = calculateAdditionalMetrics();
-
+    // eslint-disable-next-line react/no-unstable-nested-components
     const PostingsCard = () => (
       <Box
         sx={{
@@ -623,6 +608,7 @@ const CampaignAnalytics = ({ campaign }) => {
       </Box>
     );
 
+    // eslint-disable-next-line react/no-unstable-nested-components
     const TopEngagementCard = () => {
       // Find the creator with the highest engagement rate
       const topEngagementCreator = useMemo(() => {
@@ -685,7 +671,10 @@ const CampaignAnalytics = ({ campaign }) => {
                 sx={{
                   width: 45,
                   height: 45,
-                  bgcolor: topEngagementCreator && topEngagementCreator.platform === 'Instagram' ? '#E4405F' : '#000000',
+                  bgcolor:
+                    topEngagementCreator && topEngagementCreator.platform === 'Instagram'
+                      ? '#E4405F'
+                      : '#000000',
                   mr: 2,
                 }}
               >
@@ -996,7 +985,9 @@ const CampaignAnalytics = ({ campaign }) => {
                     }}
                   >
                     {availablePlatforms.length > 1 && getPlatformLabel(selectedPlatform)}
-                    {availablePlatforms.length < 2 && insightsData.length > 0 && `${insightsData[0].platform} Posts`}
+                    {availablePlatforms.length < 2 &&
+                      insightsData.length > 0 &&
+                      `${insightsData[0].platform} Posts`}
                   </Typography>
                 </Box>
 
@@ -1094,7 +1085,8 @@ const CampaignAnalytics = ({ campaign }) => {
 
             {/* Top Performer */}
             {(selectedPlatform !== 'ALL' ||
-              (availablePlatforms.length === 1 && insightsData.length > 0 &&
+              (availablePlatforms.length === 1 &&
+                insightsData.length > 0 &&
                 (insightsData[0].platform === 'Instagram' ||
                   insightsData[0].platform === 'TikTok'))) && (
               <Box
@@ -1322,7 +1314,9 @@ const CampaignAnalytics = ({ campaign }) => {
                         color="#1340FF"
                       >
                         {availablePlatforms.length > 1 && getPlatformLabel(selectedPlatform)}
-                        {availablePlatforms.length < 2 && insightsData.length > 0 && `${insightsData[0].platform} Posts`}
+                        {availablePlatforms.length < 2 &&
+                          insightsData.length > 0 &&
+                          `${insightsData[0].platform} Posts`}
                       </Typography>
                     </Box>
                   </Grid>
@@ -1413,7 +1407,8 @@ const CampaignAnalytics = ({ campaign }) => {
 
           {/* Right: Top Engagement Card */}
           {(selectedPlatform !== 'ALL' ||
-            (availablePlatforms.length === 1 && insightsData.length > 0 &&
+            (availablePlatforms.length === 1 &&
+              insightsData.length > 0 &&
               (insightsData[0].platform === 'Instagram' ||
                 insightsData[0].platform === 'TikTok'))) && (
             <Grid
@@ -1465,7 +1460,13 @@ const CampaignAnalytics = ({ campaign }) => {
     return topPerformer;
   };
 
-  const UserPerformanceCard = ({ engagementRate, submission, insightData, loadingInsights: isLoadingInsights }) => {
+  // eslint-disable-next-line react/no-unstable-nested-components
+  const UserPerformanceCard = ({
+    engagementRate,
+    submission,
+    insightData,
+    loadingInsights: isLoadingInsights,
+  }) => {
     const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
 
     return (
@@ -1480,7 +1481,8 @@ const CampaignAnalytics = ({ campaign }) => {
                   sx={{
                     width: 48,
                     height: 48,
-                    bgcolor: submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
+                    bgcolor:
+                      submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
                   }}
                 >
                   {loadingCreator ? (
@@ -1512,7 +1514,12 @@ const CampaignAnalytics = ({ campaign }) => {
                     <Box display="flex" alignItems="center" mr="auto" ml={2}>
                       {/* Engagement Rate */}
                       <Box>
-                        <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={16}
+                          fontWeight={600}
+                          color="#636366"
+                        >
                           Engagement Rate
                         </Typography>
                         <Typography
@@ -1532,7 +1539,12 @@ const CampaignAnalytics = ({ campaign }) => {
 
                       {/* Views */}
                       <Box sx={{ width: 80 }}>
-                        <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={16}
+                          fontWeight={600}
+                          color="#636366"
+                        >
                           Views
                         </Typography>
                         <Typography
@@ -1552,7 +1564,12 @@ const CampaignAnalytics = ({ campaign }) => {
 
                       {/* Likes */}
                       <Box>
-                        <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={16}
+                          fontWeight={600}
+                          color="#636366"
+                        >
                           Likes
                         </Typography>
                         <Typography
@@ -1572,7 +1589,12 @@ const CampaignAnalytics = ({ campaign }) => {
 
                       {/* Comments */}
                       <Box>
-                        <Typography fontFamily="Aileron" fontSize={16} fontWeight={600} color="#636366">
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={16}
+                          fontWeight={600}
+                          color="#636366"
+                        >
                           Comments
                         </Typography>
                         <Typography
@@ -1666,7 +1688,8 @@ const CampaignAnalytics = ({ campaign }) => {
                   sx={{
                     width: 40,
                     height: 40,
-                    bgcolor: submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
+                    bgcolor:
+                      submission && submission.platform === 'Instagram' ? '#E4405F' : '#000000',
                     mr: 2,
                   }}
                 >
@@ -1702,7 +1725,12 @@ const CampaignAnalytics = ({ campaign }) => {
                     <Box display="flex" justifyContent="center" alignItems="center" mb={2}>
                       {/* Engagement Rate */}
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={14}
+                          fontWeight={600}
+                          color="#636366"
+                        >
                           Engagement
                         </Typography>
                         <Typography
@@ -1722,7 +1750,12 @@ const CampaignAnalytics = ({ campaign }) => {
 
                       {/* Views */}
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={14}
+                          fontWeight={600}
+                          color="#636366"
+                        >
                           Views
                         </Typography>
                         <Typography
@@ -1742,7 +1775,12 @@ const CampaignAnalytics = ({ campaign }) => {
 
                       {/* Likes */}
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={14}
+                          fontWeight={600}
+                          color="#636366"
+                        >
                           Likes
                         </Typography>
                         <Typography
@@ -1762,7 +1800,12 @@ const CampaignAnalytics = ({ campaign }) => {
 
                       {/* Comments */}
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography fontFamily="Aileron" fontSize={14} fontWeight={600} color="#636366">
+                        <Typography
+                          fontFamily="Aileron"
+                          fontSize={14}
+                          fontWeight={600}
+                          color="#636366"
+                        >
                           Comments
                         </Typography>
                         <Typography
@@ -1875,12 +1918,18 @@ const CampaignAnalytics = ({ campaign }) => {
   return (
     <Box>
       {/* Platform Toggle */}
-      {availablePlatforms.length > 1 && <PlatformToggle />}
+      {availablePlatforms.length > 1 && (
+        <PlatformToggle
+          lgUp={lgUp}
+          availablePlatforms={availablePlatforms}
+          selectedPlatform={selectedPlatform}
+          handlePlatformChange={handlePlatformChange}
+        />
+      )}
 
       <Typography fontSize={24} fontWeight={600} fontFamily="Aileron" gutterBottom>
         Performance Summary
       </Typography>
-
 
       {/* Loading state for insights */}
       {loadingInsights && (
@@ -1930,7 +1979,6 @@ const CampaignAnalytics = ({ campaign }) => {
           Error loading insights: {insightsError?.message || 'Unknown error'}
         </Alert>
       )}
-
 
       {/* Core Metrics Section */}
       <CoreMetricsSection insightsData={filteredInsightsData} summaryStats={summaryStats} />
@@ -2009,7 +2057,8 @@ const CampaignAnalytics = ({ campaign }) => {
                   mx: 'auto',
                 }}
               >
-                Creator performance data will appear here once creators submit their posting links and content goes live.
+                Creator performance data will appear here once creators submit their posting links
+                and content goes live.
               </Typography>
             </Box>
           </Grid>
@@ -2022,7 +2071,6 @@ const CampaignAnalytics = ({ campaign }) => {
             </Alert>
           </Grid>
         )}
-
       </Grid>
 
       {/* Pagination Controls */}
