@@ -485,23 +485,50 @@ const CampaignAgreements = ({ campaign }) => {
     });
   }, [data, submissions, loadingSubmissions]);
 
-  const filteredData = useMemo(() => {
+  const pitchApprovedAgreements = useMemo(() => {
     if (!combinedData) return [];
+
+    if (!Array.isArray(campaign?.pitch)) {
+      return combinedData;
+    }
+
+    const approvedPitches = campaign.pitch
+      .filter(
+        (pitchItem) =>
+          pitchItem?.status === 'APPROVED' ||
+          pitchItem?.status === 'AGREEMENT_SUBMITTED' ||
+          pitchItem?.status === 'AGREEMENT_PENDING' ||
+          pitchItem?.status === 'approved'
+      )
+      .map((pitchItem) => pitchItem?.userId)
+      .filter(Boolean);
+
+    if (!approvedPitches.length) {
+      return [];
+    }
+
+    const approvedCreatorSet = new Set(approvedPitches);
+
+    return combinedData.filter((agreement) => approvedCreatorSet.has(agreement.userId));
+  }, [combinedData, campaign?.pitch]);
+
+  const filteredData = useMemo(() => {
+    if (!pitchApprovedAgreements) return [];
 
     let result = [];
 
     if (selectedFilter === 'pending') {
-      result = combinedData.filter((item) => !item.isSent);
+      result = pitchApprovedAgreements.filter((item) => !item.isSent);
     } else if (selectedFilter === 'sent') {
-      result = combinedData.filter((item) => item.isSent);
+      result = pitchApprovedAgreements.filter((item) => item.isSent);
     } else {
-      result = combinedData;
+      result = pitchApprovedAgreements;
     }
 
     // Sort by selected column
     return [...result].sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortColumn) {
         case 'date': {
           // Sort by issue date (createdAt or updatedAt)
@@ -528,10 +555,10 @@ const CampaignAgreements = ({ campaign }) => {
           break;
         }
       }
-      
+
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [combinedData, selectedFilter, sortColumn, sortDirection]);
+  }, [selectedFilter, sortColumn, sortDirection, pitchApprovedAgreements]);
 
   const handleViewAgreement = (url, item) => {
     setSelectedUrl(url);
@@ -907,8 +934,6 @@ const CampaignAgreements = ({ campaign }) => {
 
                 const isPendingReview = item?.submission?.status === 'PENDING_REVIEW';
 
-                console.log('This is the item: ', !item?.submission);
-
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
@@ -1086,9 +1111,7 @@ const CampaignAgreements = ({ campaign }) => {
                             // For pending (not sent) agreements, show Send Agreement button
                             <Tooltip
                               title={
-                                !item?.submission
-                                  ? 'Approve (and/or link) creator before sending agreement'
-                                  : ''
+                                !item?.submission ? 'Link creator before sending agreement' : ''
                               }
                               arrow
                             >
