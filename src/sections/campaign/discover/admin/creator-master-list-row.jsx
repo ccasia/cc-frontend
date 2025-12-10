@@ -80,8 +80,8 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch }) => {
 
     return {
       username: profileUsername || '-',
-      engagementRate: null,
-      followerCount: null,
+      engagementRate: pitch?.engagementRate ?? null,
+      followerCount: pitch?.followerCount ?? null,
     };
   };
 
