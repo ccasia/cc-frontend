@@ -26,21 +26,6 @@ export default function useSubmissionSocket({
             onUpdate?.(true);
           }, 100);
         }
-
-        const actionMessages = {
-          'approve': 'Submission approved',
-          'reject': 'Submission rejected',
-          'request_revision': 'Changes requested',
-          'posting_link_approve': 'Posting link approved',
-          'posting_link_reject': 'Posting link rejected'
-        };
-
-        const message = actionMessages[data.action] || 'Submission updated';
-        if (data.byClient) {
-          enqueueSnackbar(`${message} by client`, { variant: 'info' });
-        } else {
-          enqueueSnackbar(message, { variant: 'info' });
-        }
       }
     };
 

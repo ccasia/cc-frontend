@@ -40,9 +40,6 @@ import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
 // Import steps from campaign creation
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
-import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
-import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
-import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
 
 import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
@@ -665,6 +662,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     };
 
     const handleCancel = () => {
+      setIsConfirming(false)
       setOpenConfirmModal(false);
     };
 
@@ -761,7 +759,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           >
             <Button
               color="inherit"
-              disabled={activeStep === 0 || isLoading || isConfirming}
+              disabled={activeStep === 0}
               onClick={handleBack}
               sx={{
                 mr: 1,
@@ -885,7 +883,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           <Stack direction="row" spacing={2} justifyContent="space-between">
             <Button
               color="inherit"
-              disabled={activeStep === 0 || isLoading || isConfirming}
+              disabled={activeStep === 0}
               onClick={handleBack}
               fullWidth
               sx={{
