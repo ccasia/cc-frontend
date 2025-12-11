@@ -603,7 +603,7 @@ function CreatorAccordion({ creator, campaign }) {
         py: { xs: 1, sm: onlyAgreement ? 1 : 0 },
         minWidth: 0,
         overflow: 'visible',
-        mb: 0.5
+        mt: 0.5
       }}>
         {/* Creator Info Section */}
         <Box sx={{ 
