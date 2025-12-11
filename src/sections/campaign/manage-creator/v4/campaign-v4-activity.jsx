@@ -1012,6 +1012,7 @@ const CampaignV4Activity = ({ campaign }) => {
   const [uploadingSubmissions, setUploadingSubmissions] = useState({}); // Track which submissions are uploading
   const updateTimerRef = React.useRef(null); // Store timer for debouncing updates
   const isFirstUpdateRef = React.useRef(true); // Track if this is the first update
+  const hasAutoExpandedLogisticsRef = React.useRef(false); // Track if we've auto-expanded logistics
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
@@ -1350,11 +1351,13 @@ const CampaignV4Activity = ({ campaign }) => {
   // Check if creator's agreement has been approved
   const isAgreementApproved = overviewData?.isAgreementApproved;
 
+  // Auto-expand logistics once when agreement is approved (but allow user to close it)
   useEffect(() => {
-    if (isAgreementApproved && !isLogisticsCompleted && !expandedSections.logistics) {
+    if (isAgreementApproved && !isLogisticsCompleted && !hasAutoExpandedLogisticsRef.current) {
       setExpandedSections((prev) => ({ ...prev, logistics: true }));
+      hasAutoExpandedLogisticsRef.current = true;
     }
-  }, [isAgreementApproved, isLogisticsCompleted, expandedSections.logistics]);
+  }, [isAgreementApproved, isLogisticsCompleted]);
 
   if (error) {
     return (
@@ -1455,262 +1458,6 @@ const CampaignV4Activity = ({ campaign }) => {
                 }}
               />
             </Box>
-          </Collapse>
-        </Card>
-      </Box>
-    );
-  }
-
-  if (isAgreementApproved && !isLogisticsCompleted) {
-    return (
-      <Box>
-        <Card
-          sx={{
-            overflow: 'visible',
-            bgcolor: '#F5F5F5',
-            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-            borderRadius: 2,
-            border: 'none',
-            mb: 1,
-          }}
-        >
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ p: 2, cursor: 'pointer' }}
-            onClick={() =>
-              setExpandedSections((prev) => ({
-                ...prev,
-                approvedAgreement: !prev.approvedAgreement,
-              }))
-            }
-          >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: 600,
-                  color: 'black',
-                  fontFamily:
-                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                }}
-              >
-                Agreement
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  fontWeight: 600,
-                  border: '1px solid',
-                  borderBottom: '3px solid',
-                  borderRadius: 0.8,
-                  bgcolor: 'white',
-                  whiteSpace: 'nowrap',
-                  color: '#00AB55',
-                  borderColor: '#00AB55',
-                  fontSize: '0.75rem',
-                }}
-              >
-                APPROVED
-              </Typography>
-            </Stack>
-            <Iconify
-              icon={
-                expandedSections.approvedAgreement ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'
-              }
-              width={20}
-            />
-          </Stack>
-
-          <Collapse in={expandedSections.approvedAgreement}>
-            <Box sx={{ p: 2, pt: 0 }}>
-              <Stack spacing={2}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#221f20',
-                    fontFamily:
-                      'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    fontWeight: 500,
-                  }}
-                >
-                  ✅ Your agreement has been approved!{' '}
-                  {signedAgreementUrl ? 'Below is your signed agreement.' : ''} You can now proceed
-                  with the campaign submissions.
-                </Typography>
-
-                {/* Agreement PDF Preview */}
-                {(signedAgreementUrl || agreementUrl) && (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: { xs: 'column', md: 'row' },
-                      gap: 2,
-                      mt: 1,
-                    }}
-                  >
-                    {/* PDF Preview */}
-                    <Box sx={{ flex: 1 }}>
-                      <Box
-                        sx={{
-                          width: '100%',
-                          height: { xs: '250px', sm: '300px' },
-                          borderRadius: 1,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          overflow: 'auto',
-                          bgcolor: 'background.neutral',
-                          '& .react-pdf__Document': {
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                          },
-                          '&::-webkit-scrollbar': {
-                            width: '8px',
-                          },
-                          '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: 'rgba(0,0,0,0.2)',
-                            borderRadius: '4px',
-                          },
-                          '&::-webkit-scrollbar-track': {
-                            backgroundColor: 'rgba(0,0,0,0.1)',
-                          },
-                        }}
-                      >
-                        <Document
-                          file={signedAgreementUrl || agreementUrl}
-                          onLoadSuccess={onDocumentLoadSuccess}
-                          onLoadError={onDocumentLoadError}
-                        >
-                          {Array.from(new Array(numPages), (el, index) => (
-                            <Box
-                              key={index}
-                              sx={{
-                                p: 1,
-                                width: '100%',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                '&:not(:last-child)': {
-                                  borderBottom: '1px solid',
-                                  borderColor: 'divider',
-                                },
-                              }}
-                            >
-                              <Page
-                                key={`page-${index + 1}`}
-                                pageNumber={index + 1}
-                                scale={isSmallScreen ? 0.3 : 0.4}
-                                renderAnnotationLayer={false}
-                                renderTextLayer={false}
-                              />
-                            </Box>
-                          ))}
-                        </Document>
-                      </Box>
-                    </Box>
-
-                    {/* Download Button */}
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: { xs: 'center', md: 'flex-start' },
-                      }}
-                    >
-                      <Button
-                        variant="contained"
-                        startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                        onClick={() => handleDownload(signedAgreementUrl || agreementUrl)}
-                        sx={{
-                          bgcolor: '#203ff5',
-                          color: 'white',
-                          borderBottom: 3,
-                          borderBottomColor: '#112286',
-                          borderRadius: 1.5,
-                          px: 2.5,
-                          py: 1.2,
-                          '&:hover': {
-                            bgcolor: '#203ff5',
-                            opacity: 0.9,
-                          },
-                        }}
-                      >
-                        {signedAgreementUrl ? 'Download Signed Agreement' : 'Download Agreement'}
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
-              </Stack>
-            </Box>
-          </Collapse>
-        </Card>
-        <Card
-          sx={{
-            overflow: 'visible',
-            bgcolor: '#F5F5F5',
-            boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-            borderRadius: 2,
-            border: 'none',
-            mb: 3,
-          }}
-        >
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ p: 2, cursor: 'pointer' }}
-            onClick={() => setExpandedSections((prev) => ({ ...prev, logistics: !prev.logistics }))}
-          >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: 600,
-                  color: 'black',
-                  fontFamily: 'Inter Display, sans-serif',
-                }}
-              >
-                Logistics Information
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  px: 1.5,
-                  py: 0.5,
-                  fontWeight: 600,
-                  border: '1px solid',
-                  borderBottom: '3px solid',
-                  borderRadius: 0.8,
-                  bgcolor: 'white',
-                  whiteSpace: 'nowrap',
-                  color: '#8B5CF6',
-                  borderColor: '#8B5CF6', // Purple for Action Required
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'inherit' }}
-                >
-                  NOT STARTED
-                </Typography>
-              </Box>
-            </Stack>
-            <Iconify
-              icon={expandedSections.logistics ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-              width={20}
-            />
-          </Stack>
-
-          <Collapse in={expandedSections.logistics}>
-            <Divider />
-            {/* The Form Component */}
-            <LogisticsForm user={user} campaignId={campaign.id} onUpdate={() => mutateLogistic()} />
           </Collapse>
         </Card>
       </Box>
@@ -1941,7 +1688,8 @@ const CampaignV4Activity = ({ campaign }) => {
         </Card>
       )}
 
-      {isLogisticsCompleted && (
+      {/* Logistics Information Card - Always visible when agreement is approved */}
+      {isAgreementApproved && (
         <Card
           sx={{
             overflow: 'visible',
@@ -1983,15 +1731,15 @@ const CampaignV4Activity = ({ campaign }) => {
                   borderRadius: 0.8,
                   bgcolor: 'white',
                   whiteSpace: 'nowrap',
-                  color: '#00AB55',
-                  borderColor: '#00AB55',
+                  color: isLogisticsCompleted ? '#00AB55' : '#8B5CF6',
+                  borderColor: isLogisticsCompleted ? '#00AB55' : '#8B5CF6',
                 }}
               >
                 <Typography
                   variant="caption"
                   sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'inherit' }}
                 >
-                  COMPLETED{' '}
+                  {isLogisticsCompleted ? 'COMPLETED' : 'NOT STARTED'}
                 </Typography>
               </Box>
             </Stack>

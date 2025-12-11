@@ -535,32 +535,6 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       </Tooltip>
                     </>
                   )}
-
-                  {currentPitch?.status === 'approved' && (
-                    <Tooltip title="View Shortlisted Profile">
-                      <Button
-                        size="small"
-                        sx={{
-                          p: 2,
-                          color: '#FFFFFF',
-                          bgcolor: '#3A3A3C',
-                          border: '1px solid #282424',
-                          borderBottom: '3px solid #282424',
-                          borderRadius: '10px',
-                          height: '42px',
-                          fontWeight: 600,
-                          fontSize: '12px',
-                          textTransform: 'none',
-                          '&:hover': {
-                            bgcolor: '#4a4a4c',
-                          },
-                        }}
-                        onClick={handleShortlistedProfileClick}
-                      >
-                        Profile
-                      </Button>
-                    </Tooltip>
-                  )}
                 </Stack>
               </Stack>
             </Box>

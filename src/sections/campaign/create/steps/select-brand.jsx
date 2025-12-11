@@ -215,8 +215,8 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
       </Stack>
 
       {client && (client?.type === 'agency' || !!client?.brand?.length) && (
-        <Stack spacing={1} mt={8}>
-          <FormField label="Select/Create a Client">
+        <Stack spacing={1} mt={2}>
+          <FormField label="Select/Create a Brand">
             <RHFAutocomplete
               name="campaignBrand"
               placeholder="Select or Create Brand"
