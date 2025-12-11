@@ -29,9 +29,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import AgreementTemplate from 'src/template/agreement';
 
-import PDFEditor from 'src/components/pdf/pdf-editor';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 const stepsPDF = ['Fill in missing information', 'Digital Signature'];
 
