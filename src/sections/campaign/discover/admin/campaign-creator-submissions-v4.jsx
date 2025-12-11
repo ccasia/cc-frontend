@@ -179,10 +179,10 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
-            width: { xs: 140, sm: 210 },
-            minWidth: { xs: 120, sm: 140 },
+            width: { xs: 140, sm: submissions?.length > 4 ? 200 : 210, },
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10,
+            borderBottomRightRadius: isExpanded ? 0 : 10,
             '&:hover': {
               bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
             }
@@ -278,8 +278,8 @@ function CreatorAccordion({ creator, campaign }) {
             <Iconify 
               icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"}
               sx={{ 
-                width: { xs: 20, sm: 22, md: 24, lg: 26 }, 
-                height: { xs: 20, sm: 22, md: 24, lg: 26 } 
+                width: { xs: 20, sm: 22, }, 
+                height: { xs: 20, sm: 22, } 
               }}
               color={isExpanded ? '#1340FF' : '#8E8E93'}
             />            
@@ -305,10 +305,10 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
-            width: { xs: 140, sm: 210 },
-            minWidth: { xs: 120, sm: 140 },
+            width: { xs: 140, sm: submissions?.length > 4 ? 200 : 210, },
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10,
+            borderBottomRightRadius: isExpanded ? 0 : 10,
             '&:hover': {
               bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
             }
@@ -399,8 +399,8 @@ function CreatorAccordion({ creator, campaign }) {
           <Iconify 
             icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"} 
             sx={{ 
-              width: { xs: 20, sm: 22, md: 24, lg: 26 }, 
-              height: { xs: 20, sm: 22, md: 24, lg: 26 } 
+              width: { xs: 20, sm: 22, }, 
+              height: { xs: 20, sm: 22, } 
             }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
@@ -425,10 +425,10 @@ function CreatorAccordion({ creator, campaign }) {
           sx={{ 
             cursor: 'pointer',
             gap: { xs: 0.2, sm: 0.4, md: 0.5 },
-            width: { xs: 140, sm: 210 },
-            minWidth: { xs: 120, sm: 140 },
+            width: { xs: 140, sm: submissions?.length > 4 ? 200 : 210, },
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10,
+            borderBottomRightRadius: isExpanded ? 0 : 10,
             '&:hover': {
               bgcolor: isExpanded ? 'background.neutral' : 'rgba(231, 231, 231, 0.8)',
             }
@@ -519,8 +519,8 @@ function CreatorAccordion({ creator, campaign }) {
           <Iconify 
             icon={isExpanded ? "mingcute:up-line" : "mingcute:down-line"}
             sx={{ 
-              width: { xs: 20, sm: 22, md: 24, lg: 26 }, 
-              height: { xs: 20, sm: 22, md: 24, lg: 26 } 
+              width: { xs: 20, sm: 22, }, 
+              height: { xs: 20, sm: 22, } 
             }}
             color={isExpanded ? '#1340FF' : '#8E8E93'}
           />
@@ -588,31 +588,32 @@ function CreatorAccordion({ creator, campaign }) {
   };
 
   return (
-    <Box sx={{ 
-      mb: 1,
-    }}>
+    <Stack>
       {/* Creator Info Row */}
-      <Box sx={{ 
+      <Stack sx={{ 
         display: 'flex', 
         alignItems: 'center', 
+        justifyContent: 'space-between',
         backgroundColor: '#E7E7E7',
         boxShadow: '0px 4px 4px 0px #8E8E9340',
         borderRadius: 1,
-        pl: { xs: 0.8, sm: 1 },
+        pl: 1,
         pr: { xs: 0.5, sm: onlyAgreement ? 1 : 0 },
         flexDirection: { xs: 'column', sm: 'row' },
         py: { xs: 1, sm: onlyAgreement ? 1 : 0 },
-        gap: { xs: 1, sm: 0 },
+        minWidth: 0,
+        overflow: 'visible',
+        mb: 0.5
       }}>
         {/* Creator Info Section */}
         <Box sx={{ 
-          display: 'flex', 
+          display: 'inline-flex',
+          flex: 1,
           alignItems: 'center',
           pr: { xs: 0, sm: 2 },
-          minWidth: 0,
-          maxWidth: { xs: '100%', sm: onlyAgreement ? '100%' : 300 },
           width: { xs: '100%', sm: 'auto' },
           justifyContent: { xs: 'flex-start', sm: 'flex-start' },
+          minWidth: 0
         }}>
           <Avatar
             src={creator.user?.photoURL}
@@ -620,21 +621,25 @@ function CreatorAccordion({ creator, campaign }) {
             sx={{ 
               width: { xs: 32, sm: 35 }, 
               height: { xs: 32, sm: 35 }, 
-              mr: { xs: 1.5, sm: 2 }, 
-              flexShrink: 0 
+              mr: { xs: 1.5, sm: 1 }, 
             }}
           >
             {creator.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Box
+            sx={{
+              minWidth: 0,
+              maxWidth: { xs: '100%', sm: submissions?.length > 3 ? 300 : '100%' },
+            }}
+          >
             <Tooltip title={creator.user?.name || 'Unknown Creator'} arrow>
               <Typography 
                 variant="subtitle1" 
-                noWrap
                 sx={{ 
-                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                   overflow: 'hidden',
-                  fontSize: { xs: '0.9rem', sm: '1rem' }
+                  textOverflow: 'ellipsis',
+                  fontSize: { xs: 12, sm: 14, lineHeight: 1.5 }
                 }}
               >
                 {creator.user?.name || 'Unknown Creator'}
@@ -644,26 +649,29 @@ function CreatorAccordion({ creator, campaign }) {
         </Box>
 
         {/* Submission Pills Section */}
-        <Box sx={{ 
-          flex: 1, 
-          display: 'flex', 
-          justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-          gap: { xs: 0.8, sm: 1.2, md: 1.5 },
-          flexWrap: { xs: 'wrap', sm: 'nowrap' },
-          width: { xs: '100%', sm: 'auto' },
-          overflowX: { xs: 'auto', sm: 'visible' },
-          '&::-webkit-scrollbar': {
-            height: 2,
-            display: { xs: 'block', sm: 'none' }
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: 'transparent',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(0,0,0,0.2)',
-            borderRadius: 2,
-          },
-        }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'nowrap',
+            flex: submissions?.length > 4 ? 4 : 2,
+            justifyContent: 'flex-end',
+            width: '100%',
+            minWidth: 0,
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            '&::-webkit-scrollbar': {
+              height: 2,
+              display: { xs: 'block' }
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(0,0,0,0.2)',
+              borderRadius: 2,
+            },
+          }}
+        >
           {(() => {
             if (submissionsLoading) {
               return (
@@ -682,7 +690,7 @@ function CreatorAccordion({ creator, campaign }) {
             return renderSubmissionPills();
           })()}
         </Box>
-      </Box>
+      </Stack>
 
       {/* Expanded Submission Content */}
       {expandedSubmission && (
@@ -690,7 +698,7 @@ function CreatorAccordion({ creator, campaign }) {
           {renderExpandedSubmission()}
         </Box>
       )}
-    </Box>
+    </Stack>
   );
 }
 
@@ -706,7 +714,7 @@ CreatorAccordion.propTypes = {
 
 export default function CampaignCreatorSubmissionsV4({ campaign }) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
 
