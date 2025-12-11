@@ -31,10 +31,11 @@ import AgreementTemplate from 'src/template/agreement';
 
 import PDFEditor from 'src/components/pdf/pdf-editor';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import PDFEditorV2 from 'src/components/pdf/pdf-editor-v2';
 
 const stepsPDF = ['Fill in missing information', 'Digital Signature'];
 
-const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) => {
+const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm, onTemplateCreated }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [url, setURL] = useState('');
   const loadingProcess = useBoolean();
@@ -152,8 +153,13 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
         }
       );
 
+
       if (setAgreementForm) {
         setAgreementForm('agreementFrom', res?.data?.agreementTemplate);
+      }
+
+      if (onTemplateCreated && res?.data?.agreementTemplate) {
+        onTemplateCreated(res.data.agreementTemplate);
       }
 
       if (campaignId) {
@@ -199,7 +205,7 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
                 </Stack>
               )}
               {activeStep === 1 && (
-                <PDFEditor
+                <PDFEditorV2
                   file={url}
                   annotations={annotations}
                   setAnnotations={setAnnotations}
@@ -244,4 +250,5 @@ PDFEditorModal.propTypes = {
   user: PropTypes.object,
   campaignId: PropTypes.string,
   setAgreementForm: PropTypes.func,
+  onTemplateCreated: PropTypes.func,
 };
