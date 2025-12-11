@@ -23,20 +23,31 @@ import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 const filter = createFilterOptions();
 
-// const findLatestPackage = (packages) => {
-//   if (packages.length === 0) {
-//     return null; // Return null if the array is empty
-//   }
+const FormField = ({ label, children, required = true }) => (
+  <Stack spacing={0.5}>
+    <FormLabel
+      required={required}
+      sx={{
+        fontWeight: 700,
+        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+        fontSize: '0.875rem', // Smaller font size for labels
+        mb: 0.5,
+        '& .MuiFormLabel-asterisk': {
+          color: '#FF3500', // Change this to your desired color
+        },
+      }}
+    >
+      {label}
+    </FormLabel>
+    {children}
+  </Stack>
+);
 
-//   const latestPackage = packages.reduce((latest, current) => {
-//     const latestDate = new Date(latest.createdAt);
-//     const currentDate = new Date(current.createdAt);
-
-//     return currentDate > latestDate ? current : latest;
-//   });
-
-//   return latestPackage;
-// };
+FormField.propTypes = {
+  label: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+  required: PropTypes.bool,
+};
 
 const getRemainingTime = (invoiceDate) => {
   const remainingDays = dayjs(invoiceDate).diff(dayjs(), 'days');
@@ -49,8 +60,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
 
   const {
     getValues,
-    setError,
-    clearErrors,
+    // Removed unused setError, clearErrors
     watch,
     setValue,
     formState: { errors },
@@ -60,7 +70,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
   const brand = getValues('campaignBrand');
   const campaignCredits = watch('campaignCredits');
 
-  const creditSummary = useMemo(() => client?.creditSummary || null, [client])
+  const creditSummary = useMemo(() => client?.creditSummary || null, [client]);
 
   const requestedCredits = Number(campaignCredits || 0);
   const availableCredits = creditSummary?.remainingCredits ?? 0;
@@ -68,9 +78,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
   let creditError = false;
   let creditHelperText = '';
 
-  if (requestedCredits <= 0) {
-    // No credits requested
-  } else if (requestedCredits > availableCredits) {
+  if (requestedCredits > availableCredits) {
     creditError = true;
     creditHelperText = `Exceeds limit - credits available: ${availableCredits}`;
   }
@@ -79,7 +87,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
     if (onValidationChange) {
       onValidationChange(creditError);
     }
-  }, [creditError, onValidationChange]); 
+  }, [creditError, onValidationChange]);
 
   // const latestPackageItem = useMemo(() => {
   //   if (client?.id && client?.subscriptions.length) {
@@ -150,86 +158,65 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
   }, [client, setValue]);
 
   return (
-    <Box
-      sx={{
-        p: 2,
-      }}
-    >
-      <Stack spacing={1}>
-        <FormLabel
-          required
-          sx={{
-            fontWeight: 600,
-            color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-          }}
-        >
-          Select client or agency
-        </FormLabel>
+    <Box sx={{ maxWidth: '500px', mx: 'auto' }}>
+      <Stack spacing={1} mt={8}>
+        <FormField label="Select/Create a Client">
+          <RHFAutocomplete
+            name="client"
+            placeholder="Select or Create Client"
+            options={data || []}
+            loading={isLoading}
+            getOptionLabel={(option) => {
+              if (option.inputValue) {
+                return option.inputValue;
+              }
+              return option.name;
+            }}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            selectOnFocus
+            clearOnBlur
+            renderOption={(props, option) => {
+              const { ...optionProps } = props;
 
-        <RHFAutocomplete
-          name="client"
-          placeholder="Select or Create Client"
-          options={data || []}
-          loading={isLoading}
-          getOptionLabel={(option) => {
-            if (option.inputValue) {
-              return option.inputValue;
-            }
-            return option.name;
-          }}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          selectOnFocus
-          clearOnBlur
-          renderOption={(props, option) => {
-            const { ...optionProps } = props;
+              return (
+                <Stack
+                  component="li"
+                  direction="row"
+                  spacing={1}
+                  p={1}
+                  {...optionProps}
+                  key={option?.id}
+                >
+                  <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                  <ListItemText primary={option.name} />
+                </Stack>
+              );
+            }}
+            filterOptions={(options, params) => {
+              const { inputValue } = params;
 
-            return (
-              <Stack
-                component="li"
-                direction="row"
-                spacing={1}
-                p={1}
-                {...optionProps}
-                key={option?.id}
-              >
-                <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
-                <ListItemText primary={option.name} />
-              </Stack>
-            );
-          }}
-          filterOptions={(options, params) => {
-            const { inputValue } = params;
+              const filtered = filter(options, params);
 
-            const filtered = filter(options, params);
+              const isExisting = options.some(
+                (option) => option.name.toLowerCase() === inputValue.toLowerCase()
+              );
 
-            const isExisting = options.some(
-              (option) => option.name.toLowerCase() === inputValue.toLowerCase()
-            );
+              if (inputValue !== '' && !isExisting) {
+                filtered.push({
+                  inputValue,
+                  name: `Add "${inputValue}"`,
+                });
+              }
 
-            if (inputValue !== '' && !isExisting) {
-              filtered.push({
-                inputValue,
-                name: `Add "${inputValue}"`,
-              });
-            }
-
-            return filtered;
-          }}
-        />
+              return filtered;
+            }}
+          />
+        </FormField>
       </Stack>
 
       {client && (client?.type === 'agency' || !!client?.brand?.length) && (
-        <Box mt={2}>
-          <Stack spacing={1}>
-            <FormLabel
-              required
-              sx={{
-                fontWeight: 600,
-                color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-              }}
-            >
-              Select or create brand
-            </FormLabel>
+        <Stack spacing={1} mt={8}>
+          <FormField label="Select/Create a Client">
             <RHFAutocomplete
               name="campaignBrand"
               placeholder="Select or Create Brand"
@@ -284,8 +271,8 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
                 return filtered;
               }}
             />
-          </Stack>
-        </Box>
+          </FormField>
+        </Stack>
       )}
 
       {client &&
@@ -307,9 +294,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
                 >
                   <Iconify icon="pajamas:expire" width={26} />
                 </Avatar>
-                <Typography variant="subtitle2">
-                  Package has expired
-                </Typography>
+                <Typography variant="subtitle2">Package has expired</Typography>
                 <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
                   Renew package
                 </Button>
@@ -319,11 +304,11 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
                 direction={{ sm: 'column', md: 'row' }}
                 justifyContent="space-between"
                 gap={2}
-                mt={3}
+                mt={8}
               >
                 <Stack
                   spacing={2}
-                  minWidth={1 / 2}
+                  flex={1}
                   sx={{
                     position: 'relative',
                     border: 1,
@@ -342,7 +327,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
                     },
                   }}
                 >
-                  <Stack>
+                  <Stack spacing={0.5}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                       <FormLabel
                         sx={{
@@ -353,7 +338,9 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
                         Total Available Credits
                       </FormLabel>
 
-                      <Tooltip title={`Total remaining credits from ${creditSummary.activePackagesCount} active package(s).`}>
+                      <Tooltip
+                        title={`Total remaining credits from ${creditSummary.activePackagesCount} active package(s).`}
+                      >
                         <Iconify
                           icon="material-symbols:info-outline-rounded"
                           width="24"
@@ -372,7 +359,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
                     />
                   </Stack>
 
-                  <Stack>
+                  <Stack spacing={0.5}>
                     <FormLabel
                       sx={{
                         fontWeight: 600,
@@ -389,7 +376,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage, onValidationChange }
                     />
                   </Stack>
                 </Stack>
-                <Stack spacing={1} minWidth={1 / 2}>
+                <Stack spacing={1} flex={1}>
                   <FormLabel
                     required
                     sx={{
