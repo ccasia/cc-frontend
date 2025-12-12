@@ -29,9 +29,9 @@ import LogisticsTableRow from './logistics-table-row';
 import ConfirmStatusChangeDialog from './dialogs/confirm-status-change-dialog';
 
 const TABLE_HEAD = [
-  { id: 'name', label: 'Name', width: '40%' },
-  { id: 'product', label: 'Product Assigned', width: '40%' },
-  { id: 'status', label: 'Status', width: '20%' },
+  { id: 'name', label: 'Name', width: '20%', align: 'left' },
+  { id: 'product', label: 'Product Assigned', width: '55%', align: 'center' },
+  { id: 'status', label: 'Status', width: '25%', align: 'left' },
 ];
 
 const STATUS_OPTIONS = [
@@ -144,6 +144,7 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
                 {TABLE_HEAD.map((heading) => (
                   <TableCell
                     key={heading.id}
+                    align={heading.align || 'left'}
                     sx={{ width: heading.width, py: 1, height: 40, color: '#231F20' }}
                   >
                     {heading.label}

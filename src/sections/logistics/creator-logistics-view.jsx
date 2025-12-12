@@ -31,6 +31,7 @@ export default function CreatorLogisticsView({ campaign }) {
   const deliveryDetails = logistic?.deliveryDetails;
   const creator = logistic?.creator;
   const isConfirmed = logistic?.deliveryDetails?.isConfirmed;
+  const type = logistic?.type;
 
   const handleMarkReceived = async () => {
     try {
@@ -294,7 +295,7 @@ export default function CreatorLogisticsView({ campaign }) {
       >
         {/* Top Section: Stepper */}
         <Box sx={{ py: 6, px: { xs: 3, md: 14 }, borderBottom: '1px solid #EDEFF2' }}>
-          <CreatorLogisticsStepper status={status} updatedDates={logistic} />
+          <CreatorLogisticsStepper status={status} updatedDates={logistic} type={type} />
         </Box>
 
         {/* Bottom Section: Split Columns */}

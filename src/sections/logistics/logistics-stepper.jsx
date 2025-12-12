@@ -80,11 +80,7 @@ function CustomStepIcon(props) {
     return <Iconify icon="solar:clock-circle-bold" width={16} />;
   };
 
-  return (
-    <StepIconRoot ownerState={{ active, completed, error }}>
-      {getIcon()}
-    </StepIconRoot>
-  );
+  return <StepIconRoot ownerState={{ active, completed, error }}>{getIcon()}</StepIconRoot>;
 }
 
 CustomStepIcon.propTypes = {
@@ -96,51 +92,92 @@ CustomStepIcon.propTypes = {
 export default function LogisticsStepper({ logistic }) {
   if (!logistic) return null;
 
-  const { status, deliveryDetails } = logistic;
-
-  // Determine Active Step Index based on status
-  let activeStep = 0;
-  if (status === 'PENDING_ASSIGNMENT') activeStep = 0;
-  else if (status === 'SCHEDULED') activeStep = 1;
-  else if (status === 'SHIPPED')
-    activeStep = 2; // "Out for delivery" logic
-  else if (['DELIVERED', 'RECEIVED', 'COMPLETED'].includes(status)) activeStep = 4;
-  else if (status === 'ISSUE_REPORTED') activeStep = 3; // Trigger error state on step 3/4
-
+  const { status, type, deliveryDetails, reservationDetails, updatedAt, completedAt, shippedAt } =
+    logistic;
+  const isReservation = type === 'RESERVATION';
   const hasIssue = status === 'ISSUE_REPORTED';
 
-  const steps = [
-    {
-      step: 1,
-      label: 'Assign Product',
-      description: 'Assign product to creator',
-      completedDate: deliveryDetails?.createdAt,
-      color: '#FF3500',
-    },
-    {
-      step: 2,
-      label: 'Schedule Delivery',
-      description: 'Enter delivery details to continue',
-      completedDate: logistic.shippedAt,
-      color: '#FF3500',
-    },
-    {
-      step: 3,
-      label: 'Shipped Out',
-      description: 'We will update the status when the delivery date comes.',
-      completedDate: logistic.deliveredAt || logistic.receivedAt,
+  let activeStep = 0;
+  let steps = [];
 
-      color: '#1340FF',
-    },
-    {
-      step: 4,
-      label: hasIssue ? 'Delivery Failed' : 'Received',
-      description: hasIssue ? 'Please review issue to continue' : 'Waiting for confirmation...',
-      completedDate: logistic.deliveredAt || logistic.receivedAt,
-      error: hasIssue,
-      color: '#FF3500',
-    },
-  ];
+  if (isReservation) {
+    const isDetailsDone = reservationDetails?.isConfirmed;
+    const isScheduled = reservationDetails?.slots?.some((slot) => slot.status === 'SELECTED');
+    const isCompleted = ['COMPLETED', 'RECEIVED'].includes(status);
+
+    steps = [
+      {
+        label: 'Confirm Details',
+        description: isDetailsDone
+          ? `Completed on ${fDate(updatedAt)}`
+          : 'Add any details you want the creator to note.',
+        isCompleted: isDetailsDone,
+        isActive: !isDetailsDone,
+        color: '#FF3500',
+      },
+      {
+        label: 'Schedule',
+        description: isScheduled
+          ? `Completed on ${fDate(updatedAt)}`
+          : 'Schedule a slot for the creator.',
+        isCompleted: isScheduled,
+        isActive: isDetailsDone && !isScheduled,
+        color: '#1340FF',
+      },
+      {
+        label: hasIssue ? 'Issue Reported' : 'Completed',
+        description: hasIssue
+          ? 'Please review issue to continue'
+          : isCompleted
+            ? 'Visit completed'
+            : 'Waiting for creator to complete visit...',
+        isCompleted: isCompleted,
+        isActive: isScheduled && isDetailsDone && !isCompleted,
+        error: hasIssue,
+        color: hasIssue ? '#FF3500' : '#1ABF66',
+      },
+    ];
+  } else {
+    if (status === 'PENDING_ASSIGNMENT') activeStep = 0;
+    else if (status === 'SCHEDULED') activeStep = 1;
+    else if (status === 'SHIPPED')
+      activeStep = 2; // "Out for delivery" logic
+    else if (['DELIVERED', 'RECEIVED', 'COMPLETED'].includes(status)) activeStep = 4;
+    else if (status === 'ISSUE_REPORTED') activeStep = 3; // Trigger error state on step 3/4
+
+    steps = [
+      {
+        step: 1,
+        label: 'Assign Product',
+        description: 'Assign product to creator',
+        completedDate: deliveryDetails?.createdAt,
+        color: '#FF3500',
+      },
+      {
+        step: 2,
+        label: 'Schedule Delivery',
+        description: 'Enter delivery details to continue',
+        completedDate: logistic.shippedAt,
+        color: '#FF3500',
+      },
+      {
+        step: 3,
+        label: 'Shipped Out',
+        description: 'We will update the status when the delivery date comes.',
+        completedDate: logistic.deliveredAt || logistic.receivedAt,
+
+        color: '#1340FF',
+      },
+      {
+        step: 4,
+        label: hasIssue ? 'Delivery Failed' : 'Received',
+        description: hasIssue ? 'Please review issue to continue' : 'Waiting for confirmation...',
+        completedDate: logistic.deliveredAt || logistic.receivedAt,
+        error: hasIssue,
+        color: '#FF3500',
+      },
+    ];
+  }
 
   return (
     <Stepper
@@ -222,45 +259,75 @@ LogisticsStepper.propTypes = {
 
 // ----------------------------------------------------------------------
 
-export function CreatorLogisticsStepper({ status, updatedDates }) {
-  let activeStep = 0;
-
-  if (
-    ['SCHEDULED', 'SHIPPED', 'DELIVERED', 'RECEIVED', 'COMPLETED', 'ISSUE_REPORTED'].includes(
-      status
-    )
-  ) {
-    activeStep = 1;
-  }
-  if (['SHIPPED', 'DELIVERED', 'RECEIVED', 'COMPLETED', 'ISSUE_REPORTED'].includes(status)) {
-    activeStep = 2;
-  }
-  if (['RECEIVED', 'COMPLETED'].includes(status)) {
-    activeStep = 3;
-  }
+export function CreatorLogisticsStepper({ status, updatedDates, type }) {
+  const isReservation = type === 'RESERVATION';
   const isIssue = status === 'ISSUE_REPORTED';
+  let activeStep = 0;
+  let steps = [];
+  console.log('isReservation:', isReservation);
+  if (isReservation) {
+    if (status === 'PENDING_ASSIGNMENT') activeStep = 1; // Waiting for client
+    if (status === 'SCHEDULED') activeStep = 2; // Visit Upcoming
+    if (['COMPLETED', 'ISSUE_REPORTED'].includes(status)) activeStep = 3;
 
-  const steps = [
-    {
-      step: 1,
-      label: 'Confirm Details',
-      date: updatedDates?.createdAt, // Or specific date if tracked
-      desc: 'Completed on',
-    },
-    {
-      step: 2,
-      label: 'Delivery Scheduled',
-      date: updatedDates?.shippedAt ? updatedDates.createdAt : null, // Use createdAt logic or similar as per requirement
-      desc: 'Completed on',
-    },
-    {
-      step: 3,
-      label: isIssue ? 'Issue Reported' : 'Receive Product',
-      date: updatedDates?.deliveredAt || updatedDates?.receivedAt,
-      desc: isIssue ? 'We’ll review your issue and resolve it shortly.' : 'Completed on',
-      error: isIssue,
-    },
-  ];
+    steps = [
+      {
+        step: 1,
+        label: 'Check Availability',
+        date: updatedDates?.createdAt,
+        desc: 'Completed on',
+      },
+      {
+        step: 2,
+        label: 'Confirm Slot',
+        date: status !== 'PENDING_ASSIGNMENT' ? updatedDates?.updatedAt : null,
+        desc: status === 'PENDING_ASSIGNMENT' ? 'Waiting for Client...' : 'Completed on',
+      },
+      {
+        step: 3,
+        label: isIssue ? 'Issue Reported' : 'Complete Visit',
+        date: updatedDates?.completedAt,
+        desc: isIssue ? 'We’ll review shortly.' : 'Completed on',
+        error: isIssue,
+      },
+    ];
+  } else {
+    if (
+      ['SCHEDULED', 'SHIPPED', 'DELIVERED', 'RECEIVED', 'COMPLETED', 'ISSUE_REPORTED'].includes(
+        status
+      )
+    ) {
+      activeStep = 1;
+    }
+    if (['SHIPPED', 'DELIVERED', 'RECEIVED', 'COMPLETED', 'ISSUE_REPORTED'].includes(status)) {
+      activeStep = 2;
+    }
+    if (['RECEIVED', 'COMPLETED'].includes(status)) {
+      activeStep = 3;
+    }
+
+    steps = [
+      {
+        step: 1,
+        label: 'Confirm Details',
+        date: updatedDates?.createdAt, // Or specific date if tracked
+        desc: 'Completed on',
+      },
+      {
+        step: 2,
+        label: 'Delivery Scheduled',
+        date: updatedDates?.shippedAt ? updatedDates.createdAt : null, // Use createdAt logic or similar as per requirement
+        desc: 'Completed on',
+      },
+      {
+        step: 3,
+        label: isIssue ? 'Issue Reported' : 'Receive Product',
+        date: updatedDates?.deliveredAt || updatedDates?.receivedAt,
+        desc: isIssue ? 'We’ll review your issue and resolve it shortly.' : 'Completed on',
+        error: isIssue,
+      },
+    ];
+  }
 
   return (
     <Stepper
@@ -318,5 +385,6 @@ export function CreatorLogisticsStepper({ status, updatedDates }) {
 
 CreatorLogisticsStepper.propTypes = {
   status: PropTypes.string,
+  type: PropTypes.string,
   updatedDates: PropTypes.object,
 };
