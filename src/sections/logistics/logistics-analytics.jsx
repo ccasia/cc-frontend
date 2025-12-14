@@ -100,7 +100,7 @@ export default function LogisticsAnalytics({ logistics = [], isReservation }) {
         },
       },
     },
-    labels: labels,
+    labels,
     dataLabels: { enabled: false },
   };
 
@@ -179,4 +179,5 @@ export default function LogisticsAnalytics({ logistics = [], isReservation }) {
 
 LogisticsAnalytics.propTypes = {
   logistics: PropTypes.array,
+  isReservation: PropTypes.bool,
 };

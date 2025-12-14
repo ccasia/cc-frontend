@@ -64,16 +64,14 @@ function ScheduledItem({ item, isReservation }) {
   let mainInfo = '-';
   if (isReservation) {
     mainInfo = details?.outlet || 'No Outlet Selected';
-  } else {
-    if (details?.items) {
-      if (Array.isArray(details.items)) {
-        mainInfo = details.items
-          .map((i) => i.product?.productName)
-          .filter(Boolean)
-          .join(', ');
-      } else {
-        mainInfo = details.items;
-      }
+  } else if (details?.items) {
+    if (Array.isArray(details.items)) {
+      mainInfo = details.items
+        .map((i) => i.product?.productName)
+        .filter(Boolean)
+        .join(', ');
+    } else {
+      mainInfo = details.items;
     }
   }
 
@@ -254,6 +252,7 @@ function ScheduledItem({ item, isReservation }) {
 
 ScheduledItem.propTypes = {
   item: PropTypes.object,
+  isReservation: PropTypes.bool,
 };
 
 export default function LogisticsScheduledList({ date, logistics, isReservation }) {
@@ -344,4 +343,5 @@ export default function LogisticsScheduledList({ date, logistics, isReservation 
 LogisticsScheduledList.propTypes = {
   date: PropTypes.object,
   logistics: PropTypes.array,
+  isReservation: PropTypes.bool,
 };

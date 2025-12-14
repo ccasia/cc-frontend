@@ -139,6 +139,7 @@ LogisticsDrawer.propTypes = {
   onUpdate: PropTypes.func,
   campaignId: PropTypes.string,
   isAdmin: PropTypes.bool,
+  isReservation: PropTypes.bool,
 };
 
 // ------------------------------------------------------------------------------------------

@@ -331,4 +331,5 @@ LogisticsList.propTypes = {
   campaignId: PropTypes.string,
   logistics: PropTypes.string,
   isAdmin: PropTypes.bool,
+  isReservation: PropTypes.bool,
 };

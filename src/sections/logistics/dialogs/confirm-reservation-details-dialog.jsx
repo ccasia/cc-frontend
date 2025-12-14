@@ -21,8 +21,8 @@ import {
 import LoadingButton from '@mui/lab/LoadingButton';
 
 import Iconify from 'src/components/iconify';
-import FormProvider, { RHFTextField, RHFSelect } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
+import FormProvider, { RHFTextField, RHFSelect } from 'src/components/hook-form';
 import { useSnackbar } from 'src/components/snackbar';
 
 export default function ConfirmReservationDetailsDialog({
@@ -67,7 +67,6 @@ export default function ConfirmReservationDetailsDialog({
   });
 
   const {
-    reset,
     handleSubmit,
     setValue,
     formState: { isSubmitting },
@@ -123,7 +122,7 @@ export default function ConfirmReservationDetailsDialog({
               Confirm Details
             </Typography>
             <Typography variant="body2" sx={{ color: '#636366', mt: 0.5 }}>
-              Please confirm the creator's selection and add any notes.
+              Please confirm the creator`&apos;`s selection and add any notes.
             </Typography>
           </Box>
           <IconButton onClick={onClose}>

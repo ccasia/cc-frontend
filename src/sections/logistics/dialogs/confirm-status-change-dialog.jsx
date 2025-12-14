@@ -60,6 +60,7 @@ function StatusPill({ value, isReservation }) {
 
 StatusPill.propTypes = {
   value: PropTypes.string,
+  isReservation: PropTypes.bool,
 };
 
 export default function ConfirmStatusChangeDialog({
@@ -222,4 +223,5 @@ ConfirmStatusChangeDialog.propTypes = {
   oldStatus: PropTypes.string,
   newStatus: PropTypes.string,
   loading: PropTypes.bool,
+  isReservation: PropTypes.bool,
 };

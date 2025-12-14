@@ -1,25 +1,24 @@
+import useSWR from 'swr';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import useSWR from 'swr';
 import { format, addMonths, subMonths, isSameDay } from 'date-fns';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
+  Grid,
+  Stack,
+  Avatar,
   Dialog,
   Button,
   Typography,
   IconButton,
-  Grid,
-  Stack,
   CircularProgress,
-  Avatar,
-  Chip,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
+
+import axiosInstance, { fetcher } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import { fetcher } from 'src/utils/axios';
-import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 
 export default function ScheduleReservationDialog({
@@ -67,6 +66,7 @@ export default function ScheduleReservationDialog({
         setCurrentMonth(new Date());
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, logistic]);
 
   // --- Handlers ---
