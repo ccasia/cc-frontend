@@ -39,6 +39,9 @@ export default function CampaignLogisticsView({
   setOpenBulkAssign,
   isAdmin = false,
 }) {
+  const campaignLogisticsType = campaign?.logisticsType;
+  const isReservation = campaignLogisticsType === 'RESERVATION';
+
   const [date, setDate] = useState(new Date());
   const [filterName, setFilterName] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -99,6 +102,7 @@ export default function CampaignLogisticsView({
                 date={date}
                 onChange={(newDate) => setDate(newDate)}
                 logistics={safeLogistics}
+                isReservation={isReservation}
               />
             </Box>
             {/* Vertical Divider (Desktop) */}
@@ -113,12 +117,16 @@ export default function CampaignLogisticsView({
             {/* Horizontal Divider (Mobile) */}
             <Divider sx={{ display: { xs: 'block', md: 'none' } }} />
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <LogisticsScheduledList date={date} logistics={safeLogistics} />
+              <LogisticsScheduledList
+                date={date}
+                logistics={safeLogistics}
+                isReservation={isReservation}
+              />
             </Box>
           </Card>
         </Grid>
         <Grid item xs={12} md={3}>
-          <LogisticsAnalytics logistics={safeLogistics} />
+          <LogisticsAnalytics logistics={safeLogistics} isReservation={isReservation} />
         </Grid>
       </Grid>
       <Box
@@ -253,7 +261,12 @@ export default function CampaignLogisticsView({
           Edit & Bulk Assign
         </Button>
       </Box>
-      <LogisticsList campaignId={campaign?.id} logistics={filteredLogistics} isAdmin={isAdmin} />
+      <LogisticsList
+        campaignId={campaign?.id}
+        logistics={filteredLogistics}
+        isAdmin={isAdmin}
+        isReservation={isReservation}
+      />
 
       {campaign && (
         <BulkAssignView

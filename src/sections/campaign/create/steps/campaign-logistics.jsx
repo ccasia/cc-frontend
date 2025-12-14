@@ -410,19 +410,20 @@ const CampaignLogistics = () => {
                       width: { xs: '100%', sm: 'calc(50% - 8px)' },
                     }}
                   >
-                    <TextField
+                    <RHFTextField
                       fullWidth
+                      name={`locations.${index}.name`}
                       placeholder={
                         index === locationFields.length - 1 && locationFields.length % 2 === 0
                           ? 'Add an outlet'
                           : ''
                       }
-                      value={field.name}
-                      onChange={(e) => {
-                        const newLocations = [...locationFields];
-                        newLocations[index].name = e.target.value;
-                        setValue(`locations.${index}.name`, e.target.value);
-                      }}
+                      // value={field.name}
+                      // onChange={(e) => {
+                      //   const newLocations = [...locationFields];
+                      //   newLocations[index].name = e.target.value;
+                      //   setValue(`locations.${index}.name`, e.target.value);
+                      // }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 1,

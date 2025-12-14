@@ -1,37 +1,21 @@
 import PropTypes from 'prop-types';
 import { format, isSameDay } from 'date-fns';
 
-import {
-  Box,
-  Link,
-  List,
-  Stack,
-  Avatar,
-  Divider,
-  ListItem,
-  Typography,
-  alpha,
-} from '@mui/material';
+import { Box, Link, List, Stack, Avatar, Divider, ListItem, Typography } from '@mui/material';
 
 import Scrollbar from 'src/components/scrollbar';
 import Iconify from 'src/components/iconify';
 
-const getStatusConfig = (currentStatus) => {
+const getStatusConfig = (currentStatus, isReservation) => {
   switch (currentStatus) {
     case 'PENDING_ASSIGNMENT':
-      return {
-        label: 'unassigned',
-        color: '#B0B0B0',
-        bgColor: '#EFEFEF',
-        hasAction: true,
-      };
+      return isReservation
+        ? { label: 'unconfirmed', color: '#B0B0B0', bgColor: '#EFEFEF' }
+        : { label: 'unassigned', color: '#B0B0B0', bgColor: '#EFEFEF', hasAction: true };
     case 'SCHEDULED':
-      return {
-        label: 'yet to ship',
-        color: '#FF9A02',
-        bgColor: '#FFF7DB',
-        hasAction: true,
-      };
+      return isReservation
+        ? { label: 'scheduled', color: '#1340FF', bgColor: '#E3F2FD' }
+        : { label: 'yet to ship', color: '#FF9A02', bgColor: '#FFF7DB' };
     case 'SHIPPED':
       return {
         label: 'shipped out',
@@ -56,7 +40,7 @@ const getStatusConfig = (currentStatus) => {
       };
     case 'ISSUE_REPORTED':
       return {
-        label: 'failed',
+        label: isReservation ? 'issue' : 'failed',
         color: '#FF3500',
         bgColor: '#FFD0C9',
         hasAction: true,
@@ -71,9 +55,9 @@ const getStatusConfig = (currentStatus) => {
   }
 };
 
-function ScheduledItem({ item }) {
-  const isReservation = item.type === 'RESERVATION';
+function ScheduledItem({ item, isReservation }) {
   const creator = item.creator || {};
+  const statusConfig = getStatusConfig(item.status, isReservation);
 
   const details = isReservation ? item.reservationDetails : item.deliveryDetails || {};
 
@@ -219,8 +203,6 @@ function ScheduledItem({ item }) {
     );
   };
 
-  const statusConfig = getStatusConfig(item.status);
-
   return (
     <ListItem sx={{ px: 4, py: 2, alignItems: 'flex-start' }}>
       <Box sx={{ width: '2px', height: 65, bgcolor: '#1340FF', mr: 2, flexShrink: 0 }} />
@@ -274,12 +256,11 @@ ScheduledItem.propTypes = {
   item: PropTypes.object,
 };
 
-export default function LogisticsScheduledList({ date, logistics }) {
+export default function LogisticsScheduledList({ date, logistics, isReservation }) {
   const safeLogistics = logistics || [];
-  const isReservation = safeLogistics.length > 0 && safeLogistics[0]?.type === 'RESERVATION';
 
   const dayLogistics = safeLogistics.filter((item) => {
-    if (item.type === 'RESERVATION') {
+    if (isReservation) {
       const selectedSlot = item.reservationDetails?.slots?.find((s) => s.status === 'SELECTED');
       if (!selectedSlot) return false;
       return isSameDay(new Date(selectedSlot.startTime), date);
@@ -351,7 +332,7 @@ export default function LogisticsScheduledList({ date, logistics }) {
         ) : (
           <List disablePadding>
             {dayLogistics.map((item) => (
-              <ScheduledItem key={item.id} item={item} />
+              <ScheduledItem key={item.id} item={item} isReservation={isReservation} />
             ))}
           </List>
         )}

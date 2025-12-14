@@ -24,25 +24,44 @@ import Iconify from 'src/components/iconify';
 import { LoadingScreen } from 'src/components/loading-screen';
 import EmptyContent from 'src/components/empty-content';
 
-import { LogisticsDrawer, LogisticsAdminDrawer } from './logistics-drawer';
+import LogisticsDrawer from './logistics-drawer';
 import LogisticsTableRow from './logistics-table-row';
 import ConfirmStatusChangeDialog from './dialogs/confirm-status-change-dialog';
 
-const TABLE_HEAD = [
+const getTableHead = (isReservation) => [
   { id: 'name', label: 'Name', width: '20%', align: 'left' },
-  { id: 'product', label: 'Product Assigned', width: '55%', align: 'center' },
+  {
+    id: isReservation ? 'details' : 'product',
+    label: isReservation ? 'Details' : 'Product Assigned',
+    width: '55%',
+    align: 'center',
+  },
   { id: 'status', label: 'Status', width: '25%', align: 'left' },
 ];
 
-const STATUS_OPTIONS = [
-  { value: 'PENDING_ASSIGNMENT', label: 'UNASSIGNED', color: '#B0B0B0' },
-  { value: 'SCHEDULED', label: 'YET TO SHIP', color: '#FF9A02' },
-  { value: 'SHIPPED', label: 'SHIPPED OUT', color: '#8A5AFE' },
-  { value: 'DELIVERED', label: 'DELIVERED', color: '#1ABF66' },
-  { value: 'ISSUE_REPORTED', label: 'FAILED', color: '#D4321C' },
-];
+const getStatusOption = (isReservation) =>
+  [
+    {
+      value: 'PENDING_ASSIGNMENT',
+      label: isReservation ? 'UNCONFIRMED' : 'UNASSIGNED',
+      color: '#B0B0B0',
+    },
+    {
+      value: 'SCHEDULED',
+      label: isReservation ? 'SCHEDULED' : 'YET TO SHIP',
+      color: isReservation ? '#1340FF' : '#FF9A02',
+    },
+    !isReservation && { value: 'SHIPPED', label: 'SHIPPED OUT', color: '#8A5AFE' },
+    { value: 'DELIVERED', label: isReservation ? 'COMPLETED' : 'DELIVERED', color: '#1ABF66' },
+    { value: 'ISSUE_REPORTED', label: isReservation ? 'ISSUE' : 'FAILED', color: '#D4321C' },
+  ].filter(Boolean);
 
-export default function LogisticsList({ campaignId, isAdmin, logistics: propLogistics }) {
+export default function LogisticsList({
+  campaignId,
+  isAdmin,
+  logistics: propLogistics,
+  isReservation,
+}) {
   const { enqueueSnackbar } = useSnackbar();
   const {
     data: fetchedLogistics,
@@ -51,6 +70,9 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
   } = useSWR(campaignId ? `/api/logistics/campaign/${campaignId}` : null, fetcher);
 
   const logistics = propLogistics || fetchedLogistics;
+
+  const STATUS_OPTIONS = getStatusOption(isReservation);
+  const TABLE_HEAD = getTableHead(isReservation);
 
   const [selectedLogisticId, setSelectedLogisticId] = useState(null);
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -158,6 +180,7 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
                 <LogisticsTableRow
                   key={row.id}
                   row={row}
+                  isReservation={isReservation}
                   onClick={() => handleClick(row.id)}
                   onEditStatus={isAdmin ? (e) => handleEditStatus(e, row.id) : null}
                 />
@@ -180,12 +203,13 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
       </Card>
 
       {isAdmin ? (
-        <LogisticsAdminDrawer
+        <LogisticsDrawer
           open={openDrawer}
           onClose={handleCloseDrawer}
           logistic={selectedLogistic}
           onUpdate={mutate}
           campaignId={campaignId}
+          isReservation={isReservation}
         />
       ) : (
         <LogisticsDrawer
@@ -194,6 +218,7 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
           logistic={selectedLogistic}
           onUpdate={mutate}
           campaignId={campaignId}
+          isReservation={isReservation}
         />
       )}
       {isAdmin && (
@@ -295,6 +320,7 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
           oldStatus={statusLogistic.status}
           newStatus={pendingNewStatus}
           loading={statusLoading}
+          isReservation={isReservation}
         />
       )}
     </>
