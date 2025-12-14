@@ -205,8 +205,8 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           mb: 3,
         }}
       >
-      {/* Uses the Shared Stepper */}
-        <LogisticsStepper logistic={logistic} onUpdate={onUpdate} isReservation={true} />
+        {/* Uses the Shared Stepper */}
+        <LogisticsStepper logistic={logistic} onUpdate={onUpdate} isReservation />
 
         <Stack alignItems="center" sx={{ mt: 3 }}>
           {renderActionButtons()}

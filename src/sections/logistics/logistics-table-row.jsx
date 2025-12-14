@@ -14,14 +14,14 @@ import Iconify from 'src/components/iconify';
 export default function LogisticsTableRow({ row, onClick, onEditStatus, isReservation }) {
   const { creator, status, deliveryDetails, reservationDetails } = row;
 
-  const getStatusConfig = (currentStatus, isReservation) => {
+  const getStatusConfig = (currentStatus, isRes) => {
     switch (currentStatus) {
       case 'PENDING_ASSIGNMENT':
-        return isReservation
+        return isRes
           ? { label: 'UNCONFIRMED', color: '#B0B0B0', hasAction: true } // Reservation
           : { label: 'UNASSIGNED', color: '#B0B0B0', hasAction: true }; // Delivery
       case 'SCHEDULED':
-        return isReservation
+        return isRes
           ? { label: 'SCHEDULED', color: '#1340FF', hasAction: true } // Reservation (Blue)
           : { label: 'YET TO SHIP', color: '#FF9A02', hasAction: true }; // Delivery (Orange)
 
@@ -34,17 +34,12 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
       case 'DELIVERED':
       case 'RECEIVED':
       case 'COMPLETED':
-        return isReservation
-          ? { label: 'COMPLETED', color: '#1ABF66', hasAction: false } // Reservation (Blue)
+        return isRes
+          ? { label: 'COMPLETED', color: '#1ABF66', hasAction: false }
           : { label: 'DELIVERED', color: '#1ABF66', hasAction: false };
-        return {
-          label: 'COMPLETED',
-          color: '#1ABF66',
-          hasAction: false,
-        };
       case 'ISSUE_REPORTED':
         return {
-          label: isReservation ? 'ISSUE' : 'FAILED',
+          label: isRes ? 'ISSUE' : 'FAILED',
           color: '#D4321C',
           hasAction: true,
         };
@@ -167,4 +162,5 @@ LogisticsTableRow.propTypes = {
   row: PropTypes.object,
   onClick: PropTypes.func,
   onEditStatus: PropTypes.func,
+  isReservation: PropTypes.bool,
 };

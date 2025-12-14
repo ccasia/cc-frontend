@@ -104,6 +104,13 @@ export default function LogisticsStepper({ logistic, isReservation }) {
     const isScheduled = reservationDetails?.slots?.some((slot) => slot.status === 'SELECTED');
     const isCompleted = ['COMPLETED', 'RECEIVED'].includes(status);
 
+    let completionDescription = 'Waiting for creator to complete visit...';
+    if (hasIssue) {
+      completionDescription = 'Please review issue to continue';
+    } else if (isCompleted) {
+      completionDescription = 'Visit completed';
+    }
+
     steps = [
       {
         label: 'Confirm Details',
@@ -125,12 +132,8 @@ export default function LogisticsStepper({ logistic, isReservation }) {
       },
       {
         label: hasIssue ? 'Issue Reported' : 'Completed',
-        description: hasIssue
-          ? 'Please review issue to continue'
-          : isCompleted
-            ? 'Visit completed'
-            : 'Waiting for creator to complete visit...',
-        isCompleted: isCompleted,
+        description: completionDescription,
+        isCompleted,
         isActive: isScheduled && isDetailsDone && !isCompleted,
         error: hasIssue,
         color: hasIssue ? '#FF3500' : '#1ABF66',
@@ -254,6 +257,7 @@ export default function LogisticsStepper({ logistic, isReservation }) {
 
 LogisticsStepper.propTypes = {
   logistic: PropTypes.object,
+  isReservation: PropTypes.bool,
 };
 
 // ----------------------------------------------------------------------
@@ -383,6 +387,6 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
 
 CreatorLogisticsStepper.propTypes = {
   status: PropTypes.string,
-  type: PropTypes.string,
   updatedDates: PropTypes.object,
+  isReservation: PropTypes.bool,
 };

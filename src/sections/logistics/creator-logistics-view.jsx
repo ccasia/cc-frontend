@@ -10,8 +10,8 @@ import { fDate } from 'src/utils/format-time';
 import { useSnackbar } from 'src/components/snackbar';
 
 import { CreatorLogisticsStepper } from './logistics-stepper';
-import ConfirmDeliveryDetailsDialog from './dialogs/confirm-details-dialog';
 import ReportIssueDialog from './dialogs/report-issue-dialog';
+import ConfirmDeliveryDetailsDialog from './dialogs/confirm-details-dialog';
 
 export default function CreatorLogisticsView({ campaign }) {
   const { enqueueSnackbar } = useSnackbar();
@@ -346,5 +346,6 @@ export default function CreatorLogisticsView({ campaign }) {
 CreatorLogisticsView.propTypes = {
   campaign: PropTypes.shape({
     id: PropTypes.string,
+    logisticsType: PropTypes.string,
   }),
 };
