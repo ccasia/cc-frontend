@@ -6,10 +6,8 @@ import { Box, Card, alpha, Stack, Divider, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
-export default function LogisticsAnalytics({ logistics = [] }) {
+export default function LogisticsAnalytics({ logistics = [], isReservation }) {
   const theme = useTheme();
-  const isReservation =
-    logistics.length > 0 && logistics.some((item) => item.type === 'RESERVATION');
 
   const stats = logistics.reduce(
     (acc, item) => {

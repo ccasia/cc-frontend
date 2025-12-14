@@ -89,12 +89,11 @@ CustomStepIcon.propTypes = {
   error: PropTypes.bool,
 };
 
-export default function LogisticsStepper({ logistic }) {
+export default function LogisticsStepper({ logistic, isReservation }) {
   if (!logistic) return null;
 
-  const { status, type, deliveryDetails, reservationDetails, updatedAt, completedAt, shippedAt } =
+  const { status, deliveryDetails, reservationDetails, updatedAt, completedAt, shippedAt } =
     logistic;
-  const isReservation = type === 'RESERVATION';
   const hasIssue = status === 'ISSUE_REPORTED';
 
   let activeStep = 0;
@@ -259,8 +258,7 @@ LogisticsStepper.propTypes = {
 
 // ----------------------------------------------------------------------
 
-export function CreatorLogisticsStepper({ status, updatedDates, type }) {
-  const isReservation = type === 'RESERVATION';
+export function CreatorLogisticsStepper({ status, updatedDates, isReservation }) {
   const isIssue = status === 'ISSUE_REPORTED';
   let activeStep = 0;
   let steps = [];

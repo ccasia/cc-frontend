@@ -8,8 +8,8 @@ import Iconify from 'src/components/iconify';
 import LogisticsStepper from '../logistics-stepper';
 
 // DIALOGS (To be implemented next)
-// import ConfirmReservationDialog from '../dialogs/confirm-reservation-dialog';
-// import ScheduleReservationDialog from '../dialogs/schedule-reservation-dialog';
+import ConfirmReservationDetailsDialog from '../dialogs/confirm-reservation-details-dialog';
+import ScheduleReservationDialog from '../dialogs/schedule-reservation-dialog';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
 
 export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAdmin, onClose }) {
@@ -205,8 +205,8 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           mb: 3,
         }}
       >
-        {/* Uses the Shared Stepper */}
-        <LogisticsStepper logistic={logistic} onUpdate={onUpdate} />
+      {/* Uses the Shared Stepper */}
+        <LogisticsStepper logistic={logistic} onUpdate={onUpdate} isReservation={true} />
 
         <Stack alignItems="center" sx={{ mt: 3 }}>
           {renderActionButtons()}
@@ -215,14 +215,12 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
 
       {renderReservationDetails}
 
-      {/* --- DIALOGS (Commented out until created) --- */}
-
-      {/* <ConfirmReservationDialog 
-            open={openConfirm} 
-            onClose={() => setOpenConfirm(false)}
-            logistic={logistic}
-            onUpdate={onUpdate}
-        /> */}
+      <ConfirmReservationDetailsDialog
+        open={openConfirm}
+        onClose={() => setOpenConfirm(false)}
+        logistic={logistic}
+        onUpdate={onUpdate}
+      />
 
       <ReviewIssueDialog
         open={openIssue}
@@ -232,13 +230,13 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
         onUpdate={onUpdate}
       />
 
-      {/* <ScheduleReservationDialog 
-            open={openReschedule}
-            onClose={() => setOpenReschedule(false)}
-            logistic={logistic}
-            campaignId={campaignId}
-            onUpdate={onUpdate}
-      /> */}
+      <ScheduleReservationDialog
+        open={openSchedule}
+        onClose={() => setOpenSchedule(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
     </>
   );
 }

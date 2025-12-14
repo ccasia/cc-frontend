@@ -10,7 +10,7 @@ import { fDate } from 'src/utils/format-time';
 import { useSnackbar } from 'src/components/snackbar';
 
 import { CreatorLogisticsStepper } from './logistics-stepper';
-import ConfirmDetailsDialog from './dialogs/confirm-details-dialog';
+import ConfirmDeliveryDetailsDialog from './dialogs/confirm-details-dialog';
 import ReportIssueDialog from './dialogs/report-issue-dialog';
 
 export default function CreatorLogisticsView({ campaign }) {
@@ -31,7 +31,7 @@ export default function CreatorLogisticsView({ campaign }) {
   const deliveryDetails = logistic?.deliveryDetails;
   const creator = logistic?.creator;
   const isConfirmed = logistic?.deliveryDetails?.isConfirmed;
-  const type = logistic?.type;
+  const isReservation = campaign?.logisticsType === 'RESERVATION';
 
   const handleMarkReceived = async () => {
     try {
@@ -295,7 +295,11 @@ export default function CreatorLogisticsView({ campaign }) {
       >
         {/* Top Section: Stepper */}
         <Box sx={{ py: 6, px: { xs: 3, md: 14 }, borderBottom: '1px solid #EDEFF2' }}>
-          <CreatorLogisticsStepper status={status} updatedDates={logistic} type={type} />
+          <CreatorLogisticsStepper
+            status={status}
+            updatedDates={logistic}
+            isReservation={isReservation}
+          />
         </Box>
 
         {/* Bottom Section: Split Columns */}
@@ -322,7 +326,7 @@ export default function CreatorLogisticsView({ campaign }) {
       </Box>
 
       {/* Dialogs */}
-      <ConfirmDetailsDialog
+      <ConfirmDeliveryDetailsDialog
         open={openConfirm}
         onClose={() => setOpenConfirm(false)}
         logistic={logistic}
