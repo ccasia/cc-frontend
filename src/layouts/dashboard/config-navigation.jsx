@@ -423,18 +423,35 @@ export function useNavData() {
       });
     }
 
+    // Build FAQ and Settings items based on user role
+    const settingsItems = [];
+    
+    // Only show FAQ for non-creator and non-Finance users
+    if (user?.role !== 'creator' && user?.admin?.role?.name !== 'Finance') {
+      settingsItems.push({
+        title: (
+          <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+            FAQ
+          </span>
+        ),
+        path: paths.dashboard.faq,
+        icon: <Iconify icon="material-symbols:help-outline" width={25} />,
+      });
+    }
+    
+    // Always show Settings
+    settingsItems.push({
+      title: (
+        <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+          Settings
+        </span>
+      ),
+      path: paths.dashboard.user.profile,
+      icon: ICONS.settings,
+    });
+
     baseData.push({
-      items: [
-        {
-          title: (
-            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
-              Settings
-            </span>
-          ),
-          path: paths.dashboard.user.profile,
-          icon: ICONS.settings,
-        },
-      ],
+      items: settingsItems,
     });
 
     return baseData;

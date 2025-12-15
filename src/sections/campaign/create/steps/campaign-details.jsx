@@ -1,23 +1,16 @@
+import PropTypes from 'prop-types';
 import React, { memo } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
-import {
-  Box,
-  Grid,
-  Chip,
-  Stack,
-  Button,
-  FormLabel,
-  Typography,
-  IconButton,
-} from '@mui/material';
+import { Box, Grid, Stack, Button, FormLabel, Typography, IconButton } from '@mui/material';
 
 import { langList } from 'src/contants/language';
 import { countriesCities } from 'src/contants/countries';
-import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
 import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
+
+import { interestsList } from 'src/sections/creator/form/creatorForm';
 
 const videoAngle = [
   'Product Demo/Review',
@@ -32,14 +25,18 @@ const videoAngle = [
   'Up to cult creative to decide',
 ];
 
-// eslint-disable-next-line react/prop-types
 const FormField = ({ label, children, required = true }) => (
-  <Stack spacing={1}>
+  <Stack spacing={0.5}>
     <FormLabel
       required={required}
       sx={{
-        fontWeight: 600,
+        fontWeight: 700,
         color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+        fontSize: '0.875rem', // Smaller font size for labels
+        mb: 0.5,
+        '& .MuiFormLabel-asterisk': {
+          color: '#FF3500', // Change this to your desired color
+        },
       }}
     >
       {label}
@@ -47,6 +44,12 @@ const FormField = ({ label, children, required = true }) => (
     {children}
   </Stack>
 );
+
+FormField.propTypes = {
+  label: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+  required: PropTypes.bool,
+};
 
 const BoxStyle = {
   border: 1,
@@ -96,7 +99,7 @@ const CampaignDetails = () => {
   });
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={3} sx={{ maxWidth: '800px', mx: 'auto' }}>
       <Box
         rowGap={2}
         columnGap={3}
@@ -107,8 +110,9 @@ const CampaignDetails = () => {
           sm: 'repeat(2, 1fr)',
         }}
       >
+        {/* Left grid - Target Audience */}
         <Stack spacing={2}>
-          <FormField label="Gender">
+          <FormField label="Audience Gender">
             <RHFMultiSelect
               name="audienceGender"
               placeholder="Select Gender"
@@ -123,7 +127,7 @@ const CampaignDetails = () => {
             />
           </FormField>
 
-          <FormField label="Country">
+          <FormField label="Audience Country">
             <RHFAutocomplete
               name="country"
               placeholder="Select country"
@@ -172,7 +176,7 @@ const CampaignDetails = () => {
           </FormField>
 
           {country?.toLowerCase() === 'malaysia' && (
-            <FormField label="City/Area">
+            <FormField label="Audience City/Area">
               <RHFMultiSelect
                 name="audienceLocation"
                 placeholder="Select city"
@@ -197,20 +201,7 @@ const CampaignDetails = () => {
               variant="outlined"
             />
           )}
-
-          <FormField label="Interests">
-            <RHFMultiSelect
-              name="audienceCreatorPersona"
-              placeholder="Select creator persona"
-              checkbox
-              chip
-              options={interestsLists.map((item) => ({
-                value: item.toLowerCase(),
-                label: item,
-              }))}
-            />
-          </FormField>
-          <FormField label="Age">
+          <FormField label="Audience Age">
             <RHFMultiSelect
               name="audienceAge"
               checkbox
@@ -224,44 +215,37 @@ const CampaignDetails = () => {
               placeholder="Select Age"
             />
           </FormField>
-          <FormField label="Language">
-            <RHFAutocomplete
-              multiple
-              disableCloseOnSelect
+          <FormField label="Audience Language">
+            <RHFMultiSelect
               name="audienceLanguage"
               placeholder="Select Language"
-              options={langList.sort()}
-              getOptionLabel={(option) => option || ''}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => {
-                  const { key, ...tagProps } = getTagProps({ index });
-                  return (
-                    <Chip
-                      variant="outlined"
-                      sx={{
-                        border: 1,
-                        borderColor: '#EBEBEB',
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                        py: 2,
-                      }}
-                      label={option}
-                      key={key}
-                      {...tagProps}
-                    />
-                  );
-                })
-              }
+              checkbox
+              chip
+              options={langList.sort().map((lang) => ({ value: lang, label: lang }))}
             />
           </FormField>
         </Stack>
 
-        <Stack spacing={3}>
-          <FormField label="Creator Persona" required={false}>
+        {/* Right grid - Target Audience */}
+        <Stack spacing={2}>
+          <FormField label="User Persona">
             <RHFTextField
               name="audienceUserPersona"
-              placeholder=" let us know who you want your campaign to reach!"
+              placeholder="Let us know who you want your campaign to reach!"
               multiline
               rows={3}
+            />
+          </FormField>
+          <FormField label="Audience Creator Persona">
+            <RHFMultiSelect
+              name="audienceCreatorPersona"
+              placeholder="Select creator persona"
+              checkbox
+              chip
+              options={interestsList.map((item) => ({
+                value: item.toLowerCase(),
+                label: item,
+              }))}
             />
           </FormField>
           <FormField label="Social Media Platform">
@@ -290,9 +274,9 @@ const CampaignDetails = () => {
         {audienceGeoLocation === 'Others' && <Box flexGrow={1} />}
       </Box>
 
+      {/* Dos and Donts */}
       <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" mt={5}>
         <Typography
-          // variant="h5"
           sx={{
             fontSize: 40,
             fontFamily: (theme) => theme.typography.fontSecondaryFamily,
@@ -300,8 +284,8 @@ const CampaignDetails = () => {
         >
           Dos and Don&apos;ts
         </Typography>
-        <Typography variant="caption" color="text.secondary">
-          ( optional )
+        <Typography variant="caption" fontWeight={700} mt={1} color="text.secondary">
+          OPTIONAL
         </Typography>
       </Stack>
 
@@ -311,7 +295,7 @@ const CampaignDetails = () => {
             <Box className="header">
               <Iconify
                 icon="mdi:checkbox-outline"
-                color="success.main"
+                color="#026D54"
                 sx={{
                   width: 20,
                   height: 20,
@@ -330,13 +314,10 @@ const CampaignDetails = () => {
                 CAMPAIGN DO&apos;S
               </Typography>
             </Box>
-            <Stack direction="column" spacing={2}>
+            <Stack direction="column" spacing={1.5}>
               {doFields.map((item, index) => (
-                <Stack key={item.id} direction="row" spacing={1} alignItems="center">
-                  <RHFTextField
-                    name={`campaignDo[${index}].value`}
-                    label={`Campaign Do's ${index + 1}`}
-                  />
+                <Stack key={item.id} direction="row" alignItems="center">
+                  <RHFTextField name={`campaignDo[${index}].value`} label={`No. ${index + 1}`} />
                   {index !== 0 && (
                     <IconButton color="error" onClick={() => doRemove(index)}>
                       <Iconify icon="ic:outline-delete" color="error.main" />
@@ -345,7 +326,16 @@ const CampaignDetails = () => {
                 </Stack>
               ))}
 
-              <Button variant="contained" onClick={() => doAppend({ value: '' })}>
+              <Button
+                variant="contained"
+                style={{
+                  color: '#231F20',
+                  backgroundColor: '#fff',
+                  border: '1px solid #E7E7E7',
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                }}
+                onClick={() => doAppend({ value: '' })}
+              >
                 Add Do
               </Button>
             </Stack>
@@ -375,13 +365,10 @@ const CampaignDetails = () => {
                 CAMPAIGN DONT&apos;S
               </Typography>
             </Box>
-            <Stack direction="column" spacing={2}>
+            <Stack direction="column" spacing={1.5}>
               {dontFields.map((item, index) => (
-                <Stack key={item.id} direction="row" spacing={1} alignItems="center">
-                  <RHFTextField
-                    name={`campaignDont[${index}].value`}
-                    label={`Campaign Dont's ${index + 1}`}
-                  />
+                <Stack key={item.id} direction="row" alignItems="center">
+                  <RHFTextField name={`campaignDont[${index}].value`} label={`No. ${index + 1}`} />
                   {index !== 0 && (
                     <IconButton color="error" onClick={() => dontRemove(index)}>
                       <Iconify icon="ic:outline-delete" color="error.main" />
@@ -390,7 +377,16 @@ const CampaignDetails = () => {
                 </Stack>
               ))}
 
-              <Button variant="contained" onClick={() => dontAppend({ value: '' })}>
+              <Button
+                variant="contained"
+                style={{
+                  color: '#231F20',
+                  backgroundColor: '#fff',
+                  border: '1px solid #E7E7E7',
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                }}
+                onClick={() => dontAppend({ value: '' })}
+              >
                 Add Don&apos;t
               </Button>
             </Stack>
