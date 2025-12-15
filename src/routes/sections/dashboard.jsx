@@ -112,6 +112,9 @@ const MobileModalView = lazy(
 // Creator Profile
 const CreatorProfile = lazy(() => import('src/pages/dashboard/creator/profile'));
 
+// FAQ
+const FaqPage = lazy(() => import('src/pages/faq'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -608,6 +611,10 @@ export const dashboardRoutes = [
       {
         path: 'overview',
         element: <Overview />,
+      },
+      {
+        path: 'faq',
+        element: <FaqPage />,
       },
     ],
   },
