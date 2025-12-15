@@ -43,11 +43,6 @@ import CampaignLists from '../campaign-list';
 
 // ----------------------------------------------------------------------
 
-// Helper to check if we should log (only in development or when debug flag is set)
-const shouldLog = () => {
-  return import.meta.env.DEV || localStorage.getItem('debugCampaigns') === 'true';
-};
-
 // ----------------------------------------------------------------------
 // Check
 export default function CampaignListView() {
@@ -89,30 +84,12 @@ export default function CampaignListView() {
         params.append('campaignId', campaignId);
       }
 
-      const apiUrl = `/api/campaign/matchCampaignWithCreator?${params.toString()}`;
-      if (shouldLog()) {
-        console.log('🔍 Campaign API - First page request:', {
-          url: apiUrl,
-          search: debouncedQuery,
-          campaignId: campaignId || 'none',
-          pageIndex,
-        });
-      }
-
       // return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}`;
-      return apiUrl;
+      return `/api/campaign/matchCampaignWithCreator?${params.toString()}`;
     }
 
     // If there's no more data (check both hasNextPage and lastCursor), stop fetching
     if (!previousPageData?.metaData?.hasNextPage || !previousPageData?.metaData?.lastCursor) {
-      if (shouldLog()) {
-        console.log('🔍 Campaign infinite scroll - Stopping fetch:', {
-          hasNextPage: previousPageData?.metaData?.hasNextPage,
-          lastCursor: !!previousPageData?.metaData?.lastCursor,
-          pageIndex,
-          totalCampaignsReceived: previousPageData?.data?.campaigns?.length || 0,
-        });
-      }
       return null;
     }
 
@@ -126,41 +103,13 @@ export default function CampaignListView() {
       params.append('campaignId', campaignId);
     }
 
-    const apiUrl = `/api/campaign/matchCampaignWithCreator?${params.toString()}`;
-    if (shouldLog()) {
-      console.log('🔍 Campaign API - Next page request:', {
-        url: apiUrl,
-        pageIndex,
-        cursor: previousPageData?.metaData?.lastCursor,
-        hasNextPage: previousPageData?.metaData?.hasNextPage,
-      });
-    }
-
     // Otherwise, use the lastCursor to get the next page
     // return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
-    return apiUrl;
+    return `/api/campaign/matchCampaignWithCreator?${params.toString()}`;
   };
 
   const { data, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(getKey, fetcher, {
     revalidateFirstPage: false,
-    onSuccess: (responseData) => {
-      if (shouldLog()) {
-        console.log('🔍 Campaign API - Response received:', {
-          totalPages: responseData?.length || 0,
-          totalCampaigns: responseData?.flatMap(item => item?.data?.campaigns)?.length || 0,
-          lastPageMetadata: responseData?.[responseData.length - 1]?.metaData,
-        });
-      }
-    },
-    onError: (error) => {
-      if (shouldLog()) {
-        console.error('🔍 Campaign API - Error:', {
-          message: error?.message,
-          status: error?.response?.status,
-          data: error?.response?.data,
-        });
-      }
-    },
   });
 
   const { user } = useAuthContext();
@@ -360,70 +309,15 @@ export default function CampaignListView() {
 
   const filteredData = useMemo(() => {
     const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
-
-    if (shouldLog()) {
-      console.log('🔍 Campaign discover - Data pages received:', data?.length || 0);
-      console.log(
-        '🔍 Campaign discover - Raw campaigns:',
-        campaigns?.map((c) => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin }))
-      );
-      console.log('🔍 Campaign discover - Total raw campaigns received:', campaigns?.length || 0);
-
-      // Log pagination metadata for each page
-      data?.forEach((page, index) => {
-        console.log(`🔍 Campaign discover - Page ${index + 1} metadata:`, {
-          campaignsInPage: page?.data?.campaigns?.length || 0,
-          hasNextPage: page?.metaData?.hasNextPage,
-          lastCursor: page?.metaData?.lastCursor,
-        });
-      });
-
-      // Log creator profile data that might affect matching
-      console.log('🔍 Campaign discover - Creator profile data:', {
-        userId: user?.id,
-        creatorId: user?.creator?.id,
-        isOnBoardingFormCompleted: user?.creator?.isOnBoardingFormCompleted,
-        isFormCompleted: user?.creator?.isFormCompleted,
-        hasMediaKit: !!user?.creator?.mediaKit,
-        socialMediaAccounts: user?.creator?.socialMedia?.length || 0,
-        categories: user?.creator?.categories?.map(c => c.name) || [],
-        location: user?.creator?.location,
-      });
-    }
-
     const activeCampaigns = campaigns?.filter((campaign) => campaign?.status === 'ACTIVE');
-    
-    if (shouldLog()) {
-      console.log(
-        '🔍 Campaign discover - Active campaigns after status filter:',
-        activeCampaigns?.length || 0
-      );
-      
-      // Log campaigns that were filtered out by status
-      const inactiveCampaigns = campaigns?.filter((campaign) => campaign?.status !== 'ACTIVE');
-      if (inactiveCampaigns?.length > 0) {
-        console.log('🔍 Campaign discover - Filtered out inactive campaigns:', 
-          inactiveCampaigns?.map(c => ({ id: c.id, name: c.name, status: c.status }))
-        );
-      }
-    }
 
-    const finalFiltered = applyFilter({
+    return applyFilter({
       inputData: activeCampaigns,
       filter,
       user,
       sortBy,
       search,
     });
-
-    if (shouldLog()) {
-      console.log('🔍 Campaign discover - Final filtered campaigns:', finalFiltered?.length || 0);
-      console.log('🔍 Campaign discover - Filter applied:', filter);
-      console.log('🔍 Campaign discover - Search query:', search.query);
-      console.log('🔍 Campaign discover - Sort by:', sortBy);
-    }
-
-    return finalFiltered;
   }, [data, filter, user, sortBy, search]);
 
   // const filteredData = useMemo(
@@ -1100,112 +994,38 @@ export default function CampaignListView() {
 // ----------------------------------------------------------------------
 
 const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
-  if (shouldLog()) {
-    console.log('🔍 applyFilter - Input data length:', inputData?.length || 0);
-    console.log('🔍 applyFilter - Filter type:', filter);
-    console.log('🔍 applyFilter - User ID:', user?.id);
-    console.log('🔍 applyFilter - Input campaigns:', inputData?.map(c => ({
-      id: c.id,
-      name: c.name,
-      status: c.status,
-      percentageMatch: c.percentageMatch,
-      bookmarked: c.bookMarkCampaign?.some((item) => item.userId === user.id),
-      hasDraft: c.pitch?.some((elem) => elem?.userId === user?.id && elem?.status === 'draft'),
-    })));
-  }
-
   let resultData = inputData;
 
   if (filter === 'saved') {
-    const beforeSavedFilter = resultData?.length || 0;
-    const savedCampaigns = resultData?.filter((campaign) =>
+    resultData = resultData?.filter((campaign) =>
       campaign.bookMarkCampaign.some((item) => item.userId === user.id)
     );
-    const filteredOutCampaigns = resultData?.filter((campaign) =>
-      !campaign.bookMarkCampaign.some((item) => item.userId === user.id)
-    );
-    
-    if (shouldLog()) {
-      console.log('🔍 applyFilter - Saved filter details:', {
-        before: beforeSavedFilter,
-        after: savedCampaigns?.length || 0,
-        filteredOut: filteredOutCampaigns?.length || 0,
-        filteredOutCampaigns: filteredOutCampaigns?.map(c => ({ id: c.id, name: c.name })),
-      });
-    }
-    
-    resultData = savedCampaigns;
   }
 
   if (filter === 'draft') {
-    const beforeDraftFilter = resultData?.length || 0;
-    const draftCampaigns = resultData?.filter((campaign) =>
+    resultData = resultData?.filter((campaign) =>
       campaign.pitch?.some((elem) => elem?.userId === user?.id && elem?.status === 'draft')
     );
-    const filteredOutCampaigns = resultData?.filter((campaign) =>
-      !campaign.pitch?.some((elem) => elem?.userId === user?.id && elem?.status === 'draft')
-    );
-    
-    if (shouldLog()) {
-      console.log('🔍 applyFilter - Draft filter details:', {
-        before: beforeDraftFilter,
-        after: draftCampaigns?.length || 0,
-        filteredOut: filteredOutCampaigns?.length || 0,
-        filteredOutCampaigns: filteredOutCampaigns?.map(c => ({ id: c.id, name: c.name })),
-      });
-    }
-    
-    resultData = draftCampaigns;
   }
 
   // Apply sorting
   if (sortBy === 'Most matched') {
     resultData = orderBy(resultData, ['percentageMatch'], ['desc']);
-    if (shouldLog()) console.log('🔍 applyFilter - Applied "Most matched" sorting');
   } else if (sortBy === 'Most recent') {
     resultData = orderBy(resultData, ['createdAt'], ['desc']);
-    if (shouldLog()) console.log('🔍 applyFilter - Applied "Most recent" sorting');
   } else {
     // Default sorting: newest first
     resultData = orderBy(resultData, ['createdAt'], ['desc']);
-    if (shouldLog()) console.log('🔍 applyFilter - Applied default (newest first) sorting');
   }
 
   // Apply search filter
   if (search.query) {
-    const beforeSearchFilter = resultData?.length || 0;
-    const searchedCampaigns = resultData?.filter(
+    resultData = resultData?.filter(
       (item) =>
         item.name.toLowerCase().includes(search.query.toLowerCase()) ||
         item.company?.name.toLowerCase().includes(search.query.toLowerCase())
     );
-    const filteredOutCampaigns = resultData?.filter(
-      (item) =>
-        !(item.name.toLowerCase().includes(search.query.toLowerCase()) ||
-        item.company?.name.toLowerCase().includes(search.query.toLowerCase()))
-    );
-    
-    if (shouldLog()) {
-      console.log('🔍 applyFilter - Search filter details:', {
-        query: search.query,
-        before: beforeSearchFilter,
-        after: searchedCampaigns?.length || 0,
-        filteredOut: filteredOutCampaigns?.length || 0,
-        filteredOutCampaigns: filteredOutCampaigns?.map(c => ({ id: c.id, name: c.name })),
-      });
-    }
-    
-    resultData = searchedCampaigns;
   }
 
-  if (shouldLog()) {
-    console.log('🔍 applyFilter - Final result length:', resultData?.length || 0);
-    console.log('🔍 applyFilter - Final campaigns:', resultData?.map(c => ({
-      id: c.id,
-      name: c.name,
-      percentageMatch: c.percentageMatch,
-    })));
-  }
-  
   return resultData;
 };
