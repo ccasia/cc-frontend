@@ -30,7 +30,6 @@ export const paths = {
     kanban: `${ROOTS.DASHBOARD}/kanban`,
     analytics: `${ROOTS.DASHBOARD}/analytics`,
     client: `${ROOTS.DASHBOARD}/client`,
-    faq: `${ROOTS.DASHBOARD}/faq`,
     company: {
       root: `${ROOTS.DASHBOARD}/company`,
       manage: `${ROOTS.DASHBOARD}/company/manage`,

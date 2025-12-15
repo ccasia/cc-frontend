@@ -110,8 +110,8 @@ export function RHFMultiSelect({
               sx={{
                 border: 1,
                 borderColor: '#EBEBEB',
-                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                py: 1.5,
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                py: 2,
               }}
             />
           ))}
@@ -135,7 +135,7 @@ export function RHFMultiSelect({
         onClick={handleClearAll}
         sx={{
           position: 'absolute',
-          right: 28, // Position it to the left of the dropdown arrow
+          right: 32, // Position it to the left of the dropdown arrow
           top: '50%',
           transform: 'translateY(-50%)',
           zIndex: 1,
@@ -202,84 +202,3 @@ RHFMultiSelect.propTypes = {
   placeholder: PropTypes.string,
   showClearAll: PropTypes.bool,
 };
-
-// ----------------------------------------------------------------------
-// Allows the use of a placeholder before select dropdown
-
-export function RHFSelectV2({
-  name,
-  label,
-  placeholder,
-  native,
-  maxHeight = 220,
-  helperText,
-  children,
-  PaperPropsSx,
-  multiple,
-  ...other
-}) {
-  const { control } = useFormContext();
-
-  return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState: { error } }) => (
-        <FormControl fullWidth error={!!error}>
-          {label && <InputLabel id={name}>{label}</InputLabel>}
-          <Select
-            {...field}
-            labelId={name}
-            id={name}
-            value={multiple ? field.value || [''] : field.value || ''}
-            displayEmpty={!!placeholder}
-            label={label}
-            multiple={multiple}
-            renderValue={(selected) => {
-              if (!selected || (Array.isArray(selected) && selected.length === 0) || selected === '') {
-                return <Box sx={{ color: 'text.disabled' }}>{placeholder}</Box>;
-              }
-              if (multiple && Array.isArray(selected)) {
-                return selected.join(', ');
-              }
-              return children
-                .filter((child) => child.props.value === selected)
-                .map((child) => child.props.children)
-                .join(', ');
-            }}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  ...(!native && {
-                    maxHeight: typeof maxHeight === 'number' ? maxHeight : 'unset',
-                  }),
-                  ...PaperPropsSx,
-                },
-              },
-            }}
-            sx={{ textTransform: 'capitalize' }}
-            {...other}
-          >
-            {children}
-          </Select>
-          {(!!error || helperText) && (
-            <FormHelperText error={!!error}>{error ? error?.message : helperText}</FormHelperText>
-          )}
-        </FormControl>
-      )}
-    />
-  );
-}
-
-RHFSelectV2.propTypes = {
-  PaperPropsSx: PropTypes.object,
-  children: PropTypes.node,
-  helperText: PropTypes.string,
-  maxHeight: PropTypes.number,
-  name: PropTypes.string,
-  native: PropTypes.bool,
-  multiple: PropTypes.bool,
-  label: PropTypes.string,
-  placeholder: PropTypes.string,
-};
-

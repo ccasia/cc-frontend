@@ -131,7 +131,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   const [, setError] = useState();
   const approveCreditModal = useBoolean();
   const { mutate } = useGetCampaignById(campaign.id);
-
+  
   // Ref to track if credits have been synced for this campaign
   const creditsSyncedRef = useRef(false);
   const lastCampaignIdRef = useRef(null);
@@ -166,20 +166,20 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   // Sync credits on mount - runs once per campaign
   const syncCredits = useCallback(async () => {
     if (!campaign?.id || !campaign?.campaignCredits) return;
-
+    
     // Only sync if this is a new campaign or hasn't been synced yet
     if (creditsSyncedRef.current && lastCampaignIdRef.current === campaign.id) {
       return;
     }
-
+    
     try {
       const response = await axiosInstance.post(`/api/campaign/syncCredits/${campaign.id}`);
       console.log('Credits synced:', response.data);
-
+      
       // Mark as synced for this campaign
       creditsSyncedRef.current = true;
       lastCampaignIdRef.current = campaign.id;
-
+      
       // Refresh campaign data to get updated credits
       if (mutate) {
         mutate();
@@ -195,7 +195,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
     if (campaign?.id !== lastCampaignIdRef.current) {
       creditsSyncedRef.current = false;
     }
-
+    
     syncCredits();
   }, [syncCredits, campaign?.id]);
 
@@ -236,17 +236,17 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
 
   const handleCreditFieldChange = (field, value) => {
     const numValue = Number(value) || 0;
-
+    
     setEditCredits((prev) => {
       const newCredits = { ...prev, [field]: numValue };
-
+      
       // Auto-calculate creditsPending if campaignCredits or creditsUtilized changes
       if (field === 'campaignCredits' || field === 'creditsUtilized') {
         const campaignCreds = field === 'campaignCredits' ? numValue : prev.campaignCredits;
         const utilizedCreds = field === 'creditsUtilized' ? numValue : prev.creditsUtilized;
         newCredits.creditsPending = Math.max(0, campaignCreds - utilizedCreds);
       }
-
+      
       return newCredits;
     });
 
@@ -255,7 +255,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
     if (numValue < 0) {
       fieldError = 'Value cannot be negative';
     }
-
+    
     setCreditErrors((prev) => ({ ...prev, [field]: fieldError }));
   };
 
@@ -266,7 +266,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
       toast.error('Please fix validation errors before saving');
       return;
     }
-
+    
     approveCreditModal.onTrue();
   };
 
@@ -380,9 +380,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                     CREATOR PITCHES
                   </Typography>
                   <Typography variant="h4">
-                    {localCampaign?.pitch?.filter(
-                      (pitch) => pitch.type === 'text' || pitch.type === 'video'
-                    )?.length || 0}
+                    {localCampaign?.pitch?.filter((pitch) => pitch.type === 'text' || pitch.type === 'video')
+                      ?.length || 0}
                   </Typography>
                 </Stack>
               </Stack>
@@ -444,11 +443,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                     PENDING AGREEMENTS
                   </Typography>
                   <Typography variant="h4">
-                    {localCampaign?.creatorAgreement?.filter((a) => !a.isSent)?.length ||
-                      0 ||
-                      localCampaign?.pitch?.filter((p) => p.status === 'AGREEMENT_PENDING')
-                        ?.length ||
-                      0}
+                    {(localCampaign?.creatorAgreement?.filter((a) => !a.isSent)?.length || 0) ||
+                    (localCampaign?.pitch?.filter((p) => p.status === 'AGREEMENT_PENDING')?.length || 0)}
                   </Typography>
                 </Stack>
               </Stack>
@@ -520,63 +516,37 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                       >
                         CREDITS TRACKING
                       </Typography>
-                      {campaign?.campaignCredits &&
-                        latestPackageItem &&
-                        !isEditingCredit &&
-                        (user?.role === 'superadmin' ||
-                          ['god', 'advanced'].includes(user?.admin?.mode)) && (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            // color="primary"
-                            onClick={handleEditCredit}
-                          >
-                            Edit Credits
-                          </Button>
-                        )}
-                      {/* Edit Action Buttons */}
-                      {isEditingCredit && (
-                        <Stack direction="row" justifyContent="flex-end" spacing={1} p={0.3}>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={handleCancelCreditChanges}
-                          >
-                            <Iconify icon="charm:cross" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="success"
-                            onClick={handleCreditChangesConfirmation}
-                            disabled={Object.values(creditErrors).some((err) => err !== null)}
-                          >
-                            <Iconify icon="charm:tick" />
-                          </IconButton>
-                        </Stack>
+                      {campaign?.campaignCredits && latestPackageItem && !isEditingCredit && (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          // color="primary"
+                          onClick={handleEditCredit}
+                        >
+                          Edit Credits
+                        </Button>
                       )}
                     </Stack>
                   </Box>
 
-                  <Stack spacing={1}>
+                  <Stack spacing={[1]}>
                     {campaign?.campaignCredits && latestPackageItem ? (
-                      <Stack spacing={1.5} color="text.secondary" mt={2}>
+                      <Stack spacing={1.5} color="text.secondary">
                         {/* Campaign Credits Row */}
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
+                          <Typography
+                            sx={{ mt: 1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                          >
                             Campaign Credits
                           </Typography>
 
                           {isEditingCredit ? (
                             <TextField
                               size="small"
-                              value={
-                                editCredits.campaignCredits === 0 ? '' : editCredits.campaignCredits
-                              }
+                              value={editCredits.campaignCredits === 0 ? '' : editCredits.campaignCredits}
                               type="number"
                               inputProps={{ min: 0 }}
-                              onChange={(e) =>
-                                handleCreditFieldChange('campaignCredits', e.target.value)
-                              }
+                              onChange={(e) => handleCreditFieldChange('campaignCredits', e.target.value)}
                               onKeyDown={(e) => {
                                 if (['e', 'E', '+', '-'].includes(e.key)) {
                                   e.preventDefault();
@@ -585,37 +555,27 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                               sx={{
                                 width: 100,
                                 animation: `${animation} 0.5s ease-in-out`,
-                                my: -1,
                               }}
                               error={!!creditErrors.campaignCredits}
                               helperText={creditErrors.campaignCredits}
                             />
                           ) : (
                             <Typography
-                              sx={{
-                                fontSize: '16px',
-                                fontWeight: 600,
+                              sx={{ 
+                                mt: 1, 
+                                fontSize: '16px', 
+                                fontWeight: 600, 
                                 color: '#636366',
-                                cursor:
-                                  user?.role === 'superadmin' ||
-                                  ['god', 'advanced'].includes(user?.admin?.mode)
-                                    ? 'pointer'
-                                    : 'default',
+                                cursor: (user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) ? 'pointer' : 'default'
                               }}
-                              onClick={
-                                user?.role === 'superadmin' ||
-                                ['god', 'advanced'].includes(user?.admin?.mode)
-                                  ? handleEditCredit
-                                  : undefined
-                              }
+                              onClick={(user?.role === 'superadmin' || ['god', 'advanced'].includes(user?.admin?.mode)) ? handleEditCredit : undefined}
                             >
                               {campaign?.campaignCredits ?? 0} UGC Credits
                             </Typography>
                           )}
                         </Stack>
-
                         <Divider />
-
+                        
                         {/* Credits Utilized Row */}
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                           <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
@@ -624,68 +584,80 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                           {isEditingCredit ? (
                             <TextField
                               size="small"
-                              value={
-                                editCredits.creditsUtilized === 0 ? '' : editCredits.creditsUtilized
-                              }
+                              value={editCredits.creditsUtilized === 0 ? '' : editCredits.creditsUtilized}
                               type="number"
                               inputProps={{ min: 0 }}
-                              onChange={(e) =>
-                                handleCreditFieldChange('creditsUtilized', e.target.value)
-                              }
+                              onChange={(e) => handleCreditFieldChange('creditsUtilized', e.target.value)}
                               onKeyDown={(e) => {
                                 if (['e', 'E', '+', '-'].includes(e.key)) {
                                   e.preventDefault();
                                 }
                               }}
-                              sx={{ width: 100, my: -1 }}
+                              sx={{ width: 100 }}
                               error={!!creditErrors.creditsUtilized}
                               helperText={creditErrors.creditsUtilized}
                             />
                           ) : (
-                            <Typography
-                              sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}
-                            >
+                            <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
                               {campaign?.creditsUtilized ?? 0} UGC Credits
                             </Typography>
                           )}
                         </Stack>
-
                         <Divider />
-
+                        
                         {/* Credits Pending Row */}
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
+                          <Typography
+                            sx={{ mb: isEditingCredit ? 0 : -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                          >
                             Credits Pending
                           </Typography>
                           {isEditingCredit ? (
                             <TextField
                               size="small"
-                              value={
-                                editCredits.creditsPending === 0 ? '' : editCredits.creditsPending
-                              }
+                              value={editCredits.creditsPending === 0 ? '' : editCredits.creditsPending}
                               type="number"
                               inputProps={{ min: 0 }}
-                              onChange={(e) =>
-                                handleCreditFieldChange('creditsPending', e.target.value)
-                              }
+                              onChange={(e) => handleCreditFieldChange('creditsPending', e.target.value)}
                               onKeyDown={(e) => {
                                 if (['e', 'E', '+', '-'].includes(e.key)) {
                                   e.preventDefault();
                                 }
                               }}
-                              sx={{ width: 100, my: -1 }}
+                              sx={{ width: 100 }}
                               error={!!creditErrors.creditsPending}
                               helperText={creditErrors.creditsPending}
                               disabled
                             />
                           ) : (
                             <Typography
-                              sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}
+                              sx={{ mb: -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}
                             >
                               {campaign?.creditsPending ?? 0} UGC Credits
                             </Typography>
                           )}
                         </Stack>
+                        
+                        {/* Edit Action Buttons */}
+                        {isEditingCredit && (
+                          <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 1 }}>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={handleCancelCreditChanges}
+                            >
+                              <Iconify icon="charm:cross" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="success"
+                              onClick={handleCreditChangesConfirmation}
+                              disabled={Object.values(creditErrors).some((err) => err !== null)}
+                            >
+                              <Iconify icon="charm:tick" />
+                            </IconButton>
+                          </Stack>
+                        )}
                       </Stack>
                     ) : (
                       <Typography
@@ -732,9 +704,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         }}
                       >
                         (
-                        {localCampaign?.pitch?.filter(
-                          (pitch) => pitch.type === 'text' || pitch.type === 'video'
-                        )?.length || 0}
+                        {localCampaign?.pitch?.filter((pitch) => pitch.type === 'text' || pitch.type === 'video')
+                          ?.length || 0}
                         )
                       </Typography>
                     </Stack>
@@ -754,17 +725,13 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                               pt: 2,
                               pb:
                                 index !==
-                                localCampaign.pitch.filter(
-                                  (p) => p.type === 'text' || p.type === 'video'
-                                ).length -
+                                localCampaign.pitch.filter((p) => p.type === 'text' || p.type === 'video').length -
                                   1
                                   ? 2
                                   : 1,
                               borderBottom:
                                 index !==
-                                localCampaign.pitch.filter(
-                                  (p) => p.type === 'text' || p.type === 'video'
-                                ).length -
+                                localCampaign.pitch.filter((p) => p.type === 'text' || p.type === 'video').length -
                                   1
                                   ? '1px solid #e7e7e7'
                                   : 'none',
@@ -1032,25 +999,19 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Typography>
           <Stack spacing={1.5}>
             <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2" fontWeight={600}>
-                Campaign Credits:
-              </Typography>
+              <Typography variant="body2" fontWeight={600}>Campaign Credits:</Typography>
               <Typography variant="body2">
                 {campaign?.campaignCredits ?? 0} → {editCredits.campaignCredits ?? 0}
               </Typography>
             </Stack>
             <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2" fontWeight={600}>
-                Credits Utilized:
-              </Typography>
+              <Typography variant="body2" fontWeight={600}>Credits Utilized:</Typography>
               <Typography variant="body2">
                 {campaign?.creditsUtilized ?? 0} → {editCredits.creditsUtilized ?? 0}
               </Typography>
             </Stack>
             <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2" fontWeight={600}>
-                Credits Pending:
-              </Typography>
+              <Typography variant="body2" fontWeight={600}>Credits Pending:</Typography>
               <Typography variant="body2">
                 {campaign?.creditsPending ?? 0} → {editCredits.creditsPending ?? 0}
               </Typography>

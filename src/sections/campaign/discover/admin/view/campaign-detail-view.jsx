@@ -68,7 +68,6 @@ import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
-import CampaignFAQ from '../campaign-faq';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 
 // Ensure campaignTabs exists and is loaded from localStorage
@@ -92,7 +91,6 @@ const clientAllowedTabs = [
   'submissions-v4',
   'analytics',
   'logistics', // allow client to access Logistics tab
-  'faq',
 ];
 
 const CampaignDetailView = ({ id }) => {
@@ -400,7 +398,6 @@ const CampaignDetailView = ({ id }) => {
                   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
                   value: 'logistics',
                 },
-                { label: 'FAQ', value: 'faq' },
               ]
             : // Admin/other user tabs
               [
@@ -617,7 +614,6 @@ const CampaignDetailView = ({ id }) => {
     ),
     'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} />,
     analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />,
-    faq: <CampaignFAQ />,
   };
 
   const formatDate = (dateString) => {
