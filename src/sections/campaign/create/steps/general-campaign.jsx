@@ -1,34 +1,26 @@
 import useSWR from 'swr';
-import dayjs from 'dayjs';
-import PropTypes from 'prop-types';
 import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 
-import { DatePicker } from '@mui/x-date-pickers';
-import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
+import { Box, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
 
 import socket from 'src/hooks/socket';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
-import { objectivesLists } from 'src/contants/objectives';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Label from 'src/components/label';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
-const FormField = ({ label, children, required = true }) => (
-  <Stack spacing={0.5}>
+// eslint-disable-next-line react/prop-types
+const FormField = ({ label, children }) => (
+  <Stack spacing={1}>
     <FormLabel
-      required={required}
+      required
       sx={{
-        fontWeight: 700,
+        fontWeight: 600,
         color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-        fontSize: '0.875rem', // Smaller font size for labels
-        mb: 0.5,
-        '& .MuiFormLabel-asterisk': {
-          color: '#FF3500', // Change this to your desired color
-        },
       }}
     >
       {label}
@@ -37,18 +29,9 @@ const FormField = ({ label, children, required = true }) => (
   </Stack>
 );
 
-FormField.propTypes = {
-  label: PropTypes.string.isRequired,
-  children: PropTypes.node.isRequired,
-  required: PropTypes.bool,
-};
-
 const GeneralCampaign = () => {
   const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
-  const { setValue, watch } = useFormContext();
-
-  const startDate = watch('campaignStartDate');
-  const endDate = watch('campaignEndDate');
+  const { setValue } = useFormContext();
 
   useEffect(() => {
     if (socket) {
@@ -64,75 +47,25 @@ const GeneralCampaign = () => {
     setValue('campaignId', `C${data + 1 < 10 ? `0${data + 1}` : data + 1}`);
   }, [setValue, data]);
 
-  // Auto-set end date 14 days after start date
-  useEffect(() => {
-    if (startDate) {
-      // Ensure startDate is a valid dayjs object
-      const start = dayjs(startDate);
-      if (start.isValid()) {
-        // Calculate end date as 14 days after start date
-        const newEndDate = start.add(14, 'day');
-        setValue('campaignEndDate', newEndDate.toDate());
-      }
-    }
-  }, [startDate, setValue]);
-
   return (
-    <Box sx={{ maxWidth: '500px', mx: 'auto' }}>
-      <Stack alignItems="self-end" spacing={0.5} mt={2}>
+    <>
+      <Stack alignItems="self-end" spacing={0.5}>
         <Typography variant="subtitle2">Campaign ID</Typography>
         {!isLoading && <Label color="info">C0{data + 1}</Label>}
       </Stack>
 
-      <Stack spacing={2} mt={4}>
+      <Box
+        gap={2}
+        display="grid"
+        mt={4}
+        gridTemplateColumns={{
+          xs: 'repeat(1, 1fr)',
+          sm: 'repeat(2, 1fr)',
+        }}
+      >
         <FormField label="Campaign Title">
           <RHFTextField name="campaignTitle" placeholder="Campaign Title" />
         </FormField>
-
-        {/* Date Range - Two columns */}
-        <Box>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <FormField label="Campaign Start Date">
-                <DatePicker
-                  value={startDate}
-                  onChange={(newValue) => {
-                    setValue('campaignStartDate', newValue, { shouldValidate: true });
-                  }}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      placeholder: 'Select start date',
-                      error: false,
-                      size: 'small',
-                      sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                    },
-                  }}
-                />
-              </FormField>
-            </Grid>
-            <Grid item xs={6}>
-              <FormField label="Campaign End Date">
-                <DatePicker
-                  value={endDate}
-                  onChange={(newValue) => {
-                    setValue('campaignEndDate', newValue, { shouldValidate: true });
-                  }}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      placeholder: 'Select end date',
-                      error: false,
-                      size: 'small',
-                      sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                    },
-                  }}
-                />
-              </FormField>
-            </Grid>
-          </Grid>
-        </Box>
-
         <FormField label="Campaign Info">
           <RHFTextField
             name="campaignDescription"
@@ -147,40 +80,28 @@ const GeneralCampaign = () => {
         <FormField label="Product/Service Name">
           <RHFTextField name="productName" placeholder="Product/Service Name" multiline />
         </FormField>
-
-        {/* Campaign Objectives - Full width */}
-        <Box>
-          <FormField label="Campaign Objectives">
-            <RHFMultiSelect
-              name="campaignObjectives"
-              placeholder="Select Campaign Objectives"
-              options={objectivesLists.map((item) => ({
-                value: item,
-                label: item,
-              }))}
-              chip
-              checkbox
-              // size="small"
-              // sx={{
-              //   '& .MuiOutlinedInput-root': { minHeight: '50px' },
-              // }}
-            />
-          </FormField>
-        </Box>
-
-        <Box>
-          <FormField label="Industries">
-            <RHFMultiSelect
-              name="campaignIndustries"
-              placeholder="Select Industries"
-              chip
-              checkbox
-              options={interestsLists.map((item) => ({ value: item, label: item }))}
-            />
-          </FormField>
-        </Box>
-      </Stack>
-    </Box>
+        <FormField label="Campaign Objectives">
+          <RHFSelect name="campaignObjectives">
+            <MenuItem value="New Product Launch">New Product Launch</MenuItem>
+            <MenuItem value="New Service Launch">New Service Launch</MenuItem>
+            <MenuItem value="Increase Brand Awareness">Increase Brand Awareness</MenuItem>
+            <MenuItem value="Drive Product Awareness">Drive Product Awareness</MenuItem>
+            <MenuItem value="Drive Service Awareness">Drive Service Awareness</MenuItem>
+            <MenuItem value="Increase Purchase Intent">Increase Purchase Intent</MenuItem>
+            <MenuItem value="Increase Reach of Audience">Increase Reach of Audience</MenuItem>
+          </RHFSelect>
+        </FormField>
+        <FormField label="Industry">
+          <RHFSelect name="campaignIndustries">
+            {interestsLists.map((item, index) => (
+              <MenuItem key={index} value={item}>
+                {item}
+              </MenuItem>
+            ))}
+          </RHFSelect>
+        </FormField>
+      </Box>
+    </>
   );
 };
 
