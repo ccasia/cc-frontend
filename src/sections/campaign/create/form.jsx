@@ -342,7 +342,6 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     handleSubmit,
     getValues,
     reset,
-    control,
     setValue,
     watch,
     trigger,
