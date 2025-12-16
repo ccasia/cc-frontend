@@ -141,7 +141,8 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
               >
                 <Stack
                   direction="row"
-                  spacing={2}
+                  spacing={1}
+                  flex={1}
                   sx={{
                     flexWrap: { xs: 'wrap', sm: 'nowrap' },
                   }}
@@ -170,7 +171,7 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                         color: 'text.primary',
                         fontWeight: 600,
                         fontSize: '1rem',
-                        maxWidth: { xs: '100%', sm: '300px' },
+                        maxWidth: { xs: '100%', sm: '200px' },
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -198,7 +199,7 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                     alignItems="center"
                     sx={{
                       width: { xs: '100%', sm: 'auto' },
-                      justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+                      justifyContent: { xs: 'flex-end' },
                       mt: { xs: 2, sm: 0 },
                     }}
                     flexWrap="wrap"
@@ -218,10 +219,8 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                           borderColor: '#e7e7e7',
                         },
                         textTransform: 'none',
-                        px: 2,
-                        py: 1.5,
                         fontSize: '0.875rem',
-                        minWidth: '80px',
+                        minWidth: '70px',
                         height: '45px',
                       }}
                     >
@@ -244,10 +243,8 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                             borderColor: '#e7e7e7',
                           },
                           textTransform: 'none',
-                          px: 2,
-                          py: 1.5,
                           fontSize: '0.875rem',
-                          minWidth: '80px',
+                          minWidth: '70px',
                           height: '45px',
                         }}
                       >
@@ -313,18 +310,33 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
         <DialogContent sx={{ p: 2.5 }}>
           <Stack spacing={2}>
             {selectedFile && (
-              <Box
-                component={selectedFile.type?.startsWith('video/') ? 'video' : 'img'}
-                src={selectedFile.preview || selectedFile}
-                autoPlay={selectedFile.type?.startsWith('video/')}
-                controls={selectedFile.type?.startsWith('video/')}
-                sx={{
-                  width: '100%',
-                  maxHeight: '60vh',
-                  borderRadius: 1,
-                  bgcolor: 'background.neutral',
-                }}
-              />
+              <>
+                {selectedFile.type === 'application/pdf' ? (
+                  <Box
+                    component="iframe"
+                    src={selectedFile.preview || selectedFile}
+                    sx={{
+                      width: '100%',
+                      minHeight: '60vh',
+                      borderRadius: 1,
+                      bgcolor: 'background.neutral',
+                    }}
+                  />
+                ) : (
+                  <Box
+                    component={selectedFile.type?.startsWith('video/') ? 'video' : 'img'}
+                    src={selectedFile.preview || selectedFile}
+                    autoPlay={selectedFile.type?.startsWith('video/')}
+                    controls={selectedFile.type?.startsWith('video/')}
+                    sx={{
+                      width: '100%',
+                      maxHeight: '60vh',
+                      borderRadius: 1,
+                      bgcolor: 'background.neutral',
+                    }}
+                  />
+                )}
+              </>
             )}
           </Stack>
         </DialogContent>
