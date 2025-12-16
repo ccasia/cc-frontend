@@ -23,7 +23,10 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topThreeContents = topContents?.slice(0, 3);
+  // Sort by like_count in descending order and take top 3
+  const topThreeContents = topContents
+    ?.sort((a, b) => (b?.like || 0) - (a?.like || 0))
+    .slice(0, 3);
 
   const getTikTokVideoUrl = (content) => {
     if (content?.embed_html) {
