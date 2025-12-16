@@ -294,6 +294,8 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     locations: [{ name: '' }],
     campaignStartDate: null,
     campaignEndDate: null,
+    postingStartDate: null,
+    postingEndDate: null,
     campaignIndustries: '',
     campaignObjectives: '',
     campaignDescription: '',
