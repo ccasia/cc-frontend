@@ -23,7 +23,7 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topFiveContents = topContents?.slice(0, 5);
+  const topThreeContents = topContents?.slice(0, 3);
 
   const getTikTokVideoUrl = (content) => {
     if (content?.embed_html) {
@@ -49,7 +49,7 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
     return null;
   };
 
-  const displayContent = topFiveContents;
+  const displayContent = topThreeContents;
 
   if (isMobile) {
     return (

@@ -123,8 +123,8 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
     if (currentTab === 'tiktok') {
       return {
         followers: data?.creator?.tiktokUser?.follower_count || 0,
-        engagement_rate: data?.creator?.tiktokUser?.follower_count || 0,
-        averageLikes: data?.creator?.tiktokUser?.likes_count || 0,
+        engagement_rate: `${data?.creator?.tiktokUser?.engagement_rate?.toFixed(2) || 0}`,
+        averageLikes: data?.creator?.tiktokUser?.averageLikes || 0,
         averageComments: data?.creator?.tiktokUser?.averageComments || 0,
       };
     }
