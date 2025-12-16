@@ -207,7 +207,8 @@ const CampaignTargetAudience = () => {
                 name="country"
                 placeholder="Select country"
                 options={Object.keys(countriesCities)}
-                getOptionLabel={(option) => option}
+                getOptionLabel={(option) => option || ''}
+                value={country ?? null}
                 slotProps={{
                   paper: {
                     sx: {
