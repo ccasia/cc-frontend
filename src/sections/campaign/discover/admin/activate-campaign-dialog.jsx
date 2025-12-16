@@ -6,6 +6,9 @@ import { Page, Document } from 'react-pdf';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
   Box,
   Chip,
@@ -16,6 +19,7 @@ import {
   Button,
   Select,
   Avatar,
+  Divider,
   MenuItem,
   IconButton,
   Typography,
@@ -81,7 +85,11 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const [, setAgreementTemplates] = useState([]); // agreementTemplates unused
   const [campaignDetails, setCampaignDetails] = useState(null);
   
-  // Step state (1: Admin Assignment, 2: Agreement, 3: Campaign Type, 4: Deliverables)
+  // Posting dates state
+  const [postingStartDate, setPostingStartDate] = useState(null);
+  const [postingEndDate, setPostingEndDate] = useState(null);
+  
+  // Step state (1: Admin Assignment, 2: Agreement, 3: Campaign Type, 4: Deliverables, 5: Posting Dates)
   const [currentStep, setCurrentStep] = useState(1);
   
   // Form validation
@@ -90,6 +98,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     deliverables: '',
     campaignManagers: '',
     agreementTemplateId: '',
+    postingStartDate: '',
+    postingEndDate: '',
   });
 
   // PDF related states
@@ -248,11 +258,32 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
 
     // Always get the latest deliverables value from RHF
     const currentDeliverables = deliverablesForm.getValues('deliverables');
+    
+    // Posting date validation - only required for 'normal' (UGC With Posting) campaign type
+    const requiresPostingDates = campaignType === 'normal';
+    
+    const getPostingStartDateError = () => {
+      if (!requiresPostingDates) return '';
+      if (!postingStartDate) return 'Posting start date is required';
+      return '';
+    };
+    
+    const getPostingEndDateError = () => {
+      if (!requiresPostingDates) return '';
+      if (!postingEndDate) return 'Posting end date is required';
+      if (postingStartDate && postingEndDate && dayjs(postingEndDate).isBefore(dayjs(postingStartDate))) {
+        return 'End date must be after start date';
+      }
+      return '';
+    };
+    
     const newErrors = {
       campaignType: !campaignType ? 'Campaign type is required' : '',
       deliverables: !currentDeliverables || currentDeliverables.length === 0 ? 'At least one deliverable is required' : '',
       campaignManagers: getCampaignManagersError(),
       agreementTemplateId: !agreementTemplateId ? 'Agreement template is required' : '',
+      postingStartDate: getPostingStartDateError(),
+      postingEndDate: getPostingEndDateError(),
     };
     
     setErrors(newErrors);
@@ -278,6 +309,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         deliverables: currentDeliverables,
         campaignManager: campaignManagers,
         agreementTemplateId,
+        postingStartDate: postingStartDate ? dayjs(postingStartDate).toISOString() : null,
+        postingEndDate: postingEndDate ? dayjs(postingEndDate).toISOString() : null,
       });
       
       const formData = new FormData();
@@ -286,6 +319,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         deliverables: currentDeliverables,
         campaignManager: campaignManagers, // These are the admin user IDs
         agreementTemplateId,
+        postingStartDate: postingStartDate ? dayjs(postingStartDate).toISOString() : null,
+        postingEndDate: postingEndDate ? dayjs(postingEndDate).toISOString() : null,
         status: 'ACTIVE', // Explicitly set status to ACTIVE
       }));
       
@@ -326,6 +361,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       setCampaignType('');
       setCampaignManagers([]);
       setAgreementTemplateId('');
+      setPostingStartDate(null);
+      setPostingEndDate(null);
       
       // Reset step based on user role and campaign status
       if ((isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
@@ -339,6 +376,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         deliverables: '',
         campaignManagers: '',
         agreementTemplateId: '',
+        postingStartDate: '',
+        postingEndDate: '',
       });
       
       onClose();
@@ -401,11 +440,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           return (
             <Box sx={{ py: 2 }}>
               <Typography 
-                variant="h4" 
+                variant="h3" 
                 sx={{ 
                   mb: 4, 
                   fontFamily: 'Instrument Serif',
-                  textAlign: 'left'
+                  textAlign: 'left',
+                  fontWeight: 100
                 }}
               >
                 Admin Already Assigned
@@ -428,7 +468,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 )}
               </Paper>
               
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <Button
                   variant="contained"
                   onClick={() => setCurrentStep(2)}
@@ -538,7 +578,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               )}
             </FormControl>
             
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
               <Button
                 variant="contained"
                 onClick={() => setCurrentStep(2)}
@@ -567,11 +607,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         return (
           <Box sx={{ py: 2 }}>
             <Typography 
-              variant="h4" 
+              variant="h3" 
               sx={{ 
                 mb: 4, 
                 fontFamily: 'Instrument Serif',
-                textAlign: 'left'
+                textAlign: 'left',
+                fontWeight: 100
               }}
             >
               Agreement Form
@@ -649,7 +690,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               </Box>
             )}
             
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => setCurrentStep(1)}
@@ -697,17 +738,19 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         
       case 3: // Campaign Type
         return (
-          <Box sx={{ py: 2 }}>
+          <Box display="flex" flexDirection="column" gap={2} py={2}>
             <Typography 
-              variant="h4" 
+              variant="h3" 
               sx={{ 
-                mb: 4, 
                 fontFamily: 'Instrument Serif',
-                textAlign: 'left'
+                textAlign: 'left',
+                fontWeight: 100
               }}
             >
               Select Campaign Type
             </Typography>
+
+            <Divider sx={{ mb: 1.5 }}/>
             
             <FormControl fullWidth error={!!errors.campaignType} sx={{ mb: 4 }}>
               <InputLabel>Campaign Type</InputLabel>
@@ -730,7 +773,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               )}
             </FormControl>
             
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => setCurrentStep(2)}
@@ -779,18 +822,21 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       case 4: // Campaign Deliverables
         return (
           <FormProvider {...deliverablesForm}>
-            <Box sx={{ py: 2 }}>
+            <Box display="flex" flexDirection="column" gap={2} py={2}>
               <Typography 
-                variant="h4" 
+                variant="h3" 
                 sx={{ 
-                  mb: 4, 
                   fontFamily: 'Instrument Serif',
-                  textAlign: 'left'
+                  textAlign: 'left',
+                fontWeight: 100
                 }}
               >
                 Select Campaign Deliverables
               </Typography>
-              <FormControl fullWidth error={!!errors.deliverables} sx={{ mb: 4 }}>
+              
+              <Divider sx={{ mb: 1 }}/>
+
+              <FormControl fullWidth error={!!errors.deliverables}>
                 <RHFMultiSelect
                   name="deliverables"
                   options={deliverableOptions}
@@ -803,7 +849,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                   onChange={(val) => handleDeliverableChange(val)}
                 />
               </FormControl>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
                 <Button
                   variant="outlined"
                   onClick={() => setCurrentStep(3)}
@@ -826,8 +872,118 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 </Button>
                 <Button
                   variant="contained"
+                  onClick={() => {
+                    // If campaign type is 'normal' (With Posting), go to posting dates step
+                    // Otherwise, activate directly
+                    if (campaignType === 'normal') {
+                      setCurrentStep(5);
+                    } else {
+                      handleActivate();
+                    }
+                  }}
+                  disabled={!deliverablesWatch || deliverablesWatch.length === 0 || (campaignType !== 'normal' && submitting)}
+                  sx={{ 
+                    borderRadius: '8px',
+                    backgroundColor: '#1340ff',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: campaignType === 'normal' ? 80 : 140,
+                    boxShadow: '0px -3px 0px 0px #102387 inset',
+                    '&:hover': {
+                      backgroundColor: '#1935dd',
+                    },
+                  }}
+                >
+                  {(() => {
+                    if (campaignType === 'normal') return 'Next';
+                    if (submitting) return <CircularProgress size={20} />;
+                    return 'Activate Campaign';
+                  })()}
+                </Button>
+              </Box>
+            </Box>
+          </FormProvider>
+        );
+        
+      case 5: // Posting Dates
+        return (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box display="flex" flexDirection="column" gap={2} py={2}>
+              <Typography 
+                variant="h3" 
+                sx={{ 
+                  fontFamily: 'Instrument Serif',
+                  fontWeight: 100,
+                  textAlign: 'left'
+                }}
+              >
+                Set Creator Posting Period
+              </Typography>
+
+              <Divider sx={{ mb: 0.5 }}/>
+              
+              <Typography variant='subtitle2' color="text.secondary" mb={-1}>Campaign Posting Period</Typography>
+
+              <Stack spacing={1} direction="row" alignItems="center">
+                <DatePicker
+                  value={postingStartDate}
+                  onChange={(newValue) => {
+                    setPostingStartDate(newValue);
+                    setErrors((prev) => ({ ...prev, postingStartDate: '' }));
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!errors.postingStartDate,
+                      helperText: errors.postingStartDate,
+                    },
+                  }}
+                />
+                <Typography>-</Typography>
+                <DatePicker
+                  value={postingEndDate}
+                  onChange={(newValue) => {
+                    setPostingEndDate(newValue);
+                    setErrors((prev) => ({ ...prev, postingEndDate: '' }));
+                  }}
+                  minDate={postingStartDate || undefined}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!errors.postingEndDate,
+                      helperText: errors.postingEndDate,
+                    },
+                  }}
+                />
+              </Stack>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setCurrentStep(4)}
+                  sx={{ 
+                    borderRadius: '8px',
+                    border: '1px solid #E7E7E7',
+                    backgroundColor: '#FFFFFF',
+                    color: '#666',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: 80,
+                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                    '&:hover': {
+                      backgroundColor: '#F8F9FA',
+                    },
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  variant="contained"
                   onClick={handleActivate}
-                  disabled={!deliverablesWatch || deliverablesWatch.length === 0 || submitting}
+                  disabled={!postingStartDate || !postingEndDate || submitting}
                   sx={{ 
                     borderRadius: '8px',
                     backgroundColor: '#1340ff',
@@ -846,7 +1002,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 </Button>
               </Box>
             </Box>
-          </FormProvider>
+          </LocalizationProvider>
         );
         
       default:
@@ -859,7 +1015,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       open={open} 
       onClose={handleClose}
       fullWidth
-      maxWidth="md"
+      maxWidth={currentStep > 2 ? 'sm' : 'md'}
       PaperProps={{
         sx: {
           borderRadius: 2,
@@ -877,10 +1033,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           color: (theme) => theme.palette.grey[500],
         }}
       >
-        <Iconify icon="eva:close-fill" />
+        <Iconify icon="eva:close-fill" width={30} />
       </IconButton>
       
-      <DialogContent sx={{ pt: 5, pb: 3, px: 3 }}>
+      <DialogContent sx={{ py: 3, px: 3 }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
