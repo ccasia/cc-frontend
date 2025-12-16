@@ -13,10 +13,11 @@ import {
 } from '@mui/material';
 
 import { langList } from 'src/contants/language';
+import { countriesCities } from 'src/contants/countries';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
-import { RHFTextField } from 'src/components/hook-form';
+import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
 
 import { CustomRHFMultiSelect } from './custom-rhf-multi-select';
 
@@ -111,7 +112,7 @@ const CampaignTargetAudience = () => {
   const { setValue, watch } = useFormContext();
 
   const audienceLocation = watch('audienceLocation') || [];
-  const showOthersLocation = audienceLocation.includes('Others');
+  const country = watch('country');
 
   // For Do's and Don'ts - using local state for better control
   const [doItems, setDoItems] = useState([{ id: 1, value: '' }]);
@@ -187,7 +188,7 @@ const CampaignTargetAudience = () => {
       <Grid container spacing={2} alignItems="stretch">
         {/* Left column - Audience Gender and City/Area */}
         <Grid item xs={12} sm={6}>
-          <Stack spacing={2.5}>
+          <Stack spacing={2}>
             <FormField label="Gender">
               <CustomRHFMultiSelect
                 name="audienceGender"
@@ -201,130 +202,159 @@ const CampaignTargetAudience = () => {
               />
             </FormField>
             
-            <FormField label="City/Area">
+            <FormField label="Audience Country">
+              <RHFAutocomplete
+                name="country"
+                placeholder="Select country"
+                options={Object.keys(countriesCities)}
+                getOptionLabel={(option) => option}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      '& .MuiAutocomplete-listbox': {
+                        maxHeight: 300, // force scroll
+                        overflowY: 'auto',
+                        /* Scrollbar customization */
+                        '&::-webkit-scrollbar': {
+                          width: 8,
+                        },
+                        '&::-webkit-scrollbar-track': {
+                          backgroundColor: '#f1f1f1',
+                          borderRadius: 8,
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                          backgroundColor: '#888',
+                          borderRadius: 8,
+                        },
+                        '&::-webkit-scrollbar-thumb:hover': {
+                          backgroundColor: '#555',
+                        },
+                        /* Firefox */
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#888 #fff00',
+                      },
+                    },
+                  },
+                }}
+                renderOption={(props, option) => {
+                  // eslint-disable-next-line react/prop-types
+                  const { key, ...optionProps } = props;
+
+                  return (
+                    <Box key={key} {...optionProps} sx={{ display: 'flex', gap: 1 }}>
+                      <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
+                      <Typography variant="subtitle2">{option}</Typography>
+                    </Box>
+                  );
+                }}
+              />
+            </FormField>
+
+            {country?.toLowerCase() === 'malaysia' && (
+              <FormField label="Audience City/Area">
+                <RHFMultiSelect
+                  name="audienceLocation"
+                  placeholder="Select city"
+                  checkbox
+                  chip
+                  options={LOCATION_OPTIONS}
+                />
+              </FormField>
+            )}
+
+            {audienceLocation?.includes('Others') && (
+              <RHFTextField
+                name="othersAudienceLocation"
+                label="Specify Other Location"
+                variant="outlined"
+              />
+            )}
+
+            <FormField label="Age">
               <CustomRHFMultiSelect
-                name="audienceLocation"
-                placeholder="Select city"
-                options={LOCATION_OPTIONS}
+                name="audienceAge"
+                placeholder="Select Age"
+                options={AGE_OPTIONS}
                 size="small"
                 checkbox
-                sx={{ 
+                sx={{
                   '& .MuiOutlinedInput-root': { minHeight: '50px' },
                 }}
               />
-
             </FormField>
 
-            {showOthersLocation && (
-              <Box sx={{ mt: -1 }}>
-                <RHFTextField
-                  name="othersAudienceLocation"
-                  placeholder="Specify other locations"
-                  size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
-                />
-              </Box>
-            )}
+            <FormField label="Language">
+              <CustomRHFMultiSelect
+                name="audienceLanguage"
+                placeholder="Select Language"
+                options={LANGUAGE_OPTIONS}
+                size="small"
+                checkbox
+                sx={{
+                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                }}
+              />
+            </FormField>
           </Stack>
         </Grid>
 
         {/* Right column - User Persona */}
         <Grid item xs={12} sm={6}>
-          <FormField label="User Persona">
-            <RHFTextField
-              name="audienceUserPersona"
-              placeholder=" let us know who you want your campaign to reach!"
-              size="small"
-              multiline
-              rows={5}
-              sx={{
-                '& .MuiOutlinedInput-root': { padding: '8px' },
-                height: '100%',
-              }}
-            />
-          </FormField>
+          <Stack spacing={2}>
+            <FormField label="User Persona">
+              <RHFTextField
+                name="audienceUserPersona"
+                placeholder="Let us know who you want your campaign to reach!"
+                size="small"
+                multiline
+                rows={5}
+                sx={{
+                  '& .MuiOutlinedInput-root': { padding: '8px' },
+                  height: '100%',
+                }}
+              />
+            </FormField>
+            <FormField label="Interests">
+              <CustomRHFMultiSelect
+                name="audienceCreatorPersona"
+                placeholder="Select creator persona"
+                options={CREATOR_PERSONA_OPTIONS}
+                size="small"
+                checkbox
+                sx={{
+                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                }}
+              />
+            </FormField>
+
+            <FormField label="Social Media Platform">
+              <CustomRHFMultiSelect
+                name="socialMediaPlatform"
+                placeholder="Select Platform"
+                options={SOCIAL_MEDIA_OPTIONS}
+                size="small"
+                checkbox
+                sx={{
+                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                }}
+              />
+            </FormField>
+
+            <FormField label="Video Angle">
+              <CustomRHFMultiSelect
+                name="videoAngle"
+                placeholder="Select Angle"
+                options={VIDEO_ANGLE_OPTIONS}
+                size="small"
+                checkbox
+                sx={{
+                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                }}
+              />
+            </FormField>
+          </Stack>
         </Grid>
       </Grid>
-
-      {/* Third row - Creator Persona and Social Media Platform */}
-      <Grid container spacing={2} sx={{ mt: 1 }}>
-        <Grid item xs={12} sm={6}>
-          <FormField label="Interests">
-            <CustomRHFMultiSelect
-              name="audienceCreatorPersona"
-              placeholder="Select creator persona"
-              options={CREATOR_PERSONA_OPTIONS}
-              size="small"
-              checkbox
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '50px' },
-              }}
-            />
-          </FormField>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormField label="Social Media Platform">
-            <CustomRHFMultiSelect
-              name="socialMediaPlatform"
-              placeholder="Select Platform"
-              options={SOCIAL_MEDIA_OPTIONS}
-              size="small"
-              checkbox
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '50px' },
-              }}
-            />
-          </FormField>
-        </Grid>
-      </Grid>
-
-      {/* Fourth row - Age and Video Angle */}
-      <Grid container spacing={2} sx={{ mt: 1 }}>
-        <Grid item xs={12} sm={6}>
-          <FormField label="Age">
-            <CustomRHFMultiSelect
-              name="audienceAge"
-              placeholder="Select Age"
-              options={AGE_OPTIONS}
-              size="small"
-              checkbox
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '50px' },
-              }}
-            />
-          </FormField>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormField label="Video Angle">
-            <CustomRHFMultiSelect
-              name="videoAngle"
-              placeholder="Select Angle"
-              options={VIDEO_ANGLE_OPTIONS}
-              size="small"
-              checkbox
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '50px' },
-              }}
-            />
-          </FormField>
-        </Grid>
-      </Grid>
-
-      {/* Fifth row - Language */}
-      <Box sx={{ mt: 2 }}>
-        <FormField label="Language">
-          <CustomRHFMultiSelect
-            name="audienceLanguage"
-            placeholder="Select Language"
-            options={LANGUAGE_OPTIONS}
-            size="small"
-            checkbox
-            sx={{
-              '& .MuiOutlinedInput-root': { minHeight: '50px' },
-            }}
-          />
-        </FormField>
-      </Box>
 
       {/* Do's and Don'ts Section Header */}
       <Box sx={{ mt: 5, mb: 2, textAlign: 'center' }}>
