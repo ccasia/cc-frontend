@@ -240,7 +240,6 @@ const CampaignTargetAudience = () => {
                 renderOption={(props, option) => {
                   // eslint-disable-next-line react/prop-types
                   const { key, ...optionProps } = props;
-
                   return (
                     <Box key={key} {...optionProps} sx={{ display: 'flex', gap: 1 }}>
                       <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
@@ -259,6 +258,13 @@ const CampaignTargetAudience = () => {
                   checkbox
                   chip
                   options={LOCATION_OPTIONS}
+                  rules={{
+                    required: country?.toLowerCase() === 'malaysia' ? 'At least one option' : false,
+                    validate: (value) => {
+                      if (country?.toLowerCase() !== 'malaysia') return true;
+                      return value && value.length > 0 ? true : 'At least one option';
+                    },
+                  }}
                 />
               </FormField>
             )}
