@@ -31,7 +31,10 @@ const TopContentGrid = ({ topContents, tiktokUsername }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topThreeContents = topContents?.slice(0, 3);
+  // Sort by like_count in descending order and take top 3
+  const topThreeContents = topContents
+    ?.sort((a, b) => (b?.like_count || 0) - (a?.like_count || 0))
+    .slice(0, 3);
 
   // Helper function to construct TikTok URL
   const getTikTokVideoUrl = (content) => {
@@ -231,6 +234,14 @@ TopContentGrid.propTypes = {
 const MediaKitSocialContent = ({ tiktokVideos, tiktokUsername, forceDesktop = false }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
+
+  // Debug logging
+  console.log('TikTok MediaKit Debug:', {
+    tiktokVideos,
+    videosCount: tiktokVideos?.length,
+    tiktokUsername,
+    hasVideos: !!tiktokVideos?.length,
+  });
 
   if (!tiktokVideos?.length)
     return (
