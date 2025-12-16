@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import { m } from 'framer-motion';
 import { toPng } from 'html-to-image';
-import React, { useRef, useMemo, useState, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useCallback, useEffect } from 'react';
 
 import {
   Box,
@@ -27,6 +27,8 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useSWRGetCreatorByID } from 'src/hooks/use-get-creators';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 
@@ -79,6 +81,8 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
 
   const { data, isLoading, isError } = useSWRGetCreatorByID(id);
   const [currentTab, setCurrentTab] = useState('instagram');
+  const [tiktokData, setTiktokData] = useState(null);
+  const [tiktokLoading, setTiktokLoading] = useState(false);
 
   // Share functionality
   const containerRef = useRef(null);
@@ -103,6 +107,28 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
     imageUrl: '',
   });
 
+  // Fetch TikTok data from live API (same as creator side)
+  useEffect(() => {
+    const fetchTikTokData = async () => {
+      if (!data?.id) return;
+      
+      try {
+        setTiktokLoading(true);
+        const res = await axiosInstance.get(endpoints.creators.social.tiktokV2(data.id));
+        setTiktokData(res.data);
+      } catch (error) {
+        console.error('Error fetching TikTok data:', error);
+        setTiktokData(null);
+      } finally {
+        setTiktokLoading(false);
+      }
+    };
+
+    if (currentTab === 'tiktok' && data?.creator?.isTiktokConnected) {
+      fetchTikTokData();
+    }
+  }, [data, currentTab]);
+
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
@@ -121,11 +147,21 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
     }
 
     if (currentTab === 'tiktok') {
+      // Use live TikTok data if available, fallback to database
+      const totalEngagement =
+        (tiktokData?.medias?.totalLikes ?? 0) + 
+        (tiktokData?.medias?.totalComments ?? 0) + 
+        (tiktokData?.medias?.totalShares ?? 0);
+      
       return {
-        followers: data?.creator?.tiktokUser?.follower_count || 0,
-        engagement_rate: `${data?.creator?.tiktokUser?.engagement_rate?.toFixed(2) || 0}`,
-        averageLikes: data?.creator?.tiktokUser?.averageLikes || 0,
-        averageComments: data?.creator?.tiktokUser?.averageComments || 0,
+        followers: tiktokData?.overview?.follower_count || data?.creator?.tiktokUser?.follower_count || 0,
+        engagement_rate: `${
+          tiktokData?.medias?.engagement_rate?.toFixed(2) || 
+          data?.creator?.tiktokUser?.engagement_rate?.toFixed(2) || 
+          0
+        }`,
+        averageLikes: tiktokData?.medias?.averageLikes || data?.creator?.tiktokUser?.averageLikes || 0,
+        averageComments: tiktokData?.medias?.averageComments || data?.creator?.tiktokUser?.averageComments || 0,
       };
     }
 
@@ -134,7 +170,7 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
       engagement_rate: 0,
       averageLikes: 0,
     };
-  }, [data, currentTab]);
+  }, [data, currentTab, tiktokData]);
 
   // Helper function for screenshot styles
   const getScreenshotStyles = useCallback(
@@ -1539,7 +1575,7 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
           {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
         </Typography>
 
-        <MediaKitSocial currentTab={currentTab} data={data} sx={{ mb: 4 }} />
+        <MediaKitSocial currentTab={currentTab} data={data} tiktokData={tiktokData} sx={{ mb: 4 }} />
       </Container>
 
       {/* ----------------------------------------------------------------------------------------------------------------------------------------------------------*/}
@@ -1890,6 +1926,8 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
 
           <MediaKitSocial
             currentTab={currentTab}
+            data={data}
+            tiktokData={tiktokData}
             className="desktop-screenshot-mediakit"
             forceDesktop
             sx={{
@@ -1914,7 +1952,6 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
                 width: '100% !important',
               },
             }}
-            data={data}
           />
         </Box>
       </Container>
