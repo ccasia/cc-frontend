@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
+import { useForm, FormProvider } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 
 import {
@@ -36,6 +37,7 @@ import AgreementTemplate from 'src/template/agreement';
 
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
+import { RHFMultiSelect } from 'src/components/hook-form';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
@@ -64,12 +66,19 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [campaignType, setCampaignType] = useState('');
-  const [deliverables, setDeliverables] = useState([]);
+  // Remove local deliverables state, use RHF only
+
+  // RHF setup for deliverables step only
+  const deliverablesForm = useForm({
+    defaultValues: { deliverables: [] },
+  });
+  // Always use this for the current deliverables value
+  const deliverablesWatch = deliverablesForm.watch('deliverables');
   const [campaignManagers, setCampaignManagers] = useState([]);
   const [agreementTemplateId, setAgreementTemplateId] = useState('');
   
   const [adminOptions, setAdminOptions] = useState([]);
-  const [agreementTemplates, setAgreementTemplates] = useState([]);
+  const [, setAgreementTemplates] = useState([]); // agreementTemplates unused
   const [campaignDetails, setCampaignDetails] = useState(null);
   
   // Step state (1: Admin Assignment, 2: Agreement, 3: Campaign Type, 4: Deliverables)
@@ -88,7 +97,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const templateModal = useBoolean();
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [pages, setPages] = useState(0);
-  const [displayPdf, setDisplayPdf] = useState(null);
+  const [, setDisplayPdf] = useState(null); // displayPdf unused
   const lgUp = useResponsive('up', 'lg');
 
   // Add debugging for admin data structure
@@ -201,21 +210,26 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     }
   }, [campaignDetails, isCSM, user?.role]);
 
-  const handleDeliverableChange = (event) => {
-    const {
-      target: { value },
-    } = event;
-    setDeliverables(typeof value === 'string' ? value.split(',') : value);
+  // Only update RHF state, not local
+  const handleDeliverableChange = (valueOrEvent) => {
+    let value = valueOrEvent;
+    if (valueOrEvent && valueOrEvent.target) {
+      value = typeof value === 'string' ? value.split(',') : value;
+    }
     setErrors((prev) => ({ ...prev, deliverables: '' }));
+    deliverablesForm.setValue('deliverables', value);
   };
 
+  // No need to sync local state to RHF anymore
+
   const handleAdminManagerChange = (event) => {
-    const {
-      target: { value },
-    } = event;
+    const { value } = event.target;
     setCampaignManagers(typeof value === 'string' ? value.split(',') : value);
     setErrors((prev) => ({ ...prev, campaignManagers: '' }));
   };
+
+  // Debug: log RHF deliverables value
+  console.log('Deliverables (RHF): ', deliverablesForm.getValues('deliverables'));
 
   const validateForm = () => {
     // Skip admin manager validation for admin/CSM users completing activation
@@ -232,9 +246,11 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       return '';
     };
 
+    // Always get the latest deliverables value from RHF
+    const currentDeliverables = deliverablesForm.getValues('deliverables');
     const newErrors = {
       campaignType: !campaignType ? 'Campaign type is required' : '',
-      deliverables: deliverables.length === 0 ? 'At least one deliverable is required' : '',
+      deliverables: !currentDeliverables || currentDeliverables.length === 0 ? 'At least one deliverable is required' : '',
       campaignManagers: getCampaignManagersError(),
       agreementTemplateId: !agreementTemplateId ? 'Agreement template is required' : '',
     };
@@ -244,42 +260,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     return !Object.values(newErrors).some((error) => error);
   };
 
-  const handleInitialActivate = async () => {
-    if (campaignManagers.length === 0) {
-      enqueueSnackbar('Please select at least one admin manager', { variant: 'error' });
-      return;
-    }
-    
-    setSubmitting(true);
-    
-    try {
-      console.log('Sending initial activation data:', {
-        campaignManager: campaignManagers,
-      });
-      
-      const formData = new FormData();
-      formData.append('data', JSON.stringify({
-        campaignManager: campaignManagers, // These are the admin user IDs
-      }));
-      
-      const response = await axios.post(`/api/campaign/initialActivateCampaign/${campaignId}`, formData);
-      console.log('Initial activation response:', response.data);
-      
-      enqueueSnackbar('Campaign assigned to admin successfully. Admin will complete the setup.', { variant: 'success' });
-      onClose();
-      
-      // Trigger data revalidation
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error('Error in initial campaign activation:', error);
-      console.error('Error details:', error.response?.data);
-      enqueueSnackbar(error.response?.data?.message || 'Failed to assign campaign to admin', { variant: 'error' });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // handleInitialActivate is unused, remove to fix lint warning
 
   const handleActivate = async () => {
     if (!validateForm()) {
@@ -291,9 +272,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     
     try {
       // Log what we're sending to help debug
+      const currentDeliverables = deliverablesForm.getValues('deliverables');
       console.log('Sending data:', {
         campaignType,
-        deliverables,
+        deliverables: currentDeliverables,
         campaignManager: campaignManagers,
         agreementTemplateId,
       });
@@ -301,7 +283,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       const formData = new FormData();
       formData.append('data', JSON.stringify({
         campaignType,
-        deliverables,
+        deliverables: currentDeliverables,
         campaignManager: campaignManagers, // These are the admin user IDs
         agreementTemplateId,
         status: 'ACTIVE', // Explicitly set status to ACTIVE
@@ -342,7 +324,6 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     if (!submitting) {
       // Reset form state
       setCampaignType('');
-      setDeliverables([]);
       setCampaignManagers([]);
       setAgreementTemplateId('');
       
@@ -797,92 +778,75 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         
       case 4: // Campaign Deliverables
         return (
-          <Box sx={{ py: 2 }}>
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                mb: 4, 
-                fontFamily: 'Instrument Serif',
-                textAlign: 'left'
-              }}
-            >
-              Select Campaign Deliverables
-            </Typography>
-            
-            <FormControl fullWidth error={!!errors.deliverables} sx={{ mb: 4 }}>
-              <InputLabel>Campaign Deliverables</InputLabel>
-              <Select
-                multiple
-                value={deliverables}
-                onChange={handleDeliverableChange}
-                input={<OutlinedInput label="Campaign Deliverables" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip 
-                        key={value} 
-                        label={deliverableOptions.find(opt => opt.value === value)?.label || value} 
-                        size="small"
-                      />
-                    ))}
-                  </Box>
-                )}
-              >
-                {deliverableOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.deliverables && (
-                <FormHelperText>{errors.deliverables}</FormHelperText>
-              )}
-            </FormControl>
-            
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
-              <Button
-                variant="outlined"
-                onClick={() => setCurrentStep(3)}
+          <FormProvider {...deliverablesForm}>
+            <Box sx={{ py: 2 }}>
+              <Typography 
+                variant="h4" 
                 sx={{ 
-                  borderRadius: '8px',
-                  border: '1px solid #E7E7E7',
-                  backgroundColor: '#FFFFFF',
-                  color: '#666',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                  height: 36,
-                  minWidth: 80,
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  '&:hover': {
-                    backgroundColor: '#F8F9FA',
-                  },
+                  mb: 4, 
+                  fontFamily: 'Instrument Serif',
+                  textAlign: 'left'
                 }}
               >
-                Back
-              </Button>
-              
-              <Button
-                variant="contained"
-                onClick={handleActivate}
-                disabled={deliverables.length === 0 || submitting}
-                sx={{ 
-                  borderRadius: '8px',
-                  backgroundColor: '#1340ff',
-                  color: 'white',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                  height: 36,
-                  minWidth: 140,
-                  boxShadow: '0px -3px 0px 0px #102387 inset',
-                  '&:hover': {
-                    backgroundColor: '#1935dd',
-                  },
-                }}
-              >
-                {submitting ? <CircularProgress size={20} /> : 'Activate Campaign'}
-              </Button>
+                Select Campaign Deliverables
+              </Typography>
+              <FormControl fullWidth error={!!errors.deliverables} sx={{ mb: 4 }}>
+                <RHFMultiSelect
+                  name="deliverables"
+                  options={deliverableOptions}
+                  chip
+                  checkbox
+                  placeholder="Select deliverables"
+                  helperText={errors.deliverables}
+                  showClearAll
+                  // react-hook-form will handle value/onChange
+                  onChange={(val) => handleDeliverableChange(val)}
+                />
+              </FormControl>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setCurrentStep(3)}
+                  sx={{ 
+                    borderRadius: '8px',
+                    border: '1px solid #E7E7E7',
+                    backgroundColor: '#FFFFFF',
+                    color: '#666',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: 80,
+                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                    '&:hover': {
+                      backgroundColor: '#F8F9FA',
+                    },
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleActivate}
+                  disabled={!deliverablesWatch || deliverablesWatch.length === 0 || submitting}
+                  sx={{ 
+                    borderRadius: '8px',
+                    backgroundColor: '#1340ff',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: 140,
+                    boxShadow: '0px -3px 0px 0px #102387 inset',
+                    '&:hover': {
+                      backgroundColor: '#1935dd',
+                    },
+                  }}
+                >
+                  {submitting ? <CircularProgress size={20} /> : 'Activate Campaign'}
+                </Button>
+              </Box>
             </Box>
-          </Box>
+          </FormProvider>
         );
         
       default:
