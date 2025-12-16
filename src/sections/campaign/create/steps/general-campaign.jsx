@@ -143,7 +143,7 @@ const GeneralCampaign = () => {
         </Grid>
 
         {/* Posting Dates */}
-        <Stack direction={'row'} alignItems={'center'} spacing={1}>
+        <Stack direction="row" alignItems="center" spacing={1}>
           <Box flex={1}>
             <FormField label="Campaign Posting Period">
               <DatePicker
