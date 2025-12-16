@@ -29,7 +29,8 @@ const MediaKitSocial = ({ currentTab, data, sx, className, forceDesktop = false 
     )}
     {currentTab === 'tiktok' && (
       <MediaKitSocialContentTiktok 
-      tiktokVideos={data?.creator?.tiktokUser?.tiktokVideo} 
+      tiktokVideos={data?.creator?.tiktokUser?.tiktokVideo}
+      tiktokUsername={data?.creator?.tiktokUser?.username}
       forceDesktop={forceDesktop} />
     )}
     {currentTab === 'partnerships' && <MediaKitPartnership />}
