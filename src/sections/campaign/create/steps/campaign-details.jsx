@@ -201,6 +201,7 @@ const CampaignDetails = () => {
               variant="outlined"
             />
           )}
+
           <FormField label="Audience Age">
             <RHFMultiSelect
               name="audienceAge"
@@ -215,6 +216,7 @@ const CampaignDetails = () => {
               placeholder="Select Age"
             />
           </FormField>
+
           <FormField label="Audience Language">
             <RHFMultiSelect
               name="audienceLanguage"
