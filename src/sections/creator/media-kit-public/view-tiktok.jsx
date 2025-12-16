@@ -235,14 +235,6 @@ const MediaKitSocialContent = ({ tiktokVideos, tiktokUsername, forceDesktop = fa
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
 
-  // Debug logging
-  console.log('TikTok MediaKit Debug:', {
-    tiktokVideos,
-    videosCount: tiktokVideos?.length,
-    tiktokUsername,
-    hasVideos: !!tiktokVideos?.length,
-  });
-
   if (!tiktokVideos?.length)
     return (
       <Label
