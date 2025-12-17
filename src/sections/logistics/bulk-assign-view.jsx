@@ -70,6 +70,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
   const [tempQuantity, setTempQuantity] = useState('');
   const [editingCreatorProduct, setEditingCreatorProduct] = useState(null); 
   const [tempCreatorQuantity, setTempCreatorQuantity] = useState('');
+  const [productBaseQuantities, setProductBaseQuantities] = useState({}); // Track base quantities for Product List
 
   useEffect(() => {
     if (open && logistics) {
@@ -94,24 +95,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     }
   }, [logistics, open, creators]);
 
-  const getProductQuantity = (productId) => {
-    // Return the quantity that each creator gets (not the total)
-    if (selectedCreatorIds.length === 0) return 0;
-    
-    const creatorWithProduct = selectedCreatorIds.find((creatorId) => {
-      const creatorAssignments = assignments[creatorId] || [];
-      const productAssignment = creatorAssignments.find((item) => item.productId === productId);
-      return productAssignment && productAssignment.quantity > 0;
-    });
-    
-    if (creatorWithProduct) {
-      const creatorAssignments = assignments[creatorWithProduct] || [];
-      const productAssignment = creatorAssignments.find((item) => item.productId === productId);
-      return productAssignment.quantity || 0;
-    }
-    
-    return 0;
-  };
+  const getProductQuantity = (productId) => productBaseQuantities[productId] || 1;
 
   // Handle quantity editing
   const handleQuantityClick = (productId, e) => {
@@ -134,35 +118,43 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     const newQuantity = parseInt(tempQuantity, 10) || 0;
     console.log('Submitting quantity:', newQuantity, 'for product:', productId, 'to creators:', selectedCreatorIds);
     
-    if (newQuantity > 0 && selectedCreatorIds.length > 0) {
+    if (newQuantity > 0) {
+      // Save the base quantity for the Product List
+      setProductBaseQuantities(prev => ({
+        ...prev,
+        [productId]: newQuantity
+      }));
       
-      const newAssignments = { ...assignments };
-      
-      selectedCreatorIds.forEach((creatorId) => {
-        if (!newAssignments[creatorId]) {
-          newAssignments[creatorId] = [];
-        }
+      // Assign to selected creators if any
+      if (selectedCreatorIds.length > 0) {
+        const newAssignments = { ...assignments };
         
-        const existingIndex = newAssignments[creatorId].findIndex(item => item.productId === productId);
+        selectedCreatorIds.forEach((creatorId) => {
+          if (!newAssignments[creatorId]) {
+            newAssignments[creatorId] = [];
+          }
+          
+          const existingIndex = newAssignments[creatorId].findIndex(item => item.productId === productId);
+          
+          const product = products.find(p => p.id === productId);
+          const productData = {
+            productId,
+            name: product?.productName,
+            quantity: newQuantity 
+          };
+          
+          console.log(`Assigning ${newQuantity} of ${product?.productName} to creator ${creatorId}`);
+          
+          if (existingIndex >= 0) {
+            newAssignments[creatorId][existingIndex] = productData;
+          } else {
+            newAssignments[creatorId].push(productData);
+          }
+        });
         
-        const product = products.find(p => p.id === productId);
-        const productData = {
-          productId,
-          name: product?.productName,
-          quantity: newQuantity 
-        };
-        
-        console.log(`Assigning ${newQuantity} of ${product?.productName} to creator ${creatorId}`);
-        
-        if (existingIndex >= 0) {
-          newAssignments[creatorId][existingIndex] = productData;
-        } else {
-          newAssignments[creatorId].push(productData);
-        }
-      });
-      
-      console.log('New assignments:', newAssignments);
-      setAssignments(newAssignments);
+        console.log('New assignments:', newAssignments);
+        setAssignments(newAssignments);
+      }
     }
     
     setEditingProductId(null);
