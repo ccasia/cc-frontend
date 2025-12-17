@@ -78,15 +78,7 @@ const GeneralCampaign = () => {
         setValue('campaignEndDate', newEndDate.toDate());
       }
     }
-
-    if (postingStartDate) {
-      const start = dayjs(postingStartDate);
-      if (start.isValid()) {
-        const newPostingEndDate = start.add(7, 'day');
-        setValue('postingEndDate', newPostingEndDate.toDate());
-      }
-    }
-  }, [startDate, postingStartDate, setValue]);
+  }, [startDate, setValue]);
 
   return (
     <Box sx={{ maxWidth: '500px', mx: 'auto' }}>
