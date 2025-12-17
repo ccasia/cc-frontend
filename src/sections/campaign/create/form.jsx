@@ -294,6 +294,8 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     locations: [{ name: '' }],
     campaignStartDate: null,
     campaignEndDate: null,
+    postingStartDate: null,
+    postingEndDate: null,
     campaignIndustries: '',
     campaignObjectives: '',
     campaignDescription: '',
@@ -342,7 +344,6 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     handleSubmit,
     getValues,
     reset,
-    control,
     setValue,
     watch,
     trigger,
@@ -399,7 +400,6 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     // console.log('form data', formData);
 
     // NOTE: Need to set default timeline here because of form change
-
     const startDateVal = data.campaignStartDate ? dayjs(data.campaignStartDate) : dayjs();
     const {campaignType} = data;
 
@@ -425,12 +425,25 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
         }));
     }
 
+    // Get posting dates from form data
+    const postingStartDateVal = data.postingStartDate ? dayjs(data.postingStartDate) : null;
+    const postingEndDateVal = data.postingEndDate ? dayjs(data.postingEndDate) : null;
+
     // Calculate dates for each timeline item based on duration
     let currentStartDate = startDateVal;
     const timelinesWithDates = processedTimelines.map((item) => {
+      // For "Posting" timeline, use the posting dates from form if provided
+      if (item.timeline_type?.name === 'Posting' && postingStartDateVal && postingEndDateVal) {
+        return {
+          ...item,
+          startDate: postingStartDateVal.format('ddd LL'),
+          endDate: postingEndDateVal.format('ddd LL'),
+        };
+      }
+
       const itemStartDate = currentStartDate;
       const itemEndDate = currentStartDate.add(parseInt(item.duration || 7, 10), 'day');
-      currentStartDate = itemEndDate; // Next item starts where this one ends
+      currentStartDate = itemEndDate;
 
       return {
         ...item,
@@ -483,8 +496,8 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
               id: 4,
               name: 'Posting',
               timeline_type: { name: 'Posting' },
-              startDate: startDateVal.add(20, 'day').format('ddd LL'),
-              endDate: startDateVal.add(22, 'day').format('ddd LL'),
+              startDate: postingStartDateVal ? postingStartDateVal.format('ddd LL') : startDateVal.add(20, 'day').format('ddd LL'),
+              endDate: postingEndDateVal ? postingEndDateVal.format('ddd LL') : startDateVal.add(22, 'day').format('ddd LL'),
               duration: 2,
               for: 'creator',
             },
