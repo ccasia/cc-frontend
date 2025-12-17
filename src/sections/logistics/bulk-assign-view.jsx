@@ -35,8 +35,8 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
   const { data: products } = useSWR(productsApiUrl, fetcher);
 
   const creators = useMemo(
-    () =>
-      logistics
+    () => {
+      const realCreators = logistics
         ?.filter((item) => ['PENDING_ASSIGNMENT', 'SCHEDULED'].includes(item.status))
         .map((item) => {
           const socialMediaHandle =
@@ -50,7 +50,10 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
             handle: socialMediaHandle ? `@${socialMediaHandle}` : '-',
             existingItems: item.deliveryDetails?.items || [],
           };
-        }) || [],
+        }) || [];
+
+      return realCreators;
+    },
     [logistics]
   );
 
@@ -92,6 +95,19 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
         });
 
       setAssignments(initialAssignments);
+      
+      // Restore selected creators and products from assignments
+      const assignedCreatorIds = Object.keys(initialAssignments);
+      const assignedProductIds = new Set();
+      
+      Object.values(initialAssignments).forEach((items) => {
+        items.forEach((item) => {
+          assignedProductIds.add(item.productId);
+        });
+      });
+      
+      setSelectedCreatorIds(assignedCreatorIds);
+      setSelectedProductIds([...assignedProductIds]);
     }
   }, [logistics, open, creators]);
 
@@ -287,7 +303,15 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     const isSelected = selectedCreatorIds.includes(creatorId);
 
     if (isSelected) {
+      // Remove from selected creators
       setSelectedCreatorIds((prev) => prev.filter((id) => id !== creatorId));
+      
+      // Remove all assignments for this creator
+      setAssignments((prev) => {
+        const next = { ...prev };
+        delete next[creatorId]; // Remove all assignments for this creator
+        return next;
+      });
     } else {
       setSelectedCreatorIds((prev) => [...prev, creatorId]);
 
@@ -302,7 +326,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
             .map((p) => ({
               productId: p.id,
               name: p.productName,
-              quantity: 1,
+              quantity: getProductQuantity(p.id), // Use base quantity instead of 1
             }));
 
           const mergedItems = [...currentItems];
@@ -317,6 +341,17 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
         });
       }
     }
+  };
+
+  const handleClose = () => {
+    // Reset everything to empty state when canceling
+    setAssignments({});
+    setSelectedCreatorIds([]);
+    setSelectedProductIds([]);
+    setProductBaseQuantities({});
+    setEditingProductId(null);
+    setEditingCreatorProduct(null);
+    onClose();
   };
 
   const handleConfirm = async () => {
@@ -339,9 +374,12 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
       await axiosInstance.post(`/api/logistics/bulk-assign/${campaign.id}`, payload);
       onUpdate();
       onClose();
+      
       setAssignments({});
       setSelectedCreatorIds([]);
       setSelectedProductIds([]);
+      setProductBaseQuantities({}); 
+      
       enqueueSnackbar('Assignments updated successfully', { variant: 'success' });
     } catch (error) {
       console.error('Bulk assign failed', error);
@@ -426,7 +464,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
             .map((p) => ({
               productId: p.id,
               name: p.productName,
-              quantity: 1,
+              quantity: getProductQuantity(p.id), // Use base quantity instead of 1
             }));
 
           // Loop through ALL creators and add missing products
@@ -448,8 +486,9 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
         });
       }
     } else {
-      // Deselect All
+      // Deselect All - Clear both selections and assignments
       setSelectedCreatorIds([]);
+      setAssignments({}); // Clear all assignments
     }
   };
 
@@ -457,7 +496,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     <Dialog
       fullScreen
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       PaperProps={{
         sx: { bgcolor: '#F4F4F4', p: 1 },
       }}
@@ -484,7 +523,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
           <Box fullWidth sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 1 }}>
             <Button
               variant="outlined"
-              onClick={onClose}
+              onClick={handleClose}
               sx={{
                 borderRadius: '8px',
                 color: '#231F20',
