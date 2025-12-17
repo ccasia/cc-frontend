@@ -107,10 +107,10 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
     imageUrl: '',
   });
 
-  // Fetch TikTok data from live API (same as creator side)
+  // Preload TikTok data when component mounts
   useEffect(() => {
     const fetchTikTokData = async () => {
-      if (!data?.id) return;
+      if (!data?.id || tiktokData) return; 
       
       try {
         setTiktokLoading(true);
@@ -124,10 +124,11 @@ const MediaKit = ({ id, noBigScreen, hideBackButton = false, hideShareButton = f
       }
     };
 
-    if (currentTab === 'tiktok' && data?.creator?.isTiktokConnected) {
+    // Preload TikTok data immediately when creator data is available
+    if (data?.creator?.isTiktokConnected && !tiktokData) {
       fetchTikTokData();
     }
-  }, [data, currentTab]);
+  }, [data, tiktokData]);
 
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
