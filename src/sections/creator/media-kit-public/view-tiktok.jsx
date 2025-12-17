@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 import { Box, Grid, Stack, alpha, useTheme, Typography, useMediaQuery } from '@mui/material';
 
 import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -26,11 +27,29 @@ const formatNumber = (num) => {
 //   to { width: 100%; }
 // `;
 
-const TopContentGrid = ({ topContents }) => {
+const TopContentGrid = ({ topContents, tiktokUsername }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topFiveContents = topContents?.slice(0, 5);
+  const topThreeContents = topContents?.slice(0, 3);
+
+  // Helper function to construct TikTok URL
+  const getTikTokVideoUrl = (content) => {
+    // Try to construct URL from username and video_id
+    if (tiktokUsername && content?.video_id) {
+      return `https://www.tiktok.com/@${tiktokUsername}/video/${content.video_id}`;
+    }
+    
+    // Fallback: try to extract from embed_link
+    if (content?.embed_link) {
+      const videoIdMatch = content.embed_link.match(/\/v1\/(\d+)/);
+      if (videoIdMatch && videoIdMatch[1] && tiktokUsername) {
+        return `https://www.tiktok.com/@${tiktokUsername}/video/${videoIdMatch[1]}`;
+      }
+    }
+    
+    return null;
+  };
 
   return (
     <Grid
@@ -49,7 +68,7 @@ const TopContentGrid = ({ topContents }) => {
       animate="show"
       initial="hidden"
     >
-      {topFiveContents.map((content, index) => (
+      {topThreeContents.map((content, index) => (
         <Grid
           item
           xs={12}
@@ -62,12 +81,72 @@ const TopContentGrid = ({ topContents }) => {
             show: { opacity: 1, y: 0 },
           }}
         >
-          <Box height={600} borderRadius={2} overflow="hidden">
-            <iframe
-              src={content?.embed_link}
-              title="tiktok"
-              style={{ height: '100%', width: '100%' }}
+          <Box
+            sx={{
+              position: 'relative',
+              height: 600,
+              overflow: 'hidden',
+              borderRadius: 2,
+              cursor: 'pointer',
+              '&:hover .image': {
+                scale: 1.05,
+              },
+            }}
+            onClick={() => {
+              const videoUrl = getTikTokVideoUrl(content);
+              if (videoUrl) {
+                window.open(videoUrl, '_blank');
+              }
+            }}
+          >
+            <Box
+              component="img"
+              className="image"
+              src={content?.cover_image_url}
+              alt={content?.title || `TikTok video ${index + 1}`}
+              sx={{
+                height: 1,
+                width: '100%',
+                transition: 'all .2s linear',
+                objectFit: 'cover',
+              }}
             />
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                width: '100%',
+                color: 'white',
+                p: isMobile ? 2 : 2,
+                px: 3,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  mb: 1,
+                }}
+              >
+                {content?.description?.slice(0, 100) || content?.title || 'TikTok Video'}
+              </Typography>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify icon="material-symbols:favorite-outline" width={20} />
+                  <Typography variant="subtitle2">{formatNumber(content?.like_count)}</Typography>
+                </Stack>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify icon="iconamoon:comment" width={20} />
+                  <Typography variant="subtitle2">{formatNumber(content?.comment_count)}</Typography>
+                </Stack>
+              </Stack>
+            </Box>
           </Box>
           {/* <Box
             sx={{
@@ -142,16 +221,16 @@ const TopContentGrid = ({ topContents }) => {
 TopContentGrid.propTypes = {
   topContents: PropTypes.arrayOf(
     PropTypes.shape({
-      image_url: PropTypes.string.isRequired,
+      video_id: PropTypes.string,
+      cover_image_url: PropTypes.string,
     })
   ).isRequired,
+  tiktokUsername: PropTypes.string,
 };
 
-const MediaKitSocialContent = ({ tiktokVideos, forceDesktop = false }) => {
+const MediaKitSocialContent = ({ tiktokVideos, tiktokUsername, forceDesktop = false }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
-
-  // const MediaKitSocialContent = ({ tiktokVideos }) => {
 
   if (!tiktokVideos?.length)
     return (
@@ -175,7 +254,7 @@ const MediaKitSocialContent = ({ tiktokVideos, forceDesktop = false }) => {
 
   return (
     <Box width={1}>
-      <TopContentGrid topContents={tiktokVideos} />
+      <TopContentGrid topContents={tiktokVideos} tiktokUsername={tiktokUsername} />
     </Box>
   );
 };
@@ -184,5 +263,6 @@ export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
   tiktokVideos: PropTypes.array,
+  tiktokUsername: PropTypes.string,
   forceDesktop: PropTypes.bool,
 };

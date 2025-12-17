@@ -35,8 +35,8 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
   const { data: products } = useSWR(productsApiUrl, fetcher);
 
   const creators = useMemo(
-    () =>
-      logistics
+    () => {
+      const realCreators = logistics
         ?.filter((item) => ['PENDING_ASSIGNMENT', 'SCHEDULED'].includes(item.status))
         .map((item) => {
           const socialMediaHandle =
@@ -50,7 +50,10 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
             handle: socialMediaHandle ? `@${socialMediaHandle}` : '-',
             existingItems: item.deliveryDetails?.items || [],
           };
-        }) || [],
+        }) || [];
+
+      return realCreators;
+    },
     [logistics]
   );
 
@@ -66,6 +69,11 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
   const [openEditQuantity, setOpenEditQuantity] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchCreator, setSearchCreator] = useState('');
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [tempQuantity, setTempQuantity] = useState('');
+  const [editingCreatorProduct, setEditingCreatorProduct] = useState(null); 
+  const [tempCreatorQuantity, setTempCreatorQuantity] = useState('');
+  const [productBaseQuantities, setProductBaseQuantities] = useState({}); // Track base quantities for Product List
 
   useEffect(() => {
     if (open && logistics) {
@@ -87,8 +95,150 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
         });
 
       setAssignments(initialAssignments);
+      
+      // Restore selected creators and products from assignments
+      const assignedCreatorIds = Object.keys(initialAssignments);
+      const assignedProductIds = new Set();
+      
+      Object.values(initialAssignments).forEach((items) => {
+        items.forEach((item) => {
+          assignedProductIds.add(item.productId);
+        });
+      });
+      
+      setSelectedCreatorIds(assignedCreatorIds);
+      setSelectedProductIds([...assignedProductIds]);
     }
   }, [logistics, open, creators]);
+
+  const getProductQuantity = (productId) => productBaseQuantities[productId] || 1;
+
+  // Handle quantity editing
+  const handleQuantityClick = (productId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Quantity click for product:', productId); 
+    setEditingProductId(productId);
+    const currentQuantity = getProductQuantity(productId);
+    setTempQuantity((currentQuantity || 1).toString());
+  };
+
+  const handleQuantityChange = (e) => {
+    const value = e.target.value;
+    if (value === '' || /^\d+$/.test(value)) {
+      setTempQuantity(value);
+    }
+  };
+
+  const handleQuantitySubmit = (productId) => {
+    const newQuantity = parseInt(tempQuantity, 10) || 0;
+    console.log('Submitting quantity:', newQuantity, 'for product:', productId, 'to creators:', selectedCreatorIds);
+    
+    if (newQuantity > 0) {
+      // Save the base quantity for the Product List
+      setProductBaseQuantities(prev => ({
+        ...prev,
+        [productId]: newQuantity
+      }));
+      
+      // Assign to selected creators if any
+      if (selectedCreatorIds.length > 0) {
+        const newAssignments = { ...assignments };
+        
+        selectedCreatorIds.forEach((creatorId) => {
+          if (!newAssignments[creatorId]) {
+            newAssignments[creatorId] = [];
+          }
+          
+          const existingIndex = newAssignments[creatorId].findIndex(item => item.productId === productId);
+          
+          const product = products.find(p => p.id === productId);
+          const productData = {
+            productId,
+            name: product?.productName,
+            quantity: newQuantity 
+          };
+          
+          console.log(`Assigning ${newQuantity} of ${product?.productName} to creator ${creatorId}`);
+          
+          if (existingIndex >= 0) {
+            newAssignments[creatorId][existingIndex] = productData;
+          } else {
+            newAssignments[creatorId].push(productData);
+          }
+        });
+        
+        console.log('New assignments:', newAssignments);
+        setAssignments(newAssignments);
+      }
+    }
+    
+    setEditingProductId(null);
+    setTempQuantity('');
+  };
+
+  const handleQuantityCancel = () => {
+    setEditingProductId(null);
+    setTempQuantity('');
+  };
+
+  // Handle individual creator-product quantity editing
+  const handleCreatorQuantityClick = (creatorId, productId, currentQuantity, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Creator quantity click:', creatorId, productId, currentQuantity);
+    setEditingCreatorProduct({ creatorId, productId });
+    setTempCreatorQuantity(currentQuantity.toString());
+  };
+
+  const handleCreatorQuantityChange = (e) => {
+    const value = e.target.value;
+    if (value === '' || /^\d+$/.test(value)) {
+      setTempCreatorQuantity(value);
+    }
+  };
+
+  const handleCreatorQuantitySubmit = () => {
+    const newQuantity = parseInt(tempCreatorQuantity, 10) || 0;
+    if (newQuantity >= 0 && editingCreatorProduct) {
+      const { creatorId, productId } = editingCreatorProduct;
+      const newAssignments = { ...assignments };
+      
+      if (!newAssignments[creatorId]) {
+        newAssignments[creatorId] = [];
+      }
+      
+      const existingIndex = newAssignments[creatorId].findIndex(item => item.productId === productId);
+      
+      if (newQuantity > 0) {
+        const product = products.find(p => p.id === productId);
+        const productData = {
+          productId,
+          name: product?.productName,
+          quantity: newQuantity
+        };
+        
+        if (existingIndex >= 0) {
+          newAssignments[creatorId][existingIndex] = productData;
+        } else {
+          newAssignments[creatorId].push(productData);
+        }
+      } else if (existingIndex >= 0) {
+        // Remove the product if quantity is 0
+        newAssignments[creatorId].splice(existingIndex, 1);
+      }
+      
+      setAssignments(newAssignments);
+    }
+    
+    setEditingCreatorProduct(null);
+    setTempCreatorQuantity('');
+  };
+
+  const handleCreatorQuantityCancel = () => {
+    setEditingCreatorProduct(null);
+    setTempCreatorQuantity('');
+  };
 
   const filteredCreators = creators.filter((creator) => {
     const matchedSearch =
@@ -153,7 +303,15 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     const isSelected = selectedCreatorIds.includes(creatorId);
 
     if (isSelected) {
+      // Remove from selected creators
       setSelectedCreatorIds((prev) => prev.filter((id) => id !== creatorId));
+      
+      // Remove all assignments for this creator
+      setAssignments((prev) => {
+        const next = { ...prev };
+        delete next[creatorId]; // Remove all assignments for this creator
+        return next;
+      });
     } else {
       setSelectedCreatorIds((prev) => [...prev, creatorId]);
 
@@ -168,7 +326,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
             .map((p) => ({
               productId: p.id,
               name: p.productName,
-              quantity: 1,
+              quantity: getProductQuantity(p.id), // Use base quantity instead of 1
             }));
 
           const mergedItems = [...currentItems];
@@ -183,6 +341,17 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
         });
       }
     }
+  };
+
+  const handleClose = () => {
+    // Reset everything to empty state when canceling
+    setAssignments({});
+    setSelectedCreatorIds([]);
+    setSelectedProductIds([]);
+    setProductBaseQuantities({});
+    setEditingProductId(null);
+    setEditingCreatorProduct(null);
+    onClose();
   };
 
   const handleConfirm = async () => {
@@ -205,9 +374,12 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
       await axiosInstance.post(`/api/logistics/bulk-assign/${campaign.id}`, payload);
       onUpdate();
       onClose();
+      
       setAssignments({});
       setSelectedCreatorIds([]);
       setSelectedProductIds([]);
+      setProductBaseQuantities({}); 
+      
       enqueueSnackbar('Assignments updated successfully', { variant: 'success' });
     } catch (error) {
       console.error('Bulk assign failed', error);
@@ -292,7 +464,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
             .map((p) => ({
               productId: p.id,
               name: p.productName,
-              quantity: 1,
+              quantity: getProductQuantity(p.id), // Use base quantity instead of 1
             }));
 
           // Loop through ALL creators and add missing products
@@ -314,8 +486,9 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
         });
       }
     } else {
-      // Deselect All
+      // Deselect All - Clear both selections and assignments
       setSelectedCreatorIds([]);
+      setAssignments({}); // Clear all assignments
     }
   };
 
@@ -323,7 +496,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     <Dialog
       fullScreen
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       PaperProps={{
         sx: { bgcolor: '#F4F4F4', p: 1 },
       }}
@@ -350,7 +523,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
           <Box fullWidth sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 1 }}>
             <Button
               variant="outlined"
-              onClick={onClose}
+              onClick={handleClose}
               sx={{
                 borderRadius: '8px',
                 color: '#231F20',
@@ -426,33 +599,6 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
           <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 4 }}>
             <Grid container spacing={4}>
               <Grid item xs={12} md={4} display="flex" flexDirection="column" alignItems="center">
-                <Button
-                  variant="contained"
-                  startIcon={<Iconify icon="mi:edit-alt" width={24} />}
-                  onClick={() => setOpenEditQuantity(true)}
-                  disabled={selectedCreatorIds.length === 0}
-                  sx={{
-                    mb: 4,
-                    px: 2,
-                    py: 1,
-                    boxShadow: '0px -4px 0px 0px #0B2DAD inset',
-                    fontSize: '1rem',
-                    fontWeight: 700,
-                    bgcolor: '#1340FF',
-                    color: '#fff',
-                    borderRadius: '8px',
-                    '&:hover': {
-                      bgcolor: '#133effd8',
-                      boxShadow: '0px -4px 0px 0px #0B2DAD inset',
-                    },
-                    '&:active': {
-                      boxShadow: '0px 0px 0px 0px #0B2DAD inset',
-                      transform: 'translateY(1px)',
-                    },
-                  }}
-                >
-                  Edit Quantity
-                </Button>
                 <Typography variant="body2" sx={{ mb: 2, alignItems: 'center', fontWeight: 600 }}>
                   Product List
                   <Typography
@@ -464,11 +610,10 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                     ({selectedProductIds.length} Selected)
                   </Typography>
                 </Typography>
-                <Stack spacing={1.5}>
+                <Stack spacing={1.5} sx={{ alignItems: 'flex-start', width: '33%' }}>
                   {products?.map((product) => (
                     <Box
                       key={product.id}
-                      onClick={() => handleSelectProduct(product)}
                       sx={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -476,7 +621,6 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         width: 'fit-content',
                         p: 1,
                         pl: 2,
-                        cursor: 'pointer',
                         borderRadius: '8px',
                         transition: 'all 0.2s ease',
                         bgcolor: selectedProductIds.includes(product.id) ? '#1340FF' : '#FFFFFF',
@@ -500,9 +644,85 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         },
                       }}
                     >
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      <Typography 
+                        variant="body2" 
+                        onClick={() => handleSelectProduct(product)}
+                        sx={{ 
+                          fontWeight: 600, 
+                          mr: 1, 
+                          cursor: 'pointer',
+                          flex: 1
+                        }}
+                      >
                         {product.productName}
                       </Typography>
+                      {selectedProductIds.includes(product.id) && (getProductQuantity(product.id) > 0 || editingProductId === product.id || selectedCreatorIds.length === 0) && (
+                        editingProductId === product.id ? (
+                          <Box
+                            sx={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              mx: 1,
+                            }}
+                          >
+                            <input
+                              type="text"
+                              value={tempQuantity}
+                              onChange={handleQuantityChange}
+                              onBlur={() => handleQuantitySubmit(product.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleQuantitySubmit(product.id);
+                                } else if (e.key === 'Escape') {
+                                  handleQuantityCancel();
+                                }
+                              }}
+                              style={{
+                                width: '21px',
+                                height: '16px',
+                                borderRadius: '12px', // More curvy/rounded
+                                border: '1px solid #EBEBEB',
+                                textAlign: 'center',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                color: '#000000', // Black font color
+                                backgroundColor: '#FFFFFF',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                              }}
+                            />
+                          </Box>
+                        ) : (
+                          <Box
+                            onClick={(e) => handleQuantityClick(product.id, e)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            sx={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '21px',
+                              height: '16px',
+                              bgcolor: '#FFFFFF',
+                              color: '#000000', 
+                              borderRadius: '12px', 
+                              border: '1px solid #EBEBEB',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              mx: 1,
+                              cursor: 'pointer',
+                              opacity: 1,
+                              boxSizing: 'border-box',
+                              zIndex: 10, 
+                              position: 'relative',
+                              '&:hover': {
+                                bgcolor: '#f5f5f5',
+                              },
+                            }}
+                          >
+                            {getProductQuantity(product.id) || 1}
+                          </Box>
+                        )
+                      )}
                       <IconButton
                         size="small"
                         sx={{ color: '#fff', opacity: 0.7, '&:hover': { opacity: 1 } }}
@@ -563,7 +783,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                   </Box>
                 </Stack>
               </Grid>
-              <Grid item xs={12} md={8}>
+              <Grid item xs={12} md={8} sx={{ pl: 2 }}>
                 <Stack direction="row" justifyContent="space-between" sx={{ mb: 2 }}>
                   <TextField
                     placeholder="Search Creator"
@@ -578,9 +798,28 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                       ),
                     }}
                     sx={{
-                      width: 300,
-                      bgcolor: '#fff',
-                      '& .MuiOutlinedInput-root': { borderRadius: '8px' },
+                      width: '400px',
+                      height: '40px',
+                      bgcolor: '#FFFFFF',
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        border: '1px solid #E7E7E7',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        height: '40px',
+                        '& fieldset': {
+                          border: 'none',
+                        },
+                        '&:hover fieldset': {
+                          border: 'none',
+                        },
+                        '&.Mui-focused fieldset': {
+                          border: 'none',
+                        },
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        padding: '6px 12px 9px 12px',
+                        height: 'auto',
+                      },
                     }}
                   />
                   <Select
@@ -605,6 +844,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                       borderColor: '#EBEBEB',
                       borderRadius: '8px',
                       color: '#1340FF',
+                      mr: 14, 
                     }}
                   >
                     <MenuItem value="all">All</MenuItem>
@@ -619,6 +859,10 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                     bgcolor: '#fff',
                     borderRadius: '12px',
                     overflow: 'hidden',
+                    ml: -3, // Move slightly to the left
+                    maxHeight: '400px', // Limit maximum height
+                    display: 'flex',
+                    flexDirection: 'column',
                   }}
                 >
                   <Box
@@ -647,19 +891,23 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                           </Typography>
                         </Typography>
                       </Grid>
-                      <Grid item xs={6} display="flex" alignItems="center">
+                      <Grid item xs={6} display="flex" alignItems="center" sx={{ justifyContent: 'flex-start', ml: -4 }}>
                         <Typography variant="subtitle2">Products</Typography>
                       </Grid>
                     </Grid>
                   </Box>
 
-                  {filteredCreators.map((creator) => {
+                  {/* Scrollable creators list container */}
+                  <Box 
+                    sx={{ 
+                      overflowY: 'auto', 
+                      maxHeight: '320px', 
+                      flex: 1,
+                    }}
+                  >
+                    {filteredCreators.map((creator) => {
                     const isSelected = selectedCreatorIds.includes(creator.id);
                     const assigned = assignments[creator.id] || [];
-                    const assignedString =
-                      assigned.length > 0
-                        ? assigned.map((item) => `${item.name} (${item.quantity})`).join(', ')
-                        : '-';
 
                     return (
                       <Box
@@ -692,25 +940,98 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                               </Typography>
                             </Box>
                           </Grid>
-                          <Grid item xs={6}>
-                            <Typography
-                              variant="body2"
-                              noWrap
-                              sx={{ color: assigned.length ? 'text.primary' : 'text.disabled' }}
-                            >
-                              {assignedString}
-                            </Typography>
+                          <Grid item xs={6} sx={{ ml: -4 }}>
+                            {assigned.length > 0 ? (
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                                {assigned.map((item, index) => (
+                                  <Box key={`${item.productId}-${index}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                                      {item.name}
+                                    </Typography>
+                                    {editingCreatorProduct?.creatorId === creator.id && editingCreatorProduct?.productId === item.productId ? (
+                                      <input
+                                        type="text"
+                                        value={tempCreatorQuantity}
+                                        onChange={handleCreatorQuantityChange}
+                                        onBlur={handleCreatorQuantitySubmit}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            handleCreatorQuantitySubmit();
+                                          } else if (e.key === 'Escape') {
+                                            handleCreatorQuantityCancel();
+                                          }
+                                        }}
+                                        style={{
+                                          width: '21px',
+                                          height: '16px',
+                                          borderRadius: '12px',
+                                          border: '1px solid #EBEBEB',
+                                          textAlign: 'center',
+                                          fontSize: '0.75rem',
+                                          fontWeight: 700,
+                                          color: '#000000',
+                                          backgroundColor: '#FFFFFF',
+                                          outline: 'none',
+                                          boxSizing: 'border-box',
+                                        }}
+                                      />
+                                    ) : (
+                                      <Box
+                                        onClick={(e) => handleCreatorQuantityClick(creator.id, item.productId, item.quantity, e)}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        sx={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          width: '21px',
+                                          height: '16px',
+                                          bgcolor: '#FFFFFF',
+                                          color: '#000000',
+                                          borderRadius: '12px',
+                                          border: '1px solid #EBEBEB',
+                                          fontSize: '0.75rem',
+                                          fontWeight: 700,
+                                          cursor: 'pointer',
+                                          opacity: 1,
+                                          boxSizing: 'border-box',
+                                          zIndex: 10,
+                                          position: 'relative',
+                                          '&:hover': {
+                                            bgcolor: '#f5f5f5',
+                                          },
+                                        }}
+                                      >
+                                        {item.quantity}
+                                      </Box>
+                                    )}
+                                    {index < assigned.length - 1 && (
+                                      <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                                        ,
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                ))}
+                              </Box>
+                            ) : (
+                              <Typography
+                                variant="body2"
+                                sx={{ color: 'text.disabled' }}
+                              >
+                                -
+                              </Typography>
+                            )}
                           </Grid>
                         </Grid>
                       </Box>
                     );
-                  })}
+                    })}
 
-                  {filteredCreators.length === 0 && (
-                    <Box sx={{ p: 4, textAlign: '', color: 'text.secondary' }}>
-                      <Typography>No creators found.</Typography>
-                    </Box>
-                  )}
+                    {filteredCreators.length === 0 && (
+                      <Box sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>
+                        <Typography>No creators found.</Typography>
+                      </Box>
+                    )}
+                  </Box>
                 </Stack>
               </Grid>
             </Grid>

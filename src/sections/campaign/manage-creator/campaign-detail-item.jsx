@@ -74,7 +74,8 @@ const CampaignDetailItem = ({ campaign }) => {
                 ? [{ value: 'tasks-v4', label: 'Submissions' }]
                 : [{ value: 'tasks', label: 'Activity' }]),
               { value: 'info', label: 'Campaign Details' },
-              { value: 'logistics', label: 'Logistics' },
+              // HIDE: logistics from creator
+              // { value: 'logistics', label: 'Logistics' },
             ].map((tab) => (
               <Button
                 key={tab.value}
@@ -159,9 +160,9 @@ const CampaignDetailItem = ({ campaign }) => {
           {currentTab === 'tasks-v4' && <CampaignV4Activity campaign={campaign} />}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
           {/* {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />} */}
-          {/* HIDE: logistics */}
+          {/* HIDE: logistics from creator */}
           {/* {currentTab === 'logistics' && <CampaignLogisticsView campaign={campaign} />} */}
-          {currentTab === 'logistics' && <CampaignLogistics campaign={campaign} />}
+          {/* {currentTab === 'logistics' && <CampaignLogistics campaign={campaign} />} */}
         </Box>
       </Stack>
     </Stack>

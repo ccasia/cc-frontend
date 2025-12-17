@@ -3,8 +3,12 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
+import { useForm, FormProvider } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
   Box,
   Chip,
@@ -15,6 +19,7 @@ import {
   Button,
   Select,
   Avatar,
+  Divider,
   MenuItem,
   IconButton,
   Typography,
@@ -36,6 +41,7 @@ import AgreementTemplate from 'src/template/agreement';
 
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
+import { RHFMultiSelect } from 'src/components/hook-form';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
@@ -64,15 +70,26 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [campaignType, setCampaignType] = useState('');
-  const [deliverables, setDeliverables] = useState([]);
+  // Remove local deliverables state, use RHF only
+
+  // RHF setup for deliverables step only
+  const deliverablesForm = useForm({
+    defaultValues: { deliverables: [] },
+  });
+  // Always use this for the current deliverables value
+  const deliverablesWatch = deliverablesForm.watch('deliverables');
   const [campaignManagers, setCampaignManagers] = useState([]);
   const [agreementTemplateId, setAgreementTemplateId] = useState('');
   
   const [adminOptions, setAdminOptions] = useState([]);
-  const [agreementTemplates, setAgreementTemplates] = useState([]);
+  const [, setAgreementTemplates] = useState([]); // agreementTemplates unused
   const [campaignDetails, setCampaignDetails] = useState(null);
   
-  // Step state (1: Admin Assignment, 2: Agreement, 3: Campaign Type, 4: Deliverables)
+  // Posting dates state
+  const [postingStartDate, setPostingStartDate] = useState(null);
+  const [postingEndDate, setPostingEndDate] = useState(null);
+  
+  // Step state (1: Admin Assignment, 2: Agreement, 3: Campaign Type, 4: Deliverables, 5: Posting Dates)
   const [currentStep, setCurrentStep] = useState(1);
   
   // Form validation
@@ -81,6 +98,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     deliverables: '',
     campaignManagers: '',
     agreementTemplateId: '',
+    postingStartDate: '',
+    postingEndDate: '',
   });
 
   // PDF related states
@@ -88,7 +107,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const templateModal = useBoolean();
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [pages, setPages] = useState(0);
-  const [displayPdf, setDisplayPdf] = useState(null);
+  const [, setDisplayPdf] = useState(null); // displayPdf unused
   const lgUp = useResponsive('up', 'lg');
 
   // Add debugging for admin data structure
@@ -201,21 +220,26 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     }
   }, [campaignDetails, isCSM, user?.role]);
 
-  const handleDeliverableChange = (event) => {
-    const {
-      target: { value },
-    } = event;
-    setDeliverables(typeof value === 'string' ? value.split(',') : value);
+  // Only update RHF state, not local
+  const handleDeliverableChange = (valueOrEvent) => {
+    let value = valueOrEvent;
+    if (valueOrEvent && valueOrEvent.target) {
+      value = typeof value === 'string' ? value.split(',') : value;
+    }
     setErrors((prev) => ({ ...prev, deliverables: '' }));
+    deliverablesForm.setValue('deliverables', value);
   };
 
+  // No need to sync local state to RHF anymore
+
   const handleAdminManagerChange = (event) => {
-    const {
-      target: { value },
-    } = event;
+    const { value } = event.target;
     setCampaignManagers(typeof value === 'string' ? value.split(',') : value);
     setErrors((prev) => ({ ...prev, campaignManagers: '' }));
   };
+
+  // Debug: log RHF deliverables value
+  console.log('Deliverables (RHF): ', deliverablesForm.getValues('deliverables'));
 
   const validateForm = () => {
     // Skip admin manager validation for admin/CSM users completing activation
@@ -232,11 +256,30 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       return '';
     };
 
+    // Always get the latest deliverables value from RHF
+    const currentDeliverables = deliverablesForm.getValues('deliverables');
+    
+    
+    const getPostingStartDateError = () => {
+      if (!postingStartDate) return 'Posting start date is required';
+      return '';
+    };
+    
+    const getPostingEndDateError = () => {
+      if (!postingEndDate) return 'Posting end date is required';
+      if (postingStartDate && postingEndDate && dayjs(postingEndDate).isBefore(dayjs(postingStartDate))) {
+        return 'End date must be after start date';
+      }
+      return '';
+    };
+    
     const newErrors = {
       campaignType: !campaignType ? 'Campaign type is required' : '',
-      deliverables: deliverables.length === 0 ? 'At least one deliverable is required' : '',
+      deliverables: !currentDeliverables || currentDeliverables.length === 0 ? 'At least one deliverable is required' : '',
       campaignManagers: getCampaignManagersError(),
       agreementTemplateId: !agreementTemplateId ? 'Agreement template is required' : '',
+      postingStartDate: getPostingStartDateError(),
+      postingEndDate: getPostingEndDateError(),
     };
     
     setErrors(newErrors);
@@ -244,42 +287,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     return !Object.values(newErrors).some((error) => error);
   };
 
-  const handleInitialActivate = async () => {
-    if (campaignManagers.length === 0) {
-      enqueueSnackbar('Please select at least one admin manager', { variant: 'error' });
-      return;
-    }
-    
-    setSubmitting(true);
-    
-    try {
-      console.log('Sending initial activation data:', {
-        campaignManager: campaignManagers,
-      });
-      
-      const formData = new FormData();
-      formData.append('data', JSON.stringify({
-        campaignManager: campaignManagers, // These are the admin user IDs
-      }));
-      
-      const response = await axios.post(`/api/campaign/initialActivateCampaign/${campaignId}`, formData);
-      console.log('Initial activation response:', response.data);
-      
-      enqueueSnackbar('Campaign assigned to admin successfully. Admin will complete the setup.', { variant: 'success' });
-      onClose();
-      
-      // Trigger data revalidation
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error('Error in initial campaign activation:', error);
-      console.error('Error details:', error.response?.data);
-      enqueueSnackbar(error.response?.data?.message || 'Failed to assign campaign to admin', { variant: 'error' });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // handleInitialActivate is unused, remove to fix lint warning
 
   const handleActivate = async () => {
     if (!validateForm()) {
@@ -291,19 +299,24 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     
     try {
       // Log what we're sending to help debug
+      const currentDeliverables = deliverablesForm.getValues('deliverables');
       console.log('Sending data:', {
         campaignType,
-        deliverables,
+        deliverables: currentDeliverables,
         campaignManager: campaignManagers,
         agreementTemplateId,
+        postingStartDate: postingStartDate ? dayjs(postingStartDate).toISOString() : null,
+        postingEndDate: postingEndDate ? dayjs(postingEndDate).toISOString() : null,
       });
       
       const formData = new FormData();
       formData.append('data', JSON.stringify({
         campaignType,
-        deliverables,
+        deliverables: currentDeliverables,
         campaignManager: campaignManagers, // These are the admin user IDs
         agreementTemplateId,
+        postingStartDate: postingStartDate ? dayjs(postingStartDate).toISOString() : null,
+        postingEndDate: postingEndDate ? dayjs(postingEndDate).toISOString() : null,
         status: 'ACTIVE', // Explicitly set status to ACTIVE
       }));
       
@@ -342,9 +355,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     if (!submitting) {
       // Reset form state
       setCampaignType('');
-      setDeliverables([]);
       setCampaignManagers([]);
       setAgreementTemplateId('');
+      setPostingStartDate(null);
+      setPostingEndDate(null);
       
       // Reset step based on user role and campaign status
       if ((isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
@@ -358,6 +372,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         deliverables: '',
         campaignManagers: '',
         agreementTemplateId: '',
+        postingStartDate: '',
+        postingEndDate: '',
       });
       
       onClose();
@@ -420,11 +436,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           return (
             <Box sx={{ py: 2 }}>
               <Typography 
-                variant="h4" 
+                variant="h3" 
                 sx={{ 
                   mb: 4, 
                   fontFamily: 'Instrument Serif',
-                  textAlign: 'left'
+                  textAlign: 'left',
+                  fontWeight: 100
                 }}
               >
                 Admin Already Assigned
@@ -447,7 +464,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 )}
               </Paper>
               
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <Button
                   variant="contained"
                   onClick={() => setCurrentStep(2)}
@@ -557,7 +574,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               )}
             </FormControl>
             
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
               <Button
                 variant="contained"
                 onClick={() => setCurrentStep(2)}
@@ -586,11 +603,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         return (
           <Box sx={{ py: 2 }}>
             <Typography 
-              variant="h4" 
+              variant="h3" 
               sx={{ 
                 mb: 4, 
                 fontFamily: 'Instrument Serif',
-                textAlign: 'left'
+                textAlign: 'left',
+                fontWeight: 100
               }}
             >
               Agreement Form
@@ -668,7 +686,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               </Box>
             )}
             
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => setCurrentStep(1)}
@@ -716,17 +734,19 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         
       case 3: // Campaign Type
         return (
-          <Box sx={{ py: 2 }}>
+          <Box display="flex" flexDirection="column" gap={2} py={2}>
             <Typography 
-              variant="h4" 
+              variant="h3" 
               sx={{ 
-                mb: 4, 
                 fontFamily: 'Instrument Serif',
-                textAlign: 'left'
+                textAlign: 'left',
+                fontWeight: 100
               }}
             >
               Select Campaign Type
             </Typography>
+
+            <Divider sx={{ mb: 1.5 }}/>
             
             <FormControl fullWidth error={!!errors.campaignType} sx={{ mb: 4 }}>
               <InputLabel>Campaign Type</InputLabel>
@@ -749,7 +769,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               )}
             </FormControl>
             
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => setCurrentStep(2)}
@@ -797,92 +817,179 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         
       case 4: // Campaign Deliverables
         return (
-          <Box sx={{ py: 2 }}>
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                mb: 4, 
-                fontFamily: 'Instrument Serif',
-                textAlign: 'left'
-              }}
-            >
-              Select Campaign Deliverables
-            </Typography>
-            
-            <FormControl fullWidth error={!!errors.deliverables} sx={{ mb: 4 }}>
-              <InputLabel>Campaign Deliverables</InputLabel>
-              <Select
-                multiple
-                value={deliverables}
-                onChange={handleDeliverableChange}
-                input={<OutlinedInput label="Campaign Deliverables" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip 
-                        key={value} 
-                        label={deliverableOptions.find(opt => opt.value === value)?.label || value} 
-                        size="small"
-                      />
-                    ))}
-                  </Box>
-                )}
-              >
-                {deliverableOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.deliverables && (
-                <FormHelperText>{errors.deliverables}</FormHelperText>
-              )}
-            </FormControl>
-            
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
-              <Button
-                variant="outlined"
-                onClick={() => setCurrentStep(3)}
+          <FormProvider {...deliverablesForm}>
+            <Box display="flex" flexDirection="column" gap={2} py={2}>
+              <Typography 
+                variant="h3" 
                 sx={{ 
-                  borderRadius: '8px',
-                  border: '1px solid #E7E7E7',
-                  backgroundColor: '#FFFFFF',
-                  color: '#666',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                  height: 36,
-                  minWidth: 80,
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  '&:hover': {
-                    backgroundColor: '#F8F9FA',
-                  },
+                  fontFamily: 'Instrument Serif',
+                  textAlign: 'left',
+                fontWeight: 100
                 }}
               >
-                Back
-              </Button>
+                Select Campaign Deliverables
+              </Typography>
               
-              <Button
-                variant="contained"
-                onClick={handleActivate}
-                disabled={deliverables.length === 0 || submitting}
+              <Divider sx={{ mb: 1 }}/>
+
+              <FormControl fullWidth error={!!errors.deliverables}>
+                <RHFMultiSelect
+                  name="deliverables"
+                  options={deliverableOptions}
+                  chip
+                  checkbox
+                  placeholder="Select deliverables"
+                  helperText={errors.deliverables}
+                  showClearAll
+                  // react-hook-form will handle value/onChange
+                  onChange={(val) => handleDeliverableChange(val)}
+                />
+              </FormControl>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setCurrentStep(3)}
+                  sx={{ 
+                    borderRadius: '8px',
+                    border: '1px solid #E7E7E7',
+                    backgroundColor: '#FFFFFF',
+                    color: '#666',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: 80,
+                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                    '&:hover': {
+                      backgroundColor: '#F8F9FA',
+                    },
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    // Always go to posting dates step for all campaign types
+                    setCurrentStep(5);
+                  }}
+                  disabled={!deliverablesWatch || deliverablesWatch.length === 0}
+                  sx={{ 
+                    borderRadius: '8px',
+                    backgroundColor: '#1340ff',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: 80,
+                    boxShadow: '0px -3px 0px 0px #102387 inset',
+                    '&:hover': {
+                      backgroundColor: '#1935dd',
+                    },
+                  }}
+                >
+                  Next
+                </Button>
+              </Box>
+            </Box>
+          </FormProvider>
+        );
+        
+      case 5: // Posting Dates
+        return (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box display="flex" flexDirection="column" gap={2} py={2}>
+              <Typography 
+                variant="h3" 
                 sx={{ 
-                  borderRadius: '8px',
-                  backgroundColor: '#1340ff',
-                  color: 'white',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                  height: 36,
-                  minWidth: 140,
-                  boxShadow: '0px -3px 0px 0px #102387 inset',
-                  '&:hover': {
-                    backgroundColor: '#1935dd',
-                  },
+                  fontFamily: 'Instrument Serif',
+                  fontWeight: 100,
+                  textAlign: 'left'
                 }}
               >
-                {submitting ? <CircularProgress size={20} /> : 'Activate Campaign'}
-              </Button>
+                Set Creator Posting Period
+              </Typography>
+
+              <Divider sx={{ mb: 0.5 }}/>
+              
+              <Typography variant='subtitle2' color="text.secondary" mb={-1}>Campaign Posting Period</Typography>
+
+              <Stack spacing={1} direction="row" alignItems="center">
+                <DatePicker
+                  value={postingStartDate}
+                  onChange={(newValue) => {
+                    setPostingStartDate(newValue);
+                    setErrors((prev) => ({ ...prev, postingStartDate: '' }));
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!errors.postingStartDate,
+                      helperText: errors.postingStartDate,
+                    },
+                  }}
+                />
+                <Typography>-</Typography>
+                <DatePicker
+                  value={postingEndDate}
+                  onChange={(newValue) => {
+                    setPostingEndDate(newValue);
+                    setErrors((prev) => ({ ...prev, postingEndDate: '' }));
+                  }}
+                  minDate={postingStartDate || undefined}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!errors.postingEndDate,
+                      helperText: errors.postingEndDate,
+                    },
+                  }}
+                />
+              </Stack>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setCurrentStep(4)}
+                  sx={{ 
+                    borderRadius: '8px',
+                    border: '1px solid #E7E7E7',
+                    backgroundColor: '#FFFFFF',
+                    color: '#666',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: 80,
+                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                    '&:hover': {
+                      backgroundColor: '#F8F9FA',
+                    },
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleActivate}
+                  disabled={submitting}
+                  sx={{ 
+                    borderRadius: '8px',
+                    backgroundColor: '#1340ff',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    minWidth: 140,
+                    boxShadow: '0px -3px 0px 0px #102387 inset',
+                    '&:hover': {
+                      backgroundColor: '#1935dd',
+                    },
+                  }}
+                >
+                  {submitting ? <CircularProgress size={20} /> : 'Activate Campaign'}
+                </Button>
+              </Box>
             </Box>
-          </Box>
+          </LocalizationProvider>
         );
         
       default:
@@ -895,7 +1002,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       open={open} 
       onClose={handleClose}
       fullWidth
-      maxWidth="md"
+      maxWidth={currentStep > 2 ? 'sm' : 'md'}
       PaperProps={{
         sx: {
           borderRadius: 2,
@@ -913,10 +1020,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           color: (theme) => theme.palette.grey[500],
         }}
       >
-        <Iconify icon="eva:close-fill" />
+        <Iconify icon="eva:close-fill" width={30} />
       </IconButton>
       
-      <DialogContent sx={{ pt: 5, pb: 3, px: 3 }}>
+      <DialogContent sx={{ py: 3, px: 3 }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />

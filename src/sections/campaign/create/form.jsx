@@ -351,6 +351,8 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     locations: [{ name: '' }],
     campaignStartDate: null,
     campaignEndDate: null,
+    postingStartDate: null,
+    postingEndDate: null,
     campaignIndustries: '',
     campaignObjectives: '',
     campaignDescription: '',
@@ -398,7 +400,6 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     handleSubmit,
     getValues,
     reset,
-    control,
     setValue,
     watch,
     trigger,
@@ -487,50 +488,122 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     setActiveStep(prevStep);
   };
 
-  const onDrop = useCallback(
-    (e) => {
-      const preview = URL.createObjectURL(e[0]);
-      setImage(preview);
-      setValue('image', e[0]);
-    },
-    [setValue]
-  );
-
-  const handleCampaginDontAdd = () => {
-    setcampaignDont([...campaignDont, '']);
-  };
-
-  const handleCampaginDontChange = (index, event) => {
-    const newDont = [...campaignDont];
-    newDont[index] = event.target.value;
-    setcampaignDont(newDont);
-    setValue('campaignDont', newDont);
-  };
-
-  const handleAddObjective = () => {
-    setcampaignDo([...campaignDo, '']);
-  };
-
-  const handleObjectiveChange = (index, event) => {
-    const newObjectives = [...campaignDo];
-    newObjectives[index] = event.target.value;
-    setcampaignDo(newObjectives);
-    setValue('campaignDo', newObjectives);
-  };
-
-  function hasEmptyValue(obj) {
-    // eslint-disable-next-line no-restricted-syntax
-    for (const key in obj) {
-      if (obj[key] === null || obj[key] === '') {
-        return true;
-      }
-    }
-    return false;
-  }
-
   const onSubmit = handleSubmit(async (data, stage) => {
     const formData = new FormData();
     // console.log('form data', formData);
+
+    // NOTE: Need to set default timeline here because of form change
+    const startDateVal = data.campaignStartDate ? dayjs(data.campaignStartDate) : dayjs();
+    const { campaignType } = data;
+
+    // Process default timelines based on campaign type
+    let processedTimelines = [];
+    if (defaultTimelines && defaultTimelines.length > 0) {
+      // Filter out 'Posting' for UGC campaigns (no posting)
+      const filteredTimelines =
+        campaignType === 'ugc'
+          ? defaultTimelines.filter((timeline) => timeline?.timelineType?.name !== 'Posting')
+          : defaultTimelines;
+
+      // Sort by order and map to expected format
+      processedTimelines = filteredTimelines
+        .sort((a, b) => a.order - b.order)
+        .map((elem) => ({
+          timeline_type: { id: elem?.timelineType?.id, name: elem?.timelineType?.name },
+          id: elem?.id,
+          duration: elem.duration,
+          for: elem?.for,
+          startDate: '',
+          endDate: '',
+        }));
+    }
+
+    // Get posting dates from form data
+    const postingStartDateVal = data.postingStartDate ? dayjs(data.postingStartDate) : null;
+    const postingEndDateVal = data.postingEndDate ? dayjs(data.postingEndDate) : null;
+
+    // Calculate dates for each timeline item based on duration
+    let currentStartDate = startDateVal;
+    const timelinesWithDates = processedTimelines.map((item) => {
+      // For "Posting" timeline, use the posting dates from form if provided
+      if (item.timeline_type?.name === 'Posting' && postingStartDateVal && postingEndDateVal) {
+        return {
+          ...item,
+          startDate: postingStartDateVal.format('ddd LL'),
+          endDate: postingEndDateVal.format('ddd LL'),
+        };
+      }
+
+      const itemStartDate = currentStartDate;
+      const itemEndDate = currentStartDate.add(parseInt(item.duration || 7, 10), 'day');
+      currentStartDate = itemEndDate;
+
+      return {
+        ...item,
+        startDate: itemStartDate.format('ddd LL'),
+        endDate: itemEndDate.format('ddd LL'),
+      };
+    });
+
+    // Fallback timeline if API doesn't return data
+    const fallbackTimeline = [
+      {
+        id: 1,
+        name: 'Open For Pitch',
+        timeline_type: { name: 'Open For Pitch' },
+        startDate: startDateVal.format('ddd LL'),
+        endDate: startDateVal.add(15, 'day').format('ddd LL'),
+        duration: 15,
+        for: 'creator',
+      },
+      {
+        id: 1,
+        name: 'Agreement',
+        timeline_type: { name: 'Agreement' },
+        startDate: startDateVal.add(15, 'day').format('ddd LL'),
+        endDate: startDateVal.add(16, 'day').format('ddd LL'),
+        duration: 1,
+        for: 'creator',
+      },
+      {
+        id: 2,
+        name: 'First Draft',
+        timeline_type: { name: 'First Draft' },
+        startDate: startDateVal.add(16, 'day').format('ddd LL'),
+        endDate: startDateVal.add(18, 'day').format('ddd LL'),
+        duration: 2,
+        for: 'creator',
+      },
+      {
+        id: 3,
+        name: 'Final Draft',
+        timeline_type: { name: 'Final Draft' },
+        startDate: startDateVal.add(18, 'day').format('ddd LL'),
+        endDate: startDateVal.add(20, 'day').format('ddd LL'),
+        duration: 2,
+        for: 'creator',
+      },
+      ...(campaignType !== 'ugc'
+        ? [
+            {
+              id: 4,
+              name: 'Posting',
+              timeline_type: { name: 'Posting' },
+              startDate: postingStartDateVal
+                ? postingStartDateVal.format('ddd LL')
+                : startDateVal.add(20, 'day').format('ddd LL'),
+              endDate: postingEndDateVal
+                ? postingEndDateVal.format('ddd LL')
+                : startDateVal.add(22, 'day').format('ddd LL'),
+              duration: 2,
+              for: 'creator',
+            },
+          ]
+        : []),
+    ];
+
+    const timeline = timelinesWithDates.length > 0 ? timelinesWithDates : fallbackTimeline;
+
     const adjustedData = {
       ...data,
       audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),

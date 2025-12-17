@@ -198,19 +198,7 @@ const CampaignDetails = () => {
             />
           )}
 
-          <FormField label="Interests">
-            <RHFMultiSelect
-              name="audienceCreatorPersona"
-              placeholder="Select creator persona"
-              checkbox
-              chip
-              options={interestsLists.map((item) => ({
-                value: item.toLowerCase(),
-                label: item,
-              }))}
-            />
-          </FormField>
-          <FormField label="Age">
+          <FormField label="Audience Age">
             <RHFMultiSelect
               name="audienceAge"
               checkbox
@@ -224,10 +212,9 @@ const CampaignDetails = () => {
               placeholder="Select Age"
             />
           </FormField>
-          <FormField label="Language">
-            <RHFAutocomplete
-              multiple
-              disableCloseOnSelect
+
+          <FormField label="Audience Language">
+            <RHFMultiSelect
               name="audienceLanguage"
               placeholder="Select Language"
               options={langList.sort()}

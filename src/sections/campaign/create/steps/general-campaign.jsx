@@ -21,6 +21,12 @@ const FormField = ({ label, children }) => (
       sx={{
         fontWeight: 600,
         color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+        fontSize: '0.875rem',
+        mb: !label ? '1.575rem' : 0.5,
+        '& .MuiFormLabel-asterisk': {
+          color: '#FF3500',
+          display: !label ? 'none' : 'inline-flex',
+        },
       }}
     >
       {label}
@@ -31,7 +37,12 @@ const FormField = ({ label, children }) => (
 
 const GeneralCampaign = () => {
   const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
-  const { setValue } = useFormContext();
+  const { setValue, watch } = useFormContext();
+
+  const startDate = watch('campaignStartDate');
+  const endDate = watch('campaignEndDate');
+  const postingStartDate = watch('postingStartDate');
+  const postingEndDate = watch('postingEndDate');
 
   useEffect(() => {
     if (socket) {
@@ -66,6 +77,92 @@ const GeneralCampaign = () => {
         <FormField label="Campaign Title">
           <RHFTextField name="campaignTitle" placeholder="Campaign Title" />
         </FormField>
+
+        {/* Campaign Dates */}
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <FormField label="Campaign Start Date">
+              <DatePicker
+                value={startDate}
+                onChange={(newValue) => {
+                  setValue('campaignStartDate', newValue, { shouldValidate: true });
+                }}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    placeholder: 'Select start date',
+                    error: false,
+                    size: 'small',
+                    sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                  },
+                }}
+              />
+            </FormField>
+          </Grid>
+          <Grid item xs={6}>
+            <FormField label="Campaign End Date">
+              <DatePicker
+                value={endDate}
+                onChange={(newValue) => {
+                  setValue('campaignEndDate', newValue, { shouldValidate: true });
+                }}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    placeholder: 'Select end date',
+                    error: false,
+                    size: 'small',
+                    sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                  },
+                }}
+              />
+            </FormField>
+          </Grid>
+        </Grid>
+
+        {/* Posting Dates */}
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Box flex={1}>
+            <FormField label="Campaign Posting Period">
+              <DatePicker
+                value={postingStartDate}
+                onChange={(newValue) => {
+                  setValue('postingStartDate', newValue, { shouldValidate: true });
+                }}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    placeholder: 'Select start date',
+                    error: false,
+                    size: 'small',
+                    sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                  },
+                }}
+              />
+            </FormField>
+          </Box>
+          <Typography sx={{ mt: 3.5 }}>-</Typography>
+          <Box flex={1}>
+            <FormField label="">
+              <DatePicker
+                value={postingEndDate}
+                onChange={(newValue) => {
+                  setValue('postingEndDate', newValue, { shouldValidate: true });
+                }}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    placeholder: 'Select end date',
+                    error: false,
+                    size: 'small',
+                    sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                  },
+                }}
+              />
+            </FormField>
+          </Box>
+        </Stack>
+
         <FormField label="Campaign Info">
           <RHFTextField
             name="campaignDescription"

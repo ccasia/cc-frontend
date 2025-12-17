@@ -47,9 +47,10 @@ import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
-import CampaignLogistics from '../campaign-logistics';
-// HIDE: logistics
+// HIDE: logistics - NEW LOGISTICS COMMENTED OUT
 // import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
+
+import CampaignLogistics from '../campaign-logistics';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalytics from '../campaign-analytics';
@@ -387,17 +388,19 @@ const CampaignDetailView = ({ id }) => {
                   ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
                   : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
                 { label: 'Campaign Analytics', value: 'analytics' },
-                // HIDE: logistics
-                // campaign?.logisticsType && campaign.logisticsType !== ''
-                //   ? {
-                //       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                //       value: 'logistics',
-                //     }
-                //   : null,
-                {
-                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                  value: 'logistics',
-                },
+                // OLD LOGISTICS RESTORED
+                campaign?.logisticsType && campaign.logisticsType !== ''
+                  ? {
+                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                      value: 'logistics',
+                    }
+                  : null,
+                // NEW LOGISTICS COMMENTED OUT
+                // {
+                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                //   value: 'logistics',
+                // },
+                { label: 'FAQ', value: 'faq' },
               ]
             : // Admin/other user tabs
               [
@@ -438,21 +441,18 @@ const CampaignDetailView = ({ id }) => {
                   label: `Invoices (${campaignInvoices?.length || 0})`,
                   value: 'invoices',
                 },
-                // HIDE: logistics
+                // OLD LOGISTICS RESTORED - Show unconditionally for admin
+                {
+                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                  value: 'logistics',
+                },
+                // CONDITIONAL LOGISTICS (commented out)
                 // campaign?.logisticsType && campaign.logisticsType !== ''
                 //   ? {
                 //       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
                 //       value: 'logistics',
                 //     }
                 //   : null,
-                {
-                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                  value: 'logistics',
-                },
-                // {
-                //   label: `Logistics (${campaign?.logistic?.length || 0})`,
-                //   value: 'logistics',
-                // },
               ]
           )
             .filter(Boolean)
@@ -581,6 +581,7 @@ const CampaignDetailView = ({ id }) => {
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
+    // NEW LOGISTICS COMMENTED OUT
     // logistics: isClient ? (
     //   <CampaignLogisticsView
     //     campaign={campaign}
@@ -596,6 +597,7 @@ const CampaignDetailView = ({ id }) => {
     //     isAdmin={!isClient}
     //   />
     // ),
+    // OLD LOGISTICS RESTORED
     logistics: isClient ? (
       <CampaignLogisticsClient campaign={campaign} />
     ) : (
@@ -718,33 +720,33 @@ const CampaignDetailView = ({ id }) => {
 
   const renderActionButtons = () => {
     if (isClient) {
-      // HIDE: logistics
-      //   if (currentTab === 'logistics') {
-      //     return (
-      //       <Button
-      //         variant="contained"
-      //         size="small"
-      //         startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
-      //         onClick={() => setOpenBulkAssign(true)}
-      //         disabled={isDisabled}
-      //         sx={{
-      //           height: 42,
-      //           borderRadius: 1,
-      //           color: 'white',
-      //           bgcolor: '#1340ff',
-      //           border: '1px solid #1340ff',
-      //           borderBottom: '4px solid #0e2fd6',
-      //           fontWeight: 600,
-      //           fontSize: '0.95rem',
-      //           px: 2,
-      //           whiteSpace: 'nowrap',
-      //           '&:hover': { bgcolor: '#0e2fd6' },
-      //         }}
-      //       >
-      //         Edit & Bulk Assign
-      //       </Button>
-      //     );
-      //   }
+      // HIDE: logistics - button moved to logistics view
+      // if (currentTab === 'logistics') {
+      //   return (
+      //     <Button
+      //       variant="contained"
+      //       size="small"
+      //       startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
+      //       onClick={() => setOpenBulkAssign(true)}
+      //       disabled={isDisabled}
+      //       sx={{
+      //         height: 42,
+      //         borderRadius: 1,
+      //         color: 'white',
+      //         bgcolor: '#1340ff',
+      //         border: '1px solid #1340ff',
+      //         borderBottom: '4px solid #0e2fd6',
+      //         fontWeight: 600,
+      //         fontSize: '0.95rem',
+      //         px: 2,
+      //         whiteSpace: 'nowrap',
+      //         '&:hover': { bgcolor: '#0e2fd6' },
+      //       }}
+      //     >
+      //       Edit & Bulk Assign
+      //     </Button>
+      //   );
+      // }
       return null;
     }
 
@@ -791,7 +793,7 @@ const CampaignDetailView = ({ id }) => {
       );
     }
 
-    // HIDE: logistics
+    // HIDE: logistics - button moved to logistics view
     // if (currentTab === 'logistics') {
     //   return (
     //     <Button
