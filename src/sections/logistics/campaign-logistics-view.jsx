@@ -12,6 +12,7 @@ import {
   TextField,
   MenuItem,
   InputAdornment,
+  Button,
 } from '@mui/material';
 import Iconify from 'src/components/iconify';
 import { fetcher } from 'src/utils/axios';
@@ -79,7 +80,7 @@ export default function CampaignLogisticsView({
 
   return (
     <>
-      <Grid container spacing={2} sx={{ mb: 5 }}>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} md={9}>
           <Card
             sx={{
@@ -127,66 +128,130 @@ export default function CampaignLogisticsView({
           alignItems: 'center',
           justifyContent: 'space-between',
           mb: 2,
-          gap: 2,
+          mt: 1,
+          gap: 1,
         }}
       >
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{ width: { xs: '100%', sm: 'auto' }, flexGrow: 1, justifyContent: 'space-between' }}
-        >
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           {/* Status Dropdown */}
           <Select
-            size="small"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            IconComponent={() => (
-              <Iconify
-                icon="material-symbols:filter-list-rounded"
-                width={20}
-                sx={{
-                  color: '#231F20',
-                  pointerEvents: 'none', // Allows clicking through to the select
-                  position: 'absolute',
-                  right: 12,
-                }}
-              />
-            )}
-            sx={{
-              width: { xs: 120, md: 160 },
-              bgcolor: '#fff',
+          size="small"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          IconComponent={() => (
+            <Iconify
+              icon="material-symbols:filter-list-rounded"
+              width={20}
+              sx={{
+                color: '#231F20',
+                pointerEvents: 'none',
+                position: 'absolute',
+                right: 12,
+              }}
+            />
+          )}
+          sx={{
+            width: 176,
+            height: 48,
+            backgroundColor: '#FFFFFF',
+            borderRadius: '8px',
+            color: 'text.primary',
+            '& .MuiSelect-select': {
+              paddingTop: '12px',
+              paddingRight: '12px',
+              paddingBottom: '12px',
+              paddingLeft: '14px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            },
+            '& .MuiOutlinedInput-notchedOutline': {
               borderColor: '#EBEBEB',
-              borderRadius: '8px',
-              color: 'text.primary',
-            }}
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-          {/* </TextField> */}
+              borderWidth: '1px',
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#EBEBEB',
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#EBEBEB',
+              borderWidth: '1px',
+            },
+          }}
+        >
+          {STATUS_OPTIONS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </Select>
 
-          {/* Search By Name */}
-          <TextField
-            // fullWidth
-            value={filterName}
-            onChange={handleFilterName}
-            placeholder="Search creator..."
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              maxWidth: { md: 400 },
-              bgcolor: 'background.paper',
-            }}
-          />
-        </Stack>
+        {/* Search By Name */}
+        <TextField
+          // fullWidth
+          value={filterName}
+          onChange={handleFilterName}
+          placeholder="Search"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            width: 234,
+            '& .MuiOutlinedInput-root': {
+              height: 48,
+              borderRadius: '8px',
+              backgroundColor: '#FFFFFF',
+              paddingTop: '6px',
+              paddingRight: '100px',
+              paddingBottom: '9px',
+              paddingLeft: '10px',
+              boxShadow: 'inset 0px -3px 0px 0px #E7E7E7',
+              '& fieldset': {
+                borderColor: '#E7E7E7',
+                borderWidth: '1px',
+              },
+              '&:hover fieldset': {
+                borderColor: '#E7E7E7',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#E7E7E7',
+                borderWidth: '1px',
+              },
+            },
+          }}
+        />
+        </Box>
+
+        {/* Edit & Bulk Assign Button */}
+        <Button
+          variant="contained"
+          size="small"
+          onClick={() => setOpenBulkAssign(true)}
+          sx={{
+            width: 179,
+            height: 43,
+            borderRadius: '8px',
+            color: 'white',
+            backgroundColor: '#3A3A3C',
+            paddingTop: '10px',
+            paddingRight: '48px',
+            paddingBottom: '13px',
+            paddingLeft: '48px',
+            boxShadow: 'inset 0px -3px 0px 0px rgba(0, 0, 0, 0.45)',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            whiteSpace: 'nowrap',
+            gap: '6px',
+            '&:hover': { 
+              backgroundColor: '#2A2A2C',
+            },
+          }}
+        >
+          Edit & Bulk Assign
+        </Button>
       </Box>
       <LogisticsList campaignId={campaign?.id} logistics={filteredLogistics} isAdmin={isAdmin} />
 
