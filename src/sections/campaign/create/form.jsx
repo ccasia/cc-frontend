@@ -4,12 +4,12 @@ import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { pdfjs } from 'react-pdf';
 import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { enqueueSnackbar } from 'notistack';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm, useFieldArray } from 'react-hook-form';
 import { lazy, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -27,6 +27,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompany from 'src/hooks/use-get-company';
+import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -39,19 +40,10 @@ import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
 
 import CreateBrand from './brandDialog';
-import CampaignAdminManager from './steps/admin-manager';
-import CampaignDetails from './steps/campaign-details';
-import CampaignLogistics from './steps/campaign-logistics';
-import CampaignType from './steps/campaign-type';
-import CampaignFormUpload from './steps/form-upload';
-import GeneralCampaign from './steps/general-campaign';
-import CampaignImageUpload from './steps/image-upload';
-import LogisticRemarks from './steps/logistic-remarks';
-import OtherAttachments from './steps/other-attachments';
-import ReservationSlots from './steps/reservation-slots';
 import SelectBrand from './steps/select-brand';
-import SelectTimeline from './steps/select-timeline';
-import TimelineTypeModal from './steps/timeline-type-modal';
+import GeneralCampaign from './steps/general-campaign';
+import CampaignDetails from './steps/campaign-details';
+import FinaliseCampaign from './steps/finalise-campaign';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 // new URL(
@@ -60,19 +52,14 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pd
 // ).toString();
 
 const steps = [
-  { title: 'Select Client or Agency', logo: '👾', color: '#D8FF01' },
-  { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
-  { title: 'Creator Persona', logo: '👥', color: '#FFF0E5' },
-  { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
-  { title: 'Campaign Type', logo: '⎏', color: '#8A5AFE' },
+  { title: 'Select a Client or Brand', logo: '👾', color: '#D8FF01' },
+  { title: 'Campaign Information', logo: '💬', color: '#8A5AFE' },
+  { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
   // HIDE: logistics
   // { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
   // { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
   // { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
-  { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
-  { title: 'Select Campaign Manager(s)', logo: '⛑️', color: '#FFF0E5' },
-  { title: 'Agreement Form', logo: '✍️', color: '#026D54' },
-  { title: 'Other Attachment ( Optional )', logo: '🖇️', color: '#FF3500' },
+  { title: 'Finalise Campaign', logo: '📝', color: '#FF3500' },
 ];
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
@@ -81,50 +68,31 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
   const { user } = useAuthContext();
   const openCompany = useBoolean();
   const openBrand = useBoolean();
-  const modal = useBoolean();
   const confirmation = useBoolean();
   const openPackage = useBoolean();
 
   const { data: companyListData, mutate: mutateCompanyList } = useGetCompany();
+  const { data: defaultTimelines } = useGetDefaultTimeLine();
 
   const [status, setStatus] = useState('');
   const [activeStep, setActiveStep] = useState(0);
-  const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [image, setImage] = useState(null);
   const [brandState, setBrandState] = useState('');
-  const [campaignDo, setcampaignDo] = useState(['']);
-  const [campaignDont, setcampaignDont] = useState(['']);
-  const [pages, setPages] = useState(0);
   const [hasCreditError, setHasCreditError] = useState(false);
 
   const pdfModal = useBoolean();
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleCloseCompanyDialog = () => {
-    setOpenCompanyDialog(false);
-  };
-
-  const handleOpenCompanyDialog = () => {
-    setOpenCompanyDialog(true);
-    handleClose();
-  };
-
   const campaignSchema = Yup.object().shape({
-    campaignIndustries: Yup.string().required('Campaign Industry is required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required')
+      .required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string()
       .required('Campaign title is required')
       .max(40, 'Campaign title must be 40 characters or less'),
-    campaignObjectives: Yup.string().required('Campaign objectives is required'),
+    campaignObjectives: Yup.array()
+      .min(1, 'At least one objective is required')
+      .required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
     // productName: Yup.string().required('Product or Service name is required.'),
     audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
@@ -164,20 +132,24 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       .min(1, 'Must have at least 1 image')
       .max(3, 'Must have at most 3 images'),
     campaignManager: Yup.array()
-      .min(1, 'At least One Admin is required')
-      .required('Admin Manager is required'),
+      .min(1, 'At least 1 manager is required')
+      .required('Campaign Manager is required'),
     campaignCredits: Yup.number()
       .min(1, 'Minimum need to be 1')
       .required('Campaign credits is required'),
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    campaignIndustries: Yup.string().required('Campaign industry is required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required')
+      .required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string()
       .required('Campaign title is required')
       .max(40, 'Campaign title must be 40 characters or less'),
-    campaignObjectives: Yup.string().required('Campaign objectives is required'),
+    campaignObjectives: Yup.array()
+      .min(1, 'At least one objective is required')
+      .required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
     productName: Yup.string(),
   });
@@ -220,20 +192,23 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       ),
   });
 
-  const campaignImagesSchema = Yup.object().shape({
+  const finaliseCampaignSchema = Yup.object().shape({
+    campaignManager: Yup.array()
+      .min(1, 'At least 1 manager is required')
+      .required('Campaign Manager is required'),
+    campaignType: Yup.string().required('Campaign type is required.'),
+    deliverables: Yup.array()
+      .min(1, 'At least one deliverable is required')
+      // .test('has-ugc-videos', 'UGC Videos is required', (value) => value?.includes('UGC_VIDEOS'))
+      .required('Deliverables are required'),
     campaignImages: Yup.array()
       .min(1, 'Must have at least 1 image')
       .max(3, 'Must have at most 3 images'),
-  });
-
-  const campaignAdminSchema = Yup.object().shape({
-    campaignManager: Yup.array()
-      .min(1, 'At least One Admin is required')
-      .required('Admin Manager is required'),
-  });
-
-  const timelineSchema = Yup.object().shape({
-    campaignStartDate: Yup.string().required('Campaign Start Date is required.'),
+    rawFootage: Yup.boolean(),
+    photos: Yup.boolean(),
+    ads: Yup.boolean(),
+    referencesLinks: Yup.array().notRequired(),
+    otherAttachments: Yup.array().notRequired(),
   });
 
   const clientSchema = Yup.object().shape({
@@ -248,21 +223,6 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     campaignCredits: Yup.number()
       .min(1, 'Minimum need to be 1')
       .required('Campaign credits is required'),
-  });
-
-  const agreementSchema = Yup.object().shape({
-    agreementFrom: Yup.object().required('Campaign agreement is required.'),
-  });
-
-  const campaignTypeSchema = Yup.object().shape({
-    campaignType: Yup.string().required('Campaign type is required.'),
-    deliverables: Yup.array()
-      .min(1, 'At least one deliverable is required')
-      // .test('has-ugc-videos', 'UGC Videos is required', (value) => value?.includes('UGC_VIDEOS'))
-      .required('Deliverables are required'),
-    rawFootage: Yup.boolean(),
-    photos: Yup.boolean(),
-    ads: Yup.boolean(),
   });
 
   const logisticsSchema = Yup.object().shape({
@@ -307,32 +267,15 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
         return campaignInformationSchema;
       case 2:
         return campaignRequirementSchema;
-      case 3:
-        return campaignImagesSchema;
-      case 4:
-        return campaignTypeSchema;
       // HIDE: Logistics
-
-      // case 5:
+      // case 3:
       //   return logisticsSchema;
-      // case 6:
+      // case 4:
       //   return Yup.object().shape({});
-      // case 7:
-      //   return Yup.object().shape({});
-      // case 8:
-      //   return timelineSchema;
-      // case 9:
-      //   return campaignAdminSchema;
-      // case 10:
-      //   return agreementSchema;
-      // default:
-      //   return campaignSchema;
       case 5:
-        return timelineSchema;
+        return Yup.object().shape({});
       case 6:
-        return campaignAdminSchema;
-      case 7:
-        return agreementSchema;
+        return finaliseCampaignSchema;
       default:
         return campaignSchema;
     }
@@ -377,7 +320,6 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     campaignImages: [],
     campaignManager: [],
     agreementFrom: null,
-    timeline: [],
     campaignTasksAdmin: [],
     campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
     otherAttachments: [],
@@ -387,6 +329,8 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     rawFootage: false,
     photos: false,
     campaignCredits: null,
+    isV4Submission: false,
+    submissionVersion: 'v2',
   };
 
   const methods = useForm({
@@ -406,48 +350,11 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     formState: { isValid, errors },
   } = methods;
 
-  const values = watch();
-
-  const {
-    append: doAppend,
-    fields: doFields,
-    remove: doRemove,
-  } = useFieldArray({
-    name: 'campaignDo',
-    control,
-  });
-
-  const {
-    append: dontAppend,
-    fields: dontFields,
-    remove: dontRemove,
-  } = useFieldArray({
-    name: 'campaignDont',
-    control,
-  });
-
-  const handleDropMultiFile = useCallback(
-    (acceptedFiles) => {
-      const files = values.campaignImages || [];
-
-      const newFiles = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-      );
-
-      setValue('campaignImages', [...files, ...newFiles]);
-    },
-    [setValue, values.campaignImages]
-  );
-
   useEffect(() => {
     if (brandState !== '') {
       setValue('campaignBrand', brandState);
     }
   }, [brandState, setValue]);
-
-  const isStepOptional = (step) => step === 5 || step === 10;
 
   const handleNext = async () => {
     // setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -494,7 +401,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
 
     // NOTE: Need to set default timeline here because of form change
     const startDateVal = data.campaignStartDate ? dayjs(data.campaignStartDate) : dayjs();
-    const { campaignType } = data;
+    const {campaignType} = data;
 
     // Process default timelines based on campaign type
     let processedTimelines = [];
@@ -589,12 +496,8 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
               id: 4,
               name: 'Posting',
               timeline_type: { name: 'Posting' },
-              startDate: postingStartDateVal
-                ? postingStartDateVal.format('ddd LL')
-                : startDateVal.add(20, 'day').format('ddd LL'),
-              endDate: postingEndDateVal
-                ? postingEndDateVal.format('ddd LL')
-                : startDateVal.add(22, 'day').format('ddd LL'),
+              startDate: postingStartDateVal ? postingStartDateVal.format('ddd LL') : startDateVal.add(20, 'day').format('ddd LL'),
+              endDate: postingEndDateVal ? postingEndDateVal.format('ddd LL') : startDateVal.add(22, 'day').format('ddd LL'),
               duration: 2,
               for: 'creator',
             },
@@ -611,6 +514,14 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       photos: data.deliverables.includes('PHOTOS'),
       ads: data.deliverables.includes('ADS'),
       crossPosting: data.deliverables.includes('CROSS_POSTING'),
+      timeline, // Add the generated timeline
+      // Convert arrays to comma-separated strings for schema compatibility
+      campaignIndustries: Array.isArray(data.campaignIndustries)
+        ? data.campaignIndustries.join(', ')
+        : data.campaignIndustries,
+      campaignObjectives: Array.isArray(data.campaignObjectives)
+        ? data.campaignObjectives.join(', ')
+        : data.campaignObjectives,
     };
 
     console.log('Adjusted Data before sending:', adjustedData); // Debug log
@@ -618,8 +529,6 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     // Append data correctly to FormData
     formData.append('rawFootage', adjustedData.rawFootage ? 'true' : 'false');
     formData.append('photos', adjustedData.photos ? 'true' : 'false');
-
-    delete adjustedData?.othersAudienceLocation;
 
     const combinedData = { ...adjustedData, ...{ campaignStage: stage } };
 
@@ -685,40 +594,20 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
           return <GeneralCampaign />;
         case 2:
           return <CampaignDetails />;
-        case 3:
-          return <CampaignImageUpload />;
-        case 4:
-          return <CampaignType />;
         // HIDE: logistics
-        // case 5:
+        // case 3:
         //   return <CampaignLogistics />;
-        // case 6:
+        // case 4:
         //   return <ReservationSlots />;
-        // case 7:
+        // case 5:
         //   return <LogisticRemarks />;
-        // case 8:
-        //   return <SelectTimeline />;
-        // case 9:
-        //   return <CampaignAdminManager />;
-        // case 10:
-        //   return <CampaignFormUpload pdfModal={pdfModal} />;
-        // case 11:
-        //   return <OtherAttachments />;
-        // default:
-        //   return <SelectBrand />;
-        case 5:
-          return <SelectTimeline />;
-        case 6:
-          return <CampaignAdminManager />;
-        case 7:
-          return <CampaignFormUpload pdfModal={pdfModal} />;
-        case 8:
-          return <OtherAttachments />;
+        case 3:
+          return <FinaliseCampaign />;
         default:
           return <SelectBrand />;
       }
     },
-    [pdfModal, openCompany, openBrand, openPackage]
+    [openCompany, openBrand, openPackage]
   );
 
   const handlePackageLinkSuccess = async () => {
@@ -1018,8 +907,6 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
         setValue={setValue}
         clientId={getValues('client')?.id}
       />
-
-      <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
 
       <PDFEditor
         open={pdfModal.value}
