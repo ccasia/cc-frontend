@@ -259,17 +259,13 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     // Always get the latest deliverables value from RHF
     const currentDeliverables = deliverablesForm.getValues('deliverables');
     
-    // Posting date validation - only required for 'normal' (UGC With Posting) campaign type
-    const requiresPostingDates = campaignType === 'normal';
     
     const getPostingStartDateError = () => {
-      if (!requiresPostingDates) return '';
       if (!postingStartDate) return 'Posting start date is required';
       return '';
     };
     
     const getPostingEndDateError = () => {
-      if (!requiresPostingDates) return '';
       if (!postingEndDate) return 'Posting end date is required';
       if (postingStartDate && postingEndDate && dayjs(postingEndDate).isBefore(dayjs(postingStartDate))) {
         return 'End date must be after start date';
@@ -873,15 +869,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 <Button
                   variant="contained"
                   onClick={() => {
-                    // If campaign type is 'normal' (With Posting), go to posting dates step
-                    // Otherwise, activate directly
-                    if (campaignType === 'normal') {
-                      setCurrentStep(5);
-                    } else {
-                      handleActivate();
-                    }
+                    // Always go to posting dates step for all campaign types
+                    setCurrentStep(5);
                   }}
-                  disabled={!deliverablesWatch || deliverablesWatch.length === 0 || (campaignType !== 'normal' && submitting)}
+                  disabled={!deliverablesWatch || deliverablesWatch.length === 0}
                   sx={{ 
                     borderRadius: '8px',
                     backgroundColor: '#1340ff',
@@ -889,18 +880,14 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                     fontWeight: 600,
                     fontSize: '0.8rem',
                     height: 36,
-                    minWidth: campaignType === 'normal' ? 80 : 140,
+                    minWidth: 80,
                     boxShadow: '0px -3px 0px 0px #102387 inset',
                     '&:hover': {
                       backgroundColor: '#1935dd',
                     },
                   }}
                 >
-                  {(() => {
-                    if (campaignType === 'normal') return 'Next';
-                    if (submitting) return <CircularProgress size={20} />;
-                    return 'Activate Campaign';
-                  })()}
+                  Next
                 </Button>
               </Box>
             </Box>
@@ -983,7 +970,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 <Button
                   variant="contained"
                   onClick={handleActivate}
-                  disabled={!postingStartDate || !postingEndDate || submitting}
+                  disabled={submitting}
                   sx={{ 
                     borderRadius: '8px',
                     backgroundColor: '#1340ff',
