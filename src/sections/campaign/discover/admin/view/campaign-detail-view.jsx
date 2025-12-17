@@ -47,8 +47,8 @@ import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
-// HIDE: logistics
-import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
+// HIDE: logistics - NEW LOGISTICS COMMENTED OUT
+// import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
 import CampaignLogistics from '../campaign-logistics';
 
@@ -390,17 +390,18 @@ const CampaignDetailView = ({ id }) => {
                   ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
                   : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
                 { label: 'Campaign Analytics', value: 'analytics' },
-                // HIDE: logistics
-                // campaign?.logisticsType && campaign.logisticsType !== ''
-                //   ? {
-                //       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                //       value: 'logistics',
-                //     }
-                //   : null,
-                {
-                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                  value: 'logistics',
-                },
+                // OLD LOGISTICS RESTORED
+                campaign?.logisticsType && campaign.logisticsType !== ''
+                  ? {
+                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                      value: 'logistics',
+                    }
+                  : null,
+                // NEW LOGISTICS COMMENTED OUT
+                // {
+                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                //   value: 'logistics',
+                // },
                 { label: 'FAQ', value: 'faq' },
               ]
             : // Admin/other user tabs
@@ -442,21 +443,18 @@ const CampaignDetailView = ({ id }) => {
                   label: `Invoices (${campaignInvoices?.length || 0})`,
                   value: 'invoices',
                 },
-                // HIDE: logistics
+                // OLD LOGISTICS RESTORED - Show unconditionally for admin
+                {
+                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                  value: 'logistics',
+                },
+                // CONDITIONAL LOGISTICS (commented out)
                 // campaign?.logisticsType && campaign.logisticsType !== ''
                 //   ? {
                 //       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
                 //       value: 'logistics',
                 //     }
                 //   : null,
-                {
-                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                  value: 'logistics',
-                },
-                // {
-                //   label: `Logistics (${campaign?.logistic?.length || 0})`,
-                //   value: 'logistics',
-                // },
               ]
           )
             .filter(Boolean)
@@ -585,26 +583,28 @@ const CampaignDetailView = ({ id }) => {
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
-    logistics: isClient ? (
-      <CampaignLogisticsView
-        campaign={campaign}
-        openBulkAssign={openBulkAssign}
-        setOpenBulkAssign={setOpenBulkAssign}
-        isAdmin={!isClient} // not client > admin
-      />
-    ) : (
-      <CampaignLogisticsView
-        campaign={campaign}
-        openBulkAssign={openBulkAssign}
-        setOpenBulkAssign={setOpenBulkAssign}
-        isAdmin={!isClient}
-      />
-    ),
+    // NEW LOGISTICS COMMENTED OUT
     // logistics: isClient ? (
-    //   <CampaignLogisticsClient campaign={campaign} />
+    //   <CampaignLogisticsView
+    //     campaign={campaign}
+    //     openBulkAssign={openBulkAssign}
+    //     setOpenBulkAssign={setOpenBulkAssign}
+    //     isAdmin={!isClient} // not client > admin
+    //   />
     // ) : (
-    //   <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
+    //   <CampaignLogisticsView
+    //     campaign={campaign}
+    //     openBulkAssign={openBulkAssign}
+    //     setOpenBulkAssign={setOpenBulkAssign}
+    //     isAdmin={!isClient}
+    //   />
     // ),
+    // OLD LOGISTICS RESTORED
+    logistics: isClient ? (
+      <CampaignLogisticsClient campaign={campaign} />
+    ) : (
+      <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
+    ),
     invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
