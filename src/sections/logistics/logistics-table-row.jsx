@@ -89,9 +89,14 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus }) {
               ))}
             </Box>
           ) : (
-            <Typography variant="body2" color="text.secondary">
-              -
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', pl: 5 }}>
+              <Box
+                component="img"
+                src="/assets/icons/components/logisticpencil.svg"
+                alt="No product assigned"
+                sx={{ width: 14, height: 14 }}
+              />
+            </Box>
           )}
         </TableCell>
         {/* Column 3: Status */}

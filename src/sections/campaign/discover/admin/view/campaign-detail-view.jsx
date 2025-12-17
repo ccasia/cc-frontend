@@ -47,9 +47,10 @@ import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
-import CampaignLogistics from '../campaign-logistics';
 // HIDE: logistics
-// import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
+import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
+
+import CampaignLogistics from '../campaign-logistics';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalytics from '../campaign-analytics';
@@ -584,26 +585,26 @@ const CampaignDetailView = ({ id }) => {
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
-    // logistics: isClient ? (
-    //   <CampaignLogisticsView
-    //     campaign={campaign}
-    //     openBulkAssign={openBulkAssign}
-    //     setOpenBulkAssign={setOpenBulkAssign}
-    //     isAdmin={!isClient} // not client > admin
-    //   />
-    // ) : (
-    //   <CampaignLogisticsView
-    //     campaign={campaign}
-    //     openBulkAssign={openBulkAssign}
-    //     setOpenBulkAssign={setOpenBulkAssign}
-    //     isAdmin={!isClient}
-    //   />
-    // ),
     logistics: isClient ? (
-      <CampaignLogisticsClient campaign={campaign} />
+      <CampaignLogisticsView
+        campaign={campaign}
+        openBulkAssign={openBulkAssign}
+        setOpenBulkAssign={setOpenBulkAssign}
+        isAdmin={!isClient} // not client > admin
+      />
     ) : (
-      <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
+      <CampaignLogisticsView
+        campaign={campaign}
+        openBulkAssign={openBulkAssign}
+        setOpenBulkAssign={setOpenBulkAssign}
+        isAdmin={!isClient}
+      />
     ),
+    // logistics: isClient ? (
+    //   <CampaignLogisticsClient campaign={campaign} />
+    // ) : (
+    //   <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
+    // ),
     invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
@@ -722,33 +723,33 @@ const CampaignDetailView = ({ id }) => {
 
   const renderActionButtons = () => {
     if (isClient) {
-      // HIDE: logistics
-      //   if (currentTab === 'logistics') {
-      //     return (
-      //       <Button
-      //         variant="contained"
-      //         size="small"
-      //         startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
-      //         onClick={() => setOpenBulkAssign(true)}
-      //         disabled={isDisabled}
-      //         sx={{
-      //           height: 42,
-      //           borderRadius: 1,
-      //           color: 'white',
-      //           bgcolor: '#1340ff',
-      //           border: '1px solid #1340ff',
-      //           borderBottom: '4px solid #0e2fd6',
-      //           fontWeight: 600,
-      //           fontSize: '0.95rem',
-      //           px: 2,
-      //           whiteSpace: 'nowrap',
-      //           '&:hover': { bgcolor: '#0e2fd6' },
-      //         }}
-      //       >
-      //         Edit & Bulk Assign
-      //       </Button>
-      //     );
-      //   }
+      // HIDE: logistics - button moved to logistics view
+      // if (currentTab === 'logistics') {
+      //   return (
+      //     <Button
+      //       variant="contained"
+      //       size="small"
+      //       startIcon={<Iconify icon="eva:edit-2-fill" width={20} />}
+      //       onClick={() => setOpenBulkAssign(true)}
+      //       disabled={isDisabled}
+      //       sx={{
+      //         height: 42,
+      //         borderRadius: 1,
+      //         color: 'white',
+      //         bgcolor: '#1340ff',
+      //         border: '1px solid #1340ff',
+      //         borderBottom: '4px solid #0e2fd6',
+      //         fontWeight: 600,
+      //         fontSize: '0.95rem',
+      //         px: 2,
+      //         whiteSpace: 'nowrap',
+      //         '&:hover': { bgcolor: '#0e2fd6' },
+      //       }}
+      //     >
+      //       Edit & Bulk Assign
+      //     </Button>
+      //   );
+      // }
       return null;
     }
 
@@ -795,7 +796,7 @@ const CampaignDetailView = ({ id }) => {
       );
     }
 
-    // HIDE: logistics
+    // HIDE: logistics - button moved to logistics view
     // if (currentTab === 'logistics') {
     //   return (
     //     <Button
