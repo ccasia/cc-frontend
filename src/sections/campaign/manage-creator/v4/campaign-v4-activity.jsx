@@ -1688,8 +1688,8 @@ const CampaignV4Activity = ({ campaign }) => {
         </Card>
       )}
 
-      {/* Logistics Information Card - Always visible when agreement is approved */}
-      {isAgreementApproved && (
+      {/* HIDE: Logistics Information Card from creator */}
+      {/* {isAgreementApproved && (
         <Card
           sx={{
             overflow: 'visible',
@@ -1751,11 +1751,10 @@ const CampaignV4Activity = ({ campaign }) => {
 
           <Collapse in={expandedSections.logistics}>
             <Divider />
-            {/* The Form Component */}
             <LogisticsForm user={user} campaignId={campaign.id} onUpdate={() => mutateLogistic()} />
           </Collapse>
         </Card>
-      )}
+      )} */}
 
       {/* Collapsible Submission Cards */}
       <Stack spacing={2} sx={{ p: 1, mx: -1 }}>

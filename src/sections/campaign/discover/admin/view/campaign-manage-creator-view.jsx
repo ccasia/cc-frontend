@@ -39,6 +39,7 @@ import InvoicePDF from 'src/sections/invoice/invoice-pdf';
 
 import Submissions from '../creator-stuff/submissions';
 import TimelineCreator from '../creator-stuff/timeline/view/page';
+// OLD LOGISTICS RESTORED
 import LogisticView from '../creator-stuff/logistics/view/logistic-view';
 
 const BoxStyle = {
@@ -165,6 +166,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             { label: 'Overview', value: 'profile' },
             // { label: 'Submissions', value: 'submission' },
             // { label: 'Invoice', value: 'invoice' },
+            // OLD LOGISTICS RESTORED
             { label: 'Logistics', value: 'logistics' },
             // { label: 'Timeline', value: 'timeline' }, // Add timeline when backend is ready
           ].map((tab) => (
@@ -832,6 +834,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             deliverables={{ deliverables, deliverableMutate }}
           />
         )}
+        {/* OLD LOGISTICS RESTORED */}
         {currentTab === 'logistics' && <LogisticView campaign={campaign} creator={data} />}
 
         {currentTab === 'invoice' && invoice ? (
