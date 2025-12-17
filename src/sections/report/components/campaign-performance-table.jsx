@@ -446,7 +446,8 @@ const CampaignPerformanceTable = () => {
                       minWidth: 200,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 2,
+                      gap: 1,
+                      pr: 2,
                     }}
                   >
                     <Avatar

@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
 
@@ -118,14 +119,6 @@ const PlatformToggle = ({ lgUp, availablePlatforms, selectedPlatform, handlePlat
   );
 };
 
-PlatformToggle.propTypes = {
-  lgUp: PropTypes.bool.isRequired,
-  availablePlatforms: PropTypes.arrayOf(PropTypes.string).isRequired,
-  selectedPlatform: PropTypes.string.isRequired,
-  handlePlatformChange: PropTypes.func.isRequired,
-};
-
-// Helper function to get platform label
 const getPlatformLabel = (platform) => {
   if (platform === 'ALL') return 'Total Creators';
   if (platform === 'Instagram') return 'Instagram Posts';
@@ -177,6 +170,7 @@ const RenderEngagementCard = ({
             justifyContent: 'space-around',
             height: { xs: 70, sm: 85 },
             minWidth: 0,
+            mr: 1,
           }}
         >
           <Typography
@@ -245,15 +239,6 @@ const RenderEngagementCard = ({
       </Box>
     </Box>
   );
-};
-
-RenderEngagementCard.propTypes = {
-  title: PropTypes.string.isRequired,
-  value: PropTypes.number.isRequired,
-  metricKey: PropTypes.string.isRequired,
-  filteredInsightsData: PropTypes.arrayOf(PropTypes.object).isRequired,
-  filteredSubmissions: PropTypes.arrayOf(PropTypes.object).isRequired,
-  findTopPerformerByMetric: PropTypes.func.isRequired,
 };
 
 const CampaignAnalytics = ({ campaign }) => {
@@ -453,15 +438,7 @@ const CampaignAnalytics = ({ campaign }) => {
   };
 
   // eslint-disable-next-line react/no-unstable-nested-components
-  const PlatformOverviewLayout = ({
-    insightsData: componentInsightsData,
-    summaryStats: componentSummaryStats,
-    platformCounts: componentPlatformCounts,
-    selectedPlatform: componentSelectedPlatform,
-  }) => {
-    // calculateAdditionalMetrics removed because componentSummaryStats already provides
-    // totalShares, totalReach, totalInteractions, and avgEngagementRate.
-
+  const PlatformOverviewLayout = () => {
     // eslint-disable-next-line react/no-unstable-nested-components
     const PostingsCard = () => (
       <Box
@@ -644,6 +621,10 @@ const CampaignAnalytics = ({ campaign }) => {
           borderRadius={3}
           sx={{
             height: '400px',
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'auto', // or 'hidden' if you want to hide overflow
+            boxSizing: 'border-box',
             backgroundColor: '#F5F5F5',
             p: 3,
             display: 'flex',
@@ -675,22 +656,34 @@ const CampaignAnalytics = ({ campaign }) => {
                     topEngagementCreator && topEngagementCreator.platform === 'Instagram'
                       ? '#E4405F'
                       : '#000000',
-                  mr: 2,
+                  mr: 1,
                 }}
               >
                 {creator?.user?.name?.charAt(0) || 'U'}
               </Avatar>
-              <Box>
+              <Box
+                sx={{
+                  height: 40, // Adjust as needed for your layout
+                  maxWidth: 100, // Set a max width for the name area
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}
+              >
                 <Typography
                   fontSize={14}
                   fontWeight={600}
                   color="#231F20"
                   sx={{ textAlign: 'left' }}
+                  noWrap
+                  textOverflow="ellipsis"
+                  overflow="hidden"
                 >
-                  {creator?.user?.name || 'Unknown Creator'}
+                  {creator?.user?.name}
                 </Typography>
                 <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
-                  @{creator?.user?.name?.toLowerCase().replace(/\s+/g, '') || 'unknown'}
+                  {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
                 </Typography>
               </Box>
             </Box>
@@ -1426,13 +1419,6 @@ const CampaignAnalytics = ({ campaign }) => {
         </Grid>
       </Box>
     );
-  };
-
-  PlatformOverviewLayout.propTypes = {
-    insightsData: PropTypes.array.isRequired,
-    summaryStats: PropTypes.object.isRequired,
-    platformCounts: PropTypes.object.isRequired,
-    selectedPlatform: PropTypes.string.isRequired,
   };
 
   // Add this new function before CoreMetricsSection
