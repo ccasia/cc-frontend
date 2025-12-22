@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import PropTypes from 'prop-types';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { PieChart } from '@mui/x-charts';
 import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
@@ -19,6 +19,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useSnackbar } from 'src/components/snackbar';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -32,6 +34,8 @@ import {
 } from 'src/utils/socialMetricsCalculator';
 
 import Iconify from 'src/components/iconify';
+
+import PCRReportPage from './pcr-report-page';
 
 const PlatformToggle = ({ lgUp, availablePlatforms, selectedPlatform, handlePlatformChange }) => {
   const platformConfig = [
@@ -246,9 +250,13 @@ const CampaignAnalytics = ({ campaign }) => {
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
   const [selectedPlatform, setSelectedPlatform] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
+  const [reportState, setReportState] = useState('generate'); // 'generate', 'loading', 'view'
+  const [showReportPage, setShowReportPage] = useState(false);
   const itemsPerPage = 5;
 
   const lgUp = useResponsive('up', 'lg');
+  const { socket } = useSocketContext();
+  const { enqueueSnackbar } = useSnackbar();
 
   // Extract posting submissions with URLs directly from campaign prop
   const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
@@ -305,6 +313,8 @@ const CampaignAnalytics = ({ campaign }) => {
     isLoading: loadingInsights,
     error: insightsError,
     loadingProgress,
+    mutate: refreshInsights,
+    clearCache,
   } = useSocialInsights(postingSubmissions, campaignId);
 
   // Filter insights data based on selected platform
@@ -347,6 +357,43 @@ const CampaignAnalytics = ({ campaign }) => {
   const handlePrevPage = () => {
     setCurrentPage((prev) => prev - 1);
   };
+
+
+  // Socket event listener for media kit connections
+  useEffect(() => {
+    if (!socket || !campaignId) return;
+
+    const handleAnalyticsRefresh = (data) => {
+      console.log('📡 Received analytics refresh event:', data);
+      
+      // Check if this user has submissions in current campaign
+      const hasUserSubmissions = postingSubmissions.some(
+        sub => sub.user === data.userId
+      );
+      
+      if (hasUserSubmissions) {
+        console.log(`🔄 ${data.platform} connected for user, refreshing analytics...`);
+        enqueueSnackbar(`${data.platform} connected! Refreshing analytics...`, { 
+          variant: 'success' 
+        });
+        
+        // Clear cache and re-fetch with a small delay to ensure API is ready
+        clearCache();
+        setTimeout(() => {
+          refreshInsights();
+        }, 1500);
+      }
+    };
+
+    // Join campaign room and listen for analytics refresh events
+    socket.joinCampaign(campaignId);
+    socket.on('analytics:refresh', handleAnalyticsRefresh);
+    
+    return () => {
+      socket.off('analytics:refresh', handleAnalyticsRefresh);
+      socket.leaveCampaign(campaignId);
+    };
+  }, [socket, campaignId, postingSubmissions, clearCache, refreshInsights, enqueueSnackbar]);
 
   // Reset to page 1 when platform changes
   const handlePlatformChange = (platform) => {
@@ -1901,8 +1948,17 @@ const CampaignAnalytics = ({ campaign }) => {
     loadingInsights: PropTypes.bool,
   };
 
+
   return (
     <Box>
+      {/* Conditionally render PCR Report Page or Performance Summary */}
+      {showReportPage ? (
+        <PCRReportPage 
+          campaign={campaign} 
+          onBack={() => setShowReportPage(false)} 
+        />
+      ) : (
+        <>
       {/* Platform Toggle */}
       {availablePlatforms.length > 1 && (
         <PlatformToggle
@@ -1913,9 +1969,75 @@ const CampaignAnalytics = ({ campaign }) => {
         />
       )}
 
-      <Typography fontSize={24} fontWeight={600} fontFamily="Aileron" gutterBottom>
+
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
         Performance Summary
       </Typography>
+        
+        {/* Generate Report Button */}
+        {/* <Button
+          disabled={reportState === 'loading'}
+          sx={{
+            width: '186.07px',
+            height: '44px',
+            borderRadius: '8px',
+            gap: '6px',
+            padding: '10px 16px 13px 16px',
+            background: reportState === 'loading' 
+              ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)' 
+              : 'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
+            color: '#FFFFFF',
+            fontWeight: 600,
+            fontSize: '14px',
+            textTransform: 'none',
+            '&:hover': {
+              background: reportState === 'loading' 
+                ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)' 
+                : 'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+            },
+            '&:active': {
+              boxShadow: reportState === 'loading' 
+                ? '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset' 
+                : '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
+              transform: reportState === 'loading' ? 'none' : 'translateY(1px)',
+            },
+            '&:disabled': {
+              color: '#FFFFFF',
+            }
+          }}
+          onClick={() => {
+            if (reportState === 'generate') {
+              // Start loading
+              setReportState('loading');
+              
+              // Simulate report generation (replace with actual API call)
+              setTimeout(() => {
+                setReportState('view');
+              }, 3000); // 3 second loading simulation
+              
+            } else if (reportState === 'view') {
+              // Show PCR report page
+              setShowReportPage(true);
+            }
+          }}
+        >
+          {reportState === 'loading' && (
+            <CircularProgress 
+              size={16} 
+              sx={{ 
+                color: '#FFFFFF', 
+                mr: 1 
+              }} 
+            />
+          )}
+          {reportState === 'generate' && 'Generate Report'}
+          {reportState === 'loading' && 'Generating...'}
+          {reportState === 'view' && 'View Report'}
+        </Button> */}
+      </Box>
 
       {/* Loading state for insights */}
       {loadingInsights && (
@@ -2246,6 +2368,8 @@ const CampaignAnalytics = ({ campaign }) => {
             <ChevronRightRounded size={16} />
           </Button>
         </Box>
+      )}
+        </>
       )}
     </Box>
   );
