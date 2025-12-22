@@ -36,6 +36,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
+import MediaKitPopup from './media-kit-popup';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 const ChipStyle = {
@@ -79,6 +80,7 @@ const CampaignModal = ({
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
 
   const dialogContentRef = useRef(null);
   const images = campaign?.campaignBrief?.images || [];
@@ -158,7 +160,12 @@ const CampaignModal = ({
 
   const handlePitch = () => {
     // Check if user is in the target list for media kit requirement
-    const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+    const targetUserIds = [
+      'cmeuvjc6b003on401rn4pw62b',
+      'cmf813vtd0000pd3psk46u4lt', 
+      'cmf8289xu000cpdmcj4a4fosl', 
+      'user456'
+    ];
     const isTargetUser = targetUserIds.includes(user?.id);
     
     // Check if media kit is connected
@@ -168,6 +175,10 @@ const CampaignModal = ({
     const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
     
     if (isTargetUser && (!hasMediaKit || !hasPaymentDetails)) {
+      // Show media kit popup with pitch error message if media kit is missing
+      if (!hasMediaKit) {
+        setShowMediaKitPopup(true);
+      }
       return;
     }
     
@@ -684,7 +695,12 @@ const CampaignModal = ({
                       if (isCreditsFinished) return true;
                       
                       // Check if user is in the target list for media kit requirement
-                      const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+                      const targetUserIds = [
+                        'cmeuvjc6b003on401rn4pw62b',
+                        'cmf813vtd0000pd3psk46u4lt', 
+                        'cmf8289xu000cpdmcj4a4fosl', 
+                        'user456'
+                      ];
                       const isTargetUser = targetUserIds.includes(user?.id);
                       
                       // Check if media kit is connected
@@ -756,7 +772,12 @@ const CampaignModal = ({
             {/* Warning message for incomplete profile */}
             {(() => {
               // Check if user is in the target list for media kit requirement
-              const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+              const targetUserIds = [
+                'cmeuvjc6b003on401rn4pw62b',
+                'cmf813vtd0000pd3psk46u4lt', 
+                'cmf8289xu000cpdmcj4a4fosl', 
+                'user456'
+              ];
               const isTargetUser = targetUserIds.includes(user?.id);
               
               // Check if media kit is connected
@@ -1486,6 +1507,13 @@ const CampaignModal = ({
           )}
         </DialogContent>
       </Dialog>
+
+      <MediaKitPopup 
+        open={showMediaKitPopup} 
+        onClose={() => setShowMediaKitPopup(false)} 
+        userId={user?.id || ''}
+        showPitchError={true}
+      />
     </Dialog>
   );
 };

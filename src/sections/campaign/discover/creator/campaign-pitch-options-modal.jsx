@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { grey } from '@mui/material/colors';
 import {
@@ -19,12 +19,14 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 
+import MediaKitPopup from './media-kit-popup';
 import CampaignPitchTextModal from './pitch/pitch-text-modal';
 import CampaignPitchVideoModal from './pitch/pitch-video-modal';
 
 const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video }) => {
   const smUp = useResponsive('sm', 'down');
   const { user } = useAuthContext();
+  const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
 
   const hasDraft = useMemo(
     () => campaign?.draftPitch && campaign.draftPitch.find((item) => item.userId === user?.id),
@@ -41,7 +43,12 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
 
   const handlePitch = () => {
     // Check if user is in the target list for media kit requirement
-    const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+    const targetUserIds = [
+      'cmeuvjc6b003on401rn4pw62b',
+      'cmf813vtd0000pd3psk46u4lt', 
+      'cmf8289xu000cpdmcj4a4fosl', 
+      'user456'
+    ];
     const isTargetUser = targetUserIds.includes(user?.id);
     
     // Check if media kit is connected
@@ -53,6 +60,10 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
     
     // For target users, check both media kit and payment details
     if (isTargetUser && (!hasMediaKit || !hasPaymentDetails)) {
+      // Show media kit popup with pitch error message if media kit is missing
+      if (!hasMediaKit) {
+        setShowMediaKitPopup(true);
+      }
       return;
     }
     
@@ -228,6 +239,13 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
         }}
       />
       <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} />
+      
+      <MediaKitPopup 
+        open={showMediaKitPopup} 
+        onClose={() => setShowMediaKitPopup(false)} 
+        userId={user?.id || ''}
+        showPitchError={true}
+      />
     </>
   );
 };
