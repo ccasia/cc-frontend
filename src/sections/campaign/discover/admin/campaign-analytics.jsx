@@ -35,7 +35,7 @@ import {
 
 import Iconify from 'src/components/iconify';
 
-import PCRReportPage from './pcr-report-page';
+// import PCRReportPage from './pcr-report-page';
 
 const PlatformToggle = ({ lgUp, availablePlatforms, selectedPlatform, handlePlatformChange }) => {
   const platformConfig = [
@@ -1952,12 +1952,12 @@ const CampaignAnalytics = ({ campaign }) => {
   return (
     <Box>
       {/* Conditionally render PCR Report Page or Performance Summary */}
-      {showReportPage ? (
+      {/* {showReportPage ? (
         <PCRReportPage 
           campaign={campaign} 
           onBack={() => setShowReportPage(false)} 
         />
-      ) : (
+      ) : ( */}
         <>
       {/* Platform Toggle */}
       {availablePlatforms.length > 1 && (
@@ -2370,7 +2370,7 @@ const CampaignAnalytics = ({ campaign }) => {
         </Box>
       )}
         </>
-      )}
+      {/* )} */}
     </Box>
   );
 };
