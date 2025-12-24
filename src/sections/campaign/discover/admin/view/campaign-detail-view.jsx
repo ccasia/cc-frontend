@@ -802,6 +802,7 @@ const CampaignDetailView = ({ id }) => {
         </Button>
       );
     }
+    return null;
   };
 
   return (
