@@ -1263,7 +1263,7 @@ import Iconify from 'src/components/iconify';
 //   );
 // };
 
-// export default ReservationSlots;
+// export  ReservationSlots;
 
 // export const ReservationSlotsV2 = () => {
 //   const { enqueueSnackbar } = useSnackbar();
@@ -1808,7 +1808,7 @@ import Iconify from 'src/components/iconify';
 //     </Box>
 //   );
 // };
-export const ReservationSlotsV2 = () => {
+const ReservationSlotsV2 = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { watch, setValue } = useFormContext();
 
@@ -2449,3 +2449,5 @@ export const ReservationSlotsV2 = () => {
     </Box>
   );
 };
+
+export default ReservationSlotsV2;
