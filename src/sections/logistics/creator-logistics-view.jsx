@@ -81,9 +81,10 @@ export default function CreatorLogisticsView({ campaign }) {
     }
   };
 
+  // TODO - reschedule dialog
   const handleReschedule = async () => {
-    if (!confirm('Are you sure you want to reschedule? This will cancel your current booking.'))
-      return;
+    // if (!confirm('Are you sure you want to reschedule? This will cancel your current booking.'))
+    // return;
     setIsProcessing(true);
     try {
       await axiosInstance.post(`/api/logistics/campaign/${campaign.id}/${logistic.id}/reschedule`);
@@ -476,8 +477,6 @@ export default function CreatorLogisticsView({ campaign }) {
         </Stack>
       );
     }
-
-    const confirmedSlot = reservationDetails?.slots?.find((s) => s.status === 'SELECTED');
 
     return (
       <Stack spacing={1} sx={{ height: '100%' }}>
