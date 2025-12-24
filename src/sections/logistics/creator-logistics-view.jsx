@@ -1,58 +1,110 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import useSWR from 'swr';
+import { format } from 'date-fns';
 
 import { Box, Stack, Button, Divider, Typography, Link, Badge } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
 
 import axiosInstance, { fetcher } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import { fDate } from 'src/utils/format-time';
 import { useSnackbar } from 'src/components/snackbar';
+import { useAuthContext } from 'src/auth/hooks';
 
 import { CreatorLogisticsStepper } from './logistics-stepper';
 import ReportIssueDialog from './dialogs/report-issue-dialog';
 import ConfirmDeliveryDetailsDialog from './dialogs/confirm-details-dialog';
+import CreatorReservationDialog from './dialogs/creator-reservation-dialog';
 
 export default function CreatorLogisticsView({ campaign }) {
+  const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
 
   // Dialog States
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openIssue, setOpenIssue] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Data Fetching
   const {
     data: logistic,
     mutate,
     isLoading,
-  } = useSWR(campaign?.id ? `/api/logistics/creator/campaign/${campaign.id}` : null, fetcher);
+  } = useSWR(campaign?.id ? `/api/logistics/creator/campaign/${campaign.id}` : null, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 10000,
+  });
 
-  const status = logistic?.status;
-  const deliveryDetails = logistic?.deliveryDetails;
-  const creator = logistic?.creator;
-  const isConfirmed = logistic?.deliveryDetails?.isConfirmed;
+  const { data: config } = useSWR(
+    campaign?.id && campaign?.logisticsType === 'RESERVATION'
+      ? `/api/logistics/campaign/${campaign.id}/reservation-config`
+      : null,
+    fetcher
+  );
+
   const isReservation = campaign?.logisticsType === 'RESERVATION';
+  const isAutoSchedule = config?.mode === 'AUTO_SCHEDULE';
 
-  const handleMarkReceived = async () => {
+  const status = logistic?.status || 'NOT_STARTED';
+  const deliveryDetails = logistic?.deliveryDetails;
+  const reservationDetails = logistic?.reservationDetails;
+  const creator = logistic?.creator || user;
+  const isConfirmed = isReservation
+    ? logistic?.reservationDetails?.isConfirmed
+    : logistic?.deliveryDetails?.isConfirmed;
+
+  const { confirmedSlot, proposedSlots } = useMemo(() => {
+    const slots = logistic?.reservationDetails?.slots || [];
+    return {
+      confirmedSlot: slots.find((slot) => slot.status === 'SELECTED'),
+      proposedSlots: slots.filter((slot) => slot.status === 'PROPOSED'),
+    };
+  }, [logistic]);
+
+  const handleComplete = async () => {
+    setIsProcessing(true);
     try {
-      // setIsLoading(true);
-      await axiosInstance.patch(`/api/logistics/creator/${logistic.id}/received`);
+      if (isReservation) {
+        await axiosInstance.patch(`/api/logistics/creator/${logistic.id}/complete`);
+        enqueueSnackbar('Visit marked as completed!', { variant: 'success' });
+      } else {
+        await axiosInstance.patch(`/api/logistics/creator/${logistic.id}/received`);
+        enqueueSnackbar('Products marked as received!', { variant: 'success' });
+      }
       mutate();
-      enqueueSnackbar('Products marked as received!', { variant: 'success' });
     } catch (err) {
       console.error(err);
       enqueueSnackbar('Failed to update status', { variant: 'error' });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
+  const handleReschedule = async () => {
+    if (!confirm('Are you sure you want to reschedule? This will cancel your current booking.'))
+      return;
+    setIsProcessing(true);
+    try {
+      await axiosInstance.post(`/api/logistics/campaign/${campaign.id}/${logistic.id}/reschedule`);
+      mutate();
+      enqueueSnackbar('Booking reset. Please select a new time.');
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar('Failed to reschedule', { variant: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMarkReceived = async () => {
+    handleComplete();
+  };
+
   if (isLoading) return <Typography>Loading...</Typography>;
-  if (!logistic) return <Typography>No logistics found.</Typography>;
 
-  // --- Renders ---
-
-  const renderYourDetails = (
+  const renderProductLeft = (
     <Stack spacing={1} sx={{ height: '100%' }}>
-      {/* Header */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
         <Iconify icon="eva:person-outline" sx={{ color: '#1340FF' }} />
         <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
@@ -60,7 +112,6 @@ export default function CreatorLogisticsView({ campaign }) {
         </Typography>
       </Stack>
       <Divider />
-      {/* Details List */}
       <Stack spacing={2} sx={{ flexGrow: 1, px: 4 }}>
         <Box>
           <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1.5 }}>
@@ -90,7 +141,6 @@ export default function CreatorLogisticsView({ campaign }) {
         </Box>
       </Stack>
 
-      {/* Action Button: Confirm Details */}
       {(status === 'PENDING_ASSIGNMENT' || status === 'SCHEDULED') && !isConfirmed && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Badge color="error" variant="dot" invisible={status !== 'PENDING_ASSIGNMENT'}>
@@ -127,7 +177,111 @@ export default function CreatorLogisticsView({ campaign }) {
     </Stack>
   );
 
-  const renderDeliveryDetails = (
+  const renderReservationLeft = () => {
+    let availabilityDisplay = null;
+
+    if (confirmedSlot) {
+      availabilityDisplay = (
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {format(new Date(confirmedSlot.startTime), 'd MMMM yyyy (h:mm a - ')}
+          {format(new Date(confirmedSlot.endTime), 'h:mm a)')}
+        </Typography>
+      );
+    } else {
+      availabilityDisplay = (
+        <Stack spacing={0.5}>
+          {proposedSlots.map((slot, idx) => (
+            <Typography key={idx} variant="body2" sx={{ fontWeight: 500 }}>
+              {format(new Date(slot.startTime), 'd MMMM yyyy (h:mm a)')}
+            </Typography>
+          ))}
+        </Stack>
+      );
+    }
+
+    return (
+      <Stack spacing={1} sx={{ height: '100%' }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
+          <Iconify icon="eva:person-outline" sx={{ color: '#1340FF' }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+            Your Details
+          </Typography>
+        </Stack>
+        <Divider />
+        <Stack spacing={2} sx={{ flexGrow: 1, px: 4 }}>
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 1.5 }}
+            >
+              Preferred Outlet
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {reservationDetails?.outlet || '-'}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Availability
+            </Typography>
+            {availabilityDisplay}
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Contact Number
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {creator?.phoneNumber || '-'}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              My Remarks
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {reservationDetails?.creatorRemarks || '-'}
+            </Typography>
+          </Box>
+        </Stack>
+
+        {status === 'NOT_STARTED' && !isConfirmed && (
+          <Box sx={{ px: 4, mt: 4, pb: 2 }}>
+            <Badge color="error" variant="dot" sx={{ width: '100%' }}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => setOpenConfirm(true)}
+                sx={{
+                  height: 44,
+                  bgcolor: '#1340FF',
+                  boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                  '&:hover': { bgcolor: '#133effd3' },
+                }}
+              >
+                Confirm Details
+              </Button>
+            </Badge>
+          </Box>
+        )}
+
+        {status === 'SCHEDULED' && isAutoSchedule && (
+          <Box sx={{ px: 4, mt: 4 }}>
+            <Button
+              variant="outlined"
+              onClick={handleReschedule}
+              disabled={isProcessing}
+              fullWidth
+              sx={{ borderColor: '#E0E0E0', color: 'text.secondary' }}
+            >
+              Reschedule
+            </Button>
+          </Box>
+        )}
+      </Stack>
+    );
+  };
+
+  const renderProductRight = (
     <Stack spacing={1} sx={{ height: '100%' }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
@@ -137,9 +291,7 @@ export default function CreatorLogisticsView({ campaign }) {
         </Typography>
       </Stack>
       <Divider />
-      {/* Content Area */}
       {status === 'PENDING_ASSIGNMENT' ? (
-        // Empty State (Waiting for client)
         <Box
           sx={{
             flexGrow: 1,
@@ -206,7 +358,7 @@ export default function CreatorLogisticsView({ campaign }) {
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
               Expected Delivery Date
             </Typography>
-            <Typography vvariant="body1" fontFamily="inter" sx={{ fontWeight: 700 }}>
+            <Typography variant="body1" fontFamily="inter" sx={{ fontWeight: 700 }}>
               {deliveryDetails?.expectedDeliveryDate
                 ? fDate(deliveryDetails.expectedDeliveryDate)
                 : '-'}
@@ -280,6 +432,162 @@ export default function CreatorLogisticsView({ campaign }) {
     </Stack>
   );
 
+  const renderReservationRight = () => {
+    if (status === 'NOT_STARTED' || status === 'PENDING_ASSIGNMENT') {
+      return (
+        <Stack spacing={1} sx={{ height: '100%' }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
+            <Iconify icon="solar:calendar-date-bold" sx={{ color: '#1340FF' }} />
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+              Reservation Details
+            </Typography>
+          </Stack>
+          <Divider />
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 250,
+            }}
+          >
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                bgcolor: '#F4F6F8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2,
+              }}
+            >
+              <Typography variant="h3">{status === 'NOT_STARTED' ? '📝' : '😶‍🌫️'}</Typography>
+            </Box>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {status === 'NOT_STARTED'
+                ? 'Please confirm your details to start.'
+                : 'Waiting for Client to update...'}{' '}
+            </Typography>
+          </Box>
+        </Stack>
+      );
+    }
+
+    const confirmedSlot = reservationDetails?.slots?.find((s) => s.status === 'SELECTED');
+
+    return (
+      <Stack spacing={1} sx={{ height: '100%' }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
+          <Iconify icon="solar:calendar-date-bold" sx={{ color: '#1340FF' }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+            Reservation Details
+          </Typography>
+        </Stack>
+        <Divider />
+        <Stack spacing={2} sx={{ px: 4, flexGrow: 1 }}>
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mt: 1.5 }}
+            >
+              Booked Slot
+            </Typography>
+            {confirmedSlot ? (
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {format(new Date(confirmedSlot.startTime), 'd MMMM yyyy (h:mm a - ')}
+                {format(new Date(confirmedSlot.endTime), 'h:mm a)')}
+              </Typography>
+            ) : (
+              <Typography variant="body2">-</Typography>
+            )}
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Location
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {reservationDetails?.outlet}
+            </Typography>
+          </Box>
+          {/* Display Client-Entered info (Budget, PIC, Promo) */}
+          {reservationDetails?.promoCode && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Promo
+              </Typography>
+              <Typography variant="body2">{reservationDetails.promoCode}</Typography>
+            </Box>
+          )}
+          {reservationDetails?.picName && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Person In Charge
+              </Typography>
+              <Typography variant="body2">
+                {reservationDetails.picName} ({reservationDetails.picContact})
+              </Typography>
+            </Box>
+          )}
+          {reservationDetails?.budget && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Budget
+              </Typography>
+              <Typography variant="body2">{reservationDetails.budget}</Typography>
+            </Box>
+          )}
+
+          {reservationDetails?.clientRemarks && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Client Remarks
+              </Typography>
+              <Typography variant="body2">{reservationDetails.clientRemarks}</Typography>
+            </Box>
+          )}
+        </Stack>
+
+        {/* Buttons for Scheduled State */}
+        {status !== 'COMPLETED' && (
+          <Stack direction="row" spacing={2} sx={{ px: 4, mt: 4 }}>
+            <LoadingButton
+              variant="contained"
+              fullWidth
+              onClick={handleComplete}
+              loading={isProcessing}
+              sx={{ bgcolor: '#1340FF' }}
+            >
+              Complete Visit
+            </LoadingButton>
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={() => setOpenIssue(true)}
+              sx={{ color: '#fff', bgcolor: '#3A3A3C', '&:hover': { bgcolor: '#000' } }}
+            >
+              Report Issue
+            </Button>
+          </Stack>
+        )}
+
+        {status === 'ISSUE_REPORTED' && (
+          <Box sx={{ p: 2, mx: 4, bgcolor: '#FFEFD6', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ color: '#231F20' }}>
+              Issue Reported
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#FF3500' }}>
+              We are reviewing your issue.
+            </Typography>
+          </Box>
+        )}
+      </Stack>
+    );
+  };
+
   return (
     <>
       {/* Main Wrapper Box (Replaces Card) */}
@@ -315,23 +623,36 @@ export default function CreatorLogisticsView({ campaign }) {
           }
         >
           {/* Left Column: Your Details */}
-          <Box sx={{ width: { xs: '100%', md: '50%' }, py: 1, pb: 4 }}>{renderYourDetails}</Box>
+          <Box sx={{ width: { xs: '100%', md: '50%' }, py: 1, pb: 4 }}>
+            {isReservation ? renderReservationLeft() : renderProductLeft}
+          </Box>
 
           {/* Horizontal Divider for Mobile Only */}
           <Divider sx={{ display: { xs: 'block', md: 'none' } }} />
 
           {/* Right Column: Delivery Details */}
-          <Box sx={{ width: { xs: '100%', md: '50%' }, py: 1, pb: 4 }}>{renderDeliveryDetails}</Box>
+          <Box sx={{ width: { xs: '100%', md: '50%' }, py: 1, pb: 4 }}>
+            {isReservation ? renderReservationRight() : renderProductRight}
+          </Box>
         </Stack>
       </Box>
 
       {/* Dialogs */}
-      <ConfirmDeliveryDetailsDialog
-        open={openConfirm}
-        onClose={() => setOpenConfirm(false)}
-        logistic={logistic}
-        onUpdate={mutate}
-      />
+      {isReservation ? (
+        <CreatorReservationDialog
+          open={openConfirm}
+          onClose={() => setOpenConfirm(false)}
+          campaign={campaign}
+          onUpdate={mutate}
+        />
+      ) : (
+        <ConfirmDeliveryDetailsDialog
+          open={openConfirm}
+          onClose={() => setOpenConfirm(false)}
+          logistic={logistic}
+          onUpdate={mutate}
+        />
+      )}
 
       <ReportIssueDialog
         open={openIssue}
