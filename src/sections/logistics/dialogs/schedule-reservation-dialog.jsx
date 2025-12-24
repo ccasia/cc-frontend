@@ -132,7 +132,7 @@ export default function ScheduleReservationDialog({
 
   // Get slots for the selected date from the API data
   const selectedDateSlots =
-    daysData?.find((d) => selectedDate && d.date === format(selectedDate, 'dd-MM-yyyy'))?.slots ||
+    daysData?.find((d) => selectedDate && d.date === format(selectedDate, 'yyyy-MM-dd'))?.slots ||
     [];
 
   return (
@@ -191,10 +191,8 @@ export default function ScheduleReservationDialog({
                   </Typography>
                 </Grid>
               ))}
-              {/* Simplified Logic: Just rendering daysData assuming backend returns padding or we handle it */}
               {daysData?.map((dayObj, index) => {
-                // Very basic layout, real calendar needs padding logic for start of month
-                const date = new Date(dayObj.date.split('-').reverse().join('-')); // dd-MM-yyyy to Date
+                const date = new Date(dayObj.date.split('-').reverse().join('-'));
                 const isSelected = selectedDate && isSameDay(date, selectedDate);
                 const hasProposal = proposedSlots.some((p) =>
                   isSameDay(new Date(p.startTime), date)
