@@ -3,6 +3,7 @@ import * as Yup from 'yup';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useMemo } from 'react';
+import useSWR from 'swr';
 
 import {
   Box,
@@ -21,7 +22,7 @@ import {
 import LoadingButton from '@mui/lab/LoadingButton';
 
 import Iconify from 'src/components/iconify';
-import axiosInstance from 'src/utils/axios';
+import axiosInstance, { fetcher } from 'src/utils/axios';
 import FormProvider, { RHFTextField, RHFSelect } from 'src/components/hook-form';
 import { useSnackbar } from 'src/components/snackbar';
 
@@ -34,14 +35,21 @@ export default function ConfirmReservationDetailsDialog({
 }) {
   const { enqueueSnackbar } = useSnackbar();
 
-  const outlets = useMemo(() => {
-    const current = logistic?.reservationDetails?.outlet;
-
-    return current ? [current] : ['Plan B TRX', 'Delete this shop'];
-  }, [logistic]);
+  const { data: config } = useSWR(
+    open && campaignId ? `/api/logistics/campaign/${campaignId}/reservation-config` : null,
+    fetcher
+  );
 
   const details = logistic?.reservationDetails;
   const creator = logistic?.creator;
+
+  const outlets = useMemo(() => {
+    if (config?.locations && Array.isArray(config.locations)) {
+      return config.locations;
+    }
+    const current = details?.outlet;
+    return current ? [current] : [];
+  }, [config, details]);
 
   const ConfirmationSchema = Yup.object().shape({
     outlet: Yup.string().required('Outlet is required'),
@@ -87,10 +95,13 @@ export default function ConfirmReservationDetailsDialog({
     try {
       // NOTE: Ensure you have a route that handles JUST the details update
       // without requiring a slotId yet.
-      await axiosInstance.patch(`/api/logistics/reservation/${logistic.id}/details`, {
-        ...data,
-        isConfirmed: true,
-      });
+      await axiosInstance.patch(
+        `/api/logistics/campaign/${campaignId}/${logistic.id}/reservation-detail`,
+        {
+          ...data,
+          isConfirmed: true,
+        }
+      );
 
       onUpdate();
       enqueueSnackbar('Reservation details confirmed successfully!');
