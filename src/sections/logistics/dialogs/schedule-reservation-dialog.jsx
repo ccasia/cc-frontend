@@ -1,7 +1,18 @@
 import useSWR from 'swr';
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
-import { format, addMonths, subMonths, isSameDay } from 'date-fns';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  format,
+  addMonths,
+  subMonths,
+  isSameDay,
+  parseISO,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+} from 'date-fns';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -11,9 +22,12 @@ import {
   Avatar,
   Dialog,
   Button,
+  Tooltip,
   Typography,
   IconButton,
   CircularProgress,
+  Chip,
+  Divider,
 } from '@mui/material';
 
 import axiosInstance, { fetcher } from 'src/utils/axios';
@@ -30,322 +44,410 @@ export default function ScheduleReservationDialog({
 }) {
   const { enqueueSnackbar } = useSnackbar();
 
-  // State for the calendar view
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedSlotId, setSelectedSlotId] = useState(null);
+  const [selectedSlotTime, setSelectedSlotTime] = useState(null); // Store ISO string
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch Available Slots for the displayed month
-  // Note: We need the full date string for the query
   const monthQuery = format(currentMonth, 'yyyy-MM-dd');
   const { data: daysData, isLoading } = useSWR(
     open ? `/api/logistics/campaign/${campaignId}/slots?month=${monthQuery}` : null,
     fetcher
   );
 
-  // Parse current booking data
-  const details = logistic?.reservationDetails;
-  const proposedSlots = details?.slots?.filter((s) => s.status === 'PROPOSED') || [];
-  const confirmedSlot = details?.slots?.find((s) => s.status === 'SELECTED');
+  const creator = logistic?.creator;
+  const socialMediaHandle =
+    creator?.creator?.instagramUser?.username || creator?.creator?.tiktokUser?.username;
 
-  // Pre-select logic on open
+  const calendarGrid = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+
+    return eachDayOfInterval({ start: startDate, end: endDate });
+  }, [currentMonth]);
+
+  const details = logistic?.reservationDetails;
+  const proposedSlots = useMemo(
+    () => details?.slots?.filter((s) => s.status === 'PROPOSED') || [],
+    [details]
+  );
+  const confirmedSlot = useMemo(
+    () => details?.slots?.find((s) => s.status === 'SELECTED'),
+    [details]
+  );
+
   useEffect(() => {
     if (open) {
       if (confirmedSlot) {
-        setSelectedDate(new Date(confirmedSlot.startTime));
-        setSelectedSlotId(confirmedSlot.id);
-        setCurrentMonth(new Date(confirmedSlot.startTime));
+        const date = parseISO(confirmedSlot.startTime);
+        setSelectedDate(date);
+        setSelectedSlotTime(confirmedSlot.startTime);
+        setCurrentMonth(date);
       } else if (proposedSlots.length > 0) {
-        // Default to the first proposed date
-        const firstProp = new Date(proposedSlots[0].startTime);
+        const firstProp = parseISO(proposedSlots[0].startTime);
         setCurrentMonth(firstProp);
         setSelectedDate(firstProp);
-      } else {
-        // Default to today
-        setCurrentMonth(new Date());
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, logistic]);
+  }, [open, confirmedSlot, proposedSlots]);
 
-  // --- Handlers ---
+  // --- Helpers ---
 
-  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-
-  const handleDateClick = (dateStr) => {
-    setSelectedDate(new Date(dateStr));
-    setSelectedSlotId(null); // Reset slot selection when changing date
-  };
-
-  const handleSlotClick = (slot) => {
-    // If it's an existing slot (from our db), use its ID.
-    // If it's a raw slot from the `daysData` availability, we might not have an ID yet
-    // unless we are in "Admin Override" mode creating a new slot.
-    // *Simplified Logic*: We only allow selecting from the "Proposed" list OR
-    // we match the available time to a proposed slot ID.
-
-    // For now, let's assume Admin selects one of the PROPOSED slots displayed on that day.
-    // If Admin needs to pick a NEW time not proposed, backend logic is needed to create a new slot.
-
-    // Find if this time matches a proposed slot
-    const matchingProposed = proposedSlots.find(
-      (p) => new Date(p.startTime).getTime() === new Date(slot.startTime).getTime()
-    );
-
-    if (matchingProposed) {
-      setSelectedSlotId(matchingProposed.id);
-    } else {
-      // Admin is picking a fresh slot.
-      // You might need a way to pass this "raw" time to backend if it's not in DB yet.
-      // For simplicity, I'll alert if it's not a proposed slot.
-      // Or better: Pass the raw times to backend and let backend create the slot.
-      setSelectedSlotId(slot.startTime); // Use start time as ID proxy if needed
+  const getOptionTag = (attendee) => {
+    if (attendee.status === 'SELECTED') {
+      return { label: 'Confirmed this slot', color: 'success' };
     }
+
+    const count = attendee.optionsCount || 1;
+
+    if (count === 1) {
+      return { label: 'Only this option', color: 'error' };
+    }
+
+    const moreOptions = count - 1;
+    return {
+      label: `${moreOptions} more option${moreOptions > 1 ? 's' : ''}`,
+      color: 'info',
+    };
   };
 
   const handleConfirm = async () => {
-    if (!selectedSlotId) return;
+    const slotToConfirm = proposedSlots.find((p) => p.startTime === selectedSlotTime);
+
+    if (!slotToConfirm) {
+      enqueueSnackbar('Please select a slot proposed by the creator or configure a new one', {
+        variant: 'warning',
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       await axiosInstance.patch(
-        `/api/logistics/campaign/${campaignId}/${logistic.id}/confirm-reservation`,
-        {
-          slotId: selectedSlotId,
-        }
+        `/api/logistics/campaign/${campaignId}/${logistic.id}/schedule-reservation`,
+        { slotId: slotToConfirm.id }
       );
-
       enqueueSnackbar('Reservation scheduled successfully');
       onUpdate();
       onClose();
     } catch (error) {
-      console.error(error);
       enqueueSnackbar('Failed to schedule', { variant: 'error' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // --- Render Helpers ---
+  const selectedDayObj = daysData?.find(
+    (d) => selectedDate && d.date === format(selectedDate, 'yyyy-MM-dd')
+  );
+  const slotsForSelectedDate = selectedDayObj?.slots || [];
 
-  // Get slots for the selected date from the API data
-  const selectedDateSlots =
-    daysData?.find((d) => selectedDate && d.date === format(selectedDate, 'yyyy-MM-dd'))?.slots ||
-    [];
+  const isSelectedSlotConflict = slotsForSelectedDate
+    .find((s) => s.startTime === selectedSlotTime)
+    ?.attendees?.some((a) => a.id !== logistic.creatorId && a.status === 'SELECTED');
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
       maxWidth="md"
-      PaperProps={{ sx: { bgcolor: '#F4F4F4', borderRadius: 2, p: 3, width: '100%' } }}
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 2, p: 3, bgcolor: '#F9F9F9' } }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
         <Box>
-          <Typography
-            variant="h3"
-            fontFamily="instrument serif"
-            sx={{ fontWeight: 400, color: '#231F20' }}
-          >
+          <Typography variant="h4" sx={{ fontFamily: 'Instrument Serif', fontWeight: 400 }}>
             Schedule Reservation
           </Typography>
-          <Typography variant="body2" sx={{ color: '#636366' }}>
+          <Typography variant="body2" color="text.secondary">
             Scheduling for: {logistic?.creator?.name}
           </Typography>
         </Box>
         <IconButton onClick={onClose}>
-          <Iconify icon="eva:close-fill" width={32} />
+          <Iconify icon="eva:close-fill" />
         </IconButton>
-      </Box>
+      </Stack>
 
-      {/* --- CALENDAR UI --- */}
       <Box
-        sx={{ bgcolor: '#FFFFFF', borderRadius: 2, p: 2, mt: 2, display: 'flex', minHeight: 400 }}
+        sx={{
+          display: 'flex',
+          bgcolor: '#fff',
+          borderRadius: 2,
+          border: '1px solid #EAEAEA',
+          minHeight: 360,
+        }}
       >
-        {/* Left: Date Picker (Simplified Calendar) */}
-        <Box sx={{ width: '50%', pr: 2, borderRight: '1px solid #E0E0E0' }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-            <IconButton onClick={handlePrevMonth}>
+        {/* LEFT: CALENDAR */}
+        <Box sx={{ width: '45%', p: 2, borderRight: '1px solid #EAEAEA' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <IconButton onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
               <Iconify icon="eva:chevron-left-fill" />
             </IconButton>
-            <Typography variant="subtitle1" fontWeight={700}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               {format(currentMonth, 'MMMM yyyy')}
             </Typography>
-            <IconButton onClick={handleNextMonth}>
+            <IconButton onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
               <Iconify icon="eva:chevron-right-fill" />
             </IconButton>
           </Stack>
 
-          {isLoading ? (
-            <Box display="flex" justifyContent="center" py={5}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Grid container spacing={1}>
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                <Grid item xs={12 / 7} key={i} textAlign="center">
-                  <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                    {d}
-                  </Typography>
-                </Grid>
-              ))}
-              {daysData?.map((dayObj, index) => {
-                const date = new Date(dayObj.date.split('-').reverse().join('-'));
+          <Grid container spacing={1}>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+              <Grid item xs={12 / 7} key={d} textAlign="center">
+                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.disabled' }}>
+                  {d}
+                </Typography>
+              </Grid>
+            ))}
+            {isLoading ? (
+              <CircularProgress size={20} sx={{ m: 'auto', mt: 5 }} />
+            ) : (
+              calendarGrid.map((date) => {
+                const dateString = format(date, 'yyyy-MM-dd');
+                const dayData = daysData?.find((d) => d.date === dateString);
+
+                const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
                 const isSelected = selectedDate && isSameDay(date, selectedDate);
-                const hasProposal = proposedSlots.some((p) =>
-                  isSameDay(new Date(p.startTime), date)
+                const isProposed = proposedSlots.some((p) =>
+                  isSameDay(parseISO(p.startTime), date)
                 );
+                const hasConfirmed = dayData?.slots?.some((slot) =>
+                  slot.attendees?.some((attendee) => attendee.status === 'SELECTED')
+                );
+
+                const canClick = dayData?.available;
 
                 return (
-                  <Grid item xs={12 / 7} key={index}>
-                    <Box
-                      onClick={() => handleDateClick(date.toISOString())}
-                      sx={{
-                        height: 36,
-                        width: 36,
-                        mx: 'auto',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        bgcolor: isSelected ? '#1340FF' : 'transparent',
-                        color: isSelected ? '#fff' : '#231F20',
-                        border: hasProposal && !isSelected ? '1px solid #1340FF' : 'none',
-                        '&:hover': { bgcolor: isSelected ? '#1340FF' : '#F4F6F8' },
-                      }}
-                    >
-                      <Typography variant="body2">{date.getDate()}</Typography>
-                    </Box>
+                  <Grid item xs={12 / 7} key={dateString}>
+                    <Stack alignItems="center" spacing={0.5}>
+                      <Box
+                        onClick={() => {
+                          if (canClick) {
+                            setSelectedDate(date);
+                            setSelectedSlotTime(null);
+                          }
+                        }}
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          cursor: canClick ? 'pointer' : 'default',
+                          fontSize: '13px',
+                          fontWeight: isSelected || isProposed ? 700 : 400,
+                          color: isSelected ? '#fff' : canClick ? '#231F20' : '#919EAB',
+                          bgcolor: isSelected ? '#1340FF' : 'transparent',
+                          opacity: isCurrentMonth ? 1 : 0.3,
+                          border: isProposed && !isSelected ? '1px solid #1340FF' : 'none',
+                          '&:hover': canClick
+                            ? { bgcolor: isSelected ? '#1340FF' : '#F4F6F8' }
+                            : {},
+                        }}
+                      >
+                        {date.getDate()}
+                      </Box>
+                      <Box
+                        sx={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: '50%',
+                          bgcolor: hasConfirmed ? '#1340FF' : 'transparent',
+                        }}
+                      />
+                    </Stack>
                   </Grid>
                 );
-              })}
-            </Grid>
-          )}
+              })
+            )}
+          </Grid>
         </Box>
 
-        {/* Right: Slot List */}
-        <Box sx={{ width: '50%', pl: 2, display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="subtitle1" sx={{ mb: 2 }}>
+        {/* RIGHT: SLOTS & ATTENDEES */}
+        <Box sx={{ width: '55%', p: 2, display: 'flex', flexDirection: 'column' }}>
+          <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 700 }}>
             {selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy') : 'Select a date'}
           </Typography>
 
-          <Stack spacing={1} sx={{ flexGrow: 1, overflowY: 'auto' }}>
-            {selectedDate && selectedDateSlots.length === 0 && (
-              <Typography variant="caption" color="text.secondary">
-                No slots available.
-              </Typography>
-            )}
-            {selectedDateSlots.map((slot, idx) => {
-              const slotStart = new Date(slot.startTime);
-              const slotEnd = new Date(slot.endTime);
-              const timeLabel = `${format(slotStart, 'h:mm a')} - ${format(slotEnd, 'h:mm a')}`;
+          <Grid container spacing={2} sx={{ flexGrow: 1, minHeight: 0 }}>
+            {/* TIMESLOT COLUMN */}
+            <Grid item xs={5} sx={{ height: '100%' }}>
+              <Stack
+                spacing={1}
+                sx={{
+                  maxHeight: 250,
+                  overflowY: 'auto',
+                  msOverflowStyle: 'none',
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': {
+                    display: 'none',
+                  },
+                }}
+              >
+                {slotsForSelectedDate.map((slot) => {
+                  const isProposed = proposedSlots.some((p) => p.startTime === slot.startTime);
+                  const isSelected = selectedSlotTime === slot.startTime;
 
-              const isProposed = proposedSlots.some(
-                (p) => new Date(p.startTime).getTime() === slotStart.getTime()
-              );
+                  return (
+                    <Button
+                      key={slot.startTime}
+                      fullWidth
+                      variant={isSelected ? 'contained' : 'outlined'}
+                      onClick={() => setSelectedSlotTime(slot.startTime)}
+                      sx={{
+                        py: 1,
+                        fontSize: '11px',
+                        bgcolor: isSelected ? '#1340FF' : '#fff',
+                        borderColor: isSelected ? '#1340FF' : isProposed ? '#1340FF' : '#EDEFF2',
+                        color: isSelected ? '#fff' : isProposed ? '#1340FF' : 'text.disabled',
+                        '&:hover': { bgcolor: isSelected ? '#0026e6' : '#F4F6F8' },
+                      }}
+                    >
+                      {format(parseISO(slot.startTime), 'p')} -{' '}
+                      {format(parseISO(slot.endTime), 'p')}
+                    </Button>
+                  );
+                })}
+              </Stack>
+            </Grid>
+            {/* ATTENDEE COLUMN */}
+            <Grid item xs={7}>
+              {selectedSlotTime && (
+                <Stack spacing={2}>
+                  {slotsForSelectedDate
+                    .find((s) => s.startTime === selectedSlotTime)
+                    ?.attendees.map((attendee) => {
+                      const isTargetCreator = attendee.id === logistic.creatorId;
+                      const tag = getOptionTag(attendee);
 
-              // NEW: Check for attendees from our updated API
-              const attendees = slot.attendees || [];
-
-              const isSelected =
-                selectedSlotId === slot.startTime ||
-                proposedSlots.find((p) => p.id === selectedSlotId)?.startTime === slot.startTime;
-
-              return (
-                <Box key={idx} sx={{ mb: 1 }}>
-                  <Button
-                    fullWidth
-                    variant={isSelected ? 'contained' : 'outlined'}
-                    onClick={() => handleSlotClick(slot)}
-                    sx={{
-                      justifyContent: 'space-between',
-                      borderColor: isProposed ? '#1340FF' : '#E0E0E0',
-                      bgcolor: isSelected ? '#1340FF' : '#fff',
-                      color: isSelected ? '#fff' : '#231F20',
-                      mb: 0.5,
-                      '&:hover': { bgcolor: isSelected ? '#133effd3' : '#F4F6F8' },
-                    }}
-                  >
-                    <Typography variant="body2">{timeLabel}</Typography>
-                    {isProposed && (
-                      <Box
-                        sx={{
-                          px: 1,
-                          py: 0.2,
-                          bgcolor: isSelected ? 'rgba(255,255,255,0.2)' : '#E3F2FD',
-                          color: isSelected ? '#fff' : '#1340FF',
-                          borderRadius: 0.5,
-                          fontSize: '10px',
-                          fontWeight: 700,
-                        }}
-                      >
-                        PROPOSED
-                      </Box>
-                    )}
-                  </Button>
-
-                  {/* NEW: Render Attendees underneath the button */}
-                  {attendees.length > 0 && (
-                    <Stack direction="column" spacing={1} sx={{ pl: 1, mt: 1, mb: 2 }}>
-                      {attendees.map((person) => (
-                        <Stack key={person.id} direction="row" alignItems="center" spacing={1}>
-                          <Avatar src={person.photoURL} sx={{ width: 24, height: 24 }} />
-                          <Box>
+                      return (
+                        <Stack key={attendee.id} direction="row" spacing={1} alignItems="center">
+                          <Avatar src={attendee.photoURL} sx={{ width: 32, height: 32 }} />
+                          <Box sx={{ flexGrow: 1 }}>
                             <Typography
                               variant="caption"
-                              sx={{ fontWeight: 600, display: 'block' }}
+                              sx={{ fontWeight: 700, display: 'block' }}
                             >
-                              {person.name}
+                              {attendee.name} {isTargetCreator && '(Current)'}
                             </Typography>
                             <Typography
                               variant="caption"
                               color="text.secondary"
-                              sx={{ fontSize: '0.65rem' }}
+                              sx={{ display: 'block', fontSize: '10px', mt: -0.5 }}
                             >
-                              {person.phoneNumber}
+                              {attendee.handle || ''}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ fontSize: '10px', mt: -0.5 }}
+                            >
+                              {attendee.phoneNumber}
                             </Typography>
                           </Box>
+
+                          {/* Show Status Chip */}
+                          <Chip
+                            label={tag.label}
+                            size="small"
+                            variant="soft"
+                            color={tag.color}
+                            sx={{
+                              fontSize: '9px',
+                              height: 18,
+                              ...(tag.color === 'error' && {
+                                bgcolor: '#FFE9E9',
+                                color: '#FF4842',
+                              }),
+                              ...(tag.color === 'info' && {
+                                bgcolor: '#E9F0FF',
+                                color: '#1340FF',
+                              }),
+                              ...(tag.color === 'success' && {
+                                bgcolor: '#E9FFF0',
+                                color: '#22C55E',
+                              }),
+                            }}
+                          />
                         </Stack>
-                      ))}
-                    </Stack>
-                  )}
-                </Box>
-              );
-            })}
-          </Stack>
+                      );
+                    })}
+                  {!slotsForSelectedDate
+                    .find((s) => s.startTime === selectedSlotTime)
+                    ?.attendees.some((a) => a.id === logistic.creatorId) &&
+                    proposedSlots.some((p) => p.startTime === selectedSlotTime) && (
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ opacity: 0.6 }}>
+                        <Avatar src={logistic.creator.photoURL} sx={{ width: 32, height: 32 }} />
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 700, display: 'block' }}>
+                            {logistic.creator.name} (Current)
+                          </Typography>
+                          {socialMediaHandle && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: 'block', fontSize: '10px', mt: -0.5 }}
+                            >
+                              {socialMediaHandle}
+                            </Typography>
+                          )}
+                          <Typography
+                            variant="caption"
+                            color="warning.main"
+                            sx={{ fontSize: '10px' }}
+                          >
+                            Proposed
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    )}
+
+                  {/* If the current creator is one of the proposers but not confirmed yet, we show them too */}
+                  {proposedSlots.some((p) => p.startTime === selectedSlotTime) &&
+                    !slotsForSelectedDate
+                      .find((s) => s.startTime === selectedSlotTime)
+                      ?.attendees.some((a) => a.id === logistic.creatorId) && (
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ opacity: 0.6 }}>
+                        <Avatar src={logistic.creator.photoURL} sx={{ width: 32, height: 32 }} />
+                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                          {logistic.creator.name} (Proposing)
+                        </Typography>
+                      </Stack>
+                    )}
+                </Stack>
+              )}
+            </Grid>
+          </Grid>
+
+          {isSelectedSlotConflict && (
+            <Typography
+              variant="caption"
+              color="error"
+              sx={{ mt: 'auto', textAlign: 'center', fontWeight: 600 }}
+            >
+              Another creator has already confirmed this timeslot.
+            </Typography>
+          )}
         </Box>
       </Box>
 
-      {/* Footer */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          sx={{ color: 'text.primary', borderColor: '#E0E0E0' }}
-        >
+      <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
+        <Button variant="outlined" onClick={onClose} sx={{ px: 4 }}>
           Cancel
         </Button>
         <LoadingButton
           variant="contained"
-          onClick={handleConfirm}
           loading={isSubmitting}
-          disabled={!selectedSlotId}
-          sx={{ bgcolor: '#3A3A3C', color: '#fff', '&:hover': { bgcolor: '#000' } }}
+          disabled={!selectedSlotTime || isSelectedSlotConflict}
+          onClick={handleConfirm}
+          sx={{ bgcolor: '#231F20', px: 4, '&:hover': { bgcolor: '#000' } }}
         >
           Confirm
         </LoadingButton>
-      </Box>
+      </Stack>
     </Dialog>
   );
 }
-
-ScheduleReservationDialog.propTypes = {
-  open: PropTypes.bool,
-  onClose: PropTypes.func,
-  logistic: PropTypes.object,
-  campaignId: PropTypes.string,
-  onUpdate: PropTypes.func,
-};

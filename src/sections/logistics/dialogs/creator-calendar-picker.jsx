@@ -190,7 +190,7 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
               <Button
                 key={idx}
                 variant="outlined"
-                disabled={slot.isTaken}
+                // disabled={slot.isTaken}
                 onClick={() =>
                   onSlotSelect({
                     start: slot.startTime,
