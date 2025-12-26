@@ -190,8 +190,8 @@ export default function LogisticsList({
                 <TableRow>
                   <TableCell colSpan={4}>
                     <EmptyContent
-                      title="No deliveries scheduled"
-                      description="Click 'Edit & Bulk Assign' to get started."
+                      title="No logistic found"
+                      // description="Click 'Edit & Bulk Assign' to get started."
                       imgUrl="/assets/icons/empty/ic_content.svg"
                     />
                   </TableCell>

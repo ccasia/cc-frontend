@@ -32,8 +32,8 @@ export default function CreatorLogisticsView({ campaign }) {
     mutate,
     isLoading,
   } = useSWR(campaign?.id ? `/api/logistics/creator/campaign/${campaign.id}` : null, fetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 10000,
+    revalidateOnFocus: false, 
+    revalidateOnReconnect: false,
   });
 
   const { data: config } = useSWR(
