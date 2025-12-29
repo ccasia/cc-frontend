@@ -12,6 +12,8 @@ import {
   startOfWeek,
   endOfWeek,
   eachDayOfInterval,
+  getHours,
+  getMinutes,
 } from 'date-fns';
 
 import { LoadingButton } from '@mui/lab';
@@ -78,6 +80,21 @@ export default function ScheduleReservationDialog({
     return eachDayOfInterval({ start: startDate, end: endDate });
   }, [currentMonth]);
 
+  const formatSlotLabel = (startTime, endTime) => {
+    const start = parseISO(startTime);
+    const end = parseISO(endTime);
+
+    const isFullDay =
+      getHours(start) === 8 &&
+      getMinutes(start) === 0 &&
+      getHours(end) === 7 &&
+      getMinutes(end) === 59;
+
+    if (isFullDay) return 'Full day';
+
+    return `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
+  };
+
   const proposedSlots = useMemo(
     () => details?.slots?.filter((s) => s.status === 'PROPOSED') || [],
     [details]
@@ -101,9 +118,10 @@ export default function ScheduleReservationDialog({
     if (!slot) return null;
 
     const start = parseISO(slot.startTime);
-    const end = parseISO(slot.endTime);
+    const timeLabel = formatSlotLabel(slot.startTime, slot.endTime);
 
-    return `${format(start, 'EEEE, d MMMM yyyy, h:mm a')} - ${format(end, 'h:mm a')}`;
+    // return `${format(start, 'EEEE, d MMMM yyyy, h:mm a')} - ${format(end, 'h:mm a')}`;
+    return `${format(start, 'EEEE, d MMMM yyyy')}, ${timeLabel}`;
   }, [selectedSlotTime, slotsForSelectedDate]);
 
   const dateHeader =
@@ -349,8 +367,7 @@ export default function ScheduleReservationDialog({
                         '&:hover': { bgcolor: isSelected ? '#0026e6' : '#F4F6F8' },
                       }}
                     >
-                      {format(parseISO(slot.startTime), 'p')} -{' '}
-                      {format(parseISO(slot.endTime), 'p')}
+                      {formatSlotLabel(slot.startTime, slot.endTime)}
                     </Button>
                   );
                 })}
@@ -375,36 +392,52 @@ export default function ScheduleReservationDialog({
                             <Typography
                               key={i}
                               variant="caption"
-                              sx={{ display: 'block', fontSize: '10px' }}
+                              sx={{ display: 'block', fontSize: '12px' }}
                             >
-                              {format(parseISO(slot.start), 'd MMM yyyy, h:mm a')} -{' '}
-                              {format(parseISO(slot.end), 'h:mm a')}
+                              {format(parseISO(slot.start), 'dd MMM yyyy')},{' '}
+                              {formatSlotLabel(slot.start, slot.end)}
                             </Typography>
                           ))}
                         </Box>
                       );
 
                       return (
-                        <Stack key={attendee.id} direction="row" spacing={1} alignItems="center">
+                        <Stack
+                          key={attendee.id}
+                          direction="row"
+                          spacing={1}
+                          borderLeft={isTargetCreator ? '2px solid #1340FF' : ''}
+                          pl={1}
+                        >
                           <Avatar src={attendee.photoURL} sx={{ width: 32, height: 32 }} />
                           <Box sx={{ flexGrow: 1 }}>
                             <Typography
                               variant="caption"
-                              sx={{ fontWeight: 700, display: 'block' }}
+                              sx={{ fontWeight: 700, fontSize: '16px', display: 'block' }}
                             >
-                              {attendee.name} {isTargetCreator && '(Current)'}
+                              {attendee.name}
                             </Typography>
                             <Typography
                               variant="caption"
-                              color="text.secondary"
-                              sx={{ display: 'block', fontSize: '10px', mt: -0.2 }}
+                              // color="text.secondary"
+                              sx={{
+                                fontWeight: 400,
+                                display: 'block',
+                                fontSize: '14px',
+                                mt: -0.25,
+                              }}
                             >
                               {`@${attendee.handle}` || ''}
                             </Typography>
                             <Typography
                               variant="caption"
-                              color="text.secondary"
-                              sx={{ display: 'block', fontSize: '10px', mt: -0.2 }}
+                              // color="text.secondary"
+                              sx={{
+                                fontWeight: 400,
+                                display: 'block',
+                                fontSize: '14px',
+                                mt: -0.25,
+                              }}
                             >
                               {attendee.phoneNumber}
                             </Typography>
