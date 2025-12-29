@@ -27,7 +27,6 @@ import {
   IconButton,
   CircularProgress,
   Chip,
-  Divider,
 } from '@mui/material';
 
 import axiosInstance, { fetcher } from 'src/utils/axios';
@@ -58,6 +57,17 @@ export default function ScheduleReservationDialog({
   const creator = logistic?.creator;
   const socialMediaHandle =
     creator?.creator?.instagramUser?.username || creator?.creator?.tiktokUser?.username;
+  const details = logistic?.reservationDetails;
+  const slotsForSelectedDate = useMemo(() => {
+    const selectedDayObj = daysData?.find(
+      (d) => selectedDate && d.date === format(selectedDate, 'yyyy-MM-dd')
+    );
+    return selectedDayObj?.slots || [];
+  }, [daysData, selectedDate]);
+
+  const isSelectedSlotConflict = slotsForSelectedDate
+    .find((s) => s.startTime === selectedSlotTime)
+    ?.attendees?.some((a) => a.id !== logistic.creatorId && a.status === 'SELECTED');
 
   const calendarGrid = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -68,15 +78,37 @@ export default function ScheduleReservationDialog({
     return eachDayOfInterval({ start: startDate, end: endDate });
   }, [currentMonth]);
 
-  const details = logistic?.reservationDetails;
   const proposedSlots = useMemo(
     () => details?.slots?.filter((s) => s.status === 'PROPOSED') || [],
     [details]
   );
+
+  const isNotProposedSlot = useMemo(() => {
+    if (!selectedSlotTime) return false;
+
+    return !proposedSlots.some((p) => p.startTime === selectedSlotTime);
+  }, [selectedSlotTime, proposedSlots]);
+
   const confirmedSlot = useMemo(
     () => details?.slots?.find((s) => s.status === 'SELECTED'),
     [details]
   );
+
+  const selectedSlotDetails = useMemo(() => {
+    if (!selectedSlotTime) return null;
+
+    const slot = slotsForSelectedDate.find((s) => s.startTime === selectedSlotTime);
+    if (!slot) return null;
+
+    const start = parseISO(slot.startTime);
+    const end = parseISO(slot.endTime);
+
+    return `${format(start, 'EEEE, d MMMM yyyy, h:mm a')} - ${format(end, 'h:mm a')}`;
+  }, [selectedSlotTime, slotsForSelectedDate]);
+
+  const dateHeader =
+    selectedSlotDetails ||
+    (selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy') : 'Select a date');
 
   useEffect(() => {
     if (open) {
@@ -100,15 +132,14 @@ export default function ScheduleReservationDialog({
       return { label: 'Confirmed this slot', color: 'success' };
     }
 
-    const count = attendee.optionsCount || 1;
+    const count = attendee.otherSlots?.length || 0;
 
-    if (count === 1) {
+    if (count === 0) {
       return { label: 'Only this option', color: 'error' };
     }
 
-    const moreOptions = count - 1;
     return {
-      label: `${moreOptions} more option${moreOptions > 1 ? 's' : ''}`,
+      label: `${count} more option${count > 1 ? 's' : ''}`,
       color: 'info',
     };
   };
@@ -139,15 +170,6 @@ export default function ScheduleReservationDialog({
     }
   };
 
-  const selectedDayObj = daysData?.find(
-    (d) => selectedDate && d.date === format(selectedDate, 'yyyy-MM-dd')
-  );
-  const slotsForSelectedDate = selectedDayObj?.slots || [];
-
-  const isSelectedSlotConflict = slotsForSelectedDate
-    .find((s) => s.startTime === selectedSlotTime)
-    ?.attendees?.some((a) => a.id !== logistic.creatorId && a.status === 'SELECTED');
-
   return (
     <Dialog
       open={open}
@@ -158,10 +180,10 @@ export default function ScheduleReservationDialog({
     >
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontFamily: 'Instrument Serif', fontWeight: 400 }}>
+          <Typography variant="h2" sx={{ fontFamily: 'Instrument Serif', fontWeight: 400 }}>
             Schedule Reservation
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body" color="#636366">
             Scheduling for: {logistic?.creator?.name}
           </Typography>
         </Box>
@@ -180,12 +202,12 @@ export default function ScheduleReservationDialog({
         }}
       >
         {/* LEFT: CALENDAR */}
-        <Box sx={{ width: '45%', p: 2, borderRight: '1px solid #EAEAEA' }}>
+        <Box sx={{ width: '40%', p: 2, borderRight: '1px solid #EAEAEA' }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
             <IconButton onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
               <Iconify icon="eva:chevron-left-fill" />
             </IconButton>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            <Typography variant="body" sx={{ fontSize: '20px', fontWeight: 700 }}>
               {format(currentMonth, 'MMMM yyyy')}
             </Typography>
             <IconButton onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
@@ -194,10 +216,16 @@ export default function ScheduleReservationDialog({
           </Stack>
 
           <Grid container spacing={1}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-              <Grid item xs={12 / 7} key={d} textAlign="center">
-                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.disabled' }}>
-                  {d}
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              <Grid
+                item
+                xs={12 / 7}
+                key={day}
+                textAlign="center"
+                sx={{ borderBottom: '1px solid #EAEAEA', p: 1.5 }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#333333' }}>
+                  {day}
                 </Typography>
               </Grid>
             ))}
@@ -218,10 +246,16 @@ export default function ScheduleReservationDialog({
                 );
 
                 const canClick = dayData?.available;
+                let color = '#919EAB';
+                if (isSelected) {
+                  color = '#fff';
+                } else if (canClick) {
+                  color = '#231F20';
+                }
 
                 return (
                   <Grid item xs={12 / 7} key={dateString}>
-                    <Stack alignItems="center" spacing={0.5}>
+                    <Stack alignItems="center" spacing={0.2}>
                       <Box
                         onClick={() => {
                           if (canClick) {
@@ -237,9 +271,9 @@ export default function ScheduleReservationDialog({
                           justifyContent: 'center',
                           borderRadius: '50%',
                           cursor: canClick ? 'pointer' : 'default',
-                          fontSize: '13px',
+                          fontSize: '14px',
                           fontWeight: isSelected || isProposed ? 700 : 400,
-                          color: isSelected ? '#fff' : canClick ? '#231F20' : '#919EAB',
+                          color,
                           bgcolor: isSelected ? '#1340FF' : 'transparent',
                           opacity: isCurrentMonth ? 1 : 0.3,
                           border: isProposed && !isSelected ? '1px solid #1340FF' : 'none',
@@ -252,8 +286,8 @@ export default function ScheduleReservationDialog({
                       </Box>
                       <Box
                         sx={{
-                          width: 4,
-                          height: 4,
+                          width: 6,
+                          height: 6,
                           borderRadius: '50%',
                           bgcolor: hasConfirmed ? '#1340FF' : 'transparent',
                         }}
@@ -267,18 +301,19 @@ export default function ScheduleReservationDialog({
         </Box>
 
         {/* RIGHT: SLOTS & ATTENDEES */}
-        <Box sx={{ width: '55%', p: 2, display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 700 }}>
-            {selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy') : 'Select a date'}
-          </Typography>
-
+        <Box sx={{ width: '60%', p: 2, pb: 0, display: 'flex', flexDirection: 'column' }}>
           <Grid container spacing={2} sx={{ flexGrow: 1, minHeight: 0 }}>
             {/* TIMESLOT COLUMN */}
-            <Grid item xs={5} sx={{ height: '100%' }}>
+            <Grid
+              item
+              xs={5}
+              alignContent="center"
+              sx={{ height: '100%', pr: 2, borderRight: '1px solid #EAEAEA' }}
+            >
               <Stack
                 spacing={1}
                 sx={{
-                  maxHeight: 250,
+                  maxHeight: 300,
                   overflowY: 'auto',
                   msOverflowStyle: 'none',
                   scrollbarWidth: 'none',
@@ -290,6 +325,13 @@ export default function ScheduleReservationDialog({
                 {slotsForSelectedDate.map((slot) => {
                   const isProposed = proposedSlots.some((p) => p.startTime === slot.startTime);
                   const isSelected = selectedSlotTime === slot.startTime;
+                  const borderColor = isSelected || isProposed ? '#1340FF' : '#EDEFF2';
+                  let color = 'text.disabled';
+                  if (isSelected) {
+                    color = '#fff';
+                  } else if (isProposed) {
+                    color = '#1340FF';
+                  }
 
                   return (
                     <Button
@@ -299,10 +341,11 @@ export default function ScheduleReservationDialog({
                       onClick={() => setSelectedSlotTime(slot.startTime)}
                       sx={{
                         py: 1,
-                        fontSize: '11px',
+                        px: 0.5,
+                        fontSize: '15px',
                         bgcolor: isSelected ? '#1340FF' : '#fff',
-                        borderColor: isSelected ? '#1340FF' : isProposed ? '#1340FF' : '#EDEFF2',
-                        color: isSelected ? '#fff' : isProposed ? '#1340FF' : 'text.disabled',
+                        borderColor,
+                        color,
                         '&:hover': { bgcolor: isSelected ? '#0026e6' : '#F4F6F8' },
                       }}
                     >
@@ -315,13 +358,31 @@ export default function ScheduleReservationDialog({
             </Grid>
             {/* ATTENDEE COLUMN */}
             <Grid item xs={7}>
+              <Typography variant="body" sx={{ fontSize: '20px', mb: 2, fontWeight: 700 }}>
+                {dateHeader}
+              </Typography>
               {selectedSlotTime && (
-                <Stack spacing={2}>
+                <Stack spacing={1}>
                   {slotsForSelectedDate
                     .find((s) => s.startTime === selectedSlotTime)
                     ?.attendees.map((attendee) => {
                       const isTargetCreator = attendee.id === logistic.creatorId;
                       const tag = getOptionTag(attendee);
+
+                      const tooltip = (
+                        <Box sx={{ p: 0.5 }}>
+                          {attendee.otherSlots?.map((slot, i) => (
+                            <Typography
+                              key={i}
+                              variant="caption"
+                              sx={{ display: 'block', fontSize: '10px' }}
+                            >
+                              {format(parseISO(slot.start), 'd MMM yyyy, h:mm a')} -{' '}
+                              {format(parseISO(slot.end), 'h:mm a')}
+                            </Typography>
+                          ))}
+                        </Box>
+                      );
 
                       return (
                         <Stack key={attendee.id} direction="row" spacing={1} alignItems="center">
@@ -336,42 +397,75 @@ export default function ScheduleReservationDialog({
                             <Typography
                               variant="caption"
                               color="text.secondary"
-                              sx={{ display: 'block', fontSize: '10px', mt: -0.5 }}
+                              sx={{ display: 'block', fontSize: '10px', mt: -0.2 }}
                             >
-                              {attendee.handle || ''}
+                              {`@${attendee.handle}` || ''}
                             </Typography>
                             <Typography
                               variant="caption"
                               color="text.secondary"
-                              sx={{ fontSize: '10px', mt: -0.5 }}
+                              sx={{ display: 'block', fontSize: '10px', mt: -0.2 }}
                             >
                               {attendee.phoneNumber}
                             </Typography>
                           </Box>
 
                           {/* Show Status Chip */}
-                          <Chip
-                            label={tag.label}
-                            size="small"
-                            variant="soft"
-                            color={tag.color}
-                            sx={{
-                              fontSize: '9px',
-                              height: 18,
-                              ...(tag.color === 'error' && {
-                                bgcolor: '#FFE9E9',
-                                color: '#FF4842',
-                              }),
-                              ...(tag.color === 'info' && {
-                                bgcolor: '#E9F0FF',
-                                color: '#1340FF',
-                              }),
-                              ...(tag.color === 'success' && {
-                                bgcolor: '#E9FFF0',
-                                color: '#22C55E',
-                              }),
+                          <Tooltip
+                            title={attendee.otherSlots?.length > 0 ? tooltip : ''}
+                            placement="bottom"
+                            slotProps={{
+                              popper: {
+                                modifiers: [
+                                  {
+                                    name: 'offset',
+                                    options: {
+                                      offset: [40, -10],
+                                    },
+                                  },
+                                ],
+                              },
+                              tooltip: {
+                                sx: {
+                                  bgcolor: '#FFFFFF',
+                                  color: '#231F20',
+                                  borderRadius: 1.5,
+                                  border: '1px solid #EAEAEA',
+                                  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
+                                  '& .MuiTooltip-arrow': {
+                                    color: '#FFFFFF',
+                                    '&:before': {
+                                      border: '1px solid #EAEAEA',
+                                    },
+                                  },
+                                },
+                              },
                             }}
-                          />
+                          >
+                            <Chip
+                              label={tag.label}
+                              size="small"
+                              variant="soft"
+                              color={tag.color}
+                              sx={{
+                                fontSize: '9px',
+                                height: 18,
+                                cursor: attendee.otherSlots?.length > 0 ? 'help' : 'default',
+                                ...(tag.color === 'error' && {
+                                  bgcolor: '#FFE9E9',
+                                  color: '#FF4842',
+                                }),
+                                ...(tag.color === 'info' && {
+                                  bgcolor: '#E9F0FF',
+                                  color: '#1340FF',
+                                }),
+                                ...(tag.color === 'success' && {
+                                  bgcolor: '#E9FFF0',
+                                  color: '#22C55E',
+                                }),
+                              }}
+                            />
+                          </Tooltip>
                         </Stack>
                       );
                     })}
@@ -405,7 +499,6 @@ export default function ScheduleReservationDialog({
                       </Stack>
                     )}
 
-                  {/* If the current creator is one of the proposers but not confirmed yet, we show them too */}
                   {proposedSlots.some((p) => p.startTime === selectedSlotTime) &&
                     !slotsForSelectedDate
                       .find((s) => s.startTime === selectedSlotTime)
@@ -421,16 +514,6 @@ export default function ScheduleReservationDialog({
               )}
             </Grid>
           </Grid>
-
-          {isSelectedSlotConflict && (
-            <Typography
-              variant="caption"
-              color="error"
-              sx={{ mt: 'auto', textAlign: 'center', fontWeight: 600 }}
-            >
-              Another creator has already confirmed this timeslot.
-            </Typography>
-          )}
         </Box>
       </Box>
 
@@ -441,13 +524,39 @@ export default function ScheduleReservationDialog({
         <LoadingButton
           variant="contained"
           loading={isSubmitting}
-          disabled={!selectedSlotTime || isSelectedSlotConflict}
+          disabled={!selectedSlotTime || isSelectedSlotConflict || isNotProposedSlot}
           onClick={handleConfirm}
           sx={{ bgcolor: '#231F20', px: 4, '&:hover': { bgcolor: '#000' } }}
         >
           Confirm
         </LoadingButton>
       </Stack>
+      {isSelectedSlotConflict && (
+        <Typography
+          variant="caption"
+          color="error"
+          sx={{ mt: 1, textAlign: 'right', fontWeight: 600 }}
+        >
+          Another creator has already confirmed this timeslot.
+        </Typography>
+      )}
+      {isNotProposedSlot && (
+        <Typography
+          variant="caption"
+          color="error"
+          sx={{ mt: 1, textAlign: 'right', fontWeight: 600 }}
+        >
+          Creator did not select this timeslot.
+        </Typography>
+      )}
     </Dialog>
   );
 }
+
+ScheduleReservationDialog.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  logistic: PropTypes.object,
+  onUpdate: PropTypes.func,
+  campaignId: PropTypes.string,
+};
