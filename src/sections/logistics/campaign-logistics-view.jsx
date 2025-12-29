@@ -71,6 +71,8 @@ export default function CampaignLogisticsView({
         let matchedStatus = false;
         if (filterStatus === 'all') {
           matchedStatus = true;
+        } else if (filterStatus === 'PENDING_ASSIGNMENT') {
+          matchedStatus = ['PENDING_ASSIGNMENT', 'NOT_STARTED'].includes(item.status);
         } else if (filterStatus === 'DELIVERED') {
           matchedStatus = ['DELIVERED', 'RECEIVED', 'COMPLETED'].includes(item.status);
         } else {

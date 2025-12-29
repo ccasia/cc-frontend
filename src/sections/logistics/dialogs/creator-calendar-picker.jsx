@@ -11,6 +11,9 @@ import {
   startOfWeek,
   endOfWeek,
   eachDayOfInterval,
+  parseISO,
+  getHours,
+  getMinutes,
 } from 'date-fns';
 
 import {
@@ -19,10 +22,8 @@ import {
   Button,
   Typography,
   IconButton,
-  Grid,
   CircularProgress,
   Divider,
-  Collapse,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
@@ -38,6 +39,38 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
     fetcher
   );
 
+  const formatSlotLabel = (startTime, endTime) => {
+    const getClockTime = (isoStr) => {
+      const timePart = isoStr.split('T')[1];
+      const [hours, minutes] = timePart.split(':');
+      const h = parseInt(hours, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const displayHours = h % 12 || 12;
+      return `${displayHours}:${minutes} ${ampm}`;
+    };
+    const startStr = getClockTime(startTime);
+    const endStr = getClockTime(endTime);
+
+    const isFullDay = startTime.includes('T00:00') && endTime.includes('T23:59');
+    if (isFullDay) return 'Full day';
+
+    return `${startStr} - ${endStr}`;
+  };
+
+  const allFetchedSlots = useMemo(() => {
+    if (!daysData) return [];
+    return daysData.reduce((acc, day) => [...acc, ...day.slots], []);
+  }, [daysData]);
+
+  const activeDateSlots = useMemo(() => {
+    if (!selectedDate) return [];
+    const dateString = format(selectedDate, 'yyyy-MM-dd');
+
+    return allFetchedSlots
+      .filter((slot) => slot.startTime.startsWith(dateString))
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }, [selectedDate, allFetchedSlots]);
+
   const calendarGrid = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(monthStart);
@@ -49,11 +82,6 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
       end: endDate,
     });
   }, [currentMonth]);
-
-  const activeDay = daysData?.find(
-    (d) => selectedDate && d.date === format(selectedDate, 'yyyy-MM-dd')
-  );
-  const activeDateSlots = activeDay?.slots || [];
 
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
@@ -110,11 +138,11 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
             {calendarGrid?.map((date, idx) => {
               const dateString = format(date, 'yyyy-MM-dd');
 
-              const dayData = daysData?.find((d) => d.date === dateString);
-
+              const hasSlots = allFetchedSlots.some((slot) =>
+                slot.startTime.startsWith(dateString)
+              );
               const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
               const isSelected = selectedDate && isSameDay(date, selectedDate);
-              const hasSlots = dayData?.slots && dayData.slots.length > 0;
 
               let color = '#919EAB';
               if (isCurrentMonth && hasSlots) color = '#231F20';
@@ -211,8 +239,7 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
                   },
                 }}
               >
-                {format(new Date(slot.startTime), 'h:mm a')} -{' '}
-                {format(new Date(slot.endTime), 'h:mm a')}
+                {formatSlotLabel(slot.startTime, slot.endTime)}
               </Button>
             ))
           )}

@@ -42,6 +42,11 @@ const getTableHead = (isReservation) => [
 const getStatusOption = (isReservation) =>
   [
     {
+      value: 'NOT_STARTED',
+      label: isReservation ? 'AWAITING CONFIRMATION' : 'UNASSIGNED',
+      color: '#B0B0B0',
+    },
+    {
       value: 'PENDING_ASSIGNMENT',
       label: isReservation ? 'UNCONFIRMED' : 'UNASSIGNED',
       color: '#B0B0B0',
@@ -257,7 +262,7 @@ export default function LogisticsList({
                 <CircularProgress size={24} />
               </Box>
             ) : (
-              STATUS_OPTIONS.map((option) => {
+              STATUS_OPTIONS.filter((option) => option.value !== 'NOT_STARTED').map((option) => {
                 const isSelected = statusLogistic?.status === option.value;
 
                 return (
@@ -329,7 +334,7 @@ export default function LogisticsList({
 
 LogisticsList.propTypes = {
   campaignId: PropTypes.string,
-  logistics: PropTypes.string,
+  logistics: PropTypes.array,
   isAdmin: PropTypes.bool,
   isReservation: PropTypes.bool,
 };

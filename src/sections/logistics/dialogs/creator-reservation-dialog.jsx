@@ -4,7 +4,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { format } from 'date-fns';
+import { format, parseISO, getHours, getMinutes } from 'date-fns';
 
 import {
   Box,
@@ -41,6 +41,28 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
     open && campaign?.id ? `/api/logistics/campaign/${campaign.id}/reservation-config` : null,
     fetcher
   );
+
+  const formatSlotLabel = (startTime, endTime) => {
+    const getClockTime = (isoStr) => {
+      const timePart = isoStr.split('T')[1];
+      const [hours, minutes] = timePart.split(':');
+      const h = parseInt(hours, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const displayHours = h % 12 || 12;
+      return `${displayHours}:${minutes} ${ampm}`;
+    };
+
+    const startStr = getClockTime(startTime);
+    const endStr = getClockTime(endTime);
+
+    const startDate = parseISO(startTime);
+    const datePart = format(startDate, 'd MMMM yyyy');
+
+    const isFullDay = startTime.includes('T00:00') && endTime.includes('T23:59');
+    if (isFullDay) return `${datePart} (Full day)`;
+
+    return `${datePart} (${startStr} - ${endStr})`;
+  };
 
   const ReservationSchema = Yup.object().shape({
     outlet: Yup.string().required('Outlet is required'),
@@ -125,12 +147,6 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
     }
   };
 
-  const formatSlotLabel = (start, end) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    return `${format(startDate, 'd MMMM yyyy')} (${format(startDate, 'h:mm a')} - ${format(endDate, 'h:mm a')})`;
-  };
-
   return (
     <Dialog
       open={open}
@@ -186,7 +202,7 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
                 {config?.locations?.map((loc, idx) => {
                   const val = typeof loc === 'string' ? loc : loc.name;
                   return (
-                    <MenuItem key={idx} value={val}>
+                    <MenuItem key={idx} value={val} sx={{ textTransform: 'capitalize' }}>
                       {val}
                     </MenuItem>
                   );

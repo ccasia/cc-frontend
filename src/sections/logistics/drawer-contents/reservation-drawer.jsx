@@ -43,7 +43,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
       );
     }
 
-    // Both done?
     if (isDetailsConfirmed && isScheduled) {
       if (isAdmin) {
         return (
@@ -52,20 +51,37 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           </Button>
         );
       }
-      return null; // Client has nothing left to do here
+      return null;
     }
 
     return (
-      <Stack spacing={1.5} width="100%">
+      <Stack direction="row" justifyContent="center" alignItems="center" spacing={2} width="100%">
         {/* 1. Confirm Details Button (If not done) */}
         {!isDetailsConfirmed && (
-          <Badge color="error" variant="dot" sx={{ width: '100%' }}>
+          <Badge color="error" variant="dot">
             <Button
-              fullWidth
               variant="contained"
               onClick={() => setOpenConfirm(true)}
-              // Use Dark Grey if it's the "secondary" action, or Blue if it's the only action
-              sx={{ ...buttonSx, bgcolor: !isScheduled ? '#3A3A3C' : '#1340FF' }}
+              sx={{
+                width: 'fit-content',
+                height: 44,
+                padding: { xs: '4px 8px', sm: '6px 10px' },
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #00000073 inset',
+                backgroundColor: '#3A3A3C',
+                color: '#FFFFFF',
+                fontSize: { xs: 12, sm: 14, md: 16 },
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#3a3a3ce1',
+                  boxShadow: '0px -4px 0px 0px #00000073 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #00000073 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
             >
               Confirm Details
             </Button>
@@ -74,9 +90,8 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
 
         {/* 2. Schedule Button (If not done) */}
         {!isScheduled && (
-          <Badge color="error" variant="dot" sx={{ width: '100%' }}>
+          <Badge color="error" variant="dot">
             <Button
-              fullWidth
               variant="contained"
               onClick={() => setOpenSchedule(true)}
               sx={buttonSx} // Always Blue for Schedule
@@ -242,14 +257,24 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
 }
 
 const buttonSx = {
+  width: 'fit-content',
   height: 44,
-  px: 3,
+  padding: { xs: '4px 8px', sm: '6px 10px' },
   borderRadius: '8px',
   boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
   backgroundColor: '#1340FF',
   color: '#FFFFFF',
+  fontSize: { xs: 12, sm: 14, md: 16 },
   fontWeight: 600,
-  '&:hover': { backgroundColor: '#133effd3', boxShadow: '0px -4px 0px 0px #0c2aa6 inset' },
+  textTransform: 'none',
+  '&:hover': {
+    backgroundColor: '#133effd3',
+    boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+  },
+  '&:active': {
+    boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+    transform: 'translateY(1px)',
+  },
 };
 
 const outlineButtonSx = {

@@ -268,9 +268,10 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
   let steps = [];
   console.log('isReservation:', isReservation);
   if (isReservation) {
-    if (status === 'PENDING_ASSIGNMENT') activeStep = 1;
-    if (status === 'SCHEDULED') activeStep = 2;
-    if (['COMPLETED', 'ISSUE_REPORTED'].includes(status)) activeStep = 3;
+    if (status === 'NOT_STARTED') activeStep = 0;
+    else if (status === 'PENDING_ASSIGNMENT') activeStep = 1;
+    else if (status === 'SCHEDULED') activeStep = 2;
+    else if (['COMPLETED', 'RECEIVED', 'ISSUE_REPORTED'].includes(status)) activeStep = 3;
 
     steps = [
       {
@@ -282,7 +283,7 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
       {
         step: 2,
         label: 'Confirm Slot',
-        date: status !== 'PENDING_ASSIGNMENT' ? updatedDates?.updatedAt : null,
+        date: activeStep > 1 ? updatedDates?.updatedAt : null,
         desc: status === 'PENDING_ASSIGNMENT' ? 'Waiting for Client...' : 'Completed on',
       },
       {

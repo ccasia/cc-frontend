@@ -60,12 +60,20 @@ export default function ScheduleReservationDialog({
   const socialMediaHandle =
     creator?.creator?.instagramUser?.username || creator?.creator?.tiktokUser?.username;
   const details = logistic?.reservationDetails;
+
+  const allFetchedSlots = useMemo(() => {
+    if (!daysData) return [];
+    return daysData.reduce((acc, day) => [...acc, ...day.slots], []);
+  }, [daysData]);
+
   const slotsForSelectedDate = useMemo(() => {
-    const selectedDayObj = daysData?.find(
-      (d) => selectedDate && d.date === format(selectedDate, 'yyyy-MM-dd')
-    );
-    return selectedDayObj?.slots || [];
-  }, [daysData, selectedDate]);
+    if (!selectedDate) return [];
+    const dateString = format(selectedDate, 'yyyy-MM-dd');
+
+    return allFetchedSlots
+      .filter((slot) => slot.startTime.startsWith(dateString))
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }, [selectedDate, allFetchedSlots]);
 
   const isSelectedSlotConflict = slotsForSelectedDate
     .find((s) => s.startTime === selectedSlotTime)
@@ -81,18 +89,22 @@ export default function ScheduleReservationDialog({
   }, [currentMonth]);
 
   const formatSlotLabel = (startTime, endTime) => {
-    const start = parseISO(startTime);
-    const end = parseISO(endTime);
+    const getClockTime = (isoStr) => {
+      const timePart = isoStr.split('T')[1];
+      const [hours, minutes] = timePart.split(':');
+      const h = parseInt(hours, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const displayHours = h % 12 || 12;
+      return `${displayHours}:${minutes} ${ampm}`;
+    };
 
-    const isFullDay =
-      getHours(start) === 8 &&
-      getMinutes(start) === 0 &&
-      getHours(end) === 7 &&
-      getMinutes(end) === 59;
+    const startStr = getClockTime(startTime);
+    const endStr = getClockTime(endTime);
 
+    const isFullDay = startTime.includes('T00:00') && endTime.includes('T23:59');
     if (isFullDay) return 'Full day';
 
-    return `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
+    return `${startStr} - ${endStr}`;
   };
 
   const proposedSlots = useMemo(
@@ -117,12 +129,10 @@ export default function ScheduleReservationDialog({
     const slot = slotsForSelectedDate.find((s) => s.startTime === selectedSlotTime);
     if (!slot) return null;
 
-    const start = parseISO(slot.startTime);
     const timeLabel = formatSlotLabel(slot.startTime, slot.endTime);
 
-    // return `${format(start, 'EEEE, d MMMM yyyy, h:mm a')} - ${format(end, 'h:mm a')}`;
-    return `${format(start, 'EEEE, d MMMM yyyy')}, ${timeLabel}`;
-  }, [selectedSlotTime, slotsForSelectedDate]);
+    return `${format(selectedDate, 'EEEE, d MMMM yyyy')}, ${timeLabel}`;
+  }, [selectedSlotTime, slotsForSelectedDate, selectedDate]);
 
   const dateHeader =
     selectedSlotDetails ||
@@ -131,14 +141,18 @@ export default function ScheduleReservationDialog({
   useEffect(() => {
     if (open) {
       if (confirmedSlot) {
-        const date = parseISO(confirmedSlot.startTime);
+        const datePart = confirmedSlot.startTime.split('T')[0];
+        const date = parseISO(datePart);
+
         setSelectedDate(date);
         setSelectedSlotTime(confirmedSlot.startTime);
         setCurrentMonth(date);
       } else if (proposedSlots.length > 0) {
-        const firstProp = parseISO(proposedSlots[0].startTime);
-        setCurrentMonth(firstProp);
-        setSelectedDate(firstProp);
+        const datePart = proposedSlots[0].startTime.split('T')[0];
+        const date = parseISO(datePart);
+
+        setCurrentMonth(date);
+        setSelectedDate(date);
       }
     }
   }, [open, confirmedSlot, proposedSlots]);
@@ -252,18 +266,20 @@ export default function ScheduleReservationDialog({
             ) : (
               calendarGrid.map((date) => {
                 const dateString = format(date, 'yyyy-MM-dd');
-                const dayData = daysData?.find((d) => d.date === dateString);
+                const todaySlots = allFetchedSlots.filter((slot) =>
+                  slot.startTime.startsWith(dateString)
+                );
 
                 const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
                 const isSelected = selectedDate && isSameDay(date, selectedDate);
-                const isProposed = proposedSlots.some((p) =>
-                  isSameDay(parseISO(p.startTime), date)
-                );
-                const hasConfirmed = dayData?.slots?.some((slot) =>
+                const isProposed = proposedSlots.some((p) => p.startTime.startsWith(dateString));
+                const hasConfirmed = todaySlots.some((slot) =>
                   slot.attendees?.some((attendee) => attendee.status === 'SELECTED')
                 );
 
+                const dayData = daysData?.find((d) => d.date === dateString);
                 const canClick = dayData?.available;
+
                 let color = '#919EAB';
                 if (isSelected) {
                   color = '#fff';

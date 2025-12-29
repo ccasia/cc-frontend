@@ -32,7 +32,7 @@ export default function CreatorLogisticsView({ campaign }) {
     mutate,
     isLoading,
   } = useSWR(campaign?.id ? `/api/logistics/creator/campaign/${campaign.id}` : null, fetcher, {
-    revalidateOnFocus: false, 
+    revalidateOnFocus: false,
     revalidateOnReconnect: false,
   });
 
@@ -246,17 +246,39 @@ export default function CreatorLogisticsView({ campaign }) {
         </Stack>
 
         {status === 'NOT_STARTED' && !isConfirmed && (
-          <Box sx={{ px: 4, mt: 4, pb: 2 }}>
-            <Badge color="error" variant="dot" sx={{ width: '100%' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              px: 4,
+              mt: 4,
+              pb: 2,
+            }}
+          >
+            <Badge color="error" variant="dot">
               <Button
-                fullWidth
                 variant="contained"
                 onClick={() => setOpenConfirm(true)}
                 sx={{
+                  padding: { xs: '4px 8px', sm: '6px 10px' },
                   height: 44,
                   bgcolor: '#1340FF',
+                  px: 4,
+                  py: 1,
+                  borderRadius: '8px',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  textTransform: 'none',
                   boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-                  '&:hover': { bgcolor: '#133effd3' },
+                  '&:hover': {
+                    backgroundColor: '#133effd3',
+                    boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                  },
+                  '&:active': {
+                    boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                    transform: 'translateY(1px)',
+                  },
                 }}
               >
                 Confirm Details
@@ -266,13 +288,42 @@ export default function CreatorLogisticsView({ campaign }) {
         )}
 
         {status === 'SCHEDULED' && isAutoSchedule && (
-          <Box sx={{ px: 4, mt: 4 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              // justifyContent: 'center',
+              alignItems: 'center',
+              px: 4,
+              mt: 4,
+              // pb: 2,
+            }}
+          >
             <Button
               variant="outlined"
               onClick={handleReschedule}
               disabled={isProcessing}
-              fullWidth
-              sx={{ borderColor: '#E0E0E0', color: 'text.secondary' }}
+              // fullWidth
+              sx={{
+                padding: { xs: '4px 8px', sm: '6px 10px' },
+                height: 44,
+                bgcolor: '#FFFFFF',
+                color: '#1340FF',
+                px: 4,
+                py: 1,
+                borderRadius: '8px',
+                fontSize: '15px',
+                fontWeight: 600,
+                textTransform: 'none',
+                boxShadow: '0px -4px 0px 0px #E7E7E7 inset',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.84)',
+                  boxShadow: '0px -4px 0px 0px #E7E7E7 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #E7E7E7 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
             >
               Reschedule
             </Button>
@@ -481,7 +532,7 @@ export default function CreatorLogisticsView({ campaign }) {
     return (
       <Stack spacing={1} sx={{ height: '100%' }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
-          <Iconify icon="solar:calendar-date-bold" sx={{ color: '#1340FF' }} />
+          <Iconify icon="eva:calendar-outline" sx={{ color: '#1340FF' }} />
           <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
             Reservation Details
           </Typography>
@@ -558,7 +609,26 @@ export default function CreatorLogisticsView({ campaign }) {
               fullWidth
               onClick={handleComplete}
               loading={isProcessing}
-              sx={{ bgcolor: '#1340FF' }}
+              sx={{
+                width: 'fit-content',
+                height: 44,
+                padding: { xs: '4px 8px', sm: '6px 10px' },
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                backgroundColor: '#1340FF',
+                color: '#FFFFFF',
+                fontSize: { xs: 12, sm: 14, md: 16 },
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#133effd3',
+                  boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
             >
               Complete Visit
             </LoadingButton>
@@ -566,7 +636,26 @@ export default function CreatorLogisticsView({ campaign }) {
               variant="outlined"
               fullWidth
               onClick={() => setOpenIssue(true)}
-              sx={{ color: '#fff', bgcolor: '#3A3A3C', '&:hover': { bgcolor: '#000' } }}
+              sx={{
+                width: 'fit-content',
+                height: 44,
+                padding: { xs: '4px 8px', sm: '6px 10px' },
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #000 inset',
+                backgroundColor: '#3A3A3C',
+                color: '#fff',
+                fontSize: { xs: 12, sm: 14, md: 16 },
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#3a3a3cde',
+                  boxShadow: '0px -4px 0px 0px #000 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #000 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
             >
               Report Issue
             </Button>

@@ -17,6 +17,9 @@ export default function LogisticsAnalytics({ logistics = [], isReservation }) {
         case 'PENDING_ASSIGNMENT':
           acc.unassigned += 1;
           break;
+        case 'NOT_STARTED':
+          acc.unassigned += 1;
+          break;
         case 'SCHEDULED':
           acc.yetToShip += 1;
           break;
