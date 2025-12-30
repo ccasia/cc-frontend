@@ -375,7 +375,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
       <ResponsiveContainer width="100%" height={500}>
         <LineChart
           data={chartData.weekData}
-          margin={{ top: 30, right: 10, left: -5, bottom: 40 }}
+          margin={{ top: 30, right: 5, left: 0, bottom: 40 }}
         >
           
           <XAxis
@@ -384,13 +384,13 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
             axisLine={{ stroke: 'none' }}
             tickLine={{ stroke: 'none' }}
             height={50}
-            padding={{ left: 30 }}
+            padding={{ left: 20, right: 20 }}
           />
           
           <YAxis
             domain={[chartData.yMin, chartData.yMax]}
             ticks={[chartData.yMin, chartData.yMax]}
-            tick={{ fill: '#636366', fontSize: 14, fontFamily: 'Aileron' }}
+            tick={{ fill: '#000', fontSize: 15, fontFamily: 'Aileron' }}
             axisLine={{ stroke: 'none' }}
             tickLine={{ stroke: 'none' }}
             tickFormatter={(value) => {
