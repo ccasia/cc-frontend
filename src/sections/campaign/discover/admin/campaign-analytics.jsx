@@ -19,8 +19,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { useSnackbar } from 'src/components/snackbar';
-import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -33,8 +31,11 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 import Iconify from 'src/components/iconify';
-import { EngagementRateHeatmap } from 'src/components/trend-analysis';
+import { useSnackbar } from 'src/components/snackbar';
+import { EngagementRateHeatmap, TopCreatorsLineChart } from 'src/components/trend-analysis';
 
 // import PCRReportPage from './pcr-report-page';
 
@@ -362,7 +363,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
   // Socket event listener for media kit connections
   useEffect(() => {
-    if (!socket || !campaignId) return;
+    if (!socket || !campaignId) return undefined;
 
     const handleAnalyticsRefresh = (data) => {
       console.log('📡 Received analytics refresh event:', data);
@@ -2073,7 +2074,8 @@ const CampaignAnalytics = ({ campaign }) => {
         />
       )}
 
-      <Stack direction={'row'} flex={1} spacing={2} justifyContent={'space-between'} minHeight={500} mb={2}>
+      {/* Trends Analysis */}
+      <Stack direction="row" flex={1} spacing={4} justifyContent="space-between" minHeight={500} mb={2}>
         <Box flex={1}>
           <EngagementRateHeatmap 
             campaignId={campaignId} 
@@ -2081,8 +2083,12 @@ const CampaignAnalytics = ({ campaign }) => {
             weeks={6}
           />
         </Box>
-        <Box flex={1} bgcolor={'background.neutral'} p={2} borderRadius={2}>
-          Top 5 Creators by Views - Coming Soon
+        <Box flex={1}>
+          <TopCreatorsLineChart
+            campaignId={campaignId}
+            platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+            days={7}
+          />
         </Box>
       </Stack>
 
