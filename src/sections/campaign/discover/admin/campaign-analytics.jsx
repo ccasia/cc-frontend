@@ -34,6 +34,7 @@ import {
 } from 'src/utils/socialMetricsCalculator';
 
 import Iconify from 'src/components/iconify';
+import { EngagementRateHeatmap } from 'src/components/trend-analysis';
 
 // import PCRReportPage from './pcr-report-page';
 
@@ -473,15 +474,6 @@ const CampaignAnalytics = ({ campaign }) => {
         </Grid>
       </Box>
     );
-  };
-
-  CoreMetricsSection.propTypes = {
-    summaryStats: PropTypes.shape({
-      totalViews: PropTypes.number,
-      totalLikes: PropTypes.number,
-      totalComments: PropTypes.number,
-      totalSaved: PropTypes.number,
-    }).isRequired,
   };
 
   // eslint-disable-next-line react/no-unstable-nested-components
@@ -1929,26 +1921,6 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   };
 
-  UserPerformanceCard.propTypes = {
-    engagementRate: PropTypes.number,
-    submission: PropTypes.shape({
-      id: PropTypes.string,
-      postUrl: PropTypes.string,
-      user: PropTypes.string,
-      platform: PropTypes.string,
-    }).isRequired,
-    insightData: PropTypes.shape({
-      insight: PropTypes.object,
-      postUrl: PropTypes.string,
-      thumbnail: PropTypes.string,
-      video: PropTypes.shape({
-        media_url: PropTypes.string,
-      }),
-    }),
-    loadingInsights: PropTypes.bool,
-  };
-
-
   return (
     <Box>
       {/* Conditionally render PCR Report Page or Performance Summary */}
@@ -1968,7 +1940,6 @@ const CampaignAnalytics = ({ campaign }) => {
           handlePlatformChange={handlePlatformChange}
         />
       )}
-
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
@@ -2102,8 +2073,21 @@ const CampaignAnalytics = ({ campaign }) => {
         />
       )}
 
+      <Stack direction={'row'} flex={1} spacing={2} justifyContent={'space-between'} minHeight={500} mb={2}>
+        <Box flex={1}>
+          <EngagementRateHeatmap 
+            campaignId={campaignId} 
+            platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+            weeks={6}
+          />
+        </Box>
+        <Box flex={1} bgcolor={'background.neutral'} p={2} borderRadius={2}>
+          Top 5 Creators by Views - Coming Soon
+        </Box>
+      </Stack>
+
       {/* Creator List Header with Count */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
         <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
           Creator List
         </Typography>
