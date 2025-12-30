@@ -1,6 +1,4 @@
 import PropTypes from 'prop-types';
-import { format } from 'date-fns';
-import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
@@ -10,6 +8,8 @@ import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 
 import Iconify from 'src/components/iconify';
+
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
 export default function LogisticsTableRow({ row, onClick, onEditStatus, isReservation }) {
   const { creator, status, deliveryDetails, reservationDetails } = row;
@@ -64,10 +64,14 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
           primary={outlet}
           secondary={
             confirmedSlot
-              ? format(new Date(confirmedSlot.startTime), 'dd MMM yyyy, h:mm a')
+              ? formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)
               : 'Waiting for confirmation...'
           }
-          primaryTypographyProps={{ typography: 'body2', fontWeight: 600 }}
+          primaryTypographyProps={{
+            typography: 'body2',
+            fontWeight: 600,
+            textTransform: 'capitalize',
+          }}
           secondaryTypographyProps={{
             typography: 'caption',
             color: confirmedSlot ? 'text.primary' : 'text.disabled',

@@ -4,7 +4,6 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { format, parseISO, getHours, getMinutes } from 'date-fns';
 
 import {
   Box,
@@ -19,7 +18,6 @@ import {
   DialogContent,
   DialogActions,
   MenuItem,
-  alpha,
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 
@@ -30,6 +28,7 @@ import axiosInstance, { fetcher } from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 
 import CreatorCalendarPicker from './creator-calendar-picker';
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
 export default function CreatorReservationDialog({ open, onClose, campaign, onUpdate }) {
   const { user } = useAuthContext();
@@ -41,28 +40,6 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
     open && campaign?.id ? `/api/logistics/campaign/${campaign.id}/reservation-config` : null,
     fetcher
   );
-
-  const formatSlotLabel = (startTime, endTime) => {
-    const getClockTime = (isoStr) => {
-      const timePart = isoStr.split('T')[1];
-      const [hours, minutes] = timePart.split(':');
-      const h = parseInt(hours, 10);
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const displayHours = h % 12 || 12;
-      return `${displayHours}:${minutes} ${ampm}`;
-    };
-
-    const startStr = getClockTime(startTime);
-    const endStr = getClockTime(endTime);
-
-    const startDate = parseISO(startTime);
-    const datePart = format(startDate, 'd MMMM yyyy');
-
-    const isFullDay = startTime.includes('T00:00') && endTime.includes('T23:59');
-    if (isFullDay) return `${datePart} (Full day)`;
-
-    return `${datePart} (${startStr} - ${endStr})`;
-  };
 
   const ReservationSchema = Yup.object().shape({
     outlet: Yup.string().required('Outlet is required'),
@@ -232,7 +209,7 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
                     >
                       <Iconify icon="eva:calendar-outline" sx={{ color: '#1340FF' }} />
                       <Typography variant="body2" sx={{ fontWeight: 600, color: '#231F20' }}>
-                        {formatSlotLabel(item.start, item.end)}
+                        {formatReservationSlot(item.start, item.end, true)}
                       </Typography>
                     </Stack>
 

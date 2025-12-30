@@ -11,9 +11,6 @@ import {
   startOfWeek,
   endOfWeek,
   eachDayOfInterval,
-  parseISO,
-  getHours,
-  getMinutes,
 } from 'date-fns';
 
 import {
@@ -28,6 +25,7 @@ import {
 
 import Iconify from 'src/components/iconify';
 import { fetcher } from 'src/utils/axios';
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
 export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCancel }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -38,24 +36,6 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
     campaignId ? `/api/logistics/campaign/${campaignId}/slots?month=${monthQuery}` : null,
     fetcher
   );
-
-  const formatSlotLabel = (startTime, endTime) => {
-    const getClockTime = (isoStr) => {
-      const timePart = isoStr.split('T')[1];
-      const [hours, minutes] = timePart.split(':');
-      const h = parseInt(hours, 10);
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const displayHours = h % 12 || 12;
-      return `${displayHours}:${minutes} ${ampm}`;
-    };
-    const startStr = getClockTime(startTime);
-    const endStr = getClockTime(endTime);
-
-    const isFullDay = startTime.includes('T00:00') && endTime.includes('T23:59');
-    if (isFullDay) return 'Full day';
-
-    return `${startStr} - ${endStr}`;
-  };
 
   const allFetchedSlots = useMemo(() => {
     if (!daysData) return [];
@@ -218,7 +198,7 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
               <Button
                 key={idx}
                 variant="outlined"
-                // disabled={slot.isTaken}
+                disabled={slot.isTaken}
                 onClick={() =>
                   onSlotSelect({
                     start: slot.startTime,
@@ -239,7 +219,7 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
                   },
                 }}
               >
-                {formatSlotLabel(slot.startTime, slot.endTime)}
+                {formatReservationSlot(slot.startTime, slot.endTime)}
               </Button>
             ))
           )}

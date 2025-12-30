@@ -274,45 +274,25 @@ export default function ProductDeliveryDrawer({ open, onClose, logistic, onUpdat
 
   return (
     <>
-      <Drawer
-        open={open}
-        onClose={onClose}
-        anchor="right"
-        PaperProps={{
-          sx: {
-            width: { xs: 1, sm: 370 },
-            backgroundColor: '#F4F6F8 !important',
-            borderTopLeftRadius: 12,
-          },
+      <Box
+        sx={{
+          p: 2.5,
+          border: '1px solid #919EAB3D',
+          bgcolor: '#F4F6F8',
+          borderRadius: 2,
+          mx: 3,
+          mb: 3,
         }}
       >
-        {renderHeader}
-        <Divider
-          sx={{
-            mb: 3,
-          }}
-        />
-        {renderCreator}
-        <Box
-          sx={{
-            p: 2.5,
-            border: '1px solid #919EAB3D',
-            bgcolor: '#F4F6F8',
-            borderRadius: 2,
-            mx: 3,
-            mb: 3,
-          }}
-        >
-          <LogisticsStepper logistic={logistic} onUpdate={onUpdate} campaignId={campaignId} />
-          {actionButton && (
-            <Stack alignItems="center" sx={{ mt: 3 }}>
-              <Box>{actionButton}</Box>
-            </Stack>
-          )}
-        </Box>
-        {renderDietary}
-        {renderDeliveryDetails}
-      </Drawer>
+        <LogisticsStepper logistic={logistic} onUpdate={onUpdate} campaignId={campaignId} />
+        {actionButton && (
+          <Stack alignItems="center" sx={{ mt: 3 }}>
+            <Box>{actionButton}</Box>
+          </Stack>
+        )}
+      </Box>
+      {renderDietary}
+      {renderDeliveryDetails}
       <AssignLogisticDialog
         open={openAssign}
         onClose={() => setOpenAssign(false)}

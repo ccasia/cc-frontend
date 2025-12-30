@@ -93,8 +93,6 @@ export default function ConfirmReservationDetailsDialog({
 
   const onSubmit = async (data) => {
     try {
-      // NOTE: Ensure you have a route that handles JUST the details update
-      // without requiring a slotId yet.
       await axiosInstance.patch(
         `/api/logistics/campaign/${campaignId}/${logistic.id}/reservation-detail`,
         {

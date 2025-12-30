@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useMemo } from 'react';
 import useSWR from 'swr';
-import { format } from 'date-fns';
 
 import { Box, Stack, Button, Divider, Typography, Link, Badge } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
@@ -13,6 +12,7 @@ import { useSnackbar } from 'src/components/snackbar';
 import { useAuthContext } from 'src/auth/hooks';
 
 import { CreatorLogisticsStepper } from './logistics-stepper';
+import { formatReservationSlot } from 'src/utils/reservation-time';
 import ReportIssueDialog from './dialogs/report-issue-dialog';
 import ConfirmDeliveryDetailsDialog from './dialogs/confirm-details-dialog';
 import CreatorReservationDialog from './dialogs/creator-reservation-dialog';
@@ -184,8 +184,7 @@ export default function CreatorLogisticsView({ campaign }) {
     if (confirmedSlot) {
       availabilityDisplay = (
         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          {format(new Date(confirmedSlot.startTime), 'd MMMM yyyy (h:mm a - ')}
-          {format(new Date(confirmedSlot.endTime), 'h:mm a)')}
+          {formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)}
         </Typography>
       );
     } else {
@@ -193,7 +192,7 @@ export default function CreatorLogisticsView({ campaign }) {
         <Stack spacing={0.5}>
           {proposedSlots.map((slot, idx) => (
             <Typography key={idx} variant="body2" sx={{ fontWeight: 500 }}>
-              {format(new Date(slot.startTime), 'd MMMM yyyy (h:mm a)')}
+              {formatReservationSlot(slot.startTime, slot.endTime, true)}
             </Typography>
           ))}
         </Stack>
@@ -213,11 +212,16 @@ export default function CreatorLogisticsView({ campaign }) {
           <Box>
             <Typography
               variant="caption"
-              sx={{ color: 'text.secondary', display: 'block', mt: 1.5 }}
+              sx={{
+                color: 'text.secondary',
+                display: 'block',
+                mt: 1.5,
+                textTransform: 'capitalize',
+              }}
             >
               Preferred Outlet
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, textTransform: 'capitalize' }}>
               {reservationDetails?.outlet || '-'}
             </Typography>
           </Box>
@@ -548,8 +552,7 @@ export default function CreatorLogisticsView({ campaign }) {
             </Typography>
             {confirmedSlot ? (
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                {format(new Date(confirmedSlot.startTime), 'd MMMM yyyy (h:mm a - ')}
-                {format(new Date(confirmedSlot.endTime), 'h:mm a)')}
+                {formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)}
               </Typography>
             ) : (
               <Typography variant="body2">-</Typography>

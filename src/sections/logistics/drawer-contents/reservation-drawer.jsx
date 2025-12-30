@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { format } from 'date-fns';
 
 import { Box, Stack, Button, Divider, Typography, Badge, Chip } from '@mui/material';
 import Iconify from 'src/components/iconify';
@@ -11,6 +10,8 @@ import LogisticsStepper from '../logistics-stepper';
 import ConfirmReservationDetailsDialog from '../dialogs/confirm-reservation-details-dialog';
 import ScheduleReservationDialog from '../dialogs/schedule-reservation-dialog';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
+
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
 export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAdmin, onClose }) {
   // Dialog States
@@ -129,8 +130,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           </Typography>
           {confirmedSlot ? (
             <Typography variant="body2" fontWeight={600} sx={{ mt: 0.5 }}>
-              {format(new Date(confirmedSlot.startTime), 'd MMM yyyy (h:mm a - ')}
-              {format(new Date(confirmedSlot.endTime), 'h:mm a)')}
+              {formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)}
             </Typography>
           ) : (
             <Typography variant="body2" sx={{ mt: 0.5 }}>
@@ -144,7 +144,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           <Typography variant="caption" color="text.secondary">
             Location
           </Typography>
-          <Typography variant="body2" fontWeight={600}>
+          <Typography variant="body2" fontWeight={600} sx={{ textTransform: 'capitalize' }}>
             {details?.outlet || '-'}
           </Typography>
         </Box>
@@ -234,6 +234,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
         open={openConfirm}
         onClose={() => setOpenConfirm(false)}
         logistic={logistic}
+        campaignId={campaignId}
         onUpdate={onUpdate}
       />
 

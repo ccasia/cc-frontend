@@ -13,7 +13,6 @@ import {
   endOfWeek,
   eachDayOfInterval,
   getHours,
-  getMinutes,
 } from 'date-fns';
 
 import { LoadingButton } from '@mui/lab';
@@ -35,7 +34,7 @@ import axiosInstance, { fetcher } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-
+import { formatReservationSlot } from 'src/utils/reservation-time';
 export default function ScheduleReservationDialog({
   open,
   onClose,
@@ -75,9 +74,23 @@ export default function ScheduleReservationDialog({
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [selectedDate, allFetchedSlots]);
 
-  const isSelectedSlotConflict = slotsForSelectedDate
-    .find((s) => s.startTime === selectedSlotTime)
-    ?.attendees?.some((a) => a.id !== logistic.creatorId && a.status === 'SELECTED');
+  // const isSelectedSlotConflict = slotsForSelectedDate
+  //   .find((s) => s.startTime === selectedSlotTime)
+  //   ?.attendees?.some((a) => a.id !== logistic.creatorId && a.status === 'SELECTED');
+
+  const isSelectedSlotConflict = useMemo(() => {
+    const slot = slotsForSelectedDate.find((s) => s.startTime === selectedSlotTime);
+    if (!slot) return false;
+
+    const start = parseISO(slot.startTime);
+    const end = parseISO(slot.endTime);
+    const isFullDay = getHours(start) === 8 && getHours(end) === 7;
+
+    return (
+      !isFullDay &&
+      slot.attendees?.some((a) => a.id !== logistic.creatorId && a.status === 'SELECTED')
+    );
+  }, [selectedSlotTime, slotsForSelectedDate, logistic.creatorId]);
 
   const calendarGrid = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -87,25 +100,6 @@ export default function ScheduleReservationDialog({
 
     return eachDayOfInterval({ start: startDate, end: endDate });
   }, [currentMonth]);
-
-  const formatSlotLabel = (startTime, endTime) => {
-    const getClockTime = (isoStr) => {
-      const timePart = isoStr.split('T')[1];
-      const [hours, minutes] = timePart.split(':');
-      const h = parseInt(hours, 10);
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const displayHours = h % 12 || 12;
-      return `${displayHours}:${minutes} ${ampm}`;
-    };
-
-    const startStr = getClockTime(startTime);
-    const endStr = getClockTime(endTime);
-
-    const isFullDay = startTime.includes('T00:00') && endTime.includes('T23:59');
-    if (isFullDay) return 'Full day';
-
-    return `${startStr} - ${endStr}`;
-  };
 
   const proposedSlots = useMemo(
     () => details?.slots?.filter((s) => s.status === 'PROPOSED') || [],
@@ -129,7 +123,7 @@ export default function ScheduleReservationDialog({
     const slot = slotsForSelectedDate.find((s) => s.startTime === selectedSlotTime);
     if (!slot) return null;
 
-    const timeLabel = formatSlotLabel(slot.startTime, slot.endTime);
+    const timeLabel = formatReservationSlot(slot.startTime, slot.endTime);
 
     return `${format(selectedDate, 'EEEE, d MMMM yyyy')}, ${timeLabel}`;
   }, [selectedSlotTime, slotsForSelectedDate, selectedDate]);
@@ -383,7 +377,7 @@ export default function ScheduleReservationDialog({
                         '&:hover': { bgcolor: isSelected ? '#0026e6' : '#F4F6F8' },
                       }}
                     >
-                      {formatSlotLabel(slot.startTime, slot.endTime)}
+                      {formatReservationSlot(slot.startTime, slot.endTime)}
                     </Button>
                   );
                 })}
@@ -410,8 +404,7 @@ export default function ScheduleReservationDialog({
                               variant="caption"
                               sx={{ display: 'block', fontSize: '12px' }}
                             >
-                              {format(parseISO(slot.start), 'dd MMM yyyy')},{' '}
-                              {formatSlotLabel(slot.start, slot.end)}
+                              {formatReservationSlot(slot.start, slot.end, true)}
                             </Typography>
                           ))}
                         </Box>
