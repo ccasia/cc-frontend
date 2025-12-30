@@ -1,6 +1,9 @@
-import React, { useMemo } from 'react';
-import { Box, Typography, CircularProgress, Alert, Tooltip, Stack } from '@mui/material';
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import React from 'react';
+
+import { Box, Alert, Tooltip, Typography, CircularProgress } from '@mui/material';
+
 import { useGetEngagementHeatmap } from './use-get-engagement-heatmap';
 
 /**
@@ -16,9 +19,6 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
   });
 
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  // Map display position to backend dayOfWeek index
-  // Display row 0 (Mon) = backend index 1, Display row 1 (Tue) = backend index 2, etc.
-  const dayOfWeekIndex = [5, 6, 0, 1, 2, 3, 4];
 
   const colorScales = heatmapData?.summary?.scales || null;
 
@@ -41,13 +41,15 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
     return COLORS.highest;
   };
 
-  // Process heatmap grid data - backend returns 2D grid already (weeks x days)
-  const heatmapGrid = useMemo(() => {
-    if (!heatmapData?.heatmap) return [];
-
-    // Backend returns array of weeks, each containing 7 days
-    return heatmapData.heatmap || [];
-  }, [heatmapData?.heatmap]);
+  // Always show 6 weeks, latest week is rightmost
+  const NUM_WEEKS = weeks || 6;
+  let grid = heatmapData?.heatmap || [];
+  // Pad with empty weeks if less than NUM_WEEKS
+  while (grid.length < NUM_WEEKS) {
+    grid.unshift(Array(7).fill({ date: null, engagementRate: null, totalPosts: null, totalViews: null, hasData: false }));
+  }
+  // Do NOT reverse; rightmost column is latest week
+  const heatmapGrid = grid.slice(-NUM_WEEKS);
 
   if (error) {
     return (
@@ -132,9 +134,8 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
         {/* Main Heatmap Grid */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {Array.from({ length: 7 }).map((_, displayRow) => {
-            // Map display row position to backend dayOfWeek index
-            const backendDayOfWeek = dayOfWeekIndex[displayRow];
-
+            // displayRow 0 = Monday, 1 = Tuesday, etc. (matches our generated array structure)
+            
             return (
               <Box
                 key={`day-row-${displayRow}`}
@@ -145,10 +146,10 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
                 }}
               >
                 {heatmapGrid.map((weekData, weekIndex) => {
-                  // Use mapped dayOfWeek to access backend data
-                  // backendDayOfWeek tells us which dayOfWeek to get from the data
-                  const cell = weekData[backendDayOfWeek] || { date: null, engagementRate: null };
-                  const isToday = cell?.date && dayjs(cell.date).isSame(dayjs(), 'day');
+                  // Access day by index: weekData[0] = Monday, weekData[1] = Tuesday, etc.
+                  const cell = weekData[displayRow] || { date: null, engagementRate: null };
+
+                  console.log(heatmapGrid)
 
                   return (
                     <Tooltip
@@ -203,7 +204,8 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
             sx={{
               display: 'grid',
               gridTemplateColumns: `repeat(${weeks}, 1fr)`,
-							mb: 1
+              gap: 1,
+              mb: 1
             }}
           >
             {Array.from({ length: weeks }).map((_, weekIndex) => (
@@ -291,7 +293,7 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
 						</Box>
 					</Box>
 
-					<Box display={'flex'} flex={1} flexDirection={'row'} justifyContent={'space-between'}>
+					<Box display="flex" flex={1} flexDirection="row" justifyContent="space-between">
 						<Typography>Lowest Engagement</Typography>
 						<Typography>Highest Engagement</Typography>
 					</Box>
@@ -301,6 +303,12 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
 
     </Box>
   );
+};
+
+EngagementRateHeatmap.propTypes = {
+  campaignId: PropTypes.string.isRequired,
+  platform: PropTypes.string.isRequired,
+  weeks: PropTypes.array.isRequired,
 };
 
 export default EngagementRateHeatmap;
