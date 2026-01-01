@@ -42,12 +42,7 @@ const getTableHead = (isReservation) => [
 const getStatusOption = (isReservation) =>
   [
     {
-      value: 'NOT_STARTED',
-      label: isReservation ? 'AWAITING CONFIRMATION' : 'UNASSIGNED',
-      color: '#B0B0B0',
-    },
-    {
-      value: 'PENDING_ASSIGNMENT',
+      value: 'PENDING_ASSIGNMENT' || 'NOT_STARTED',
       label: isReservation ? 'UNCONFIRMED' : 'UNASSIGNED',
       color: '#B0B0B0',
     },
@@ -57,7 +52,11 @@ const getStatusOption = (isReservation) =>
       color: isReservation ? '#1340FF' : '#FF9A02',
     },
     !isReservation && { value: 'SHIPPED', label: 'SHIPPED OUT', color: '#8A5AFE' },
-    { value: 'DELIVERED', label: isReservation ? 'COMPLETED' : 'DELIVERED', color: '#1ABF66' },
+    {
+      value: isReservation ? 'COMPLETED' : 'DELIVERED',
+      label: isReservation ? 'COMPLETED' : 'DELIVERED',
+      color: '#1ABF66',
+    },
     { value: 'ISSUE_REPORTED', label: isReservation ? 'ISSUE' : 'FAILED', color: '#D4321C' },
   ].filter(Boolean);
 

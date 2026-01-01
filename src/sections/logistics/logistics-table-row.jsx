@@ -16,6 +16,8 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
 
   const getStatusConfig = (currentStatus, isRes) => {
     switch (currentStatus) {
+      case 'NOT_STARTED':
+        return { label: 'UNCONFIRMED', color: '#B0B0B0', hasAction: true };
       case 'PENDING_ASSIGNMENT':
         return isRes
           ? { label: 'UNCONFIRMED', color: '#B0B0B0', hasAction: true } // Reservation

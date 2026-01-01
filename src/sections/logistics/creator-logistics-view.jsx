@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import useSWR from 'swr';
 
 import { Box, Stack, Button, Divider, Typography, Link, Badge } from '@mui/material';
@@ -16,6 +16,61 @@ import { formatReservationSlot } from 'src/utils/reservation-time';
 import ReportIssueDialog from './dialogs/report-issue-dialog';
 import ConfirmDeliveryDetailsDialog from './dialogs/confirm-details-dialog';
 import CreatorReservationDialog from './dialogs/creator-reservation-dialog';
+
+const NewInfoBadge = () => (
+  <Box
+    component="span"
+    sx={{
+      width: 8,
+      height: 8,
+      borderRadius: '50%',
+      bgcolor: '#FF3500',
+      display: 'inline-block',
+      mr: 1,
+    }}
+  />
+);
+
+const InfoItem = ({ label, value, fieldKey, logisticId, isAuto }) => {
+  const [showBadge, setShowBadge] = useState(false);
+
+  useEffect(() => {
+    if (!isAuto || !value) return;
+
+    const seen = localStorage.getItem(`seen-${logisticId}-${fieldKey}`);
+    if (!seen) {
+      setShowBadge(true);
+    }
+  }, [value, logisticId, fieldKey, isAuto]);
+
+  const handleMouseEnter = () => {
+    if (showBadge) {
+      setShowBadge(false);
+      localStorage.setItem(`seen-${logisticId}-${fieldKey}`, 'true');
+    }
+  };
+
+  if (!value) return null;
+
+  return (
+    <Box onMouseEnter={handleMouseEnter}>
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          display: 'flex',
+          alignItems: 'center',
+          fontWeight: 500,
+        }}
+      >
+        {label} {showBadge && <NewInfoBadge />}
+      </Typography>
+      <Typography variant="body1" sx={{ fontWeight: 500, color: '#231F20' }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+};
 
 export default function CreatorLogisticsView({ campaign }) {
   const { user } = useAuthContext();
@@ -183,7 +238,7 @@ export default function CreatorLogisticsView({ campaign }) {
 
     if (confirmedSlot) {
       availabilityDisplay = (
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '14px' }}>
           {formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)}
         </Typography>
       );
@@ -191,7 +246,7 @@ export default function CreatorLogisticsView({ campaign }) {
       availabilityDisplay = (
         <Stack spacing={0.5}>
           {proposedSlots.map((slot, idx) => (
-            <Typography key={idx} variant="body2" sx={{ fontWeight: 500 }}>
+            <Typography key={idx} variant="body2" sx={{ fontWeight: 500, fontSize: '14px' }}>
               {formatReservationSlot(slot.startTime, slot.endTime, true)}
             </Typography>
           ))}
@@ -221,7 +276,10 @@ export default function CreatorLogisticsView({ campaign }) {
             >
               Preferred Outlet
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 500, textTransform: 'capitalize' }}>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 500, fontSize: '14px', textTransform: 'capitalize' }}
+            >
               {reservationDetails?.outlet || '-'}
             </Typography>
           </Box>
@@ -235,7 +293,7 @@ export default function CreatorLogisticsView({ campaign }) {
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
               Contact Number
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '14px' }}>
               {creator?.phoneNumber || '-'}
             </Typography>
           </Box>
@@ -243,13 +301,13 @@ export default function CreatorLogisticsView({ campaign }) {
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
               My Remarks
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '14px' }}>
               {reservationDetails?.creatorRemarks || '-'}
             </Typography>
           </Box>
         </Stack>
 
-        {status === 'NOT_STARTED' && !isConfirmed && (
+        {status === 'NOT_STARTED' && (
           <Box
             sx={{
               display: 'flex',
@@ -493,7 +551,7 @@ export default function CreatorLogisticsView({ campaign }) {
       return (
         <Stack spacing={1} sx={{ height: '100%' }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 3 }}>
-            <Iconify icon="solar:calendar-date-bold" sx={{ color: '#1340FF' }} />
+            <Iconify icon="eva:calendar-outline" sx={{ color: '#1340FF' }} />
             <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
               Reservation Details
             </Typography>
@@ -551,7 +609,10 @@ export default function CreatorLogisticsView({ campaign }) {
               Booked Slot
             </Typography>
             {confirmedSlot ? (
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="body"
+                sx={{ fontWeight: 700, fontSize: '18px', fontFamily: 'Inter' }}
+              >
                 {formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)}
               </Typography>
             ) : (
@@ -562,12 +623,20 @@ export default function CreatorLogisticsView({ campaign }) {
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
               Location
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            <Typography
+              variant="body"
+              sx={{
+                fontWeight: 700,
+                fontSize: '18px',
+                fontFamily: 'Inter',
+                textTransform: 'capitalize',
+              }}
+            >
               {reservationDetails?.outlet}
             </Typography>
           </Box>
           {/* Display Client-Entered info (Budget, PIC, Promo) */}
-          {reservationDetails?.promoCode && (
+          {/* {reservationDetails?.promoCode && (
             <Box>
               <Typography variant="caption" color="text.secondary">
                 Promo
@@ -581,7 +650,8 @@ export default function CreatorLogisticsView({ campaign }) {
                 Person In Charge
               </Typography>
               <Typography variant="body2">
-                {reservationDetails.picName} ({reservationDetails.picContact})
+                {reservationDetails.picName}{' '}
+                {reservationDetails?.picContact && <span>({reservationDetails.picContact})</span>}
               </Typography>
             </Box>
           )}
@@ -601,7 +671,42 @@ export default function CreatorLogisticsView({ campaign }) {
               </Typography>
               <Typography variant="body2">{reservationDetails.clientRemarks}</Typography>
             </Box>
-          )}
+          )} */}
+          <InfoItem
+            label="Person In Charge"
+            value={
+              reservationDetails?.picName
+                ? `${reservationDetails.picName} ${reservationDetails?.picContact ? `(${reservationDetails.picContact})` : ''}`
+                : null
+            }
+            fieldKey="pic"
+            logisticId={logistic.id}
+            isAuto={isAutoSchedule} // Red dot logic only triggers if this is true
+          />
+
+          <InfoItem
+            label="Budget"
+            value={reservationDetails?.budget}
+            fieldKey="budget"
+            logisticId={logistic.id}
+            isAuto={isAutoSchedule}
+          />
+
+          <InfoItem
+            label="Promo/Menu"
+            value={reservationDetails?.promoCode}
+            fieldKey="promo"
+            logisticId={logistic.id}
+            isAuto={isAutoSchedule}
+          />
+
+          <InfoItem
+            label="Client Remarks"
+            value={reservationDetails?.clientRemarks}
+            fieldKey="remarks"
+            logisticId={logistic.id}
+            isAuto={isAutoSchedule}
+          />
         </Stack>
 
         {/* Buttons for Scheduled State */}
@@ -615,7 +720,7 @@ export default function CreatorLogisticsView({ campaign }) {
               sx={{
                 width: 'fit-content',
                 height: 44,
-                padding: { xs: '4px 8px', sm: '6px 10px' },
+                padding: { xs: '4px 14px', sm: '6px 18px' },
                 borderRadius: '8px',
                 boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
                 backgroundColor: '#1340FF',
@@ -681,13 +786,12 @@ export default function CreatorLogisticsView({ campaign }) {
 
   return (
     <>
-      {/* Main Wrapper Box (Replaces Card) */}
       <Box
         sx={{
           bgcolor: '#FFFFFF',
-          borderRadius: 2, // ~16px
+          borderRadius: 2,
           border: '1px solid',
-          borderColor: '#EDEFF2', // Light grey border
+          borderColor: '#EDEFF2',
           overflow: 'hidden',
           width: '100%',
         }}

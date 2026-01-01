@@ -5,6 +5,7 @@ import { Box, Link, List, Stack, Avatar, Divider, ListItem, Typography } from '@
 
 import Scrollbar from 'src/components/scrollbar';
 import Iconify from 'src/components/iconify';
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
 const getStatusConfig = (currentStatus, isReservation) => {
   switch (currentStatus) {
@@ -81,9 +82,8 @@ function ScheduledItem({ item, isReservation, onClick }) {
       const selectedSlot = details?.slots?.find((s) => s.status === 'SELECTED');
       if (selectedSlot) {
         return (
-          <Typography variant="body2" sx={{ color: '#1340FF', fontWeight: 600 }}>
-            {format(new Date(selectedSlot.startTime), 'h:mm a')} -{' '}
-            {format(new Date(selectedSlot.endTime), 'h:mm a')}
+          <Typography variant="body2" sx={{ color: '#231F20', fontWeight: 600 }}>
+            {formatReservationSlot(selectedSlot.startTime, selectedSlot.endTime)}
           </Typography>
         );
       }
@@ -116,12 +116,29 @@ function ScheduledItem({ item, isReservation, onClick }) {
   };
 
   return (
-    <ListItem sx={{ px: 4, py: 2, alignItems: 'flex-start' }}>
+    <ListItem
+      sx={{
+        px: 3,
+        py: 1,
+        alignItems: 'flex-start',
+        cursor: 'pointer',
+        borderRadius: '10px',
+        transition: 'background-color 0.2s',
+        '&:hover': {
+          bgcolor: 'rgba(0, 0, 0, 0.03)',
+        },
+      }}
+      onClick={() => onClick(item.id)}
+    >
       <Box sx={{ width: '2px', height: 65, bgcolor: '#1340FF', mr: 2, flexShrink: 0 }} />
       <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ width: 30, height: 30, mr: 2 }} />
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="subtitle1" noWrap>
+          <Typography
+            variant="body"
+            noWrap
+            sx={{ fontSize: '20px', fontWeight: 500, fontFamily: 'Inter', mt: -0.5 }}
+          >
             {creator.name || 'Unknown Creator'}
           </Typography>
           <Box
@@ -135,20 +152,36 @@ function ScheduledItem({ item, isReservation, onClick }) {
               fontSize: '10px',
               fontWeight: 600,
               textTransform: 'capitalize',
+              mt: -0.5,
             }}
           >
             {statusConfig.label}
           </Box>
         </Stack>
 
-        <Typography variant="body2" sx={{ color: 'text.primary' }}>
+        <Typography
+          variant="body"
+          sx={{
+            color: '#8E8E93',
+            fontSize: '14px',
+            fontWeight: 400,
+            fontFamily: 'Inter',
+          }}
+        >
           {creator.phoneNumber || '-'}
         </Typography>
 
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography
             variant="body2"
-            sx={{ color: 'text.secondary', maxWidth: '60%', fontWeight: 600 }}
+            textTransform={isReservation ? 'capitalize' : ''}
+            sx={{
+              color: '#8E8E93',
+              fontSize: '14px',
+              fontFamily: 'Inter',
+              fontWeight: 600,
+              maxWidth: '60%',
+            }}
           >
             {mainInfo}
           </Typography>
@@ -172,17 +205,33 @@ ScheduledItem.propTypes = {
 
 export default function LogisticsScheduledList({ date, logistics, isReservation, onClick }) {
   const safeLogistics = logistics || [];
+  const dateString = format(date, 'yyyy-MM-dd');
 
-  const dayLogistics = safeLogistics.filter((item) => {
-    if (isReservation) {
-      const selectedSlot = item.reservationDetails?.slots?.find((s) => s.status === 'SELECTED');
-      if (!selectedSlot) return false;
-      return isSameDay(new Date(selectedSlot.startTime), date);
-    }
+  const dayLogistics = safeLogistics
+    .filter((item) => {
+      if (isReservation) {
+        const selectedSlot = item.reservationDetails?.slots?.find((s) => s.status === 'SELECTED');
+        if (!selectedSlot) return false;
+        // return isSameDay(new Date(selectedSlot.startTime), date);
+        return selectedSlot?.startTime.startsWith(dateString);
+      }
 
-    if (!item.deliveryDetails?.expectedDeliveryDate) return false;
-    return isSameDay(new Date(item.deliveryDetails.expectedDeliveryDate), date);
-  });
+      if (!item.deliveryDetails?.expectedDeliveryDate) return false;
+      // return isSameDay(new Date(item.deliveryDetails.expectedDeliveryDate), date);
+      return item.deliveryDetails?.expectedDeliveryDate?.startsWith(dateString);
+    })
+    .sort((a, b) => {
+      const getCompareTime = (item) => {
+        if (isReservation) {
+          return (
+            item.reservationDetails?.slots?.find((s) => s.status === 'SELECTED')?.startTime || ''
+          );
+        }
+        return item.deliveryDetails?.expectedDeliveryDate || '';
+      };
+
+      return getCompareTime(a).localeCompare(getCompareTime(b));
+    });
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -193,7 +242,7 @@ export default function LogisticsScheduledList({ date, logistics, isReservation,
         </Typography>
       </Stack>
       <Divider />
-      <Typography variant="h6" sx={{ px: '14px', py: '12px' }}>
+      <Typography variant="h6" sx={{ px: '14px', py: '8px' }}>
         {format(date, 'EEEE, d MMMM yyyy')}
       </Typography>
 
