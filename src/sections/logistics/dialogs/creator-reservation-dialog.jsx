@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import * as Yup from 'yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 
 import {
@@ -41,13 +41,22 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
     fetcher
   );
 
+  const isAuto = config?.mode === 'AUTO_SCHEDULE';
+
+  const isLocked = useMemo(() => {
+    if (!isAuto || !config?.availabilityRules) return false;
+    const totalSlotsCount = config.availabilityRules.reduce(
+      (acc, rule) => acc + (rule.slots?.length || 0),
+      0
+    );
+    return totalSlotsCount === 1;
+  }, [config, isAuto]);
+
   const ReservationSchema = Yup.object().shape({
     outlet: Yup.string().required('Outlet is required'),
     contactNumber: Yup.string().required('Contact number is required'),
     remarks: Yup.string(),
-    selectedSlots: Yup.array()
-      .min(1, 'Please select at least one availability slot')
-      .required('Availability is required'),
+    selectedSlots: Yup.array().required('Availability is required'),
   });
 
   const defaultValues = {
@@ -71,19 +80,39 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
     formState: { isSubmitting },
   } = methods;
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name: 'selectedSlots',
   });
 
   useEffect(() => {
-    if (open) {
+    if (open && config) {
       reset(defaultValues);
       setShowPicker(false);
-      setValue('contactNumber', user?.phoneNumber || '');
+
+      if (isLocked && config.availabilityRules?.length > 0) {
+        const firstRule = config.availabilityRules[0];
+        const firstSlot = firstRule.slots[0];
+        const dateStr = firstRule.dates[0];
+
+        const autoSlot = {
+          start: `${dateStr}T${firstSlot.startTime}:00.000Z`,
+          end: `${dateStr}T${firstSlot.endTime}:00.000Z`,
+        };
+
+        replace([autoSlot]);
+
+        if (config.locations?.length > 0) {
+          const firstLoc =
+            typeof config.locations[0] === 'string'
+              ? config.locations[0]
+              : config.locations[0].name;
+          setValue('outlet', firstLoc);
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, reset]);
+  }, [open, isLocked, config, replace]);
 
   const onSubmit = async (data) => {
     try {
@@ -110,6 +139,12 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
   };
 
   const handleAddSlot = (slot) => {
+    if (isAuto) {
+      replace([slot]);
+      setShowPicker(false);
+      return;
+    }
+
     if (fields.length >= 3) {
       enqueueSnackbar('You can only select up to 3 slots', { variant: 'warning' });
       return;
@@ -124,7 +159,201 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
     }
   };
 
-  return (
+  return isAuto ? (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{ sx: { bgcolor: '#F4F4F4', borderRadius: 2 } }}
+    >
+      <DialogTitle sx={{ pb: 1 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+          <Box>
+            <Typography
+              variant="h3"
+              fontFamily="instrument serif"
+              sx={{ fontWeight: 400, color: '#231F20' }}
+            >
+              Confirm Details
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#231F20', mt: 0.5 }}>
+              You can reschedule later.
+            </Typography>
+          </Box>
+          <IconButton onClick={onClose}>
+            <Iconify icon="eva:close-outline" />
+          </IconButton>
+        </Stack>
+      </DialogTitle>
+
+      <Divider sx={{ mb: 2, mx: 3 }} />
+
+      <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+        <DialogContent sx={{ overflowY: 'auto', maxHeight: '70vh', px: 3 }}>
+          <Stack spacing={3}>
+            {/* Contact Number */}
+            <Box>
+              <Typography variant="caption" sx={{ color: '#636366', display: 'block', mb: 0.5 }}>
+                Contact Number <span style={{ color: '#FF4842' }}>*</span>
+              </Typography>
+              <RHFTextField
+                name="contactNumber"
+                placeholder="+60 12-3151 580"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#FFFFFF',
+                    borderRadius: 1,
+                    '& fieldset': {
+                      borderRadius: 1,
+                    },
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Outlet Selection */}
+            <Box>
+              <Typography variant="caption" sx={{ color: '#636366', display: 'block', mb: 0.5 }}>
+                Select Outlet <span style={{ color: '#FF4842' }}>*</span>
+              </Typography>
+              <RHFSelect
+                name="outlet"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#FFFFFF',
+                    borderRadius: 1,
+                    '& fieldset': {
+                      borderRadius: 1,
+                    },
+                  },
+                }}
+              >
+                {config?.locations?.map((loc, idx) => {
+                  const val = typeof loc === 'string' ? loc : loc.name;
+                  return (
+                    <MenuItem key={idx} value={val} sx={{ textTransform: 'capitalize' }}>
+                      {val}
+                    </MenuItem>
+                  );
+                })}
+              </RHFSelect>
+            </Box>
+
+            {/* Time Slot Selection */}
+            <Box>
+              <Typography variant="caption" sx={{ color: '#636366', display: 'block', mb: 0.5 }}>
+                Confirm Time Slot <span style={{ color: '#FF4842' }}>*</span>
+              </Typography>
+
+              <Stack spacing={1.5}>
+                {fields.map((item, index) => (
+                  <Stack key={item.id} direction="row" spacing={1}>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      spacing={1.5}
+                      sx={{
+                        flexGrow: 1,
+                        p: 1.5,
+                        bgcolor: isLocked ? '#F9F9F9' : '#FFFFFF',
+                        borderRadius: 1,
+                        border: '1px solid #EDEFF2',
+                      }}
+                    >
+                      <Iconify icon="eva:calendar-outline" sx={{ color: '#1340FF' }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#231F20' }}>
+                        {formatReservationSlot(item.start, item.end, true)}
+                      </Typography>
+                    </Stack>
+
+                    {!isLocked && (
+                      <IconButton
+                        onClick={() => remove(index)}
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 1,
+                          bgcolor: '#FFFFFF',
+                          border: '1px solid #EDEFF2',
+                          color: '#FF5630',
+                          '&:hover': { bgcolor: '#FFF5F5' },
+                        }}
+                      >
+                        <Iconify icon="eva:trash-2-outline" width={22} />
+                      </IconButton>
+                    )}
+                  </Stack>
+                ))}
+
+                {/* Show Picker only if not locked and we haven't reached limits */}
+                {!isLocked && !showPicker && (
+                  <Button
+                    onClick={() => setShowPicker(true)}
+                    disabled={isAuto ? fields.length >= 1 : fields.length >= 3}
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      minWidth: 48,
+                      borderRadius: 1,
+                      bgcolor: '#FFFFFF',
+                      color: '#1340FF',
+                      border: '1px solid #E0E0E0',
+                      '&:hover': { bgcolor: '#F4F6F8' },
+                    }}
+                  >
+                    <Iconify icon="eva:plus-fill" width={24} />
+                  </Button>
+                )}
+
+                <Collapse in={showPicker} unmountOnExit>
+                  <CreatorCalendarPicker
+                    campaignId={campaign?.id}
+                    onSlotSelect={handleAddSlot}
+                    onCancel={() => setShowPicker(false)}
+                  />
+                </Collapse>
+              </Stack>
+            </Box>
+
+            {/* Remarks */}
+            <Box>
+              <Typography variant="caption" sx={{ color: '#636366', display: 'block', mb: 0.5 }}>
+                Remarks
+              </Typography>
+              <RHFTextField
+                name="remarks"
+                multiline
+                rows={3}
+                placeholder="Add any special notes..."
+                sx={{ bgcolor: '#fff', borderRadius: 1 }}
+              />
+            </Box>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3 }}>
+          <Button variant="outlined" onClick={onClose} sx={{ bgcolor: '#fff', color: '#231F20' }}>
+            Cancel
+          </Button>
+          <LoadingButton
+            type="submit"
+            variant="contained"
+            loading={isSubmitting}
+            sx={{
+              bgcolor: '#1340FF',
+              color: '#FFFFFF',
+              boxShadow: '0px -4px 0px 0px #0B2DAD inset',
+              px: 4,
+              '&:hover': { bgcolor: '#0B2DAD' },
+            }}
+          >
+            Confirm
+          </LoadingButton>
+        </DialogActions>
+      </FormProvider>
+    </Dialog>
+  ) : (
     <Dialog
       open={open}
       onClose={onClose}
@@ -263,9 +492,10 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
                   </Button>
                 )}
                 {fields.length >= 3 && (
-                  <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1 }}>
-                    Maximum of 3 slots reached. Remove one to select a different time.
-                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'text.secondary', mt: 1 }}
+                  ></Typography>
                 )}
               </Stack>
             </Box>

@@ -12,6 +12,7 @@ import ScheduleReservationDialog from '../dialogs/schedule-reservation-dialog';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
 
 import { formatReservationSlot } from 'src/utils/reservation-time';
+import { config } from '@fullcalendar/core/internal';
 
 export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAdmin, onClose }) {
   // Dialog States
@@ -28,6 +29,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
   const proposedSlots = details?.slots?.filter((slot) => slot.status === 'PROPOSED') || [];
   const isDetailsConfirmed = details?.isConfirmed;
   const hasIssue = status === 'ISSUE_REPORTED';
+  const isAuto = config?.mode === 'AUTO_SCHEDULE';
 
   // --- Button Logic ---
   const renderActionButtons = () => {
@@ -90,7 +92,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
         )}
 
         {/* 2. Schedule Button (If not done) */}
-        {!isScheduled && (
+        {!isScheduled && !isAuto && (
           <Badge color="error" variant="dot">
             <Button
               variant="contained"
