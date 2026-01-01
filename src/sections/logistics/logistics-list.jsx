@@ -66,6 +66,7 @@ export default function LogisticsList({
   isAdmin,
   logistics: propLogistics,
   isReservation,
+  onClick,
 }) {
   const { enqueueSnackbar } = useSnackbar();
   const {
@@ -79,18 +80,12 @@ export default function LogisticsList({
   const STATUS_OPTIONS = getStatusOption(isReservation);
   const TABLE_HEAD = getTableHead(isReservation);
 
-  const [selectedLogisticId, setSelectedLogisticId] = useState(null);
-  const [openDrawer, setOpenDrawer] = useState(false);
   const [statusAnchorEl, setStatusAnchorEl] = useState(null);
   const [statusTargetId, setStatusTargetId] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingNewStatus, setPendingNewStatus] = useState(null);
   const [statusLoading, setStatusLoading] = useState(false);
 
-  const selectedLogistic = useMemo(
-    () => logistics?.find((item) => item.id === selectedLogisticId),
-    [logistics, selectedLogisticId]
-  );
 
   const statusLogistic = useMemo(
     () => logistics?.find((item) => item.id === statusTargetId),
@@ -98,13 +93,9 @@ export default function LogisticsList({
   );
 
   const handleClick = (logisticId) => {
-    setSelectedLogisticId(logisticId);
-    setOpenDrawer(true);
+    onClick(logisticId);
   };
 
-  const handleCloseDrawer = () => {
-    setOpenDrawer(false);
-  };
 
   const handleEditStatus = (e, id) => {
     e.stopPropagation();
@@ -207,25 +198,6 @@ export default function LogisticsList({
         </TableContainer>
       </Card>
 
-      {isAdmin ? (
-        <LogisticsDrawer
-          open={openDrawer}
-          onClose={handleCloseDrawer}
-          logistic={selectedLogistic}
-          onUpdate={mutate}
-          campaignId={campaignId}
-          isReservation={isReservation}
-        />
-      ) : (
-        <LogisticsDrawer
-          open={openDrawer}
-          onClose={handleCloseDrawer}
-          logistic={selectedLogistic}
-          onUpdate={mutate}
-          campaignId={campaignId}
-          isReservation={isReservation}
-        />
-      )}
       {isAdmin && (
         <Popover
           open={Boolean(statusAnchorEl)}

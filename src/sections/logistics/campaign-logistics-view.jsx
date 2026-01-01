@@ -22,6 +22,7 @@ import BulkAssignView from './bulk-assign-view';
 import LogisticsCalendar from './logistics-calendar';
 import LogisticsScheduledList from './logistics-scheduled-list';
 import LogisticsAnalytics from './logistics-analytics';
+import LogisticsDrawer from './logistics-drawer';
 
 const DELIVERY_OPTIONS = [
   { value: 'all', label: 'All' },
@@ -54,6 +55,8 @@ export default function CampaignLogisticsView({
   const [date, setDate] = useState(new Date());
   const [filterName, setFilterName] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [openDrawer, setOpenDrawer] = useState(false);
+  const [selectedLogisticId, setSelectedLogisticId] = useState(null);
 
   const { data: logistics, mutate } = useSWR(
     campaign?.id ? `/api/logistics/campaign/${campaign?.id}` : null,
@@ -83,6 +86,20 @@ export default function CampaignLogisticsView({
       }),
     [safeLogistics, filterName, filterStatus]
   );
+
+  const selectedLogistic = useMemo(
+    () => safeLogistics.find((item) => item.id === selectedLogisticId),
+    [safeLogistics, selectedLogisticId]
+  );
+
+  const handleOpenDrawer = (id) => {
+    setSelectedLogisticId(id);
+    setOpenDrawer(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setOpenDrawer(false);
+  };
 
   const handleFilterName = (event) => {
     setFilterName(event.target.value);
@@ -132,6 +149,7 @@ export default function CampaignLogisticsView({
                 date={date}
                 logistics={safeLogistics}
                 isReservation={isReservation}
+                onClick={handleOpenDrawer}
               />
             </Box>
           </Card>
@@ -278,6 +296,16 @@ export default function CampaignLogisticsView({
         campaignId={campaign?.id}
         logistics={filteredLogistics}
         isAdmin={isAdmin}
+        isReservation={isReservation}
+        onClick={handleOpenDrawer}
+      />
+
+      <LogisticsDrawer
+        open={openDrawer}
+        onClose={handleCloseDrawer}
+        logistic={selectedLogistic}
+        onUpdate={mutate}
+        campaignId={campaign?.id}
         isReservation={isReservation}
       />
 

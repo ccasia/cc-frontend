@@ -55,7 +55,7 @@ const getStatusConfig = (currentStatus, isReservation) => {
   }
 };
 
-function ScheduledItem({ item, isReservation }) {
+function ScheduledItem({ item, isReservation, onClick }) {
   const creator = item.creator || {};
   const statusConfig = getStatusConfig(item.status, isReservation);
 
@@ -75,92 +75,6 @@ function ScheduledItem({ item, isReservation }) {
     }
   }
 
-  // const statusConfig = getStatusConfig(item.status);
-  // const trackingLink = deliveryDetails.trackingLink;
-
-  //   return (
-  //     <ListItem
-  //       sx={{
-  //         px: 4,
-  //         py: 2,
-  //         alignItems: 'flex-start',
-  //       }}
-  //     >
-  //       <Box
-  //         sx={{
-  //           width: '2px',
-  //           height: 65,
-  //           bgcolor: '#1340FF',
-  //           mr: 2,
-  //           // mt: 0.5,
-  //           flexShrink: 0,
-  //         }}
-  //       />
-  //       <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ width: 30, height: 30, mr: 2 }} />
-  //       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-  //         <Stack direction="row" alignItems="center" spacing={1}>
-  //           <Typography variant="subtitle1" noWrap>
-  //             {creator.name || 'Unknown Creator'}
-  //           </Typography>
-  //           <Box
-  //             sx={{
-  //               px: 0.5,
-  //               py: 0.25,
-  //               borderRadius: '4px',
-  //               backgroundColor: statusConfig.bgColor,
-  //               color: statusConfig.color,
-  //               border: `1px solid ${statusConfig.bgColor}`,
-  //               fontSize: '10px',
-  //               fontWeight: 600,
-  //               textTransform: 'capitalize',
-  //               whiteSpace: 'nowrap',
-  //             }}
-  //           >
-  //             {statusConfig.label}
-  //           </Box>
-  //         </Stack>
-
-  //         <Typography variant="body2" sx={{ color: 'text.primary' }}>
-  //           {creator.phoneNumber || '-'}
-  //         </Typography>
-
-  //         <Stack direction="row" alignItems="center" spacing={1}>
-  //           <Typography
-  //             variant="body2"
-  //             sx={{ color: 'text.secondary', maxWidth: '60%', fontWeight: 600 }}
-  //           >
-  //             {productString}
-  //           </Typography>
-  //           <Divider
-  //             orientation="vertical"
-  //             flexItem
-  //             sx={{ height: 14, alignSelf: 'center', color: '#8E8E93' }}
-  //           />
-  //           {trackingLink ? (
-  //             <Link
-  //               href={trackingLink}
-  //               target="_blank"
-  //               rel="noopener"
-  //               variant="body2"
-  //               sx={{
-  //                 color: '#0062CD',
-  //                 textDecoration: 'underline',
-  //                 fontWeight: 400,
-  //                 cursor: 'pointer',
-  //               }}
-  //             >
-  //               Tracking Link
-  //             </Link>
-  //           ) : (
-  //             <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
-  //               No tracking info
-  //             </Typography>
-  //           )}
-  //         </Stack>
-  //       </Box>
-  //     </ListItem>
-  //   );
-  // }
   // 2. Get Secondary Info (Tracking vs Time Slot)
   const renderSecondaryInfo = () => {
     if (isReservation) {
@@ -253,9 +167,10 @@ function ScheduledItem({ item, isReservation }) {
 ScheduledItem.propTypes = {
   item: PropTypes.object,
   isReservation: PropTypes.bool,
+  onClick: PropTypes.func,
 };
 
-export default function LogisticsScheduledList({ date, logistics, isReservation }) {
+export default function LogisticsScheduledList({ date, logistics, isReservation, onClick }) {
   const safeLogistics = logistics || [];
 
   const dayLogistics = safeLogistics.filter((item) => {
@@ -331,7 +246,12 @@ export default function LogisticsScheduledList({ date, logistics, isReservation 
         ) : (
           <List disablePadding>
             {dayLogistics.map((item) => (
-              <ScheduledItem key={item.id} item={item} isReservation={isReservation} />
+              <ScheduledItem
+                key={item.id}
+                item={item}
+                isReservation={isReservation}
+                onClick={onClick}
+              />
             ))}
           </List>
         )}
@@ -344,4 +264,5 @@ LogisticsScheduledList.propTypes = {
   date: PropTypes.object,
   logistics: PropTypes.array,
   isReservation: PropTypes.bool,
+  onClick: PropTypes.func,
 };

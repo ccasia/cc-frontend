@@ -88,9 +88,9 @@ export default function ScheduleReservationDialog({
 
     return (
       !isFullDay &&
-      slot.attendees?.some((a) => a.id !== logistic.creatorId && a.status === 'SELECTED')
+      slot.attendees?.some((a) => a.id !== logistic?.creatorId && a.status === 'SELECTED')
     );
-  }, [selectedSlotTime, slotsForSelectedDate, logistic.creatorId]);
+  }, [selectedSlotTime, slotsForSelectedDate, logistic?.creatorId]);
 
   const calendarGrid = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -107,10 +107,10 @@ export default function ScheduleReservationDialog({
   );
 
   const isNotProposedSlot = useMemo(() => {
-    if (!selectedSlotTime) return false;
+    if (!selectedSlotTime || !logistic) return false;
 
     return !proposedSlots.some((p) => p.startTime === selectedSlotTime);
-  }, [selectedSlotTime, proposedSlots]);
+  }, [selectedSlotTime, proposedSlots, logistic]);
 
   const confirmedSlot = useMemo(
     () => details?.slots?.find((s) => s.status === 'SELECTED'),
