@@ -2,7 +2,6 @@
 import PropTypes from 'prop-types';
 import React, { useMemo, useState, useEffect } from 'react';
 
-import { PieChart } from '@mui/x-charts';
 import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import {
   Box,
@@ -35,7 +34,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import { EngagementRateHeatmap, TopCreatorsLineChart } from 'src/components/trend-analysis';
+import { TopCreatorsLineChart, EngagementRateHeatmap } from 'src/components/trend-analysis';
 import PlatformOverviewMobile from 'src/components/campaign-analytics/PlatformOverviewMobile';
 import PlatformOverviewDesktop from 'src/components/campaign-analytics/PlatformOverviewDesktop';
 
@@ -480,8 +479,7 @@ const CampaignAnalytics = ({ campaign }) => {
   };
 
   // eslint-disable-next-line react/no-unstable-nested-components
-  const PlatformOverviewLayout = () => {
-    return (
+  const PlatformOverviewLayout = () => (
       <Box sx={{ mb: 3 }}>
         {/* Mobile Layout */}
         <PlatformOverviewMobile
@@ -508,7 +506,6 @@ const CampaignAnalytics = ({ campaign }) => {
         />
       </Box>
     );
-  };
 
   // Add this new function before CoreMetricsSection
   const findTopPerformerByMetric = (metricKey, insights, submissionsList) => {
@@ -546,10 +543,10 @@ const CampaignAnalytics = ({ campaign }) => {
 
     return (
       <Grid item xs={12}>
-        <Box px={2.5} borderRadius={1} border="2px solid #F5F5F5">
+        <Box borderRadius={1} border="2px solid #F5F5F5">
           <Box sx={{ py: 1 }}>
             {/* Desktop Layout (md+) */}
-            <Box display={{ xs: 'none', md: 'flex' }} alignItems="center">
+            <Box px={{ xs: 0, sm: 2 }} display={{ xs: 'none', md: 'flex' }} alignItems="center">
               {/* Left Side: Creator Info */}
               <Stack direction="row" spacing={2} alignItems="center">
                 <Avatar
@@ -756,9 +753,9 @@ const CampaignAnalytics = ({ campaign }) => {
             </Box>
 
             {/* Mobile Layout (xs) */}
-            <Box display={{ xs: 'flex', md: 'none' }} flexDirection="column" sx={{ py: 2 }}>
+            <Box display={{ xs: 'flex', md: 'none' }} flexDirection="column" alignItems="center" sx={{ py: 2 }}>
               {/* Top: Creator Info */}
-              <Box display="flex" mb={2}>
+              <Box display="flex" mb={2} width={300}>
                 <Avatar
                   sx={{
                     width: 40,
@@ -797,7 +794,7 @@ const CampaignAnalytics = ({ campaign }) => {
               {(() => {
                 if (insightData) {
                   return (
-                    <Box display="flex" gap={1.2} mb={2}>
+                    <Box display="flex" gap={1.5} textAlign="center" maxWidth={300} mb={2}>
                       {/* Engagement Rate */}
                       <Box>
                         <Typography
