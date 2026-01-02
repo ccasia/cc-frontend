@@ -26,7 +26,7 @@ const NewInfoBadge = () => (
       borderRadius: '50%',
       bgcolor: '#FF3500',
       display: 'inline-block',
-      mr: 1,
+      ml: 1,
     }}
   />
 );

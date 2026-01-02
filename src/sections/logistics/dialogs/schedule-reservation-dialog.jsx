@@ -197,6 +197,19 @@ export default function ScheduleReservationDialog({
     }
   };
 
+  const sortedAttendees = useMemo(() => {
+    const selectedSlot = slotsForSelectedDate.find((s) => s.startTime === selectedSlotTime);
+    if (!selectedSlotTime || !selectedSlot) return [];
+
+    const list = [...(selectedSlot.attendees || [])];
+
+    return list.sort((a, b) => {
+      if (a.id === logistic?.creatorId) return -1;
+      if (b.id === logistic?.creatorId) return 1;
+      return 0;
+    });
+  }, [selectedSlotTime, slotsForSelectedDate, logistic]);
+
   return (
     <Dialog
       open={open}
@@ -391,127 +404,125 @@ export default function ScheduleReservationDialog({
               </Typography>
               {selectedSlotTime && (
                 <Stack spacing={1}>
-                  {slotsForSelectedDate
-                    .find((s) => s.startTime === selectedSlotTime)
-                    ?.attendees.map((attendee) => {
-                      const isTargetCreator = attendee.id === logistic.creatorId;
-                      const tag = getOptionTag(attendee);
+                  {sortedAttendees.map((attendee) => {
+                    const isTargetCreator = attendee.id === logistic.creatorId;
+                    const tag = getOptionTag(attendee);
 
-                      const tooltip = (
-                        <Box sx={{ p: 0.5 }}>
-                          {attendee.otherSlots?.map((slot, i) => (
-                            <Typography
-                              key={i}
-                              variant="caption"
-                              sx={{ display: 'block', fontSize: '12px' }}
-                            >
-                              {formatReservationSlot(slot.start, slot.end, true)}
-                            </Typography>
-                          ))}
+                    const tooltip = (
+                      <Box sx={{ p: 0.5 }}>
+                        {attendee.otherSlots?.map((slot, i) => (
+                          <Typography
+                            key={i}
+                            variant="caption"
+                            sx={{ display: 'block', fontSize: '12px' }}
+                          >
+                            {formatReservationSlot(slot.start, slot.end, true)}
+                          </Typography>
+                        ))}
+                      </Box>
+                    );
+
+                    return (
+                      <Stack
+                        key={attendee.id}
+                        direction="row"
+                        spacing={1}
+                        borderLeft={isTargetCreator ? '2px solid #1340FF' : ''}
+                        pl={1}
+                      >
+                        <Avatar src={attendee.photoURL} sx={{ width: 32, height: 32 }} />
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 700, fontSize: '16px', display: 'block' }}
+                          >
+                            {attendee.name}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            // color="text.secondary"
+                            sx={{
+                              fontWeight: 400,
+                              display: 'block',
+                              fontSize: '14px',
+                              mt: -0.25,
+                            }}
+                          >
+                            {`@${attendee.handle}` || ''}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            // color="text.secondary"
+                            sx={{
+                              fontWeight: 400,
+                              display: 'block',
+                              fontSize: '14px',
+                              mt: -0.25,
+                            }}
+                          >
+                            {attendee.phoneNumber}
+                          </Typography>
                         </Box>
-                      );
 
-                      return (
-                        <Stack
-                          key={attendee.id}
-                          direction="row"
-                          spacing={1}
-                          borderLeft={isTargetCreator ? '2px solid #1340FF' : ''}
-                          pl={1}
-                        >
-                          <Avatar src={attendee.photoURL} sx={{ width: 32, height: 32 }} />
-                          <Box sx={{ flexGrow: 1 }}>
-                            <Typography
-                              variant="caption"
-                              sx={{ fontWeight: 700, fontSize: '16px', display: 'block' }}
-                            >
-                              {attendee.name}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              // color="text.secondary"
-                              sx={{
-                                fontWeight: 400,
-                                display: 'block',
-                                fontSize: '14px',
-                                mt: -0.25,
-                              }}
-                            >
-                              {`@${attendee.handle}` || ''}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              // color="text.secondary"
-                              sx={{
-                                fontWeight: 400,
-                                display: 'block',
-                                fontSize: '14px',
-                                mt: -0.25,
-                              }}
-                            >
-                              {attendee.phoneNumber}
-                            </Typography>
-                          </Box>
-
-                          {/* Show Status Chip */}
-                          <Tooltip
-                            title={attendee.otherSlots?.length > 0 ? tooltip : ''}
-                            placement="bottom"
-                            slotProps={{
-                              popper: {
-                                modifiers: [
-                                  {
-                                    name: 'offset',
-                                    options: {
-                                      offset: [40, -10],
-                                    },
+                        {/* Show Status Chip */}
+                        <Tooltip
+                          title={attendee.otherSlots?.length > 0 ? tooltip : ''}
+                          placement="bottom"
+                          slotProps={{
+                            popper: {
+                              modifiers: [
+                                {
+                                  name: 'offset',
+                                  options: {
+                                    offset: [40, -10],
                                   },
-                                ],
-                              },
-                              tooltip: {
-                                sx: {
-                                  bgcolor: '#FFFFFF',
-                                  color: '#231F20',
-                                  borderRadius: 1.5,
-                                  border: '1px solid #EAEAEA',
-                                  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
-                                  '& .MuiTooltip-arrow': {
-                                    color: '#FFFFFF',
-                                    '&:before': {
-                                      border: '1px solid #EAEAEA',
-                                    },
+                                },
+                              ],
+                            },
+                            tooltip: {
+                              sx: {
+                                bgcolor: '#FFFFFF',
+                                color: '#231F20',
+                                borderRadius: 1.5,
+                                border: '1px solid #EAEAEA',
+                                boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
+                                '& .MuiTooltip-arrow': {
+                                  color: '#FFFFFF',
+                                  '&:before': {
+                                    border: '1px solid #EAEAEA',
                                   },
                                 },
                               },
+                            },
+                          }}
+                        >
+                          <Chip
+                            label={tag.label}
+                            size="small"
+                            variant="soft"
+                            color={tag.color}
+                            sx={{
+                              fontSize: '9px',
+                              height: 18,
+                              cursor: attendee.otherSlots?.length > 0 ? 'help' : 'default',
+                              ...(tag.color === 'error' && {
+                                bgcolor: '#FFE9E9',
+                                color: '#FF4842',
+                              }),
+                              ...(tag.color === 'info' && {
+                                bgcolor: '#E9F0FF',
+                                color: '#1340FF',
+                              }),
+                              ...(tag.color === 'success' && {
+                                bgcolor: '#E9FFF0',
+                                color: '#22C55E',
+                              }),
                             }}
-                          >
-                            <Chip
-                              label={tag.label}
-                              size="small"
-                              variant="soft"
-                              color={tag.color}
-                              sx={{
-                                fontSize: '9px',
-                                height: 18,
-                                cursor: attendee.otherSlots?.length > 0 ? 'help' : 'default',
-                                ...(tag.color === 'error' && {
-                                  bgcolor: '#FFE9E9',
-                                  color: '#FF4842',
-                                }),
-                                ...(tag.color === 'info' && {
-                                  bgcolor: '#E9F0FF',
-                                  color: '#1340FF',
-                                }),
-                                ...(tag.color === 'success' && {
-                                  bgcolor: '#E9FFF0',
-                                  color: '#22C55E',
-                                }),
-                              }}
-                            />
-                          </Tooltip>
-                        </Stack>
-                      );
-                    })}
+                          />
+                        </Tooltip>
+                      </Stack>
+                    );
+                  })}
                   {!slotsForSelectedDate
                     .find((s) => s.startTime === selectedSlotTime)
                     ?.attendees.some((a) => a.id === logistic.creatorId) &&

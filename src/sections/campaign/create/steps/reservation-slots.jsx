@@ -1994,7 +1994,10 @@ const ReservationSlotsV2 = () => {
         allDay: false,
       };
     }
-    setValue('availabilityRules', [...savedRules, newRule]);
+    setValue('availabilityRules', [...savedRules, newRule], {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
 
     enqueueSnackbar('Added successfully', { variant: 'success' });
     setSelectedDates([]);
@@ -2003,10 +2006,11 @@ const ReservationSlotsV2 = () => {
   };
 
   const handleRemoveRule = (index) => {
-    setValue(
-      'availabilityRules',
-      savedRules.filter((_, i) => i !== index)
-    );
+    const updatedRules = savedRules.filter((_, i) => i !== index);
+    setValue('availabilityRules', updatedRules, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   let renderRightColumn;
