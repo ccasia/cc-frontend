@@ -27,8 +27,8 @@ import FormProvider, { RHFTextField, RHFSelect } from 'src/components/hook-form'
 import axiosInstance, { fetcher } from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 
-import CreatorCalendarPicker from './creator-calendar-picker';
 import { formatReservationSlot } from 'src/utils/reservation-time';
+import CreatorCalendarPicker from './creator-calendar-picker';
 
 export default function CreatorReservationDialog({ open, onClose, campaign, onUpdate }) {
   const { user } = useAuthContext();
@@ -492,10 +492,9 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
                   </Button>
                 )}
                 {fields.length >= 3 && (
-                  <Typography
-                    variant="caption"
-                    sx={{ color: 'text.secondary', mt: 1 }}
-                  ></Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1 }}>
+                    Delete a time slot to add new time slots.
+                  </Typography>
                 )}
               </Stack>
             </Box>

@@ -85,7 +85,6 @@ export default function LogisticsList({
   const [pendingNewStatus, setPendingNewStatus] = useState(null);
   const [statusLoading, setStatusLoading] = useState(false);
 
-
   const statusLogistic = useMemo(
     () => logistics?.find((item) => item.id === statusTargetId),
     [logistics, statusTargetId]
@@ -94,7 +93,6 @@ export default function LogisticsList({
   const handleClick = (logisticId) => {
     onClick(logisticId);
   };
-
 
   const handleEditStatus = (e, id) => {
     e.stopPropagation();
@@ -308,4 +306,5 @@ LogisticsList.propTypes = {
   logistics: PropTypes.array,
   isAdmin: PropTypes.bool,
   isReservation: PropTypes.bool,
+  onClick: PropTypes.func,
 };

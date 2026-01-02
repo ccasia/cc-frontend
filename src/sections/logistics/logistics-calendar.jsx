@@ -153,7 +153,7 @@ export default function LogisticsCalendar({ date, onChange, logistics, isReserva
           slotProps={{
             day: {
               logistics: safeLogistics,
-              isReservation: isReservation,
+              isReservation,
             },
           }}
           sx={{

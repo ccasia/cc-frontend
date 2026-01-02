@@ -4,15 +4,14 @@ import { useState } from 'react';
 import { Box, Stack, Button, Divider, Typography, Badge, Chip } from '@mui/material';
 import Iconify from 'src/components/iconify';
 
+import { formatReservationSlot } from 'src/utils/reservation-time';
+import { config } from '@fullcalendar/core/internal';
 import LogisticsStepper from '../logistics-stepper';
 
 // DIALOGS (To be implemented next)
 import ConfirmReservationDetailsDialog from '../dialogs/confirm-reservation-details-dialog';
 import ScheduleReservationDialog from '../dialogs/schedule-reservation-dialog';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
-
-import { formatReservationSlot } from 'src/utils/reservation-time';
-import { config } from '@fullcalendar/core/internal';
 
 export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAdmin, onClose }) {
   // Dialog States

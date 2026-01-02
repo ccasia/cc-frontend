@@ -11,8 +11,8 @@ import { fDate } from 'src/utils/format-time';
 import { useSnackbar } from 'src/components/snackbar';
 import { useAuthContext } from 'src/auth/hooks';
 
-import { CreatorLogisticsStepper } from './logistics-stepper';
 import { formatReservationSlot } from 'src/utils/reservation-time';
+import { CreatorLogisticsStepper } from './logistics-stepper';
 import ReportIssueDialog from './dialogs/report-issue-dialog';
 import ConfirmDeliveryDetailsDialog from './dialogs/confirm-details-dialog';
 import CreatorReservationDialog from './dialogs/creator-reservation-dialog';
@@ -70,6 +70,14 @@ const InfoItem = ({ label, value, fieldKey, logisticId, isAuto }) => {
       </Typography>
     </Box>
   );
+};
+
+InfoItem.propTypes = {
+  label: PropTypes.string,
+  value: PropTypes.string,
+  fieldKey: PropTypes.string,
+  logisticId: PropTypes.string,
+  isAuto: PropTypes.bool,
 };
 
 export default function CreatorLogisticsView({ campaign }) {
