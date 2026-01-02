@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import PropTypes from 'prop-types';
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import { Box, Alert, Tooltip, Typography, CircularProgress } from '@mui/material';
 
@@ -43,7 +43,7 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
 
   // Always show 6 weeks, latest week is rightmost
   const NUM_WEEKS = weeks || 6;
-  let grid = heatmapData?.heatmap || [];
+  const grid = heatmapData?.heatmap || [];
   // Pad with empty weeks if less than NUM_WEEKS
   while (grid.length < NUM_WEEKS) {
     grid.unshift(Array(7).fill({ date: null, engagementRate: null, totalPosts: null, totalViews: null, hasData: false }));
@@ -133,10 +133,10 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
 
         {/* Main Heatmap Grid */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, md: 1 } }}>
-          {Array.from({ length: 7 }).map((_, displayRow) => {
+          {Array.from({ length: 7 }).map((_, displayRow) => 
             // displayRow 0 = Monday, 1 = Tuesday, etc. (matches our generated array structure)
             
-            return (
+             (
               <Box
                 key={`day-row-${displayRow}`}
                 sx={{
@@ -196,8 +196,8 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
                   );
                 })}
               </Box>
-            );
-          })}
+            )
+          )}
 
           {/* X-axis: Week Labels at Bottom */}
           <Box
