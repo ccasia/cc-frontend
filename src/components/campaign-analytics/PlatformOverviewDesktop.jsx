@@ -1,23 +1,17 @@
 /* eslint-disable react/prop-types */
-import React, { useMemo } from 'react';
+import React from 'react';
+
 import { PieChart } from '@mui/x-charts';
 import { Box, Grid, Link, Avatar, Typography } from '@mui/material';
 
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
+
 import { formatNumber, calculateEngagementRate } from 'src/utils/socialMetricsCalculator';
 
-const PlatformOverviewDesktop = ({
-  platformCounts,
-  selectedPlatform,
-  summaryStats,
-  availablePlatforms,
-  filteredInsightsData,
-  filteredSubmissions,
-  insightsData,
-  getPlatformLabel,
-}) => {
-  // PostingsCard Component
-  const PostingsCard = () => (
+
+// PostingsCard extracted
+function PostingsCard({ platformCounts, selectedPlatform }) {
+  return (
     <Box
       sx={{
         textAlign: 'center',
@@ -39,7 +33,6 @@ const PlatformOverviewDesktop = ({
       >
         Postings
       </Typography>
-
       <Box
         sx={{
           display: 'flex',
@@ -65,7 +58,6 @@ const PlatformOverviewDesktop = ({
             >
               {platformCounts.Instagram > 0 ? platformCounts.Instagram : ''}
             </Typography>
-
             <Box
               sx={{
                 width: 54,
@@ -79,7 +71,6 @@ const PlatformOverviewDesktop = ({
                   );
                 })(),
                 backgroundColor: (() => {
-                  // Fill conditions based on selection and post count
                   if (platformCounts.Instagram === 0) return '#F5F5F5';
                   if (selectedPlatform === 'ALL') return '#1340FF';
                   if (selectedPlatform === 'Instagram') return '#1340FF';
@@ -104,10 +95,8 @@ const PlatformOverviewDesktop = ({
               Instagram
             </Typography>
           </Box>
-
           {/* TikTok Beam */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {/* Post count above beam */}
             <Typography
               variant="h6"
               sx={{
@@ -120,7 +109,6 @@ const PlatformOverviewDesktop = ({
             >
               {platformCounts.TikTok > 0 ? platformCounts.TikTok : ''}
             </Typography>
-
             <Box
               sx={{
                 width: 54,
@@ -132,7 +120,6 @@ const PlatformOverviewDesktop = ({
                   return minHeight + (platformCounts.TikTok / maxCount) * (maxHeight - minHeight);
                 })(),
                 backgroundColor: (() => {
-                  // Fill conditions based on selection and post count
                   if (platformCounts.TikTok === 0) return '#F5F5F5';
                   if (selectedPlatform === 'ALL') return '#1340FF';
                   if (selectedPlatform === 'TikTok') return '#1340FF';
@@ -161,149 +148,149 @@ const PlatformOverviewDesktop = ({
       </Box>
     </Box>
   );
+}
 
-  // TopEngagementCard Component
-  const TopEngagementCard = () => {
-    // Find the creator with the highest engagement rate
-    const topEngagementCreator = useMemo(() => {
-      if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
-
-      let highestEngagement = -1;
-      let topCreator = null;
-
-      filteredInsightsData.forEach((insightData) => {
-        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-        if (submission) {
-          const engagementRate = calculateEngagementRate(insightData.insight);
-          if (engagementRate > highestEngagement) {
-            highestEngagement = engagementRate;
-            topCreator = {
-              ...submission,
-              engagementRate,
-              insightData,
-            };
-          }
+// TopEngagementCard extracted
+function TopEngagementCard({ filteredInsightsData, filteredSubmissions, getCreatorById, engagementRateCalc }) {
+  const topEngagementCreator = React.useMemo(() => {
+    if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
+    let highestEngagement = -1;
+    let topCreator = null;
+    filteredInsightsData.forEach((insightData) => {
+      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+      if (submission) {
+        const engagementRate = engagementRateCalc(insightData.insight);
+        if (engagementRate > highestEngagement) {
+          highestEngagement = engagementRate;
+          topCreator = {
+            ...submission,
+            engagementRate,
+            insightData,
+          };
         }
-      });
-
-      return topCreator;
-    }, []);
-
-    const { data: creator } = useGetCreatorById(topEngagementCreator?.user);
-
-    if (!topEngagementCreator) return null;
-
-    return (
-      <Box
-        borderRadius={3}
-        sx={{
-          height: '400px',
-          width: '100%',
-          maxWidth: '100%',
-          overflow: 'auto',
-          boxSizing: 'border-box',
-          backgroundColor: '#F5F5F5',
-          p: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-        }}
-      >
-        <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20">
-          Top Engagement
+      }
+    });
+    return topCreator;
+  }, [filteredInsightsData, filteredSubmissions, engagementRateCalc]);
+  const { data: creator } = getCreatorById(topEngagementCreator?.user);
+  if (!topEngagementCreator) return null;
+  return (
+    <Box
+      borderRadius={3}
+      sx={{
+        height: '400px',
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'auto',
+        boxSizing: 'border-box',
+        backgroundColor: '#F5F5F5',
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+      }}
+    >
+      <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20">
+        Top Engagement
+      </Typography>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+        <Typography
+          fontFamily="Instrument Serif"
+          fontWeight={400}
+          fontSize={55}
+          color="#1340FF"
+          textAlign="center"
+        >
+          {topEngagementCreator.engagementRate}%
         </Typography>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <Typography
-            fontFamily="Instrument Serif"
-            fontWeight={400}
-            fontSize={55}
-            color="#1340FF"
-            textAlign="center"
-          >
-            {topEngagementCreator.engagementRate}%
-          </Typography>
-
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar
-              sx={{
-                width: 45,
-                height: 45,
-                bgcolor:
-                  topEngagementCreator && topEngagementCreator.platform === 'Instagram'
-                    ? '#E4405F'
-                    : '#000000',
-                mr: 1,
-              }}
-            >
-              {creator?.user?.name?.charAt(0) || 'U'}
-            </Avatar>
-            <Box
-              sx={{
-                height: 40,
-                maxWidth: 100,
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              <Typography
-                fontSize={14}
-                fontWeight={600}
-                color="#231F20"
-                sx={{ textAlign: 'left' }}
-                noWrap
-                textOverflow="ellipsis"
-                overflow="hidden"
-              >
-                {creator?.user?.name}
-              </Typography>
-              <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
-                {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-
-        <Box sx={{ alignSelf: 'center' }}>
-          <Link
-            href={topEngagementCreator.insightData.postUrl}
-            target="_blank"
-            rel="noopener"
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar
             sx={{
-              display: 'block',
-              textDecoration: 'none',
-              '&:hover': {
-                opacity: 0.8,
-                transition: 'opacity 0.2s',
-              },
+              width: 45,
+              height: 45,
+              bgcolor:
+                topEngagementCreator && topEngagementCreator.platform === 'Instagram'
+                  ? '#E4405F'
+                  : '#000000',
+              mr: 1,
             }}
           >
-            <Box
-              component="img"
-              src={
-                topEngagementCreator.insightData.thumbnail ||
-                topEngagementCreator.insightData.video?.media_url
-              }
-              alt="Top performing post"
-              sx={{
-                width: 290,
-                height: 180,
-                mt: 2,
-                borderRadius: 2,
-                objectFit: 'cover',
-                objectPosition: 'left top',
-                border: '1px solid #e0e0e0',
-              }}
-            />
-          </Link>
+            {creator?.user?.name?.charAt(0) || 'U'}
+          </Avatar>
+          <Box
+            sx={{
+              height: 40,
+              maxWidth: 100,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography
+              fontSize={14}
+              fontWeight={600}
+              color="#231F20"
+              sx={{ textAlign: 'left' }}
+              noWrap
+              textOverflow="ellipsis"
+              overflow="hidden"
+            >
+              {creator?.user?.name}
+            </Typography>
+            <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
+              {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
+            </Typography>
+          </Box>
         </Box>
       </Box>
-    );
-  };
+      <Box sx={{ alignSelf: 'center' }}>
+        <Link
+          href={topEngagementCreator.insightData.postUrl}
+          target="_blank"
+          rel="noopener"
+          sx={{
+            display: 'block',
+            textDecoration: 'none',
+            '&:hover': {
+              opacity: 0.8,
+              transition: 'opacity 0.2s',
+            },
+          }}
+        >
+          <Box
+            component="img"
+            src={
+              topEngagementCreator.insightData.thumbnail ||
+              topEngagementCreator.insightData.video?.media_url
+            }
+            alt="Top performing post"
+            sx={{
+              width: 290,
+              height: 180,
+              mt: 2,
+              borderRadius: 2,
+              objectFit: 'cover',
+              objectPosition: 'left top',
+              border: '1px solid #e0e0e0',
+            }}
+          />
+        </Link>
+      </Box>
+    </Box>
+  );
+}
 
-  return (
+const PlatformOverviewDesktop = ({
+  platformCounts,
+  selectedPlatform,
+  summaryStats,
+  availablePlatforms,
+  filteredInsightsData,
+  filteredSubmissions,
+  insightsData,
+  getPlatformLabel,
+}) => (
     <Grid
       container
       justifyContent="center"
@@ -313,7 +300,7 @@ const PlatformOverviewDesktop = ({
       {/* Left Condition: Platform Overview Card */}
       {availablePlatforms.length > 1 && selectedPlatform === 'ALL' && (
         <Grid item xs={12} md={2.5} alignContent="center" bgcolor="#F5F5F5" borderRadius={3} mr={2}>
-          <PostingsCard />
+          <PostingsCard platformCounts={platformCounts} selectedPlatform={selectedPlatform} />
         </Grid>
       )}
 
@@ -576,11 +563,15 @@ const PlatformOverviewDesktop = ({
           insightsData.length > 0 &&
           (insightsData[0].platform === 'Instagram' || insightsData[0].platform === 'TikTok'))) && (
         <Grid item xs={12} md={2.5} ml={2} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
-          <TopEngagementCard />
+          <TopEngagementCard
+            filteredInsightsData={filteredInsightsData}
+            filteredSubmissions={filteredSubmissions}
+            getCreatorById={useGetCreatorById}
+            engagementRateCalc={calculateEngagementRate}
+          />
         </Grid>
       )}
     </Grid>
   );
-};
 
 export default PlatformOverviewDesktop;

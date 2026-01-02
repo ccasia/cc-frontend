@@ -1,24 +1,19 @@
 /* eslint-disable react/prop-types */
-import React, { useMemo } from 'react';
-import { PieChart } from '@mui/x-charts';
-import { Box, Typography, Avatar, Link, Grid, Divider } from '@mui/material';
+import React from 'react';
 
-import Iconify from 'src/components/iconify';
+import { PieChart } from '@mui/x-charts';
+import { Box, Link, Grid, Avatar, Typography } from '@mui/material';
+
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
+
 import { formatNumber, calculateEngagementRate } from 'src/utils/socialMetricsCalculator';
 
-const PlatformOverviewMobile = ({
-  platformCounts,
-  selectedPlatform,
-  filteredInsightsData,
-  filteredSubmissions,
-  insightsData,
-  summaryStats,
-  availablePlatforms,
-  getPlatformLabel,
-}) => {
-  // PostingsCard Component
-  const PostingsCard = () => (
+import Iconify from 'src/components/iconify';
+
+
+// PostingsCard extracted
+function PostingsCard({ platformCounts, selectedPlatform }) {
+  return (
     <Box
       sx={{
         px: 3,
@@ -38,7 +33,6 @@ const PlatformOverviewMobile = ({
       >
         Postings
       </Typography>
-
       <Box
         sx={{
           display: 'flex',
@@ -49,7 +43,6 @@ const PlatformOverviewMobile = ({
       >
         {/* Instagram Horizontal Beam */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          {/* Instagram Icon */}
           <Iconify
             icon="prime:instagram"
             sx={{
@@ -59,8 +52,6 @@ const PlatformOverviewMobile = ({
               flexShrink: 0,
             }}
           />
-
-          {/* Horizontal Beam */}
           <Box
             sx={{
               flex: 1,
@@ -75,8 +66,6 @@ const PlatformOverviewMobile = ({
               transition: 'all 0.3s ease',
             }}
           />
-
-          {/* Post count */}
           <Typography
             sx={{
               color: '#000',
@@ -89,10 +78,7 @@ const PlatformOverviewMobile = ({
             {platformCounts.Instagram > 0 ? platformCounts.Instagram : ''}
           </Typography>
         </Box>
-
-        {/* TikTok Horizontal Beam */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          {/* TikTok Icon */}
           <Iconify
             icon="prime:tiktok"
             sx={{
@@ -102,8 +88,6 @@ const PlatformOverviewMobile = ({
               flexShrink: 0,
             }}
           />
-
-          {/* Horizontal Beam */}
           <Box
             sx={{
               flex: 1,
@@ -118,8 +102,6 @@ const PlatformOverviewMobile = ({
               transition: 'all 0.3s ease',
             }}
           />
-
-          {/* Post count */}
           <Typography
             sx={{
               color: '#000',
@@ -135,149 +117,149 @@ const PlatformOverviewMobile = ({
       </Box>
     </Box>
   );
+}
 
-  // TopEngagementCard Component
-  const TopEngagementCard = () => {
-    // Find the creator with the highest engagement rate
-    const topEngagementCreator = useMemo(() => {
-      if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
-
-      let highestEngagement = -1;
-      let topCreator = null;
-
-      filteredInsightsData.forEach((insightData) => {
-        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-        if (submission) {
-          const engagementRate = calculateEngagementRate(insightData.insight);
-          if (engagementRate > highestEngagement) {
-            highestEngagement = engagementRate;
-            topCreator = {
-              ...submission,
-              engagementRate,
-              insightData,
-            };
-          }
+// TopEngagementCard extracted
+function TopEngagementCard({ filteredInsightsData, filteredSubmissions, getCreatorById, engagementRateCalc }) {
+  const topEngagementCreator = React.useMemo(() => {
+    if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
+    let highestEngagement = -1;
+    let topCreator = null;
+    filteredInsightsData.forEach((insightData) => {
+      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+      if (submission) {
+        const engagementRate = engagementRateCalc(insightData.insight);
+        if (engagementRate > highestEngagement) {
+          highestEngagement = engagementRate;
+          topCreator = {
+            ...submission,
+            engagementRate,
+            insightData,
+          };
         }
-      });
-
-      return topCreator;
-    }, []);
-
-    const { data: creator } = useGetCreatorById(topEngagementCreator?.user);
-
-    if (!topEngagementCreator) return null;
-
-    return (
-      <Box
-        borderRadius={3}
-        sx={{
-          height: '400px',
-          width: '100%',
-          maxWidth: '100%',
-          overflow: 'auto',
-          boxSizing: 'border-box',
-          backgroundColor: '#F5F5F5',
-          p: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-        }}
-      >
-        <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20">
-          Top Engagement
+      }
+    });
+    return topCreator;
+  }, [filteredInsightsData, filteredSubmissions, engagementRateCalc]);
+  const { data: creator } = getCreatorById(topEngagementCreator?.user);
+  if (!topEngagementCreator) return null;
+  return (
+    <Box
+      borderRadius={3}
+      sx={{
+        height: '400px',
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'auto',
+        boxSizing: 'border-box',
+        backgroundColor: '#F5F5F5',
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+      }}
+    >
+      <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20">
+        Top Engagement
+      </Typography>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+        <Typography
+          fontFamily="Instrument Serif"
+          fontWeight={400}
+          fontSize={55}
+          color="#1340FF"
+          textAlign="center"
+        >
+          {topEngagementCreator.engagementRate}%
         </Typography>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <Typography
-            fontFamily="Instrument Serif"
-            fontWeight={400}
-            fontSize={55}
-            color="#1340FF"
-            textAlign="center"
-          >
-            {topEngagementCreator.engagementRate}%
-          </Typography>
-
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar
-              sx={{
-                width: 45,
-                height: 45,
-                bgcolor:
-                  topEngagementCreator && topEngagementCreator.platform === 'Instagram'
-                    ? '#E4405F'
-                    : '#000000',
-                mr: 1,
-              }}
-            >
-              {creator?.user?.name?.charAt(0) || 'U'}
-            </Avatar>
-            <Box
-              sx={{
-                height: 40,
-                maxWidth: 100,
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              <Typography
-                fontSize={14}
-                fontWeight={600}
-                color="#231F20"
-                sx={{ textAlign: 'left' }}
-                noWrap
-                textOverflow="ellipsis"
-                overflow="hidden"
-              >
-                {creator?.user?.name}
-              </Typography>
-              <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
-                {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-
-        <Box sx={{ alignSelf: 'center' }}>
-          <Link
-            href={topEngagementCreator.insightData.postUrl}
-            target="_blank"
-            rel="noopener"
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar
             sx={{
-              display: 'block',
-              textDecoration: 'none',
-              '&:hover': {
-                opacity: 0.8,
-                transition: 'opacity 0.2s',
-              },
+              width: 45,
+              height: 45,
+              bgcolor:
+                topEngagementCreator && topEngagementCreator.platform === 'Instagram'
+                  ? '#E4405F'
+                  : '#000000',
+              mr: 1,
             }}
           >
-            <Box
-              component="img"
-              src={
-                topEngagementCreator.insightData.thumbnail ||
-                topEngagementCreator.insightData.video?.media_url
-              }
-              alt="Top performing post"
-              sx={{
-                width: 290,
-                height: 180,
-                mt: 2,
-                borderRadius: 2,
-                objectFit: 'cover',
-                objectPosition: 'left top',
-                border: '1px solid #e0e0e0',
-              }}
-            />
-          </Link>
+            {creator?.user?.name?.charAt(0) || 'U'}
+          </Avatar>
+          <Box
+            sx={{
+              height: 40,
+              maxWidth: 100,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography
+              fontSize={14}
+              fontWeight={600}
+              color="#231F20"
+              sx={{ textAlign: 'left' }}
+              noWrap
+              textOverflow="ellipsis"
+              overflow="hidden"
+            >
+              {creator?.user?.name}
+            </Typography>
+            <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
+              {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
+            </Typography>
+          </Box>
         </Box>
       </Box>
-    );
-  };
+      <Box sx={{ alignSelf: 'center' }}>
+        <Link
+          href={topEngagementCreator.insightData.postUrl}
+          target="_blank"
+          rel="noopener"
+          sx={{
+            display: 'block',
+            textDecoration: 'none',
+            '&:hover': {
+              opacity: 0.8,
+              transition: 'opacity 0.2s',
+            },
+          }}
+        >
+          <Box
+            component="img"
+            src={
+              topEngagementCreator.insightData.thumbnail ||
+              topEngagementCreator.insightData.video?.media_url
+            }
+            alt="Top performing post"
+            sx={{
+              width: 290,
+              height: 180,
+              mt: 2,
+              borderRadius: 2,
+              objectFit: 'cover',
+              objectPosition: 'left top',
+              border: '1px solid #e0e0e0',
+            }}
+          />
+        </Link>
+      </Box>
+    </Box>
+  );
+}
 
-  return (
+const PlatformOverviewMobile = ({
+  platformCounts,
+  selectedPlatform,
+  filteredInsightsData,
+  filteredSubmissions,
+  insightsData,
+  summaryStats,
+  availablePlatforms,
+  getPlatformLabel,
+}) => (
     <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3 }}>
       {/* Postings Card */}
       <Box
@@ -286,10 +268,10 @@ const PlatformOverviewMobile = ({
           borderRadius: 3,
           mb: 2,
           p: 2,
-					boxShadow: '0px 4px 4px 0px #8E8E9340'
+          boxShadow: '0px 4px 4px 0px #8E8E9340'
         }}
       >
-        <PostingsCard />
+        <PostingsCard platformCounts={platformCounts} selectedPlatform={selectedPlatform} />
       </Box>
 
       {/* Metrics Section - 4 column row */}
@@ -305,7 +287,7 @@ const PlatformOverviewMobile = ({
       >
         <Grid container justifyContent="center">
           {/* Column 1: Engagement Rate */}
-          <Grid item pl={1} xs={selectedPlatform === 'TikTok' ? 4 : 3} borderRight={'1px solid #C9C9C9'} >
+          <Grid item pl={1} xs={selectedPlatform === 'TikTok' ? 4 : 3} borderRight="1px solid #C9C9C9" >
             <Box>
               <Typography
                 fontFamily="Instrument Serif"
@@ -327,7 +309,7 @@ const PlatformOverviewMobile = ({
           </Grid>
 
           {/* Column 2: Posts */}
-          <Grid item pl={1} xs={selectedPlatform === 'TikTok' ? 4 : 3} borderRight={'1px solid #C9C9C9'}>
+          <Grid item pl={1} xs={selectedPlatform === 'TikTok' ? 4 : 3} borderRight="1px solid #C9C9C9">
             <Box>
               <Typography
                 fontFamily="Instrument Serif"
@@ -551,11 +533,15 @@ const PlatformOverviewMobile = ({
           insightsData.length > 0 &&
           (insightsData[0].platform === 'Instagram' || insightsData[0].platform === 'TikTok'))) && (
         <Grid item xs={12} md={2.5} ml={2} alignContent="center" bgcolor="#F5F5F5" borderRadius={3}>
-          <TopEngagementCard />
+          <TopEngagementCard
+            filteredInsightsData={filteredInsightsData}
+            filteredSubmissions={filteredSubmissions}
+            getCreatorById={useGetCreatorById}
+            engagementRateCalc={calculateEngagementRate}
+          />
         </Grid>
       )}
     </Box>
   );
-};
 
 export default PlatformOverviewMobile;
