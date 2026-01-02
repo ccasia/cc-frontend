@@ -19,8 +19,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { useSnackbar } from 'src/components/snackbar';
-import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -33,7 +31,11 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
+import { EngagementRateHeatmap, TopCreatorsLineChart } from 'src/components/trend-analysis';
 
 // import PCRReportPage from './pcr-report-page';
 
@@ -361,7 +363,7 @@ const CampaignAnalytics = ({ campaign }) => {
 
   // Socket event listener for media kit connections
   useEffect(() => {
-    if (!socket || !campaignId) return;
+    if (!socket || !campaignId) return undefined;
 
     const handleAnalyticsRefresh = (data) => {
       console.log('📡 Received analytics refresh event:', data);
@@ -473,15 +475,6 @@ const CampaignAnalytics = ({ campaign }) => {
         </Grid>
       </Box>
     );
-  };
-
-  CoreMetricsSection.propTypes = {
-    summaryStats: PropTypes.shape({
-      totalViews: PropTypes.number,
-      totalLikes: PropTypes.number,
-      totalComments: PropTypes.number,
-      totalSaved: PropTypes.number,
-    }).isRequired,
   };
 
   // eslint-disable-next-line react/no-unstable-nested-components
@@ -1929,26 +1922,6 @@ const CampaignAnalytics = ({ campaign }) => {
     );
   };
 
-  UserPerformanceCard.propTypes = {
-    engagementRate: PropTypes.number,
-    submission: PropTypes.shape({
-      id: PropTypes.string,
-      postUrl: PropTypes.string,
-      user: PropTypes.string,
-      platform: PropTypes.string,
-    }).isRequired,
-    insightData: PropTypes.shape({
-      insight: PropTypes.object,
-      postUrl: PropTypes.string,
-      thumbnail: PropTypes.string,
-      video: PropTypes.shape({
-        media_url: PropTypes.string,
-      }),
-    }),
-    loadingInsights: PropTypes.bool,
-  };
-
-
   return (
     <Box>
       {/* Conditionally render PCR Report Page or Performance Summary */}
@@ -1968,7 +1941,6 @@ const CampaignAnalytics = ({ campaign }) => {
           handlePlatformChange={handlePlatformChange}
         />
       )}
-
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
@@ -2102,8 +2074,26 @@ const CampaignAnalytics = ({ campaign }) => {
         />
       )}
 
+      {/* Trends Analysis */}
+      <Stack direction="row" flex={1} spacing={4} justifyContent="space-between" minHeight={500} mb={2}>
+        <Box flex={1}>
+          <EngagementRateHeatmap 
+            campaignId={campaignId} 
+            platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+            weeks={6}
+          />
+        </Box>
+        <Box flex={1}>
+          <TopCreatorsLineChart
+            campaignId={campaignId}
+            platform={selectedPlatform === 'ALL' ? 'All' : selectedPlatform}
+            days={7}
+          />
+        </Box>
+      </Stack>
+
       {/* Creator List Header with Count */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
         <Typography fontSize={24} fontWeight={600} fontFamily="Aileron">
           Creator List
         </Typography>
