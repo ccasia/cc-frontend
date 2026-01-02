@@ -900,7 +900,7 @@ const CampaignDetailView = ({ id }) => {
           width="100%"
           sx={{ mt: -1 }}
         >
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack direction="row" alignItems="center" spacing={2} width={'100%'}>
             {campaign?.campaignBrief?.images?.[0] && (
               <img
                 src={campaign?.campaignBrief.images[0]}

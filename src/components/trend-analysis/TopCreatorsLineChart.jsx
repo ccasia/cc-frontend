@@ -96,7 +96,7 @@ const CustomXAxisTick = ({ x, y, payload, chartData }) => {
         dy={40}
         textAnchor="middle"
         fill="#636366"
-        fontSize={12}
+        fontSize={10}
         fontFamily="Aileron"
       >
         ({dateFormatted})
@@ -128,7 +128,8 @@ const CustomLegend = ({ payload }) => (
         sx={{
           display: 'flex',
           gap: 1,
-          alignItems: 'center'
+          alignItems: 'center',
+          ml: 3
         }}
       >
         <Box
@@ -139,7 +140,7 @@ const CustomLegend = ({ payload }) => (
             flexShrink: 0,
           }}
         />
-        <Typography fontSize={12} lineHeight={1.2}>
+        <Typography fontSize={{ xs: 10, sm: 12 }} lineHeight={1.2}>
           {entry.value}
         </Typography>
       </Box>
@@ -375,7 +376,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
       <ResponsiveContainer width="100%" height={500}>
         <LineChart
           data={chartData.weekData}
-          margin={{ top: 30, right: 5, left: 0, bottom: 40 }}
+          margin={{ top: 30, right: 5, left: -10, bottom: 40 }}
         >
           
           <XAxis
@@ -384,7 +385,7 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
             axisLine={{ stroke: 'none' }}
             tickLine={{ stroke: 'none' }}
             height={50}
-            padding={{ left: 20, right: 20 }}
+            padding={{ left: 10, right: 20 }}
           />
           
           <YAxis

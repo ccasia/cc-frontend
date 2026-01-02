@@ -78,13 +78,13 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
   return (
     <Box sx={{ p: 0 }}>
       {/* Header */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: { xs: 2, md: 3 } }}>
         <Typography
           variant="h6"
           sx={{
             fontFamily: 'Aileron',
             fontWeight: 600,
-            fontSize: 18,
+            fontSize: { xs: 16, md: 18 },
             color: '#000',
             mb: 1,
           }}
@@ -95,7 +95,7 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
           variant="body2"
           sx={{
             color: '#636366',
-            fontSize: 14,
+            fontSize: { xs: 12, md: 14 },
           }}
         >
           Last {weeks} weeks ({platform})
@@ -111,19 +111,19 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
         }}
       >
         {/* Y-axis: Day Labels */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, md: 1 } }}>
           {dayNames.map((day) => (
             <Box
               key={day}
               sx={{
-                height: 37,
+                height: { xs: 28, md: 37 },
                 display: 'flex',
                 alignItems: 'center',
-                fontSize: 13,
+                fontSize: { xs: 10, md: 13 },
                 fontWeight: 600,
                 color: '#000',
                 fontFamily: 'Aileron',
-                minWidth: 40,
+                minWidth: { xs: 30, md: 40 },
               }}
             >
               {day}
@@ -132,7 +132,7 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
         </Box>
 
         {/* Main Heatmap Grid */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, md: 1 } }}>
           {Array.from({ length: 7 }).map((_, displayRow) => {
             // displayRow 0 = Monday, 1 = Tuesday, etc. (matches our generated array structure)
             
@@ -142,7 +142,7 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: `repeat(${weeks}, 1fr)`,
-									gap: 1
+									gap: { xs: 0.5, md: 1 }
                 }}
               >
                 {heatmapGrid.map((weekData, weekIndex) => {
@@ -180,8 +180,8 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
                     >
                       <Box
                         sx={{
-                          minWidth: 67,
-                          height: 37,
+                          minWidth: { xs: 40, sm: 55, md: 67 },
+                          height: { xs: 28, md: 37 },
                           backgroundColor: getHeatColor(cell?.engagementRate),
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
@@ -204,7 +204,7 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
             sx={{
               display: 'grid',
               gridTemplateColumns: `repeat(${weeks}, 1fr)`,
-              gap: 1,
+              gap: { xs: 0.5, md: 1 },
               mb: 1
             }}
           >
@@ -213,12 +213,12 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
                 key={`week-label-${weekIndex}`}
                 sx={{
                   textAlign: 'center',
-                  fontSize: 13,
+                  fontSize: { xs: 10, md: 13 },
                   fontWeight: 600,
                   color: '#000',
                   fontFamily: 'Aileron',
-                  height: 32,
-                  minWidth: 67,
+                  height: { xs: 24, md: 32 },
+                  minWidth: { xs: 40, sm: 55, md: 67 },
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -245,7 +245,7 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
 								py: 0.2
 							}}
 						>
-							<Typography sx={{ fontSize: 12, color: '#48484A' }}>
+							<Typography sx={{ fontSize: { xs: 9, md: 12 }, color: '#48484A' }}>
 								{colorScales?.lowest.label || '< 0%'}
 							</Typography>
 						</Box>
@@ -259,7 +259,7 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
 								py: 0.2
 							}}
 						>
-							<Typography sx={{ fontSize: 12, color: '#48484A' }}>
+							<Typography sx={{ fontSize: { xs: 9, md: 12 }, color: '#48484A' }}>
 								{colorScales?.mediumLow.label || '0% - 0%'}
 							</Typography>
 						</Box>
@@ -273,7 +273,7 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
 								py: 0.2
 							}}
 						>
-							<Typography sx={{ fontSize: 12, color: '#E7E7E7' }}>
+							<Typography sx={{ fontSize: { xs: 9, md: 12 }, color: '#E7E7E7' }}>
 								{colorScales?.mediumHigh.label || '0% - 0%'}
 							</Typography>
 						</Box>
@@ -287,15 +287,15 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
 								py: 0.2
 							}}
 						>
-							<Typography sx={{ fontSize: 12, color: '#E7E7E7' }}>
+							<Typography sx={{ fontSize: { xs: 9, md: 12 }, color: '#E7E7E7' }}>
 								{colorScales?.highest.label || '> 0%'}
 							</Typography>
 						</Box>
 					</Box>
 
 					<Box display="flex" flex={1} flexDirection="row" justifyContent="space-between">
-						<Typography>Lowest Engagement</Typography>
-						<Typography>Highest Engagement</Typography>
+						<Typography sx={{ fontSize: { xs: 10, md: 14 } }}>Lowest Engagement</Typography>
+						<Typography sx={{ fontSize: { xs: 10, md: 14 } }}>Highest Engagement</Typography>
 					</Box>
         </Box>
       </Box>
