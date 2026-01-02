@@ -47,10 +47,9 @@ import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 
-// HIDE: logistics - NEW LOGISTICS COMMENTED OUT
-// import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
-
-import CampaignLogistics from '../campaign-logistics';
+// import CampaignLogistics from '../campaign-logistics';
+// HIDE: logistics
+import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalytics from '../campaign-analytics';
@@ -60,7 +59,7 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
-import CampaignLogisticsClient from '../campaign-logistics-client';
+// import CampaignLogisticsClient from '../campaign-logistics-client';
 // import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
@@ -390,19 +389,17 @@ const CampaignDetailView = ({ id }) => {
                   ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
                   : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
                 { label: 'Campaign Analytics', value: 'analytics' },
-                // OLD LOGISTICS RESTORED
+                // HIDE: logistics
                 campaign?.logisticsType && campaign.logisticsType !== ''
                   ? {
                       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
                       value: 'logistics',
                     }
                   : null,
-                // NEW LOGISTICS COMMENTED OUT
                 // {
                 //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
                 //   value: 'logistics',
                 // },
-                { label: 'FAQ', value: 'faq' },
               ]
             : // Admin/other user tabs
               [
@@ -443,18 +440,21 @@ const CampaignDetailView = ({ id }) => {
                   label: `Invoices (${campaignInvoices?.length || 0})`,
                   value: 'invoices',
                 },
-                // OLD LOGISTICS RESTORED - Show unconditionally for admin
-                {
-                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                  value: 'logistics',
-                },
-                // CONDITIONAL LOGISTICS (commented out)
-                // campaign?.logisticsType && campaign.logisticsType !== ''
-                //   ? {
-                //       label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                //       value: 'logistics',
-                //     }
-                //   : null,
+                // HIDE: logistics
+                campaign?.logisticsType && campaign.logisticsType !== ''
+                  ? {
+                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                      value: 'logistics',
+                    }
+                  : null,
+                // {
+                //   label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                //   value: 'logistics',
+                // },
+                // {
+                //   label: `Logistics (${campaign?.logistic?.length || 0})`,
+                //   value: 'logistics',
+                // },
               ]
           )
             .filter(Boolean)
@@ -583,28 +583,27 @@ const CampaignDetailView = ({ id }) => {
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
-    // NEW LOGISTICS COMMENTED OUT
-    // logistics: isClient ? (
-    //   <CampaignLogisticsView
-    //     campaign={campaign}
-    //     openBulkAssign={openBulkAssign}
-    //     setOpenBulkAssign={setOpenBulkAssign}
-    //     isAdmin={!isClient} // not client > admin
-    //   />
-    // ) : (
-    //   <CampaignLogisticsView
-    //     campaign={campaign}
-    //     openBulkAssign={openBulkAssign}
-    //     setOpenBulkAssign={setOpenBulkAssign}
-    //     isAdmin={!isClient}
-    //   />
-    // ),
-    // OLD LOGISTICS RESTORED
+    // HIDE: logistics
     logistics: isClient ? (
-      <CampaignLogisticsClient campaign={campaign} />
+      <CampaignLogisticsView
+        campaign={campaign}
+        openBulkAssign={openBulkAssign}
+        setOpenBulkAssign={setOpenBulkAssign}
+        isAdmin={!isClient} // not client > admin
+      />
     ) : (
-      <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
+      <CampaignLogisticsView
+        campaign={campaign}
+        openBulkAssign={openBulkAssign}
+        setOpenBulkAssign={setOpenBulkAssign}
+        isAdmin={!isClient}
+      />
     ),
+    // logistics: isClient ? (
+    //   <CampaignLogisticsClient campaign={campaign} />
+    // ) : (
+    //   <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
+    // ),
     invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />

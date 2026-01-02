@@ -40,6 +40,9 @@ import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
 // Import steps from campaign creation
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
+import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
+import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
+import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
 
 import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
@@ -54,9 +57,9 @@ const steps = [
   { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
   // HIDE: logistics
-  // { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
-  // { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
-  // { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
+  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
+  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
+  { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
   { title: 'Other Attachment ( Optional )', logo: '🖇️', color: '#FF3500' },
 ];
 
@@ -210,23 +213,60 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       otherwise: (schema) => schema.notRequired(),
     }),
     logisticRemarks: Yup.string(),
-    locations: Yup.array().notRequired(),
+    // locations: Yup.array().notRequired(),
 
-    venueName: Yup.string().when('logisticType', {
+    // venueName: Yup.string().when('logisticType', {
+    //   is: 'RESERVATION',
+    //   then: (schema) => schema,
+    //   otherwise: (schema) => schema,
+    // }),
+    // venueAddress: Yup.string().when('logisticsType', {
+    //   is: 'RESERVATION',
+    //   then: (schema) => schema,
+    //   otherwise: (schema) => schema,
+    // }),
+    // reservationNotes: Yup.string().when('logisticsType', {
+    //   is: 'RESERVATION',
+    //   then: (schema) => schema,
+    //   otherwise: (schema) => schema,
+    // }),
+    locations: Yup.array().when('logisticsType', {
       is: 'RESERVATION',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
+      then: (schema) =>
+        schema
+          .of(
+            Yup.object().shape({
+              name: Yup.string().trim().required('Location name is required'),
+            })
+          )
+          .min(1, 'At least one location is required'),
+      otherwise: (schema) => schema.notRequired(),
     }),
-    venueAddress: Yup.string().when('logisticsType', {
-      is: 'RESERVATION',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
-    }),
-    reservationNotes: Yup.string().when('logisticsType', {
-      is: 'RESERVATION',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
-    }),
+
+    venueName: Yup.string(),
+    venueAddress: Yup.string(),
+    reservationNotes: Yup.string(),
+  });
+
+  const reservationSlotsSchema = Yup.object().shape({
+    availabilityRules: Yup.array()
+      .of(
+        Yup.object().shape({
+          dates: Yup.array().min(1, 'Please select at least one date').required(),
+          slots: Yup.array()
+            .of(
+              Yup.object().shape({
+                startTime: Yup.string().required(),
+                endTime: Yup.string().required(),
+                label: Yup.string().nullable(), // Allow null/empty labels
+              })
+            )
+            .min(1, 'Please add at least one time slot')
+            .required(),
+        })
+      )
+      .min(1, 'At least one reservation rule is required')
+      .required(),
   });
 
   const campaignAdminSchema = Yup.object().shape({
@@ -276,6 +316,12 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       // default:
       //   return campaignSchema;
       case 3:
+        return logisticsSchema;
+      case 4:
+        return reservationSlotsSchema;
+      case 5:
+        return Yup.object().shape({});
+      case 6:
         return Yup.object().shape({
           otherAttachments: Yup.array(),
           referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
@@ -320,6 +366,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     schedulingOption: 'confirmation',
     products: [{ name: '' }],
     locations: [{ name: '' }],
+    availabilityRules: [],
     venueName: '',
     venueAddress: '',
     reservationNotes: '',
@@ -521,6 +568,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         venueAddress: data.venueAddress || '',
         reservationNotes: data.reservationNotes || '',
         schedulingOption: data.schedulingOption || 'confirmation',
+        availabilityRules: data.availabilityRules || [],
       };
 
       console.log('Client campaign data:', clientCampaignData);
@@ -665,7 +713,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     };
 
     const handleCancel = () => {
-      setIsConfirming(false)
+      setIsConfirming(false);
       setOpenConfirmModal(false);
     };
 
@@ -689,17 +737,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 2:
         return <CampaignUploadPhotos isLoading={isLoading} />;
       // HIDE: logistics
-      // case 3:
-      //   return <CampaignLogistics />;
-      // case 4:
-      //   return <ReservationSlots />;
-      // case 5:
-      //   return <LogisticRemarks />;
-      // case 6:
-      //   return <OtherAttachments />;
-      // default:
-      //   return null;
       case 3:
+        return <CampaignLogistics />;
+      case 4:
+        return <ReservationSlots />;
+      case 5:
+        return <LogisticRemarks />;
+      case 6:
         return <OtherAttachments />;
       default:
         return null;
@@ -708,6 +752,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
   const startDate = getValues('campaignStartDate');
   const campaignStartDate = watch('campaignStartDate');
+
+  const isStepValid = () => {
+    if (activeStep === 2) {
+      return values.campaignImages && values.campaignImages.length > 0;
+    }
+    return isValid;
+  };
 
   return (
     <Box>
@@ -808,7 +859,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               <Button
                 variant="contained"
                 onClick={handleNext}
-                disabled={isLoading || isConfirming}
+                disabled={!isStepValid() || !isValid || isLoading || isConfirming}
                 sx={{
                   bgcolor: '#3A3A3C',
                   '&:hover': {
@@ -929,7 +980,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               <Button
                 variant="contained"
                 onClick={handleNext}
-                disabled={isLoading || isConfirming}
+                disabled={!isStepValid() || !isValid || isLoading || isConfirming}
                 fullWidth
                 sx={{
                   bgcolor: '#3A3A3C',
