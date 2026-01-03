@@ -43,6 +43,10 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
 
   const isAuto = config?.mode === 'AUTO_SCHEDULE';
   const creator = campaign?.creator || user;
+  const logistic = Array.isArray(campaign?.logistics)
+    ? campaign.logistics.find((item) => item.creatorId === user?.id)
+    : campaign?.logistics;
+  const reservationDetails = logistic?.reservationDetails;
 
   const isLocked = useMemo(() => {
     if (!isAuto || !config?.availabilityRules) return false;
@@ -61,9 +65,9 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
   });
 
   const defaultValues = {
-    outlet: '',
+    outlet: reservationDetails?.outlet || '',
     phoneNumber: creator?.phoneNumber || '',
-    remarks: '',
+    remarks: reservationDetails?.creatorRemarks || '',
     selectedSlots: [],
   };
 
@@ -85,6 +89,8 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
     control,
     name: 'selectedSlots',
   });
+
+  console.log('reservation', reservationDetails);
 
   useEffect(() => {
     if (open && config) {
