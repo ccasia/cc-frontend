@@ -144,7 +144,7 @@ export default function LogisticsCalendar({ date, onChange, logistics, isReserva
         <DateCalendar
           value={date}
           onChange={onChange}
-          // minDate={new Date()} // uncomment if want to disable past date viewing
+          minDate={new Date('2026-01-01')}
           showDaysOutsideCurrentMonth
           fixedWeekNumber={6}
           slots={{
@@ -175,10 +175,10 @@ export default function LogisticsCalendar({ date, onChange, logistics, isReserva
               paddingBottom: '4px',
             },
             '& .MuiPickersYear-yearButton.Mui-selected': {
-              backgroundColor: '#1340FF !important', // Your Blue Color
+              backgroundColor: '#1340FF !important',
               color: '#ffffff',
               '&:hover': {
-                backgroundColor: '#0b2dad !important', // Darker Blue on hover
+                backgroundColor: '#0b2dad !important',
               },
             },
           }}

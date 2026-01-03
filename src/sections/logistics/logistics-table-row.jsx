@@ -65,9 +65,14 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
         <ListItemText
           primary={outlet}
           secondary={
-            confirmedSlot
-              ? formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)
-              : 'Waiting for confirmation...'
+            confirmedSlot ? (
+              formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)
+            ) : (
+              <Iconify
+                icon="eva:edit-2-outline"
+                sx={{ color: 'text.disabled', mt: 0.5 }}
+              />
+            )
           }
           primaryTypographyProps={{
             typography: 'body2',
@@ -76,6 +81,7 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
           }}
           secondaryTypographyProps={{
             typography: 'caption',
+            component: 'div',
             color: confirmedSlot ? 'text.primary' : 'text.disabled',
           }}
         />
