@@ -307,6 +307,7 @@ export default function CampaignLogisticsView({
         onUpdate={mutate}
         campaignId={campaign?.id}
         isReservation={isReservation}
+        isAdmin={isAdmin}
       />
 
       {campaign && (

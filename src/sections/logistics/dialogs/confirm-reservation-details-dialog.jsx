@@ -42,6 +42,7 @@ export default function ConfirmReservationDetailsDialog({
 
   const details = logistic?.reservationDetails;
   const creator = logistic?.creator;
+  const isEdit = details?.isConfirmed;
 
   const outlets = useMemo(() => {
     if (config?.locations && Array.isArray(config.locations)) {
@@ -77,17 +78,20 @@ export default function ConfirmReservationDetailsDialog({
   const {
     handleSubmit,
     setValue,
-    formState: { isSubmitting },
+    reset,
+    formState: { isSubmitting, isDirty },
   } = methods;
 
   useEffect(() => {
     if (open && details) {
-      setValue('outlet', details.outlet || '');
-      setValue('clientRemarks', details.clientRemarks || '');
-      setValue('picName', details.picName || '');
-      setValue('picContact', details.picContact || '');
-      setValue('promoCode', details.promoCode || '');
-      setValue('budget', details.budget || '');
+      reset({
+        outlet: details.outlet || '',
+        clientRemarks: details.clientRemarks || '',
+        picName: details.picName || '',
+        picContact: details.picContact || '',
+        promoCode: details.promoCode || '',
+        budget: details.budget || '',
+      });
     }
   }, [open, details, setValue]);
 
@@ -128,10 +132,10 @@ export default function ConfirmReservationDetailsDialog({
               fontFamily="instrument serif"
               sx={{ fontWeight: 400, color: '#231F20' }}
             >
-              Confirm Details
+              {isEdit ? 'Edit Details' : 'Confirm Details'}
             </Typography>
             <Typography variant="body2" sx={{ color: '#636366', mt: 0.5 }}>
-              Please confirm the creator`&apos;`s selection and add any notes.
+              Please confirm the creator's selection and add any notes.
             </Typography>
           </Box>
           <IconButton onClick={onClose}>
@@ -257,6 +261,7 @@ export default function ConfirmReservationDetailsDialog({
             variant="contained"
             size="large"
             loading={isSubmitting}
+            disabled={!isDirty}
             sx={{
               bgcolor: '#3A3A3C',
               color: '#FFFFFF',

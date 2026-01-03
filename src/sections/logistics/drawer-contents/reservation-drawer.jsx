@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 import { Box, Stack, Button, Divider, Typography, Badge, Chip } from '@mui/material';
 import Iconify from 'src/components/iconify';
@@ -8,24 +8,22 @@ import { formatReservationSlot } from 'src/utils/reservation-time';
 import { config } from '@fullcalendar/core/internal';
 import LogisticsStepper from '../logistics-stepper';
 
-// DIALOGS (To be implemented next)
 import ConfirmReservationDetailsDialog from '../dialogs/confirm-reservation-details-dialog';
 import ScheduleReservationDialog from '../dialogs/schedule-reservation-dialog';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
+import AdminScheduleReservationDialog from '../dialogs/admin-schedule-reservation-dialog';
 
 export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAdmin, onClose }) {
-  // Dialog States
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openSchedule, setOpenSchedule] = useState(false);
+  const [openAdminSchedule, setOpenAdminSchedule] = useState(false);
   const [openIssue, setOpenIssue] = useState(false);
 
   const status = logistic?.status;
   const details = logistic?.reservationDetails;
 
-  // Identify slots
   const confirmedSlot = details?.slots?.find((slot) => slot.status === 'SELECTED');
   const isScheduled = Boolean(confirmedSlot);
-  const proposedSlots = details?.slots?.filter((slot) => slot.status === 'PROPOSED') || [];
   const isDetailsConfirmed = details?.isConfirmed;
   const hasIssue = status === 'ISSUE_REPORTED';
   const isAuto = config?.mode === 'AUTO_SCHEDULE';
@@ -34,26 +32,156 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
   const renderActionButtons = () => {
     if (hasIssue) {
       return (
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={() => setOpenIssue(true)}
-          sx={{ ...buttonSx, bgcolor: '#FF3500', boxShadow: 'none' }}
-        >
+        <Button fullWidth variant="contained" onClick={() => setOpenIssue(true)} sx={buttonSx}>
           Review Issue
         </Button>
       );
     }
 
-    if (isDetailsConfirmed && isScheduled) {
-      if (isAdmin) {
+    if (isAdmin) {
+      if (isScheduled && !isDetailsConfirmed) {
         return (
-          <Button variant="outlined" onClick={() => setOpenSchedule(true)} sx={outlineButtonSx}>
-            Edit Schedule
-          </Button>
+          <Stack
+            direction="row"
+            justifyContent="center"
+            alignItems="center"
+            spacing={2}
+            width="100%"
+          >
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => setOpenConfirm(true)}
+              sx={{
+                width: 'fit-content',
+                height: 44,
+                padding: { xs: '4px 8px', sm: '6px 10px' },
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #00000073 inset',
+                backgroundColor: '#3A3A3C',
+                color: '#FFFFFF',
+                fontSize: { xs: 12, sm: 14, md: 16 },
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#3a3a3ce1',
+                  boxShadow: '0px -4px 0px 0px #00000073 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #00000073 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
+            >
+              Confirm Details
+            </Button>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => setOpenAdminSchedule(true)}
+              sx={buttonSx}
+            >
+              Reschedule
+            </Button>
+          </Stack>
         );
       }
-      return null;
+
+      if (isDetailsConfirmed && !isScheduled) {
+        return (
+          <Stack
+            direction="row"
+            justifyContent="center"
+            alignItems="center"
+            spacing={2}
+            width="100%"
+          >
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => setOpenConfirm(true)}
+              sx={{
+                width: 'fit-content',
+                height: 44,
+                padding: { xs: '4px 8px', sm: '6px 10px' },
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #00000073 inset',
+                backgroundColor: '#3A3A3C',
+                color: '#FFFFFF',
+                fontSize: { xs: 12, sm: 14, md: 16 },
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#3a3a3ce1',
+                  boxShadow: '0px -4px 0px 0px #00000073 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #00000073 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
+            >
+              Edit Details
+            </Button>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => setOpenAdminSchedule(true)}
+              sx={buttonSx}
+            >
+              Schedule
+            </Button>
+          </Stack>
+        );
+      }
+
+      if (isDetailsConfirmed && isScheduled) {
+        return (
+          <Stack
+            direction="row"
+            justifyContent="center"
+            alignItems="center"
+            spacing={2}
+            width="100%"
+          >
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => setOpenConfirm(true)}
+              sx={{
+                width: 'fit-content',
+                height: 44,
+                padding: { xs: '4px 8px', sm: '6px 10px' },
+                borderRadius: '8px',
+                boxShadow: '0px -4px 0px 0px #00000073 inset',
+                backgroundColor: '#3A3A3C',
+                color: '#FFFFFF',
+                fontSize: { xs: 12, sm: 14, md: 16 },
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#3a3a3ce1',
+                  boxShadow: '0px -4px 0px 0px #00000073 inset',
+                },
+                '&:active': {
+                  boxShadow: '0px 0px 0px 0px #00000073 inset',
+                  transform: 'translateY(1px)',
+                },
+              }}
+            >
+              Edit Details
+            </Button>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => setOpenAdminSchedule(true)}
+              sx={buttonSx}
+            >
+              Reschedule
+            </Button>
+          </Stack>
+        );
+      }
     }
 
     return (
@@ -95,7 +223,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           <Badge color="error" variant="dot">
             <Button
               variant="contained"
-              onClick={() => setOpenSchedule(true)}
+              onClick={isAdmin ? () => setOpenAdminSchedule(true) : () => setOpenSchedule(true)}
               sx={buttonSx} // Always Blue for Schedule
             >
               Schedule
@@ -238,7 +366,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
         campaignId={campaignId}
         onUpdate={onUpdate}
       />
-
       <ReviewIssueDialog
         open={openIssue}
         onClose={() => setOpenIssue(false)}
@@ -246,10 +373,16 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
         campaignId={campaignId}
         onUpdate={onUpdate}
       />
-
       <ScheduleReservationDialog
         open={openSchedule}
         onClose={() => setOpenSchedule(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
+      <AdminScheduleReservationDialog
+        open={openAdminSchedule}
+        onClose={() => setOpenAdminSchedule(false)}
         logistic={logistic}
         campaignId={campaignId}
         onUpdate={onUpdate}
@@ -277,13 +410,6 @@ const buttonSx = {
     boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
     transform: 'translateY(1px)',
   },
-};
-
-const outlineButtonSx = {
-  borderRadius: '8px',
-  color: '#231F20',
-  border: '1px solid #E0E0E0',
-  '&:hover': { backgroundColor: '#F4F6F8' },
 };
 
 ReservationDrawer.propTypes = {

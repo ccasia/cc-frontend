@@ -42,6 +42,7 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
   );
 
   const isAuto = config?.mode === 'AUTO_SCHEDULE';
+  const creator = campaign?.creator || user;
 
   const isLocked = useMemo(() => {
     if (!isAuto || !config?.availabilityRules) return false;
@@ -54,14 +55,14 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
 
   const ReservationSchema = Yup.object().shape({
     outlet: Yup.string().required('Outlet is required'),
-    contactNumber: Yup.string().required('Contact number is required'),
+    phoneNumber: Yup.string().required('Contact number is required'),
     remarks: Yup.string(),
     selectedSlots: Yup.array().required('Availability is required'),
   });
 
   const defaultValues = {
     outlet: '',
-    contactNumber: '',
+    phoneNumber: creator?.phoneNumber || '',
     remarks: '',
     selectedSlots: [],
   };
@@ -118,7 +119,7 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
     try {
       const payload = {
         outlet: data.outlet,
-        contactNumber: data.contactNumber,
+        phoneNumber: data.phoneNumber,
         remarks: data.remarks,
         pax: 1,
         selectedSlots: data.selectedSlots.map((slot) => ({
@@ -198,7 +199,7 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
                 Contact Number <span style={{ color: '#FF4842' }}>*</span>
               </Typography>
               <RHFTextField
-                name="contactNumber"
+                name="phoneNumber"
                 placeholder="+60 12-3151 580"
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -504,7 +505,7 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
                 Contact Number <span style={{ color: '#FF4842' }}>*</span>
               </Typography>
               <RHFTextField
-                name="contactNumber"
+                name="phoneNumber"
                 placeholder="+60 12-3151 580"
                 sx={{
                   '& .MuiOutlinedInput-root': {
