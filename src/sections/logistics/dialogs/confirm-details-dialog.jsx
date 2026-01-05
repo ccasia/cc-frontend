@@ -23,7 +23,7 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 
-export default function ConfirmDetailsDialog({ open, onClose, logistic, onUpdate }) {
+export default function ConfirmDeliveryDetailsDialog({ open, onClose, logistic, onUpdate }) {
   const { enqueueSnackbar } = useSnackbar();
 
   const ConfirmSchema = Yup.object().shape({
@@ -168,7 +168,7 @@ export default function ConfirmDetailsDialog({ open, onClose, logistic, onUpdate
   );
 }
 
-ConfirmDetailsDialog.propTypes = {
+ConfirmDeliveryDetailsDialog.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   logistic: PropTypes.object,

@@ -1,35 +1,32 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
 
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
-import { styled } from '@mui/material/styles';
 
 import Iconify from 'src/components/iconify';
 
-export default function LogisticsTableRow({ row, onClick, onEditStatus }) {
-  const { creator, status, deliveryDetails } = row;
-  const items = deliveryDetails?.items;
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
-  const getStatusConfig = (currentStatus) => {
+export default function LogisticsTableRow({ row, onClick, onEditStatus, isReservation }) {
+  const { creator, status, deliveryDetails, reservationDetails } = row;
+
+  const getStatusConfig = (currentStatus, isRes) => {
     switch (currentStatus) {
+      case 'NOT_STARTED':
+        return { label: 'UNCONFIRMED', color: '#B0B0B0', hasAction: true };
       case 'PENDING_ASSIGNMENT':
-        return {
-          label: 'UNASSIGNED',
-          color: '#B0B0B0',
-          hasAction: true,
-        };
+        return isRes
+          ? { label: 'UNCONFIRMED', color: '#B0B0B0', hasAction: true } // Reservation
+          : { label: 'UNASSIGNED', color: '#B0B0B0', hasAction: true }; // Delivery
       case 'SCHEDULED':
-        return {
-          label: 'YET TO SHIP',
-          color: '#FF9A02',
-          hasAction: true,
-        };
+        return isRes
+          ? { label: 'SCHEDULED', color: '#1340FF', hasAction: true } // Reservation (Blue)
+          : { label: 'YET TO SHIP', color: '#FF9A02', hasAction: true }; // Delivery (Orange)
+
       case 'SHIPPED':
         return {
           label: 'SHIPPED OUT',
@@ -37,21 +34,14 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus }) {
           hasAction: false,
         };
       case 'DELIVERED':
-        return {
-          label: 'DELIVERED',
-          color: '#1ABF66',
-          hasAction: false,
-        };
       case 'RECEIVED':
       case 'COMPLETED':
-        return {
-          label: 'COMPLETED',
-          color: '#1ABF66',
-          hasAction: false,
-        };
+        return isRes
+          ? { label: 'COMPLETED', color: '#1ABF66', hasAction: false }
+          : { label: 'DELIVERED', color: '#1ABF66', hasAction: false };
       case 'ISSUE_REPORTED':
         return {
-          label: 'FAILED',
+          label: isRes ? 'ISSUE' : 'FAILED',
           color: '#D4321C',
           hasAction: true,
         };
@@ -64,7 +54,61 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus }) {
     }
   };
 
-  const configCurrentStatus = getStatusConfig(status);
+  const configCurrentStatus = getStatusConfig(status, isReservation);
+
+  const renderMiddleColumn = () => {
+    if (isReservation) {
+      const confirmedSlot = reservationDetails?.slots?.find((slot) => slot.status === 'SELECTED');
+      const outlet = reservationDetails?.outlet || 'No Outlet Selected';
+
+      return (
+        <ListItemText
+          primary={outlet}
+          secondary={
+            confirmedSlot ? (
+              formatReservationSlot(confirmedSlot.startTime, confirmedSlot.endTime, true)
+            ) : (
+              <Iconify
+                icon="eva:edit-2-outline"
+                sx={{ color: 'text.disabled', mt: 0.5 }}
+              />
+            )
+          }
+          primaryTypographyProps={{
+            typography: 'body2',
+            fontWeight: 600,
+            textTransform: 'capitalize',
+          }}
+          secondaryTypographyProps={{
+            typography: 'caption',
+            component: 'div',
+            color: confirmedSlot ? 'text.primary' : 'text.disabled',
+          }}
+        />
+      );
+    }
+
+    const items = deliveryDetails?.items;
+    const hasItems = items && items.length > 0;
+
+    if (hasItems) {
+      return (
+        <Box display="flex" flexDirection="row" flexWrap="wrap" justifyContent="center">
+          {items.map((item, index) => (
+            <Typography key={index} variant="body2">
+              {item.product?.productName} ({item.quantity}){index < items.length - 1 && ',\u00A0'}
+            </Typography>
+          ))}
+        </Box>
+      );
+    }
+
+    return (
+      <Typography variant="body2" color="text.secondary">
+        <Iconify icon="eva:edit-2-outline" />
+      </Typography>
+    );
+  };
 
   return (
     <>
@@ -79,25 +123,8 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus }) {
           />
         </TableCell>
         {/* Column 2: Products */}
-        <TableCell sx={{ width: '40%' }}>
-          {items && items.length > 0 ? (
-            <Box display="flex" flexDirection="row">
-              {items.map((item, index) => (
-                <Typography key={index} variant="body2">
-                  {item.product?.productName} ({item.quantity}){index < items.length - 1 && ',\u00A0'}
-                </Typography>
-              ))}
-            </Box>
-          ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', pl: 5 }}>
-              <Box
-                component="img"
-                src="/assets/icons/components/logisticpencil.svg"
-                alt="No product assigned"
-                sx={{ width: 14, height: 14 }}
-              />
-            </Box>
-          )}
+        <TableCell align="center" sx={{ width: '30%' }}>
+          {renderMiddleColumn()}
         </TableCell>
         {/* Column 3: Status */}
         <TableCell sx={{ width: '20%', textAlign: 'right' }}>
@@ -147,4 +174,5 @@ LogisticsTableRow.propTypes = {
   row: PropTypes.object,
   onClick: PropTypes.func,
   onEditStatus: PropTypes.func,
+  isReservation: PropTypes.bool,
 };

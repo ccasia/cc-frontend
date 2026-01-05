@@ -3,20 +3,20 @@ import { useState } from 'react';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
 
-import { Box, Stack, Button, Dialog, Avatar, Divider, Typography, IconButton } from '@mui/material';
-
+import { Box, Stack, Dialog, Avatar, Divider, Typography, IconButton } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
 import Iconify from 'src/components/iconify';
 
 export default function ReviewIssueDialog({ open, onClose, logistic, campaignId, onUpdate }) {
   const { enqueueSnackbar } = useSnackbar();
-
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isReservation = logistic?.type === 'RESERVATION';
 
   const latestIssue =
     logistic?.issues && logistic.issues.length > 0
       ? logistic.issues[logistic.issues.length - 1]
       : { reason: 'No issue description provided.' };
-      
+
   const handleRetry = async () => {
     setIsSubmitting(true);
 
@@ -43,6 +43,22 @@ export default function ReviewIssueDialog({ open, onClose, logistic, campaignId,
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Failed to resolve issue', { variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReschedule = async () => {
+    setIsSubmitting(true);
+    try {
+      // Calls the new service that clears slots but keeps details
+      await axiosInstance.post(`/api/logistics/campaign/${campaignId}/${logistic.id}/reschedule`);
+      enqueueSnackbar('Reservation reset. Creator can now select a new time.');
+      onUpdate();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Failed to reset reservation', { variant: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -96,7 +112,9 @@ export default function ReviewIssueDialog({ open, onClose, logistic, campaignId,
               {logistic?.creator?.phoneNumber || '-'}
             </Typography>
             <Typography variant="body2" sx={{ color: '#231F20' }}>
-              {logistic?.deliveryDetails?.address || 'No address provided'}
+              {isReservation
+                ? logistic?.deliveryDetails?.address || 'No address provided'
+                : logistic?.reservationDetails?.outlet || 'No Outlet Selected'}
             </Typography>
           </Box>
         </Stack>
@@ -122,10 +140,10 @@ export default function ReviewIssueDialog({ open, onClose, logistic, campaignId,
 
       {/* Action Buttons */}
       <Stack direction="row" spacing={2} justifyContent="center">
-        <Button
+        <LoadingButton
           variant="contained"
-          onClick={handleRetry}
-          disabled={isSubmitting}
+          onClick={isReservation ? handleReschedule : handleRetry}
+          loading={isSubmitting}
           sx={{
             width: 'fit-content',
             height: 44,
@@ -147,14 +165,16 @@ export default function ReviewIssueDialog({ open, onClose, logistic, campaignId,
             },
           }}
         >
-          Retry
-        </Button>
+          {isReservation ? 'Reschedule' : 'Retry'}
+        </LoadingButton>
 
-        <Button
+        <LoadingButton
           variant="contained"
           onClick={handleResolve}
-          disabled={isSubmitting}
+          loading={isSubmitting}
           sx={{
+            height: 44,
+            px: 3,
             borderRadius: '8px',
             boxShadow: '0px -4px 0px 0px #00000073 inset',
             bgcolor: '#3A3A3C',
@@ -167,7 +187,7 @@ export default function ReviewIssueDialog({ open, onClose, logistic, campaignId,
           }}
         >
           Mark as Resolved
-        </Button>
+        </LoadingButton>
       </Stack>
     </Dialog>
   );
