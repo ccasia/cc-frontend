@@ -93,7 +93,7 @@ export default function ConfirmReservationDetailsDialog({
         budget: details.budget || '',
       });
     }
-  }, [open, details, setValue]);
+  }, [open, details, setValue, reset]);
 
   const onSubmit = async (data) => {
     try {
@@ -135,7 +135,7 @@ export default function ConfirmReservationDetailsDialog({
               {isEdit ? 'Edit Details' : 'Confirm Details'}
             </Typography>
             <Typography variant="body2" sx={{ color: '#636366', mt: 0.5 }}>
-              Please confirm the creator's selection and add any notes.
+              Please confirm the creator&apos;s selection and add any notes.
             </Typography>
           </Box>
           <IconButton onClick={onClose}>

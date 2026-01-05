@@ -1508,11 +1508,11 @@ const CampaignModal = ({
         </DialogContent>
       </Dialog>
 
-      <MediaKitPopup 
-        open={showMediaKitPopup} 
-        onClose={() => setShowMediaKitPopup(false)} 
+      <MediaKitPopup
+        open={showMediaKitPopup}
+        onClose={() => setShowMediaKitPopup(false)}
         userId={user?.id || ''}
-        showPitchError={true}
+        showPitchError
       />
     </Dialog>
   );

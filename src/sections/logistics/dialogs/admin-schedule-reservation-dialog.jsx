@@ -167,6 +167,10 @@ export default function AdminScheduleReservationDialog({
           {calendarGrid.map((day, idx) => {
             const isSelected = isSameDay(day, selectedDate);
             const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+
+            let textColor = '#919EAB';
+            if (isCurrentMonth) textColor = '#231F20';
+            if (isSelected) textColor = '#fff';
             return (
               <Grid item xs={12 / 7} key={idx}>
                 <Box
@@ -181,7 +185,7 @@ export default function AdminScheduleReservationDialog({
                     borderRadius: '50%',
                     cursor: 'pointer',
                     bgcolor: isSelected ? '#1340FF' : 'transparent',
-                    color: isSelected ? '#fff' : isCurrentMonth ? '#231F20' : '#919EAB',
+                    color: textColor,
                     '&:hover': { bgcolor: isSelected ? '#1340FF' : '#F4F6F8' },
                   }}
                 >
