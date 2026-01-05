@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
@@ -24,11 +24,20 @@ const getStatusColor = (status) => {
 };
 
 function ServerDay(props) {
-  const { logistics = [], day, outsideCurrentMonth, ...other } = props;
+  const { logistics = [], day, outsideCurrentMonth, isReservation, ...other } = props;
+
+  const dateString = format(day, 'yyyy-MM-dd');
 
   const dayLogistics = logistics.filter((logistic) => {
+    if (isReservation) {
+      const selectedSlot = logistic.reservationDetails?.slots?.find((s) => s.status === 'SELECTED');
+
+      if (!selectedSlot) return false;
+      return selectedSlot?.startTime.startsWith(dateString);
+    }
+
     if (!logistic.deliveryDetails?.expectedDeliveryDate) return false;
-    return isSameDay(new Date(logistic.deliveryDetails.expectedDeliveryDate), day);
+    return logistic.deliveryDetails?.expectedDeliveryDate?.startsWith(dateString);
   });
 
   const count = dayLogistics.length;
@@ -123,9 +132,10 @@ ServerDay.propTypes = {
   highlightedDays: PropTypes.array,
   outsideCurrentMonth: PropTypes.bool,
   logistics: PropTypes.array,
+  isReservation: PropTypes.bool,
 };
 
-export default function LogisticsCalendar({ date, onChange, logistics }) {
+export default function LogisticsCalendar({ date, onChange, logistics, isReservation }) {
   const safeLogistics = logistics || [];
 
   return (
@@ -134,14 +144,17 @@ export default function LogisticsCalendar({ date, onChange, logistics }) {
         <DateCalendar
           value={date}
           onChange={onChange}
-          minDate={new Date()}
+          minDate={new Date('2026-01-01')}
           showDaysOutsideCurrentMonth
           fixedWeekNumber={6}
           slots={{
             day: ServerDay,
           }}
           slotProps={{
-            day: { logistics: safeLogistics },
+            day: {
+              logistics: safeLogistics,
+              isReservation,
+            },
           }}
           sx={{
             width: '100%',
@@ -162,10 +175,10 @@ export default function LogisticsCalendar({ date, onChange, logistics }) {
               paddingBottom: '4px',
             },
             '& .MuiPickersYear-yearButton.Mui-selected': {
-              backgroundColor: '#1340FF !important', // Your Blue Color
+              backgroundColor: '#1340FF !important',
               color: '#ffffff',
               '&:hover': {
-                backgroundColor: '#0b2dad !important', // Darker Blue on hover
+                backgroundColor: '#0b2dad !important',
               },
             },
           }}
@@ -179,4 +192,5 @@ LogisticsCalendar.propTypes = {
   date: PropTypes.object,
   onChange: PropTypes.func,
   logistics: PropTypes.array,
+  isReservation: PropTypes.bool,
 };

@@ -38,6 +38,9 @@ import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
+import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
+import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-slots';
+import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
 
 import CreateBrand from './brandDialog';
 import SelectBrand from './steps/select-brand';
@@ -56,10 +59,10 @@ const steps = [
   { title: 'Campaign Information', logo: '💬', color: '#8A5AFE' },
   { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
   // HIDE: logistics
-  // { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
-  // { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
-  // { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
-  { title: 'Finalise Campaign', logo: '📝', color: '#FF3500' },
+  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
+  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
+  { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
+  { title: 'Finalise Campaign', logo: '🖇📝', color: '#FF3500' },
 ];
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
@@ -240,23 +243,60 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       otherwise: (schema) => schema.notRequired(),
     }),
     logisticRemarks: Yup.string(),
-    locations: Yup.array().notRequired(),
+    // locations: Yup.array().notRequired(),
 
-    venueName: Yup.string().when('logisticsType', {
+    // venueName: Yup.string().when('logisticsType', {
+    //   is: 'RESERVATION',
+    //   then: (schema) => schema,
+    //   otherwise: (schema) => schema,
+    // }),
+    // venueAddress: Yup.string().when('logisticsType', {
+    //   is: 'RESERVATION',
+    //   then: (schema) => schema,
+    //   otherwise: (schema) => schema,
+    // }),
+    // reservationNotes: Yup.string().when('logisticsType', {
+    //   is: 'RESERVATION',
+    //   then: (schema) => schema,
+    //   otherwise: (schema) => schema,
+    // }),
+    locations: Yup.array().when('logisticsType', {
       is: 'RESERVATION',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
+      then: (schema) =>
+        schema
+          .of(
+            Yup.object().shape({
+              name: Yup.string().trim().required('Location name is required'),
+            })
+          )
+          .min(1, 'At least one location is required'),
+      otherwise: (schema) => schema.notRequired(),
     }),
-    venueAddress: Yup.string().when('logisticsType', {
-      is: 'RESERVATION',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
-    }),
-    reservationNotes: Yup.string().when('logisticsType', {
-      is: 'RESERVATION',
-      then: (schema) => schema,
-      otherwise: (schema) => schema,
-    }),
+
+    venueName: Yup.string(),
+    venueAddress: Yup.string(),
+    reservationNotes: Yup.string(),
+  });
+
+  const reservationSlotsSchema = Yup.object().shape({
+    availabilityRules: Yup.array()
+      .of(
+        Yup.object().shape({
+          dates: Yup.array().min(1, 'Please select at least one date').required(),
+          slots: Yup.array()
+            .of(
+              Yup.object().shape({
+                startTime: Yup.string().required(),
+                endTime: Yup.string().required(),
+                label: Yup.string().nullable(), // Allow null/empty labels
+              })
+            )
+            .min(1, 'Please add at least one time slot')
+            .required(),
+        })
+      )
+      .min(1, 'At least one reservation rule is required')
+      .required(),
   });
 
   const getSchemaForStep = (step) => {
@@ -268,10 +308,11 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       case 2:
         return campaignRequirementSchema;
       // HIDE: Logistics
-      // case 3:
-      //   return logisticsSchema;
-      // case 4:
-      //   return Yup.object().shape({});
+      case 3:
+        return logisticsSchema;
+      case 4:
+        // return Yup.object().shape({});
+        return reservationSlotsSchema;
       case 5:
         return Yup.object().shape({});
       case 6:
@@ -328,6 +369,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     deliverables: ['UGC_VIDEOS'],
     rawFootage: false,
     photos: false,
+    availabilityRules: [],
     campaignCredits: null,
     isV4Submission: false,
     submissionVersion: 'v2',
@@ -362,15 +404,13 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     if (result) {
       // Skip Reservation Slots and Logistic Remarks steps if logistics type is not 'reservation'
       const logisticsType = getValues('logisticsType');
-      const nextStep = activeStep + 1; // HIDE: logistics
+      // const nextStep = activeStep + 1; // HIDE: logistics
 
       // HIDE: Logistics
-      // let nextStep = activeStep + 1;
-      // if (activeStep === 5 && logisticsType !== 'RESERVATION' && nextStep === 6) {
-      //   nextStep = 8; // Skip to Campaign Timeline (skip both Reservation Slots and Logistic Remarks)
-      // } else if (activeStep === 6 && logisticsType === 'RESERVATION') {
-      //   nextStep = 7; // Go to Logistic Remarks after Reservation Slots
-      // }
+      let nextStep = activeStep + 1;
+      if (activeStep === 3 && logisticsType !== 'RESERVATION') {
+        nextStep = 6; // Skip to Campaign Timeline (skip both Reservation Slots and Logistic Remarks)
+      }
 
       localStorage.setItem('activeStep', nextStep);
       setActiveStep(nextStep);
@@ -379,17 +419,13 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
 
   const handleBack = () => {
     const logisticsType = getValues('logisticsType');
-    const prevStep = activeStep - 1; // HIDE: Logistics
+    // const prevStep = activeStep - 1; // HIDE: Logistics
 
     // HIDE: Logistics
-    // let prevStep = activeStep - 1;
-    // if (activeStep === 8 && logisticsType !== 'RESERVATION') {
-    //   prevStep = 5;
-    // } else if (activeStep === 7 && logisticsType !== 'RESERVATION') {
-    //   prevStep = 5;
-    // } else if (activeStep === 6 && logisticsType !== 'RESERVATION') {
-    //   prevStep = 5;
-    // }
+    let prevStep = activeStep - 1;
+    if (activeStep === 6 && logisticsType !== 'RESERVATION') {
+      prevStep = 3;
+    }
 
     localStorage.setItem('activeStep', prevStep);
     setActiveStep(prevStep);
@@ -401,7 +437,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
 
     // NOTE: Need to set default timeline here because of form change
     const startDateVal = data.campaignStartDate ? dayjs(data.campaignStartDate) : dayjs();
-    const {campaignType} = data;
+    const { campaignType } = data;
 
     // Process default timelines based on campaign type
     let processedTimelines = [];
@@ -595,13 +631,13 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
         case 2:
           return <CampaignDetails />;
         // HIDE: logistics
-        // case 3:
-        //   return <CampaignLogistics />;
-        // case 4:
-        //   return <ReservationSlots />;
-        // case 5:
-        //   return <LogisticRemarks />;
         case 3:
+          return <CampaignLogistics />;
+        case 4:
+          return <ReservationSlotsV2 />;
+        case 5:
+          return <LogisticRemarks />;
+        case 6:
           return <FinaliseCampaign />;
         default:
           return <SelectBrand />;

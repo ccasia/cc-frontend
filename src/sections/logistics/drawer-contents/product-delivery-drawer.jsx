@@ -18,27 +18,90 @@ import {
 
 import Iconify from 'src/components/iconify';
 
-// import LogisticsStepper from './logistics-stepper';
-// import AssignLogisticDialog, { AdminAssignLogisticDialog } from './dialogs/assign-logistic-dialog';
-// import AdminEditLogisticDialog from './dialogs/admin-edit-logistic-dialog';
-// import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
-// import ReviewIssueDialog from './dialogs/review-issue-dialog';
+import LogisticsStepper from '../logistics-stepper';
+import AssignLogisticDialog, { AdminAssignLogisticDialog } from '../dialogs/assign-logistic-dialog';
+import AdminEditLogisticDialog from '../dialogs/admin-edit-logistic-dialog';
+import ScheduleDeliveryDialog from '../dialogs/schedule-delivery-dialog';
+import ReviewIssueDialog from '../dialogs/review-issue-dialog';
 
-import ProductDeliveryDrawer from './drawer-contents/product-delivery-drawer';
-import ReservationDrawer from './drawer-contents/reservation-drawer';
+export default function ProductDeliveryDrawer({ open, onClose, logistic, onUpdate, campaignId }) {
+  const [openAssign, setOpenAssign] = useState(false);
+  const [openSchedule, setOpenSchedule] = useState(false);
+  const [openIssue, setOpenIssue] = useState(false);
 
-export default function LogisticsDrawer({
-  open,
-  onClose,
-  logistic,
-  onUpdate,
-  campaignId,
-  isAdmin = false,
-  isReservation,
-}) {
+  const status = logistic?.status;
   const creator = logistic?.creator;
+  const deliveryDetails = logistic?.deliveryDetails;
   const socialMediaHandle =
     creator?.creator?.instagramUser?.username || creator?.creator?.tiktokUser?.username;
+  const buttonSx = useMemo(
+    () => ({
+      width: 'fit-content',
+      height: 44,
+      padding: { xs: '4px 8px', sm: '6px 10px' },
+      borderRadius: '8px',
+      boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+      backgroundColor: '#1340FF',
+      color: '#FFFFFF',
+      fontSize: { xs: 12, sm: 14, md: 16 },
+      fontWeight: 600,
+      textTransform: 'none',
+      '&:hover': {
+        backgroundColor: '#133effd3',
+        boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+      },
+      '&:active': {
+        boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+        transform: 'translateY(1px)',
+      },
+    }),
+    []
+  );
+
+  const actionButton = useMemo(() => {
+    if (!logistic) return null;
+
+    switch (status) {
+      case 'PENDING_ASSIGNMENT':
+        return (
+          <Badge color="error" variant="dot">
+            <Button fullWidth variant="contained" onClick={() => setOpenAssign(true)} sx={buttonSx}>
+              <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
+              Assign
+            </Button>
+          </Badge>
+        );
+      case 'SCHEDULED':
+        return (
+          <Badge color="error" variant="dot">
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => setOpenSchedule(true)}
+              sx={buttonSx}
+            >
+              <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
+              Schedule Delivery
+            </Button>
+          </Badge>
+        );
+      case 'ISSUE_REPORTED':
+        return (
+          <Badge color="error" variant="dot">
+            <Button fullWidth variant="contained" onClick={() => setOpenIssue(true)} sx={buttonSx}>
+              <Iconify icon="mi:edit-alt" width={24} sx={{ mr: 1 }} />
+              Review Issue
+            </Button>
+          </Badge>
+        );
+      case 'SHIPPED':
+      case 'DELIVERED':
+      case 'COMPLETED':
+        return null;
+      default:
+        return null;
+    }
+  }, [status, logistic, buttonSx]);
 
   const renderHeader = (
     <Stack
@@ -86,60 +149,181 @@ export default function LogisticsDrawer({
             </Typography>
           </Box>
         </Box>
+        {/* <IconButton onClick={onClose}>
+        <Iconify icon="eva:close-fill" />
+      </IconButton> */}
+      </Stack>
+    </Box>
+  );
+
+  const renderDietary = (
+    <Box
+      sx={{
+        px: 2.5,
+        py: 1,
+        border: '1px solid #919EAB3D',
+        bgcolor: '#F4F6F8',
+        borderRadius: 2,
+        mx: 3,
+        mb: 3,
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+        <Iconify icon="material-symbols:clarify-outline-rounded" sx={{ color: '#1340FF' }} />
+        <Typography variant="subtitle2">DIETARY RESTRICTIONS/ALLERGIES</Typography>
+      </Stack>
+      <Divider />
+      <Typography variant="body2" sx={{ color: 'text.secondary', my: 2 }}>
+        {deliveryDetails?.dietaryRestrictions || 'No dietary restrictions or allergies specified.'}
+      </Typography>
+    </Box>
+  );
+
+  const renderDeliveryDetails = (
+    <Box
+      sx={{
+        px: 2.5,
+        py: 1,
+        border: '1px solid #919EAB3D',
+        bgcolor: '#F4F6F8',
+        borderRadius: 2,
+        mx: 3,
+        mb: 3,
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+        <Iconify icon="material-symbols:clarify-outline-rounded" sx={{ color: '#1340FF' }} />
+        <Typography variant="subtitle2">DELIVERY DETAILS</Typography>
+      </Stack>
+      <Divider />
+      <Stack spacing={2} sx={{ my: 2 }}>
+        <Box>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Product
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            {deliveryDetails?.items?.map((item, index) => (
+              <Box
+                key={index}
+                sx={{
+                  px: 1,
+                  py: 0.5,
+                  color: '#8E8E93',
+                  bgcolor: '#F4F6F8',
+                  borderRadius: '6px',
+                  border: '1px solid #919EAB3D',
+                  boxShadow: '0px -3px 0px 0px #919EAB3D inset',
+                  typography: 'caption',
+                  fontWeight: 600,
+                }}
+              >
+                {item.product?.productName} ({item.quantity})
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+        <Box>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Tracking Link
+          </Typography>
+          <Box sx={{ mt: 0 }}>
+            {deliveryDetails?.trackingLink ? (
+              <Link
+                variant="body2"
+                href={deliveryDetails.trackingLink}
+                target="_blank"
+                rel="noopener"
+                sx={{ color: '#1340FF' }}
+              >
+                {deliveryDetails.trackingLink}
+              </Link>
+            ) : (
+              <Typography variant="body2">-</Typography>
+            )}
+          </Box>
+        </Box>
+        <Box>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Delivery Address
+          </Typography>
+          <Stack>
+            <Iconify />
+            <Typography variant="body2">
+              {deliveryDetails?.address || 'No address provided'}
+            </Typography>
+          </Stack>
+        </Box>
+        <Box>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Expected Delivery
+          </Typography>
+          <Typography variant="body2">
+            {deliveryDetails?.expectedDeliveryDate
+              ? new Date(deliveryDetails.expectedDeliveryDate).toLocaleDateString('en-GB', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'numeric',
+                  day: 'numeric',
+                })
+              : '-'}
+          </Typography>
+        </Box>
       </Stack>
     </Box>
   );
 
   return (
-    <Drawer
-      open={open}
-      onClose={onClose}
-      anchor="right"
-      PaperProps={{
-        sx: {
-          width: { xs: 1, sm: 370 },
-          backgroundColor: '#F4F6F8 !important',
-          borderTopLeftRadius: 12,
-        },
-      }}
-    >
-      {renderHeader}
-      <Divider
+    <>
+      <Box
         sx={{
+          p: 2.5,
+          border: '1px solid #919EAB3D',
+          bgcolor: '#F4F6F8',
+          borderRadius: 2,
+          mx: 3,
           mb: 3,
         }}
+      >
+        <LogisticsStepper logistic={logistic} onUpdate={onUpdate} campaignId={campaignId} />
+        {actionButton && (
+          <Stack alignItems="center" sx={{ mt: 3 }}>
+            <Box>{actionButton}</Box>
+          </Stack>
+        )}
+      </Box>
+      {renderDietary}
+      {renderDeliveryDetails}
+      <AssignLogisticDialog
+        open={openAssign}
+        onClose={() => setOpenAssign(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
       />
-      {renderCreator}
-
-      {isReservation ? (
-        <ReservationDrawer
-          logistic={logistic}
-          onUpdate={onUpdate}
-          campaignId={campaignId}
-          isAdmin={isAdmin}
-          onClose={onClose}
-        />
-      ) : (
-        <ProductDeliveryDrawer
-          logistic={logistic}
-          onUpdate={onUpdate}
-          campaignId={campaignId}
-          isAdmin={isAdmin}
-          onClose={onClose}
-        />
-      )}
-    </Drawer>
+      <ScheduleDeliveryDialog
+        open={openSchedule}
+        onClose={() => setOpenSchedule(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
+      <ReviewIssueDialog
+        open={openIssue}
+        onClose={() => setOpenIssue(false)}
+        logistic={logistic}
+        campaignId={campaignId}
+        onUpdate={onUpdate}
+      />
+    </>
   );
 }
 
-LogisticsDrawer.propTypes = {
+ProductDeliveryDrawer.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   logistic: PropTypes.object,
   onUpdate: PropTypes.func,
   campaignId: PropTypes.string,
-  isAdmin: PropTypes.bool,
-  isReservation: PropTypes.bool,
 };
 
 // ------------------------------------------------------------------------------------------
