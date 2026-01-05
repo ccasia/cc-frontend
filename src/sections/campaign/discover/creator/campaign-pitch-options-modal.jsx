@@ -239,12 +239,12 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
         }}
       />
       <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} />
-      
-      <MediaKitPopup 
-        open={showMediaKitPopup} 
-        onClose={() => setShowMediaKitPopup(false)} 
+
+      <MediaKitPopup
+        open={showMediaKitPopup}
+        onClose={() => setShowMediaKitPopup(false)}
         userId={user?.id || ''}
-        showPitchError={true}
+        showPitchError
       />
     </>
   );
