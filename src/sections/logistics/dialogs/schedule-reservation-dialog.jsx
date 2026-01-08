@@ -291,8 +291,10 @@ export default function ScheduleReservationDialog({
                 let color = '#919EAB';
                 if (isSelected) {
                   color = '#fff';
-                } else if (canClick) {
-                  color = '#231F20';
+                } else if (canClick && !isProposed) {
+                  color = '#090708ff';
+                } else if (isProposed) {
+                  color = '#1340FF';
                 }
 
                 return (
@@ -349,7 +351,7 @@ export default function ScheduleReservationDialog({
             <Grid
               item
               xs={5}
-              alignContent="center"
+              alignContent="flex-start"
               sx={{ height: '100%', pr: 2, borderRight: '1px solid #EAEAEA' }}
             >
               <Stack
@@ -382,7 +384,7 @@ export default function ScheduleReservationDialog({
                       variant={isSelected ? 'contained' : 'outlined'}
                       onClick={() => setSelectedSlotTime(slot.startTime)}
                       sx={{
-                        py: 1,
+                        py: 1.2,
                         px: 0.5,
                         fontSize: '15px',
                         bgcolor: isSelected ? '#1340FF' : '#fff',
