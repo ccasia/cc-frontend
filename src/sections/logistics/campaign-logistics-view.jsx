@@ -36,7 +36,7 @@ const DELIVERY_OPTIONS = [
 
 const RESERVATION_OPTIONS = [
   { value: 'all', label: 'All' },
-  { value: 'PENDING_ASSIGNMENT', label: 'Unassigned' },
+  { value: 'PENDING_ASSIGNMENT', label: 'Unconfirmed' },
   { value: 'SCHEDULED', label: 'Scheduled' },
   { value: 'COMPLETED', label: 'Completed' },
   { value: 'ISSUE_REPORTED', label: 'Failed' },
