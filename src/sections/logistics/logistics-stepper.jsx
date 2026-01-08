@@ -521,9 +521,9 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
               {activeStep === index && !step.error && index !== 2 && (
                 <Typography
                   variant="caption"
-                  sx={{ color: '#FF3500', display: 'block', fontsize: '10px' }}
+                  sx={{ color: '#1340FF', display: 'block', fontsize: '10px' }}
                 >
-                  Please provide necessary details.
+                  Waiting for Client to confirm your slot...{' '}
                 </Typography>
               )}
               {status === 'SCHEDULED' && index === 2 && !isErrorStep && (
