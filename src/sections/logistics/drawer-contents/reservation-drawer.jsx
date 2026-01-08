@@ -220,14 +220,14 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
         )}
 
         {/* 2. Schedule Button (If not done) */}
-        {!isScheduled && !isAuto && (
+        {!isScheduled && !isAuto && status === 'PENDING_ASSIGNMENT' && (
           <Badge color="error" variant="dot">
             <Button
               variant="contained"
               onClick={isAdmin ? () => setOpenAdminSchedule(true) : () => setOpenSchedule(true)}
               sx={buttonSx} // Always Blue for Schedule
             >
-              Schedule
+              Confirm Slot
             </Button>
           </Badge>
         )}
