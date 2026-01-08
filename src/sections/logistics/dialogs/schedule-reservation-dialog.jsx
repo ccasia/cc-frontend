@@ -142,15 +142,15 @@ export default function ScheduleReservationDialog({
         setSelectedDate(date);
         setSelectedSlotTime(confirmedSlot.startTime);
         setCurrentMonth(date);
-      } else if (proposedSlots.length > 0) {
-        const datePart = proposedSlots[0].startTime.split('T')[0];
-        const date = parseISO(datePart);
+      } else {
+        const today = new Date();
 
-        setCurrentMonth(date);
-        setSelectedDate(date);
+        setCurrentMonth(today);
+        setSelectedDate(today);
+        setSelectedSlotTime(null);
       }
     }
-  }, [open, confirmedSlot, proposedSlots]);
+  }, [open, confirmedSlot]);
 
   // --- Helpers ---
 
@@ -440,7 +440,6 @@ export default function ScheduleReservationDialog({
                           </Typography>
                           <Typography
                             variant="caption"
-                            // color="text.secondary"
                             sx={{
                               fontWeight: 400,
                               display: 'block',
@@ -452,7 +451,6 @@ export default function ScheduleReservationDialog({
                           </Typography>
                           <Typography
                             variant="caption"
-                            // color="text.secondary"
                             sx={{
                               fontWeight: 400,
                               display: 'block',
