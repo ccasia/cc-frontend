@@ -1035,6 +1035,7 @@ const CampaignV4Activity = ({ campaign }) => {
   // Fetch logistics data
   const { logistic, logisticLoading, mutate: mutateLogistic } = useGetCreatorLogistic(campaign?.id);
   const isLogisticsCompleted = !!logistic;
+  const isDelivery = campaign?.logisticsType === 'PRODUCT_DELIVERY';
 
   // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
   const originalAgreementUrl = campaign?.agreement?.agreementUrl;
@@ -1424,12 +1425,12 @@ const CampaignV4Activity = ({ campaign }) => {
           >
             <Stack direction="row" alignItems="center" spacing={2}>
               <Typography
-                variant="subtitle1"
+                variant="h6"
                 sx={{
-                  fontWeight: 600,
-                  color: 'black',
                   fontFamily:
                     'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontWeight: 500,
+                  color: 'black',
                 }}
               >
                 Agreement
@@ -1784,7 +1785,7 @@ const CampaignV4Activity = ({ campaign }) => {
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: 1,
+            mb: isDelivery ? 2 : 1,
           }}
         >
           <Stack
@@ -1801,12 +1802,12 @@ const CampaignV4Activity = ({ campaign }) => {
           >
             <Stack direction="row" alignItems="center" spacing={2}>
               <Typography
-                variant="subtitle1"
+                variant="h6"
                 sx={{
-                  fontWeight: 600,
-                  color: 'black',
                   fontFamily:
                     'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontWeight: 500,
+                  color: 'black',
                 }}
               >
                 Agreement
@@ -1964,7 +1965,7 @@ const CampaignV4Activity = ({ campaign }) => {
       )}
 
       {/* HIDE: Logistics Information Card from creator */}
-      {/* {isAgreementApproved && (
+      {isAgreementApproved && isDelivery && (
         <Card
           sx={{
             overflow: 'visible',
@@ -1972,7 +1973,7 @@ const CampaignV4Activity = ({ campaign }) => {
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: 3,
+            mb: 1,
           }}
         >
           <Stack
@@ -1984,11 +1985,12 @@ const CampaignV4Activity = ({ campaign }) => {
           >
             <Stack direction="row" alignItems="center" spacing={2}>
               <Typography
-                variant="subtitle1"
+                variant="h6"
                 sx={{
-                  fontWeight: 600,
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontWeight: 500,
                   color: 'black',
-                  fontFamily: 'Inter Display, sans-serif',
                 }}
               >
                 Logistics Information
@@ -2029,7 +2031,7 @@ const CampaignV4Activity = ({ campaign }) => {
             <LogisticsForm user={user} campaignId={campaign.id} onUpdate={() => mutateLogistic()} />
           </Collapse>
         </Card>
-      )} */}
+      )}
 
       {/* Collapsible Submission Cards */}
       <Stack spacing={2} sx={{ p: 1, mx: -1 }}>
@@ -2489,6 +2491,7 @@ CampaignV4Activity.propTypes = {
     id: PropTypes.string,
     name: PropTypes.string,
     campaignType: PropTypes.string,
+    logisticsType: PropTypes.string,
     agreement: PropTypes.shape({
       agreementUrl: PropTypes.string,
     }),
