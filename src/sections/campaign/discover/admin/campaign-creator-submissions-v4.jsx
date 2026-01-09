@@ -672,13 +672,6 @@ function CreatorAccordion({ creator, campaign }) {
                 </Typography>
               );
             }
-            if (submissions.length === 1 && !isClient) {
-              return (
-                <Typography variant="body2" color="text.secondary">
-                  Set agreement and assign UGC Videos to creator
-                </Typography>
-              );
-            }
             return renderSubmissionPills();
           })()}
         </Box>
