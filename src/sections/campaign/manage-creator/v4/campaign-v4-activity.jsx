@@ -141,6 +141,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 
   const handleRemove = () => {
     setValue('agreementForm', null, { shouldValidate: true });
+    setValue('agreementForm', null, { shouldValidate: true });
   };
 
   const onSubmit = handleSubmit(async (data) => {
@@ -917,7 +918,7 @@ const LogisticsForm = ({ user, campaignId, onUpdate }) => {
                   Apartment, suite, etc.
                 </Typography>
                 <RHFTextField
-                  name="unitNumber"
+                  name="location"
                   placeholder="Apartment, suite, etc."
                   sx={{
                     '& .MuiOutlinedInput-root': {
@@ -2008,8 +2009,8 @@ const CampaignV4Activity = ({ campaign }) => {
                   borderRadius: 0.8,
                   bgcolor: 'white',
                   whiteSpace: 'nowrap',
-                  color: '#00AB55',
-                  borderColor: '#00AB55',
+                  color: isLogisticsCompleted ? '#00AB55' : '#8E8E93',
+                  borderColor: isLogisticsCompleted ? '#00AB55' : '#8E8E93',
                 }}
               >
                 <Typography
@@ -2028,7 +2029,81 @@ const CampaignV4Activity = ({ campaign }) => {
 
           <Collapse in={expandedSections.logistics}>
             <Divider />
-            <LogisticsForm user={user} campaignId={campaign.id} onUpdate={() => mutateLogistic()} />
+            {isLogisticsCompleted ? (
+              <Box sx={{ p: 3 }}>
+                <Stack spacing={4}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 3, md: 10 }}>
+                    <Box sx={{ minWidth: 200 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#636366', display: 'block', mb: 1 }}
+                      >
+                        Country of Residence <span style={{ color: '#FF4842' }}>*</span>
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                        {user?.creator?.country}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ minWidth: 200 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#636366', display: 'block', mb: 1 }}
+                      >
+                        State/Territory <span style={{ color: '#FF4842' }}>*</span>
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                        {user?.creator?.state}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#636366', display: 'block', mb: 1 }}
+                      >
+                        Dietary Restrictions/Allergies
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                        {logistic?.deliveryDetails?.dietaryRestrictions || '-'}
+                      </Typography>
+                    </Box>
+                  </Stack>
+
+                  {/* Middle Row: Address */}
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: '#636366', display: 'block', mb: 1 }}
+                    >
+                      Address <span style={{ color: '#FF4842' }}>*</span>
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                      {logistic?.deliveryDetails?.address}
+                    </Typography>
+                  </Box>
+
+                  {/* Bottom Row: Apartment */}
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: '#636366', display: 'block', mb: 1 }}
+                    >
+                      Apartment, suite, etc.
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                      {user?.creator?.location || '-'}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            ) : (
+              <LogisticsForm
+                user={user}
+                campaignId={campaign.id}
+                onUpdate={() => mutateLogistic()}
+              />
+            )}
           </Collapse>
         </Card>
       )}
@@ -2129,7 +2204,10 @@ const CampaignV4Activity = ({ campaign }) => {
                   )}
                 </Stack>
                 <IconButton size="small">
-                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
+                  <Iconify
+                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                    width={20}
+                  />
                 </IconButton>
               </Box>
               {/* Collapsible Content */}
@@ -2273,7 +2351,10 @@ const CampaignV4Activity = ({ campaign }) => {
                   )}
                 </Stack>
                 <IconButton size="small">
-                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
+                  <Iconify
+                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                    width={20}
+                  />
                 </IconButton>
               </Box>
 
@@ -2424,7 +2505,7 @@ const CampaignV4Activity = ({ campaign }) => {
                   )}
                 </Stack>
                 <IconButton size="small">
-                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
+                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} width={20}/>
                 </IconButton>
               </Box>
 
