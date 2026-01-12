@@ -90,6 +90,11 @@ export default function CampaignListView() {
 
     // If there's no more data (check both hasNextPage and lastCursor), stop fetching
     if (!previousPageData?.metaData?.hasNextPage || !previousPageData?.metaData?.lastCursor) {
+      console.log('🔍 Campaign infinite scroll - Stopping fetch:', {
+        hasNextPage: previousPageData?.metaData?.hasNextPage,
+        lastCursor: !!previousPageData?.metaData?.lastCursor,
+        pageIndex,
+      });
       return null;
     }
 
@@ -309,15 +314,42 @@ export default function CampaignListView() {
 
   const filteredData = useMemo(() => {
     const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
-    const activeCampaigns = campaigns?.filter((campaign) => campaign?.status === 'ACTIVE');
 
-    return applyFilter({
+    console.log('🔍 Campaign discover - Data pages received:', data?.length || 0);
+    console.log(
+      '🔍 Campaign discover - Raw campaigns:',
+      campaigns?.map((c) => ({ id: c.id, name: c.name, createdAt: c.createdAt, origin: c.origin }))
+    );
+    console.log('🔍 Campaign discover - Total raw campaigns received:', campaigns?.length || 0);
+
+    // Log pagination metadata for each page
+    data?.forEach((page, index) => {
+      console.log(`🔍 Campaign discover - Page ${index + 1} metadata:`, {
+        campaignsInPage: page?.data?.campaigns?.length || 0,
+        hasNextPage: page?.metaData?.hasNextPage,
+        lastCursor: page?.metaData?.lastCursor,
+      });
+    });
+
+    const activeCampaigns = campaigns?.filter((campaign) => campaign?.status === 'ACTIVE');
+    console.log(
+      '🔍 Campaign discover - Active campaigns after status filter:',
+      activeCampaigns?.length || 0
+    );
+
+    const finalFiltered = applyFilter({
       inputData: activeCampaigns,
       filter,
       user,
       sortBy,
       search,
     });
+
+    console.log('🔍 Campaign discover - Final filtered campaigns:', finalFiltered?.length || 0);
+    console.log('🔍 Campaign discover - Filter applied:', filter);
+    console.log('🔍 Campaign discover - Search query:', search.query);
+
+    return finalFiltered;
   }, [data, filter, user, sortBy, search]);
 
   // const filteredData = useMemo(
@@ -994,38 +1026,69 @@ export default function CampaignListView() {
 // ----------------------------------------------------------------------
 
 const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
+  console.log('applyFilter - Input data length:', inputData?.length || 0);
+  console.log('applyFilter - Filter type:', filter);
+  console.log('applyFilter - User ID:', user?.id);
+
   let resultData = inputData;
 
   if (filter === 'saved') {
+    const beforeSavedFilter = resultData?.length || 0;
     resultData = resultData?.filter((campaign) =>
       campaign.bookMarkCampaign.some((item) => item.userId === user.id)
+    );
+    console.log(
+      'applyFilter - After saved filter:',
+      resultData?.length || 0,
+      'from',
+      beforeSavedFilter
     );
   }
 
   if (filter === 'draft') {
+    const beforeDraftFilter = resultData?.length || 0;
     resultData = resultData?.filter((campaign) =>
       campaign.pitch?.some((elem) => elem?.userId === user?.id && elem?.status === 'draft')
+    );
+    console.log(
+      'applyFilter - After draft filter:',
+      resultData?.length || 0,
+      'from',
+      beforeDraftFilter
     );
   }
 
   // Apply sorting
   if (sortBy === 'Most matched') {
     resultData = orderBy(resultData, ['percentageMatch'], ['desc']);
+    console.log('applyFilter - Applied "Most matched" sorting');
   } else if (sortBy === 'Most recent') {
     resultData = orderBy(resultData, ['createdAt'], ['desc']);
+    console.log('applyFilter - Applied "Most recent" sorting');
   } else {
     // Default sorting: newest first
     resultData = orderBy(resultData, ['createdAt'], ['desc']);
+    console.log('applyFilter - Applied default (newest first) sorting');
   }
 
   // Apply search filter
   if (search.query) {
+    const beforeSearchFilter = resultData?.length || 0;
     resultData = resultData?.filter(
       (item) =>
         item.name.toLowerCase().includes(search.query.toLowerCase()) ||
         item.company?.name.toLowerCase().includes(search.query.toLowerCase())
     );
+    console.log(
+      'applyFilter - After search filter:',
+      resultData?.length || 0,
+      'from',
+      beforeSearchFilter,
+      'for query:',
+      search.query
+    );
   }
 
+  console.log('applyFilter - Final result length:', resultData?.length || 0);
   return resultData;
 };

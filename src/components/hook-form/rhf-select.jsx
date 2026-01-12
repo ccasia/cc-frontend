@@ -282,4 +282,3 @@ RHFSelectV2.propTypes = {
   label: PropTypes.string,
   placeholder: PropTypes.string,
 };
-

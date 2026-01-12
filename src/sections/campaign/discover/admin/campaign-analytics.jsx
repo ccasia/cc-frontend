@@ -177,7 +177,7 @@ const RenderEngagementCard = ({
             justifyContent: 'space-around',
             height: { xs: 70, sm: 85 },
             minWidth: 0,
-            mr: 1
+            mr: 1,
           }}
         >
           <Typography

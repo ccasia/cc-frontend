@@ -30,6 +30,18 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved }) => {
 
   const creatorName = pitch?.user?.name || 'Creator';
 
+  const getRealPitchId = () => {
+    const pitchId = pitch?.id;
+    if (!pitchId) return null;
+    
+    // Remove 'shortlisted-' prefix if present
+    if (pitchId.startsWith('shortlisted-')) {
+      return pitchId.replace('shortlisted-', '');
+    }
+    
+    return pitchId;
+  };
+
   const handleRemoveCreator = async () => {
     try {
       setLoading(true);
@@ -55,7 +67,15 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved }) => {
   const handleWithdrawCreator = async () => {
     try {
       setLoading(true);
-      const res = await axiosInstance.patch(endpoints.campaign.pitch.v3.withdraw(pitch.id), {
+      
+      // Get the real pitch ID (without 'shortlisted-' prefix)
+      const realPitchId = getRealPitchId();
+      
+      if (!realPitchId) {
+        throw new Error('Invalid pitch ID');
+      }
+      
+      const res = await axiosInstance.patch(endpoints.campaign.pitch.v3.withdraw(realPitchId), {
         reason: 'Withdrawn by admin',
       });
 
@@ -65,7 +85,7 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved }) => {
         onRemoved();
       }
     } catch (error) {
-      enqueueSnackbar(error?.message || 'Failed to withdraw creator', {
+      enqueueSnackbar(error?.response?.data?.message || error?.message || 'Failed to withdraw creator', {
         variant: 'error',
       });
     } finally {

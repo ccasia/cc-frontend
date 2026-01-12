@@ -50,12 +50,15 @@ const ChildAccountList = ({ companyId, company }) => {
   const mdUp = useResponsive('up', 'md');
 
   // Get client ID from company - use the first active client
-  const clientId = company?.clients?.[0]?.id || company?.clientId;
-
-  console.log('Company data:', company);
-  console.log('Client ID being used:', clientId);
+  // Note: company.clientId is just a reference (like A01), we need the actual client.id
+  const clientId = company?.clients?.[0]?.id;
 
   const fetchChildAccounts = useCallback(async () => {
+    if (!clientId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/api/child-account/client/${clientId}`);
@@ -87,6 +90,11 @@ const ChildAccountList = ({ companyId, company }) => {
   }, [fetchChildAccounts]);
 
   const handleInviteChildAccount = async () => {
+    if (!clientId) {
+      enqueueSnackbar('No client ID found. Cannot invite child account.', { variant: 'error' });
+      return;
+    }
+
     try {
       const response = await axiosInstance.post(`/api/child-account/client/${clientId}`, formData);
       enqueueSnackbar(response.data.message, { variant: 'success' });
@@ -184,6 +192,7 @@ const ChildAccountList = ({ companyId, company }) => {
             variant="contained"
             startIcon={<Iconify icon="eva:plus-fill" />}
             onClick={() => setInviteDialog(true)}
+            disabled={!clientId}
             sx={{
               bgcolor: '#203ff5',
               '&:hover': { bgcolor: '#102387' },
@@ -207,7 +216,17 @@ const ChildAccountList = ({ companyId, company }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {childAccounts.length === 0 ? (
+              {!clientId ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    <EmptyContent 
+                      title="No Client Associated" 
+                      description="This company does not have an associated client record. Child accounts can only be managed for companies with active client accounts."
+                      filled 
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : childAccounts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
                     <EmptyContent title="No child accounts" filled />
