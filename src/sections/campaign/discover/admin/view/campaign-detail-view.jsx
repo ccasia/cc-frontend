@@ -313,33 +313,33 @@ const CampaignDetailView = ({ id }) => {
   }, []);
 
   const getAgreementsLabel = (submissions, agreements, pitches, shortlisted) => {
-    const pendingAgreementApproval =
-      submissions?.filter((a) => a?.status === 'PENDING_REVIEW').length || 0;
-
     // Get approved pitch user IDs
     const approvedPitchUserIds = new Set(
       (pitches || [])
-        .filter((pitch) => pitch?.status === 'APPROVED' && pitch?.userId)
+        .filter(
+          (pitch) =>
+            (pitch?.status === 'APPROVED' ||
+              pitch?.status === 'AGREEMENT_SUBMITTED' ||
+              pitch?.status === 'AGREEMENT_PENDING') &&
+            pitch?.userId
+        )
         .map((pitch) => pitch.userId)
     );
 
-    // Get shortlisted user IDs where agreement is not ready
-    const shortlistedPendingUserIds = new Set(
-      (shortlisted || [])
-        .filter((s) => s?.userId && s?.isAgreementReady === false)
-        .map((s) => s.userId)
+    // Get shortlisted user IDs (for backwards compatibility)
+    const shortlistedUserIds = new Set(
+      (shortlisted || []).filter((s) => s?.userId).map((s) => s.userId)
     );
 
-    // Combine both sets for users who need agreements sent
-    const usersNeedingAgreement = new Set([...approvedPitchUserIds, ...shortlistedPendingUserIds]);
+    // Combine both sets for total agreements
+    const totalAgreementsUserIds = new Set([...approvedPitchUserIds, ...shortlistedUserIds]);
 
-    // Count agreements not sent for users in the combined set (no duplicates)
-    const pendingSendAgreement = (agreements || []).filter(
-      (a) => a.isSent === false && usersNeedingAgreement.has(a.userId)
+    // Count total agreements for approved creators
+    const totalAgreements = (agreements || []).filter((a) =>
+      totalAgreementsUserIds.has(a.userId)
     ).length;
 
-    const totalPending = pendingAgreementApproval + pendingSendAgreement;
-    return totalPending > 0 ? `Agreements (${totalPending})` : 'Agreements';
+    return `Agreements (${totalAgreements})`;
   };
 
   const renderTabs = (
