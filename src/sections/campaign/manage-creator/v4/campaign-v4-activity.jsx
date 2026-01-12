@@ -141,12 +141,12 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
   };
 
   const handleRemove = () => {
-    setValue('agreementForm', null, {shouldValidate: true});
+    setValue('agreementForm', null, { shouldValidate: true });
   };
 
   const onSubmit = handleSubmit(async (data) => {
     if (!data.agreementForm) {
-      enqueueSnackbar('Please select a file to upload.', {variant: 'warning'});
+      enqueueSnackbar('Please select a file to upload.', { variant: 'warning' });
 
       return;
     }
@@ -279,7 +279,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
         {agreementUrl && (
           <Box
             sx={{
-              width: { xs: '100%', md: '70%'},
+              width: { xs: '100%', md: '70%' },
               height: { xs: '400px', sm: '500px' },
               borderRadius: 1,
               border: '1px solid',
@@ -348,8 +348,13 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
           </Box>
 
           {/* Action Buttons - Bottom Right */}
-          <Box display="flex" flexDirection={{ xs: 'row', md: 'column' }} flex={1} justifyContent="space-between"
-          sx={{gap: 2}}>
+          <Box
+            display="flex"
+            flexDirection={{ xs: 'row', md: 'column' }}
+            flex={1}
+            justifyContent="space-between"
+            sx={{ gap: 2 }}
+          >
             {/* Download Agreement Button */}
             {agreementUrl && (
               <Button
@@ -372,7 +377,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                   },
                 }}
               >
-                <Iconify icon="material-symbols:download" width={{ xs: 30, md: 20}} />
+                <Iconify icon="material-symbols:download" width={{ xs: 30, md: 20 }} />
                 <Box
                   component="span"
                   ml={1}
@@ -385,18 +390,57 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
               </Button>
             )}
 
-            <Box 
-            component="span"
-            sx={{
-              display: 'flex',
-              alignSelf: 'flex-end',
-              gap: 1,
-            }}>
-            {agreementUrl && (
+            <Box
+              component="span"
+              sx={{
+                display: 'flex',
+                alignSelf: 'flex-end',
+                gap: 1,
+              }}
+            >
+              {agreementUrl && (
+                <Button
+                  variant="contained"
+                  onClick={handleOpenUploadModal}
+                  disabled={isAgreementSubmitted || !agreementUrl}
+                  sx={{
+                    bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
+                    color: '#fff',
+                    alignSelf: 'flex-end',
+                    borderBottom: 3.5,
+                    borderBottomColor: isAgreementSubmitted ? '#9e9e9f' : '#112286',
+                    borderRadius: 1.5,
+                    px: 2.5,
+                    py: 1.2,
+                    '&:hover': {
+                      bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
+                      opacity: 0.9,
+                    },
+                    '&.Mui-disabled': {
+                      color: '#fff',
+                      opacity: 0.6,
+                    },
+                  }}
+                >
+                  <Iconify icon="material-symbols:upload" width={24} />
+                  <Box
+                    component="span"
+                    ml={1}
+                    sx={{
+                      display: { xs: 'none', md: 'inline' },
+                    }}
+                  >
+                    Upload Agreement
+                  </Box>
+                </Button>
+              )}
+
+              {/* Digital Signing Option */}
               <Button
                 variant="contained"
-                onClick={handleOpenUploadModal}
+                onClick={handleOpenEditor}
                 disabled={isAgreementSubmitted || !agreementUrl}
+                startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
                 sx={{
                   bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
                   color: '#fff',
@@ -407,60 +451,21 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                   px: 2.5,
                   py: 1.2,
                   '&:hover': {
-                  bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
-                  opacity: 0.9,
+                    bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
+                    opacity: 0.9,
                   },
                   '&.Mui-disabled': {
-                  color: '#fff',
-                  opacity: 0.6,
+                    color: '#fff',
+                    opacity: 0.6,
                   },
                 }}
               >
-                <Iconify icon="material-symbols:upload" width={24} />
-                <Box
-                  component="span"
-                  ml={1}
-                  sx={{
-                    display: { xs: 'none', md: 'inline' },
-                  }}
-                >
-                  Upload Agreement
-                </Box>
+                {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement'}
               </Button>
-            )}
-
-            {/* Digital Signing Option */}
-            <Button
-              variant="contained"
-              onClick={handleOpenEditor}
-              disabled={isAgreementSubmitted || !agreementUrl}
-              startIcon={<Iconify icon="solar:document-text-bold-duotone" width={24} />}
-              sx={{
-                bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
-                color: '#fff',
-                alignSelf: 'flex-end',
-                borderBottom: 3.5,
-                borderBottomColor: isAgreementSubmitted ? '#9e9e9f' : '#112286',
-                borderRadius: 1.5,
-                px: 2.5,
-                py: 1.2,
-                '&:hover': {
-                  bgcolor: isAgreementSubmitted ? '#b0b0b1' : '#203ff5',
-                  opacity: 0.9,
-                },
-                '&.Mui-disabled': {
-                  color: '#fff',
-                  opacity: 0.6,
-                },
-              }}
-            >
-              {isAgreementSubmitted ? 'Submitted' : 'Sign Agreement'}
-            </Button>
             </Box>
           </Box>
         </Stack>
       </Box>
-
 
       {/* Sign Agreement Dialog */}
       <Dialog
@@ -610,19 +615,26 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={openUploadModal} onClose={() => setOpenUploadModal(false)} fullWidth maxWidth="sm">
+      <Dialog
+        open={openUploadModal}
+        onClose={() => setOpenUploadModal(false)}
+        fullWidth
+        maxWidth="sm"
+      >
         <DialogTitle
           sx={{
             borderBottom: 1,
             borderColor: 'divider',
-          }}>
-            Upload Signed Agreement
+          }}
+        >
+          Upload Signed Agreement
         </DialogTitle>
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <DialogContent>
-            <Stack spacing={2} sx={{ py: 2}}>
+            <Stack spacing={2} sx={{ py: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                If you have downloaded and signed the agreement manually, please upload the completed PDF file here.
+                If you have downloaded and signed the agreement manually, please upload the
+                completed PDF file here.
               </Typography>
               {!agreementForm ? (
                 <RHFUpload
@@ -643,12 +655,12 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
                     borderColor: 'divider',
                   }}
                 >
-                  <Iconify 
-                    icon="solar:file-text-bold-duotone" 
-                    width={40} 
-                    sx={{ color: '#1340FF', mr: 2 }} 
+                  <Iconify
+                    icon="solar:file-text-bold-duotone"
+                    width={40}
+                    sx={{ color: '#1340FF', mr: 2 }}
                   />
-                  
+
                   <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
                     <Typography variant="subtitle2" noWrap>
                       {agreementForm.name}
@@ -671,14 +683,16 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
               )}
             </Stack>
           </DialogContent>
-          <DialogActions sx={{
-            p: { xs: 2, md: 2 },
-            borderTop: 1,
-            borderColor: 'divider',
-            gap: { xs: 1.5, md: 2 },
-          }}>
-            <Button 
-              onClick={() => setOpenUploadModal(false)} 
+          <DialogActions
+            sx={{
+              p: { xs: 2, md: 2 },
+              borderTop: 1,
+              borderColor: 'divider',
+              gap: { xs: 1.5, md: 2 },
+            }}
+          >
+            <Button
+              onClick={() => setOpenUploadModal(false)}
               variant="outlined"
               sx={{
                 borderColor: '#203ff5',
@@ -1012,7 +1026,6 @@ const CampaignV4Activity = ({ campaign }) => {
   const [uploadingSubmissions, setUploadingSubmissions] = useState({}); // Track which submissions are uploading
   const updateTimerRef = React.useRef(null); // Store timer for debouncing updates
   const isFirstUpdateRef = React.useRef(true); // Track if this is the first update
-  const hasAutoExpandedLogisticsRef = React.useRef(false); // Track if we've auto-expanded logistics
 
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
@@ -1135,12 +1148,12 @@ const CampaignV4Activity = ({ campaign }) => {
   // Socket listeners for real-time submission updates
   useEffect(() => {
     if (!socket || !campaign?.id) return;
-    
+
     const queueUpdate = () => {
       if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
 
       const delay = isFirstUpdateRef.current ? 0 : 200;
-      
+
       updateTimerRef.current = setTimeout(() => {
         mutate();
         mutateOverview();
@@ -1156,7 +1169,9 @@ const CampaignV4Activity = ({ campaign }) => {
         ...(submissionsData?.grouped?.rawFootage || []),
       ];
 
-      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+      const isRelevantUpdate = allSubmissions.some(
+        (submission) => submission.id === data.submissionId
+      );
 
       if (isRelevantUpdate && data.userId !== user?.id) {
         queueUpdate();
@@ -1170,7 +1185,9 @@ const CampaignV4Activity = ({ campaign }) => {
         ...(submissionsData?.grouped?.rawFootage || []),
       ];
 
-      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+      const isRelevantUpdate = allSubmissions.some(
+        (submission) => submission.id === data.submissionId
+      );
 
       if (isRelevantUpdate && data.userId !== user?.id) {
         queueUpdate();
@@ -1184,7 +1201,9 @@ const CampaignV4Activity = ({ campaign }) => {
         ...(submissionsData?.grouped?.rawFootage || []),
       ];
 
-      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+      const isRelevantUpdate = allSubmissions.some(
+        (submission) => submission.id === data.submissionId
+      );
 
       if (isRelevantUpdate && data.userId !== user?.id) {
         queueUpdate();
@@ -1198,7 +1217,9 @@ const CampaignV4Activity = ({ campaign }) => {
         ...(submissionsData?.grouped?.rawFootage || []),
       ];
 
-      const isRelevantUpdate = allSubmissions.some((submission) => submission.id === data.submissionId);
+      const isRelevantUpdate = allSubmissions.some(
+        (submission) => submission.id === data.submissionId
+      );
 
       if (isRelevantUpdate) {
         queueUpdate();
@@ -1219,7 +1240,7 @@ const CampaignV4Activity = ({ campaign }) => {
     return () => {
       // Clear any pending updates
       if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
-      
+
       socket.off('v4:submission:updated', handleSubmissionUpdate);
       socket.off('v4:content:submitted', handleContentSubmitted);
       socket.off('v4:posting:updated', handlePostingUpdated);
@@ -1351,13 +1372,11 @@ const CampaignV4Activity = ({ campaign }) => {
   // Check if creator's agreement has been approved
   const isAgreementApproved = overviewData?.isAgreementApproved;
 
-  // Auto-expand logistics once when agreement is approved (but allow user to close it)
   useEffect(() => {
-    if (isAgreementApproved && !isLogisticsCompleted && !hasAutoExpandedLogisticsRef.current) {
+    if (isAgreementApproved && !isLogisticsCompleted && !expandedSections.logistics) {
       setExpandedSections((prev) => ({ ...prev, logistics: true }));
-      hasAutoExpandedLogisticsRef.current = true;
     }
-  }, [isAgreementApproved, isLogisticsCompleted]);
+  }, [isAgreementApproved, isLogisticsCompleted, expandedSections.logistics]);
 
   if (error) {
     return (
@@ -1463,6 +1482,263 @@ const CampaignV4Activity = ({ campaign }) => {
       </Box>
     );
   }
+
+  // HIDE: Logistics Information from creator - skip directly to submissions
+  // if (isAgreementApproved && !isLogisticsCompleted) {
+  //   return (
+  //     <Box>
+  //       <Card
+  //         sx={{
+  //           overflow: 'visible',
+  //           bgcolor: '#F5F5F5',
+  //           boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+  //           borderRadius: 2,
+  //           border: 'none',
+  //           mb: 1,
+  //         }}
+  //       >
+  //         <Stack
+  //           direction="row"
+  //           alignItems="center"
+  //           justifyContent="space-between"
+  //           sx={{ p: 2, cursor: 'pointer' }}
+  //           onClick={() =>
+  //             setExpandedSections((prev) => ({
+  //               ...prev,
+  //               approvedAgreement: !prev.approvedAgreement,
+  //             }))
+  //           }
+  //         >
+  //           <Stack direction="row" alignItems="center" spacing={2}>
+  //             <Typography
+  //               variant="subtitle1"
+  //               sx={{
+  //                 fontWeight: 600,
+  //                 color: 'black',
+  //                 fontFamily:
+  //                   'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  //               }}
+  //             >
+  //               Agreement
+  //             </Typography>
+  //             <Typography
+  //               variant="caption"
+  //               sx={{
+  //                 px: 1.5,
+  //                 py: 0.5,
+  //                 fontWeight: 600,
+  //                 border: '1px solid',
+  //                 borderBottom: '3px solid',
+  //                 borderRadius: 0.8,
+  //                 bgcolor: 'white',
+  //                 whiteSpace: 'nowrap',
+  //                 color: '#00AB55',
+  //                 borderColor: '#00AB55',
+  //                 fontSize: '0.75rem',
+  //               }}
+  //             >
+  //               APPROVED
+  //             </Typography>
+  //           </Stack>
+  //           <Iconify
+  //             icon={
+  //               expandedSections.approvedAgreement ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'
+  //             }
+  //             width={20}
+  //           />
+  //         </Stack>
+  //
+  //         <Collapse in={expandedSections.approvedAgreement}>
+  //           <Box sx={{ p: 2, pt: 0 }}>
+  //             <Stack spacing={2}>
+  //               <Typography
+  //                 variant="body2"
+  //                 sx={{
+  //                   color: '#221f20',
+  //                   fontFamily:
+  //                     'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  //                   fontWeight: 500,
+  //                 }}
+  //               >
+  //                 ✅ Your agreement has been approved!{' '}
+  //                 {signedAgreementUrl ? 'Below is your signed agreement.' : ''} You can now proceed
+  //                 with the campaign submissions.
+  //               </Typography>
+  //
+  //               {/* Agreement PDF Preview */}
+  //               {(signedAgreementUrl || agreementUrl) && (
+  //                 <Box
+  //                   sx={{
+  //                     display: 'flex',
+  //                     flexDirection: { xs: 'column', md: 'row' },
+  //                     gap: 2,
+  //                     mt: 1,
+  //                   }}
+  //                 >
+  //                   {/* PDF Preview */}
+  //                   <Box sx={{ flex: 1 }}>
+  //                     <Box
+  //                       sx={{
+  //                         width: '100%',
+  //                         height: { xs: '250px', sm: '300px' },
+  //                         borderRadius: 1,
+  //                         border: '1px solid',
+  //                         borderColor: 'divider',
+  //                         overflow: 'auto',
+  //                         bgcolor: 'background.neutral',
+  //                         '& .react-pdf__Document': {
+  //                           display: 'flex',
+  //                           flexDirection: 'column',
+  //                           alignItems: 'center',
+  //                         },
+  //                         '&::-webkit-scrollbar': {
+  //                           width: '8px',
+  //                         },
+  //                         '&::-webkit-scrollbar-thumb': {
+  //                           backgroundColor: 'rgba(0,0,0,0.2)',
+  //                           borderRadius: '4px',
+  //                         },
+  //                         '&::-webkit-scrollbar-track': {
+  //                           backgroundColor: 'rgba(0,0,0,0.1)',
+  //                         },
+  //                       }}
+  //                     >
+  //                       <Document
+  //                         file={signedAgreementUrl || agreementUrl}
+  //                         onLoadSuccess={onDocumentLoadSuccess}
+  //                         onLoadError={onDocumentLoadError}
+  //                       >
+  //                         {Array.from(new Array(numPages), (el, index) => (
+  //                           <Box
+  //                             key={index}
+  //                             sx={{
+  //                               p: 1,
+  //                               width: '100%',
+  //                               display: 'flex',
+  //                               justifyContent: 'center',
+  //                               '&:not(:last-child)': {
+  //                                 borderBottom: '1px solid',
+  //                                 borderColor: 'divider',
+  //                               },
+  //                             }}
+  //                           >
+  //                             <Page
+  //                               key={`page-${index + 1}`}
+  //                               pageNumber={index + 1}
+  //                               scale={isSmallScreen ? 0.3 : 0.4}
+  //                               renderAnnotationLayer={false}
+  //                               renderTextLayer={false}
+  //                             />
+  //                           </Box>
+  //                         ))}
+  //                       </Document>
+  //                     </Box>
+  //                   </Box>
+  //
+  //                   {/* Download Button */}
+  //                   <Box
+  //                     sx={{
+  //                       display: 'flex',
+  //                       flexDirection: 'column',
+  //                       justifyContent: 'center',
+  //                       alignItems: { xs: 'center', md: 'flex-start' },
+  //                     }}
+  //                   >
+  //                     <Button
+  //                       variant="contained"
+  //                       startIcon={<Iconify icon="material-symbols:download" width={20} />}
+  //                       onClick={() => handleDownload(signedAgreementUrl || agreementUrl)}
+  //                       sx={{
+  //                         bgcolor: '#203ff5',
+  //                         color: 'white',
+  //                         borderBottom: 3,
+  //                         borderBottomColor: '#112286',
+  //                         borderRadius: 1.5,
+  //                         px: 2.5,
+  //                         py: 1.2,
+  //                         '&:hover': {
+  //                           bgcolor: '#203ff5',
+  //                           opacity: 0.9,
+  //                         },
+  //                       }}
+  //                     >
+  //                       {signedAgreementUrl ? 'Download Signed Agreement' : 'Download Agreement'}
+  //                     </Button>
+  //                   </Box>
+  //                 </Box>
+  //               )}
+  //             </Stack>
+  //           </Box>
+  //         </Collapse>
+  //       </Card>
+  //       <Card
+  //         sx={{
+  //           overflow: 'visible',
+  //           bgcolor: '#F5F5F5',
+  //           boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+  //           borderRadius: 2,
+  //           border: 'none',
+  //           mb: 3,
+  //         }}
+  //       >
+  //         <Stack
+  //           direction="row"
+  //           alignItems="center"
+  //           justifyContent="space-between"
+  //           sx={{ p: 2, cursor: 'pointer' }}
+  //           onClick={() => setExpandedSections((prev) => ({ ...prev, logistics: !prev.logistics }))}
+  //         >
+  //           <Stack direction="row" alignItems="center" spacing={2}>
+  //             <Typography
+  //               variant="subtitle1"
+  //               sx={{
+  //                 fontWeight: 600,
+  //                 color: 'black',
+  //                 fontFamily: 'Inter Display, sans-serif',
+  //               }}
+  //             >
+  //               Logistics Information
+  //             </Typography>
+  //             <Box
+  //               sx={{
+  //                 display: 'flex',
+  //                 alignItems: 'center',
+  //                 gap: 0.5,
+  //                 px: 1.5,
+  //                 py: 0.5,
+  //                 fontWeight: 600,
+  //                 border: '1px solid',
+  //                 borderBottom: '3px solid',
+  //                 borderRadius: 0.8,
+  //                 bgcolor: 'white',
+  //                 whiteSpace: 'nowrap',
+  //                 color: '#8B5CF6',
+  //                 borderColor: '#8B5CF6', // Purple for Action Required
+  //               }}
+  //             >
+  //               <Typography
+  //                 variant="caption"
+  //                 sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'inherit' }}
+  //               >
+  //                 NOT STARTED
+  //               </Typography>
+  //             </Box>
+  //           </Stack>
+  //           <Iconify
+  //             icon={expandedSections.logistics ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+  //             width={20}
+  //           />
+  //         </Stack>
+  //
+  //         <Collapse in={expandedSections.logistics}>
+  //           <Divider />
+  //           {/* The Form Component */}
+  //           <LogisticsForm user={user} campaignId={campaign.id} onUpdate={() => mutateLogistic()} />
+  //         </Collapse>
+  //       </Card>
+  //     </Box>
+  //   );
+  // }
 
   return (
     <Box>
@@ -1731,15 +2007,15 @@ const CampaignV4Activity = ({ campaign }) => {
                   borderRadius: 0.8,
                   bgcolor: 'white',
                   whiteSpace: 'nowrap',
-                  color: isLogisticsCompleted ? '#00AB55' : '#8B5CF6',
-                  borderColor: isLogisticsCompleted ? '#00AB55' : '#8B5CF6',
+                  color: '#00AB55',
+                  borderColor: '#00AB55',
                 }}
               >
                 <Typography
                   variant="caption"
                   sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'inherit' }}
                 >
-                  {isLogisticsCompleted ? 'COMPLETED' : 'NOT STARTED'}
+                  COMPLETED{' '}
                 </Typography>
               </Box>
             </Stack>
@@ -1824,11 +2100,7 @@ const CampaignV4Activity = ({ campaign }) => {
                     }}
                   >
                     {status === 'UPLOADING...' && (
-                      <CircularProgress
-                        size={12}
-                        thickness={4}
-                        sx={{ color: statusInfo.color }}
-                      />
+                      <CircularProgress size={12} thickness={4} sx={{ color: statusInfo.color }} />
                     )}
                     <Typography
                       variant="caption"
@@ -1972,11 +2244,7 @@ const CampaignV4Activity = ({ campaign }) => {
                     }}
                   >
                     {status === 'UPLOADING...' && (
-                      <CircularProgress
-                        size={12}
-                        thickness={4}
-                        sx={{ color: statusInfo.color }}
-                      />
+                      <CircularProgress size={12} thickness={4} sx={{ color: statusInfo.color }} />
                     )}
                     <Typography
                       variant="caption"
@@ -2018,7 +2286,10 @@ const CampaignV4Activity = ({ campaign }) => {
                     onUpdate={async () => {
                       await mutate(
                         (currentData) => {
-                          console.log('[Photo Submission] Before update - status:', currentData?.grouped?.photos?.find(p => p.id === photo.id)?.status);
+                          console.log(
+                            '[Photo Submission] Before update - status:',
+                            currentData?.grouped?.photos?.find((p) => p.id === photo.id)?.status
+                          );
 
                           if (!currentData?.grouped) return currentData;
 
@@ -2042,7 +2313,10 @@ const CampaignV4Activity = ({ campaign }) => {
                             },
                           };
 
-                          console.log('[Photo Submission] After update - status:', updated.grouped.photos.find(p => p.id === photo.id)?.status);
+                          console.log(
+                            '[Photo Submission] After update - status:',
+                            updated.grouped.photos.find((p) => p.id === photo.id)?.status
+                          );
                           return updated;
                         },
                         { revalidate: false }
@@ -2121,11 +2395,7 @@ const CampaignV4Activity = ({ campaign }) => {
                     }}
                   >
                     {status === 'UPLOADING...' && (
-                      <CircularProgress
-                        size={12}
-                        thickness={4}
-                        sx={{ color: statusInfo.color }}
-                      />
+                      <CircularProgress size={12} thickness={4} sx={{ color: statusInfo.color }} />
                     )}
                     <Typography
                       variant="caption"
@@ -2166,7 +2436,11 @@ const CampaignV4Activity = ({ campaign }) => {
                     onUpdate={async () => {
                       await mutate(
                         (currentData) => {
-                          console.log('[Raw Footage] Before update - status:', currentData?.grouped?.rawFootage?.find(rf => rf.id === rawFootage.id)?.status);
+                          console.log(
+                            '[Raw Footage] Before update - status:',
+                            currentData?.grouped?.rawFootage?.find((rf) => rf.id === rawFootage.id)
+                              ?.status
+                          );
 
                           if (!currentData?.grouped) return currentData;
 
@@ -2190,7 +2464,10 @@ const CampaignV4Activity = ({ campaign }) => {
                             },
                           };
 
-                          console.log('[Raw Footage] After update - status:', updated.grouped.rawFootage.find(rf => rf.id === rawFootage.id)?.status);
+                          console.log(
+                            '[Raw Footage] After update - status:',
+                            updated.grouped.rawFootage.find((rf) => rf.id === rawFootage.id)?.status
+                          );
                           return updated;
                         },
                         { revalidate: false }

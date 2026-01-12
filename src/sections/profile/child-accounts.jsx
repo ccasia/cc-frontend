@@ -78,6 +78,11 @@ export default function ChildAccounts() {
   });
 
   const fetchChildAccounts = useCallback(async () => {
+    if (!user?.client?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/api/child-account/client/${user?.client?.id}`);
@@ -90,10 +95,17 @@ export default function ChildAccounts() {
   }, [user?.client?.id, enqueueSnackbar]);
 
   useEffect(() => {
-    fetchChildAccounts();
-  }, [fetchChildAccounts]);
+    if (user?.client?.id) {
+      fetchChildAccounts();
+    }
+  }, [fetchChildAccounts, user?.client?.id]);
 
   const handleInviteChildAccount = async () => {
+    if (!user?.client?.id) {
+      enqueueSnackbar('No client ID found. Cannot invite child account.', { variant: 'error' });
+      return;
+    }
+
     if (!formData.email || !formData.firstName || !formData.lastName) {
       enqueueSnackbar('Please fill in all fields', { variant: 'error' });
       return;

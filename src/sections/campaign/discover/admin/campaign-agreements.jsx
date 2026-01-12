@@ -399,7 +399,7 @@ AgreementDialog.propTypes = {
 
 const CampaignAgreements = ({ campaign }) => {
   const { data, isLoading } = useGetAgreements(campaign?.id);
-  const [selectedFilter] = useState('all');
+  const [selectedFilter, setSelectedFilter] = useState('all');
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [sortColumn, setSortColumn] = useState('name'); // 'name', 'date', 'status'
@@ -416,6 +416,7 @@ const CampaignAgreements = ({ campaign }) => {
   const { user } = useAuthContext();
 
   const smUp = useResponsive('up', 'sm');
+  const mdUp = useResponsive('up', 'md');
 
   // Handle column sort click
   const handleColumnSort = (column) => {
@@ -532,11 +533,31 @@ const CampaignAgreements = ({ campaign }) => {
 
     let result = [];
 
-    if (selectedFilter === 'pending') {
+    if (selectedFilter === 'pendingAgreement') {
+      // Not sent yet
       result = pitchApprovedAgreements.filter((item) => !item.isSent);
-    } else if (selectedFilter === 'sent') {
-      result = pitchApprovedAgreements.filter((item) => item.isSent);
+    } else if (selectedFilter === 'pendingApproval') {
+      // Sent and waiting for creator to submit (PENDING_REVIEW)
+      result = pitchApprovedAgreements.filter(
+        (item) => item?.submission?.status === 'PENDING_REVIEW'
+      );
+    } else if (selectedFilter === 'sentToCreator') {
+      // Sent to creator but not yet submitted
+      result = pitchApprovedAgreements.filter(
+        (item) => item.isSent && !item?.submission?.status
+      );
+    } else if (selectedFilter === 'rejected') {
+      // Rejected agreements
+      result = pitchApprovedAgreements.filter(
+        (item) => item?.submission?.status === 'REJECTED'
+      );
+    } else if (selectedFilter === 'approved') {
+      // Approved agreements
+      result = pitchApprovedAgreements.filter(
+        (item) => item?.submission?.status === 'APPROVED'
+      );
     } else {
+      // All
       result = pitchApprovedAgreements;
     }
 
@@ -556,8 +577,10 @@ const CampaignAgreements = ({ campaign }) => {
           // Get status priority for sorting
           const getStatusPriority = (item) => {
             if (item?.submission?.status === 'PENDING_REVIEW') return 1; // Pending Review first
-            if (item?.isSent) return 2; // Sent
-            return 3; // Not sent
+            if (item?.submission?.status === 'REJECTED') return 2; // Rejected
+            if (item?.submission?.status === 'APPROVED') return 3; // Approved
+            if (item?.isSent) return 4; // Sent
+            return 5; // Not sent
           };
           comparison = getStatusPriority(a) - getStatusPriority(b);
           break;
@@ -670,12 +693,39 @@ const CampaignAgreements = ({ campaign }) => {
     [user]
   );
 
+  // Calculate filter counts
+  const filterCounts = useMemo(() => {
+    if (!pitchApprovedAgreements) {
+      return {
+        all: 0,
+        pendingAgreement: 0,
+        pendingApproval: 0,
+        sentToCreator: 0,
+        rejected: 0,
+        approved: 0,
+      };
+    }
+
+    return {
+      all: pitchApprovedAgreements.length,
+      pendingAgreement: pitchApprovedAgreements.filter((item) => !item.isSent).length,
+      pendingApproval: pitchApprovedAgreements.filter(
+        (item) => item?.submission?.status === 'PENDING_REVIEW'
+      ).length,
+      sentToCreator: pitchApprovedAgreements.filter(
+        (item) => item.isSent && !item?.submission?.status
+      ).length,
+      rejected: pitchApprovedAgreements.filter(
+        (item) => item?.submission?.status === 'REJECTED'
+      ).length,
+      approved: pitchApprovedAgreements.filter(
+        (item) => item?.submission?.status === 'APPROVED'
+      ).length,
+    };
+  }, [pitchApprovedAgreements]);
+
   if (isLoading || loadingSubmissions) {
     return <div>Loading...</div>; // A loading message while the data is being fetched
-  }
-
-  if (!filteredData || filteredData.length < 1) {
-    return <EmptyContent title="No agreements found" />;
   }
 
   return (
@@ -756,9 +806,9 @@ const CampaignAgreements = ({ campaign }) => {
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1}
-            sx={{ width: { xs: '100%', md: 'auto' } }}
+            sx={{ width: { xs: '100%', md: 'auto' }, flexWrap: 'wrap' }}
           >
-            {/* <Button
+            <Button
               fullWidth={!mdUp}
               onClick={() => setSelectedFilter('all')}
               sx={{
@@ -790,7 +840,7 @@ const CampaignAgreements = ({ campaign }) => {
 
             <Button
               fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('pending')}
+              onClick={() => setSelectedFilter('pendingAgreement')}
               sx={{
                 px: 1.5,
                 py: 2.5,
@@ -801,7 +851,8 @@ const CampaignAgreements = ({ campaign }) => {
                 fontSize: '0.85rem',
                 fontWeight: 600,
                 textTransform: 'none',
-                ...(selectedFilter === 'pending'
+                whiteSpace: 'nowrap',
+                ...(selectedFilter === 'pendingAgreement'
                   ? {
                       color: '#203ff5',
                       bgcolor: 'rgba(32, 63, 245, 0.04)',
@@ -811,16 +862,19 @@ const CampaignAgreements = ({ campaign }) => {
                       bgcolor: 'transparent',
                     }),
                 '&:hover': {
-                  bgcolor: selectedFilter === 'pending' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                  bgcolor:
+                    selectedFilter === 'pendingAgreement'
+                      ? 'rgba(32, 63, 245, 0.04)'
+                      : 'transparent',
                 },
               }}
             >
-              {`Pending (${pendingCount})`}
+              {`Pending Agreement (${filterCounts.pendingAgreement})`}
             </Button>
 
             <Button
               fullWidth={!mdUp}
-              onClick={() => setSelectedFilter('sent')}
+              onClick={() => setSelectedFilter('pendingApproval')}
               sx={{
                 px: 1.5,
                 py: 2.5,
@@ -831,7 +885,8 @@ const CampaignAgreements = ({ campaign }) => {
                 fontSize: '0.85rem',
                 fontWeight: 600,
                 textTransform: 'none',
-                ...(selectedFilter === 'sent'
+                whiteSpace: 'nowrap',
+                ...(selectedFilter === 'pendingApproval'
                   ? {
                       color: '#203ff5',
                       bgcolor: 'rgba(32, 63, 245, 0.04)',
@@ -841,26 +896,126 @@ const CampaignAgreements = ({ campaign }) => {
                       bgcolor: 'transparent',
                     }),
                 '&:hover': {
-                  bgcolor: selectedFilter === 'sent' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                  bgcolor:
+                    selectedFilter === 'pendingApproval'
+                      ? 'rgba(32, 63, 245, 0.04)'
+                      : 'transparent',
                 },
               }}
             >
-              {`Sent (${sentCount})`}
-            </Button> */}
+              {`Pending Approval (${filterCounts.pendingApproval})`}
+            </Button>
+
+            <Button
+              fullWidth={!mdUp}
+              onClick={() => setSelectedFilter('sentToCreator')}
+              sx={{
+                px: 1.5,
+                py: 2.5,
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                ...(selectedFilter === 'sentToCreator'
+                  ? {
+                      color: '#203ff5',
+                      bgcolor: 'rgba(32, 63, 245, 0.04)',
+                    }
+                  : {
+                      color: '#637381',
+                      bgcolor: 'transparent',
+                    }),
+                '&:hover': {
+                  bgcolor:
+                    selectedFilter === 'sentToCreator' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                },
+              }}
+            >
+              {`Sent To Creator (${filterCounts.sentToCreator})`}
+            </Button>
+
+            <Button
+              fullWidth={!mdUp}
+              onClick={() => setSelectedFilter('rejected')}
+              sx={{
+                px: 1.5,
+                py: 2.5,
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                ...(selectedFilter === 'rejected'
+                  ? {
+                      color: '#203ff5',
+                      bgcolor: 'rgba(32, 63, 245, 0.04)',
+                    }
+                  : {
+                      color: '#637381',
+                      bgcolor: 'transparent',
+                    }),
+                '&:hover': {
+                  bgcolor: selectedFilter === 'rejected' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                },
+              }}
+            >
+              {`Rejected (${filterCounts.rejected})`}
+            </Button>
+
+            <Button
+              fullWidth={!mdUp}
+              onClick={() => setSelectedFilter('approved')}
+              sx={{
+                px: 1.5,
+                py: 2.5,
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                ...(selectedFilter === 'approved'
+                  ? {
+                      color: '#203ff5',
+                      bgcolor: 'rgba(32, 63, 245, 0.04)',
+                    }
+                  : {
+                      color: '#637381',
+                      bgcolor: 'transparent',
+                    }),
+                '&:hover': {
+                  bgcolor: selectedFilter === 'approved' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                },
+              }}
+            >
+              {`Approved (${filterCounts.approved})`}
+            </Button>
           </Stack>
         </Stack>
 
-        <TableContainer
-          sx={{
-            width: '100%',
-            minWidth: { xs: '100%', sm: 800 },
-            position: 'relative',
-            bgcolor: 'transparent',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Table size={smUp ? 'medium' : 'small'}>
+        {!filteredData || filteredData.length < 1 ? (
+          <EmptyContent title="No agreements found" />
+        ) : (
+          <TableContainer
+            sx={{
+              width: '100%',
+              minWidth: { xs: '100%', sm: 800 },
+              position: 'relative',
+              bgcolor: 'transparent',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Table size={smUp ? 'medium' : 'small'}>
             <TableHead>
               <TableRow>
                 <TableCell
@@ -1376,6 +1531,7 @@ const CampaignAgreements = ({ campaign }) => {
             </TableBody>
           </Table>
         </TableContainer>
+        )}
       </Stack>
 
       <AgreementDialog
