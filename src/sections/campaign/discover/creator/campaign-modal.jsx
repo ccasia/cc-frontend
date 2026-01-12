@@ -158,7 +158,28 @@ const CampaignModal = ({
 
   const handlePitch = () => {
     // Check if user is in the target list for media kit requirement
-    const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+    const targetUserIds = [
+      'cm8gvqtcv01hwph01uof2u9xu', // Avanyeesh Kartigesu
+      'cm49lve6i00patrd2ax5fj67h', // Chloe Lisan
+      'cm4132k9p00wb54qgcrs71v0t', // Sonya Wong Singh
+      'cmauqo8oy03ioky0157sbr2jg', // Iman Mohd Amin
+      'cm8jxuuvy0272ph01nr0h7din', // Anis Khaleeda
+      'cm5b5p0zu00r2ylfpo241kqki', // Lynette Lee Yan Yan
+      'cmewrex4p054ipx01u5xqkqhj', // Kyle Roshen Jacob
+      'cm7oe0q15005bms010ujmjb3r', // Zuliakha Zulkafli
+      'cm44lei3t00si132zq87a5lan', // Adlina Shireen
+      'cm9kzqz1u00ziqe01q2tsdptg', // Zaty Asri
+      'cmfb25m4r003vqn01zoe9atng', // Kelvesh Deshenraj
+      'cmj9pz1n40a3hs40154b31l90', // Umy Alia
+      'cm8mh5ic5032sph011r87rw4e', // Nicole Ong
+      'cm40womsf001k54qg4epuacmu', // Adam Hamid
+      'cm4utxiyv02mu9wevfkpyt8qj', // Elaine Fong
+      'cmfwczmov0t5rqp01aq687n4a', // Shirley Ho
+      'cmj7kdxxi05sqs401pro45vik', // Janice Kong
+      'cmj21yl0102ghpc01xmy9zkwa', // Tengku A'liaa Muna
+      'cm3pyp3vm006qm9m8qm1ep02d', // Farisha Ilyana
+      'cm4ey6g9401w4trd2ip0zf1et', // Tsara Maimunah
+    ];
     const isTargetUser = targetUserIds.includes(user?.id);
     
     // Check if media kit is connected
@@ -684,7 +705,28 @@ const CampaignModal = ({
                       if (isCreditsFinished) return true;
                       
                       // Check if user is in the target list for media kit requirement
-                      const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+                      const targetUserIds = [
+                        'cm8gvqtcv01hwph01uof2u9xu', // Avanyeesh Kartigesu
+                        'cm49lve6i00patrd2ax5fj67h', // Chloe Lisan
+                        'cm4132k9p00wb54qgcrs71v0t', // Sonya Wong Singh
+                        'cmauqo8oy03ioky0157sbr2jg', // Iman Mohd Amin
+                        'cm8jxuuvy0272ph01nr0h7din', // Anis Khaleeda
+                        'cm5b5p0zu00r2ylfpo241kqki', // Lynette Lee Yan Yan
+                        'cmewrex4p054ipx01u5xqkqhj', // Kyle Roshen Jacob
+                        'cm7oe0q15005bms010ujmjb3r', // Zuliakha Zulkafli
+                        'cm44lei3t00si132zq87a5lan', // Adlina Shireen
+                        'cm9kzqz1u00ziqe01q2tsdptg', // Zaty Asri
+                        'cmfb25m4r003vqn01zoe9atng', // Kelvesh Deshenraj
+                        'cmj9pz1n40a3hs40154b31l90', // Umy Alia
+                        'cm8mh5ic5032sph011r87rw4e', // Nicole Ong
+                        'cm40womsf001k54qg4epuacmu', // Adam Hamid
+                        'cm4utxiyv02mu9wevfkpyt8qj', // Elaine Fong
+                        'cmfwczmov0t5rqp01aq687n4a', // Shirley Ho
+                        'cmj7kdxxi05sqs401pro45vik', // Janice Kong
+                        'cmj21yl0102ghpc01xmy9zkwa', // Tengku A'liaa Muna
+                        'cm3pyp3vm006qm9m8qm1ep02d', // Farisha Ilyana
+                        'cm4ey6g9401w4trd2ip0zf1et', // Tsara Maimunah
+                      ];
                       const isTargetUser = targetUserIds.includes(user?.id);
                       
                       // Check if media kit is connected
@@ -756,7 +798,28 @@ const CampaignModal = ({
             {/* Warning message for incomplete profile */}
             {(() => {
               // Check if user is in the target list for media kit requirement
-              const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+              const targetUserIds = [
+                'cm8gvqtcv01hwph01uof2u9xu', // Avanyeesh Kartigesu
+                'cm49lve6i00patrd2ax5fj67h', // Chloe Lisan
+                'cm4132k9p00wb54qgcrs71v0t', // Sonya Wong Singh
+                'cmauqo8oy03ioky0157sbr2jg', // Iman Mohd Amin
+                'cm8jxuuvy0272ph01nr0h7din', // Anis Khaleeda
+                'cm5b5p0zu00r2ylfpo241kqki', // Lynette Lee Yan Yan
+                'cmewrex4p054ipx01u5xqkqhj', // Kyle Roshen Jacob
+                'cm7oe0q15005bms010ujmjb3r', // Zuliakha Zulkafli
+                'cm44lei3t00si132zq87a5lan', // Adlina Shireen
+                'cm9kzqz1u00ziqe01q2tsdptg', // Zaty Asri
+                'cmfb25m4r003vqn01zoe9atng', // Kelvesh Deshenraj
+                'cmj9pz1n40a3hs40154b31l90', // Umy Alia
+                'cm8mh5ic5032sph011r87rw4e', // Nicole Ong
+                'cm40womsf001k54qg4epuacmu', // Adam Hamid
+                'cm4utxiyv02mu9wevfkpyt8qj', // Elaine Fong
+                'cmfwczmov0t5rqp01aq687n4a', // Shirley Ho
+                'cmj7kdxxi05sqs401pro45vik', // Janice Kong
+                'cmj21yl0102ghpc01xmy9zkwa', // Tengku A'liaa Muna
+                'cm3pyp3vm006qm9m8qm1ep02d', // Farisha Ilyana
+                'cm4ey6g9401w4trd2ip0zf1et', // Tsara Maimunah
+              ];
               const isTargetUser = targetUserIds.includes(user?.id);
               
               // Check if media kit is connected
