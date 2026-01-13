@@ -158,7 +158,13 @@ const CampaignModal = ({
 
   const handlePitch = () => {
     // Check if user is in the target list for media kit requirement
-    const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+    const targetUserIds = [
+      'cmeuvjc6b003on401rn4pw62b',
+      'cmf813vtd0000pd3psk46u4lt', 
+      'cmipdmkvd0005k43fnfgxrb4t',
+      'cmf8289xu000cpdmcj4a4fosl', 
+      'user456'
+    ];
     const isTargetUser = targetUserIds.includes(user?.id);
     
     // Check if media kit is connected
@@ -684,7 +690,13 @@ const CampaignModal = ({
                       if (isCreditsFinished) return true;
                       
                       // Check if user is in the target list for media kit requirement
-                      const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+                      const targetUserIds = [
+                        'cmeuvjc6b003on401rn4pw62b',
+                        'cmf813vtd0000pd3psk46u4lt', 
+                        'cmipdmkvd0005k43fnfgxrb4t',
+                        'cmf8289xu000cpdmcj4a4fosl', 
+                        'user456'
+                      ];
                       const isTargetUser = targetUserIds.includes(user?.id);
                       
                       // Check if media kit is connected
@@ -756,7 +768,13 @@ const CampaignModal = ({
             {/* Warning message for incomplete profile */}
             {(() => {
               // Check if user is in the target list for media kit requirement
-              const targetUserIds = ['cmf8289xu000cpdmcj4a4fosl', 'user456']; // Add your target user IDs here
+              const targetUserIds = [
+                'cmeuvjc6b003on401rn4pw62b',
+                'cmf813vtd0000pd3psk46u4lt', 
+                'cmipdmkvd0005k43fnfgxrb4t',
+                'cmf8289xu000cpdmcj4a4fosl', 
+                'user456'
+              ];
               const isTargetUser = targetUserIds.includes(user?.id);
               
               // Check if media kit is connected

@@ -124,10 +124,10 @@ export default function CampaignListView() {
   const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
   
   const targetUserIds = useMemo(() => [
-    'user-id-1',
-    'user-id-2',
-    'user-id-3',
-    'user-id-4',
+    'cmeuvjc6b003on401rn4pw62b',
+    'cmf813vtd0000pd3psk46u4lt',
+    'cmipdmkvd0005k43fnfgxrb4t',
+    'user456',
     'user-id-5',
     'user-id-6',
     'user-id-7',
