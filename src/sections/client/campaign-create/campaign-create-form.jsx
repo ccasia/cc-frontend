@@ -360,7 +360,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     campaignForm: [],
     otherAttachments: [],
     referencesLinks: [],
-    submissionVersion: 'v3',
+    submissionVersion: '',
     logisticsType: '',
     logisticRemarks: '',
     schedulingOption: 'confirmation',
@@ -559,7 +559,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               .filter((item) => item.value)
           : [],
         referencesLinks: Array.isArray(data.referencesLinks) ? data.referencesLinks : [],
-        submissionVersion: data.submissionVersion || 'v3',
+        submissionVersion: data.submissionVersion || '',
         logisticsType: data.logisticsType || '',
         logisticRemarks: data.logisticRemarks || '',
         products: data.products || [],
