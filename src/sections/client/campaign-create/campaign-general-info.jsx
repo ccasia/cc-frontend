@@ -13,11 +13,11 @@ import useGetClientCredits from 'src/hooks/use-get-client-credits';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
-import { objectivesLists } from 'src/contants/objectives';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Label from 'src/components/label';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFUploadCover } from 'src/components/hook-form/rhf-upload-cover';
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -30,6 +30,7 @@ const FormField = ({ label, children, required = true }) => (
         fontSize: '0.875rem', // Smaller font size for labels
         mb: 0.5,
         '& .MuiFormLabel-asterisk': {
+          display: required ? 'inline-block' : 'none',
           color: '#FF3500', // Change this to your desired color
         },
       }}
@@ -68,7 +69,9 @@ const ClientCampaignGeneralInfo = () => {
   // Compute exceed state and notify parent
   const numericAvailable = Number(availableCredits) || 0;
   const requestedCredits = Number(credits ?? 0);
-  const exceedOnly = (numericAvailable <= 0 && requestedCredits > 0) || (numericAvailable > 0 && requestedCredits > numericAvailable);
+  const exceedOnly =
+    (numericAvailable <= 0 && requestedCredits > 0) ||
+    (numericAvailable > 0 && requestedCredits > numericAvailable);
   const blockInvalid = numericAvailable <= 0 || requestedCredits <= 0 || exceedOnly;
   let creditHelperText = '';
 
@@ -82,7 +85,9 @@ const ClientCampaignGeneralInfo = () => {
 
   useEffect(() => {
     try {
-      window.dispatchEvent(new CustomEvent('client-campaign-credits-error', { detail: blockInvalid }));
+      window.dispatchEvent(
+        new CustomEvent('client-campaign-credits-error', { detail: blockInvalid })
+      );
     } catch (e) {
       // Ignore failures when notifying window listeners
     }
@@ -126,221 +131,185 @@ const ClientCampaignGeneralInfo = () => {
   return (
     <>
       {/* Container to limit width */}
-      <Box sx={{ maxWidth: '650px', mx: 'auto', mb: 8 }}>
+      <Box sx={{ maxWidth: '816px', mx: 'auto', mb: 8, mt: 4 }}>
         <Stack alignItems="self-end" spacing={0.5} mb={2}>
           <Typography variant="subtitle2">Campaign ID</Typography>
           {!isLoading && <Label color="info">C0{data + 1}</Label>}
         </Stack>
-        {/* Campaign Title - Full width */}
-        <FormField label="Campaign Title">
-          <RHFTextField
-            name="campaignTitle"
-            placeholder="Enter campaign title (max 40 characters)"
-            size="small"
-            inputProps={{
-              maxLength: 40,
-            }}
-            sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
-          />
-        </FormField>
 
-        {/* Date Range - Two columns */}
-        <Box sx={{ mt: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <FormField label="Campaign Start Date">
-                <DatePicker
-                  value={startDate}
-                  onChange={(newValue) => {
-                    setValue('campaignStartDate', newValue, { shouldValidate: true });
-                  }}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      placeholder: 'Select start date',
-                      error: false,
-                      size: 'small',
-                      sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                    },
-                  }}
-                />
-              </FormField>
-            </Grid>
-            <Grid item xs={6}>
-              <FormField label="Campaign End Date">
-                <DatePicker
-                  value={endDate}
-                  onChange={(newValue) => {
-                    setValue('campaignEndDate', newValue, { shouldValidate: true });
-                  }}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      placeholder: 'Select end date',
-                      error: false,
-                      size: 'small',
-                      sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                    },
-                  }}
-                />
-              </FormField>
-            </Grid>
+        {/* Campaign Title & Industry - Two Columns */}
+        <Grid container spacing={2} mb={2}>
+          <Grid item xs={12} sm={6}>
+            <FormField label="Campaign Name">
+              <RHFTextField
+                name="campaignTitle"
+                placeholder="Campaign Name (max 40 characters)"
+                size="small"
+                inputProps={{
+                  maxLength: 40,
+                }}
+                sx={{ '& .MuiOutlinedInput-root': { height: '57px' } }}
+              />
+            </FormField>
           </Grid>
-        </Box>
+          <Grid item xs={12} sm={6}>
+            <FormField label="Industry">
+              <RHFMultiSelect
+                name="campaignIndustries"
+                placeholder="Select Industry"
+                chip
+                checkbox
+                options={interestsLists.map((item) => ({ value: item, label: item }))}
+              />
+            </FormField>
+          </Grid>
+        </Grid>
 
-        {/* Credits - Two columns */}
-        <Box sx={{ mt: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <FormField label="Available Credits">
-                <TextField
-                  fullWidth
-                  disabled
-                  size="small"
-                  value={isLoadingCredits ? 'Loading...' : availableCredits.toString()}
-                  InputProps={{
-                    readOnly: true,
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
-                />
-              </FormField>
-            </Grid>
-            <Grid item xs={6}>
-              <FormField label="Number Of Credits">
+        {/* Campaign General Info - Two Columns */}
+        <Grid container spacing={2}>
+          {/* Column one */}
+          <Grid item xs={12} sm={6}>
+            {/* Campaign Info - Full width */}
+            <Box mb={2}>
+              <FormField label="Campaign Info">
                 <RHFTextField
-                  name="campaignCredits"
-                  placeholder="Enter number of credits"
-                  type="number"
-                  InputProps={{
-                    inputProps: {
-                      min: 1,
-                      max: numericAvailable > 0 ? numericAvailable : 0,
-                    },
-                  }}
-                  helperText={creditHelperText}
-                  error={Boolean(creditHelperText)}
+                  name="campaignDescription"
+                  placeholder="Explain more about the campaign..."
+                  multiline
+                  rows={4}
+                  size="small"
+                  sx={{ '& .MuiOutlinedInput-root': { padding: '12px' } }}
+                />
+              </FormField>
+            </Box>
+            {/* About Brand - Full width */}
+            <Box mb={2}>
+              <FormField label="About the Brand" required={false}>
+                <Typography mt={-1} mb={0.5} variant='caption' color="#8E8E93">Let us know a bit more about you!</Typography>
+                <RHFTextField
+                  name="brandAbout"
+                  placeholder="About"
+                  multiline
+                  rows={1}
+                  size="small"
+                  sx={{ '& .MuiOutlinedInput-root': { padding: '12px' } }}
+                />
+              </FormField>
+            </Box>
+            {/* Campaign start/end date - Two columns */}
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <FormField label="Campaign Start Date">
+                  <DatePicker
+                    value={startDate}
+                    onChange={(newValue) => {
+                      setValue('campaignStartDate', newValue, { shouldValidate: true });
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        placeholder: 'Start Date',
+                        error: false,
+                        size: 'small',
+                        sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                      },
+                    }}
+                  />
+                </FormField>
+              </Grid>
+              <Grid item xs={6}>
+                <FormField label="Campaign End Date">
+                  <DatePicker
+                    value={endDate}
+                    onChange={(newValue) => {
+                      setValue('campaignEndDate', newValue, { shouldValidate: true });
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        placeholder: 'End Date',
+                        error: false,
+                        size: 'small',
+                        sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                      },
+                    }}
+                  />
+                </FormField>
+              </Grid>
+            </Grid>
+            {/* Product/Service Name - Full width */}
+            <Box sx={{ mt: 2 }}>
+              <FormField label="Product/Service Name">
+                <RHFTextField
+                  name="productName"
+                  placeholder="Product/Service Name"
+                  size="small"
                   sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
                 />
               </FormField>
-            </Grid>
+            </Box>
           </Grid>
-        </Box>
-
-        {/* Campaign Info - Full width */}
-        <Box sx={{ mt: 2 }}>
-          <FormField label="Campaign Info">
-            <RHFTextField
-              name="campaignDescription"
-              placeholder="Explain more about the campaign..."
-              multiline
-              rows={4}
-              size="small"
-              sx={{ '& .MuiOutlinedInput-root': { padding: '8px' } }}
-            />
-          </FormField>
-        </Box>
-
-        {/* Brand Tone - Full width */}
-        <Box sx={{ mt: 2 }}>
-          <FormField label="Brand Tone">
-            <RHFTextField
-              name="brandTone"
-              placeholder="Describe the brand tone"
-              multiline
-              rows={2}
-              size="small"
-              sx={{ '& .MuiOutlinedInput-root': { padding: '8px' } }}
-            />
-          </FormField>
-        </Box>
-
-        {/* Product/Service Name - Full width */}
-        <Box sx={{ mt: 2 }}>
-          <FormField label="Product/Service Name">
-            <RHFTextField
-              name="productName"
-              placeholder="Enter product or service name"
-              size="small"
-              sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
-            />
-          </FormField>
-        </Box>
-
-        {/* Campaign Objectives - Full width */}
-        <Box sx={{ mt: 2 }}>
-          <FormField label="Campaign Objectives">
-            <RHFMultiSelect
-              name="campaignObjectives"
-              placeholder="Select Campaign Objectives"
-              options={objectivesLists.map((item) => ({
-                value: item,
-                label: item,
-              }))}
-              chip
-              checkbox
-              // size="small"
-              // sx={{
-              //   '& .MuiOutlinedInput-root': { minHeight: '50px' },
-              // }}
-            />
-          </FormField>
-        </Box>
-
-        {/* Industries - Full width */}
-        {/* <Box sx={{ mt: 2 }}>
-          <FormField label="Industries">
-            <CustomRHFMultiSelect
-              name="campaignIndustries"
-              options={industriesOptions}
-              chip={true}
-              checkbox={false}
-              chipColor="#8E8E93"
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': { minHeight: '50px' },
-              }}
-            /> */}
-        {/* {interestsLists.map((item, index) => (
-                <MenuItem key={index} value={item}>
-                  {item}
-                </MenuItem>
-              ))}
-            </CustomRHFMultiSelect> */}
-        {/* </FormField>
-        </Box> */}
-        <Box sx={{ mt: 2 }}>
-          <FormField label="Industries">
-            <RHFMultiSelect
-              name="campaignIndustries"
-              placeholder="Select Industries"
-              chip
-              checkbox
-              options={interestsLists.map((item) => ({ value: item, label: item }))}
-            />
-          </FormField>
-        </Box>
-
-        {/* Submission Version Toggle */}
-        {/* <Box sx={{ mt: 2 }}>
-          <FormField label="Submission Version" required={false}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={watch('submissionVersion') === 'v4'}
-                  onChange={(e) => {
-                    setValue('submissionVersion', e.target.checked ? 'v4' : 'v3', { shouldValidate: true });
-                  }}
-                  color="primary"
+          {/* Column two */}
+          <Grid item xs={12} sm={6}>
+            <Box mb={2}>
+              <FormField label="Website Link" required={false}>
+                <RHFTextField
+                  name="websiteLink"
+                  placeholder="cultcreativeasia.com"
+                  multiline
+                  rows={1}
+                  size="small"
+                  sx={{ '& .MuiOutlinedInput-root': { padding: '12px' } }}
                 />
-              }
-              label={
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Enable v4 submission flow
-                </Typography>
-              }
-            />
-          </FormField>
-        </Box> */}
+              </FormField>
+            </Box>
+            {/* Credits - Two columns */}
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <FormField label="Available Credits">
+                  <TextField
+                    fullWidth
+                    disabled
+                    size="small"
+                    value={isLoadingCredits ? 'Loading...' : availableCredits.toString()}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
+                  />
+                </FormField>
+              </Grid>
+              <Grid item xs={6}>
+                <FormField label="Number Of Credits">
+                  <RHFTextField
+                    name="campaignCredits"
+                    placeholder="Assign Credits"
+                    type="number"
+                    InputProps={{
+                      inputProps: {
+                        min: 1,
+                        max: numericAvailable > 0 ? numericAvailable : 0,
+                      },
+                    }}
+                    helperText={creditHelperText}
+                    error={Boolean(creditHelperText)}
+                    sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
+                  />
+                </FormField>
+              </Grid>
+            </Grid>
+
+            {/* Campaign Photo - Full width */}
+            <Box sx={{ mt: 2, mb: 4 }}>
+              <FormField label="Campaign Image">
+                <RHFUploadCover
+                  name="campaignImages"
+                  maxSize={3145728}
+                />
+              </FormField>
+            </Box>
+          </Grid>
+        </Grid>
       </Box>
     </>
   );
