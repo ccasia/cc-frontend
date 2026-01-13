@@ -1,11 +1,7 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 
-import {
-  Box,
-  TextField,
-  Typography
-} from '@mui/material';
+import { Box, TextField, Typography } from '@mui/material';
 
 const LogisticRemarks = () => {
   const { register } = useFormContext();
@@ -47,7 +43,7 @@ const LogisticRemarks = () => {
             'Cancellation penalties',
             'Instructions (Product Pick up, Registration...)',
             'Rules/Disclaimers',
-            'You may also include links to menus or any documents here'
+            'You may also include links to menus here',
           ].map((item, index) => (
             <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start', mb: 0.5 }}>
               <Box 
@@ -78,7 +74,7 @@ const LogisticRemarks = () => {
         </Box>
 
         <TextField
-          {...register('logisticRemarks')}
+          {...register('clientRemarks')}
           placeholder="Type your remarks here..."
           multiline
           rows={6}

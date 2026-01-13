@@ -17,7 +17,14 @@ import Iconify from 'src/components/iconify';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
 const CampaignLogistics = () => {
-  const { watch, setValue, control, getValues } = useFormContext();
+  const {
+    watch,
+    setValue,
+    control,
+    getValues,
+    trigger,
+    formState: { errors },
+  } = useFormContext();
   const [editingIndex, setEditingIndex] = useState(-1);
   const [editValue, setEditValue] = useState('');
   const [lastAddedIndex, setLastAddedIndex] = useState(0);
@@ -47,15 +54,15 @@ const CampaignLogistics = () => {
 
   // Initialize arrays if needed
   React.useEffect(() => {
-    if (logisticsType === 'PRODUCT_DELIVERY' && (!productFields || productFields.length === 0)) {
+    if (logisticsType === 'PRODUCT_DELIVERY' && productFields.length === 0) {
       appendProduct({ name: '' });
-      setLastAddedIndex(0);
+      // setLastAddedIndex(0);
     }
-    if (logisticsType === 'RESERVATION' && (!locationFields || locationFields.length === 0)) {
+    if (logisticsType === 'RESERVATION' && locationFields.length === 0) {
       appendLocation({ name: '' });
-      setValue('schedulingOption', 'confirmation');
+      // setValue('schedulingOption', 'confirmation');
     }
-  }, [logisticsType, productFields, locationFields, appendProduct, appendLocation, setValue]);
+  }, [logisticsType]);
 
   const handleEdit = (index, value) => {
     setEditingIndex(index);
@@ -106,11 +113,12 @@ const CampaignLogistics = () => {
         setting a reservation for a restaurant
       </Typography>
 
-      <Stack spacing={3}>
+      <Stack spacing={2}>
         <Stack spacing={1}>
           <FormLabel
             sx={{
               fontWeight: 600,
+              fontSize: '14px',
               color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
             }}
           >
@@ -125,9 +133,16 @@ const CampaignLogistics = () => {
               // Reset fields when logistics type changes
               if (e.target.value === 'PRODUCT_DELIVERY') {
                 setValue('schedulingOption', '');
+                if (getValues('products').length === 0) setValue('products', [{ name: '' }]);
               } else if (e.target.value === 'RESERVATION') {
                 // Initialize reservation fields
                 setValue('schedulingOption', 'confirmation');
+                if (getValues('locations').length === 0) setValue('locations', [{ name: '' }]);
+              } else {
+                // We clear the data and the scheduling option
+                setValue('schedulingOption', '');
+                setValue('products', [{ name: '' }]);
+                setValue('locations', [{ name: '' }]);
               }
             }}
           >
@@ -138,15 +153,15 @@ const CampaignLogistics = () => {
         </Stack>
 
         {logisticsType === 'PRODUCT_DELIVERY' && (
-          <Stack spacing={3} mb={10}>
+          <Stack spacing={2}>
             {productFields.map((field, index) => (
               <Stack key={field.id} spacing={1}>
                 <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <Typography
                     sx={{
                       fontWeight: 600,
+                      fontSize: '14px',
                       color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                      mb: 1,
                     }}
                   >
                     {index === 0 ? 'Product' : `Product ${index + 1}`}
@@ -228,7 +243,7 @@ const CampaignLogistics = () => {
                         onClick={() => handleEdit(index, getValues(`products.${index}.name`))}
                         sx={{ ml: 1 }}
                       >
-                        <Iconify icon="eva:edit-fill" />
+                        <Iconify icon="feather:edit" />
                       </IconButton>
                     )}
                   </Box>
@@ -278,7 +293,7 @@ const CampaignLogistics = () => {
 
         {logisticsType === 'RESERVATION' && (
           <>
-            <Stack spacing={2}>
+            <Stack spacing={1}>
               <FormLabel
                 sx={{
                   fontWeight: 600,
@@ -389,7 +404,7 @@ const CampaignLogistics = () => {
               </Box>
             </Stack>
 
-            <Stack spacing={2} mb={10}>
+            <Stack spacing={1}>
               <FormLabel
                 sx={{
                   fontWeight: 600,
@@ -397,39 +412,84 @@ const CampaignLogistics = () => {
                 }}
               >
                 Location
+                <Typography component="span" color="error">
+                  *
+                </Typography>
               </FormLabel>
 
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                {locationFields.map((field, index) => (
-                  <Box
-                    key={field.id}
-                    sx={{
-                      width: { xs: '100%', sm: 'calc(50% - 8px)' },
-                    }}
-                  >
-                    <RHFTextField
-                      fullWidth
-                      name={`locations.${index}.name`}
-                      placeholder={
-                        index === locationFields.length - 1 && locationFields.length % 2 === 0
-                          ? 'Add an outlet'
-                          : ''
-                      }
-                      // value={field.name}
-                      // onChange={(e) => {
-                      //   const newLocations = [...locationFields];
-                      //   newLocations[index].name = e.target.value;
-                      //   setValue(`locations.${index}.name`, e.target.value);
-                      // }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        },
-                      }}
-                    />
+              <Stack direction="row" spacing={2} sx={{ px: 0.5 }}>
+                <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
+                  Outlet
+                </Typography>
+                <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
+                  PIC{' '}
+                  <Box component="span" sx={{ fontWeight: 400 }}>
+                    (Optional)
                   </Box>
+                </Typography>
+                <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
+                  Contact Number{' '}
+                  <Box component="span" sx={{ fontWeight: 400 }}>
+                    (Optional)
+                  </Box>
+                </Typography>
+                <Box sx={{ width: 48 }} />
+              </Stack>
+
+              <Stack spacing={1.5}>
+                {locationFields.map((field, index) => (
+                  <Stack key={field.id} direction="row" spacing={2} alignItems="center">
+                    <RHFTextField
+                      name={`locations.${index}.name`}
+                      placeholder="Outlet"
+                      onChange={(e) => {
+                        setValue(`locations.${index}.name`, e.target.value, {
+                          shouldValidate: true,
+                        });
+                        trigger('locations');
+                      }}
+                      error={
+                        index === 0
+                          ? !!errors.locations && !Array.isArray(errors.locations)
+                          : !!errors?.locations?.[index]?.name
+                      }
+                      sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                    />
+                    <RHFTextField
+                      name={`locations.${index}.pic`}
+                      placeholder="PIC"
+                      sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                    />
+                    <RHFTextField
+                      name={`locations.${index}.contactNumber`}
+                      placeholder="Contact Number"
+                      sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+                    />
+
+                    <IconButton
+                      onClick={() => removeLocation(index)}
+                      disabled={locationFields.length === 1}
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 1,
+                        border: '1px solid #E7E7E7',
+                        color: '#FF3030',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        '&:hover': { bgcolor: '#FFF5F5' },
+                      }}
+                    >
+                      <Iconify icon="eva:trash-2-outline" width={22} />
+                    </IconButton>
+                  </Stack>
                 ))}
-              </Box>
+              </Stack>
+
+              {errors.locations && !Array.isArray(errors.locations) && (
+                <Typography variant="caption" color="error" sx={{ fontWeight: 400 }}>
+                  {errors.locations.message}
+                </Typography>
+              )}
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <IconButton
