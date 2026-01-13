@@ -99,17 +99,17 @@ export default function ConfirmReservationDetailsDialog({
   }, [selectedOutlet, config, setValue]);
 
   useEffect(() => {
-    if (open && details) {
+    if (open && details && config) {
       reset({
         outlet: typeof details.outlet === 'string' ? details.outlet : details.outlet?.name || '',
-        clientRemarks: details.clientRemarks || '',
+        clientRemarks: details.clientRemarks || config.clientRemarks || '',
         picName: details.picName || '',
         picContact: details.picContact || '',
         promoCode: details.promoCode || '',
         budget: details.budget || '',
       });
     }
-  }, [open, details, reset]);
+  }, [open, details, config, reset]);
 
   const onSubmit = async (data) => {
     try {
