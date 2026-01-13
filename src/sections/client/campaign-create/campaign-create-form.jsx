@@ -160,8 +160,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     audienceGender: Yup.array()
       .min(1, 'At least one option')
       .required('Audience Gender is required'),
+    country: Yup.array().min(1, 'At least one country is required').required('Country is required'),
     audienceLocation: Yup.array().when('country', {
-      is: 'Malaysia',
+      is: (country) => country?.some((c) => c === 'Malaysia'),
       then: (schema) =>
         schema.min(1, 'At least one option').required('Audience location is required'),
       otherwise: (schema) => schema.notRequired(),

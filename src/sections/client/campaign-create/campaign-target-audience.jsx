@@ -205,10 +205,12 @@ const CampaignTargetAudience = () => {
             <FormField label="Audience Country">
               <RHFAutocomplete
                 name="country"
-                placeholder="Select country"
+                placeholder="Select countries"
+                multiple
+                disableCloseOnSelect
                 options={Object.keys(countriesCities)}
                 getOptionLabel={(option) => option || ''}
-                value={country ?? null}
+                value={country ?? []}
                 slotProps={{
                   paper: {
                     sx: {
@@ -250,7 +252,7 @@ const CampaignTargetAudience = () => {
               />
             </FormField>
 
-            {country?.toLowerCase() === 'malaysia' && (
+            {country?.some((c) => c?.toLowerCase() === 'malaysia') && (
               <FormField label="Audience City/Area">
                 <RHFMultiSelect
                   name="audienceLocation"

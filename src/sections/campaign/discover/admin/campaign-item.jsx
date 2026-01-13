@@ -298,20 +298,27 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                     />
                     <Tooltip
                       title={
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Iconify
-                            icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
-                            width={15}
-                          />
-                          <Typography variant="caption">
-                            {
-                              countries.find((item) =>
-                                item.label
-                                  .toLowerCase()
-                                  .includes(campaign?.campaignRequirement?.country?.toLowerCase())
-                              ).label
-                            }
-                          </Typography>
+                        <Stack direction="column" spacing={0.5}>
+                          {(Array.isArray(campaign?.campaignRequirement?.country) 
+                            ? campaign?.campaignRequirement?.country 
+                            : [campaign?.campaignRequirement?.country])
+                            .filter(Boolean)
+                            .map((countryName, idx) => {
+                              const countryData = countries.find((item) =>
+                                item.label.toLowerCase().includes(countryName?.toLowerCase())
+                              );
+                              return countryData ? (
+                                <Stack key={idx} direction="row" spacing={1} alignItems="center">
+                                  <Iconify
+                                    icon={`emojione:flag-for-${countryName?.toLowerCase()}`}
+                                    width={15}
+                                  />
+                                  <Typography variant="caption">
+                                    {countryData.label}
+                                  </Typography>
+                                </Stack>
+                              ) : null;
+                            })}
                         </Stack>
                       }
                       followCursor
@@ -325,15 +332,47 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                         },
                       }}
                     >
-                      <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
-                        {
-                          countries.find((item) =>
-                            item.label
-                              .toLowerCase()
-                              .includes(campaign?.campaignRequirement?.country?.toLowerCase())
-                          ).code
-                        }
-                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        {(Array.isArray(campaign?.campaignRequirement?.country) 
+                          ? campaign?.campaignRequirement?.country 
+                          : [campaign?.campaignRequirement?.country])
+                          .filter(Boolean)
+                          .slice(0, 3)
+                          .map((countryName, idx, arr) => {
+                            const countryData = countries.find((item) =>
+                              item.label.toLowerCase().includes(countryName?.toLowerCase())
+                            );
+                            return countryData ? (
+                              <Stack key={idx} direction="row" spacing={1} alignItems="center">
+                                <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
+                                  {countryData.code}
+                                </Typography>
+                                {idx < arr.length - 1 && (
+                                  <Divider
+                                    orientation="vertical"
+                                    flexItem
+                                    sx={{ bgcolor: 'black', height: 14 }}
+                                    variant="middle"
+                                  />
+                                )}
+                              </Stack>
+                            ) : null;
+                          })}
+                        {Array.isArray(campaign?.campaignRequirement?.country) && 
+                         campaign?.campaignRequirement?.country.length > 3 && (
+                          <>
+                            <Divider
+                              orientation="vertical"
+                              flexItem
+                              sx={{ bgcolor: 'black', height: 14 }}
+                              variant="middle"
+                            />
+                            <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
+                              +{campaign?.campaignRequirement?.country.length - 3}
+                            </Typography>
+                          </>
+                        )}
+                      </Stack>
                     </Tooltip>
                   </>
                 )}

@@ -78,7 +78,7 @@ const CampaignDetails = () => {
   const { control, watch } = useFormContext();
 
   const audienceGeoLocation = watch('audienceLocation');
-  const country = watch('country');
+  const country = watch('country'); // Now an array of countries
 
   const {
     append: doAppend,
@@ -130,7 +130,9 @@ const CampaignDetails = () => {
           <FormField label="Audience Country">
             <RHFAutocomplete
               name="country"
-              placeholder="Select country"
+              placeholder="Select countries"
+              multiple
+              disableCloseOnSelect
               options={Object.keys(countriesCities)}
               getOptionLabel={(option) => option}
               slotProps={{
@@ -175,7 +177,7 @@ const CampaignDetails = () => {
             />
           </FormField>
 
-          {country?.toLowerCase() === 'malaysia' && (
+          {country?.some((c) => c?.toLowerCase() === 'malaysia') && (
             <FormField label="Audience City/Area">
               <RHFMultiSelect
                 name="audienceLocation"

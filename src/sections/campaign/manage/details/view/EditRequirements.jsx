@@ -28,7 +28,7 @@ import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/ho
 export const EditRequirements = ({ open, campaign, onClose }) => {
   const methods = useForm({
     defaultValues: {
-      country: campaign?.campaignRequirement?.country || '',
+      country: campaign?.campaignRequirement?.country || [],
       audienceGender: campaign?.campaignRequirement?.gender || [],
       audienceAge: campaign?.campaignRequirement?.age || [],
       audienceLocation: campaign?.campaignRequirement?.geoLocation || [],
@@ -110,7 +110,9 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
               <RHFAutocomplete
                 name="country"
                 label="Audience Country"
-                placeholder="Select country"
+                placeholder="Select countries"
+                multiple
+                disableCloseOnSelect
                 options={Object.keys(countriesCities)}
                 getOptionLabel={(option) => option}
                 slotProps={{
@@ -154,7 +156,7 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                 }}
               />
 
-              {country?.toLowerCase() === 'malaysia' && (
+              {country?.some((c) => c?.toLowerCase() === 'malaysia') && (
                 <>
                   <RHFMultiSelect
                     name="audienceLocation"
