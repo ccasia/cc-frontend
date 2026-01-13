@@ -79,13 +79,29 @@ export default function ConfirmReservationDetailsDialog({
     handleSubmit,
     setValue,
     reset,
+    watch,
     formState: { isSubmitting, isDirty },
   } = methods;
+
+  const selectedOutlet = watch('outlet');
+
+  useEffect(() => {
+    if (!selectedOutlet || !config?.locations) return;
+
+    const matchedLocation = config.locations.find(
+      (loc) => (typeof loc === 'string' ? loc : loc.name) === selectedOutlet
+    );
+
+    if (matchedLocation && typeof matchedLocation === 'object') {
+      setValue('picName', matchedLocation.pic || '');
+      setValue('picContact', matchedLocation.contactNumber || '');
+    }
+  }, [selectedOutlet, config, setValue]);
 
   useEffect(() => {
     if (open && details) {
       reset({
-        outlet: details.outlet || '',
+        outlet: typeof details.outlet === 'string' ? details.outlet : details.outlet?.name || '',
         clientRemarks: details.clientRemarks || '',
         picName: details.picName || '',
         picContact: details.picContact || '',
@@ -93,7 +109,7 @@ export default function ConfirmReservationDetailsDialog({
         budget: details.budget || '',
       });
     }
-  }, [open, details, setValue, reset]);
+  }, [open, details, reset]);
 
   const onSubmit = async (data) => {
     try {
@@ -186,11 +202,14 @@ export default function ConfirmReservationDetailsDialog({
                 placeholder="Select Outlet"
                 sx={{ bgcolor: '#FFFFFF', borderRadius: 1 }}
               >
-                {outlets.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
+                {outlets.map((option, idx) => {
+                  const name = typeof option === 'string' ? option : option.name;
+                  return (
+                    <MenuItem key={idx} value={name}>
+                      {name}
+                    </MenuItem>
+                  );
+                })}
               </RHFSelect>
             </Box>
 
@@ -225,7 +244,12 @@ export default function ConfirmReservationDetailsDialog({
                 <RHFTextField
                   name="picContact"
                   placeholder="PIC Contact Number"
-                  sx={{ bgcolor: '#FFFFFF', borderRadius: 1 }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#FFFFFF',
+                      borderRadius: 1,
+                    },
+                  }}
                 />
               </Box>
             </Stack>
@@ -248,7 +272,13 @@ export default function ConfirmReservationDetailsDialog({
                 <RHFTextField
                   name="budget"
                   placeholder="Enter Spend Limit"
-                  sx={{ bgcolor: '#FFFFFF', borderRadius: 1 }}
+                  sx={{
+                    borderRadius: 1,
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#FFFFFF',
+                      borderRadius: 1,
+                    },
+                  }}
                 />
               </Box>
             </Stack>
@@ -261,7 +291,7 @@ export default function ConfirmReservationDetailsDialog({
             variant="contained"
             size="large"
             loading={isSubmitting}
-            disabled={!isDirty}
+            // disabled={!isDirty} //strictly for editing
             sx={{
               bgcolor: '#3A3A3C',
               color: '#FFFFFF',
