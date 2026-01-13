@@ -288,53 +288,53 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                       : campaign?.status
                   )}
                 </Typography>
-                {campaign?.campaignRequirement?.country && (
+                {campaign?.campaignRequirement?.country.length && (
                   <>
-                    <Divider
-                      orientation="vertical"
-                      flexItem
-                      sx={{ bgcolor: 'black', height: 14 }}
-                      variant="middle"
-                    />
-                    <Tooltip
-                      title={
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Iconify
-                            icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
-                            width={15}
-                          />
-                          <Typography variant="caption">
+                    {campaign?.campaignRequirement?.country.map((country) => (
+                      <>
+                        <Divider
+                          orientation="vertical"
+                          flexItem
+                          sx={{ bgcolor: 'black', height: 14 }}
+                          variant="middle"
+                        />
+                        <Tooltip
+                          title={
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Iconify
+                                icon={`emojione:flag-for-${country?.toLowerCase()}`}
+                                width={15}
+                              />
+                              <Typography variant="caption">
+                                {
+                                  countries.find((item) =>
+                                    item.label.toLowerCase().includes(country?.toLowerCase())
+                                  ).label
+                                }
+                              </Typography>
+                            </Stack>
+                          }
+                          followCursor
+                          slotProps={{
+                            tooltip: {
+                              sx: {
+                                // bgcolor: 'white',
+                                // color: 'black',
+                                borderRadius: 0.4,
+                              },
+                            },
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
                             {
                               countries.find((item) =>
-                                item.label
-                                  .toLowerCase()
-                                  .includes(campaign?.campaignRequirement?.country?.toLowerCase())
-                              ).label
+                                item.label.toLowerCase().includes(country?.toLowerCase())
+                              ).code
                             }
                           </Typography>
-                        </Stack>
-                      }
-                      followCursor
-                      slotProps={{
-                        tooltip: {
-                          sx: {
-                            // bgcolor: 'white',
-                            // color: 'black',
-                            borderRadius: 0.4,
-                          },
-                        },
-                      }}
-                    >
-                      <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
-                        {
-                          countries.find((item) =>
-                            item.label
-                              .toLowerCase()
-                              .includes(campaign?.campaignRequirement?.country?.toLowerCase())
-                          ).code
-                        }
-                      </Typography>
-                    </Tooltip>
+                        </Tooltip>
+                      </>
+                    ))}
                   </>
                 )}
               </Stack>
