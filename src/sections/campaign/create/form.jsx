@@ -229,47 +229,30 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
   });
 
   const logisticsSchema = Yup.object().shape({
-    logisticsType: Yup.string(),
+    logisticsType: Yup.string().nullable(),
     products: Yup.array().when('logisticsType', {
       is: 'PRODUCT_DELIVERY',
       then: (schema) =>
-        schema
-          .of(
-            Yup.object().shape({
-              name: Yup.string().required('Product name is required'),
-            })
-          )
-          .min(1, 'At least one product is required'),
+        schema.test('at-least-one-product', 'Fill at least one product', (value) =>
+          value?.some((p) => p.name?.trim().length > 0)
+        ),
       otherwise: (schema) => schema.notRequired(),
     }),
-    logisticRemarks: Yup.string(),
-    // locations: Yup.array().notRequired(),
-
-    // venueName: Yup.string().when('logisticsType', {
-    //   is: 'RESERVATION',
-    //   then: (schema) => schema,
-    //   otherwise: (schema) => schema,
-    // }),
-    // venueAddress: Yup.string().when('logisticsType', {
-    //   is: 'RESERVATION',
-    //   then: (schema) => schema,
-    //   otherwise: (schema) => schema,
-    // }),
-    // reservationNotes: Yup.string().when('logisticsType', {
-    //   is: 'RESERVATION',
-    //   then: (schema) => schema,
-    //   otherwise: (schema) => schema,
-    // }),
+    clientRemarks: Yup.string(),
     locations: Yup.array().when('logisticsType', {
       is: 'RESERVATION',
       then: (schema) =>
         schema
           .of(
             Yup.object().shape({
-              name: Yup.string().trim().required('Location name is required'),
+              name: Yup.string().trim().notRequired(),
+              pic: Yup.string().notRequired(),
+              contactNumber: Yup.string().notRequired(),
             })
           )
-          .min(1, 'At least one location is required'),
+          .test('at-least-one-location', 'At least one outlet is required', (value) =>
+            value?.some((l) => l.name?.trim().length > 0)
+          ),
       otherwise: (schema) => schema.notRequired(),
     }),
 
@@ -329,10 +312,10 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     country: '',
     campaignBrand: null,
     logisticsType: '',
-    logisticRemarks: '',
+    clientRemarks: '',
     schedulingOption: 'confirmation',
     products: [{ name: '' }],
-    locations: [{ name: '' }],
+    locations: [{ name: '', pic: '', contactNumber: '' }],
     campaignStartDate: null,
     campaignEndDate: null,
     postingStartDate: null,
@@ -558,6 +541,12 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
       campaignObjectives: Array.isArray(data.campaignObjectives)
         ? data.campaignObjectives.join(', ')
         : data.campaignObjectives,
+      products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
+      reservationConfig: {
+        mode: data.schedulingOption === 'auto' ? 'AUTO_SCHEDULE' : 'MANUAL_CONFIRMATION',
+        locations: data.locations,
+        availabilityRules: data.availabilityRules,
+      },
     };
 
     console.log('Adjusted Data before sending:', adjustedData); // Debug log
@@ -665,6 +654,27 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
 
   const startDate = getValues('campaignStartDate');
   const campaignStartDate = watch('campaignStartDate');
+
+  const isNextDisabled = () => {
+    if (errors?.campaignCredits || hasCreditError) return true;
+
+    if (activeStep === 3) {
+      const type = getValues('logisticsType');
+      if (!type) return false;
+
+      if (type === 'PRODUCT_DELIVERY') {
+        const products = getValues('products');
+        return !products?.some((p) => p.name?.trim().length > 0);
+      }
+
+      if (type === 'RESERVATION') {
+        const locations = getValues('locations');
+        return !locations?.some((l) => l.name?.trim().length > 0);
+      }
+    }
+
+    return !isValid;
+  };
 
   return (
     <Box>
@@ -780,7 +790,8 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                   py: 1,
                 }}
-                disabled={!isValid || errors?.campaignCredit || hasCreditError}
+                // disabled={!isValid || errors?.campaignCredit || hasCreditError}
+                disabled={isNextDisabled()}
                 onClick={handleNext}
               >
                 Next
