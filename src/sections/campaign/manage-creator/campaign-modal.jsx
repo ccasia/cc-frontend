@@ -1,4 +1,5 @@
 /* eslint-disable no-nested-ternary */
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
 import React, { useRef, useMemo, useState, useEffect } from 'react';
@@ -431,30 +432,52 @@ const CampaignModal = ({
               justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
               sx={{ mt: { xs: 1.5, sm: 0 } }}
             >
-              {campaign?.shortlisted && (
-                <Button
-                  variant="contained"
-                  onClick={() => handleManageClick(campaign.id)}
-                  sx={{
-                    backgroundColor: '#203ff5',
-                    color: 'white',
-                    borderBottom: '4px solid #102387 !important',
-                    border: 'none',
-                    '&:hover': {
-                      backgroundColor: '#1935dd',
-                      borderBottom: '4px solid #102387 !important',
-                    },
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    padding: { xs: '4px 12px', sm: '6px 18px' },
-                    minWidth: '100px',
-                    height: '42px',
-                    boxShadow: 'none',
-                    textTransform: 'none',
-                  }}
-                >
-                  Manage
-                </Button>
-              )}
+              {campaign?.shortlisted && (() => {
+                // Check if user is in the target list for media kit requirement
+                const targetUserIds = [
+                  'cmeuvjc6b003on401rn4pw62b',
+                  'cmf813vtd0000pd3psk46u4lt', 
+                  'cmipdmkvd0005k43fnfgxrb4t',
+                  'cmf8289xu000cpdmcj4a4fosl', 
+                  'user456'
+                ];
+                const isTargetUser = targetUserIds.includes(user?.id);
+                
+                // Check if media kit is connected
+                const hasMediaKit = user?.creator && 
+                  (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+                
+                // For target users, disable manage button if no media kit
+                const isDisabled = isTargetUser && !hasMediaKit;
+                
+                return (
+                  <Button
+                    variant="contained"
+                    onClick={() => handleManageClick(campaign.id)}
+                    disabled={isDisabled}
+                    sx={{
+                      backgroundColor: isDisabled ? '#f5f5f5' : '#203ff5',
+                      color: isDisabled ? '#a1a1a1' : 'white',
+                      borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
+                      border: 'none',
+                      '&:hover': {
+                        backgroundColor: isDisabled ? '#f5f5f5' : '#1935dd',
+                        borderBottom: isDisabled ? '4px solid #d1d1d1 !important' : '4px solid #102387 !important',
+                      },
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      padding: { xs: '4px 12px', sm: '6px 18px' },
+                      minWidth: '100px',
+                      height: '42px',
+                      boxShadow: 'none',
+                      textTransform: 'none',
+                      fontWeight: 650,
+                      opacity: isDisabled ? 0.7 : 1,
+                    }}
+                  >
+                    Manage
+                  </Button>
+                );
+              })()}
               {campaign?.pitch && !campaign?.shortlisted && (
                 <Chip
                   icon={<Iconify icon="mdi:clock" />}
@@ -605,6 +628,56 @@ const CampaignModal = ({
               )} */}
             </Stack>
           </Stack>
+
+          {/* Warning message for incomplete media kit */}
+          {campaign?.shortlisted && (() => {
+            // Check if user is in the target list for media kit requirement
+            const targetUserIds = [
+              'cmeuvjc6b003on401rn4pw62b',
+              'cmf813vtd0000pd3psk46u4lt', 
+              'cmipdmkvd0005k43fnfgxrb4t',
+              'cmf8289xu000cpdmcj4a4fosl', 
+              'user456'
+            ];
+            const isTargetUser = targetUserIds.includes(user?.id);
+            
+            // Check if media kit is connected
+            const hasMediaKit = user?.creator && 
+              (user.creator.isFacebookConnected || user.creator.isTiktokConnected);
+            
+            if (isTargetUser && !hasMediaKit) {
+              return (
+                <Typography
+                  sx={{
+                    flex: 1,
+                    textAlign: 'center',
+                    p: 1,
+                    mt: 2,
+                    borderRadius: 1,
+                    color: '#FF3500',
+                    backgroundColor: '#FFF2F0',
+                    fontWeight: 600,
+                    fontSize: 12,
+                    alignSelf: 'center',
+                  }}
+                >
+                  <span role="img" aria-label="warning">😮</span> Oops! You need to {' '}
+                  <Link
+                    to={paths.dashboard.user.profileTabs.socials}
+                    style={{
+                      color: '#FF3500',
+                      fontWeight: 'inherit',
+                    }}
+                  >
+                    link your media kit
+                  </Link>{' '}
+                  before you can manage your campaign.
+                </Typography>
+              );
+            }
+            
+            return null;
+          })()}
 
           {isSmallScreen ? (
             <CampaignModalMobile campaign={campaign} />
