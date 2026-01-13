@@ -718,11 +718,10 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         logisticsType: data.logisticsType || '',
         clientRemarks: data.clientRemarks || '',
         products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
-        reservationConfig: {
-          mode: data.schedulingOption === 'auto' ? 'AUTO_SCHEDULE' : 'MANUAL_CONFIRMATION',
-          locations: data.locations,
-          availabilityRules: data.availabilityRules,
-        },
+        availabilityRules: data.availabilityRules || [],
+        locations: data.locations?.filter((l) => l.name?.trim().length > 0) || [],
+        schedulingOption:
+          data.schedulingOption === 'auto' ? 'AUTO_SCHEDULE' : 'MANUAL_CONFIRMATION',
         // Additional Details 1 fields
         contentFormat: Array.isArray(data.contentFormat) ? data.contentFormat : [],
         postingStartDate: data.postingStartDate || null,

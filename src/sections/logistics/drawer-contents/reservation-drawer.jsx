@@ -227,7 +227,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
               onClick={isAdmin ? () => setOpenAdminSchedule(true) : () => setOpenSchedule(true)}
               sx={buttonSx} // Always Blue for Schedule
             >
-              Confirm Slot
+              {isAdmin ? 'Schedule' : 'Confirm Slot'}
             </Button>
           </Badge>
         )}
