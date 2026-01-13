@@ -108,10 +108,16 @@ const CreatorProfileView = ({ id }) => {
 
   const groupedCampaigns = campaigns.reduce((groups, campaign) => {
     const pitchStatus = campaign.pitch?.status;
+    const isUserShortlisted = campaign.shortlisted?.userId === id;
     const campaignStatus = campaign.status;
 
-    if (!pitchStatus) {
-      return groups
+    // include retrospective campaigns that have not pitch when shortlisted
+    if (!pitchStatus && isUserShortlisted) {
+      if (campaignStatus === 'COMPLETED') {
+        groups.past.push(campaign);
+      } else {
+        groups.approved.push(campaign);
+      }
     }
 
     if (pitchStatus === 'PENDING_REVIEW' || pitchStatus === 'SENT_TO_CLIENT') {
