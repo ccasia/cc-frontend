@@ -1,31 +1,28 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useMemo, useRef } from 'react';
-
-// axios
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
-// @mui
-import Avatar from '@mui/material/Avatar';
+import { useRef, useMemo, useState, useEffect } from 'react';
 
 // @mui
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+// @mui
+import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import ListItemText from '@mui/material/ListItemText';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import Checkbox from '@mui/material/Checkbox';
-import ListItemText from '@mui/material/ListItemText';
-import Chip from '@mui/material/Chip';
 
 // hooks
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+
+// axios
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 // components
 import Iconify from 'src/components/iconify';
@@ -813,7 +810,7 @@ export default function NewInvoiceModal({ open, onClose, onSubmit, campId }) {
                 value={amount}
                 onChange={(e) => {
                   // Only allow numbers, one decimal point, and max 2 decimal places
-                  const value = e.target.value;
+                  const {value} = e.target;
                   const regex = /^\d*(\.\d{0,2})?$/;
                   if (value === '' || regex.test(value)) {
                     setAmount(value);

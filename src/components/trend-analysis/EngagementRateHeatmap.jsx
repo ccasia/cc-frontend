@@ -80,25 +80,14 @@ export const EngagementRateHeatmap = ({ campaignId, platform = 'All', weeks = 6 
       {/* Header */}
       <Box sx={{ mb: { xs: 2, md: 3 } }}>
         <Typography
-          variant="h6"
           sx={{
             fontFamily: 'Aileron',
             fontWeight: 600,
-            fontSize: { xs: 16, md: 18 },
+            fontSize: 24,
             color: '#000',
-            mb: 1,
           }}
         >
           Engagement Rate Heatmap
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color: '#636366',
-            fontSize: { xs: 12, md: 14 },
-          }}
-        >
-          Last {weeks} weeks ({platform})
         </Typography>
       </Box>
 

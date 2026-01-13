@@ -1,42 +1,42 @@
-import React, { useState, useEffect, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   format,
-  isSameDay,
   isBefore,
-  addMinutes,
-  eachDayOfInterval,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
+  endOfDay,
+  isSameDay,
   endOfWeek,
   addMonths,
+  addMinutes,
+  endOfMonth,
   startOfDay,
-  endOfDay,
+  startOfWeek,
+  startOfMonth,
   isWithinInterval,
+  eachDayOfInterval,
 } from 'date-fns';
 
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DesktopTimePicker } from '@mui/x-date-pickers/DesktopTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
   Box,
   Grid,
   Stack,
+  Button,
+  Switch,
+  Divider,
+  Checkbox,
+  MenuItem,
   Typography,
   IconButton,
-  Button,
-  Divider,
-  Switch,
-  Checkbox,
-  FormControlLabel,
-  MenuItem,
-  ThemeProvider,
   createTheme,
+  ThemeProvider,
+  FormControlLabel,
 } from '@mui/material';
-import { DesktopTimePicker } from '@mui/x-date-pickers/DesktopTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useSnackbar } from 'src/components/snackbar';
 
 import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
 
 // const ReservationSlots = () => {
 //   const { enqueueSnackbar } = useSnackbar();

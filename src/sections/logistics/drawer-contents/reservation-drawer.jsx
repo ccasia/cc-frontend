@@ -1,17 +1,18 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useState, useMemo } from 'react';
+import { config } from '@fullcalendar/core/internal';
 
-import { Box, Stack, Button, Divider, Typography, Badge, Chip } from '@mui/material';
-import Iconify from 'src/components/iconify';
+import { Box, Stack, Badge, Button, Divider, Typography } from '@mui/material';
 
 import { formatReservationSlot } from 'src/utils/reservation-time';
-import { config } from '@fullcalendar/core/internal';
-import LogisticsStepper from '../logistics-stepper';
 
-import ConfirmReservationDetailsDialog from '../dialogs/confirm-reservation-details-dialog';
-import ScheduleReservationDialog from '../dialogs/schedule-reservation-dialog';
+import Iconify from 'src/components/iconify';
+
+import LogisticsStepper from '../logistics-stepper';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
+import ScheduleReservationDialog from '../dialogs/schedule-reservation-dialog';
 import AdminScheduleReservationDialog from '../dialogs/admin-schedule-reservation-dialog';
+import ConfirmReservationDetailsDialog from '../dialogs/confirm-reservation-details-dialog';
 
 export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAdmin, onClose }) {
   const [openConfirm, setOpenConfirm] = useState(false);

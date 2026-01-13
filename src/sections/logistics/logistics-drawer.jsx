@@ -1,19 +1,13 @@
 import PropTypes from 'prop-types';
-import { useState, useMemo } from 'react';
-import axiosInstance from 'src/utils/axios';
-import { useSnackbar } from 'src/components/snackbar';
 
 import {
   Box,
-  Badge,
   Stack,
   Drawer,
   Avatar,
-  Button,
   Divider,
   Typography,
   IconButton,
-  Link,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
@@ -24,8 +18,8 @@ import Iconify from 'src/components/iconify';
 // import ScheduleDeliveryDialog from './dialogs/schedule-delivery-dialog';
 // import ReviewIssueDialog from './dialogs/review-issue-dialog';
 
-import ProductDeliveryDrawer from './drawer-contents/product-delivery-drawer';
 import ReservationDrawer from './drawer-contents/reservation-drawer';
+import ProductDeliveryDrawer from './drawer-contents/product-delivery-drawer';
 
 export default function LogisticsDrawer({
   open,

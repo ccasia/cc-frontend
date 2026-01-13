@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import React, { useState, useEffect } from 'react';
 
+import EditIcon from '@mui/icons-material/Edit';
 import {
   Chip,
   Table,
@@ -23,8 +24,6 @@ import {
 
 import axiosInstance from 'src/utils/axios';
 
-import Iconify from 'src/components/iconify';
-import EditIcon from '@mui/icons-material/Edit';
 import Scrollbar from 'src/components/scrollbar';
 import { useTable, emptyRows, TableNoData, TableEmptyRows } from 'src/components/table';
 

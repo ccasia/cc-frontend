@@ -1,28 +1,24 @@
 import PropTypes from 'prop-types';
-import { useState, useMemo } from 'react';
-import axiosInstance from 'src/utils/axios';
-import { useSnackbar } from 'src/components/snackbar';
+import { useMemo, useState } from 'react';
 
 import {
   Box,
+  Link,
   Badge,
   Stack,
-  Drawer,
   Avatar,
   Button,
   Divider,
   Typography,
   IconButton,
-  Link,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
 import LogisticsStepper from '../logistics-stepper';
-import AssignLogisticDialog, { AdminAssignLogisticDialog } from '../dialogs/assign-logistic-dialog';
-import AdminEditLogisticDialog from '../dialogs/admin-edit-logistic-dialog';
-import ScheduleDeliveryDialog from '../dialogs/schedule-delivery-dialog';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
+import AssignLogisticDialog from '../dialogs/assign-logistic-dialog';
+import ScheduleDeliveryDialog from '../dialogs/schedule-delivery-dialog';
 
 export default function ProductDeliveryDrawer({ open, onClose, logistic, onUpdate, campaignId }) {
   const [openAssign, setOpenAssign] = useState(false);
