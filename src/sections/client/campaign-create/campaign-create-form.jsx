@@ -10,7 +10,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { lazy, useState, useEffect, useCallback } from 'react';
+import React, { lazy, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -48,20 +48,41 @@ import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
+import CampaignObjective from './campaign-objective';
+import NextSteps from './next-steps';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
-// Define client-specific steps (ending at upload photos)
+// Define internal steps (includes sub-steps for logistics)
+// Visual indicator maps: 0=General, 1=Objective, 2=Audience, 3-5=Logistics, 6=Next Steps
 const steps = [
-  { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
-  { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
-  { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
-  // HIDE: logistics
-  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
-  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
-  { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
-  { title: 'Other Attachment ( Optional )', logo: '🖇️', color: '#FF3500' },
+  { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE', indicatorIndex: 0 },
+  { title: 'Campaign Objectives', logo: '🎯', color: '#026D54', indicatorIndex: 1 },
+  { title: 'Target Audience', logo: '👥', color: '#FFF0E5', indicatorIndex: 2 },
+  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01', indicatorIndex: 3 },
+  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01', indicatorIndex: 3 },
+  { title: 'Additional Logistic Remarks', logo: '✏️', color: '#D8FF01', indicatorIndex: 3 },
+  { title: 'Next Steps', logo: '👣', color: '#D8FF01', indicatorIndex: 4 },
 ];
+
+// Step indicator labels for the clickable navigation (5 visual steps)
+const stepLabels = ['General', 'Objective', 'Audience', 'Logistics', 'Next Steps'];
+
+// Map visual indicator index to first internal step index
+const indicatorToStepMap = {
+  0: 0, // General
+  1: 1, // Objective  
+  2: 2, // Audience
+  3: 3, // Logistics (first sub-step)
+  4: 6, // Next Steps
+};
+
+// Get which visual indicator is active based on internal step
+const getIndicatorIndex = (internalStep) => {
+  if (internalStep >= 6) return 4; // Next Steps
+  if (internalStep >= 3) return 3; // Logistics (includes sub-steps 3, 4, 5)
+  return internalStep; // 0, 1, 2 map directly
+};
 
 const PDFEditor = lazy(() => import('src/sections/campaign/create/pdf-editor'));
 
@@ -75,12 +96,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [image, setImage] = useState(null);
-  const [campaignDo, setcampaignDo] = useState(['']);
-  const [campaignDont, setcampaignDont] = useState(['']);
-  const [pages, setPages] = useState(0);
-
-  const smDown = useResponsive('down', 'sm');
 
   const pdfModal = useBoolean();
 
@@ -95,9 +110,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     campaignTitle: Yup.string()
       .required('Campaign title is required')
       .max(40, 'Campaign title must be 40 characters or less'),
-    campaignObjectives: Yup.array()
-      .min(1, 'At least one objective is required')
-      .required('Campaign objectives is required'),
+    campaignObjectives: Yup.string().required('Campaign objective is required'),
     brandTone: Yup.string().required('Brand tone is required'),
     audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
     audienceGender: Yup.array()
@@ -148,11 +161,18 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     campaignTitle: Yup.string()
       .required('Campaign title is required')
       .max(40, 'Campaign title must be 40 characters or less'),
-    campaignObjectives: Yup.array()
-      .min(1, 'At least one objective is required')
-      .required('Campaign objectives is required'),
-    brandTone: Yup.string().required('Brand tone is required'),
+    campaignCredits: Yup.number()
+      .min(1, 'Assign at least 1 credit')
+      .required('Campaign credits is required'),
+    campaignImages: Yup.array()
+      .min(1, 'Must have at least 1 image')
+      .max(3, 'Must have at most 3 images'),
+    campaignStartDate: Yup.date().required('Campaign Start Date is required.'),
+    campaignEndDate: Yup.date().required('Campaign End Date is required.'),
+    brandTone: Yup.string(),
+    brandAbout: Yup.string(),
     productName: Yup.string(),
+    websiteLink: Yup.string(),
   });
 
   const campaignRequirementSchema = Yup.object().shape({
@@ -174,8 +194,15 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       .min(1, 'At least one option')
       .required('Audience creator persona is required'),
     audienceUserPersona: Yup.string(),
-    socialMediaPlatform: Yup.array().min(1, 'At least one option'),
-    videoAngle: Yup.array().min(1, 'At least one option'),
+    // Secondary Audience - all optional
+    secondaryAudienceGender: Yup.array(),
+    secondaryAudienceAge: Yup.array(),
+    secondaryAudienceLocation: Yup.array(),
+    secondaryOthersAudienceLocation: Yup.string(),
+    secondaryAudienceLanguage: Yup.array(),
+    secondaryAudienceCreatorPersona: Yup.array(),
+    secondaryAudienceUserPersona: Yup.string(),
+    geographicFocus: Yup.string(),
     campaignDo: Yup.array()
       .min(1, 'At least one option')
       .of(
@@ -190,12 +217,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           value: Yup.string(),
         })
       ),
-  });
-
-  const campaignImagesSchema = Yup.object().shape({
-    campaignImages: Yup.array()
-      .min(1, 'Must have at least 1 image')
-      .max(5, 'Must have at most 5 images'),
   });
 
   const logisticsSchema = Yup.object().shape({
@@ -269,28 +290,33 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       .required(),
   });
 
-  const campaignAdminSchema = Yup.object().shape({
-    adminManager: Yup.array()
-      .min(1, 'At least One Admin is required')
-      .required('Admin Manager is required'),
+  // Schema for Objective step (step 1)
+  const objectiveSchema = Yup.object().shape({
+    campaignObjectives: Yup.string().required('Campaign objective is required'),
+    secondaryObjectives: Yup.array().max(2, 'You can select up to 2 secondary objectives'),
+    boostContent: Yup.string(),
+    primaryKPI: Yup.string(),
+    performanceBaseline: Yup.string(),
+    campaignDo: Yup.array()
+      .min(1, 'At least one option')
+      .of(
+        Yup.object().shape({
+          value: Yup.string(),
+        })
+      ),
+    campaignDont: Yup.array()
+      .min(1, 'At least one option')
+      .of(
+        Yup.object().shape({
+          value: Yup.string(),
+        })
+      ),
   });
 
-  const timelineSchema = Yup.object().shape({
-    campaignStartDate: Yup.string().required('Campaign Start Date is required.'),
-  });
-
-  const agreementSchema = Yup.object().shape({
-    agreementFrom: Yup.object().required('Campaign agreement is required.'),
-  });
-
-  const campaignTypeSchema = Yup.object().shape({
-    campaignType: Yup.string().required('Campaign type is required.'),
-    deliverables: Yup.array()
-      .min(1, 'At least one deliverable is required')
-      .required('Deliverables are required'),
-    rawFootage: Yup.boolean(),
-    photos: Yup.boolean(),
-    ads: Yup.boolean(),
+  // Schema for Next Steps/Publish step (step 6)
+  const publishSchema = Yup.object().shape({
+    otherAttachments: Yup.array(),
+    referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
   });
 
   const getSchemaForStep = (step) => {
@@ -298,34 +324,17 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 0:
         return campaignInformationSchema;
       case 1:
-        return campaignRequirementSchema;
+        return objectiveSchema;
       case 2:
-        return campaignImagesSchema;
-
-      // HIDE: logistics
-      // case 3:
-      //   return logisticsSchema;
-      // case 4:
-      // case 5:
-      //   return Yup.object().shape({});
-      // case 6:
-      //   return Yup.object().shape({
-      //     otherAttachments: Yup.array(),
-      //     referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
-      //   });
-      // default:
-      //   return campaignSchema;
+        return campaignRequirementSchema;
       case 3:
         return logisticsSchema;
       case 4:
         return reservationSlotsSchema;
       case 5:
-        return Yup.object().shape({});
+        return Yup.object().shape({}); // Logistic remarks - optional
       case 6:
-        return Yup.object().shape({
-          otherAttachments: Yup.array(),
-          referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
-        });
+        return publishSchema;
       default:
         return campaignSchema;
     }
@@ -338,9 +347,16 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     campaignEndDate: null,
     campaignCredits: '',
     campaignIndustries: [],
-    campaignObjectives: [],
+    campaignObjectives: '',
+    secondaryObjectives: [],
+    boostContent: '',
+    primaryKPI: '',
+    performanceBaseline: '',
     brandTone: '',
+    brandAbout: '',
     productServiceName: '',
+    websiteLink: '',
+    // Primary Audience
     audienceUserPersona: '',
     audienceGender: [],
     audienceAge: [],
@@ -348,8 +364,17 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     othersAudienceLocation: '',
     audienceLanguage: [],
     audienceCreatorPersona: [],
-    socialMediaPlatform: [],
-    videoAngle: [],
+    country: '',
+    // Secondary Audience
+    secondaryAudienceUserPersona: '',
+    secondaryAudienceGender: [],
+    secondaryAudienceAge: [],
+    secondaryAudienceLocation: [],
+    secondaryOthersAudienceLocation: '',
+    secondaryAudienceLanguage: [],
+    secondaryAudienceCreatorPersona: [],
+    secondaryCountry: '',
+    geographicFocus: '',
     campaignDo: [{ value: '' }],
     campaignDont: [{ value: '' }],
     campaignImages: [],
@@ -360,7 +385,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     campaignForm: [],
     otherAttachments: [],
     referencesLinks: [],
-    submissionVersion: '',
+    submissionVersion: 'v4',
     logisticsType: '',
     logisticRemarks: '',
     schedulingOption: 'confirmation',
@@ -424,7 +449,27 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     [setValue, values.campaignImages]
   );
 
-  const isStepOptional = (step) => step === 7;
+  // Get fields to validate for each step
+  const getFieldsForStep = (step) => {
+    switch (step) {
+      case 0: // General
+        return ['campaignTitle', 'campaignDescription', 'campaignIndustries', 'campaignCredits', 'campaignImages', 'campaignStartDate', 'campaignEndDate'];
+      case 1: // Objective
+        return ['campaignObjectives', 'campaignDo', 'campaignDont'];
+      case 2: // Audience
+        return ['audienceAge', 'audienceGender', 'audienceLocation', 'audienceLanguage', 'audienceCreatorPersona', 'socialMediaPlatform', 'videoAngle'];
+      case 3: // Logistics
+        return ['logisticsType'];
+      case 4: // Reservation Slots
+        return ['availabilityRules'];
+      case 5: // Logistic Remarks
+        return []; // Optional, no required fields
+      case 6: // Next Steps / Publish
+        return [];
+      default:
+        return [];
+    }
+  };
 
   const handleNext = async () => {
     // Prevent progressing if credits are zero or invalid
@@ -434,11 +479,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     };
     window.addEventListener('client-campaign-credits-error', listener, { once: true });
 
-    const result = await trigger();
+    // Only validate fields for the current step
+    const fieldsToValidate = getFieldsForStep(activeStep);
+    const result = fieldsToValidate.length > 0 ? await trigger(fieldsToValidate) : true;
     window.removeEventListener('client-campaign-credits-error', listener);
 
     // Also validate locally: if availableCredits is 0 and step is General Campaign Information
-    const isGeneralInfoStep = steps[activeStep]?.title === 'General Campaign Information';
+    const isGeneralInfoStep = activeStep === 0;
     const requestedCredits = Number(getValues('campaignCredits') || 0);
     const availableCredits = Number(localStorage.getItem('clientAvailableCredits') || 0);
     const isExceed =
@@ -449,10 +496,20 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       const logisticsType = getValues('logisticsType');
       let nextStep = activeStep + 1;
 
-      if (activeStep === 3 && logisticsType !== 'RESERVATION' && nextStep === 4) {
-        nextStep = 6;
-      } else if (activeStep === 4 && logisticsType === 'RESERVATION') {
+      // Handle logistics sub-step navigation
+      // Step 3 = Logistics, Step 4 = Reservation Slots, Step 5 = Logistic Remarks, Step 6 = Next Steps
+      if (activeStep === 3) {
+        // From Logistics step, skip to Next Steps if not RESERVATION type
+        if (logisticsType !== 'RESERVATION') {
+          nextStep = 6; // Skip to Next Steps
+        }
+        // Otherwise go to step 4 (Reservation Slots)
+      } else if (activeStep === 4) {
+        // From Reservation Slots, go to Logistic Remarks
         nextStep = 5;
+      } else if (activeStep === 5) {
+        // From Logistic Remarks, go to Next Steps
+        nextStep = 6;
       }
 
       localStorage.setItem('clientActiveStep', nextStep);
@@ -464,51 +521,39 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     }
   };
 
+  // Handle clicking on step indicator to navigate directly
+  const handleStepClick = (indicatorIndex) => {
+    const currentIndicator = getIndicatorIndex(activeStep);
+    // Allow navigation to any indicator that has been visited or previous indicators
+    if (indicatorIndex <= currentIndicator) {
+      const targetStep = indicatorToStepMap[indicatorIndex];
+      setActiveStep(targetStep);
+      localStorage.setItem('clientActiveStep', targetStep);
+    }
+  };
+
   const handleBack = () => {
-    const logisticType = getValues('logisticsType');
+    const logisticsType = getValues('logisticsType');
     let prevStep = activeStep - 1;
 
+    // Handle logistics sub-step navigation going back
     if (activeStep === 6) {
-      if (logisticType !== 'RESERVATION') {
-        prevStep = 3;
+      // From Next Steps, go back based on logistics type
+      if (logisticsType === 'RESERVATION') {
+        prevStep = 5; // Go to Logistic Remarks
       } else {
-        prevStep = 5;
+        prevStep = 3; // Go back to Logistics
       }
+    } else if (activeStep === 5) {
+      // From Logistic Remarks, go to Reservation Slots
+      prevStep = 4;
+    } else if (activeStep === 4) {
+      // From Reservation Slots, go to Logistics
+      prevStep = 3;
     }
 
     localStorage.setItem('clientActiveStep', prevStep);
     setActiveStep(prevStep);
-  };
-
-  const onDrop = useCallback(
-    (e) => {
-      const preview = URL.createObjectURL(e[0]);
-      setImage(preview);
-      setValue('image', e[0]);
-    },
-    [setValue]
-  );
-
-  const handleCampaginDontAdd = () => {
-    setcampaignDont([...campaignDont, '']);
-  };
-
-  const handleCampaginDontChange = (index, event) => {
-    const newDont = [...campaignDont];
-    newDont[index] = event.target.value;
-    setcampaignDont(newDont);
-    setValue('campaignDont', newDont);
-  };
-
-  const handleAddObjective = () => {
-    setcampaignDo([...campaignDo, '']);
-  };
-
-  const handleObjectiveChange = (index, event) => {
-    const newObjectives = [...campaignDo];
-    newObjectives[index] = event.target.value;
-    setcampaignDo(newObjectives);
-    setValue('campaignDo', newObjectives);
   };
 
   const onSubmit = handleSubmit(async (data, stage) => {
@@ -529,9 +574,15 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         campaignEndDate: data.campaignEndDate || null,
         campaignCredits: Number(data.campaignCredits) || 0,
         brandTone: data.brandTone || '',
+        brandAbout: data.brandAbout || '',
         productName: data.productName || '',
+        websiteLink: data.websiteLink || '',
         campaignIndustries: Array.isArray(data.campaignIndustries) ? data.campaignIndustries : [],
-        campaignObjectives: Array.isArray(data.campaignObjectives) ? data.campaignObjectives : [],
+        campaignObjectives: data.campaignObjectives || '',
+        secondaryObjectives: Array.isArray(data.secondaryObjectives) ? data.secondaryObjectives : [],
+        boostContent: data.boostContent || '',
+        primaryKPI: data.primaryKPI || '',
+        performanceBaseline: data.performanceBaseline || '',
         audienceGender: Array.isArray(data.audienceGender) ? data.audienceGender : [],
         audienceAge: Array.isArray(data.audienceAge) ? data.audienceAge : [],
         audienceLocation: Array.isArray(data.audienceLocation)
@@ -542,6 +593,25 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           ? data.audienceCreatorPersona
           : [],
         audienceUserPersona: data.audienceUserPersona || '',
+        country: data.country || '',
+        secondaryAudienceGender: Array.isArray(data.secondaryAudienceGender)
+          ? data.secondaryAudienceGender
+          : [],
+        secondaryAudienceAge: Array.isArray(data.secondaryAudienceAge)
+          ? data.secondaryAudienceAge
+          : [],
+        secondaryAudienceLocation: Array.isArray(data.secondaryAudienceLocation)
+          ? data.secondaryAudienceLocation.filter((item) => item !== 'Others')
+          : [],
+        secondaryAudienceLanguage: Array.isArray(data.secondaryAudienceLanguage)
+          ? data.secondaryAudienceLanguage
+          : [],
+        secondaryAudienceCreatorPersona: Array.isArray(data.secondaryAudienceCreatorPersona)
+          ? data.secondaryAudienceCreatorPersona
+          : [],
+        secondaryAudienceUserPersona: data.secondaryAudienceUserPersona || '',
+        secondaryCountry: data.secondaryCountry || '',
+        geographicFocus: data.geographicFocus || '',
         socialMediaPlatform: Array.isArray(data.socialMediaPlatform)
           ? data.socialMediaPlatform
           : [],
@@ -727,16 +797,15 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     };
   }, [handleFinalSubmit, setOpenConfirmModal]); // Include dependencies
 
-  // Modify the step content function to handle client flow
+  // Modify the step content function to handle client flow with 7 internal steps
   const getStepContent = (step) => {
     switch (step) {
       case 0:
         return <ClientCampaignGeneralInfo />;
       case 1:
-        return <CampaignTargetAudience />;
+        return <CampaignObjective />;
       case 2:
-        return <CampaignUploadPhotos isLoading={isLoading} />;
-      // HIDE: logistics
+        return <CampaignTargetAudience />;
       case 3:
         return <CampaignLogistics />;
       case 4:
@@ -744,21 +813,47 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 5:
         return <LogisticRemarks />;
       case 6:
-        return <OtherAttachments />;
+        return <NextSteps onPublish={handleSubmit(onSubmit)} isLoading={isLoading} />;
       default:
         return null;
     }
   };
 
-  const startDate = getValues('campaignStartDate');
-  const campaignStartDate = watch('campaignStartDate');
-
+  // Check if current step has required fields filled
   const isStepValid = () => {
-    if (activeStep === 2) {
-      return values.campaignImages && values.campaignImages.length > 0;
+    switch (activeStep) {
+      case 0: // General
+        return (
+          values.campaignTitle &&
+          values.campaignDescription &&
+          values.campaignIndustries?.length > 0 &&
+          values.campaignCredits &&
+          values.campaignStartDate &&
+          values.campaignEndDate &&
+          values.campaignImages?.length > 0
+        );
+      case 1: // Objective
+        return values.campaignObjectives?.length > 0;
+      case 2: // Audience
+        return (
+          values.audienceAge?.length > 0 &&
+          values.audienceGender?.length > 0 &&
+          values.audienceLanguage?.length > 0 &&
+          values.audienceCreatorPersona?.length > 0
+        );
+      case 3: // Logistics - optional
+      case 4: // Reservation Slots - optional (shown only for RESERVATION)
+      case 5: // Logistic Remarks - optional
+        return true;
+      case 6: // Next Steps (Publish) - all required fields already validated
+        return true;
+      default:
+        return true;
     }
-    return isValid;
   };
+
+  // Get the current visual indicator index for rendering
+  const currentIndicatorIndex = getIndicatorIndex(activeStep);
 
   return (
     <Box>
@@ -766,40 +861,87 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <IconButton
             sx={{
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
               border: 1,
-              pb: 1.3,
               borderRadius: 1,
+              height: '100%',
+              boxShadow: '0px -1.5px 0px 0px #E7E7E7 inset',
               borderColor: '#E7E7E7',
+              height: 45,
+              width: 45,
+              padding: 1,
             }}
-            color="default"
-            variant="outlined"
+            size='large'
             disabled={isLoading || isConfirming}
             onClick={onClose}
           >
-            <Iconify icon="ic:round-close" />
+            <Iconify icon="material-symbols:close" width={20} color={'#231F20'} />
           </IconButton>
 
+          {/* Step Indicator - Clickable navigation */}
           <Box
             sx={{
               position: 'absolute',
-              top: smDown,
               left: '50%',
-              bgcolor: 'wheat',
               transform: 'translateX(-50%)',
+              width: '100%',
+              maxWidth: { xs: '95%', sm: 600 },
+              display: { xs: 'none', sm: 'flex' },
+              justifyContent: 'center',
+              alignItems: 'center',
             }}
           >
-            <LinearProgress
-              variant="determinate"
-              value={Math.floor(((activeStep + 1) / steps.length) * 100)}
-              sx={{
-                width: 150,
-                bgcolor: '#E7E7E7',
-                '& .MuiLinearProgress-bar': {
-                  backgroundColor: '#1340FF',
-                },
-              }}
-            />
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="center"
+              sx={{ width: '100%' }}
+            >
+              {stepLabels.map((label, index) => (
+                <React.Fragment key={label}>
+                  {/* Step Box */}
+                  <Box
+                    onClick={() => handleStepClick(index)}
+                    sx={{
+                      minWidth: 133,
+                      height: 45,
+                      py: 1.2,
+                      textAlign: 'center',
+                      borderRadius: 1,
+                      fontSize: 14,
+                      fontWeight: 400,
+                      bgcolor: currentIndicatorIndex === index ? '#1340FF' : currentIndicatorIndex > index ? '#1340FF' : '#fff',
+                      color: currentIndicatorIndex === index ? '#fff' : currentIndicatorIndex > index ? '#fff' : '#636366',
+                      border: '1px solid #636366',
+                      borderColor: currentIndicatorIndex >= index ? '#1340FF' : '#636366',
+                      cursor: index <= currentIndicatorIndex ? 'pointer' : 'default',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        opacity: index <= currentIndicatorIndex ? 0.85 : 1,
+                      },
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Box component="span">{label}</Box>
+                  </Box>
+
+                  {/* Connector Line (except after last step) */}
+                  {index < stepLabels.length - 1 && (
+                    <Box
+                      sx={{
+                        height: 1.2,
+                        flexGrow: 1,
+                        minWidth: 50,
+                        maxWidth: 80,
+                        bgcolor: currentIndicatorIndex > index ? '#1340FF' : '#636366',
+                      }}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
+            </Stack>
           </Box>
 
           {/* Navigation buttons - Hidden on mobile */}
@@ -817,6 +959,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               onClick={handleBack}
               sx={{
                 mr: 1,
+                height: 45,
                 bgcolor: 'white',
                 border: '1px solid #E7E7E7',
                 color: '#3A3A3C',
@@ -825,7 +968,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                   border: '1px solid #E7E7E7',
                 },
                 fontWeight: 600,
-                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.05) inset',
+                boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
               }}
             >
               Back
@@ -838,13 +981,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                 <Button
                   variant="contained"
                   onClick={handleConfirmCampaign}
-                  disabled={isConfirming || isLoading}
+                  disabled={isConfirming || isLoading || !isStepValid()}
                   sx={{
                     bgcolor: '#1340FF',
                     '&:hover': {
                       bgcolor: '#0030e0',
                     },
-                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                    boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
                     fontWeight: 600,
                   }}
                 >
@@ -859,13 +1002,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               <Button
                 variant="contained"
                 onClick={handleNext}
-                disabled={!isStepValid() || !isValid || isLoading || isConfirming}
+                disabled={!isStepValid() || isLoading || isConfirming}
                 sx={{
                   bgcolor: '#3A3A3C',
                   '&:hover': {
                     bgcolor: '#47474a',
                   },
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
                   fontWeight: 600,
                 }}
               >
@@ -898,7 +1041,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           >
             <Stack alignItems="center" spacing={2}>
               <Avatar
-                sx={{ bgcolor: steps[activeStep].color, width: 60, height: 60, fontSize: 35 }}
+                sx={{ bgcolor: steps[activeStep].color, width: 70, height: 70, fontSize: 35 }}
               >
                 {steps[activeStep].logo}
               </Avatar>
@@ -913,7 +1056,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               </Typography>
             </Stack>
 
-            <Box my={5} overflow="auto" minHeight={400}>
+            <Box overflow="auto" minHeight={400}>
               {getStepContent(activeStep)}
             </Box>
           </Box>
@@ -959,7 +1102,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               <Button
                 variant="contained"
                 onClick={handleConfirmCampaign}
-                disabled={isConfirming || isLoading}
+                disabled={isConfirming || isLoading || !isStepValid()}
                 fullWidth
                 sx={{
                   bgcolor: '#1340FF',
@@ -980,7 +1123,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               <Button
                 variant="contained"
                 onClick={handleNext}
-                disabled={!isStepValid() || !isValid || isLoading || isConfirming}
+                disabled={!isStepValid() || isLoading || isConfirming}
                 fullWidth
                 sx={{
                   bgcolor: '#3A3A3C',
