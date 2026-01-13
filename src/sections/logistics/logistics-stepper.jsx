@@ -1,20 +1,21 @@
-import PropTypes from 'prop-types';
-import { format } from 'date-fns';
-import { fDate } from 'src/utils/format-time';
 import { useMemo } from 'react';
+import { format } from 'date-fns';
+import PropTypes from 'prop-types';
 
 import {
   Box,
   Step,
+  Badge,
+  styled,
   Stepper,
   StepLabel,
-  StepConnector,
   Typography,
   StepContent,
-  styled,
+  StepConnector,
   stepConnectorClasses,
-  Badge,
 } from '@mui/material';
+
+import { fDate } from 'src/utils/format-time';
 
 import Iconify from 'src/components/iconify';
 

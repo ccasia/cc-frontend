@@ -1,11 +1,11 @@
+import { format } from 'date-fns';
 import PropTypes from 'prop-types';
-import { format, isSameDay } from 'date-fns';
 
 import { Box, Link, List, Stack, Avatar, Divider, ListItem, Typography } from '@mui/material';
 
-import Scrollbar from 'src/components/scrollbar';
-import Iconify from 'src/components/iconify';
 import { formatReservationSlot } from 'src/utils/reservation-time';
+
+import Iconify from 'src/components/iconify';
 
 const getStatusConfig = (currentStatus, isReservation) => {
   switch (currentStatus) {

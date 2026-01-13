@@ -1,33 +1,35 @@
-import PropTypes from 'prop-types';
-import * as Yup from 'yup';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
+import * as Yup from 'yup';
+import PropTypes from 'prop-types';
+import { useMemo, useState, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, useFieldArray } from 'react-hook-form';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
   Dialog,
   Button,
-  Collapse,
   Divider,
+  Collapse,
+  MenuItem,
   IconButton,
   Typography,
   DialogTitle,
   DialogContent,
   DialogActions,
-  MenuItem,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
+
+import axiosInstance, { fetcher } from 'src/utils/axios';
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
 import { useAuthContext } from 'src/auth/hooks';
-import Iconify from 'src/components/iconify';
-import FormProvider, { RHFTextField, RHFSelect } from 'src/components/hook-form';
-import axiosInstance, { fetcher } from 'src/utils/axios';
-import { useSnackbar } from 'src/components/snackbar';
 
-import { formatReservationSlot } from 'src/utils/reservation-time';
+import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
+import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
+
 import CreatorCalendarPicker from './creator-calendar-picker';
 
 export default function CreatorReservationDialog({ open, onClose, campaign, onUpdate }) {

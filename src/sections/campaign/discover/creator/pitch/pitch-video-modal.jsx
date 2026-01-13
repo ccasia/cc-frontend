@@ -15,12 +15,11 @@ import {
   Stack,
   Button,
   Dialog,
-  Divider,
+  Typography,
   DialogTitle,
   ListItemText,
   DialogActions,
   DialogContent,
-  Typography,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';

@@ -37,12 +37,12 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
+import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
 import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
+import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
+import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
 // Import steps from campaign creation
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
-import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
-import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
-import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
 
 import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components

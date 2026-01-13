@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -27,6 +27,92 @@ import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
 import MobileCreatorSubmissions from './submissions/v4/mobile/mobile-creator-submissions';
 
 // ----------------------------------------------------------------------
+
+function ScrollingName({ name }) {
+  const containerRef = useRef(null);
+  const textRef = useRef(null);
+  const [shouldScroll, setShouldScroll] = useState(false);
+  const [scrollDistance, setScrollDistance] = useState(0);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (containerRef.current && textRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const textWidth = textRef.current.scrollWidth;
+        const needsScroll = textWidth > containerWidth;
+        setShouldScroll(needsScroll);
+        if (needsScroll) {
+          setScrollDistance(textWidth - containerWidth);
+        } else {
+          setScrollDistance(0);
+        }
+      }
+    };
+
+    // Use a small delay to ensure layout is complete
+    const timeoutId = setTimeout(checkOverflow, 0);
+    window.addEventListener('resize', checkOverflow);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', checkOverflow);
+    };
+  }, [name]);
+
+  // Create keyframes dynamically - using a unique name based on distance
+  // We'll use inline styles for the animation since keyframes can't be dynamic
+  const animationName = `scroll-${scrollDistance}`;
+
+  return (
+    <>
+      {shouldScroll && scrollDistance > 0 && (
+        <style>
+          {`
+            @keyframes ${animationName} {
+              0%, 25% {
+                transform: translateX(0);
+              }
+              50%, 75% {
+                transform: translateX(-${scrollDistance}px);
+              }
+              100% {
+                transform: translateX(0);
+              }
+            }
+          `}
+        </style>
+      )}
+      <Box
+        ref={containerRef}
+        sx={{
+          width: '100%',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        <Tooltip title={name} arrow>
+          <Typography
+            ref={textRef}
+            variant="subtitle1"
+            sx={{
+              fontSize: { xs: '0.9rem', sm: '1rem' },
+              whiteSpace: 'nowrap',
+              display: 'inline-block',
+              ...(shouldScroll && scrollDistance > 0 && {
+                animation: `${animationName} 8s ease-in-out infinite`,
+              }),
+            }}
+          >
+            {name}
+          </Typography>
+        </Tooltip>
+      </Box>
+    </>
+  );
+}
+
+ScrollingName.propTypes = {
+  name: PropTypes.string.isRequired,
+};
 
 function CreatorAccordionWithSubmissions({ creator, campaign }) {
   // Get V4 submissions for this creator to check if they have any
@@ -626,20 +712,8 @@ function CreatorAccordion({ creator, campaign }) {
           >
             {creator.user?.name?.charAt(0).toUpperCase()}
           </Avatar>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Tooltip title={creator.user?.name || 'Unknown Creator'} arrow>
-              <Typography 
-                variant="subtitle1" 
-                noWrap
-                sx={{ 
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden',
-                  fontSize: { xs: '0.9rem', sm: '1rem' }
-                }}
-              >
-                {creator.user?.name || 'Unknown Creator'}
-              </Typography>
-            </Tooltip>
+          <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden', position: 'relative' }}>
+            <ScrollingName name={creator.user?.name || 'Unknown Creator'} />
           </Box>
         </Box>
 

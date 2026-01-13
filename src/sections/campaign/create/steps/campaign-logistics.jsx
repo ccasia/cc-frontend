@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import { useFormContext, useFieldArray } from 'react-hook-form';
+import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import {
   Box,
@@ -9,15 +9,12 @@ import {
   MenuItem,
   TextField,
   FormLabel,
-  RadioGroup,
   Typography,
   IconButton,
-  FormControl,
-  FormControlLabel,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
-import { RHFSelect, RHFTextField, RHFRadioGroup } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
 const CampaignLogistics = () => {
   const { watch, setValue, control, getValues } = useFormContext();

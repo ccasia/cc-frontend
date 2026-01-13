@@ -1,30 +1,29 @@
-import PropTypes from 'prop-types';
 import useSWR from 'swr';
-import { useState, useMemo } from 'react';
-import { useSnackbar } from 'src/components/snackbar';
+import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 
 import {
   Box,
   Card,
   Stack,
   Table,
-  TableBody,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableCell,
   Popover,
+  TableRow,
   MenuItem,
-  Typography,
+  TableBody,
+  TableHead,
+  TableCell,
+  TableContainer,
   CircularProgress,
 } from '@mui/material';
 
 import axiosInstance, { fetcher } from 'src/utils/axios';
-import Iconify from 'src/components/iconify';
-import { LoadingScreen } from 'src/components/loading-screen';
-import EmptyContent from 'src/components/empty-content';
 
-import LogisticsDrawer from './logistics-drawer';
+import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
+import EmptyContent from 'src/components/empty-content';
+import { LoadingScreen } from 'src/components/loading-screen';
+
 import LogisticsTableRow from './logistics-table-row';
 import ConfirmStatusChangeDialog from './dialogs/confirm-status-change-dialog';
 

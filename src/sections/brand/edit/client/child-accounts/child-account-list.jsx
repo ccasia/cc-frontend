@@ -1,37 +1,37 @@
-import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import {
   Box,
   Card,
+  Chip,
+  Menu,
   Table,
+  Stack,
   Button,
+  Dialog,
   TableRow,
+  MenuItem,
   TableBody,
   TableCell,
   TableHead,
-  Stack,
+  TextField,
   Typography,
   IconButton,
-  Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  Chip,
-  Menu,
-  MenuItem,
   CircularProgress,
 } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+
+import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import EmptyContent from 'src/components/empty-content/empty-content';
-
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
 const ChildAccountList = ({ companyId, company }) => {
   const [childAccounts, setChildAccounts] = useState([]);
@@ -216,23 +216,30 @@ const ChildAccountList = ({ companyId, company }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {!clientId ? (
+              {/* No client associated */}
+              {!clientId && (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
-                    <EmptyContent 
-                      title="No Client Associated" 
+                    <EmptyContent
+                      title="No Client Associated"
                       description="This company does not have an associated client record. Child accounts can only be managed for companies with active client accounts."
-                      filled 
+                      filled
                     />
                   </TableCell>
                 </TableRow>
-              ) : childAccounts.length === 0 ? (
+              )}
+
+              {/* No child accounts */}
+              {clientId && childAccounts.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
                     <EmptyContent title="No child accounts" filled />
                   </TableCell>
                 </TableRow>
-              ) : (
+              )}
+
+              {/* Child accounts list */}
+              {clientId && childAccounts.length > 0 && (
                 childAccounts.map((account) => (
                   <TableRow key={account.id}>
                     <TableCell>

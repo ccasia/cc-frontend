@@ -7,9 +7,9 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 
-import Iconify from 'src/components/iconify';
-
 import { formatReservationSlot } from 'src/utils/reservation-time';
+
+import Iconify from 'src/components/iconify';
 
 export default function LogisticsTableRow({ row, onClick, onEditStatus, isReservation }) {
   const { creator, status, deliveryDetails, reservationDetails } = row;
@@ -111,8 +111,7 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
   };
 
   return (
-    <>
-      <TableRow hover onClick={onClick} sx={{ cursor: 'pointer' }}>
+    <TableRow hover onClick={onClick} sx={{ cursor: 'pointer' }}>
         {/* Column 1: Name */}
         <TableCell sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
           <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ mr: 2 }} />
@@ -166,7 +165,6 @@ export default function LogisticsTableRow({ row, onClick, onEditStatus, isReserv
           </Box>
         </TableCell>
       </TableRow>
-    </>
   );
 }
 

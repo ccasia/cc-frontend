@@ -1,15 +1,13 @@
 import PropTypes from 'prop-types';
-import { useEffect } from 'react';
 
 import {
   Box,
   Modal,
   Button,
   Avatar,
+  useTheme,
   Typography,
   IconButton,
-  Stack,
-  useTheme,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';

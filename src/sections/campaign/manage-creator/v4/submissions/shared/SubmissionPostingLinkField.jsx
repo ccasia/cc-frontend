@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Box, Typography, TextField } from '@mui/material';
+
+import { TextField, Typography } from '@mui/material';
 
 /**
  * Shared posting link field component for submissions that require posting links

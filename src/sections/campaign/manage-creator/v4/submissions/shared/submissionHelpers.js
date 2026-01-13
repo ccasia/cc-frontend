@@ -5,7 +5,7 @@
  * @returns {Object} Status flags
  */
 export const getSubmissionStatusFlags = (submission, campaign = null) => {
-  const status = submission.status;
+  const {status} = submission;
   const campaignType = campaign?.campaignType || submission.campaign?.campaignType;
 
   // Basic status flags
@@ -84,7 +84,7 @@ export const getButtonStates = ({
   isPostingLinkRejected,
   hasCaption = false,
 }) => {
-  const status = submission.status;
+  const {status} = submission;
 
   // Determine if disabled - improved logic to prevent re-submission during upload/review
   const isDisabled =

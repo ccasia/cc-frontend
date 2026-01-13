@@ -1,15 +1,11 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
+
 import {
   Box,
-  Typography,
   TextField,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText
+  Typography
 } from '@mui/material';
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 const LogisticRemarks = () => {
   const { register } = useFormContext();

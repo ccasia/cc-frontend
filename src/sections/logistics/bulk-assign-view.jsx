@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
-import { useSnackbar } from 'src/components/snackbar';
+import { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -9,21 +8,23 @@ import {
   Stack,
   Button,
   Dialog,
-  DialogTitle,
-  DialogActions,
-  DialogContent,
   Avatar,
+  Select,
   Checkbox,
+  MenuItem,
   TextField,
   Typography,
   IconButton,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
   InputAdornment,
-  MenuItem,
-  Select,
 } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
 import axiosInstance, { fetcher } from 'src/utils/axios';
+
+import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
 
 import EditQuantityDialog from './dialogs/edit-quantity-dialog';
 import DeleteProductDialog from './dialogs/delete-product-dialog';
@@ -124,7 +125,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
   };
 
   const handleQuantityChange = (e) => {
-    const value = e.target.value;
+    const {value} = e.target;
     if (value === '' || /^\d+$/.test(value)) {
       setTempQuantity(value);
     }
@@ -192,7 +193,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
   };
 
   const handleCreatorQuantityChange = (e) => {
-    const value = e.target.value;
+    const {value} = e.target;
     if (value === '' || /^\d+$/.test(value)) {
       setTempCreatorQuantity(value);
     }

@@ -1,24 +1,25 @@
 import useSWR from 'swr';
 import PropTypes from 'prop-types';
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   format,
+  parseISO,
+  getHours,
   addMonths,
   subMonths,
   isSameDay,
-  parseISO,
-  startOfMonth,
+  endOfWeek,
   endOfMonth,
   startOfWeek,
-  endOfWeek,
+  startOfMonth,
   eachDayOfInterval,
-  getHours,
 } from 'date-fns';
 
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Grid,
+  Chip,
   Stack,
   Avatar,
   Dialog,
@@ -27,14 +28,13 @@ import {
   Typography,
   IconButton,
   CircularProgress,
-  Chip,
 } from '@mui/material';
 
 import axiosInstance, { fetcher } from 'src/utils/axios';
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import { formatReservationSlot } from 'src/utils/reservation-time';
 
 export default function ScheduleReservationDialog({
   open,

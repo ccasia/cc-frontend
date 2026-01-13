@@ -1,8 +1,8 @@
-import Chart from 'react-apexcharts';
 import PropTypes from 'prop-types';
-import { useTheme } from '@mui/material/styles';
+import Chart from 'react-apexcharts';
 
-import { Box, Card, alpha, Stack, Divider, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { Box, Card, Stack, Divider, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
