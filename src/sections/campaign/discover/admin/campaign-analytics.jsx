@@ -267,6 +267,10 @@ const RenderEngagementCard = ({
     filteredSubmissions
   );
   const { data: topCreator } = useGetCreatorById(topPerformer?.submission?.user);
+  // For manual entries, use the creator name directly; for API entries, use the creator from the hook
+  const creatorName = topPerformer?.manualEntry
+    ? topPerformer.manualEntry.creatorName
+    : topCreator?.user?.name || 'Unknown';
   const percentage = topPerformer && value > 0 ? Math.round((topPerformer.value / value) * 100) : 0;
 
   return (
@@ -335,7 +339,7 @@ const RenderEngagementCard = ({
                   display: 'block',
                 }}
               >
-                {topCreator?.user?.name || 'Unknown'}
+                {creatorName}
               </Typography>
             </Box>
           )}
@@ -1932,15 +1936,23 @@ const CampaignAnalytics = ({ campaign }) => {
     };
   }, [filteredSubmissions, currentPage, itemsPerPage]);
 
-  // Get platform counts for beam display
+  // Get platform counts for beam display (includes both API submissions and manual entries)
   const platformCounts = useMemo(() => {
     const counts = { Instagram: 0, TikTok: 0 };
+    // Count from API submissions
     postingSubmissions.forEach((sub) => {
       if (sub && sub.platform === 'Instagram') counts.Instagram += 1;
       if (sub && sub.platform === 'TikTok') counts.TikTok += 1;
     });
+    // Count from manual entries
+    if (manualEntries && manualEntries.length > 0) {
+      manualEntries.forEach((entry) => {
+        if (entry.platform === 'Instagram') counts.Instagram += 1;
+        if (entry.platform === 'TikTok') counts.TikTok += 1;
+      });
+    }
     return counts;
-  }, [postingSubmissions]);
+  }, [postingSubmissions, manualEntries]);
 
   // Fetch insights for posting submissions (always fetch all, filter for display)
   const {
@@ -1967,10 +1979,21 @@ const CampaignAnalytics = ({ campaign }) => {
     });
   }, [insightsData, selectedPlatform, postingSubmissions]);
 
+  // Filter manual entries based on selected platform
+  const filteredManualEntries = useMemo(() => {
+    if (!manualEntries || manualEntries.length === 0) {
+      return [];
+    }
+    if (selectedPlatform === 'ALL') {
+      return manualEntries;
+    }
+    return manualEntries.filter((entry) => entry.platform === selectedPlatform);
+  }, [manualEntries, selectedPlatform]);
+
   // Calculate summary statistics based on filtered data or provide empty state
   const summaryStats = useMemo(() => {
-    if (filteredInsightsData.length === 0) {
-      // Return placeholder data when no insights are available
+    // If we have no insights and no manual entries, return placeholder
+    if (filteredInsightsData.length === 0 && filteredManualEntries.length === 0) {
       return {
         totalViews: 0,
         totalLikes: 0,
@@ -1982,8 +2005,9 @@ const CampaignAnalytics = ({ campaign }) => {
         avgEngagementRate: 0,
       };
     }
-    return calculateSummaryStats(filteredInsightsData);
-  }, [filteredInsightsData]);
+    // Calculate stats including both insights and manual entries
+    return calculateSummaryStats(filteredInsightsData, filteredManualEntries);
+  }, [filteredInsightsData, filteredManualEntries]);
 
   const handleNextPage = () => {
     setCurrentPage((prev) => prev + 1);
@@ -2170,25 +2194,52 @@ const CampaignAnalytics = ({ campaign }) => {
 
   // Add this new function before CoreMetricsSection
   const findTopPerformerByMetric = (metricKey, insights, submissionsList) => {
-    if (!insights || insights.length === 0) return null;
-
     let topPerformer = null;
     let highestValue = 0;
 
-    insights.forEach((insightData) => {
-      const submission = submissionsList.find((sub) => sub.id === insightData.submissionId);
-      if (submission) {
-        const value = getMetricValue(insightData.insight, metricKey);
+    // Check API insights
+    if (insights && insights.length > 0) {
+      insights.forEach((insightData) => {
+        const submission = submissionsList.find((sub) => sub.id === insightData.submissionId);
+        if (submission) {
+          const value = getMetricValue(insightData.insight, metricKey);
+          if (value > highestValue) {
+            highestValue = value;
+            topPerformer = {
+              submission,
+              value,
+              insightData,
+            };
+          }
+        }
+      });
+    }
+
+    // Check manual entries
+    if (filteredManualEntries && filteredManualEntries.length > 0) {
+      filteredManualEntries.forEach((entry) => {
+        let value = 0;
+        // Map metric keys to manual entry fields
+        if (metricKey === 'views') value = entry.views || 0;
+        else if (metricKey === 'likes') value = entry.likes || 0;
+        else if (metricKey === 'shares') value = entry.shares || 0;
+        else if (metricKey === 'saved') value = entry.saved || 0;
+
         if (value > highestValue) {
           highestValue = value;
           topPerformer = {
-            submission,
+            submission: null, // Manual entries don't have submissions
             value,
-            insightData,
+            insightData: null,
+            manualEntry: {
+              creatorName: entry.creatorName,
+              creatorUsername: entry.creatorUsername,
+              platform: entry.platform,
+            },
           };
         }
-      }
-    });
+      });
+    }
 
     return topPerformer;
   };
