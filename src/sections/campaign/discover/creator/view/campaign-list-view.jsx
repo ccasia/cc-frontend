@@ -126,7 +126,7 @@ export default function CampaignListView() {
   const targetUserIds = useMemo(() => [
     'cmeuvjc6b003on401rn4pw62b',
     'cmf813vtd0000pd3psk46u4lt',
-    'cmf8289xu000cpdmcj4a4fosl',
+    'cmipdmkvd0005k43fnfgxrb4t',
     'user456',
     'user-id-5',
     'user-id-6',
