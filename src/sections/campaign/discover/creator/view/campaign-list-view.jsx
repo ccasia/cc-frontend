@@ -25,6 +25,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fetcher } from 'src/utils/axios';
+import { shouldShowMediaKitPopup } from 'src/utils/media-kit-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -34,12 +35,10 @@ import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
-import { shouldShowMediaKitPopup } from 'src/utils/media-kit-utils';
-
 import CreatorForm from 'src/sections/creator/form/creatorForm';
 
-import MediaKitPopup from '../media-kit-popup';
 import CampaignLists from '../campaign-list';
+import MediaKitPopup from '../media-kit-popup';
 
 // ----------------------------------------------------------------------
 

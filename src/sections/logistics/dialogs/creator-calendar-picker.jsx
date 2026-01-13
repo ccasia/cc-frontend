@@ -1,15 +1,15 @@
-import PropTypes from 'prop-types';
-import { useState, useMemo } from 'react';
 import useSWR from 'swr';
+import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 import {
   format,
   addMonths,
   subMonths,
   isSameDay,
-  startOfMonth,
+  endOfWeek,
   endOfMonth,
   startOfWeek,
-  endOfWeek,
+  startOfMonth,
   eachDayOfInterval,
 } from 'date-fns';
 
@@ -17,15 +17,16 @@ import {
   Box,
   Stack,
   Button,
+  Divider,
   Typography,
   IconButton,
   CircularProgress,
-  Divider,
 } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
 import { fetcher } from 'src/utils/axios';
 import { formatReservationSlot } from 'src/utils/reservation-time';
+
+import Iconify from 'src/components/iconify';
 
 export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCancel }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());

@@ -2,12 +2,12 @@ import { Navigate, useRoutes } from 'react-router-dom';
 
 import { PATH_AFTER_LOGIN } from 'src/config-global';
 import Agreement from "src/pages/dashboard/template/view"
+import ChildAccountSetup from 'src/pages/auth/child-account-setup';
 
 import Verify from 'src/sections/creator/verify';
 import VerfiyXero from 'src/sections/finance/verfiyXero';
 import CreatorFormView from 'src/sections/creator/form/creatorForm';
 import VerifyConfirmation from 'src/sections/creator/verifyConfirmation';
-import ChildAccountSetup from 'src/pages/auth/child-account-setup';
 
 import { mainRoutes } from './main';
 import { authRoutes } from './auth';

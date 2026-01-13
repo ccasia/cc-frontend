@@ -1,30 +1,30 @@
-import PropTypes from 'prop-types';
-import * as Yup from 'yup';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { useEffect, useMemo } from 'react';
 import useSWR from 'swr';
+import * as Yup from 'yup';
+import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
+import { useMemo, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
 
+import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
+  Stack,
   Dialog,
-  Button,
+  Avatar,
   Divider,
+  MenuItem,
+  Typography,
+  IconButton,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Typography,
-  Stack,
-  IconButton,
-  Avatar,
-  MenuItem,
 } from '@mui/material';
-import LoadingButton from '@mui/lab/LoadingButton';
+
+import axiosInstance, { fetcher } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import axiosInstance, { fetcher } from 'src/utils/axios';
-import FormProvider, { RHFTextField, RHFSelect } from 'src/components/hook-form';
 import { useSnackbar } from 'src/components/snackbar';
+import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
 export default function ConfirmReservationDetailsDialog({
   open,

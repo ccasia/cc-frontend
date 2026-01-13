@@ -46,12 +46,12 @@ import API from './api';
 import UploadPhoto from './dropzone';
 import AccountSecurity from './security';
 import ClientProfile from './client-profile';
+import ChildAccounts from './child-accounts';
 import { Billing } from '../creator/profile/billing';
 import Preference from '../creator/profile/preferences';
 import AccountSocialLinks from '../creator/profile/social';
 import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
-import ChildAccounts from './child-accounts';
 
 // import x from '../creator/profile/notification';
 

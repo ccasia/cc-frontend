@@ -308,25 +308,14 @@ export const TopCreatorsLineChart = ({ campaignId, platform = 'All', days = 7 })
       <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Box>
           <Typography
-            variant="h6"
             sx={{
               fontFamily: 'Aileron',
               fontWeight: 600,
-              fontSize: 18,
+              fontSize: 24,
               color: '#000',
-              mb: 1,
             }}
           >
             Top 5 Creators in Views
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: '#636366',
-              fontSize: 14,
-            }}
-          >
-            Last {days} days ({platform})
           </Typography>
         </Box>
         

@@ -7,14 +7,14 @@ import { useReactToPrint } from 'react-to-print';
 import { Page, pdfjs, Document } from 'react-pdf';
 import React, { useRef, useState, useEffect } from 'react';
 
-import { formatCurrencyAmount } from 'src/utils/currency';
-
 import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+
+import { formatCurrencyAmount } from 'src/utils/currency';
 
 import { useGetCreatorInvoice } from 'src/api/invoices';
 

@@ -50,6 +50,23 @@ export const formatNumber = (num) => {
   return num.toLocaleString();
 };
 
+// Format number with commas for input fields (e.g., 2000 -> "2,000")
+export const formatNumberWithCommas = (num) => {
+  if (num === null || num === undefined || num === '') return '';
+  const numStr = String(num).replace(/,/g, '');
+  const numValue = Number(numStr);
+  if (Number.isNaN(numValue)) return '';
+  return numValue.toLocaleString('en-US');
+};
+
+// Parse formatted number string back to number (e.g., "2,000" -> 2000)
+export const parseFormattedNumber = (str) => {
+  if (str === '' || str === null || str === undefined) return '';
+  // Remove all commas and non-numeric characters except decimal point
+  const cleaned = String(str).replace(/[^\d.]/g, '');
+  return cleaned;
+};
+
 export const calculateEngagementRate = (insight) => {
   const views = getMetricValue(insight, 'views');
   const likes = getMetricValue(insight, 'likes');

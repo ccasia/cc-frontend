@@ -16,7 +16,6 @@ import CampaignLogisticsView from 'src/sections/logistics/creator-logistics-view
 
 import CampaignInfo from './campaign-info';
 import CampaignMyTasks from './campaign-myTask';
-import CampaignLogistics from './campaign-logistics';
 import CampaignV4Activity from './v4/campaign-v4-activity';
 
 const CampaignDetailItem = ({ campaign }) => {

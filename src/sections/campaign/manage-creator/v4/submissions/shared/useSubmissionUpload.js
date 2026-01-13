@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import { useState, useCallback } from 'react';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 /**
