@@ -22,6 +22,11 @@ export default function UploadSingle({
   error,
   helperText,
   sx,
+  height = 225,
+  iconSize = 26,
+  iconBox = 40,
+  placeholderPrimaryTypographyProps,
+  placeholderSecondaryTypographyProps,
   ...other
 }) {
   const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections, open } =
@@ -58,7 +63,7 @@ export default function UploadSingle({
           opacity: 0.4,
         },
         width: '100%',
-        height: 225,
+        height: height,
         borderRadius: 2,
         ...(isDragActive && {
           opacity: 0.3,
@@ -76,13 +81,13 @@ export default function UploadSingle({
     >
       <input {...getInputProps()} />
 
-      <Stack alignItems="center" spacing={2}>
+      <Stack alignItems="center" spacing={1} px={2}>
         <Box
           sx={{
             bgcolor: '#203ff5',
             borderRadius: '50%',
-            width: 40,
-            height: 40,
+            width: iconBox,
+            height: iconBox,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -90,7 +95,7 @@ export default function UploadSingle({
         >
           <Iconify
             icon="fluent:add-24-filled"
-            width={26}
+            width={iconSize}
             sx={{
               color: '#fff',
             }}
@@ -102,12 +107,13 @@ export default function UploadSingle({
           secondary="Acceptable files: JPG, PNG | Max file size: 10MB"
           primaryTypographyProps={{
             textAlign: 'center',
-            variant: 'h5',
+            ...placeholderPrimaryTypographyProps,
           }}
           secondaryTypographyProps={{
             textAlign: 'center',
             variant: 'body1',
             color: '#8E8E93',
+            ...placeholderSecondaryTypographyProps,
           }}
         />
       </Stack>
@@ -119,7 +125,7 @@ export default function UploadSingle({
       sx={{
         position: 'relative',
         width: '100%',
-        maxHeight: 225,
+        height: height,
         borderRadius: 2,
         overflow: 'hidden',
         display: 'flex',
@@ -194,4 +200,6 @@ UploadSingle.propTypes = {
   onDelete: PropTypes.func,
   onDrop: PropTypes.func,
   sx: PropTypes.object,
+  placeholderPrimaryTypographyProps: PropTypes.object,
+  placeholderSecondaryTypographyProps: PropTypes.object,
 };
