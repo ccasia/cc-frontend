@@ -34,6 +34,7 @@ export default function Upload({
   onRemove,
   onRemoveAll,
   sx,
+  height = 250,
   ...other
 }) {
   const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections, open } =
@@ -69,7 +70,7 @@ export default function Upload({
         '&:hover': {
           opacity: 0.4,
         },
-        minHeight: 250,
+        height: height,
         borderRadius: 2,
         ...(isDragActive && {
           opacity: 0.3,
@@ -139,7 +140,7 @@ export default function Upload({
         ) : Object.keys(other.accept)[0].includes('application/pdf') ? (
           <ListItemText
             primary="Choose a file or drag and drop here"
-            secondary="Acceptable files: PDF"
+            secondary="Acceptable files: PDF, JPEG, PNG"
             primaryTypographyProps={{
               textAlign: 'center',
               variant: 'h5',
