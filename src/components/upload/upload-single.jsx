@@ -63,7 +63,7 @@ export default function UploadSingle({
           opacity: 0.4,
         },
         width: '100%',
-        height: height,
+        height,
         borderRadius: 2,
         ...(isDragActive && {
           opacity: 0.3,
@@ -125,7 +125,7 @@ export default function UploadSingle({
       sx={{
         position: 'relative',
         width: '100%',
-        height: height,
+        height,
         borderRadius: 2,
         overflow: 'hidden',
         display: 'flex',
@@ -200,6 +200,9 @@ UploadSingle.propTypes = {
   onDelete: PropTypes.func,
   onDrop: PropTypes.func,
   sx: PropTypes.object,
+  height: PropTypes.object,
+  iconSize: PropTypes.object,
+  iconBox: PropTypes.object,
   placeholderPrimaryTypographyProps: PropTypes.object,
   placeholderSecondaryTypographyProps: PropTypes.object,
 };
