@@ -3,13 +3,13 @@
 import * as Yup from 'yup';
 import { pdfjs } from 'react-pdf';
 import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { enqueueSnackbar } from 'notistack';
 import { mutate as globalMutate } from 'swr';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm, useFieldArray } from 'react-hook-form';
 import React, { lazy, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -24,8 +24,8 @@ import {
   Divider,
   IconButton,
   Typography,
-  ListItemText,
   DialogTitle,
+  ListItemText,
   DialogContent,
   DialogActions,
   LinearProgress,
@@ -39,7 +39,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import { NextStepsIcon } from 'src/assets/icons';
 
 import Image from 'src/components/image';
-
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
@@ -54,7 +53,6 @@ import NextSteps from './next-steps';
 import CampaignObjective from './campaign-objective';
 import AdditionalDetails1 from './additional-details-1';
 import AdditionalDetails2 from './additional-details-2';
-import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
@@ -769,8 +767,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         formData.append('otherAttachments', data.otherAttachments[i]);
       }
 
-      // Append brand guidelines PDF if available
-      if (data.brandGuidelines && data.brandGuidelines instanceof File) {
+      // Append brand guidelines files if available (support multiple)
+      if (data.brandGuidelines && Array.isArray(data.brandGuidelines)) {
+        for (let i = 0; i < data.brandGuidelines.length; i += 1) {
+          if (data.brandGuidelines[i] instanceof File || data.brandGuidelines[i].type) {
+            formData.append('brandGuidelines', data.brandGuidelines[i]);
+          }
+        }
+      } else if (data.brandGuidelines && data.brandGuidelines instanceof File) {
         formData.append('brandGuidelines', data.brandGuidelines);
       }
 
