@@ -4,6 +4,7 @@ import { useFormContext } from 'react-hook-form';
 
 import {
   Box,
+  Chip,
   Grid,
   Stack,
   FormLabel,
@@ -113,6 +114,7 @@ const CampaignTargetAudience = () => {
 
   const audienceLocation = watch('audienceLocation') || [];
   const country = watch('country');
+  const countries = watch('countries');
 
   // For Do's and Don'ts - using local state for better control
   const [doItems, setDoItems] = useState([{ id: 1, value: '' }]);
@@ -202,20 +204,19 @@ const CampaignTargetAudience = () => {
               />
             </FormField>
             
-            <FormField label="Audience Country">
+            <FormField label="Audience Countries">
               <RHFAutocomplete
-                name="country"
-                placeholder="Select country"
+                name="countries"
+                placeholder="Select countries"
+                multiple
                 options={Object.keys(countriesCities)}
-                getOptionLabel={(option) => option || ''}
-                value={country ?? null}
+                getOptionLabel={(option) => option}
                 slotProps={{
                   paper: {
                     sx: {
                       '& .MuiAutocomplete-listbox': {
-                        maxHeight: 300, // force scroll
+                        maxHeight: 300,
                         overflowY: 'auto',
-                        /* Scrollbar customization */
                         '&::-webkit-scrollbar': {
                           width: 8,
                         },
@@ -230,7 +231,6 @@ const CampaignTargetAudience = () => {
                         '&::-webkit-scrollbar-thumb:hover': {
                           backgroundColor: '#555',
                         },
-                        /* Firefox */
                         scrollbarWidth: 'thin',
                         scrollbarColor: '#888 #fff00',
                       },
@@ -240,6 +240,7 @@ const CampaignTargetAudience = () => {
                 renderOption={(props, option) => {
                   // eslint-disable-next-line react/prop-types
                   const { key, ...optionProps } = props;
+
                   return (
                     <Box key={key} {...optionProps} sx={{ display: 'flex', gap: 1 }}>
                       <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
@@ -247,10 +248,29 @@ const CampaignTargetAudience = () => {
                     </Box>
                   );
                 }}
+                renderTags={(selected, getTagProps) =>
+                  selected.map((option, index) => (
+                    <Chip
+                      {...getTagProps({ index })}
+                      key={option}
+                      icon={<Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={16} />}
+                      label={option}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        border: 1,
+                        borderColor: '#EBEBEB',
+                        boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                        backgroundColor: '#fff',
+                        py: 1.5,
+                      }}
+                    />
+                  ))
+                }
               />
             </FormField>
 
-            {country?.toLowerCase() === 'malaysia' && (
+            {(countries?.includes('Malaysia') || country?.toLowerCase() === 'malaysia') && (
               <FormField label="Audience City/Area">
                 <RHFMultiSelect
                   name="audienceLocation"

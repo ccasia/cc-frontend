@@ -99,9 +99,11 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     audienceGender: Yup.array()
       .min(1, 'At least one option')
       .required('Audience Gender is required'),
-    country: Yup.string().required('Country is required'),
-    audienceLocation: Yup.array().when('country', {
-      is: 'Malaysia',
+    countries: Yup.array()
+      .min(1, 'At least one country is required')
+      .required('Countries is required'),
+    audienceLocation: Yup.array().when('countries', {
+      is: (countries) => countries && countries.includes('Malaysia'),
       then: (schema) =>
         schema.min(1, 'At least one option').required('Audience location is required'),
       otherwise: (schema) => schema.notRequired(),
@@ -159,9 +161,11 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     audienceGender: Yup.array()
       .min(1, 'At least one option')
       .required('Audience Gender is required'),
-    country: Yup.string().required('Country is required'),
-    audienceLocation: Yup.array().when('country', {
-      is: 'Malaysia',
+    countries: Yup.array()
+      .min(1, 'At least one country is required')
+      .required('Countries is required'),
+    audienceLocation: Yup.array().when('countries', {
+      is: (countries) => countries && countries.includes('Malaysia'),
       then: (schema) =>
         schema.min(1, 'At least one option').required('Audience location is required'),
       otherwise: (schema) => schema.notRequired(),

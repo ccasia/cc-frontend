@@ -215,6 +215,32 @@ const CampaignModalMobile = ({ campaign }) => {
           </Box>
         </Box>
 
+        {/* Countries row */}
+        {campaign?.campaignRequirement?.countries?.length > 0 && (
+          <Box>
+            <Typography variant="body2" sx={{ color: '#8e8e93', mb: 1, fontWeight: 600 }}>
+              Countries
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {campaign?.campaignRequirement?.countries?.map((countryName, idx) => (
+                <Box
+                  key={idx}
+                  display="inline-flex"
+                  gap={1}
+                  sx={{ ...ChipStyle, p: 1, px: 1.5 }}
+                  alignItems="center"
+                >
+                  <Iconify
+                    icon={`emojione:flag-for-${countryName.toLowerCase()}`}
+                    width={20}
+                  />
+                  <Typography variant="subtitle2">{countryName}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        )}
+
         {/* Geo Location row */}
         <Box>
           <Typography variant="body2" sx={{ color: '#8e8e93', mb: 1, fontWeight: 600 }}>
