@@ -99,7 +99,7 @@ export default function UploadSingle({
 
         <ListItemText
           primary="Choose a file or drag and drop here"
-          secondary="Acceptable files: JPG, PNG, SVG"
+          secondary="Acceptable files: JPG, PNG | Max file size: 10MB"
           primaryTypographyProps={{
             textAlign: 'center',
             variant: 'h5',
