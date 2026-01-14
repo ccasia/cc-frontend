@@ -465,6 +465,18 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     venueName: '',
     venueAddress: '',
     reservationNotes: '',
+    // Additional Details 1 fields
+    socialMediaPlatform: [],
+    contentFormat: [],
+    postingStartDate: null,
+    postingEndDate: null,
+    mainMessage: '',
+    keyPoints: '',
+    toneAndStyle: '',
+    brandGuidelines: null,
+    referenceContent: '',
+    productImage1: [],
+    productImage2: [],
   };
 
   const methods = useForm({
@@ -720,9 +732,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         clientRemarks: data.clientRemarks || '',
         products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
         availabilityRules: data.availabilityRules || [],
-        locations: data.locations?.filter((l) => l.name?.trim().length > 0) || [],
-        schedulingOption: data.schedulingOption,
-        allowMultipleBookings: data.allowMultipleBookings,
+        // Additional Details 1 fields
+        contentFormat: Array.isArray(data.contentFormat) ? data.contentFormat : [],
+        postingStartDate: data.postingStartDate || null,
+        postingEndDate: data.postingEndDate || null,
+        mainMessage: data.mainMessage || '',
+        keyPoints: data.keyPoints || '',
+        toneAndStyle: data.toneAndStyle || '',
+        referenceContent: data.referenceContent || '',
       };
 
       console.log('Client campaign data:', clientCampaignData);
@@ -743,6 +760,29 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       // eslint-disable-next-line guard-for-in, no-restricted-syntax
       for (const i in data.otherAttachments) {
         formData.append('otherAttachments', data.otherAttachments[i]);
+      }
+
+      // Append brand guidelines PDF if available
+      if (data.brandGuidelines && data.brandGuidelines instanceof File) {
+        formData.append('brandGuidelines', data.brandGuidelines);
+      }
+
+      // Append product image 1 if available
+      if (data.productImage1 && Array.isArray(data.productImage1)) {
+        for (let i = 0; i < data.productImage1.length; i += 1) {
+          if (data.productImage1[i] instanceof File || data.productImage1[i].type) {
+            formData.append('productImage1', data.productImage1[i]);
+          }
+        }
+      }
+
+      // Append product image 2 if available
+      if (data.productImage2 && Array.isArray(data.productImage2)) {
+        for (let i = 0; i < data.productImage2.length; i += 1) {
+          if (data.productImage2[i] instanceof File || data.productImage2[i].type) {
+            formData.append('productImage2', data.productImage2[i]);
+          }
+        }
       }
 
       // Use the client-specific endpoint
