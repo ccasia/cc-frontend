@@ -1,7 +1,8 @@
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
+import { useMemo } from 'react';
 
-import { Box, Link, List, Stack, Avatar, Divider, ListItem, Typography } from '@mui/material';
+import { Box, Grid, Link, List, Stack, Avatar, Divider, ListItem, Typography } from '@mui/material';
 
 import { formatReservationSlot } from 'src/utils/reservation-time';
 
@@ -203,9 +204,33 @@ ScheduledItem.propTypes = {
   onClick: PropTypes.func,
 };
 
-export default function LogisticsScheduledList({ date, logistics, isReservation, onClick }) {
+export default function LogisticsScheduledList({
+  date,
+  logistics,
+  isReservation,
+  onClick,
+  reservationConfig,
+}) {
   const safeLogistics = logistics || [];
   const dateString = format(date, 'yyyy-MM-dd');
+
+  const savedSlots = useMemo(() => {
+    if (!isReservation || !reservationConfig?.availabilityRules) return [];
+
+    const rules = reservationConfig.availabilityRules;
+
+    return rules
+      .filter((rule) => {
+        return rule.dates?.some((d) => {
+          if (!d) return false;
+          const ruleDateString =
+            typeof d === 'string' ? d.split('T')[0] : format(new Date(d), 'yyyy-MM-dd');
+          return ruleDateString === dateString;
+        });
+      })
+      .flatMap((rule) => rule.slots || [])
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }, [isReservation, reservationConfig, dateString]);
 
   const dayLogistics = safeLogistics
     .filter((item) => {
@@ -242,11 +267,40 @@ export default function LogisticsScheduledList({ date, logistics, isReservation,
         </Typography>
       </Stack>
       <Divider />
-      <Typography variant="h6" sx={{ px: '14px', py: '8px' }}>
+      <Typography variant="h6" sx={{ px: '14px', pt: '8px' }}>
         {format(date, 'EEEE, d MMMM yyyy')}
       </Typography>
 
-      <Box sx={{ flexGrow: 0, overflowY: 'auto', height: 250, px: 0.5 }}>
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', px: '14px' }}>
+        {isReservation && (
+          <Box sx={{ mt: 1, mb: 1 }}>
+            {savedSlots.length > 0 && (
+              <>
+                <Typography variant="h7" sx={{ fontWeight: 700, mb: 1 }}>
+                  Saved Timeslots
+                </Typography>
+                <Grid container>
+                  {savedSlots.map((slot, idx) => (
+                    <Grid item key={idx}>
+                      <Typography sx={{ color: '#636366', display: 'inline-block', mr: 0.8 }}>
+                        {slot.label || `${slot.startTime} - ${slot.endTime}`}
+                        {idx < savedSlots.length - 1 ? ',' : ''}
+                      </Typography>
+                    </Grid>
+                  ))}
+                </Grid>
+              </>
+            )}
+          </Box>
+        )}
+        {isReservation && dayLogistics.length > 0 && (
+          <Typography variant="h7" sx={{ fontWeight: 700 }}>
+            Creators
+          </Typography>
+        )}
+      </Box>
+
+      <Box sx={{ flexGrow: 0, overflowY: 'auto', height: 150, px: 0.5 }}>
         {dayLogistics.length === 0 ? (
           <Box
             sx={{
@@ -314,4 +368,5 @@ LogisticsScheduledList.propTypes = {
   logistics: PropTypes.array,
   isReservation: PropTypes.bool,
   onClick: PropTypes.func,
+  reservationConfig: PropTypes.object,
 };
