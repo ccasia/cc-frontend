@@ -17,7 +17,9 @@ import {
   Dialog,
   Divider,
   Container,
+  TextField,
   Typography,
+  DialogTitle,
   DialogContent,
   DialogActions,
   CircularProgress,
@@ -93,6 +95,12 @@ const CompanyEditView = ({ id }) => {
   const [loading, setLoading] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
+  const [picDialogOpen, setPicDialogOpen] = useState(false);
+  const [picFormData, setPicFormData] = useState({
+    name: '',
+    email: '',
+    designation: '',
+  });
   const router = useRouter();
   const dialog = useBoolean();
   const packageDialog = useBoolean();
@@ -103,6 +111,9 @@ const CompanyEditView = ({ id }) => {
 
   // Check if client is activated: if inviteToken is null/empty, the client has activated
   const hasActiveClient = company?.clients?.some(client => client.companyId === company.id) || false;
+
+  // Check if company has a valid PIC with email (required for activation)
+  const hasValidPIC = company?.pic?.length > 0 && Boolean(company.pic[0]?.email);
 
   const campaigns = useMemo(() => {
     if (company?.type === 'agency' || company?.brand?.length) {
@@ -195,6 +206,41 @@ const CompanyEditView = ({ id }) => {
       setLoading(false);
     }
   });
+
+  const handleActivateButtonClick = () => {
+    // Check if PIC exists, if not show PIC creation modal
+    if (!hasValidPIC) {
+      setPicDialogOpen(true);
+    } else {
+      setActivateDialogOpen(true);
+    }
+  };
+
+  const handleCreatePIC = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.post('/api/pic', {
+        ...picFormData,
+        companyId: company?.id,
+      });
+
+      enqueueSnackbar(response.data.message || 'PIC created successfully', { variant: 'success' });
+      setPicDialogOpen(false);
+      setPicFormData({ name: '', email: '', designation: '' });
+      mutate(); // Refresh company data
+      
+      // After creating PIC, show activation dialog
+      setTimeout(() => {
+        setActivateDialogOpen(true);
+      }, 300);
+    } catch (error) {
+      console.error('Error creating PIC:', error);
+      const errorMessage = error.response?.data?.message || 'Error creating PIC';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleActivateClient = async () => {
     setIsActivating(true);
@@ -298,7 +344,7 @@ const CompanyEditView = ({ id }) => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={() => setActivateDialogOpen(true)}
+                onClick={handleActivateButtonClick}
                 disabled={hasActiveClient}
                 sx={{
                   bgcolor: hasActiveClient ? '#ccc' : '#203ff5',
@@ -438,6 +484,77 @@ const CompanyEditView = ({ id }) => {
         onRefresh={handlePackageLinkSuccess}
       />
 
+      {/* PIC Creation Dialog */}
+      <Dialog open={picDialogOpen} onClose={() => setPicDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Typography fontSize={32} fontFamily="Instrument Serif">Add Person In Charge</Typography>
+          <Typography variant="body2" color="text.secondary" mt={1}>
+            Please provide PIC information to activate this client account
+          </Typography>
+        </DialogTitle>
+        <Divider />
+        <DialogContent>
+          <Stack spacing={2.5} sx={{ mt: 2 }}>
+            <TextField
+              label="PIC Name"
+              value={picFormData.name}
+              onChange={(e) => setPicFormData({ ...picFormData, name: e.target.value })}
+              fullWidth
+              required
+              placeholder="Enter PIC name"
+            />
+            <TextField
+              label="PIC Email"
+              type="email"
+              value={picFormData.email}
+              onChange={(e) => setPicFormData({ ...picFormData, email: e.target.value })}
+              fullWidth
+              required
+              placeholder="Enter PIC email"
+            />
+            <TextField
+              label="PIC Designation"
+              value={picFormData.designation}
+              onChange={(e) => setPicFormData({ ...picFormData, designation: e.target.value })}
+              fullWidth
+              required
+              placeholder="e.g., Manager, Director"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button 
+            sx={{ 
+              border: '1px solid #E7E7E7', 
+              borderRadius: '8px', 
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset', 
+              px: 3
+            }}
+            onClick={() => {
+              setPicDialogOpen(false);
+              setPicFormData({ name: '', email: '', designation: '' });
+            }}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <LoadingButton 
+            sx={{
+              borderRadius: '8px',
+              bgcolor: '#203ff5',
+              boxShadow: '0px -3px 0px 0px #102387 inset',
+              px: 3
+            }}
+            onClick={handleCreatePIC} 
+            variant="contained" 
+            loading={loading}
+            disabled={!picFormData.name || !picFormData.email || !picFormData.designation}
+          >
+            Save & Continue
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
       {/* Client Activation Dialog */}
       <Dialog open={activateDialogOpen} onClose={() => setActivateDialogOpen(false)}>
         <Box sx={{ width: 427 }}>
@@ -446,13 +563,13 @@ const CompanyEditView = ({ id }) => {
           <DialogContent>
             <Box sx={{ mt: 2, mb: 2 }}>
               <Typography variant="body1">
-                <Typography variant='span' color="#636366">Company Name:</Typography> {company?.name}
+                <Typography variant='span' color="#636366">Company Name:</Typography> {company?.name || 'N/A'}
               </Typography>
               <Typography variant="body1">
-                <Typography variant='span' color="#636366">Company Email:</Typography> {company?.pic[0]?.email}
+                <Typography variant='span' color="#636366">Company Email:</Typography> {company?.pic?.[0]?.email || 'N/A'}
               </Typography>
               <Typography variant="body1">
-                <Typography variant='span' color="#636366">Package:</Typography> {currentPackage?.package?.name || currentPackage?.customPackage?.customName}
+                <Typography variant='span' color="#636366">Package:</Typography> {currentPackage?.package?.name || currentPackage?.customPackage?.customName || 'No package assigned'}
               </Typography>
             </Box>
           </DialogContent>
