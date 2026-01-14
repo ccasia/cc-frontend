@@ -40,12 +40,6 @@ export function RHFUploadCover({ name, helperText, ...other }) {
               }}
               {...other}
             />
-
-            {!!error && (
-              <FormHelperText error sx={{ px: 2, mt: 1 }}>
-                {error.message}
-              </FormHelperText>
-            )}
           </div>
         );
       }}
