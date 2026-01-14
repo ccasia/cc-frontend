@@ -51,6 +51,8 @@ import CampaignTargetAudience from './campaign-target-audience';
 import CampaignObjective from './campaign-objective';
 import NextSteps from './next-steps';
 
+import { NextStepsIcon } from 'src/assets/icons';
+
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
 // Define internal steps (includes sub-steps for logistics)
@@ -66,12 +68,12 @@ const steps = [
 ];
 
 // Step indicator labels for the clickable navigation (5 visual steps)
-const stepLabels = ['General', 'Objective', 'Audience', 'Logistics', 'Next Steps'];
+const stepLabels = ['General', 'Objective', 'Audience', 'Logistics', null];
 
 // Map visual indicator index to first internal step index
 const indicatorToStepMap = {
   0: 0, // General
-  1: 1, // Objective  
+  1: 1, // Objective
   2: 2, // Audience
   3: 3, // Logistics (first sub-step)
   4: 6, // Next Steps
@@ -453,11 +455,27 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const getFieldsForStep = (step) => {
     switch (step) {
       case 0: // General
-        return ['campaignTitle', 'campaignDescription', 'campaignIndustries', 'campaignCredits', 'campaignImages', 'campaignStartDate', 'campaignEndDate'];
+        return [
+          'campaignTitle',
+          'campaignDescription',
+          'campaignIndustries',
+          'campaignCredits',
+          'campaignImages',
+          'campaignStartDate',
+          'campaignEndDate',
+        ];
       case 1: // Objective
         return ['campaignObjectives', 'campaignDo', 'campaignDont'];
       case 2: // Audience
-        return ['audienceAge', 'audienceGender', 'audienceLocation', 'audienceLanguage', 'audienceCreatorPersona', 'socialMediaPlatform', 'videoAngle'];
+        return [
+          'audienceAge',
+          'audienceGender',
+          'audienceLocation',
+          'audienceLanguage',
+          'audienceCreatorPersona',
+          'socialMediaPlatform',
+          'videoAngle',
+        ];
       case 3: // Logistics
         return ['logisticsType'];
       case 4: // Reservation Slots
@@ -579,7 +597,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         websiteLink: data.websiteLink || '',
         campaignIndustries: Array.isArray(data.campaignIndustries) ? data.campaignIndustries : [],
         campaignObjectives: data.campaignObjectives || '',
-        secondaryObjectives: Array.isArray(data.secondaryObjectives) ? data.secondaryObjectives : [],
+        secondaryObjectives: Array.isArray(data.secondaryObjectives)
+          ? data.secondaryObjectives
+          : [],
         boostContent: data.boostContent || '',
         primaryKPI: data.primaryKPI || '',
         performanceBaseline: data.performanceBaseline || '',
@@ -870,7 +890,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               width: 45,
               padding: 1,
             }}
-            size='large'
+            size="large"
             disabled={isLoading || isConfirming}
             onClick={onClose}
           >
@@ -897,35 +917,63 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               sx={{ width: '100%' }}
             >
               {stepLabels.map((label, index) => (
-                <React.Fragment key={label}>
+                <React.Fragment key={label || 'next-steps-icon'}>
                   {/* Step Box */}
-                  <Box
-                    onClick={() => handleStepClick(index)}
-                    sx={{
-                      minWidth: 133,
-                      height: 45,
-                      py: 1.2,
-                      textAlign: 'center',
-                      borderRadius: 1,
-                      fontSize: 14,
-                      fontWeight: 400,
-                      bgcolor: currentIndicatorIndex === index ? '#1340FF' : currentIndicatorIndex > index ? '#1340FF' : '#fff',
-                      color: currentIndicatorIndex === index ? '#fff' : currentIndicatorIndex > index ? '#fff' : '#636366',
-                      border: '1px solid #636366',
-                      borderColor: currentIndicatorIndex >= index ? '#1340FF' : '#636366',
-                      cursor: index <= currentIndicatorIndex ? 'pointer' : 'default',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        opacity: index <= currentIndicatorIndex ? 0.85 : 1,
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Box component="span">{label}</Box>
-                  </Box>
+                  {index === 4 ? (
+                    <Box
+                      px={1}
+                      py={0.5}
+                      borderRadius={1}
+                      border={'1px solid #636366'}
+                      bgcolor={
+                        currentIndicatorIndex === index
+                          ? '#1340FF'
+                          : currentIndicatorIndex > index
+                            ? '#1340FF'
+                            : '#fff'
+                      }
+                    >
+                      <NextStepsIcon active={currentIndicatorIndex === 4} size={35} />
+                    </Box>
+                  ) : (
+                    <Box
+                      onClick={() => handleStepClick(index)}
+                      sx={{
+                        minWidth: 133,
+                        height: 45,
+                        py: 1.2,
+                        textAlign: 'center',
+                        borderRadius: 1,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        bgcolor:
+                          currentIndicatorIndex === index
+                            ? '#1340FF'
+                            : currentIndicatorIndex > index
+                              ? '#1340FF'
+                              : '#fff',
+                        color:
+                          currentIndicatorIndex === index
+                            ? '#fff'
+                            : currentIndicatorIndex > index
+                              ? '#fff'
+                              : '#636366',
+                        border: '1px solid #636366',
+                        borderColor: currentIndicatorIndex >= index ? '#1340FF' : '#636366',
+                        cursor: index <= currentIndicatorIndex ? 'pointer' : 'default',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          opacity: index <= currentIndicatorIndex ? 0.85 : 1,
+                        },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Box component="span">{label}</Box>
+                    </Box>
+                  )}
 
                   {/* Connector Line (except after last step) */}
                   {index < stepLabels.length - 1 && (
