@@ -390,8 +390,8 @@ const CampaignDetailView = ({ id }) => {
                 // HIDE: logistics
                 campaign?.logisticsType && campaign.logisticsType !== ''
                   ? {
-                      label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
-                      value: 'logistics',
+                  label: `Logistics${campaign?.logistic?.length ? ` (${campaign?.logistic?.length})` : ''}`,
+                  value: 'logistics',
                     }
                   : null,
                 // {

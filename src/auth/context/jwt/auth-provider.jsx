@@ -147,7 +147,6 @@ export function AuthProvider({ children }) {
 
     const { accessToken, user } = response.data;
     
-    // Clear the popup shown flag on login to ensure it shows again
     sessionStorage.removeItem('mediaKitPopupShown');
 
     dispatch({
@@ -227,8 +226,7 @@ export function AuthProvider({ children }) {
       },
     });
   }, []);
-
-  // LOGOUT
+  
   const logout = useCallback(async () => {
     await axios.post(endpoints.auth.logout);
     setSession(null);
