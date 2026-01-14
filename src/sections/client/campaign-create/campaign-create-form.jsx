@@ -27,31 +27,28 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { NextStepsIcon } from 'src/assets/icons';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
-import OtherAttachments from 'src/sections/campaign/create/steps/other-attachments';
 import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
 import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
 // Import steps from campaign creation
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
 
+import NextSteps from './next-steps';
+import CampaignObjective from './campaign-objective';
 import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
-import CampaignObjective from './campaign-objective';
-import NextSteps from './next-steps';
-
-import { NextStepsIcon } from 'src/assets/icons';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -883,7 +880,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             sx={{
               border: 1,
               borderRadius: 1,
-              height: '100%',
               boxShadow: '0px -1.5px 0px 0px #E7E7E7 inset',
               borderColor: '#E7E7E7',
               height: 45,
@@ -894,7 +890,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             disabled={isLoading || isConfirming}
             onClick={onClose}
           >
-            <Iconify icon="material-symbols:close" width={20} color={'#231F20'} />
+            <Iconify icon="material-symbols:close" width={20} color="#231F20" />
           </IconButton>
 
           {/* Step Indicator - Clickable navigation */}
@@ -924,7 +920,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                       px={1}
                       py={0.5}
                       borderRadius={1}
-                      border={'1px solid #636366'}
+                      border="1px solid #636366"
                       bgcolor={
                         currentIndicatorIndex === index
                           ? '#1340FF'

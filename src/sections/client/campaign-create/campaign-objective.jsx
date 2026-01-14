@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import React, { memo, useEffect, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
+import React, { memo, useRef, useEffect } from 'react';
 
 import {
   Box,
