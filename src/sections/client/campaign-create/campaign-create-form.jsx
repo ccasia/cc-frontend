@@ -16,13 +16,18 @@ import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import {
+  Chip,
+  Paper,
   Stack,
   Avatar,
   Dialog,
+  Divider,
   IconButton,
   Typography,
   ListItemText,
+  DialogTitle,
   DialogContent,
+  DialogActions,
   LinearProgress,
 } from '@mui/material';
 
@@ -32,6 +37,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { NextStepsIcon } from 'src/assets/icons';
+
+import Image from 'src/components/image';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
@@ -45,6 +52,8 @@ import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-
 
 import NextSteps from './next-steps';
 import CampaignObjective from './campaign-objective';
+import AdditionalDetails1 from './additional-details-1';
+import AdditionalDetails2 from './additional-details-2';
 import CampaignUploadPhotos from './campaign-upload-photos';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
@@ -52,9 +61,9 @@ import CampaignTargetAudience from './campaign-target-audience';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
-// Define internal steps (includes sub-steps for logistics)
+// Base internal steps (includes sub-steps for logistics)
 // Visual indicator maps: 0=General, 1=Objective, 2=Audience, 3-5=Logistics, 6=Next Steps
-const steps = [
+const baseSteps = [
   { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE', indicatorIndex: 0 },
   { title: 'Campaign Objectives', logo: '🎯', color: '#026D54', indicatorIndex: 1 },
   { title: 'Target Audience', logo: '👥', color: '#FFF0E5', indicatorIndex: 2 },
@@ -64,23 +73,45 @@ const steps = [
   { title: 'Next Steps', logo: '👣', color: '#D8FF01', indicatorIndex: 4 },
 ];
 
-// Step indicator labels for the clickable navigation (5 visual steps)
-const stepLabels = ['General', 'Objective', 'Audience', 'Logistics', null];
+// Additional detail steps that appear after clicking "Continue Additional Details"
+const additionalSteps = [
+  { title: 'Additional Details 1', logo: '📝', color: '#FF3500', indicatorIndex: 5 },
+  { title: 'Additional Details 2', logo: '📝', color: '#D8FF01', indicatorIndex: 6 },
+];
 
-// Map visual indicator index to first internal step index
-const indicatorToStepMap = {
+const getSteps = (showAdditionalDetails) => 
+  showAdditionalDetails ? [...baseSteps, ...additionalSteps] : baseSteps;
+
+const backSectionLabels = ['General', 'Objective', 'Audience', 'Logistics'];
+
+const frontSectionLabels = ['Additional 1', 'Additional 2'];
+
+const backSectionIndicatorToStepMap = {
   0: 0, // General
   1: 1, // Objective
   2: 2, // Audience
   3: 3, // Logistics (first sub-step)
-  4: 6, // Next Steps
 };
 
-// Get which visual indicator is active based on internal step
-const getIndicatorIndex = (internalStep) => {
-  if (internalStep >= 6) return 4; // Next Steps
-  if (internalStep >= 3) return 3; // Logistics (includes sub-steps 3, 4, 5)
+const frontSectionIndicatorToStepMap = {
+  0: 7, // Additional Details 1
+  1: 8, // Additional Details 2
+};
+
+// Determine if we're in back section (steps 0-6) or front section (steps 7-8)
+const isInFrontSection = (activeStep) => activeStep >= 7;
+const isInBackSection = (activeStep) => activeStep <= 6;
+
+// Get which indicator is active in back section (0-3 for General, Objective, Audience, Logistics)
+const getBackSectionIndicatorIndex = (internalStep) => {
+  if (internalStep >= 3) return 3; // Logistics (includes sub-steps 3, 4, 5, 6)
   return internalStep; // 0, 1, 2 map directly
+};
+
+// Get which indicator is active in front section (0 for Details 1, 1 for Details 2)
+const getFrontSectionIndicatorIndex = (internalStep) => {
+  if (internalStep >= 8) return 1; // Additional Details 2
+  return 0; // Additional Details 1
 };
 
 const PDFEditor = lazy(() => import('src/sections/campaign/create/pdf-editor'));
@@ -95,11 +126,46 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
   const pdfModal = useBoolean();
 
+  // Derive steps based on showAdditionalDetails state
+  const steps = getSteps(showAdditionalDetails);
+  
+  // Determine if we're in the front or back section
+  const inFrontSection = isInFrontSection(activeStep);
+  const inBackSection = isInBackSection(activeStep);
+
   // Add state for confirmation modal
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
+
+  // Client brand info for preview
+  const clientBrandName =
+    user?.company?.name || user?.client?.company?.name || user?.brandName || user?.name || 'Your Brand';
+
+  // Resolve client company logo
+  let clientLogoUrl = '';
+  try {
+    const stored = localStorage.getItem('client_company_logo');
+    clientLogoUrl = stored || user?.company?.logo || user?.client?.company?.logo || '';
+  } catch {
+    clientLogoUrl = user?.company?.logo || user?.client?.company?.logo || '';
+  }
+
+  // Format date helper
+  const formatDate = (date) => {
+    if (!date) return 'Not set';
+    try {
+      return new Date(date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch {
+      return 'Invalid date';
+    }
+  };
 
   const campaignSchema = Yup.object().shape({
     campaignIndustries: Yup.array()
@@ -140,9 +206,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           value: Yup.string(),
         })
       ),
-    campaignImages: Yup.array()
-      .min(1, 'Must have at least 1 image')
-      .max(3, 'Must have at most 3 images'),
     adminManager: Yup.array()
       .min(1, 'At least One Admin is required')
       .required('Admin Manager is required'),
@@ -318,6 +381,12 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     referencesLinks: Yup.array().of(Yup.object().shape({ value: Yup.string() })),
   });
 
+  // Schema for Additional Details 1 (step 7) - optional, no validation
+  const additionalDetails1Schema = Yup.object().shape({});
+
+  // Schema for Additional Details 2 (step 8) - optional, no validation
+  const additionalDetails2Schema = Yup.object().shape({});
+
   const getSchemaForStep = (step) => {
     switch (step) {
       case 0:
@@ -334,6 +403,10 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return Yup.object().shape({}); // Logistic remarks - optional
       case 6:
         return publishSchema;
+      case 7:
+        return additionalDetails1Schema; // Additional Details 1 - optional
+      case 8:
+        return additionalDetails2Schema; // Additional Details 2 - optional
       default:
         return campaignSchema;
     }
@@ -415,39 +488,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
   const values = watch();
 
-  const {
-    append: doAppend,
-    fields: doFields,
-    remove: doRemove,
-  } = useFieldArray({
-    name: 'campaignDo',
-    control,
-  });
-
-  const {
-    append: dontAppend,
-    fields: dontFields,
-    remove: dontRemove,
-  } = useFieldArray({
-    name: 'campaignDont',
-    control,
-  });
-
-  const handleDropMultiFile = useCallback(
-    (acceptedFiles) => {
-      const files = values.campaignImages || [];
-
-      const newFiles = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-      );
-
-      setValue('campaignImages', [...files, ...newFiles]);
-    },
-    [setValue, values.campaignImages]
-  );
-
   // Get fields to validate for each step
   const getFieldsForStep = (step) => {
     switch (step) {
@@ -481,6 +521,10 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return []; // Optional, no required fields
       case 6: // Next Steps / Publish
         return [];
+      case 7: // Additional Details 1 - optional
+        return [];
+      case 8: // Additional Details 2 - optional
+        return [];
       default:
         return [];
     }
@@ -513,6 +557,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
       // Handle logistics sub-step navigation
       // Step 3 = Logistics, Step 4 = Reservation Slots, Step 5 = Logistic Remarks, Step 6 = Next Steps
+      // Step 7 = Additional Details 1, Step 8 = Additional Details 2 (when showAdditionalDetails is true)
       if (activeStep === 3) {
         // From Logistics step, skip to Next Steps if not RESERVATION type
         if (logisticsType !== 'RESERVATION') {
@@ -525,7 +570,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       } else if (activeStep === 5) {
         // From Logistic Remarks, go to Next Steps
         nextStep = 6;
+      } else if (activeStep === 7) {
+        // From Additional Details 1, go to Additional Details 2
+        nextStep = 8;
       }
+      // Note: From step 6 (Next Steps), user clicks "Continue Additional Details" button instead
 
       localStorage.setItem('clientActiveStep', nextStep);
       setActiveStep(nextStep);
@@ -537,11 +586,20 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   };
 
   // Handle clicking on step indicator to navigate directly
-  const handleStepClick = (indicatorIndex) => {
-    const currentIndicator = getIndicatorIndex(activeStep);
+  const handleBackSectionStepClick = (indicatorIndex) => {
+    const currentBackIndicator = getBackSectionIndicatorIndex(activeStep);
+    if (indicatorIndex <= currentBackIndicator && activeStep <= 6) {
+      const targetStep = backSectionIndicatorToStepMap[indicatorIndex];
+      setActiveStep(targetStep);
+      localStorage.setItem('clientActiveStep', targetStep);
+    }
+  };
+
+  const handleFrontSectionStepClick = (indicatorIndex) => {
+    const currentFrontIndicator = getFrontSectionIndicatorIndex(activeStep);
     // Allow navigation to any indicator that has been visited or previous indicators
-    if (indicatorIndex <= currentIndicator) {
-      const targetStep = indicatorToStepMap[indicatorIndex];
+    if (indicatorIndex <= currentFrontIndicator && activeStep >= 7) {
+      const targetStep = frontSectionIndicatorToStepMap[indicatorIndex];
       setActiveStep(targetStep);
       localStorage.setItem('clientActiveStep', targetStep);
     }
@@ -551,8 +609,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     const logisticsType = getValues('logisticsType');
     let prevStep = activeStep - 1;
 
-    // Handle logistics sub-step navigation going back
-    if (activeStep === 6) {
+    if (activeStep === 8) {
+      // From Additional Details 2, go to Additional Details 1
+      prevStep = 7;
+    } else if (activeStep === 7) {
+      // From Additional Details 1, go back to Next Steps and hide additional details
+      prevStep = 6;
+      setShowAdditionalDetails(false);
+    } else if (activeStep === 6) {
       // From Next Steps, go back based on logistics type
       if (logisticsType === 'RESERVATION') {
         prevStep = 5; // Go to Logistic Remarks
@@ -569,6 +633,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
     localStorage.setItem('clientActiveStep', prevStep);
     setActiveStep(prevStep);
+  };
+
+  // Handle clicking "Continue Additional Details" on Next Steps
+  const handleContinueAdditionalDetails = () => {
+    setShowAdditionalDetails(true);
+    setActiveStep(7); // Go to Additional Details 1
+    localStorage.setItem('clientActiveStep', 7);
   };
 
   const onSubmit = handleSubmit(async (data, stage) => {
@@ -830,7 +901,17 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 5:
         return <LogisticRemarks />;
       case 6:
-        return <NextSteps onPublish={handleSubmit(onSubmit)} isLoading={isLoading} />;
+        return (
+          <NextSteps
+            onPublish={handleSubmit(onSubmit)}
+            onContinueAdditionalDetails={handleContinueAdditionalDetails}
+            isLoading={isLoading}
+          />
+        );
+      case 7:
+        return <AdditionalDetails1 />;
+      case 8:
+        return <AdditionalDetails2 />;
       default:
         return null;
     }
@@ -864,13 +945,20 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return true;
       case 6: // Next Steps (Publish) - all required fields already validated
         return true;
+      case 7: // Additional Details 1 - optional
+      case 8: // Additional Details 2 - optional
+        return true;
       default:
         return true;
     }
   };
 
-  // Get the current visual indicator index for rendering
-  const currentIndicatorIndex = getIndicatorIndex(activeStep);
+  // Get the current indicator indices for both sections
+  const backSectionIndicator = getBackSectionIndicatorIndex(activeStep);
+  const frontSectionIndicator = getFrontSectionIndicatorIndex(activeStep);
+  
+  // Determine if Next Steps should be highlighted (step 6 or beyond)
+  const isNextStepsActive = activeStep >= 6;
 
   return (
     <Box>
@@ -900,7 +988,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               left: '50%',
               transform: 'translateX(-50%)',
               width: '100%',
-              maxWidth: { xs: '95%', sm: 600 },
+              maxWidth: { xs: '95%', sm: 800 },
               display: { xs: 'none', sm: 'flex' },
               justifyContent: 'center',
               alignItems: 'center',
@@ -912,77 +1000,134 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               justifyContent="center"
               sx={{ width: '100%' }}
             >
-              {stepLabels.map((label, index) => (
-                <React.Fragment key={label || 'next-steps-icon'}>
-                  {/* Step Box */}
-                  {index === 4 ? (
-                    <Box
-                      px={1}
-                      py={0.5}
-                      borderRadius={1}
-                      border="1px solid #636366"
-                      bgcolor={
-                        currentIndicatorIndex === index
+              {/* Back Section (General, Objective, Audience, Logistics) */}
+              {inBackSection && backSectionLabels.map((label, index) => (
+                <React.Fragment key={label}>
+                  <Box
+                    onClick={() => handleBackSectionStepClick(index)}
+                    sx={{
+                      minWidth: 135,
+                      height: 45,
+                      py: 1.2,
+                      textAlign: 'center',
+                      borderRadius: 1,
+                      fontSize: 14,
+                      fontWeight: 400,
+                      bgcolor:
+                        backSectionIndicator === index
                           ? '#1340FF'
-                          : currentIndicatorIndex > index
+                          : backSectionIndicator > index
                             ? '#1340FF'
-                            : '#fff'
-                      }
-                    >
-                      <NextStepsIcon active={currentIndicatorIndex === 4} size={35} />
-                    </Box>
-                  ) : (
-                    <Box
-                      onClick={() => handleStepClick(index)}
-                      sx={{
-                        minWidth: 133,
-                        height: 45,
-                        py: 1.2,
-                        textAlign: 'center',
-                        borderRadius: 1,
-                        fontSize: 14,
-                        fontWeight: 400,
-                        bgcolor:
-                          currentIndicatorIndex === index
-                            ? '#1340FF'
-                            : currentIndicatorIndex > index
-                              ? '#1340FF'
-                              : '#fff',
-                        color:
-                          currentIndicatorIndex === index
+                            : '#fff',
+                      color:
+                        backSectionIndicator === index
+                          ? '#fff'
+                          : backSectionIndicator > index
                             ? '#fff'
-                            : currentIndicatorIndex > index
-                              ? '#fff'
-                              : '#636366',
-                        border: '1px solid #636366',
-                        borderColor: currentIndicatorIndex >= index ? '#1340FF' : '#636366',
-                        cursor: index <= currentIndicatorIndex ? 'pointer' : 'default',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          opacity: index <= currentIndicatorIndex ? 0.85 : 1,
-                        },
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <Box component="span">{label}</Box>
-                    </Box>
-                  )}
+                            : '#636366',
+                      border: '1px solid #636366',
+                      borderColor: backSectionIndicator >= index ? '#1340FF' : '#636366',
+                      cursor: index <= backSectionIndicator ? 'pointer' : 'default',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        opacity: index <= backSectionIndicator ? 0.85 : 1,
+                      },
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Box component="span">{label}</Box>
+                  </Box>
+                  {/* Connector Line after each back section label */}
+                  <Box
+                    sx={{
+                      height: 1.2,
+                      flexGrow: 1,
+                      minWidth: 30,
+                      maxWidth: 50,
+                      bgcolor: backSectionIndicator > index ? '#1340FF' : '#636366',
+                    }}
+                  />
+                </React.Fragment>
+              ))}
 
-                  {/* Connector Line (except after last step) */}
-                  {index < stepLabels.length - 1 && (
-                    <Box
-                      sx={{
-                        height: 1.2,
-                        flexGrow: 1,
-                        minWidth: 50,
-                        maxWidth: 80,
-                        bgcolor: currentIndicatorIndex > index ? '#1340FF' : '#636366',
-                      }}
-                    />
-                  )}
+              {/* Next Steps Section (Publish or Continue Additional Details) */}
+              <Box
+                onClick={() => {
+                  if (activeStep >= 7) {
+                    setActiveStep(6);
+                    setShowAdditionalDetails(false);
+                    localStorage.setItem('clientActiveStep', 6);
+                  }
+                }}
+                px={1}
+                py={0.5}
+                borderRadius={1}
+                border="1px solid #636366"
+                bgcolor={isNextStepsActive ? '#1340FF' : '#fff'}
+                sx={{
+                  borderColor: isNextStepsActive ? '#1340FF' : '#636366',
+                  '&:hover': {
+                    opacity: activeStep >= 7 ? 0.85 : 1,
+                  },
+                  cursor: activeStep >= 7 ? 'pointer' : 'default',
+                }}
+              >
+                <NextStepsIcon active={isNextStepsActive} size={35} />
+              </Box>
+
+              {/* Front Section Labels (Additional Details 1, Additional Details 2) */}
+              {inFrontSection && frontSectionLabels.map((label, index) => (
+                <React.Fragment key={label}>
+                  {/* Connector Line before each front section label */}
+                  <Box
+                    sx={{
+                      height: 1.2,
+                      flexGrow: 1,
+                      minWidth: 30,
+                      maxWidth: 50,
+                      bgcolor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
+                    }}
+                  />
+                  <Box
+                    onClick={() => handleFrontSectionStepClick(index)}
+                    sx={{
+                      minWidth: 135,
+                      height: 45,
+                      py: 1.2,
+                      textAlign: 'center',
+                      borderRadius: 1,
+                      fontSize: 14,
+                      fontWeight: 400,
+                      bgcolor:
+                        frontSectionIndicator === index
+                          ? '#1340FF'
+                          : frontSectionIndicator > index
+                            ? '#1340FF'
+                            : '#fff',
+                      color:
+                        frontSectionIndicator === index
+                          ? '#fff'
+                          : frontSectionIndicator > index
+                            ? '#fff'
+                            : '#636366',
+                      border: '1px solid #636366',
+                      borderColor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
+                      cursor: index <= frontSectionIndicator ? 'pointer' : 'default',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        opacity: index <= frontSectionIndicator ? 0.85 : 1,
+                      },
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Box component="span">{label}</Box>
+                  </Box>
                 </React.Fragment>
               ))}
             </Stack>
@@ -997,31 +1142,72 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               display: { xs: 'none', md: 'flex' },
             }}
           >
-            <Button
-              color="inherit"
-              disabled={activeStep === 0}
-              onClick={handleBack}
-              sx={{
-                mr: 1,
-                height: 45,
-                bgcolor: 'white',
-                border: '1px solid #E7E7E7',
-                color: '#3A3A3C',
-                '&:hover': {
-                  bgcolor: '#F8F8F8',
+            {activeStep !== 7 && (
+              <Button
+                color="inherit"
+                disabled={activeStep === 0}
+                onClick={handleBack}
+                sx={{
+                  mr: 1,
+                  height: 45,
+                  bgcolor: 'white',
                   border: '1px solid #E7E7E7',
-                },
-                fontWeight: 600,
-                boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
-              }}
-            >
-              Back
-            </Button>
+                  color: '#3A3A3C',
+                  '&:hover': {
+                    bgcolor: '#F8F8F8',
+                    border: '1px solid #E7E7E7',
+                  },
+                  fontWeight: 600,
+                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
+                }}
+              >
+                Back
+              </Button>
+            )}
 
             <Box sx={{ flexGrow: 1 }} />
 
-            {activeStep === steps.length - 1 ? (
-              <Stack direction="row" spacing={2}>
+            {/* Steps 0-5: Show Next button */}
+            {activeStep >= 0 && activeStep <= 5 && (
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                disabled={!isStepValid() || isLoading || isConfirming}
+                sx={{
+                  height: 45,
+                  bgcolor: '#3A3A3C',
+                  '&:hover': {
+                    bgcolor: '#47474a',
+                  },
+                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  fontWeight: 600,
+                }}
+              >
+                Next
+              </Button>
+            )}
+
+            {/* Step 6: No Next button - has its own Publish/Continue buttons in content */}
+
+            {/* Step 7: Show Next and Confirm Campaign buttons */}
+            {activeStep === 7 && (
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  disabled={!isStepValid() || isLoading || isConfirming}
+                  sx={{
+                    height: 45,
+                    bgcolor: '#3A3A3C',
+                    '&:hover': {
+                      bgcolor: '#47474a',
+                    },
+                    boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                    fontWeight: 600,
+                  }}
+                >
+                  Next
+                </Button>
                 <Button
                   variant="contained"
                   onClick={handleConfirmCampaign}
@@ -1042,21 +1228,28 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                       : 'Confirm Campaign'}
                 </Button>
               </Stack>
-            ) : (
+            )}
+
+            {/* Step 8: Show only Confirm Campaign button (last step) */}
+            {activeStep === 8 && (
               <Button
                 variant="contained"
-                onClick={handleNext}
-                disabled={!isStepValid() || isLoading || isConfirming}
+                onClick={handleConfirmCampaign}
+                disabled={isConfirming || isLoading || !isStepValid()}
                 sx={{
-                  bgcolor: '#3A3A3C',
+                  bgcolor: '#1340FF',
                   '&:hover': {
-                    bgcolor: '#47474a',
+                    bgcolor: '#0030e0',
                   },
-                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
                   fontWeight: 600,
                 }}
               >
-                Next
+                {isConfirming
+                  ? 'Opening Preview...'
+                  : isLoading
+                    ? 'Creating Campaign...'
+                    : 'Confirm Campaign'}
               </Button>
             )}
           </Stack>
@@ -1142,28 +1335,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               Back
             </Button>
 
-            {activeStep === steps.length - 1 ? (
-              <Button
-                variant="contained"
-                onClick={handleConfirmCampaign}
-                disabled={isConfirming || isLoading || !isStepValid()}
-                fullWidth
-                sx={{
-                  bgcolor: '#1340FF',
-                  '&:hover': {
-                    bgcolor: '#0030e0',
-                  },
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                  fontWeight: 600,
-                }}
-              >
-                {isConfirming
-                  ? 'Opening Preview...'
-                  : isLoading
-                    ? 'Creating Campaign...'
-                    : 'Confirm Campaign'}
-              </Button>
-            ) : (
+            {/* Steps 0-5: Show Next button */}
+            {activeStep >= 0 && activeStep <= 5 && (
               <Button
                 variant="contained"
                 onClick={handleNext}
@@ -1179,6 +1352,66 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                 }}
               >
                 Next
+              </Button>
+            )}
+
+            {/* Step 6: No buttons - has its own Publish/Continue buttons in content */}
+
+            {/* Step 7: Show Next and Confirm Campaign buttons */}
+            {activeStep === 7 && (
+              <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  disabled={!isStepValid() || isLoading || isConfirming}
+                  fullWidth
+                  sx={{
+                    bgcolor: '#3A3A3C',
+                    '&:hover': {
+                      bgcolor: '#47474a',
+                    },
+                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                    fontWeight: 600,
+                  }}
+                >
+                  Next
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleConfirmCampaign}
+                  disabled={isConfirming || isLoading || !isStepValid()}
+                  fullWidth
+                  sx={{
+                    bgcolor: '#1340FF',
+                    '&:hover': {
+                      bgcolor: '#0030e0',
+                    },
+                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                    fontWeight: 600,
+                  }}
+                >
+                  {isConfirming ? 'Opening...' : isLoading ? 'Creating...' : 'Confirm'}
+                </Button>
+              </Stack>
+            )}
+
+            {/* Step 8: Show only Confirm Campaign button (last step) */}
+            {activeStep === 8 && (
+              <Button
+                variant="contained"
+                onClick={handleConfirmCampaign}
+                disabled={isConfirming || isLoading || !isStepValid()}
+                fullWidth
+                sx={{
+                  bgcolor: '#1340FF',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                  fontWeight: 600,
+                }}
+              >
+                {isConfirming ? 'Opening Preview...' : isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
               </Button>
             )}
           </Stack>
@@ -1272,7 +1505,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           </Box>
         </Dialog>
 
-        {/* Add confirmation modal */}
+        {/* Campaign Preview Confirmation Modal */}
         <Dialog
           fullWidth
           maxWidth="sm"
@@ -1280,14 +1513,19 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           onClose={() => !isLoading && setOpenConfirmModal(false)}
           PaperProps={{
             sx: {
-              borderRadius: 2,
+              borderRadius: 3,
               maxHeight: '90vh',
             },
           }}
         >
-          <DialogContent sx={{ overflow: 'auto', maxHeight: 'calc(90vh - 64px)', p: 0 }}>
-            <CampaignUploadPhotos isPreview isLoading={isLoading} />
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+            <Typography variant="h6">Campaign Preview</Typography>
+            <IconButton onClick={() => !isLoading && setOpenConfirmModal(false)} size="small" disabled={isLoading}>
+              <Iconify icon="mdi:close" />
+            </IconButton>
+          </DialogTitle>
 
+          <DialogContent dividers sx={{ p: 0, position: 'relative' }}>
             {/* Loading overlay for confirmation modal */}
             {isLoading && (
               <Box
@@ -1302,7 +1540,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   zIndex: 1000,
-                  borderRadius: 2,
                 }}
               >
                 <Box
@@ -1342,40 +1579,250 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                       },
                     }}
                   >
-                    <Typography
-                      sx={{
-                        fontSize: 24,
-                        lineHeight: 1,
-                        userSelect: 'none',
-                      }}
-                    >
-                      ⏳
-                    </Typography>
+                    <Typography sx={{ fontSize: 24, lineHeight: 1, userSelect: 'none' }}>⏳</Typography>
                   </Box>
-                  <Typography
-                    variant="subtitle1"
-                    sx={{
-                      color: '#3A3A3C',
-                      fontWeight: 600,
-                      fontSize: '1rem',
-                      mb: 1,
-                    }}
-                  >
-                    Processing
+                  <Typography variant="subtitle1" sx={{ color: '#3A3A3C', fontWeight: 600, fontSize: '1rem', mb: 1 }}>
+                    Creating Campaign
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#8E8E93',
-                      fontSize: '0.8rem',
-                    }}
-                  >
+                  <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: '0.8rem' }}>
                     Please wait...
                   </Typography>
                 </Box>
               </Box>
             )}
+
+            {/* Campaign Preview Card */}
+            <Paper elevation={0} sx={{ borderRadius: 0 }}>
+              {/* Campaign Image Header */}
+              <Box
+                sx={{
+                  position: 'relative',
+                  height: 200,
+                  width: '100%',
+                  bgcolor: 'background.neutral',
+                }}
+              >
+                {values.campaignImages && values.campaignImages.length > 0 ? (
+                  <Image
+                    src={values.campaignImages[0].preview || values.campaignImages[0]}
+                    alt="Campaign Image"
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      No image uploaded
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Preview Label */}
+                <Box sx={{ position: 'absolute', top: 16, left: 16 }}>
+                  <Chip
+                    label="CAMPAIGN PREVIEW"
+                    size="small"
+                    sx={{
+                      bgcolor: 'white',
+                      fontWeight: 600,
+                      fontSize: '0.7rem',
+                    }}
+                  />
+                </Box>
+
+                {/* Company Avatar */}
+                <Avatar
+                  src={clientLogoUrl}
+                  alt={clientBrandName}
+                  sx={{
+                    position: 'absolute',
+                    bottom: -30,
+                    left: 24,
+                    width: 60,
+                    height: 60,
+                    border: '3px solid white',
+                    bgcolor: 'primary.main',
+                  }}
+                >
+                  {clientBrandName?.charAt(0)}
+                </Avatar>
+              </Box>
+
+              {/* Campaign Details */}
+              <Box sx={{ p: 3, pt: 5 }}>
+                <Typography variant="h6" fontWeight={600} mb={0.5}>
+                  {values.campaignTitle || 'Untitled Campaign'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  by {clientBrandName}
+                </Typography>
+
+                <Divider sx={{ my: 2 }} />
+
+                {/* Date Range */}
+                <Stack direction="row" spacing={2} mb={2}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Start Date
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500}>
+                      {formatDate(values.campaignStartDate)}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      End Date
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500}>
+                      {formatDate(values.campaignEndDate)}
+                    </Typography>
+                  </Box>
+                </Stack>
+
+                {/* Description */}
+                {values.campaignDescription && (
+                  <Box mb={2}>
+                    <Typography variant="caption" color="text.secondary">
+                      Campaign Info
+                    </Typography>
+                    <Typography variant="body2">{values.campaignDescription}</Typography>
+                  </Box>
+                )}
+
+                {/* Industries */}
+                {values.campaignIndustries?.length > 0 && (
+                  <Box mb={2}>
+                    <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                      Industries
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
+                      {values.campaignIndustries.map((industry) => (
+                        <Chip key={industry} label={industry} size="small" variant="outlined" />
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+
+                {/* Objectives */}
+                {values.campaignObjectives && (
+                  <Box mb={2}>
+                    <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                      Primary Objective
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
+                      <Chip label={values.campaignObjectives} size="small" variant="outlined" />
+                    </Stack>
+                  </Box>
+                )}
+
+                {/* Target Audience */}
+                {(values.audienceGender?.length > 0 || values.audienceAge?.length > 0 || values.audienceLanguage?.length > 0) && (
+                  <Box mb={2}>
+                    <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                      Target Audience
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
+                      {values.audienceGender?.map((g) => (
+                        <Chip key={g} label={g} size="small" sx={{ bgcolor: '#E8F5E9' }} />
+                      ))}
+                      {values.audienceAge?.map((a) => (
+                        <Chip key={a} label={a} size="small" sx={{ bgcolor: '#E3F2FD' }} />
+                      ))}
+                      {values.audienceLanguage?.map((l) => (
+                        <Chip key={l} label={l} size="small" sx={{ bgcolor: '#FFF3E0' }} />
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+
+                {/* Do's and Don'ts */}
+                <Stack direction="row" spacing={3}>
+                  {values.campaignDo?.filter((d) => d.value)?.length > 0 && (
+                    <Box flex={1}>
+                      <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                        <Iconify
+                          icon="mdi:check-circle"
+                          width={14}
+                          sx={{ color: 'success.main', mr: 0.5 }}
+                        />
+                        Do&apos;s
+                      </Typography>
+                      {values.campaignDo
+                        .filter((d) => d.value)
+                        .map((item, idx) => (
+                          <Typography key={idx} variant="body2" sx={{ fontSize: '0.8rem' }}>
+                            • {item.value}
+                          </Typography>
+                        ))}
+                    </Box>
+                  )}
+                  {values.campaignDont?.filter((d) => d.value)?.length > 0 && (
+                    <Box flex={1}>
+                      <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                        <Iconify
+                          icon="mdi:close-circle"
+                          width={14}
+                          sx={{ color: 'error.main', mr: 0.5 }}
+                        />
+                        Don&apos;ts
+                      </Typography>
+                      {values.campaignDont
+                        .filter((d) => d.value)
+                        .map((item, idx) => (
+                          <Typography key={idx} variant="body2" sx={{ fontSize: '0.8rem' }}>
+                            • {item.value}
+                          </Typography>
+                        ))}
+                    </Box>
+                  )}
+                </Stack>
+              </Box>
+            </Paper>
           </DialogContent>
+
+          <DialogActions sx={{ p: 2, justifyContent: 'center' }}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setOpenConfirmModal(false);
+                setIsConfirming(false);
+                setIsLoading(false);
+              }}
+              disabled={isLoading}
+              sx={{ mr: 1 }}
+            >
+              Go Back
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleFinalSubmit}
+              disabled={isLoading}
+              startIcon={<Iconify icon="mdi:rocket-launch" />}
+              sx={{
+                bgcolor: '#1340FF',
+                px: 4,
+                py: 1,
+                fontWeight: 600,
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                '&:hover': {
+                  bgcolor: '#0030e0',
+                },
+              }}
+            >
+              {isLoading ? 'Creating...' : 'Confirm & Publish'}
+            </Button>
+          </DialogActions>
         </Dialog>
       </FormProvider>
 
