@@ -93,8 +93,8 @@ export default function ConfirmReservationDetailsDialog({
     );
 
     if (matchedLocation && typeof matchedLocation === 'object') {
-      setValue('picName', matchedLocation.pic || '');
-      setValue('picContact', matchedLocation.contactNumber || '');
+      setValue('picName', details.picName || matchedLocation.pic || '');
+      setValue('picContact', details.picContact || matchedLocation.contactNumber || '');
     }
   }, [selectedOutlet, config, setValue]);
 
@@ -103,8 +103,6 @@ export default function ConfirmReservationDetailsDialog({
       reset({
         outlet: typeof details.outlet === 'string' ? details.outlet : details.outlet?.name || '',
         clientRemarks: details.clientRemarks || config.clientRemarks || '',
-        picName: details.picName || '',
-        picContact: details.picContact || '',
         promoCode: details.promoCode || '',
         budget: details.budget || '',
       });
