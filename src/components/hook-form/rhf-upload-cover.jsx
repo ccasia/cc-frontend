@@ -1,8 +1,6 @@
 import PropTypes from 'prop-types';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import FormHelperText from '@mui/material/FormHelperText';
-
 import UploadSingle from '../upload/upload-single';
 
 // ----------------------------------------------------------------------
