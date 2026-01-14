@@ -4,9 +4,9 @@ import { useFormContext } from 'react-hook-form';
 import { DatePicker } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
 
+import { RHFUpload } from 'src/components/hook-form/rhf-upload';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 import { RHFUploadCover } from 'src/components/hook-form/rhf-upload-cover';
-import { RHFUpload } from 'src/components/hook-form/rhf-upload';
 
 // ----------------------------------------------------------------------
 
@@ -163,7 +163,7 @@ export default function AdditionalDetails1() {
 
           {/* Tone & Style */}
           <FormField label="Tone & Style">
-            <Typography variant='caption' color={'#8E8E93'} mt={-1} mb={0.5}>[Eg:- Educational / Entertaining / Inspirational / Authentic/Raw / Professional / Humorous / Other]</Typography>
+            <Typography variant='caption' color="#8E8E93" mt={-1} mb={0.5}>[Eg:- Educational / Entertaining / Inspirational / Authentic/Raw / Professional / Humorous / Other]</Typography>
             <RHFTextField
               name="toneAndStyle"
               placeholder="Tone & Style"
@@ -212,7 +212,7 @@ export default function AdditionalDetails1() {
           <FormField label="Reference Content/Inspiration">
             <RHFTextField
               name="referenceContent"
-              placeholder="https://example.com/inspiration"
+              placeholder="references.com"
               size="small"
               sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
             />
