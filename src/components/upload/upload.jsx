@@ -70,7 +70,7 @@ export default function Upload({
         '&:hover': {
           opacity: 0.4,
         },
-        height: height,
+        height,
         borderRadius: 2,
         ...(isDragActive && {
           opacity: 0.3,
@@ -256,6 +256,7 @@ Upload.propTypes = {
   onRemoveAll: PropTypes.func,
   onUpload: PropTypes.func,
   sx: PropTypes.object,
+  height: PropTypes.object,
   thumbnail: PropTypes.bool,
   uploadType: PropTypes.string,
 };
