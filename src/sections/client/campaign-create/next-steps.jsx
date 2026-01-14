@@ -27,10 +27,11 @@ import Iconify from 'src/components/iconify';
 
 NextSteps.propTypes = {
   onPublish: PropTypes.func,
+  onContinueAdditionalDetails: PropTypes.func,
   isLoading: PropTypes.bool,
 };
 
-export default function NextSteps({ onPublish, isLoading = false }) {
+export default function NextSteps({ onPublish, onContinueAdditionalDetails, isLoading = false }) {
   const { watch } = useFormContext();
   const { user } = useAuthContext();
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -100,25 +101,48 @@ export default function NextSteps({ onPublish, isLoading = false }) {
           You may publish your campaign at this point, but completing the additional details encourages higher amounts of creator participation
         </Typography>
 
-        <Button
-          variant="contained"
-          size="large"
-          onClick={handleOpenPreview}
-          startIcon={<Iconify icon="mdi:rocket-launch" />}
-          sx={{
-            bgcolor: '#1340FF',
-            px: 6,
-            py: 1.5,
-            fontSize: '1rem',
-            fontWeight: 600,
-            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-            '&:hover': {
-              bgcolor: '#0030e0',
-            },
-          }}
-        >
-          Publish Campaign
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={handleOpenPreview}
+            startIcon={<Iconify icon="mdi:rocket-launch" />}
+            sx={{
+              bgcolor: '#1340FF',
+              px: 6,
+              py: 1.5,
+              fontSize: '1rem',
+              fontWeight: 600,
+              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+              '&:hover': {
+                bgcolor: '#0030e0',
+              },
+            }}
+          >
+            Publish Campaign
+          </Button>
+
+          <Button
+            variant="outlined"
+            size="large"
+            onClick={onContinueAdditionalDetails}
+            startIcon={<Iconify icon="mdi:arrow-right" />}
+            sx={{
+              px: 4,
+              py: 1.5,
+              fontSize: '1rem',
+              fontWeight: 600,
+              borderColor: '#1340FF',
+              color: '#1340FF',
+              '&:hover': {
+                bgcolor: 'rgba(19, 64, 255, 0.04)',
+                borderColor: '#0030e0',
+              },
+            }}
+          >
+            Continue Additional Details
+          </Button>
+        </Stack>
       </Box>
 
       {/* Campaign Preview Dialog */}
