@@ -1377,6 +1377,11 @@ const CampaignModal = ({
                       },
                       { label: 'Age', data: campaign?.campaignRequirement?.age },
                       {
+                        label: 'Countries',
+                        data: campaign?.campaignRequirement?.countries || [],
+                        isCountries: true,
+                      },
+                      {
                         label: 'Geo Location',
                         data: campaign?.campaignRequirement?.geoLocation,
                       },
@@ -1387,7 +1392,14 @@ const CampaignModal = ({
                           value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
                         ),
                       },
-                    ].map((item, index) => (
+                    ]
+                      .filter((item) => {
+                        if (item.label === 'Countries') {
+                          return Array.isArray(item.data) && item.data.length > 0;
+                        }
+                        return true;
+                      })
+                      .map((item, index) => (
                       <Box key={index}>
                         <Typography
                           variant="body2"
@@ -1395,11 +1407,31 @@ const CampaignModal = ({
                         >
                           {item.label}
                         </Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {item.data?.map((value, idx) => (
-                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                          ))}
-                        </Box>
+                        {item.isCountries ? (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {item.data?.map((countryName, idx) => (
+                              <Box
+                                key={idx}
+                                display="inline-flex"
+                                gap={1}
+                                sx={{ ...ChipStyle, p: 1, px: 1.5 }}
+                                alignItems="center"
+                              >
+                                <Iconify
+                                  icon={`emojione:flag-for-${countryName.toLowerCase()}`}
+                                  width={20}
+                                />
+                                <Typography variant="subtitle2">{countryName}</Typography>
+                              </Box>
+                            ))}
+                          </Box>
+                        ) : (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {item.data?.map((value, idx) => (
+                              <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                            ))}
+                          </Box>
+                        )}
                       </Box>
                     ))}
                     <Box>
