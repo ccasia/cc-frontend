@@ -13,7 +13,7 @@ const LogisticRemarks = () => {
   return (
     <Box sx={{ py: 5 }}>
       {/* Content */}
-      <Box sx={{ maxWidth: 600, mx: 'auto' }}>
+      <Box sx={{ maxWidth: 600, mx: 'auto', mb: 10 }}>
         <Typography 
           sx={{ 
             fontFamily: 'Inter Display, sans-serif',
