@@ -64,6 +64,13 @@ export default function CampaignLogisticsView({
     fetcher
   );
 
+  const { data: reservationConfig } = useSWR(
+    campaign?.id && isReservation
+      ? `/api/logistics/campaign/${campaign?.id}/reservation-config`
+      : null,
+    fetcher
+  );
+
   const safeLogistics = useMemo(() => logistics || [], [logistics]);
 
   const filteredLogistics = useMemo(
@@ -151,6 +158,7 @@ export default function CampaignLogisticsView({
                 logistics={safeLogistics}
                 isReservation={isReservation}
                 onClick={handleOpenDrawer}
+                reservationConfig={reservationConfig}
               />
             </Box>
           </Card>
