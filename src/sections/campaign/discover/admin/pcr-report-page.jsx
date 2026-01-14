@@ -1,0 +1,4515 @@
+import PropTypes from 'prop-types';
+import { useMemo, useState, useEffect } from 'react';
+import useSWR from 'swr';
+import axios from 'axios';
+
+import { Box, Grid, Button, Typography, Avatar, Link, TextField, CircularProgress, Alert, IconButton, Popover } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EmojiPicker from 'emoji-picker-react';
+
+import { useSocialInsights } from 'src/hooks/use-social-insights';
+import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
+
+import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
+import {
+  formatNumber,
+  getMetricValue,
+  calculateSummaryStats,
+  calculateEngagementRate,
+} from 'src/utils/socialMetricsCalculator';
+
+const PCRReportPage = ({ campaign, onBack }) => {
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Show second persona card state
+  const [showEducatorCard, setShowEducatorCard] = useState(false);
+  
+  // Editable content state
+  const [editableContent, setEditableContent] = useState({
+    campaignDescription: 'The campaign reached 180K users, generating 19K engagements at an engagement rate of 3.2%, which is above industry benchmarks. With a ROAS of 4.36%, the campaign met performance expectations.',
+    engagementDescription: 'The campaign generated strong engagement across creators. Engagement peaked during Week 3 and Week 4, mainly in the middle of the weeks, indicating that the audience was most active and receptive during these periods. This pattern suggests that posting content mid-week aligns better with the target audience\'s online behaviour. Claude Morgan provided the highest engagement for this campaign (11%)',
+    viewsDescription: 'By the end of the campaign, cumulative views reached 1.2M.\n\nView growth was strongest in Week 3, where cumulative views jumped from 520K to 900K, making it the highest-performing week in terms of view contribution (+380K views). This increase suggests a peak in audience attention, driven by multiple creator posts going live and higher content shareability during that period.',
+    audienceSentimentDescription: 'With 72% positive, 20% neutral, and 8% negative sentiment, the campaign clearly resonated with audiences. The high positivity reflects strong creator–audience alignment and shows that the content successfully built trust, excitement, and brand affinity. Neutral sentiment indicates viewers found the content acceptable and non-disruptive, often engaging through simple questions or casual remarks. The low negative sentiment suggests minimal friction, with most concerns likely tied to product details.',
+    noteworthyCreatorsDescription: 'In addition to Claude Morgan above, these creators also delivered noteworthy results during the campaign.',
+    bestPerformingPersonasDescription: 'The top-performing creator personas who resonated most with audiences and achieved standout campaign results. The best performing creator personas in this campaign were The Comic and The Educator, each driving strong audience engagement through distinct but complementary approaches.',
+    positiveComments: [
+      { username: '@darrenisaac', comment: '"The outfits are soo stunning"' },
+      { username: '@laikha.nur', comment: '"okii kena beli ni sbb memang CANTIK"' },
+      { username: '@lissasarah', comment: 'is asking for the size of the grey set' },
+      { username: '@koutafukami', comment: '"okay now this is fire"' },
+    ],
+    neutralComments: [
+      { username: '@murgandos', comment: '"Is it waterproof?"' },
+      { username: '@rhodesmasuda', comment: '"Is this available for international shipping?"' },
+      { username: '@vecnawashere', comment: 'is curious on how long shipping takes' },
+      { username: '@arifsufri', comment: '"I\'ve seen this before"' },
+    ],
+    comicTitle: 'The Comic',
+    comicEmoji: '🎭',
+    comicContentStyle: 'Skits, POV humor, exaggeration',
+    comicWhyWork: 'Strong virality potential',
+    educatorTitle: 'The Educator',
+    educatorEmoji: '👨‍🏫',
+    educatorContentStyle: 'Quick tips, how-tos, problem-solution',
+    educatorWhyWork: 'Positions the product as useful',
+    improvedInsights: [
+      'Some posts felt too similar in structure, limiting freshness and engagement potential.',
+      'Relying solely on videos limited creative diversity — carousel formats could add freshness and storytelling depth.',
+      'Future campaigns should feature more diverse creators across races and allow greater flexibility in storytelling for originality.',
+    ],
+    workedWellInsights: [
+      'Working with creators across different lifestyles and age groups made the campaign feel inclusive and relatable. The best performing creator personas in this campaign were minimal friction, with most concerns likely tied to product details.',
+      'Contest mechanics were communicated naturally',
+      'All-video content delivered authentic festive moments and strong engagement — moving forward, exploring carousel formats can add more variety and visual depth.',
+    ],
+    nextStepsInsights: [
+      'Some posts felt too similar in structure, limiting freshness and engagement potential.',
+      'Adjust posting times for higher reach.',
+      'Double down on content formats that performed best.',
+    ],
+  });
+  
+  // Emoji picker state
+  const [emojiPickerAnchor, setEmojiPickerAnchor] = useState(null);
+  const [emojiPickerType, setEmojiPickerType] = useState(null); // 'comic' or 'educator'
+  
+  // Extract posting submissions from campaign data
+  const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
+  const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
+  const campaignId = campaign?.id;
+
+  // Fetch social insights data
+  const { 
+    data: insightsData, 
+    isLoading: loadingInsights 
+  } = useSocialInsights(postingSubmissions, campaignId);
+
+  // Filter insights data for all platforms
+  const filteredInsightsData = useMemo(() => {
+    if (!insightsData || insightsData.length === 0) return [];
+    return insightsData;
+  }, [insightsData]);
+
+  // Filter submissions for all platforms  
+  const filteredSubmissions = useMemo(() => {
+    return postingSubmissions.filter((sub) => sub && sub.platform);
+  }, [postingSubmissions]);
+
+  // Calculate summary statistics from real data
+  const summaryStats = useMemo(() => {
+    if (filteredInsightsData.length === 0) {
+      return {
+        totalViews: 0,
+        totalLikes: 0,
+        totalComments: 0,
+        totalShares: 0,
+        totalSaved: 0,
+        totalReach: 0,
+        totalPosts: 0,
+        avgEngagementRate: 0,
+      };
+    }
+    return calculateSummaryStats(filteredInsightsData);
+  }, [filteredInsightsData]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('PCR Report - Campaign ID:', campaignId);
+    console.log('PCR Report - Posting Submissions:', postingSubmissions.length);
+    console.log('PCR Report - Insights Data:', insightsData?.length || 0);
+    console.log('PCR Report - Loading:', loadingInsights);
+    console.log('PCR Report - Summary Stats:', summaryStats);
+  }, [campaignId, postingSubmissions, insightsData, loadingInsights, summaryStats]);
+
+  // Fetch engagement heatmap data from backend API
+  const { data: heatmapApiData, isLoading: heatmapLoading, error: heatmapError } = useSWR(
+    campaign?.id ? `/api/campaign/${campaign.id}/trends/engagement-heatmap?platform=All&weeks=6` : null,
+    async (url) => {
+      console.log('🔍 Fetching heatmap from:', url);
+      const response = await axios.get(url);
+      console.log('✅ Heatmap API response:', response.data);
+      return response.data.data;
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      shouldRetryOnError: false,
+      dedupingInterval: 60000,
+    }
+  );
+
+  // Debug heatmap API state
+  console.log('📊 Heatmap API State:', {
+    loading: heatmapLoading,
+    error: heatmapError,
+    hasData: !!heatmapApiData,
+    data: heatmapApiData,
+  });
+
+  // Manual refresh function for insights
+  const handleRefreshInsights = async () => {
+    try {
+      console.log('🔄 Triggering manual insights refresh...');
+      const response = await axios.post(`/api/campaign/${campaign.id}/trends/refresh`);
+      console.log('✅ Refresh response:', response.data);
+      alert('Insights refreshed! Please wait a moment and refresh the page.');
+      // Revalidate the heatmap data
+      window.location.reload();
+    } catch (error) {
+      console.error('❌ Error refreshing insights:', error);
+      alert('Failed to refresh insights: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // EngagementRateHeatmap component
+  const EngagementRateHeatmap = () => {
+    // Process engagement data by day and week
+    const heatmapData = useMemo(() => {
+      // If API has data, use it
+      if (heatmapApiData && heatmapApiData.heatmap && heatmapApiData.heatmap.length > 0) {
+        console.log('Heatmap - Using API data');
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const processedData = {};
+        
+        heatmapApiData.heatmap.forEach((weekData, weekIndex) => {
+          const weekKey = `W${weekIndex + 1}`;
+          processedData[weekKey] = {};
+          
+          weekData.forEach((dayData, dayIndex) => {
+            const dayKey = days[dayIndex];
+            processedData[weekKey][dayKey] = dayData?.engagementRate || 0;
+          });
+        });
+
+        return processedData;
+      }
+
+      // Fall back to manual calculation if API doesn't have data
+      console.log('Heatmap - Using manual calculation (API not available)');
+      console.log('Heatmap - filteredInsightsData:', filteredInsightsData);
+      console.log('Heatmap - filteredInsightsData length:', filteredInsightsData?.length);
+      
+      if (!filteredInsightsData || filteredInsightsData.length === 0) {
+        console.log('⚠️ Heatmap - No insights data available, returning empty grid');
+        return {
+          W1: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W2: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W3: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W4: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W5: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W6: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 }
+        };
+      }
+
+      // Create a map to store engagement rates by day and week
+      const weeklyData = {};
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      
+      // Initialize 6 weeks of data
+      for (let week = 1; week <= 6; week++) {
+        weeklyData[`W${week}`] = {};
+        days.forEach(day => {
+          weeklyData[`W${week}`][day] = [];
+        });
+      }
+
+      // Find the earliest actual post date from Instagram/TikTok
+      const actualPostDates = filteredInsightsData
+        .filter(insight => insight.video?.timestamp || insight.video?.create_time)
+        .map(insight => new Date(insight.video.timestamp || insight.video.create_time).getTime());
+      
+      if (actualPostDates.length === 0) {
+        return {
+          W1: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W2: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W3: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W4: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W5: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+          W6: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 }
+        };
+      }
+      
+      const earliestActualPost = Math.min(...actualPostDates);
+      const firstPostDate = new Date(earliestActualPost);
+      
+      // Calculate the Monday of the week when the first post was published
+      const dayOfWeek = firstPostDate.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const weekStartMonday = new Date(firstPostDate);
+      weekStartMonday.setDate(firstPostDate.getDate() - daysToMonday);
+      weekStartMonday.setHours(0, 0, 0, 0);
+      
+      filteredInsightsData.forEach((insightData) => {
+        const actualPostTimestamp = insightData.video?.timestamp || insightData.video?.create_time;
+        
+        if (actualPostTimestamp) {
+          const postDate = new Date(actualPostTimestamp);
+          const postDateMidnight = new Date(postDate);
+          postDateMidnight.setHours(0, 0, 0, 0);
+          
+          const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
+          
+          if (!isNaN(engagementRate) && engagementRate >= 0) {
+            // Fill engagement rate for every day from post date onwards through all 6 weeks
+            for (let week = 1; week <= 6; week++) {
+              const weekStartDate = new Date(weekStartMonday);
+              weekStartDate.setDate(weekStartMonday.getDate() + (week - 1) * 7);
+              
+              for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                const currentDate = new Date(weekStartDate);
+                currentDate.setDate(weekStartDate.getDate() + dayIndex);
+                currentDate.setHours(0, 0, 0, 0);
+                
+                if (currentDate >= postDateMidnight) {
+                  const dayName = days[dayIndex];
+                  weeklyData[`W${week}`][dayName].push(engagementRate);
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Calculate average engagement rate for each day/week combination
+      const processedData = {};
+      Object.keys(weeklyData).forEach(week => {
+        processedData[week] = {};
+        days.forEach(day => {
+          const rates = weeklyData[week][day];
+          if (rates.length > 0) {
+            processedData[week][day] = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+          } else {
+            processedData[week][day] = 0;
+          }
+        });
+      });
+
+      return processedData;
+    }, [heatmapApiData, filteredInsightsData, filteredSubmissions, campaign]);
+
+    // Get color based on engagement rate
+    const getHeatmapColor = (rate) => {
+      if (rate < 1.5) return '#E6EFFF'; // 0 - 1.5% - very light blue
+      if (rate < 3) return '#98BBFF'; // 1.5-3% - light blue  
+      if (rate < 6) return '#1340FF'; // 3-6% - medium blue
+      return '#01197B'; // > 6% - dark blue
+    };
+
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weeks = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'];
+
+    return (
+      <Box
+        sx={{
+          width: '421px',
+          height: '401px',
+          borderRadius: '16px',
+          gap: '10px',
+          opacity: 1,
+          paddingTop: '16px',
+          paddingRight: '16px',
+          paddingBottom: '24px',
+          paddingLeft: '16px',
+          background: '#F5F5F5',
+          border: '1px solid #F5F5F5',
+          boxSizing: 'border-box',
+          marginLeft: '-92px', 
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            fontFamily: 'Aileron',
+            fontWeight: 600,
+            fontStyle: 'normal',
+            fontSize: '24px',
+            lineHeight: '100%',
+            letterSpacing: '0%',
+            textAlign: 'left',
+            color: '#231F20',
+            mb: 2,
+          }}
+        >
+          Engagement Rate Heatmap
+        </Typography>
+
+        {/* Heatmap Grid */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {/* Heatmap rows */}
+          {days.map((day) => (
+            <Box key={day} sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+              <Box
+                sx={{
+                  width: '40px',
+                  fontFamily: 'Inter Display, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  lineHeight: '18px',
+                  color: '#231F20',
+                  textAlign: 'right',
+                  pr: 1,
+                }}
+              >
+                {day}
+              </Box>
+              {weeks.map((week) => {
+                const rate = heatmapData?.[week]?.[day] || 0;
+                return (
+                  <Box
+                    key={`${week}-${day}`}
+                    sx={{
+                      width: '50px',
+                      height: '30px',
+                      backgroundColor: getHeatmapColor(rate),
+                      borderRadius: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          ))}
+          
+          {/* Week labels at bottom */}
+          <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+            <Box sx={{ width: '40px' }} /> {/* Empty space for alignment */}
+            {weeks.map((week) => (
+              <Box
+                key={week}
+                sx={{
+                  width: '50px',
+                  textAlign: 'center',
+                  fontFamily: 'Inter Display, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  lineHeight: '18px',
+                  color: '#231F20',
+                }}
+              >
+                {week}
+              </Box>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Legend */}
+        <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 2 }}>
+          {/* Color boxes with percentage labels */}
+          <Box sx={{ display: 'flex', gap: 0 }}>
+            <Box 
+              sx={{ 
+                minWidth: '80px',
+                height: '18px', 
+                backgroundColor: '#E6EFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'Inter Display, sans-serif',
+                fontSize: '11px',
+                fontWeight: 500,
+                color: '#231F20',
+              }}
+            >
+              {'< 1.5%'}
+            </Box>
+            <Box 
+              sx={{ 
+                minWidth: '90px',
+                height: '18px', 
+                backgroundColor: '#98BBFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'Inter Display, sans-serif',
+                fontSize: '11px',
+                fontWeight: 500,
+                color: '#231F20',
+              }}
+            >
+              1.5% - 3%
+            </Box>
+            <Box 
+              sx={{ 
+                minWidth: '80px',
+                height: '18px', 
+                backgroundColor: '#1340FF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'Inter Display, sans-serif',
+                fontSize: '11px',
+                fontWeight: 500,
+                color: '#FFFFFF',
+              }}
+            >
+              3% - 6%
+            </Box>
+            <Box 
+              sx={{ 
+                minWidth: '70px',
+                height: '18px', 
+                backgroundColor: '#01197B',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'Inter Display, sans-serif',
+                fontSize: '11px',
+                fontWeight: 500,
+                color: '#FFFFFF',
+              }}
+            >
+              {'> 6%'}
+            </Box>
+          </Box>
+
+          {/* Labels below */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '320px', mt: 1 }}>
+            <Typography 
+              sx={{ 
+                fontFamily: 'Inter Display, sans-serif',
+                fontSize: '10px', 
+                fontWeight: 600,
+                lineHeight: '14px',
+                letterSpacing: '0%',
+                color: '#231F20',
+              }}
+            >
+            Lowest Engagement
+          </Typography>
+            <Typography 
+              sx={{ 
+                fontFamily: 'Inter Display, sans-serif',
+                fontSize: '10px', 
+                fontWeight: 600,
+                lineHeight: '14px',
+                letterSpacing: '0%',
+                color: '#231F20',
+              }}
+            >
+            Highest Engagement
+          </Typography>
+        </Box>
+        </Box>
+      </Box>
+    );
+  };
+
+  // PlatformInteractionsChart component
+  const PlatformInteractionsChart = () => {
+    // Calculate platform-specific interactions from API data
+    const platformData = useMemo(() => {
+      console.log('Platform Chart - Insights data:', filteredInsightsData?.length);
+      console.log('Platform Chart - Submissions:', filteredSubmissions?.length);
+      
+      if (!filteredInsightsData || filteredInsightsData.length === 0) {
+        console.log('Platform Chart - No data, returning mock data');
+        // Hardcoded data for display
+        return { instagram: 5034, tiktok: 9203, total: 14237 };
+      }
+
+      let instagramInteractions = 0;
+      let tiktokInteractions = 0;
+
+      filteredInsightsData.forEach((insightData) => {
+        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+        console.log('Platform Chart - Submission:', submission?.platform, 'Insight:', insightData.insight);
+        
+        if (submission && insightData.insight) {
+          // Use getMetricValue helper to extract metrics from insight array
+          const likes = getMetricValue(insightData.insight, 'likes');
+          const comments = getMetricValue(insightData.insight, 'comments');
+          const shares = getMetricValue(insightData.insight, 'shares');
+          const saved = getMetricValue(insightData.insight, 'saved');
+          
+          // Calculate total interactions
+          const interactions = likes + comments + shares + saved;
+
+          console.log('Platform Chart - Platform:', submission.platform, 'Interactions:', interactions, 
+            '(Likes:', likes, 'Comments:', comments, 'Shares:', shares, 'Saved:', saved, ')');
+
+          if (submission.platform === 'Instagram') {
+            instagramInteractions += interactions;
+          } else if (submission.platform === 'TikTok') {
+            tiktokInteractions += interactions;
+          }
+        }
+      });
+
+      const total = instagramInteractions + tiktokInteractions;
+      
+      console.log('Platform Chart - Final:', { 
+        instagram: instagramInteractions, 
+        tiktok: tiktokInteractions, 
+        total 
+      });
+      
+      return {
+        instagram: instagramInteractions,
+        tiktok: tiktokInteractions,
+        total
+      };
+    }, [filteredInsightsData, filteredSubmissions]);
+
+    // Calculate percentages for the donut chart
+    const instagramPercentage = platformData.total > 0 ? (platformData.instagram / platformData.total) * 100 : 0;
+    const tiktokPercentage = platformData.total > 0 ? (platformData.tiktok / platformData.total) * 100 : 0;
+
+    // SVG donut chart parameters
+    const size = 200;
+    const strokeWidth = 20;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    
+    // Calculate stroke dash arrays for the segments
+    const instagramStrokeDasharray = `${(instagramPercentage / 100) * circumference} ${circumference}`;
+    const tiktokStrokeDasharray = `${(tiktokPercentage / 100) * circumference} ${circumference}`;
+    
+    // Calculate rotation for TikTok segment to start after Instagram
+    const tiktokRotation = (instagramPercentage / 100) * 360;
+
+    const formatNumber = (num) => {
+      if (num >= 1000) {
+        return `${(num / 1000).toFixed(0)},${(num % 1000).toString().padStart(3, '0')}`;
+      }
+      return num.toString();
+    };
+
+    return (
+      <Box
+        sx={{
+          width: '292px',
+          height: '400px',
+          borderRadius: '16px',
+          gap: '10px',
+          opacity: 1,
+          paddingTop: '16px',
+          paddingRight: '16px',
+          paddingBottom: '24px',
+          paddingLeft: '16px',
+          background: '#F5F5F5',
+          border: '1px solid #F5F5F5',
+          boxSizing: 'border-box',
+          marginLeft: '10px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            fontFamily: 'Aileron',
+            fontWeight: 600,
+            fontStyle: 'normal',
+            fontSize: '24px',
+            lineHeight: '100%',
+            letterSpacing: '0%',
+            textAlign: 'left',
+            color: '#231F20',
+            mb: 2,
+            alignSelf: 'flex-start',
+          }}
+        >
+          Platform Interactions
+        </Typography>
+
+        {/* Donut Chart with External Labels */}
+        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '280px' }}>
+          <svg width="280" height="240" viewBox="0 0 280 240">
+            {/* Background circle */}
+            <circle
+              cx="140"
+              cy="120"
+              r="80"
+              fill="transparent"
+              stroke="#E5E7EB"
+              strokeWidth="18"
+            />
+            
+            {/* Instagram segment (pink) - starts from bottom */}
+            <circle
+              cx="140"
+              cy="120"
+              r="80"
+              fill="transparent"
+              stroke="#C13584"
+              strokeWidth="18"
+              strokeDasharray={`${(instagramPercentage / 100) * (80 * 2 * Math.PI)} ${80 * 2 * Math.PI}`}
+              strokeLinecap={platformData.tiktok === 0 ? "butt" : "round"}
+              transform="rotate(90 140 120)"
+            />
+            
+            {/* TikTok segment (black) - starts after Instagram - only show if TikTok has data */}
+            {platformData.tiktok > 0 && (
+              <>
+            <circle
+                  cx="140"
+                  cy="120"
+                  r="80"
+              fill="transparent"
+              stroke="#000000"
+                  strokeWidth="18"
+                  strokeDasharray={`${(tiktokPercentage / 100) * (80 * 2 * Math.PI)} ${80 * 2 * Math.PI}`}
+                  strokeLinecap={platformData.instagram === 0 ? "butt" : "round"}
+                  transform={`rotate(${90 + (instagramPercentage / 100) * 360} 140 120)`}
+            />
+            
+            {/* TikTok leader line - top left */}
+                <line x1="85" y1="60" x2="50" y2="30" stroke="#000000" strokeWidth="1" />
+                <line x1="50" y1="30" x2="15" y2="30" stroke="#000000" strokeWidth="1" />
+              </>
+            )}
+            
+            {/* Instagram leader line - bottom right - only show if Instagram has data */}
+            {platformData.instagram > 0 && (
+              <>
+                <line x1="195" y1="180" x2="230" y2="210" stroke="#C13584" strokeWidth="1" />
+                <line x1="230" y1="210" x2="265" y2="210" stroke="#C13584" strokeWidth="1" />
+              </>
+            )}
+          </svg>
+          
+          {/* Center text */}
+          <Box
+            sx={{
+              position: 'absolute',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: 'Instrument Serif',
+                fontWeight: 400,
+                fontStyle: 'normal',
+                fontSize: '32px',
+                lineHeight: '36px',
+                letterSpacing: '0%',
+                textAlign: 'center',
+                color: '#000000E5',
+                mb: 0.5,
+              }}
+            >
+              {formatNumber(platformData.total)}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: 'Aileron',
+                fontWeight: 600,
+                fontStyle: 'normal',
+                fontSize: '12.52px',
+                lineHeight: '100%',
+                letterSpacing: '0%',
+                textAlign: 'center',
+                color: '#000000E5',
+              }}
+            >
+              Total Interactions
+            </Typography>
+          </Box>
+
+          {/* TikTok external label - positioned on the leader line - only show if TikTok has data */}
+          {platformData.tiktok > 0 && (
+          <Box
+            sx={{
+              position: 'absolute',
+                top: '15px', // Positioned on the horizontal leader line
+                left: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: 'Aileron',
+                fontWeight: 400,
+                fontStyle: 'italic',
+                fontSize: '12px',
+                lineHeight: '100%',
+                letterSpacing: '0%',
+                color: '#000000B2',
+                textDecoration: 'underline',
+                mb: 0.5,
+              }}
+            >
+              TikTok
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: 'Aileron',
+                fontWeight: 400,
+                fontStyle: 'normal',
+                fontSize: '12px',
+                lineHeight: '100%',
+                letterSpacing: '0%',
+                color: '#000000B2',
+              }}
+            >
+              {formatNumber(platformData.tiktok)}
+            </Typography>
+          </Box>
+          )}
+
+          {/* Instagram external label - positioned on the leader line - only show if Instagram has data */}
+          {platformData.instagram > 0 && (
+          <Box
+            sx={{
+              position: 'absolute',
+                bottom: '15px', // Positioned on the horizontal leader line
+                right: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: 'Aileron',
+                fontWeight: 400,
+                fontStyle: 'italic',
+                fontSize: '12px',
+                lineHeight: '100%',
+                letterSpacing: '0%',
+                color: '#000000B2',
+                textDecoration: 'underline',
+                mb: 0.5,
+              }}
+            >
+              Instagram
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: 'Aileron',
+                fontWeight: 400,
+                fontStyle: 'normal',
+                fontSize: '12px',
+                lineHeight: '100%',
+                letterSpacing: '0%',
+                color: '#000000B2',
+              }}
+            >
+              {formatNumber(platformData.instagram)}
+            </Typography>
+          </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  const HighestViewWeekChart = () => {
+    const weekViewsData = useMemo(() => {
+      console.log('Chart - Insights Data:', filteredInsightsData?.length);
+      console.log('Chart - Submissions:', filteredSubmissions?.length);
+      
+      if (!filteredInsightsData || filteredInsightsData.length === 0) {
+        console.log('Chart - No data available');
+        return [];
+      }
+
+      // Get actual post dates from Instagram/TikTok video data
+      const actualPostDates = filteredInsightsData
+        .filter(insight => insight.video?.timestamp || insight.video?.create_time)
+        .map(insight => new Date(insight.video.timestamp || insight.video.create_time).getTime());
+      
+      const earliestActualPost = actualPostDates.length > 0 ? Math.min(...actualPostDates) : Date.now();
+      const campaignStart = new Date(campaign?.startDate || earliestActualPost);
+      
+      console.log('Chart - Campaign Start:', campaignStart);
+
+      // Group views by week - based on actual Instagram/TikTok post dates
+      const weeklyData = {};
+      
+      filteredInsightsData.forEach((insightData) => {
+        if (insightData.insight && insightData.video) {
+          // Use actual post timestamp from Instagram/TikTok
+          const actualPostTimestamp = insightData.video.timestamp || insightData.video.create_time;
+          
+          if (actualPostTimestamp) {
+            const postDate = new Date(actualPostTimestamp);
+            const views = getMetricValue(insightData.insight, 'views');
+            
+            // Calculate which week this post belongs to
+            const daysSinceStart = Math.floor((postDate - campaignStart) / (24 * 60 * 60 * 1000));
+            const weekNumber = Math.min(6, Math.max(1, Math.floor(daysSinceStart / 7) + 1));
+            
+            console.log('Chart - Actual Post Date:', postDate, 'Week:', weekNumber, 'Views:', views);
+            
+            if (!weeklyData[weekNumber]) {
+              weeklyData[weekNumber] = {
+                weekNumber,
+                totalViews: 0,
+                posts: [],
+              };
+            }
+            
+            weeklyData[weekNumber].totalViews += views;
+            weeklyData[weekNumber].posts.push({
+              date: postDate,
+              views,
+            });
+          }
+        }
+      });
+
+      console.log('Chart - Weekly Data:', weeklyData);
+
+      let highestWeek = null;
+      let maxWeekViews = 0;
+      
+      Object.values(weeklyData).forEach((week) => {
+        if (week.totalViews > maxWeekViews) {
+          maxWeekViews = week.totalViews;
+          highestWeek = week;
+        }
+      });
+
+      console.log('Chart - Highest Week:', highestWeek?.weekNumber, 'Views:', maxWeekViews);
+
+      if (!highestWeek) {
+        console.log('Chart - No highest week found');
+        return [];
+      }
+
+      // Find the earliest post date in the highest week
+      const firstPostDate = new Date(Math.min(...highestWeek.posts.map(p => new Date(p.date).getTime())));
+      const dayOfWeek = firstPostDate.getDay(); 
+      
+      // Calculate Monday of that week
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; 
+      const weekStartDate = new Date(firstPostDate);
+      weekStartDate.setDate(firstPostDate.getDate() - daysToMonday);
+      weekStartDate.setHours(0, 0, 0, 0);
+      
+      console.log('Chart - First post date:', firstPostDate);
+      console.log('Chart - Week start (Monday):', weekStartDate);
+      
+      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      const weekData = [];
+
+      const totalWeekViews = highestWeek.totalViews;
+      
+      // Simulate daily view distribution for the week
+      // This assumes views are concentrated in the first few days after posting
+      const distributionPattern = [0.12, 0.15, 0.18, 0.22, 0.15, 0.10, 0.08]; 
+      
+      for (let i = 0; i < 7; i++) {
+        const currentDate = new Date(weekStartDate);
+        currentDate.setDate(currentDate.getDate() + i);
+        currentDate.setHours(0, 0, 0, 0);
+        
+        // Calculate if this day is on or after the first post in this week
+        const firstPostDateStart = new Date(firstPostDate);
+        firstPostDateStart.setHours(0, 0, 0, 0);
+        const isAfterFirstPost = currentDate >= firstPostDateStart;
+        
+        let dailyViews = 0;
+        
+        // Only distribute views to days after the first post
+        if (isAfterFirstPost) {
+          dailyViews = Math.round(totalWeekViews * distributionPattern[i]);
+        }
+        
+        weekData.push({
+          day: dayNames[i],
+          date: `(${currentDate.getDate()}/${currentDate.getMonth() + 1})`,
+          views: dailyViews,
+          dailyViews: dailyViews,
+        });
+      }
+
+      console.log('Chart - Week Data (Monday-Sunday, 7 days):', weekData);
+      return weekData;
+    }, [filteredInsightsData, filteredSubmissions, campaign]);
+
+    // If no data, show message
+    if (!weekViewsData || weekViewsData.length === 0) {
+      return (
+        <Box sx={{ width: '100%', p: 4, textAlign: 'center' }}>
+          <Typography sx={{ color: '#6B7280', fontSize: '16px' }}>
+            No view data available for the campaign yet.
+          </Typography>
+        </Box>
+      );
+    }
+
+      const chartWidth = 1400;
+      const chartHeight = 480;
+      const padding = { top: 80, right: 60, bottom: 150, left: 60 };
+      const innerWidth = chartWidth - padding.left - padding.right;
+      const innerHeight = chartHeight - padding.top - padding.bottom;
+
+    const maxViews = Math.max(...weekViewsData.map(d => d.views));
+    const minViews = Math.min(...weekViewsData.map(d => d.views));
+    const viewsRange = maxViews - minViews || 1;
+
+    // Generate path points
+    const points = weekViewsData.map((d, i) => {
+      const x = padding.left + (i / (weekViewsData.length - 1)) * innerWidth;
+      const y = padding.top + innerHeight - ((d.views - minViews) / viewsRange) * innerHeight;
+      return { x, y, ...d };
+    });
+
+    // Create SVG path
+    const pathData = points.map((p, i) => 
+      `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`
+    ).join(' ');
+
+    return (
+      <Box sx={{ width: '100%', p: -4 }}>
+        <svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="xMidYMid meet">
+          {/* Line path */}
+          <path
+            d={pathData}
+            fill="none"
+            stroke="#2D7A7B"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Data points and labels */}
+          {points.map((point, i) => {
+            // Place labels below the data points
+            const labelY = point.y + 40;
+            const labelX = point.x;
+            
+            return (
+              <g key={i}>
+                {/* Outer circle (white) */}
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r="12"
+                  fill="white"
+                  stroke="#2D7A7B"
+                  strokeWidth="4"
+                />
+                
+                {/* Value label below point - white fill with green outline and shadow */}
+                <text
+                  x={labelX}
+                  y={labelY}
+                  textAnchor="middle"
+                  fill="white"
+                  fontSize="24"
+                  fontWeight="700"
+                  fontFamily="Aileron"
+                  stroke="#2D7A7B"
+                  strokeWidth="2"
+                  paintOrder="stroke"
+                  style={{ 
+                    filter: 'drop-shadow(4px 5px 3px #026D54) drop-shadow(2px 3px 8px #026D54)'
+                  }}
+                >
+                  {point.views}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* X-axis labels */}
+          {points.map((point, i) => (
+            <g key={`label-${i}`}>
+              {/* Day name */}
+              <text
+                x={point.x}
+                y={chartHeight - 75}
+                textAnchor="middle"
+                fill="#231F20"
+                fontSize="18"
+                fontWeight="400"
+                fontFamily="Aileron"
+              >
+                {point.day}
+              </text>
+              {/* Date */}
+              <text
+                x={point.x}
+                y={chartHeight - 45}
+                textAnchor="middle"
+                fill="#231F20"
+                fontSize="18"
+                fontWeight="400"
+                fontFamily="Aileron"
+              >
+                {point.date}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </Box>
+    );
+  };
+
+  // TopEngagementCard component
+  const TopEngagementCard = () => {
+    const topEngagementCreator = useMemo(() => {
+      if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
+
+      let highestEngagement = -1;
+      let topCreator = null;
+
+      filteredInsightsData.forEach((insightData) => {
+        const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+        if (submission) {
+          // Calculate engagement rate using the insight array
+          const engagementRate = calculateEngagementRate(insightData.insight);
+          
+          if (engagementRate > highestEngagement) {
+            highestEngagement = engagementRate;
+            topCreator = {
+              ...submission,
+              engagementRate,
+              insightData,
+            };
+          }
+        }
+      });
+
+      return topCreator;
+    }, [filteredInsightsData, filteredSubmissions]);
+
+    const { data: creator } = useGetCreatorById(topEngagementCreator?.user);
+
+    if (!topEngagementCreator) {
+      return (
+        <Box
+          sx={{
+            height: '400px',
+            width: '100%',
+            backgroundColor: '#F5F5F5',
+            p: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '12px'
+          }}
+        >
+          <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20" sx={{ mb: 2 }}>
+            Top Engagement
+          </Typography>
+          <Typography variant="body2" color="#64748B">
+            No engagement data available
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Box
+        sx={{
+          width: '228px',
+          height: '400px',
+          gap: '15px',
+          opacity: 1,
+          paddingTop: '20px',
+          paddingBottom: '20px',
+          paddingLeft: '20px',
+          paddingRight: '20px',
+          backgroundColor: '#F5F5F5',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          borderRadius: '12px',
+          boxSizing: 'border-box',
+        }}
+      >
+        <Typography variant="h6" fontWeight={600} fontFamily="Aileron" color="#231F20">
+          Top Engagement
+        </Typography>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <Typography
+            fontFamily="Instrument Serif"
+            fontWeight={400}
+            fontSize={55}
+            color="#1340FF"
+            textAlign="center"
+          >
+            {topEngagementCreator.engagementRate}%
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar
+              sx={{
+                width: 45,
+                height: 45,
+                bgcolor:
+                  topEngagementCreator && topEngagementCreator.platform === 'Instagram'
+                    ? '#E4405F'
+                    : '#000000',
+                mr: 1,
+              }}
+            >
+              {creator?.user?.name?.charAt(0) || 'U'}
+            </Avatar>
+            <Box
+              sx={{
+                height: 40,
+                maxWidth: 100,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography
+                fontSize={14}
+                fontWeight={600}
+                color="#231F20"
+                sx={{ textAlign: 'left' }}
+                noWrap
+                textOverflow="ellipsis"
+                overflow="hidden"
+              >
+                {creator?.user?.name || 'Unknown'}
+              </Typography>
+              <Typography fontSize={12} color="#636366" sx={{ textAlign: 'left' }}>
+                {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Box sx={{ alignSelf: 'center' }}>
+          <Link
+            href={topEngagementCreator.insightData.postUrl}
+            target="_blank"
+            rel="noopener"
+            sx={{
+              display: 'block',
+              textDecoration: 'none',
+              '&:hover': {
+                opacity: 0.8,
+                transition: 'opacity 0.2s',
+              },
+            }}
+          >
+            <Box
+              component="img"
+              src={
+                topEngagementCreator.insightData.thumbnail ||
+                topEngagementCreator.insightData.video?.media_url
+              }
+              alt="Top performing post"
+              sx={{
+                width: '188px',
+                height: '180px',
+                mt: 2,
+                borderRadius: 2,
+                objectFit: 'cover',
+                objectPosition: 'left top',
+                border: '1px solid #e0e0e0',
+              }}
+            />
+          </Link>
+        </Box>
+      </Box>
+    );
+  };
+
+  return (
+  <Box
+    sx={{
+      width: '1078px',
+      minHeight: '2923px',
+      padding: '24px',
+      gap: '10px',
+      background: 'linear-gradient(180deg, #1340FF 0%, #8A5AFE 100%)',
+      borderRadius: '16px',
+      margin: '0 auto',
+      position: 'relative'
+    }}
+  >
+    {/* Inner white content container */}
+    <Box
+      sx={{
+        background: '#FFFFFF',
+        borderRadius: '12px',
+        padding: '32px',
+        minHeight: 'calc(100% - 48px)',
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)'
+      }}
+    >
+    {/* Header with Back Button */}
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Button
+        onClick={onBack}
+        sx={{
+          width: '73px',
+          height: '44px',
+          borderRadius: '8px',
+          gap: '6px',
+          padding: '10px 16px 13px 16px',
+          background: '#3A3A3C',
+          boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+          color: '#FFFFFF',
+          textTransform: 'none',
+          fontFamily: 'Inter Display, sans-serif',
+          fontWeight: 600,
+          fontStyle: 'normal',
+          fontSize: '16px',
+          lineHeight: '20px',
+          letterSpacing: '0%',
+          '&:hover': {
+            background: '#2A2A2C',
+            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
+          },
+          '&:active': {
+            boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
+            transform: 'translateY(1px)',
+          }
+        }}
+      >
+        Back
+      </Button>
+      
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        {isEditMode ? (
+          <>
+            <Button
+              sx={{
+                height: '44px',
+                borderRadius: '8px',
+                padding: '10px 16px 13px 16px',
+                background: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                color: '#374151',
+                textTransform: 'none',
+                fontFamily: 'Inter Display, sans-serif',
+                fontWeight: 600,
+                fontStyle: 'normal',
+                fontSize: '16px',
+                lineHeight: '20px',
+                letterSpacing: '0%',
+                '&:hover': {
+                  background: '#F9FAFB',
+                  border: '1px solid #D1D5DB',
+                  boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                },
+                '&:active': {
+                  boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                  transform: 'translateY(1px)',
+                }
+              }}
+            >
+              Undo ↶
+            </Button>
+            <Button
+              sx={{
+                height: '44px',
+                borderRadius: '8px',
+                padding: '10px 16px 13px 16px',
+                background: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                color: '#374151',
+                textTransform: 'none',
+                fontFamily: 'Inter Display, sans-serif',
+                fontWeight: 600,
+                fontStyle: 'normal',
+                fontSize: '16px',
+                lineHeight: '20px',
+                letterSpacing: '0%',
+                '&:hover': {
+                  background: '#F9FAFB',
+                  border: '1px solid #D1D5DB',
+                  boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                },
+                '&:active': {
+                  boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                  transform: 'translateY(1px)',
+                }
+              }}
+            >
+              Redo ↷
+            </Button>
+            <Button
+              onClick={() => setIsEditMode(false)}
+              sx={{
+                height: '44px',
+                borderRadius: '8px',
+                padding: '10px 16px 13px 16px',
+                background: '#1340FF',
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                color: '#FFFFFF',
+                textTransform: 'none',
+                fontFamily: 'Inter Display, sans-serif',
+                fontWeight: 600,
+                fontStyle: 'normal',
+                fontSize: '16px',
+                lineHeight: '20px',
+                letterSpacing: '0%',
+                '&:hover': {
+                  background: '#0F35E6',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
+                },
+                '&:active': {
+                  boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                  transform: 'translateY(1px)',
+                }
+              }}
+            >
+              Save
+            </Button>
+          </>
+        ) : (
+          <>
+        <Button
+          sx={{
+            width: '117px',
+            height: '44px',
+            borderRadius: '8px',
+            gap: '6px',
+            padding: '10px 16px 13px 16px',
+            background: '#FFFFFF',
+            border: '1px solid #E7E7E7',
+            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            color: '#374151',
+            textTransform: 'none',
+            fontFamily: 'Inter Display, sans-serif',
+            fontWeight: 600,
+            fontStyle: 'normal',
+            fontSize: '16px',
+            lineHeight: '20px',
+            letterSpacing: '0%',
+            '&:hover': {
+              background: '#F9FAFB',
+              border: '1px solid #D1D5DB',
+              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+            },
+            '&:active': {
+              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+              transform: 'translateY(1px)',
+            }
+          }}
+              onClick={() => setIsEditMode(true)}
+        >
+              Edit Report
+        </Button>
+        <Button
+          onClick={handleRefreshInsights}
+          sx={{
+            height: '44px',
+            borderRadius: '8px',
+            padding: '10px 16px',
+            background: '#10B981',
+            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+            color: '#FFFFFF',
+            textTransform: 'none',
+            fontFamily: 'Inter Display, sans-serif',
+            fontWeight: 600,
+            fontSize: '16px',
+            lineHeight: '20px',
+            '&:hover': {
+              background: '#059669',
+              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
+            },
+            '&:active': {
+              boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
+              transform: 'translateY(1px)',
+            }
+          }}
+        >
+          🔄 Refresh Data
+        </Button>
+        <Button
+          sx={{
+            width: '79px',
+            height: '44px',
+            borderRadius: '8px',
+            gap: '6px',
+            padding: '10px 16px 13px 16px',
+            background: '#1340FF',
+            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+            color: '#FFFFFF',
+            textTransform: 'none',
+            fontFamily: 'Inter Display, sans-serif',
+            fontWeight: 600,
+            fontStyle: 'normal',
+            fontSize: '16px',
+            lineHeight: '20px',
+            letterSpacing: '0%',
+            '&:hover': {
+              background: '#0F35E6',
+              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
+            },
+            '&:active': {
+              boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
+              transform: 'translateY(1px)',
+            }
+          }}
+        >
+          Share
+        </Button>
+          </>
+        )}
+      </Box>
+    </Box>
+
+
+    {/* Report Header */}
+    <Box sx={{ mb: 4 }}>
+      <Typography 
+        variant="caption" 
+        sx={{ 
+          fontFamily: 'Inter Display, sans-serif',
+          fontWeight: 400,
+          fontStyle: 'normal',
+          fontSize: '16px',
+          lineHeight: '20px',
+          letterSpacing: '0%',
+          textTransform: 'uppercase',
+          color: '#231F20',
+          mb: 1, 
+          display: 'block' 
+        }}
+      >
+        POST CAMPAIGN REPORT: 17 NOVEMBER 2025 - 17 DECEMBER 2025
+      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontFamily: 'Inter Display, sans-serif',
+            fontWeight: 700,
+            fontStyle: 'normal',
+            fontSize: '40px',
+            lineHeight: '100%',
+            letterSpacing: '0%',
+            color: '#231F20'
+          }}
+        >
+          {campaign?.name || 'Crafting Unforgettable Nights'}
+        </Typography>
+        <Typography 
+          variant="h4"
+          sx={{
+            fontSize: '40px',
+            lineHeight: '100%'
+          }}
+        >
+          🍻
+        </Typography>
+      </Box>
+      
+      {isEditMode ? (
+        <Box sx={{ position: 'relative', mb: 2 }}>
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '12px', 
+            left: '12px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 0.5,
+            zIndex: 1,
+            bgcolor: '#F3F4F6',
+            px: 0.5
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
+              Editable
+            </Typography>
+            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            value={editableContent.campaignDescription}
+            onChange={(e) => setEditableContent({ ...editableContent, campaignDescription: e.target.value })}
+            placeholder="type here"
+            sx={{
+              '& .MuiInputBase-root': {
+                fontFamily: 'Inter Display',
+                fontSize: '20px',
+                lineHeight: '24px',
+                color: '#231F20',
+                bgcolor: '#F3F4F6',
+                borderRadius: '8px',
+                padding: '12px',
+                paddingTop: '40px',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: '1px solid #E5E7EB',
+              },
+            }}
+          />
+        </Box>
+      ) : (
+      <Typography 
+        variant="body1" 
+        sx={{ 
+          fontFamily: 'Inter Display, sans-serif',
+          fontWeight: 400,
+          fontStyle: 'normal',
+          fontSize: '20px',
+          lineHeight: '24px',
+          letterSpacing: '0%',
+          color: '#231F20'
+        }}
+      >
+          {editableContent.campaignDescription}
+      </Typography>
+      )}
+    </Box>
+
+    {/* Metrics Cards */}
+    <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Grid item xs={6} md={3}>
+        <Box
+          sx={{
+            background: 'linear-gradient(0deg, #026D54 0%, rgba(2, 109, 84, 0) 107.14%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '36px',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {formatNumber(summaryStats.totalViews) || '0'}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Total Views
+          </Typography>
+        </Box>
+      </Grid>
+      <Grid item xs={6} md={3}>
+        <Box
+          sx={{
+            background: 'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '36px',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {formatNumber(summaryStats.totalLikes) || '0'}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Total Likes
+          </Typography>
+        </Box>
+      </Grid>
+      <Grid item xs={6} md={3}>
+        <Box
+          sx={{
+            background: 'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '36px',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {formatNumber(summaryStats.totalComments) || '0'}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Total Comments
+          </Typography>
+        </Box>
+      </Grid>
+      <Grid item xs={6} md={3}>
+        <Box
+          sx={{
+            background: 'linear-gradient(180deg, rgba(19, 64, 255, 0) -8.65%, #1340FF 100%)',
+            borderRadius: '12px',
+            p: 3,
+            color: 'white',
+            height: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'flex-start'
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 500,
+              fontStyle: 'normal',
+              fontSize: '36px',
+              lineHeight: '100%',
+              letterSpacing: '0%',
+              color: '#FFFFFF',
+              mb: 0.5
+            }}
+          >
+            {formatNumber(summaryStats.totalSaved) || '0'}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontFamily: 'Inter Display, sans-serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '16px',
+              letterSpacing: '0%',
+              color: '#FFFFFF'
+            }}
+          >
+            Total Saved
+          </Typography>
+        </Box>
+      </Grid>
+    </Grid>
+
+    {/* Engagement & Interactions Section */}
+    <Box sx={{ mb: 4 }}>
+      <Typography 
+        variant="h3" 
+        sx={{ 
+          fontFamily: 'Instrument Serif, serif',
+          fontWeight: 400,
+          fontStyle: 'normal',
+          fontSize: '56px',
+          lineHeight: '60px',
+          letterSpacing: '0%',
+          color: '#231F20',
+          mb: 1
+        }}
+      >
+        Engagement & Interactions
+      </Typography>
+      
+      {isEditMode ? (
+        <Box sx={{ position: 'relative', mb: 3 }}>
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '12px', 
+            left: '12px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 0.5,
+            zIndex: 1,
+            bgcolor: '#F3F4F6',
+            px: 0.5
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
+              Editable
+            </Typography>
+            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            value={editableContent.engagementDescription}
+            onChange={(e) => setEditableContent({ ...editableContent, engagementDescription: e.target.value })}
+            placeholder="type here"
+            sx={{
+              '& .MuiInputBase-root': {
+                fontFamily: 'Inter Display',
+                fontSize: '20px',
+                lineHeight: '24px',
+                color: '#231F20',
+                bgcolor: '#F3F4F6',
+                borderRadius: '8px',
+                padding: '12px',
+                paddingTop: '40px',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: '1px solid #E5E7EB',
+              },
+            }}
+          />
+        </Box>
+      ) : (
+      <Typography 
+        variant="body1" 
+        sx={{ 
+          fontFamily: 'Inter Display, sans-serif',
+          fontWeight: 400,
+          fontStyle: 'normal',
+          fontSize: '20px',
+          lineHeight: '24px',
+          letterSpacing: '0%',
+          color: '#231F20',
+          mb: 3,
+          '& strong': {
+            fontFamily: 'Inter Display, sans-serif',
+            fontWeight: 700,
+            fontStyle: 'normal',
+            fontSize: '20px',
+            lineHeight: '24px',
+            letterSpacing: '0%',
+            color: '#231F20'
+          }
+        }}
+      >
+          {editableContent.engagementDescription}
+      </Typography>
+      )}
+
+      {/* Analytics Grid */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Top Engagement */}
+        <Grid item xs={12} md={4}>
+          <TopEngagementCard />
+        </Grid>
+
+        {/* Engagement Rate Heatmap */}
+        <Grid item xs={12} md={4}>
+          <EngagementRateHeatmap />
+        </Grid>
+
+        {/* Platform Interactions */}
+        <Grid item xs={12} md={4}>
+          <PlatformInteractionsChart />
+        </Grid>
+      </Grid>
+    </Box>
+
+    {/* Noteworthy Creators Section */}
+    <Box sx={{ mb: 4 }}>
+      {isEditMode ? (
+        <Box sx={{ position: 'relative', mb: 3 }}>
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '12px', 
+            left: '12px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 0.5,
+            zIndex: 1,
+            bgcolor: '#F3F4F6',
+            px: 0.5
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
+              Editable
+      </Typography>
+            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            rows={2}
+            value={editableContent.noteworthyCreatorsDescription}
+            onChange={(e) => setEditableContent({ ...editableContent, noteworthyCreatorsDescription: e.target.value })}
+            placeholder="type here"
+              sx={{
+              '& .MuiInputBase-root': {
+                fontFamily: 'Inter Display',
+                fontSize: '20px',
+                lineHeight: '24px',
+                color: '#231F20',
+                bgcolor: '#F3F4F6',
+                borderRadius: '8px',
+                padding: '12px',
+                paddingTop: '40px',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: '1px solid #E5E7EB',
+              },
+            }}
+          />
+        </Box>
+      ) : (
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            fontFamily: 'Inter Display, sans-serif',
+            fontWeight: 400,
+            fontSize: '20px',
+            lineHeight: '24px',
+            color: '#231F20',
+            mb: 3 
+          }}
+        >
+          {editableContent.noteworthyCreatorsDescription}
+        </Typography>
+      )}
+      
+      <Grid container spacing={2}>
+        {/* Most Views Card */}
+        {(() => {
+          let mostViewsCreator = null;
+          let maxViews = 0;
+          
+          filteredInsightsData.forEach((insightData) => {
+            const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+            const views = getMetricValue(insightData.insight, 'views');
+            if (views > maxViews) {
+              maxViews = views;
+              mostViewsCreator = { submission, insightData, views };
+            }
+          });
+          
+          const { data: creator } = useGetCreatorById(mostViewsCreator?.submission?.user);
+          const likes = mostViewsCreator ? getMetricValue(mostViewsCreator.insightData.insight, 'likes') : 0;
+          const comments = mostViewsCreator ? getMetricValue(mostViewsCreator.insightData.insight, 'comments') : 0;
+          const engagementRate = mostViewsCreator ? calculateEngagementRate(mostViewsCreator.insightData.insight) : 0;
+          
+          return (
+            <Grid item xs={12} md={4}>
+              <Box sx={{ 
+                  padding: '16px',
+                  bgcolor: '#FFFFFF', 
+                  borderRadius: '8px', 
+                  border: '1px solid #EBEBEB',
+                  boxShadow: '0px -3px 0px 0px #EBEBEB inset',
+                  position: 'relative'
+              }}>
+                {/* Most Views Badge */}
+                <Box sx={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  bgcolor: '#D1FAE5',
+                  borderRadius: '6px',
+                  px: 1.5,
+                  py: 0.5,
+                  fontFamily: 'Aileron',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  color: '#065F46'
+                }}>
+                  Most Views
+            </Box>
+                
+                {/* Creator Info */}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
+                  <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
+                    {creator?.user?.name?.charAt(0) || 'U'}
+                  </Avatar>
+                  <Box>
+                    <Typography sx={{ 
+                      fontFamily: 'Aileron', 
+                      fontWeight: 600, 
+                      fontSize: '14px',
+                      color: '#231F20' 
+                    }}>
+                      {creator?.user?.name || 'Unknown'}
+      </Typography>
+                    <Typography sx={{ 
+                      fontFamily: 'Aileron', 
+                      fontSize: '12px',
+                      color: '#636366' 
+                    }}>
+                      {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
+                    </Typography>
+                  </Box>
+                </Box>
+                
+                {/* Metrics */}
+                <Grid container spacing={1.5}>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {engagementRate}%
+            </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Engagement Rate
+                      </Typography>
+          </Box>
+        </Grid>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {formatNumber(maxViews)}
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Views
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {formatNumber(likes)}
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Likes
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {formatNumber(comments)}
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Comments
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Grid>
+          );
+        })()}
+        
+        {/* Most Comments Card */}
+        {(() => {
+          let mostCommentsCreator = null;
+          let maxComments = 0;
+          
+          filteredInsightsData.forEach((insightData) => {
+            const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+            const comments = getMetricValue(insightData.insight, 'comments');
+            if (comments > maxComments) {
+              maxComments = comments;
+              mostCommentsCreator = { submission, insightData, comments };
+            }
+          });
+          
+          const { data: creator } = useGetCreatorById(mostCommentsCreator?.submission?.user);
+          const views = mostCommentsCreator ? getMetricValue(mostCommentsCreator.insightData.insight, 'views') : 0;
+          const likes = mostCommentsCreator ? getMetricValue(mostCommentsCreator.insightData.insight, 'likes') : 0;
+          const engagementRate = mostCommentsCreator ? calculateEngagementRate(mostCommentsCreator.insightData.insight) : 0;
+          
+          return (
+        <Grid item xs={12} md={4}>
+              <Box sx={{ 
+                  padding: '16px',
+                  bgcolor: '#FFFFFF', 
+                borderRadius: '8px',
+                  border: '1px solid #EBEBEB',
+                  boxShadow: '0px -3px 0px 0px #EBEBEB inset',
+                  position: 'relative'
+              }}>
+                {/* Most Comments Badge */}
+                <Box sx={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  bgcolor: '#DBEAFE',
+                  borderRadius: '6px',
+                  px: 1.5,
+                  py: 0.5,
+                  fontFamily: 'Aileron',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  color: '#1E40AF'
+                }}>
+                  Most Comments
+            </Box>
+                
+                {/* Creator Info */}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
+                  <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
+                    {creator?.user?.name?.charAt(0) || 'U'}
+                  </Avatar>
+                  <Box>
+                    <Typography sx={{ 
+                      fontFamily: 'Aileron', 
+                      fontWeight: 600, 
+                      fontSize: '14px',
+                      color: '#231F20' 
+                    }}>
+                      {creator?.user?.name || 'Unknown'}
+                    </Typography>
+                    <Typography sx={{ 
+                      fontFamily: 'Aileron', 
+                      fontSize: '12px',
+                      color: '#636366' 
+                    }}>
+                      {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
+                    </Typography>
+                  </Box>
+                </Box>
+                
+                {/* Metrics */}
+                <Grid container spacing={1.5}>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {engagementRate}%
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Engagement Rate
+            </Typography>
+          </Box>
+        </Grid>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {formatNumber(views)}
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Views
+                      </Typography>
+                    </Box>
+      </Grid>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {formatNumber(likes)}
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Likes
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {formatNumber(maxComments)}
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Comments
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Grid>
+          );
+        })()}
+        
+        {/* Most Likes Card */}
+        {(() => {
+          let mostLikesCreator = null;
+          let maxLikes = 0;
+          
+          filteredInsightsData.forEach((insightData) => {
+            const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+            const likes = getMetricValue(insightData.insight, 'likes');
+            if (likes > maxLikes) {
+              maxLikes = likes;
+              mostLikesCreator = { submission, insightData, likes };
+            }
+          });
+          
+          const { data: creator } = useGetCreatorById(mostLikesCreator?.submission?.user);
+          const views = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'views') : 0;
+          const comments = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'comments') : 0;
+          const engagementRate = mostLikesCreator ? calculateEngagementRate(mostLikesCreator.insightData.insight) : 0;
+          
+          return (
+        <Grid item xs={12} md={4}>
+              <Box sx={{ 
+                  padding: '16px',
+                  bgcolor: '#FFFFFF', 
+                  borderRadius: '8px', 
+                  border: '1px solid #EBEBEB',
+                  boxShadow: '0px -3px 0px 0px #EBEBEB inset',
+                  position: 'relative'
+              }}>
+                {/* Most Likes Badge */}
+                <Box sx={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  bgcolor: '#FEF3C7',
+                  borderRadius: '6px',
+                  px: 1.5,
+                  py: 0.5,
+                  fontFamily: 'Aileron',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  color: '#92400E'
+                }}>
+                  Most Likes
+                </Box>
+                
+                {/* Creator Info */}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
+                  <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
+                    {creator?.user?.name?.charAt(0) || 'U'}
+                  </Avatar>
+                  <Box>
+                    <Typography sx={{ 
+                      fontFamily: 'Aileron', 
+                      fontWeight: 600, 
+                      fontSize: '14px',
+                      color: '#231F20' 
+                    }}>
+                      {creator?.user?.name || 'Unknown'}
+                    </Typography>
+                    <Typography sx={{ 
+                      fontFamily: 'Aileron', 
+                      fontSize: '12px',
+                      color: '#636366' 
+                    }}>
+                      {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
+                    </Typography>
+                  </Box>
+                </Box>
+                
+                {/* Metrics */}
+                <Grid container spacing={1.5}>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {engagementRate}%
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Engagement Rate
+            </Typography>
+          </Box>
+        </Grid>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {formatNumber(views)}
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Views
+                      </Typography>
+                    </Box>
+      </Grid>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {formatNumber(maxLikes)}
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Likes
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={3}>
+                    <Box>
+                      <Typography sx={{
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
+                        textAlign: 'center',
+                        color: '#1340FF'
+                      }}>
+                        {formatNumber(comments)}
+                      </Typography>
+                      <Typography sx={{
+                        fontFamily: 'Aileron',
+                        fontWeight: 600,
+                        fontSize: '8px',
+                        lineHeight: '10.85px',
+                        textAlign: 'center',
+                        color: '#636366'
+                      }}>
+                        Comments
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Grid>
+          );
+        })()}
+      </Grid>
+    </Box>
+
+    {/* Views Section */}
+    <Box sx={{ mb: 2 }}>
+      <Typography 
+        sx={{ 
+          fontFamily: 'Instrument Serif',
+          fontWeight: 400,
+          fontSize: '40px',
+          lineHeight: '44px',
+          letterSpacing: '0%',
+          color: '#231F20',
+          mb: 2 
+        }}
+      >
+        Views
+      </Typography>
+      
+      {isEditMode ? (
+        <Box sx={{ position: 'relative', mb: 3 }}>
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '12px', 
+            left: '12px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 0.5,
+            zIndex: 1,
+            bgcolor: '#F3F4F6',
+            px: 0.5
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
+              Editable
+            </Typography>
+            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            rows={5}
+            value={editableContent.viewsDescription}
+            onChange={(e) => setEditableContent({ ...editableContent, viewsDescription: e.target.value })}
+            placeholder="type here"
+            sx={{
+              '& .MuiInputBase-root': {
+                fontFamily: 'Aileron',
+                fontSize: '16px',
+                lineHeight: '24px',
+                color: '#374151',
+                bgcolor: '#F3F4F6',
+                borderRadius: '8px',
+                padding: '12px',
+                paddingTop: '40px',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: '1px solid #E5E7EB',
+              },
+            }}
+          />
+        </Box>
+      ) : (
+        <Typography 
+          sx={{ 
+            fontFamily: 'Aileron',
+            fontWeight: 400,
+            fontSize: '16px',
+            lineHeight: '24px',
+            color: '#374151',
+            mb: 3,
+            whiteSpace: 'pre-line'
+          }}
+        >
+          {editableContent.viewsDescription}
+        </Typography>
+      )}
+      
+      <Box sx={{ mb: 1 }}>
+        <Typography 
+          sx={{ 
+            fontFamily: 'Aileron',
+            fontWeight: 700,
+            fontSize: '18px',
+            lineHeight: '22px',
+            letterSpacing: '0%',
+            color: '#231F20',
+            mb: 3 
+          }}
+        >
+          Highest View Week
+        </Typography>
+        <HighestViewWeekChart />
+      </Box>
+    </Box>
+
+    {/* Audience Sentiment */}
+    <Box sx={{ mb: 6, mt: 0 }}>
+      <Typography 
+        sx={{ 
+          fontFamily: 'Instrument Serif',
+          fontWeight: 400,
+          fontSize: '40px',
+          lineHeight: '44px',
+          letterSpacing: '0%',
+          color: '#231F20',
+          mb: 2 
+        }}
+      >
+        Audience Sentiment
+      </Typography>
+      
+      {isEditMode ? (
+        <Box sx={{ position: 'relative', mb: 4 }}>
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '12px', 
+            left: '12px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 0.5,
+            zIndex: 1,
+            bgcolor: '#F3F4F6',
+            px: 0.5
+          }}>
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
+              Editable
+      </Typography>
+            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            value={editableContent.audienceSentimentDescription}
+            onChange={(e) => setEditableContent({ ...editableContent, audienceSentimentDescription: e.target.value })}
+            placeholder="type here"
+            sx={{
+              '& .MuiInputBase-root': {
+                fontFamily: 'Aileron',
+                fontSize: '16px',
+                lineHeight: '24px',
+                color: '#374151',
+                bgcolor: '#F3F4F6',
+                borderRadius: '8px',
+                padding: '12px',
+                paddingTop: '40px',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: '1px solid #E5E7EB',
+              },
+            }}
+          />
+        </Box>
+      ) : (
+        <Typography 
+          sx={{ 
+            fontFamily: 'Aileron',
+            fontWeight: 400,
+            fontSize: '16px',
+            lineHeight: '24px',
+            color: '#374151',
+            mb: 4 
+          }}
+        >
+          {editableContent.audienceSentimentDescription}
+        </Typography>
+      )}
+      
+      {/* Positive Comments */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Typography 
+            sx={{ 
+              fontFamily: 'Aileron',
+              fontWeight: 600,
+              fontSize: '14px',
+              lineHeight: '18px',
+              color: '#10B981',
+            }}
+          >
+            Positive Comments
+          </Typography>
+          {isEditMode && (
+            <EditIcon sx={{ fontSize: '16px', color: '#10B981' }} />
+          )}
+        </Box>
+      <Box
+        sx={{
+          p: 3,
+            border: '2px solid #10B981',
+          borderRadius: '12px',
+            bgcolor: 'white'
+          }}
+        >
+          {isEditMode ? (
+            <>
+              <Grid container spacing={2}>
+                {editableContent.positiveComments.map((comment, index) => (
+                  <Grid item xs={12} sm={6} md={3} key={index}>
+                    <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px', position: 'relative' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const newComments = editableContent.positiveComments.filter((_, i) => i !== index);
+                          setEditableContent({ ...editableContent, positiveComments: newComments });
+                        }}
+                        sx={{ position: 'absolute', top: 4, right: 4, color: '#6B7280' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
+                        {comment.username}
+                      </Typography>
+                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
+                        {comment.comment}
+                      </Typography>
+      </Box>
+                  </Grid>
+                ))}
+              </Grid>
+              <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                <TextField
+                  placeholder="Social media username"
+                  sx={{ flex: 1 }}
+                  id="positive-username-input"
+                  disabled={editableContent.positiveComments.length >= 4}
+                  defaultValue="@"
+                  onFocus={(e) => {
+                    if (e.target.value === '') {
+                      e.target.value = '@';
+                    }
+                  }}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    // Remove spaces
+                    value = value.replace(/\s/g, '');
+                    // Ensure it always starts with @
+                    if (!value.startsWith('@')) {
+                      value = '@' + value;
+                    }
+                    // Prevent deleting the @
+                    if (value === '') {
+                      value = '@';
+                    }
+                    e.target.value = value;
+                  }}
+                  onKeyPress={(e) => {
+                    // Prevent space key
+                    if (e.key === ' ') {
+                      e.preventDefault();
+                    }
+                    if (e.key === 'Enter' && editableContent.positiveComments.length < 4) {
+                      const username = document.getElementById('positive-username-input').value;
+                      const postlink = document.getElementById('positive-postlink-input').value;
+                      const comment = document.getElementById('positive-comment-input').value;
+                      
+                      if (username && username !== '@' && comment) {
+                        const newComments = [...editableContent.positiveComments, { username, comment }];
+                        setEditableContent({ ...editableContent, positiveComments: newComments });
+                        document.getElementById('positive-username-input').value = '@';
+                        document.getElementById('positive-postlink-input').value = '';
+                        document.getElementById('positive-comment-input').value = '';
+                      }
+                    }
+                  }}
+                />
+                <TextField
+                  placeholder="Post link"
+                  sx={{ flex: 1 }}
+                  id="positive-postlink-input"
+                  disabled={editableContent.positiveComments.length >= 4}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && editableContent.positiveComments.length < 4) {
+                      const username = document.getElementById('positive-username-input').value;
+                      const postlink = document.getElementById('positive-postlink-input').value;
+                      const comment = document.getElementById('positive-comment-input').value;
+                      
+                      if (username && username !== '@' && comment) {
+                        const newComments = [...editableContent.positiveComments, { username, comment }];
+                        setEditableContent({ ...editableContent, positiveComments: newComments });
+                        document.getElementById('positive-username-input').value = '@';
+                        document.getElementById('positive-postlink-input').value = '';
+                        document.getElementById('positive-comment-input').value = '';
+                      }
+                    }
+                  }}
+                />
+    </Box>
+              <TextField
+                fullWidth
+                placeholder="User comments"
+                sx={{ mt: 2 }}
+                id="positive-comment-input"
+                disabled={editableContent.positiveComments.length >= 4}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && editableContent.positiveComments.length < 4) {
+                    const username = document.getElementById('positive-username-input').value;
+                    const postlink = document.getElementById('positive-postlink-input').value;
+                    const comment = document.getElementById('positive-comment-input').value;
+                    
+                    if (username && username !== '@' && comment) {
+                      const newComments = [...editableContent.positiveComments, { username, comment }];
+                      setEditableContent({ ...editableContent, positiveComments: newComments });
+                      document.getElementById('positive-username-input').value = '@';
+                      document.getElementById('positive-postlink-input').value = '';
+                      document.getElementById('positive-comment-input').value = '';
+                    }
+                  }
+                }}
+              />
+            </>
+          ) : (
+            <Grid container spacing={2}>
+              {editableContent.positiveComments.map((comment, index) => (
+                <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
+                      {comment.username}
+      </Typography>
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
+                      {comment.comment}
+      </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+      </Box>
+    </Box>
+
+      {/* Neutral Comments */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Typography 
+            sx={{ 
+              fontFamily: 'Aileron',
+              fontWeight: 600,
+              fontSize: '14px',
+              lineHeight: '18px',
+              color: '#F59E0B',
+            }}
+          >
+            Neutral Comments
+      </Typography>
+          {isEditMode && (
+            <EditIcon sx={{ fontSize: '16px', color: '#F59E0B' }} />
+          )}
+        </Box>
+      <Box
+        sx={{
+            p: 3,
+            border: '2px solid #F59E0B',
+          borderRadius: '12px',
+            bgcolor: 'white'
+          }}
+        >
+          {isEditMode ? (
+            <>
+              <Grid container spacing={2}>
+                {editableContent.neutralComments.map((comment, index) => (
+                  <Grid item xs={12} sm={6} md={3} key={index}>
+                    <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px', position: 'relative' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const newComments = editableContent.neutralComments.filter((_, i) => i !== index);
+                          setEditableContent({ ...editableContent, neutralComments: newComments });
+                        }}
+                        sx={{ position: 'absolute', top: 4, right: 4, color: '#6B7280' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
+                        {comment.username}
+                      </Typography>
+                      <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
+                        {comment.comment}
+        </Typography>
+      </Box>
+                  </Grid>
+                ))}
+              </Grid>
+              <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                <TextField
+                  placeholder="Social media username"
+                  sx={{ flex: 1 }}
+                  id="neutral-username-input"
+                  disabled={editableContent.neutralComments.length >= 4}
+                  defaultValue="@"
+                  onFocus={(e) => {
+                    if (e.target.value === '') {
+                      e.target.value = '@';
+                    }
+                  }}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    // Remove spaces
+                    value = value.replace(/\s/g, '');
+                    // Ensure it always starts with @
+                    if (!value.startsWith('@')) {
+                      value = '@' + value;
+                    }
+                    // Prevent deleting the @
+                    if (value === '') {
+                      value = '@';
+                    }
+                    e.target.value = value;
+                  }}
+                  onKeyPress={(e) => {
+                    // Prevent space key
+                    if (e.key === ' ') {
+                      e.preventDefault();
+                    }
+                    if (e.key === 'Enter' && editableContent.neutralComments.length < 4) {
+                      const username = document.getElementById('neutral-username-input').value;
+                      const postlink = document.getElementById('neutral-postlink-input').value;
+                      const comment = document.getElementById('neutral-comment-input').value;
+                      
+                      if (username && username !== '@' && comment) {
+                        const newComments = [...editableContent.neutralComments, { username, comment }];
+                        setEditableContent({ ...editableContent, neutralComments: newComments });
+                        document.getElementById('neutral-username-input').value = '@';
+                        document.getElementById('neutral-postlink-input').value = '';
+                        document.getElementById('neutral-comment-input').value = '';
+                      }
+                    }
+                  }}
+                />
+                <TextField
+                  placeholder="Post link"
+                  sx={{ flex: 1 }}
+                  id="neutral-postlink-input"
+                  disabled={editableContent.neutralComments.length >= 4}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && editableContent.neutralComments.length < 4) {
+                      const username = document.getElementById('neutral-username-input').value;
+                      const postlink = document.getElementById('neutral-postlink-input').value;
+                      const comment = document.getElementById('neutral-comment-input').value;
+                      
+                      if (username && username !== '@' && comment) {
+                        const newComments = [...editableContent.neutralComments, { username, comment }];
+                        setEditableContent({ ...editableContent, neutralComments: newComments });
+                        document.getElementById('neutral-username-input').value = '@';
+                        document.getElementById('neutral-postlink-input').value = '';
+                        document.getElementById('neutral-comment-input').value = '';
+                      }
+                    }
+                  }}
+                />
+              </Box>
+              <TextField
+                fullWidth
+                placeholder="User comments"
+                sx={{ mt: 2 }}
+                id="neutral-comment-input"
+                disabled={editableContent.neutralComments.length >= 4}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && editableContent.neutralComments.length < 4) {
+                    const username = document.getElementById('neutral-username-input').value;
+                    const postlink = document.getElementById('neutral-postlink-input').value;
+                    const comment = document.getElementById('neutral-comment-input').value;
+                    
+                    if (username && username !== '@' && comment) {
+                      const newComments = [...editableContent.neutralComments, { username, comment }];
+                      setEditableContent({ ...editableContent, neutralComments: newComments });
+                      document.getElementById('neutral-username-input').value = '@';
+                      document.getElementById('neutral-postlink-input').value = '';
+                      document.getElementById('neutral-comment-input').value = '';
+                    }
+                  }
+                }}
+              />
+            </>
+          ) : (
+            <Grid container spacing={2}>
+              {editableContent.neutralComments.map((comment, index) => (
+                <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
+                      {comment.username}
+                    </Typography>
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
+                      {comment.comment}
+        </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      </Box>
+    </Box>
+
+    {/* Best Performing Creator Personas */}
+    <Box sx={{ mb: 6 }}>
+      <Typography 
+        sx={{ 
+          fontFamily: 'Instrument Serif',
+          fontWeight: 400,
+          fontSize: '40px',
+          lineHeight: '44px',
+          color: '#231F20',
+          mb: 2,
+        }}
+      >
+        Best Performing Creator Personas
+      </Typography>
+      {isEditMode ? (
+        <Box sx={{ position: 'relative', mb: 4 }}>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              px: 0.5,
+              py: 0.5,
+              bgcolor: '#F3F4F6',
+              borderRadius: '4px',
+            }}
+          >
+            <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
+              Editable
+            </Typography>
+            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            value={editableContent.bestPerformingPersonasDescription}
+            onChange={(e) => setEditableContent({ ...editableContent, bestPerformingPersonasDescription: e.target.value })}
+            sx={{
+              bgcolor: '#F3F4F6',
+              borderRadius: '8px',
+              '& .MuiInputBase-root': {
+                fontFamily: 'Inter Display',
+                fontSize: '20px',
+                lineHeight: '24px',
+                color: '#231F20',
+                padding: '12px',
+                paddingTop: '40px',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: 'none',
+              },
+            }}
+          />
+        </Box>
+      ) : (
+        <Typography 
+          sx={{ 
+            fontFamily: 'Aileron',
+            fontWeight: 400,
+            fontSize: '16px',
+            lineHeight: '24px',
+            color: '#374151',
+            mb: 4 
+          }}
+        >
+          {editableContent.bestPerformingPersonasDescription}
+        </Typography>
+      )}
+      {/* Creator Persona Cards */}
+      {isEditMode ? (
+        // Edit Mode: Show + button horizontally with card 1 if there's only 1 card
+      <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: 'center' }}>
+        {/* The Comic Card with Number */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 7 }}>
+          {/* Number - Outside the card */}
+          <Typography
+            sx={{
+              fontFamily: 'Instrument Serif, serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '40px',
+              lineHeight: '44px',
+              letterSpacing: '0%',
+              color: '#1340FF',
+              position: 'relative',
+              left: '-55px',
+            }}
+          >
+            1.
+          </Typography>
+          
+          {/* Card */}
+          <Box
+            sx={{
+              width: '347px',
+              height: isEditMode ? '380px' : '189px',
+              borderRadius: '20px',
+              background: '#F5F5F5',
+              border: '10px solid #FFFFFF',
+              boxShadow: '0px 4px 4px 0px #8E8E9340',
+              position: 'relative',
+              transition: 'height 0.3s ease',
+            }}
+          >
+
+          {/* Circle with Icon - Positioned as separate component */}
+          <Box
+            sx={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: '8px solid #FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'absolute',
+              left: '-70px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 1,
+              boxShadow: '-4px 4px 4px 0px #8E8E9340',
+            }}
+          >
+            {/* Editable label for emoji */}
+            {isEditMode && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -30,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  bgcolor: '#F3F4F6',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
+                  Editable
+                </Typography>
+                <EditIcon sx={{ fontSize: '14px', color: '#3A3A3C' }} />
+              </Box>
+            )}
+            {/* Inner gradient circle */}
+            <Box
+              onClick={(e) => {
+                if (isEditMode) {
+                  setEmojiPickerAnchor(e.currentTarget);
+                  setEmojiPickerType('comic');
+                }
+              }}
+              sx={{
+                width: '95px',
+                height: '95px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                cursor: isEditMode ? 'pointer' : 'default',
+                '&:hover': isEditMode ? {
+                  opacity: 0.8,
+                } : {},
+              }}
+            >
+              {editableContent.comicEmoji}
+            </Box>
+          </Box>
+
+          {/* Content - Positioned independently */}
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              right: '12px',
+              left: '70px', // Space for circle
+              top: isEditMode ? '20px' : '50%',
+              transform: isEditMode ? 'none' : 'translateY(-50%)',
+              maxWidth: 'calc(347px - 82px)', // Card width minus circle space
+              transition: 'top 0.3s ease, transform 0.3s ease',
+            }}
+          >
+            {isEditMode ? (
+              <Box sx={{ position: 'relative', mb: 0.75 }}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    zIndex: 1,
+                  }}
+                >
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                    Editable
+                  </Typography>
+                  <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
+                </Box>
+              <TextField
+                value={editableContent.comicTitle}
+                onChange={(e) => setEditableContent({ ...editableContent, comicTitle: e.target.value })}
+                  fullWidth
+                  inputProps={{
+                    style: {
+                      fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                      color: '#0067D5',
+                      textAlign: 'center',
+                    }
+                  }}
+                sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                    '& .MuiInputBase-root': {
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                    color: '#0067D5',
+                    textAlign: 'center',
+                      padding: '8px',
+                      paddingTop: '26px',
+                  },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                }}
+              />
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '36px',
+                  lineHeight: '40px',
+                  letterSpacing: '0%',
+                  color: '#0067D5',
+                  mb: 1.5,
+                  textAlign: 'center',
+                  ml: -3,
+                }}
+              >
+                {editableContent.comicTitle}
+              </Typography>
+            )}
+            
+            <Box sx={{ mb: 0.75, textAlign: 'left' }}>
+              <Typography
+                sx={{
+                  fontFamily: 'Inter Display, sans-serif',
+                  fontWeight: 500,
+                  fontStyle: 'normal',
+                  fontSize: '14px',
+                  lineHeight: '18px',
+                  letterSpacing: '0%',
+                  color: '#000000',
+                  mb: 0.5,
+                }}
+              >
+                Content Style
+              </Typography>
+              {isEditMode ? (
+                <Box sx={{ position: 'relative' }}>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
+                  </Box>
+                <TextField
+                  value={editableContent.comicContentStyle}
+                  onChange={(e) => setEditableContent({ ...editableContent, comicContentStyle: e.target.value })}
+                  fullWidth
+                    multiline
+                    rows={2}
+                  sx={{
+                      bgcolor: '#E5E7EB',
+                      borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '18px',
+                      color: '#000000',
+                        padding: '8px',
+                        paddingTop: '26px',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                    },
+                  }}
+                />
+                </Box>
+              ) : (
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                    letterSpacing: '0%',
+                    color: '#000000',
+                  }}
+                >
+                  {editableContent.comicContentStyle}
+                </Typography>
+              )}
+            </Box>
+
+            <Box sx={{ textAlign: 'left' }}>
+              <Typography
+                sx={{
+                  fontFamily: 'Inter Display, sans-serif',
+                  fontWeight: 500,
+                  fontStyle: 'normal',
+                  fontSize: '14px',
+                  lineHeight: '18px',
+                  letterSpacing: '0%',
+                  color: '#000000',
+                  mb: 0.5,
+                }}
+              >
+                Why They Work
+              </Typography>
+              {isEditMode ? (
+                <Box sx={{ position: 'relative' }}>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
+                  </Box>
+                <TextField
+                  value={editableContent.comicWhyWork}
+                  onChange={(e) => setEditableContent({ ...editableContent, comicWhyWork: e.target.value })}
+                  fullWidth
+                    multiline
+                    rows={2}
+                  sx={{
+                      bgcolor: '#E5E7EB',
+                      borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '18px',
+                      color: '#000000',
+                        padding: '8px',
+                        paddingTop: '26px',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                    },
+                  }}
+                />
+                </Box>
+              ) : (
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                    letterSpacing: '0%',
+                    color: '#000000',
+                  }}
+                >
+                  {editableContent.comicWhyWork}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+          </Box>
+        </Box>
+
+        {/* Show + button if educator card is hidden, otherwise show educator card */}
+        {!showEducatorCard ? (
+          // Add Persona Button
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <IconButton
+              onClick={() => setShowEducatorCard(true)}
+              sx={{
+                bgcolor: 'transparent',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                width: '120px',
+                height: '120px',
+                fontSize: '48px',
+                fontWeight: 300,
+                background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                '&:hover': { 
+                  opacity: 0.9,
+                  background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                },
+              }}
+            >
+              +
+            </IconButton>
+          </Box>
+        ) : (
+          // The Educator Card with Number
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative' }}>
+          {/* Delete Button - Top right of the entire card container */}
+          <IconButton
+            onClick={() => setShowEducatorCard(false)}
+            sx={{
+              position: 'absolute',
+              top: -10,
+              right: -10,
+              zIndex: 10,
+              bgcolor: '#EF4444',
+              color: 'white',
+              width: '32px',
+              height: '32px',
+              '&:hover': {
+                bgcolor: '#DC2626',
+              },
+            }}
+          >
+            <DeleteIcon sx={{ fontSize: '20px' }} />
+          </IconButton>
+
+          {/* Number - Outside the card */}
+          <Typography
+            sx={{
+              fontFamily: 'Instrument Serif, serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              fontSize: '40px',
+              lineHeight: '44px',
+              letterSpacing: '0%',
+              color: '#1340FF',
+              position: 'relative',
+              left: '-55px',
+            }}
+          >
+            2.
+          </Typography>
+          
+          {/* Card */}
+          <Box
+            sx={{
+              width: '347px',
+              height: isEditMode ? '380px' : '189px',
+              borderRadius: '20px',
+              background: '#F5F5F5',
+              border: '10px solid #FFFFFF',
+              boxShadow: '0px 4px 4px 0px #8E8E9340',
+              position: 'relative',
+              transition: 'height 0.3s ease',
+            }}
+          >
+
+          {/* Circle with Icon - Positioned as separate component */}
+          <Box
+            sx={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: '8px solid #FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'absolute',
+              left: '-70px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 1,
+              boxShadow: '-4px 4px 4px 0px #8E8E9340',
+            }}
+          >
+            {/* Editable label for emoji */}
+            {isEditMode && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -30,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  bgcolor: '#F3F4F6',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
+                  Editable
+                </Typography>
+                <EditIcon sx={{ fontSize: '14px', color: '#3A3A3C' }} />
+              </Box>
+            )}
+            {/* Inner gradient circle */}
+            <Box
+              onClick={(e) => {
+                if (isEditMode) {
+                  setEmojiPickerAnchor(e.currentTarget);
+                  setEmojiPickerType('educator');
+                }
+              }}
+              sx={{
+                width: '95px',
+                height: '95px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #1340FF 0%, #3B82F6 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                cursor: isEditMode ? 'pointer' : 'default',
+                '&:hover': isEditMode ? {
+                  opacity: 0.8,
+                } : {},
+              }}
+            >
+              {editableContent.educatorEmoji}
+            </Box>
+          </Box>
+
+          {/* Content - Positioned independently */}
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              right: '12px',
+              left: '70px', // Space for circle
+              top: isEditMode ? '20px' : '50%',
+              transform: isEditMode ? 'none' : 'translateY(-50%)',
+              maxWidth: 'calc(347px - 82px)', // Card width minus circle space
+              transition: 'top 0.3s ease, transform 0.3s ease',
+            }}
+          >
+            {isEditMode ? (
+              <Box sx={{ position: 'relative', mb: 0.75 }}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    zIndex: 1,
+                  }}
+                >
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                    Editable
+                  </Typography>
+                  <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
+                </Box>
+              <TextField
+                value={editableContent.educatorTitle}
+                onChange={(e) => setEditableContent({ ...editableContent, educatorTitle: e.target.value })}
+                  fullWidth
+                  inputProps={{
+                    style: {
+                      fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                      color: '#0067D5',
+                      textAlign: 'center',
+                    }
+                  }}
+                sx={{
+                    bgcolor: '#E5E7EB',
+                    borderRadius: '8px',
+                    '& .MuiInputBase-root': {
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                      fontSize: '28px',
+                      lineHeight: '32px',
+                    color: '#0067D5',
+                    textAlign: 'center',
+                      padding: '8px',
+                      paddingTop: '26px',
+                  },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                }}
+              />
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '36px',
+                  lineHeight: '40px',
+                  letterSpacing: '0%',
+                  color: '#0067D5',
+                  mb: 1.5,
+                  textAlign: 'center',
+                  ml: -3,
+                }}
+              >
+                {editableContent.educatorTitle}
+              </Typography>
+            )}
+            
+            <Box sx={{ mb: 0.75, textAlign: 'left' }}>
+              <Typography
+                sx={{
+                  fontFamily: 'Inter Display, sans-serif',
+                  fontWeight: 500,
+                  fontStyle: 'normal',
+                  fontSize: '14px',
+                  lineHeight: '18px',
+                  letterSpacing: '0%',
+                  color: '#000000',
+                  mb: 0.5,
+                }}
+              >
+                Content Style
+              </Typography>
+              {isEditMode ? (
+                <Box sx={{ position: 'relative' }}>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
+                  </Box>
+                <TextField
+                  value={editableContent.educatorContentStyle}
+                  onChange={(e) => setEditableContent({ ...editableContent, educatorContentStyle: e.target.value })}
+                  fullWidth
+                    multiline
+                    rows={2}
+                  sx={{
+                      bgcolor: '#E5E7EB',
+                      borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '18px',
+                      color: '#000000',
+                        padding: '8px',
+                        paddingTop: '26px',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                    },
+                  }}
+                />
+                </Box>
+              ) : (
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                    letterSpacing: '0%',
+                    color: '#000000',
+                  }}
+                >
+                  {editableContent.educatorContentStyle}
+                </Typography>
+              )}
+            </Box>
+
+            <Box sx={{ textAlign: 'left' }}>
+              <Typography
+                sx={{
+                  fontFamily: 'Inter Display, sans-serif',
+                  fontWeight: 500,
+                  fontStyle: 'normal',
+                  fontSize: '14px',
+                  lineHeight: '18px',
+                  letterSpacing: '0%',
+                  color: '#000000',
+                  mb: 0.5,
+                }}
+              >
+                Why They Work
+              </Typography>
+              {isEditMode ? (
+                <Box sx={{ position: 'relative' }}>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                      Editable
+                    </Typography>
+                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
+                  </Box>
+                <TextField
+                  value={editableContent.educatorWhyWork}
+                  onChange={(e) => setEditableContent({ ...editableContent, educatorWhyWork: e.target.value })}
+                  fullWidth
+                    multiline
+                    rows={2}
+                  sx={{
+                      bgcolor: '#E5E7EB',
+                      borderRadius: '8px',
+                      '& .MuiInputBase-root': {
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '18px',
+                      color: '#000000',
+                        padding: '8px',
+                        paddingTop: '26px',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                    },
+                  }}
+                />
+                </Box>
+              ) : (
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                    letterSpacing: '0%',
+                    color: '#000000',
+                  }}
+                >
+                  {editableContent.educatorWhyWork}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+          </Box>
+        </Box>
+        )}
+        </Box>
+      ) : (
+        // Non-edit Mode: Horizontal layout
+        <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+          {/* The Comic Card with Number */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3, ml: 0 }}>
+            {/* Number - Outside the card */}
+            <Typography
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontWeight: 400,
+                fontStyle: 'normal',
+                fontSize: '40px',
+                lineHeight: '44px',
+                letterSpacing: '0%',
+                color: '#1340FF',
+                mt: 12,
+              }}
+            >
+              1.
+            </Typography>
+            
+            {/* Emoji Circle */}
+            <Box
+              sx={{
+                width: '160px',
+                height: '160px',
+                borderRadius: '50%',
+                background: '#FFFFFF',
+                border: '10px solid #FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '-4px 4px 4px 0px #8E8E9340',
+                flexShrink: 0,
+                mt: 3,
+              }}
+            >
+              {/* Inner gradient circle */}
+              <Box
+                sx={{
+                  width: '130px',
+                  height: '130px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '64px',
+                }}
+              >
+                {editableContent.comicEmoji}
+      </Box>
+    </Box>
+
+            {/* Content Box */}
+            <Box sx={{ flex: 1, maxWidth: '950px', display: 'flex', gap: 3 }}>
+              {/* Title Box */}
+              <Box
+                sx={{
+                  bgcolor: '#F5F5F5',
+                  borderRadius: '20px',
+                  border: '10px solid #FFFFFF',
+                  boxShadow: '0px 4px 4px 0px #8E8E9340',
+                  p: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '320px',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                    fontSize: '40px',
+                    lineHeight: '44px',
+                    color: '#0067D5',
+                    textAlign: 'center',
+                  }}
+                >
+                  {editableContent.comicTitle}
+      </Typography>
+              </Box>
+              
+              {/* Content Style and Why They Work Box */}
+      <Box
+        sx={{
+                  bgcolor: '#F5F5F5',
+                  borderRadius: '20px',
+                  border: '10px solid #FFFFFF',
+                  boxShadow: '0px 4px 4px 0px #8E8E9340',
+                  p: 4,
+                  flex: 1,
+                  minWidth: '400px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  gap: 3,
+                }}
+              >
+                {/* Content Style */}
+                <Box>
+                  <Typography
+                    sx={{
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 600,
+                      fontSize: '16px',
+                      lineHeight: '20px',
+                      color: '#000000',
+                      mb: 1,
+                    }}
+                  >
+                    Content Style
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '16px',
+                      lineHeight: '24px',
+                      color: '#000000',
+                    }}
+                  >
+                    {editableContent.comicContentStyle}
+                  </Typography>
+                </Box>
+
+                {/* Why They Work */}
+                <Box>
+                  <Typography
+                    sx={{
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 600,
+                      fontSize: '16px',
+                      lineHeight: '20px',
+                      color: '#000000',
+                      mb: 1,
+                    }}
+                  >
+                    Why They Work
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '16px',
+                      lineHeight: '24px',
+                      color: '#000000',
+                    }}
+                  >
+                    {editableContent.comicWhyWork}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* The Educator Card with Number - Only show if showEducatorCard is true */}
+          {showEducatorCard && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              {/* Number - Outside the card */}
+              <Typography
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '40px',
+                  lineHeight: '44px',
+                  letterSpacing: '0%',
+                  color: '#1340FF',
+                  position: 'relative',
+                  left: '-55px',
+                }}
+              >
+              2.
+            </Typography>
+            
+            {/* Card */}
+      <Box
+        sx={{
+                width: '347px',
+                height: '189px',
+                borderRadius: '20px',
+                background: '#F5F5F5',
+                border: '10px solid #FFFFFF',
+                boxShadow: '0px 4px 4px 0px #8E8E9340',
+                position: 'relative',
+              }}
+            >
+
+            {/* Circle with Icon - Positioned as separate component */}
+            <Box
+              sx={{
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                background: '#FFFFFF',
+                border: '8px solid #FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'absolute',
+                left: '-70px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 1,
+                boxShadow: '-4px 4px 4px 0px #8E8E9340',
+              }}
+            >
+              {/* Inner gradient circle */}
+              <Box
+                sx={{
+                  width: '95px',
+                  height: '95px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '32px',
+                }}
+              >
+                {editableContent.educatorEmoji}
+              </Box>
+            </Box>
+
+            {/* Content - Positioned independently */}
+            <Box 
+              sx={{ 
+                position: 'absolute',
+                right: '12px',
+                left: '70px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                maxWidth: 'calc(347px - 82px)',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '36px',
+                  lineHeight: '40px',
+                  letterSpacing: '0%',
+                  color: '#0067D5',
+                  mb: 1.5,
+                  textAlign: 'center',
+                  ml: -3,
+                }}
+              >
+                {editableContent.educatorTitle}
+              </Typography>
+              
+              <Box sx={{ mb: 0.75, textAlign: 'left' }}>
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    fontWeight: 500,
+                    fontStyle: 'normal',
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                    letterSpacing: '0%',
+                    color: '#000000',
+                    mb: 0.5,
+                  }}
+                >
+                  Content Style
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                    letterSpacing: '0%',
+                    color: '#000000',
+                  }}
+                >
+                  {editableContent.educatorContentStyle}
+                </Typography>
+              </Box>
+
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    fontWeight: 500,
+                    fontStyle: 'normal',
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                    letterSpacing: '0%',
+                    color: '#000000',
+                    mb: 0.5,
+                  }}
+                >
+                  Why They Work
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: 'Inter Display, sans-serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    fontSize: '14px',
+                    lineHeight: '18px',
+                    letterSpacing: '0%',
+                    color: '#000000',
+                  }}
+                >
+                  {editableContent.educatorWhyWork}
+                </Typography>
+              </Box>
+            </Box>
+            </Box>
+            </Box>
+          )}
+        </Box>
+      )}
+    </Box>
+
+    {/* Three Column Insights Section */}
+    <Grid container spacing={3} sx={{ mb: 6 }}>
+      {/* What Could Be Improved - Blue */}
+      <Grid item xs={12} md={4}>
+        <Box sx={{ height: '100%' }}>
+          {/* Header */}
+          <Box 
+            sx={{ 
+              bgcolor: '#1340FF',
+              borderRadius: '12px 12px 0 0',
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <Box sx={{ fontSize: '24px' }}>📋</Box>
+            <Typography 
+              sx={{ 
+                fontFamily: 'Aileron',
+                fontWeight: 700,
+                fontSize: '18px',
+                color: 'white'
+              }}
+            >
+              What Could Be Improved
+      </Typography>
+          </Box>
+          
+          {/* Content Boxes */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            {editableContent.improvedInsights.map((insight, index) => (
+      <Box
+                key={index}
+        sx={{
+                  bgcolor: index === 0 ? '#1340FFD9' : index === 1 ? '#1340FFBF' : '#1340FFA6',
+                  p: 2.5, 
+                  color: 'white', 
+                  height: '120px', 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderRadius: index === editableContent.improvedInsights.length - 1 ? '0 0 12px 12px' : 0,
+                  position: 'relative',
+                }}
+              >
+                {isEditMode ? (
+                  <Box sx={{ 
+                    bgcolor: '#E5E7EB', 
+          borderRadius: '12px',
+                    p: 2, 
+                    flex: 1,
+                    display: 'flex',
+                    gap: 1,
+                  }}>
+                    <Box sx={{ position: 'relative', flex: 1 }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          zIndex: 1,
+                        }}
+                      >
+                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                          Editable
+        </Typography>
+                        <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
+      </Box>
+                      <TextField
+                        value={insight}
+                        onChange={(e) => {
+                          const newInsights = [...editableContent.improvedInsights];
+                          newInsights[index] = e.target.value;
+                          setEditableContent({ ...editableContent, improvedInsights: newInsights });
+                        }}
+                        fullWidth
+                        multiline
+                        rows={2}
+                        sx={{
+                          mt: 2.5,
+                          '& .MuiInputBase-root': {
+                            fontFamily: 'Aileron',
+                            fontSize: '12px',
+                            lineHeight: '18px',
+                            color: '#000000',
+                            padding: 0,
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            border: 'none',
+                          },
+                        }}
+                      />
+    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const newInsights = editableContent.improvedInsights.filter((_, i) => i !== index);
+                        setEditableContent({ ...editableContent, improvedInsights: newInsights });
+                      }}
+                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', lineHeight: '18px' }}>
+                    {insight}
+                  </Typography>
+                )}
+              </Box>
+            ))}
+            
+            {isEditMode && editableContent.improvedInsights.length < 3 && (
+              <IconButton
+                onClick={() => {
+                  setEditableContent({
+                    ...editableContent,
+                    improvedInsights: [...editableContent.improvedInsights, ''],
+                  });
+                }}
+                sx={{
+                  bgcolor: '#1340FF',
+                  color: 'white',
+                  '&:hover': { bgcolor: '#0D2FCC' },
+                  borderRadius: '12px',
+                  width: '44px',
+                  height: '44px',
+                  fontSize: '36px',
+                  fontWeight: 300,
+                }}
+              >
+                +
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+      </Grid>
+
+      {/* What Worked Well - Purple */}
+      <Grid item xs={12} md={4}>
+        <Box sx={{ height: '100%' }}>
+          {/* Header */}
+      <Box
+        sx={{
+              background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+              borderRadius: '12px 12px 0 0',
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <Box sx={{ fontSize: '24px' }}>🏆</Box>
+            <Typography 
+              sx={{ 
+                fontFamily: 'Aileron',
+                fontWeight: 700,
+                fontSize: '18px',
+                color: 'white'
+              }}
+            >
+              What Worked Well
+        </Typography>
+      </Box>
+          
+          {/* Content Boxes */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            {editableContent.workedWellInsights.map((insight, index) => (
+              <Box 
+                key={index}
+                sx={{ 
+                  background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+                  opacity: index === 0 ? 0.85 : index === 1 ? 0.75 : 0.65,
+                  p: 2.5, 
+                  color: 'white', 
+                  height: '120px', 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderRadius: index === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
+                  position: 'relative',
+                }}
+              >
+                {isEditMode ? (
+                  <Box sx={{ 
+                    bgcolor: '#E5E7EB', 
+          borderRadius: '12px',
+          p: 2,
+                    flex: 1,
+                    display: 'flex',
+                    gap: 1,
+                  }}>
+                    <Box sx={{ position: 'relative', flex: 1 }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          zIndex: 1,
+                        }}
+                      >
+                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                          Editable
+                        </Typography>
+                        <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
+                      </Box>
+                      <TextField
+                        value={insight}
+                        onChange={(e) => {
+                          const newInsights = [...editableContent.workedWellInsights];
+                          newInsights[index] = e.target.value;
+                          setEditableContent({ ...editableContent, workedWellInsights: newInsights });
+                        }}
+                        fullWidth
+                        multiline
+                        rows={2}
+                        sx={{
+                          mt: 2.5,
+                          '& .MuiInputBase-root': {
+                            fontFamily: 'Aileron',
+                            fontSize: '12px',
+                            lineHeight: '18px',
+                            color: '#000000',
+                            padding: 0,
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            border: 'none',
+                          },
+                        }}
+                      />
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const newInsights = editableContent.workedWellInsights.filter((_, i) => i !== index);
+                        setEditableContent({ ...editableContent, workedWellInsights: newInsights });
+                      }}
+                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', lineHeight: '18px' }}>
+                    {insight}
+                  </Typography>
+                )}
+              </Box>
+            ))}
+            
+            {isEditMode && editableContent.workedWellInsights.length < 3 && (
+              <IconButton
+                onClick={() => {
+                  setEditableContent({
+                    ...editableContent,
+                    workedWellInsights: [...editableContent.workedWellInsights, ''],
+                  });
+                }}
+                sx={{
+                  background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+          color: 'white',
+                  '&:hover': { background: 'linear-gradient(0deg, #7A4AEE, #7A4AEE)' },
+                  borderRadius: '12px',
+                  width: '44px',
+                  height: '44px',
+                  fontSize: '36px',
+                  fontWeight: 300,
+                }}
+              >
+                +
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+      </Grid>
+
+      {/* What To Do Next - Green */}
+      <Grid item xs={12} md={4}>
+        <Box sx={{ height: '100%' }}>
+          {/* Header */}
+      <Box
+        sx={{
+              bgcolor: '#026D54',
+              borderRadius: '12px 12px 0 0',
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <Box sx={{ fontSize: '24px' }}>🎯</Box>
+            <Typography 
+              sx={{ 
+                fontFamily: 'Aileron',
+          fontWeight: 700,
+                fontSize: '18px',
+                color: 'white'
+        }}
+      >
+              What To Do Next
+            </Typography>
+      </Box>
+          
+          {/* Content Boxes */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            {editableContent.nextStepsInsights.map((insight, index) => (
+              <Box 
+                key={index}
+                sx={{ 
+                  bgcolor: index === 0 ? '#026D54D9' : '#026D54BF',
+                  p: 2.5, 
+                  color: 'white', 
+                  height: '120px', 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderRadius: index === editableContent.nextStepsInsights.length - 1 ? '0 0 12px 12px' : 0,
+                  position: 'relative',
+                }}
+              >
+                {isEditMode ? (
+                  <Box sx={{ 
+                    bgcolor: '#E5E7EB', 
+                    borderRadius: '12px', 
+                    p: 2, 
+                    flex: 1,
+                    display: 'flex',
+                    gap: 1,
+                  }}>
+                    <Box sx={{ position: 'relative', flex: 1 }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          zIndex: 1,
+                        }}
+                      >
+                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                          Editable
+                        </Typography>
+                        <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
+    </Box>
+                      <TextField
+                        value={insight}
+                        onChange={(e) => {
+                          const newInsights = [...editableContent.nextStepsInsights];
+                          newInsights[index] = e.target.value;
+                          setEditableContent({ ...editableContent, nextStepsInsights: newInsights });
+                        }}
+                        fullWidth
+                        multiline
+                        rows={2}
+                        sx={{
+                          mt: 2.5,
+                          '& .MuiInputBase-root': {
+                            fontFamily: 'Aileron',
+                            fontSize: '12px',
+                            lineHeight: '18px',
+                            color: '#000000',
+                            padding: 0,
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            border: 'none',
+                          },
+                        }}
+                      />
+    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const newInsights = editableContent.nextStepsInsights.filter((_, i) => i !== index);
+                        setEditableContent({ ...editableContent, nextStepsInsights: newInsights });
+                      }}
+                      sx={{ color: '#000000', alignSelf: 'flex-start' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', lineHeight: '18px' }}>
+                    {insight}
+                  </Typography>
+                )}
+              </Box>
+            ))}
+            
+            {isEditMode && editableContent.nextStepsInsights.length < 3 && (
+              <IconButton
+                onClick={() => {
+                  setEditableContent({
+                    ...editableContent,
+                    nextStepsInsights: [...editableContent.nextStepsInsights, ''],
+                  });
+                }}
+                sx={{
+                  bgcolor: '#026D54',
+                  color: 'white',
+                  '&:hover': { bgcolor: '#015D44' },
+                  borderRadius: '12px',
+                  width: '44px',
+                  height: '44px',
+                  fontSize: '36px',
+                  fontWeight: 300,
+                }}
+              >
+                +
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+      </Grid>
+    </Grid>
+
+    </Box>
+
+    {/* Emoji Picker Popover */}
+    <Popover
+      open={Boolean(emojiPickerAnchor)}
+      anchorEl={emojiPickerAnchor}
+      onClose={() => {
+        setEmojiPickerAnchor(null);
+        setEmojiPickerType(null);
+      }}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'center',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'center',
+      }}
+    >
+      <EmojiPicker
+        onEmojiClick={(emojiObject) => {
+          if (emojiPickerType === 'comic') {
+            setEditableContent({ ...editableContent, comicEmoji: emojiObject.emoji });
+          } else if (emojiPickerType === 'educator') {
+            setEditableContent({ ...editableContent, educatorEmoji: emojiObject.emoji });
+          }
+          setEmojiPickerAnchor(null);
+          setEmojiPickerType(null);
+        }}
+      />
+    </Popover>
+  </Box>
+  );
+};
+
+PCRReportPage.propTypes = {
+  campaign: PropTypes.shape({
+    id: PropTypes.string,
+    name: PropTypes.string,
+  }),
+  onBack: PropTypes.func.isRequired,
+};
+
+export default PCRReportPage;
