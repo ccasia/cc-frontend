@@ -304,7 +304,7 @@ const ClientCampaignGeneralInfo = () => {
               <FormField label="Campaign Image">
                 <RHFUploadCover
                   name="campaignImages"
-                  maxSize={3145728}
+                  maxSize={10485760}
                 />
               </FormField>
             </Box>
