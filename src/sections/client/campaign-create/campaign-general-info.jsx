@@ -305,6 +305,8 @@ const ClientCampaignGeneralInfo = () => {
                 <RHFUploadCover
                   name="campaignImages"
                   maxSize={10485760}
+                  placeholderPrimaryTypographyProps={{ fontSize: 18, fontWeight: 600 }}
+                  placeholderSecondaryTypographyProps={{ fontSize: 14, fontWeight: 400 }}
                 />
               </FormField>
             </Box>
