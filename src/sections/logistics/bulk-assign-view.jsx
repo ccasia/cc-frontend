@@ -906,7 +906,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                       flex: 1,
                     }}
                   >
-                    {filteredCreators.map((creator) => {
+                  {filteredCreators.map((creator) => {
                     const isSelected = selectedCreatorIds.includes(creator.id);
                     const assigned = assignments[creator.id] || [];
 
@@ -1014,24 +1014,24 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                                 ))}
                               </Box>
                             ) : (
-                              <Typography
-                                variant="body2"
+                            <Typography
+                              variant="body2"
                                 sx={{ color: 'text.disabled' }}
-                              >
+                            >
                                 -
-                              </Typography>
+                            </Typography>
                             )}
                           </Grid>
                         </Grid>
                       </Box>
                     );
-                    })}
+                  })}
 
-                    {filteredCreators.length === 0 && (
+                  {filteredCreators.length === 0 && (
                       <Box sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>
-                        <Typography>No creators found.</Typography>
-                      </Box>
-                    )}
+                      <Typography>No creators found.</Typography>
+                    </Box>
+                  )}
                   </Box>
                 </Stack>
               </Grid>

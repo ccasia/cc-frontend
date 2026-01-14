@@ -47,7 +47,7 @@ import PlatformOverviewMobile from 'src/components/campaign-analytics/PlatformOv
 import ManualCreatorEntryForm from 'src/components/campaign-analytics/ManualCreatorEntryForm';
 import PlatformOverviewDesktop from 'src/components/campaign-analytics/PlatformOverviewDesktop';
 
-// import PCRReportPage from './pcr-report-page';
+import PCRReportPage from './pcr-report-page';
 
 // ----------------------------------------------------------------------
 
@@ -3070,12 +3070,12 @@ const CampaignAnalytics = ({ campaign }) => {
   return (
     <Box>
       {/* Conditionally render PCR Report Page or Performance Summary */}
-      {/* {showReportPage ? (
+      {showReportPage ? (
         <PCRReportPage 
           campaign={campaign} 
           onBack={() => setShowReportPage(false)} 
         />
-      ) : ( */}
+      ) : (
         <>
       {/* Platform Toggle */}
       {availablePlatforms.length > 1 && (
@@ -3093,7 +3093,7 @@ const CampaignAnalytics = ({ campaign }) => {
       </Typography>
         
         {/* Generate Report Button */}
-        {/* <Button
+        <Button
           disabled={reportState === 'loading'}
           sx={{
             width: '186.07px',
@@ -3153,7 +3153,7 @@ const CampaignAnalytics = ({ campaign }) => {
           {reportState === 'generate' && 'Generate Report'}
           {reportState === 'loading' && 'Generating...'}
           {reportState === 'view' && 'View Report'}
-        </Button> */}
+        </Button>
       </Box>
 
       {/* Error Alert - always show if error */}
@@ -3601,7 +3601,7 @@ const CampaignAnalytics = ({ campaign }) => {
         </Box>
       )}
         </>
-      {/* )} */}
+      )}
 
       {/* Delete Confirmation Modal */}
       <Dialog
