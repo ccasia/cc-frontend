@@ -429,8 +429,12 @@ export default function ScheduleReservationDialog({
                         key={attendee.id}
                         direction="row"
                         spacing={1}
-                        borderLeft={isTargetCreator ? '2px solid #1340FF' : ''}
-                        pl={1}
+                        sx={{
+                          p: 1,
+                          borderRadius: 1,
+                          borderLeft: isTargetCreator ? '4px solid #1340FF' : 'none',
+                          bgcolor: isTargetCreator ? 'rgba(19, 64, 255, 0.04)' : 'transparent',
+                        }}
                       >
                         <Avatar src={attendee.photoURL} sx={{ width: 32, height: 32 }} />
                         <Box sx={{ flexGrow: 1 }}>
