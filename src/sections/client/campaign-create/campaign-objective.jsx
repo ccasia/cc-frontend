@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { memo } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import {
@@ -47,10 +47,19 @@ FormField.propTypes = {
   required: PropTypes.bool,
 };
 
+
 const CampaignObjective = () => {
-  const { watch } = useFormContext();
+  const { watch, setValue } = useFormContext();
   const primaryObjective = watch('campaignObjectives');
   const secondaryOptions = secondaryObjectivesByPrimary[primaryObjective] || [];
+  const prevPrimaryObjective = useRef(primaryObjective);
+
+  useEffect(() => {
+    if (prevPrimaryObjective.current !== undefined && prevPrimaryObjective.current !== primaryObjective) {
+      setValue('secondaryObjectives', []);
+    }
+    prevPrimaryObjective.current = primaryObjective;
+  }, [primaryObjective, setValue]);
 
   return (
     <Box sx={{ maxWidth: '600px', mx: 'auto', mb: 8 }}>
