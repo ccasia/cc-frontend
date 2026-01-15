@@ -26,13 +26,13 @@ const ChipStyle = {
   bgcolor: '#FFF',
   border: 1,
   borderColor: '#EBEBEB',
-  borderRadius: 1,
+  borderRadius: 0.8,
   color: '#636366',
-  height: '32px',
+  height: '35px',
   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
-    px: 1.5,
+    px: 1.2,
     height: '100%',
     display: 'flex',
     alignItems: 'center',
@@ -45,22 +45,18 @@ const ChipStyle = {
 const BoxStyle = {
   border: '1px solid #e0e0e0',
   borderRadius: 2,
-  p: 3,
-  mt: -1,
-  mb: 3,
   width: '100%',
+  mb: 2,
   '& .header': {
     borderBottom: '1px solid #e0e0e0',
-    mx: -3,
-    mt: -1,
-    mb: 2,
-    pb: 1.5,
-    pt: -1,
-    px: 1.8,
+    p: 1.5,
     display: 'flex',
     alignItems: 'center',
     gap: 1,
   },
+  '& .body': {
+    p: 2.5
+  }
 };
 
 const CompactHeaderStyle = {
@@ -81,6 +77,8 @@ const capitalizeFirstLetter = (string) => {
 const CampaignDetailContentClient = ({ campaign }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
+
+  console.log('Campaign details: ', campaign)
 
   const handleChatClick = async (admin) => {
     try {
@@ -123,8 +121,6 @@ const CampaignDetailContentClient = ({ campaign }) => {
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
         {/* Left Column */}
         <Stack spacing={-3} sx={{ flex: { xs: 1, md: 2.5 } }}>
-          {/* Demographics Box */}
-
           {false && (
             <Box
               mt={4}
@@ -156,14 +152,15 @@ const CampaignDetailContentClient = ({ campaign }) => {
             </Box>
           )}
 
+          {/* GENERAL INFORMATION */}
           <Box sx={{ ...BoxStyle, mt: 1 }}>
             <Box className="header">
               <Iconify
-                icon="solar:info-circle-bold"
+                icon="material-symbols:info-outline"
                 sx={{
                   width: 20,
                   height: 20,
-                  color: '#203ff5',
+                  color: '#0067D5',
                 }}
               />
               <Typography
@@ -174,13 +171,129 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   fontSize: '0.875rem',
                 }}
               >
-                CAMPAIGN INFO
+                GENERAL INFORMATION
               </Typography>
             </Box>
 
-            <Typography variant="body2">
-              {campaign?.description || 'No campaign description available.'}
-            </Typography>
+            <Stack spacing={2} className='body'>
+              <Box>
+                <Typography variant="subtitle2" color={'#8E8E93'}>
+                  Product / Service Name
+                </Typography>
+                <Typography variant="body2">
+                  {campaign?.productName || 'No product/service name.'}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" color={'#8E8E93'}>
+                  Campaign Info
+                </Typography>
+                <Typography variant="body2">
+                  {campaign?.description || 'No campaign description available.'}
+                </Typography>
+              </Box>
+            </Stack>
+          </Box>
+
+          {/* CAMPAIGN OBJECTIVES */}
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="mingcute:target-line"
+                sx={{
+                  color: '#8A5AFE',
+                  width: 20,
+                  height: 20,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                }}
+              >
+                CAMPAIGN OBJECTIVES
+              </Typography>
+            </Box>
+            
+            <Stack className='body' justifyContent={'space-between'} direction={'row'}>
+              <Stack spacing={2} flex={1}>
+                <Box>
+                  <Typography variant="subtitle2" color={'#8E8E93'}>
+                    Primary Campaign Objective
+                  </Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    {campaign?.campaignBrief?.objectives ? (
+                      <Chip 
+                        label={campaign.campaignBrief.objectives} 
+                        size="small" 
+                        sx={ChipStyle} 
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Not specified
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color={'#8E8E93'}>
+                    Secondary Campaign Objective
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                    {campaign?.campaignBrief?.secondaryObjectives?.length > 0 ? (
+                      campaign.campaignBrief.secondaryObjectives.map((objective, idx) => (
+                        <Chip 
+                          key={idx} 
+                          label={objective} 
+                          size="small" 
+                          sx={ChipStyle} 
+                        />
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Not specified
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              </Stack>
+
+              <Stack spacing={2} flex={1}>
+                <Box>
+                  <Typography variant="subtitle2" color={'#8E8E93'}>
+                    Promote Content
+                  </Typography>
+                  <Typography variant="body2">
+                    {campaign?.campaignBrief?.boostContent 
+                      ? capitalizeFirstLetter(campaign.campaignBrief.boostContent)
+                      : 'Not specified'}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color={'#8E8E93'}>
+                    Primary KPI
+                  </Typography>
+                  <Typography variant="body2">
+                    {campaign?.campaignBrief?.primaryKPI || 'Not specified'}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color={'#8E8E93'}>
+                    Current Performance Baseline
+                  </Typography>
+                  <Typography variant="body2">
+                    {campaign?.campaignBrief?.performanceBaseline || 'Not specified'}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Stack>
           </Box>
 
           <Box sx={BoxStyle}>
@@ -316,149 +429,6 @@ const CampaignDetailContentClient = ({ campaign }) => {
               </Stack>
             </Stack>
           </Box>
-
-          {/* Objectives Box */}
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <Iconify
-                icon="mdi:target-arrow"
-                sx={{
-                  color: '#835cf5',
-                  width: 20,
-                  height: 20,
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                }}
-              >
-                CAMPAIGN OBJECTIVES
-              </Typography>
-            </Box>
-
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ pl: 0.5 }}>
-              <Iconify
-                icon="octicon:dot-fill-16"
-                sx={{
-                  color: '#000000',
-                  width: 12,
-                  height: 12,
-                  flexShrink: 0,
-                }}
-              />
-              <Typography variant="body2">{campaign?.campaignBrief?.objectives}</Typography>
-            </Stack>
-          </Box>
-
-          {/* Do's Box */}
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <Iconify
-                icon="material-symbols:check-box-outline"
-                sx={{
-                  color: '#2e6c56',
-                  width: 20,
-                  height: 20,
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                }}
-              >
-                CAMPAIGN DO&apos;S
-              </Typography>
-            </Box>
-
-                          {campaign?.campaignBrief?.campaigns_do?.length > 0 && 
-                campaign?.campaignBrief?.campaigns_do?.some(item => item.value) ? (
-                <Stack spacing={1} sx={{ pl: 0.5 }}>
-                  {campaign?.campaignBrief?.campaigns_do?.map((item, index) => 
-                    item.value ? (
-                      <Stack key={index} direction="row" spacing={1} alignItems="center">
-                        <Iconify
-                          icon="octicon:dot-fill-16"
-                          sx={{
-                            color: '#000000',
-                            width: 12,
-                            height: 12,
-                            flexShrink: 0,
-                          }}
-                        />
-                        <Typography variant="body2" sx={{ color: '#221f20' }}>
-                          {item.value}
-                        </Typography>
-                      </Stack>
-                    ) : null
-                  )}
-                </Stack>
-              ) : (
-                <Typography variant="caption" color="text.secondary">
-                  No campaign do&apos;s found.
-                </Typography>
-              )}
-          </Box>
-
-          {/* Don'ts Box */}
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <Iconify
-                icon="material-symbols:disabled-by-default-outline"
-                sx={{
-                  color: '#eb4a26',
-                  width: 20,
-                  height: 20,
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                }}
-              >
-                CAMPAIGN DON&apos;TS
-              </Typography>
-            </Box>
-
-            {campaign?.campaignBrief?.campaigns_dont?.length > 0 &&
-            campaign?.campaignBrief?.campaigns_dont?.some((item) => item.value) ? (
-              <Stack spacing={1} sx={{ pl: 0.5 }}>
-                {campaign?.campaignBrief?.campaigns_dont?.map((item, index) =>
-                  item.value ? (
-                    <Stack key={index} direction="row" spacing={1} alignItems="center">
-                      <Iconify
-                        icon="octicon:dot-fill-16"
-                        sx={{
-                          color: '#000000',
-                          width: 12,
-                          height: 12,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <Typography variant="body2" sx={{ color: '#221f20' }}>
-                        {item.value}
-                      </Typography>
-                    </Stack>
-                  ) : null
-                )}
-              </Stack>
-            ) : (
-              <Typography variant="caption" color="text.secondary">
-                No campaign don&apos;ts found.
-              </Typography>
-            )}
-          </Box>
-
-          {/* Timeline Box is intentionally removed for client users */}
         </Stack>
 
         {/* Right Column */}
