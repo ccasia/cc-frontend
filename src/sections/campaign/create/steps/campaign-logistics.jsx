@@ -389,7 +389,7 @@ const CampaignLogistics = () => {
               </Box>
             </Stack>
 
-            <Stack spacing={2}>
+            <Stack spacing={2} mb={10}>
               <FormLabel
                 sx={{
                   fontWeight: 600,
