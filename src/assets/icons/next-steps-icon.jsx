@@ -1,5 +1,6 @@
-import * as React from 'react';
 import { memo } from 'react';
+import * as React from 'react';
+import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
 
@@ -33,6 +34,11 @@ function NextStepsIcon({ active, size = 28, ...rest }) {
       <img src={iconSrc} width={size} height={size} alt="Next Steps" style={{ display: 'block' }} />
     </Box>
   );
+};
+
+NextStepsIcon.propTypes = {
+  active: PropTypes.bool,
+  size: PropTypes.number,
 };
 
 export default memo(NextStepsIcon);
