@@ -230,6 +230,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
 
   const logisticsSchema = Yup.object().shape({
     logisticsType: Yup.string().nullable(),
+    allowMultipleBookings: Yup.boolean(),
     products: Yup.array().when('logisticsType', {
       is: 'PRODUCT_DELIVERY',
       then: (schema) =>
@@ -313,6 +314,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     campaignBrand: null,
     logisticsType: '',
     clientRemarks: '',
+    allowMultipleBookings: false,
     schedulingOption: 'confirmation',
     products: [{ name: '' }],
     locations: [{ name: '', pic: '', contactNumber: '' }],
@@ -515,8 +517,12 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
               id: 4,
               name: 'Posting',
               timeline_type: { name: 'Posting' },
-              startDate: postingStartDateVal ? postingStartDateVal.format('ddd LL') : startDateVal.add(20, 'day').format('ddd LL'),
-              endDate: postingEndDateVal ? postingEndDateVal.format('ddd LL') : startDateVal.add(22, 'day').format('ddd LL'),
+              startDate: postingStartDateVal
+                ? postingStartDateVal.format('ddd LL')
+                : startDateVal.add(20, 'day').format('ddd LL'),
+              endDate: postingEndDateVal
+                ? postingEndDateVal.format('ddd LL')
+                : startDateVal.add(22, 'day').format('ddd LL'),
               duration: 2,
               for: 'creator',
             },
@@ -542,10 +548,12 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
         ? data.campaignObjectives.join(', ')
         : data.campaignObjectives,
       products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
+      allowMultipleBookings: !!data.allowMultipleBookings,
       reservationConfig: {
-        mode: data.schedulingOption === 'auto' ? 'AUTO_SCHEDULE' : 'MANUAL_CONFIRMATION',
+        mode: data.schedulingOption,
         locations: data.locations,
         availabilityRules: data.availabilityRules,
+        allowMultipleBookings: !!data.allowMultipleBookings,
       },
     };
 

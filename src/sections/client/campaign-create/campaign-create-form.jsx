@@ -275,6 +275,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
   const logisticsSchema = Yup.object().shape({
     logisticsType: Yup.string().nullable(),
+    allowMultipleBookings: Yup.boolean(),
     products: Yup.array().when('logisticsType', {
       is: 'PRODUCT_DELIVERY',
       then: (schema) =>
@@ -435,6 +436,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     submissionVersion: 'v4',
     logisticsType: '',
     clientRemarks: '',
+    allowMultipleBookings: false,
     schedulingOption: 'confirmation',
     products: [{ name: '' }],
     locations: [{ name: '', pic: '', contactNumber: '' }],
@@ -720,8 +722,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
         availabilityRules: data.availabilityRules || [],
         locations: data.locations?.filter((l) => l.name?.trim().length > 0) || [],
-        schedulingOption:
-          data.schedulingOption === 'auto' ? 'AUTO_SCHEDULE' : 'MANUAL_CONFIRMATION',
+        schedulingOption: data.schedulingOption,
+        allowMultipleBookings: data.allowMultipleBookings,
         // Additional Details 1 fields
         contentFormat: Array.isArray(data.contentFormat) ? data.contentFormat : [],
         postingStartDate: data.postingStartDate || null,

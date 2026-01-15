@@ -1,9 +1,10 @@
-import React, { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import {
   Box,
   Stack,
+  Switch,
   Radio,
   Button,
   MenuItem,
@@ -31,6 +32,7 @@ const CampaignLogistics = () => {
 
   const logisticsType = watch('logisticsType');
   const schedulingOption = watch('schedulingOption');
+  const allowMultipleBookings = watch('allowMultipleBookings');
 
   // For product delivery - multiple products
   const {
@@ -53,7 +55,7 @@ const CampaignLogistics = () => {
   });
 
   // Initialize arrays if needed
-  React.useEffect(() => {
+  useEffect(() => {
     if (logisticsType === 'PRODUCT_DELIVERY' && productFields.length === 0) {
       appendProduct({ name: '' });
       // setLastAddedIndex(0);
@@ -83,6 +85,10 @@ const CampaignLogistics = () => {
     setLastAddedIndex(productFields.length);
     setEditingIndex(-1);
   };
+
+  useEffect(() => {
+    console.log('allowMultipleBookings status', allowMultipleBookings);
+  }, [allowMultipleBookings]);
 
   return (
     <Box
@@ -402,6 +408,30 @@ const CampaignLogistics = () => {
                   </Box>
                 </Box>
               </Box>
+            </Stack>
+
+            <Stack spacing={0}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  Allow multiple creators to book the same timeslot
+                </Typography>
+                <Switch
+                  checked={watch('allowMultipleBookings')}
+                  onChange={(e) =>
+                    setValue('allowMultipleBookings', e.target.checked, { shouldValidate: true })
+                  }
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      backgroundColor: '#1340FF',
+                    },
+                  }}
+                />
+              </Stack>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Enabling this option allows <strong>multiple</strong> creators to visit your outlet
+                at the same time. Leaving this option disabled restricts <strong>one</strong>{' '}
+                timeslot to <strong>one</strong> creator only.
+              </Typography>
             </Stack>
 
             <Stack spacing={1}>

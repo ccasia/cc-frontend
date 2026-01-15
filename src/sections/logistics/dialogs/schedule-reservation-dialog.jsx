@@ -42,6 +42,7 @@ export default function ScheduleReservationDialog({
   logistic,
   campaignId,
   onUpdate,
+  reservationConfig,
 }) {
   const { enqueueSnackbar } = useSnackbar();
 
@@ -75,13 +76,9 @@ export default function ScheduleReservationDialog({
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [selectedDate, allFetchedSlots]);
 
-  // const isSelectedSlotConflict = slotsForSelectedDate
-  //   .find((s) => s.startTime === selectedSlotTime)
-  //   ?.attendees?.some((a) => a.id !== logistic.creatorId && a.status === 'SELECTED');
-
   const isSelectedSlotConflict = useMemo(() => {
     const slot = slotsForSelectedDate.find((s) => s.startTime === selectedSlotTime);
-    if (!slot) return false;
+    if (!slot || reservationConfig?.allowMultipleBookings) return false;
 
     const start = parseISO(slot.startTime);
     const end = parseISO(slot.endTime);
@@ -617,4 +614,5 @@ ScheduleReservationDialog.propTypes = {
   logistic: PropTypes.object,
   onUpdate: PropTypes.func,
   campaignId: PropTypes.string,
+  reservationConfig: PropTypes.object,
 };

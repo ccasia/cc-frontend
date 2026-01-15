@@ -5,6 +5,7 @@ import {
   format,
   parseISO,
   isSameDay,
+  isValid,
   addMonths,
   subMonths,
   endOfWeek,
@@ -16,7 +17,7 @@ import {
 
 import { LoadingButton } from '@mui/lab';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { TimePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { LocalizationProvider, DesktopTimePicker } from '@mui/x-date-pickers';
 import {
   Box,
   Grid,
@@ -45,13 +46,22 @@ export default function AdminScheduleReservationDialog({
   logistic,
   campaignId,
   onUpdate,
+  reservationConfig,
 }) {
   const { enqueueSnackbar } = useSnackbar();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [startTime, setStartTime] = useState(new Date().setHours(9, 0, 0, 0));
-  const [endTime, setEndTime] = useState(new Date().setHours(17, 0, 0, 0));
+  const [startTime, setStartTime] = useState(() => {
+    const d = new Date();
+    d.setHours(9, 0, 0, 0);
+    return d;
+  });
+  const [endTime, setEndTime] = useState(() => {
+    const d = new Date();
+    d.setHours(17, 0, 0, 0);
+    return d;
+  });
   const [loading, setLoading] = useState(false);
 
   const monthQuery = format(currentMonth, 'yyyy-MM-dd');
@@ -101,10 +111,17 @@ export default function AdminScheduleReservationDialog({
   const dateString = format(selectedDate, 'yyyy-MM-dd');
 
   const hasConflict = useMemo(() => {
-    if (!daysData || !selectedDate || !startTime || !endTime) return false;
+    if (
+      !daysData ||
+      !selectedDate ||
+      !isValid(startTime) ||
+      !isValid(endTime) ||
+      reservationConfig?.allowMultipleBookings
+    )
+      return false;
 
-    const slotStart = `${dateString}T${format(new Date(startTime), 'HH:mm')}`;
-    const slotEnd = `${dateString}T${format(new Date(endTime), 'HH:mm')}`;
+    const slotStart = `${dateString}T${format(startTime, 'HH:mm')}`;
+    const slotEnd = `${dateString}T${format(endTime, 'HH:mm')}`;
 
     const isFullDay =
       (slotStart.includes('T00:00') && slotEnd.includes('T23:59')) ||
@@ -126,8 +143,10 @@ export default function AdminScheduleReservationDialog({
   }, [daysData, selectedDate, startTime, endTime, logistic?.creatorId]);
 
   const isNotProposedSlot = useMemo(() => {
-    if (!selectedDate || !startTime) return false;
-    const currentWindowStart = `${dateString}T${format(new Date(startTime), 'HH:mm')}`;
+    if (!selectedDate || !startTime || !isValid(startTime)) return false;
+
+    const currentWindowStart = `${dateString}T${format(startTime, 'HH:mm')}`;
+    
     return !proposedSlots.some((p) => p.startTime.startsWith(currentWindowStart));
   }, [dateString, startTime, proposedSlots, selectedDate]);
 
@@ -556,4 +575,5 @@ AdminScheduleReservationDialog.propTypes = {
   logistic: PropTypes.object,
   onUpdate: PropTypes.func,
   campaignId: PropTypes.string,
+  reservationConfig: PropTypes.object,
 };

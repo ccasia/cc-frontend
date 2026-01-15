@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { config } from '@fullcalendar/core/internal';
+import useSWR from 'swr';
+import { fetcher } from 'src/utils/axios';
 
 import { Box, Stack, Badge, Button, Divider, Typography } from '@mui/material';
 
@@ -22,12 +24,18 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
 
   const status = logistic?.status;
   const details = logistic?.reservationDetails;
+  const isReservation = logistic?.type === 'RESERVATION';
 
   const confirmedSlot = details?.slots?.find((slot) => slot.status === 'SELECTED');
   const isScheduled = Boolean(confirmedSlot);
   const isDetailsConfirmed = details?.isConfirmed;
   const hasIssue = status === 'ISSUE_REPORTED';
   const isAuto = config?.mode === 'AUTO_SCHEDULE';
+
+  const { data: reservationConfig } = useSWR(
+    campaignId && isReservation ? `/api/logistics/campaign/${campaignId}/reservation-config` : null,
+    fetcher
+  );
 
   // --- Button Logic ---
   const renderActionButtons = () => {
@@ -380,6 +388,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
         logistic={logistic}
         campaignId={campaignId}
         onUpdate={onUpdate}
+        reservationConfig={reservationConfig}
       />
       <AdminScheduleReservationDialog
         open={openAdminSchedule}
@@ -387,6 +396,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
         logistic={logistic}
         campaignId={campaignId}
         onUpdate={onUpdate}
+        reservationConfig={reservationConfig}
       />
     </>
   );
