@@ -70,7 +70,7 @@ export default function AdditionalDetails1() {
   const postingEndDate = watch('postingEndDate');
 
   return (
-    <Box sx={{ maxWidth: '816px', mx: 'auto', mb: 8, mt: 4 }}>
+    <Box sx={{ maxWidth: '816px', mx: 'auto', mb: 12, mt: 8 }}>
       <Grid container spacing={2} mb={4}>
         {/* Column One */}
         <Grid item xs={12} sm={6}>
