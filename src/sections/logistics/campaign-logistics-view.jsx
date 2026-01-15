@@ -139,6 +139,7 @@ export default function CampaignLogisticsView({
                 onChange={(newDate) => setDate(newDate)}
                 logistics={safeLogistics}
                 isReservation={isReservation}
+                reservationConfig={reservationConfig}
               />
             </Box>
             {/* Vertical Divider (Desktop) */}

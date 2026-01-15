@@ -298,65 +298,66 @@ export default function LogisticsScheduledList({
             Creators
           </Typography>
         )}
-      </Box>
 
-      <Box sx={{ flexGrow: 0, overflowY: 'auto', height: 150, px: 0.5 }}>
         {dayLogistics.length === 0 ? (
-          <Box
-            sx={{
-              flexGrow: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'text.disabled',
-              minHeight: 200,
-            }}
-          >
+          <Box sx={{ flexGrow: 0, overflowY: 'hidden', height: 170, px: 0.5 }}>
             <Box
               sx={{
-                width: 80,
-                height: 80,
-                borderRadius: '50%',
-                bgcolor: '#F4F6F8',
+                flexGrow: 1,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
-                // mb: 2,
+                justifyContent: savedSlots.length > 0 ? 'flex-start' : 'center',
+                color: 'text.disabled',
+                minHeight: 200,
               }}
             >
-              <Typography sx={{ fontSize: 40 }}>🤭</Typography>
+              <Box
+                sx={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  bgcolor: '#F4F6F8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  // mb: 2,
+                }}
+              >
+                <Typography sx={{ fontSize: 40 }}>🤭</Typography>
+              </Box>
+
+              {/* Title */}
+              <Typography
+                variant="h4"
+                sx={{
+                  fontFamily: 'instrument serif',
+                  color: '#231F20',
+                  fontWeight: 400,
+                }}
+              >
+                No {isReservation ? 'visits' : 'deliveries'} scheduled.
+              </Typography>
+
+              {/* Subtitle */}
+              <Typography variant="body2" sx={{ color: '#636366', fontWeight: 400 }}>
+                Scheduled {isReservation ? 'visits' : 'deliveries'} will show up here.
+              </Typography>
             </Box>
-
-            {/* Title */}
-            <Typography
-              variant="h4"
-              sx={{
-                fontFamily: 'instrument serif',
-                color: '#231F20',
-                fontWeight: 400,
-                // mb: 1,
-              }}
-            >
-              No {isReservation ? 'visits' : 'deliveries'} scheduled.
-            </Typography>
-
-            {/* Subtitle */}
-            <Typography variant="body2" sx={{ color: '#636366', fontWeight: 400 }}>
-              Scheduled {isReservation ? 'visits' : 'deliveries'} will show up here.
-            </Typography>
           </Box>
         ) : (
-          <List disablePadding>
-            {dayLogistics.map((item) => (
-              <ScheduledItem
-                key={item.id}
-                item={item}
-                isReservation={isReservation}
-                onClick={onClick}
-              />
-            ))}
-          </List>
+          <Box sx={{ flexGrow: 0, overflowY: 'auto', height: 150, px: 0.5 }}>
+            <List disablePadding>
+              {dayLogistics.map((item) => (
+                <ScheduledItem
+                  key={item.id}
+                  item={item}
+                  isReservation={isReservation}
+                  onClick={onClick}
+                />
+              ))}
+            </List>
+          </Box>
         )}
       </Box>
     </Box>
