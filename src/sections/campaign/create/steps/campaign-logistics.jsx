@@ -138,7 +138,7 @@ const CampaignLogistics = () => {
         </Stack>
 
         {logisticsType === 'PRODUCT_DELIVERY' && (
-          <Stack spacing={3}>
+          <Stack spacing={3} mb={10}>
             {productFields.map((field, index) => (
               <Stack key={field.id} spacing={1}>
                 <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
