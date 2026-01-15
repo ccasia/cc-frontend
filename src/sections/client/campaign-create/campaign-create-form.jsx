@@ -10,24 +10,18 @@ import { mutate as globalMutate } from 'swr';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
-import React, { lazy, useState, useEffect, useCallback } from 'react';
+import React, { lazy, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import {
-  Chip,
-  Paper,
   Stack,
   Avatar,
   Dialog,
-  Divider,
   IconButton,
   Typography,
-  DialogTitle,
   ListItemText,
-  DialogContent,
-  DialogActions,
   LinearProgress,
 } from '@mui/material';
 
@@ -38,7 +32,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { NextStepsIcon } from 'src/assets/icons';
 
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
@@ -126,7 +119,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const [status, setStatus] = useState('');
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
   const pdfModal = useBoolean();
@@ -138,8 +130,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const inFrontSection = isInFrontSection(activeStep);
   const inBackSection = isInBackSection(activeStep);
 
-  // Add state for confirmation modal
-  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+
 
   // Client brand info for preview
   const clientBrandName =
@@ -864,17 +855,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     }
   });
 
-  // Add function to handle confirmation
-  const handleConfirmCampaign = () => {
-    setIsConfirming(true);
-    setOpenConfirmModal(true);
-  };
+
 
   // Add function to handle final submission
   const handleFinalSubmit = useCallback(async () => {
     try {
       setIsLoading(true);
-      setOpenConfirmModal(false); // Close the modal immediately when submission starts
+      confirmation.onFalse(); // Close the modal immediately when submission starts
 
       // Try to create client record and associate with company first
       try {
@@ -900,30 +887,10 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       enqueueSnackbar('Failed to submit campaign', { variant: 'error' });
     } finally {
       setIsLoading(false);
-      setIsConfirming(false);
     }
-  }, [onSubmit, methods]);
+  }, [onSubmit, methods, confirmation]);
 
-  // Set up event listeners for custom events - MOVED AFTER handleFinalSubmit
-  useEffect(() => {
-    const handleConfirm = () => {
-      handleFinalSubmit();
-    };
 
-    const handleCancel = () => {
-      setIsConfirming(false)
-      setOpenConfirmModal(false);
-    };
-
-    window.addEventListener('confirmCampaign', handleConfirm);
-    window.addEventListener('cancelCampaign', handleCancel);
-
-    // Clean up event listeners when component unmounts
-    return () => {
-      window.removeEventListener('confirmCampaign', handleConfirm);
-      window.removeEventListener('cancelCampaign', handleCancel);
-    };
-  }, [handleFinalSubmit, setOpenConfirmModal]); // Include dependencies
 
   // Modify the step content function to handle client flow with 7 internal steps
   const getStepContent = (step) => {
@@ -1015,7 +982,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               padding: 1,
             }}
             size="large"
-            disabled={isLoading || isConfirming}
+            disabled={isLoading}
             onClick={onClose}
           >
             <Iconify icon="material-symbols:close" width={20} color="#231F20" />
@@ -1212,7 +1179,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               <Button
                 variant="contained"
                 onClick={handleNext}
-                disabled={!isStepValid() || isLoading || isConfirming}
+                disabled={!isStepValid() || isLoading}
                 sx={{
                   height: 45,
                   bgcolor: '#3A3A3C',
@@ -1227,15 +1194,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               </Button>
             )}
 
-            {/* Step 6: No Next button - has its own Publish/Continue buttons in content */}
-
             {/* Step 7: Show Next and Confirm Campaign buttons */}
             {activeStep === 7 && (
               <Stack direction="row" spacing={1}>
                 <Button
                   variant="contained"
                   onClick={handleNext}
-                  disabled={!isStepValid() || isLoading || isConfirming}
+                  disabled={!isStepValid() || isLoading}
                   sx={{
                     height: 45,
                     bgcolor: '#3A3A3C',
@@ -1250,8 +1215,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={handleConfirmCampaign}
-                  disabled={isConfirming || isLoading || !isStepValid()}
+                  onClick={confirmation.onTrue}
+                  disabled={isLoading || !isStepValid()}
                   sx={{
                     bgcolor: '#1340FF',
                     '&:hover': {
@@ -1261,11 +1226,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                     fontWeight: 600,
                   }}
                 >
-                  {isConfirming
-                    ? 'Opening Preview...'
-                    : isLoading
-                      ? 'Creating Campaign...'
-                      : 'Confirm Campaign'}
+                  {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
                 </Button>
               </Stack>
             )}
@@ -1274,8 +1235,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             {activeStep === 8 && (
               <Button
                 variant="contained"
-                onClick={handleConfirmCampaign}
-                disabled={isConfirming || isLoading || !isStepValid()}
+                onClick={confirmation.onTrue}
+                disabled={isLoading || !isStepValid()}
                 sx={{
                   bgcolor: '#1340FF',
                   '&:hover': {
@@ -1285,11 +1246,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                   fontWeight: 600,
                 }}
               >
-                {isConfirming
-                  ? 'Opening Preview...'
-                  : isLoading
-                    ? 'Creating Campaign...'
-                    : 'Confirm Campaign'}
+                {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
               </Button>
             )}
           </Stack>
@@ -1380,7 +1337,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               <Button
                 variant="contained"
                 onClick={handleNext}
-                disabled={!isStepValid() || isLoading || isConfirming}
+                disabled={!isStepValid() || isLoading}
                 fullWidth
                 sx={{
                   bgcolor: '#3A3A3C',
@@ -1395,15 +1352,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               </Button>
             )}
 
-            {/* Step 6: No buttons - has its own Publish/Continue buttons in content */}
-
             {/* Step 7: Show Next and Confirm Campaign buttons */}
             {activeStep === 7 && (
               <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
                 <Button
                   variant="contained"
                   onClick={handleNext}
-                  disabled={!isStepValid() || isLoading || isConfirming}
+                  disabled={!isStepValid() || isLoading}
                   fullWidth
                   sx={{
                     bgcolor: '#3A3A3C',
@@ -1418,8 +1373,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={handleConfirmCampaign}
-                  disabled={isConfirming || isLoading || !isStepValid()}
+                  onClick={confirmation.onTrue}
+                  disabled={isLoading || !isStepValid()}
                   fullWidth
                   sx={{
                     bgcolor: '#1340FF',
@@ -1430,7 +1385,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                     fontWeight: 600,
                   }}
                 >
-                  {isConfirming ? 'Opening...' : isLoading ? 'Creating...' : 'Confirm'}
+                  {isLoading ? 'Creating...' : 'Confirm'}
                 </Button>
               </Stack>
             )}
@@ -1439,8 +1394,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             {activeStep === 8 && (
               <Button
                 variant="contained"
-                onClick={handleConfirmCampaign}
-                disabled={isConfirming || isLoading || !isStepValid()}
+                onClick={confirmation.onTrue}
+                disabled={isLoading || !isStepValid()}
                 fullWidth
                 sx={{
                   bgcolor: '#1340FF',
@@ -1451,7 +1406,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                   fontWeight: 600,
                 }}
               >
-                {isConfirming ? 'Opening Preview...' : isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
+                {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
               </Button>
             )}
           </Stack>
@@ -1485,7 +1440,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
             />
 
             <ListItemText
-              primary="Confirm campaign"
+              primary="Confirm Campaign"
               secondary="Are you sure you're ready to publish your campaign?"
               primaryTypographyProps={{
                 fontFamily: (theme) => theme.typography.fontSecondaryFamily,
@@ -1497,15 +1452,13 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               sx={{ mb: 2 }}
             />
 
-            {/* Action Buttons */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <LoadingButton
                 variant="contained"
                 fullWidth
                 onClick={() => {
-                  if (status) {
-                    onSubmit(status);
-                  }
+                  confirmation.onFalse();
+                  handleSubmit(onSubmit)();
                 }}
                 loading={isLoading}
                 sx={{
@@ -1535,7 +1488,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
                   },
                 }}
                 onClick={() => {
-                  setStatus('');
                   confirmation.onFalse();
                 }}
               >
@@ -1543,326 +1495,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               </Button>
             </Box>
           </Box>
-        </Dialog>
-
-        {/* Campaign Preview Confirmation Modal */}
-        <Dialog
-          fullWidth
-          maxWidth="sm"
-          open={openConfirmModal}
-          onClose={() => !isLoading && setOpenConfirmModal(false)}
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-              maxHeight: '90vh',
-            },
-          }}
-        >
-          <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-            <Typography variant="h6">Campaign Preview</Typography>
-            <IconButton onClick={() => !isLoading && setOpenConfirmModal(false)} size="small" disabled={isLoading}>
-              <Iconify icon="mdi:close" />
-            </IconButton>
-          </DialogTitle>
-
-          <DialogContent dividers sx={{ p: 0, position: 'relative' }}>
-            {/* Loading overlay for confirmation modal */}
-            {isLoading && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  bgcolor: 'rgba(255, 255, 255, 0.95)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 1000,
-                }}
-              >
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    bgcolor: 'white',
-                    borderRadius: 2,
-                    p: 3,
-                    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.1)',
-                    border: '1px solid #E7E7E7',
-                    minWidth: 280,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: '50%',
-                      bgcolor: '#FFD700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mx: 'auto',
-                      mb: 2,
-                      position: 'relative',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: -1,
-                        left: -1,
-                        right: -1,
-                        bottom: -1,
-                        borderRadius: '50%',
-                        background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                        zIndex: -1,
-                        animation: 'rotate 2s linear infinite',
-                      },
-                    }}
-                  >
-                    <Typography sx={{ fontSize: 24, lineHeight: 1, userSelect: 'none' }}>⏳</Typography>
-                  </Box>
-                  <Typography variant="subtitle1" sx={{ color: '#3A3A3C', fontWeight: 600, fontSize: '1rem', mb: 1 }}>
-                    Creating Campaign
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: '0.8rem' }}>
-                    Please wait...
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-
-            {/* Campaign Preview Card */}
-            <Paper elevation={0} sx={{ borderRadius: 0 }}>
-              {/* Campaign Image Header */}
-              <Box
-                sx={{
-                  position: 'relative',
-                  height: 200,
-                  width: '100%',
-                  bgcolor: 'background.neutral',
-                }}
-              >
-                {values.campaignImages && values.campaignImages.length > 0 ? (
-                  <Image
-                    src={values.campaignImages[0].preview || values.campaignImages[0]}
-                    alt="Campaign Image"
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                    }}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      No image uploaded
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Preview Label */}
-                <Box sx={{ position: 'absolute', top: 16, left: 16 }}>
-                  <Chip
-                    label="CAMPAIGN PREVIEW"
-                    size="small"
-                    sx={{
-                      bgcolor: 'white',
-                      fontWeight: 600,
-                      fontSize: '0.7rem',
-                    }}
-                  />
-                </Box>
-
-                {/* Company Avatar */}
-                <Avatar
-                  src={clientLogoUrl}
-                  alt={clientBrandName}
-                  sx={{
-                    position: 'absolute',
-                    bottom: -30,
-                    left: 24,
-                    width: 60,
-                    height: 60,
-                    border: '3px solid white',
-                    bgcolor: 'primary.main',
-                  }}
-                >
-                  {clientBrandName?.charAt(0)}
-                </Avatar>
-              </Box>
-
-              {/* Campaign Details */}
-              <Box sx={{ p: 3, pt: 5 }}>
-                <Typography variant="h6" fontWeight={600} mb={0.5}>
-                  {values.campaignTitle || 'Untitled Campaign'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  by {clientBrandName}
-                </Typography>
-
-                <Divider sx={{ my: 2 }} />
-
-                {/* Date Range */}
-                <Stack direction="row" spacing={2} mb={2}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Start Date
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {formatDate(values.campaignStartDate)}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      End Date
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {formatDate(values.campaignEndDate)}
-                    </Typography>
-                  </Box>
-                </Stack>
-
-                {/* Description */}
-                {values.campaignDescription && (
-                  <Box mb={2}>
-                    <Typography variant="caption" color="text.secondary">
-                      Campaign Info
-                    </Typography>
-                    <Typography variant="body2">{values.campaignDescription}</Typography>
-                  </Box>
-                )}
-
-                {/* Industries */}
-                {values.campaignIndustries?.length > 0 && (
-                  <Box mb={2}>
-                    <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                      Industries
-                    </Typography>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
-                      {values.campaignIndustries.map((industry) => (
-                        <Chip key={industry} label={industry} size="small" variant="outlined" />
-                      ))}
-                    </Stack>
-                  </Box>
-                )}
-
-                {/* Objectives */}
-                {values.campaignObjectives && (
-                  <Box mb={2}>
-                    <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                      Primary Objective
-                    </Typography>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
-                      <Chip label={values.campaignObjectives} size="small" variant="outlined" />
-                    </Stack>
-                  </Box>
-                )}
-
-                {/* Target Audience */}
-                {(values.audienceGender?.length > 0 || values.audienceAge?.length > 0 || values.audienceLanguage?.length > 0) && (
-                  <Box mb={2}>
-                    <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                      Target Audience
-                    </Typography>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
-                      {values.audienceGender?.map((g) => (
-                        <Chip key={g} label={g} size="small" sx={{ bgcolor: '#E8F5E9' }} />
-                      ))}
-                      {values.audienceAge?.map((a) => (
-                        <Chip key={a} label={a} size="small" sx={{ bgcolor: '#E3F2FD' }} />
-                      ))}
-                      {values.audienceLanguage?.map((l) => (
-                        <Chip key={l} label={l} size="small" sx={{ bgcolor: '#FFF3E0' }} />
-                      ))}
-                    </Stack>
-                  </Box>
-                )}
-
-                {/* Do's and Don'ts */}
-                <Stack direction="row" spacing={3}>
-                  {values.campaignDo?.filter((d) => d.value)?.length > 0 && (
-                    <Box flex={1}>
-                      <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                        <Iconify
-                          icon="mdi:check-circle"
-                          width={14}
-                          sx={{ color: 'success.main', mr: 0.5 }}
-                        />
-                        Do&apos;s
-                      </Typography>
-                      {values.campaignDo
-                        .filter((d) => d.value)
-                        .map((item, idx) => (
-                          <Typography key={idx} variant="body2" sx={{ fontSize: '0.8rem' }}>
-                            • {item.value}
-                          </Typography>
-                        ))}
-                    </Box>
-                  )}
-                  {values.campaignDont?.filter((d) => d.value)?.length > 0 && (
-                    <Box flex={1}>
-                      <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                        <Iconify
-                          icon="mdi:close-circle"
-                          width={14}
-                          sx={{ color: 'error.main', mr: 0.5 }}
-                        />
-                        Don&apos;ts
-                      </Typography>
-                      {values.campaignDont
-                        .filter((d) => d.value)
-                        .map((item, idx) => (
-                          <Typography key={idx} variant="body2" sx={{ fontSize: '0.8rem' }}>
-                            • {item.value}
-                          </Typography>
-                        ))}
-                    </Box>
-                  )}
-                </Stack>
-              </Box>
-            </Paper>
-          </DialogContent>
-
-          <DialogActions sx={{ p: 2, justifyContent: 'center' }}>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                setOpenConfirmModal(false);
-                setIsConfirming(false);
-                setIsLoading(false);
-              }}
-              disabled={isLoading}
-              sx={{ mr: 1 }}
-            >
-              Go Back
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleFinalSubmit}
-              disabled={isLoading}
-              startIcon={<Iconify icon="mdi:rocket-launch" />}
-              sx={{
-                bgcolor: '#1340FF',
-                px: 4,
-                py: 1,
-                fontWeight: 600,
-                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                '&:hover': {
-                  bgcolor: '#0030e0',
-                },
-              }}
-            >
-              {isLoading ? 'Creating...' : 'Confirm & Publish'}
-            </Button>
-          </DialogActions>
         </Dialog>
       </FormProvider>
 
