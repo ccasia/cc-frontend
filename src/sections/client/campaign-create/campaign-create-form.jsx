@@ -468,6 +468,16 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     referenceContent: '',
     productImage1: [],
     productImage2: [],
+    // Additional Details 2 fields
+    hashtagsToUse: '',
+    mentionsTagsRequired: '',
+    creatorCompensation: '',
+    ctaDesiredAction: '',
+    ctaLinkUrl: '',
+    ctaPromoCode: '',
+    ctaLinkInBioRequirements: '',
+    specialNotesInstructions: '',
+    needAds: '',
   };
 
   const methods = useForm({
@@ -736,6 +746,16 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         keyPoints: data.keyPoints || '',
         toneAndStyle: data.toneAndStyle || '',
         referenceContent: data.referenceContent || '',
+        // Additional Details 2 fields
+        hashtagsToUse: data.hashtagsToUse || '',
+        mentionsTagsRequired: data.mentionsTagsRequired || '',
+        creatorCompensation: data.creatorCompensation || '',
+        ctaDesiredAction: data.ctaDesiredAction || '',
+        ctaLinkUrl: data.ctaLinkUrl || '',
+        ctaPromoCode: data.ctaPromoCode || '',
+        ctaLinkInBioRequirements: data.ctaLinkInBioRequirements || '',
+        specialNotesInstructions: data.specialNotesInstructions || '',
+        needAds: data.needAds || '',
       };
 
       console.log('Client campaign data:', clientCampaignData);
