@@ -111,7 +111,6 @@ export function RHFMultiSelect({
                 border: 1,
                 borderColor: '#EBEBEB',
                 boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                py: 1.5,
               }}
             />
           ))}
@@ -158,30 +157,32 @@ export function RHFMultiSelect({
         <FormControl error={!!error} {...other}>
           {label && <InputLabel id={name}> {label} </InputLabel>}
 
-          <Select
-            {...field}
-            value={field.value || []}
-            multiple
-            displayEmpty={!!placeholder}
-            id={`multiple-${name}`}
-            labelId={name}
-            label={label}
-            renderValue={renderValues}
-          >
-            {options.map((option) => {
-              const selected = (field.value || []).includes(option.value);
+          <Box sx={{ position: 'relative', width: '100%' }}>
+            <Select
+              {...field}
+              value={field.value || []}
+              multiple
+              displayEmpty={!!placeholder}
+              id={`multiple-${name}`}
+              labelId={name}
+              label={label}
+              renderValue={renderValues}
+              fullWidth
+            >
+              {options.map((option) => {
+                const selected = (field.value || []).includes(option.value);
 
-              return (
-                <MenuItem key={option.value} value={option.value}>
-                  {checkbox && <Checkbox size="small" disableRipple checked={selected} />}
+                return (
+                  <MenuItem key={option.value} value={option.value}>
+                    {checkbox && <Checkbox size="small" disableRipple checked={selected} />}
 
-                  {option.label}
-                </MenuItem>
-              );
-            })}
-          </Select>
-
-          {renderClearAllButton(field.value, field.onChange)}
+                    {option.label}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+            {renderClearAllButton(field.value, field.onChange)}
+          </Box>
 
           {(!!error || helperText) && (
             <FormHelperText error={!!error}>{error ? error?.message : helperText}</FormHelperText>
