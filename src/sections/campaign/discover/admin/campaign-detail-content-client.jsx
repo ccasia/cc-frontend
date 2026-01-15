@@ -688,34 +688,40 @@ const CampaignDetailContentClient = ({ campaign }) => {
                         </Typography>
                       </Box>
                     )}
-                    {additionalDetails?.brandGuidelinesUrl &&
-                      (() => {
-                        const url = additionalDetails.brandGuidelinesUrl;
-                        let filename = url.split('/').pop().split('?')[0];
-                        filename = filename.replace(/_v=.*$/, '');
-                        return (
-                          <Box>
-                            <Typography
-                              variant="body2"
-                              sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                            >
-                              Brand Guidelines Document
-                            </Typography>
-                            <Link
-                              href={url}
-                              target="_blank"
-                              sx={{
-                                fontSize: '0.875rem',
-                                color: '#203ff5',
-                                textDecoration: 'none',
-                                '&:hover': { textDecoration: 'underline' },
-                              }}
-                            >
-                              {filename}
-                            </Link>
-                          </Box>
-                        );
-                      })()}
+                    {additionalDetails?.brandGuidelinesUrl && (() => {
+                      const urls = additionalDetails.brandGuidelinesUrl.split(',').map(u => u.trim()).filter(Boolean);
+                      return (
+                        <Box>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
+                          >
+                            Brand Guidelines Document{urls.length > 1 ? 's' : ''}
+                          </Typography>
+                          <Stack spacing={0.5}>
+                            {urls.map((url, idx) => {
+                              let filename = url.split('/').pop().split('?')[0];
+                              filename = filename.replace(/_v=.*$/, '');
+                              return (
+                                <Link
+                                  key={url}
+                                  href={url}
+                                  target="_blank"
+                                  sx={{
+                                    fontSize: '0.875rem',
+                                    color: '#203ff5',
+                                    textDecoration: 'none',
+                                    '&:hover': { textDecoration: 'underline' },
+                                  }}
+                                >
+                                  {filename}
+                                </Link>
+                              );
+                            })}
+                          </Stack>
+                        </Box>
+                      );
+                    })()}
                     {additionalDetails?.referenceContent && (
                       <Box>
                         <Typography
