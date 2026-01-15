@@ -168,18 +168,23 @@ export default function AdminScheduleReservationDialog({
       });
     });
 
-    // Safety check: Ensure the target creator is present if they have proposals on this day
     if (!creatorsMap.has(logistic?.creatorId)) {
       const targetDayProposal = proposedSlots.find((p) => p.startTime.startsWith(dateString));
-      if (targetDayProposal) {
+      const targetDayConfirmed = confirmedSlot?.startTime.startsWith(dateString)
+        ? confirmedSlot
+        : null;
+
+      const activeTargetDay = targetDayProposal || targetDayConfirmed;
+
+      if (activeTargetDay) {
         creatorsMap.set(logistic.creatorId, {
           id: logistic.creatorId,
           name: logistic.creator.name,
           photoURL: logistic.creator.photoURL,
           handle: socialMediaHandle,
-          status: 'PROPOSED',
-          currentSlot: { start: targetDayProposal.startTime, end: targetDayProposal.endTime },
-          otherSlots: proposedSlots.filter((p) => p.startTime !== targetDayProposal.startTime),
+          status: activeTargetDay.status,
+          currentSlot: { start: activeTargetDay.startTime, end: activeTargetDay.endTime },
+          otherSlots: proposedSlots.filter((p) => p.startTime !== activeTargetDay.startTime),
         });
       }
     }
@@ -256,7 +261,8 @@ export default function AdminScheduleReservationDialog({
           borderRadius: 2,
           border: '1px solid #EAEAEA',
           width: 720,
-          minHeight: 400,
+          minHeight: 360,
+          maxHeight: 400,
           mb: 3,
         }}
       >
@@ -521,21 +527,67 @@ export default function AdminScheduleReservationDialog({
         <ThemeProvider theme={createTheme({ palette: { primary: { main: '#1340FF' } } })}>
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Stack direction="row" spacing={1} alignItems="center" flexGrow={1}>
-              <TimePicker
+              <DesktopTimePicker
                 label="Start Time"
-                value={new Date(startTime)}
-                onChange={setStartTime}
+                // value={new Date(startTime)}
+                onChange={(newValue) => setStartTime(newValue)}
                 slotProps={{
-                  textField: { size: 'small', sx: { bgcolor: '#fff' } },
+                  popper: {
+                    sx: {
+                      '& .MuiMenuItem-root': {
+                        fontSize: '14px',
+                        '&:hover': {
+                          bgcolor: 'rgba(19, 64, 255, 0.08)',
+                          color: '#1340FF',
+                          borderRadius: 1.5,
+                        },
+                        '&.Mui-selected': {
+                          bgcolor: '#1340FF !important',
+                          color: '#fff !important',
+                          borderRadius: 1.5,
+                          '&:hover': {
+                            bgcolor: '#0c2aa6 !important',
+                          },
+                        },
+                      },
+                    },
+                  },
+                  textField: {
+                    size: 'small',
+                    sx: { bgcolor: '#fff', '& .MuiOutlinedInput-root': { borderRadius: 1.5 } },
+                  },
                 }}
               />
               <Typography variant="body2">to</Typography>
-              <TimePicker
+              <DesktopTimePicker
                 label="End Time"
-                value={new Date(endTime)}
-                onChange={setEndTime}
+                // value={new Date(endTime)}
+                onChange={(newValue) => setEndTime(newValue)}
                 slotProps={{
-                  textField: { size: 'small', sx: { bgcolor: '#fff' } },
+                  popper: {
+                    sx: {
+                      '& .MuiMenuItem-root': {
+                        fontSize: '14px',
+                        '&:hover': {
+                          bgcolor: 'rgba(19, 64, 255, 0.08)',
+                          color: '#1340FF',
+                          borderRadius: 1.5,
+                        },
+                        '&.Mui-selected': {
+                          bgcolor: '#1340FF !important',
+                          color: '#fff !important',
+                          borderRadius: 1.5,
+                          '&:hover': {
+                            bgcolor: '#0c2aa6 !important',
+                          },
+                        },
+                      },
+                    },
+                  },
+                  textField: {
+                    size: 'small',
+                    sx: { bgcolor: '#fff', '& .MuiOutlinedInput-root': { borderRadius: 1.5 } },
+                  },
                 }}
               />
             </Stack>

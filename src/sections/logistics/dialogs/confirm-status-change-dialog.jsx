@@ -5,6 +5,11 @@ import { Box, Stack, Dialog, Button, Typography } from '@mui/material';
 // Reuse config to get colors/labels
 const getStatusConfig = (status, isReservation) => {
   switch (status) {
+    case 'NOT_STARTED':
+      return {
+        label: 'UNCONFIRMED',
+        color: '#B0B0B0',
+      };
     case 'PENDING_ASSIGNMENT':
       return {
         label: isReservation ? 'UNCONFIRMED' : 'UNASSIGNED',
