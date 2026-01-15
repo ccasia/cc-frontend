@@ -73,6 +73,13 @@ const capitalizeFirstLetter = (string) => {
   return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 };
 
+const logisticsTypeLabel = (type) => {
+  if (!type) return '';
+  if (type === 'PRODUCT_DELIVERY') return 'Product Delivery';
+  if (type === 'RESERVATION') return 'Reservation';
+  return capitalizeFirstLetter(type);
+};
+
 const CampaignDetailContentClient = ({ campaign }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
@@ -119,7 +126,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
     >
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
         {/* Left Column */}
-        <Stack spacing={-3} sx={{ flex: { xs: 1, md: 2.5 } }}>
+        <Stack sx={{ flex: { xs: 1, md: 2.5 } }}>
           {false && (
             <Box
               mt={4}
@@ -295,7 +302,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
             </Stack>
           </Box>
           
-          {/* TARGET AUDIENCE SECTION */}
+          {/* TARGET AUDIENCE */}
           {(() => {
             // Check if secondary audience data exists
             const hasSecondaryAudience = 
@@ -533,7 +540,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
             );
           })()}
 
-          {/* ADDITIONAL DETAILS SECTION */}
+          {/* ADDITIONAL DETAILS */}
           {(() => {
             const additionalDetails = campaign?.campaignAdditionalDetails;
             
@@ -949,16 +956,16 @@ const CampaignDetailContentClient = ({ campaign }) => {
         </Stack>
 
         {/* Right Column */}
-        <Stack spacing={-3} sx={{ flex: { xs: 1, md: 1 } }}>
-          {/* Deliverables Box */}
-          <Box sx={{ ...BoxStyle, mt: 0.9 }}>
+        <Stack sx={{ flex: { xs: 1, md: 1 } }}>
+          {/* DELIVERABLES */}
+          <Box sx={{ ...BoxStyle, mt: 1 }}>
             <Box className="header">
               <Iconify
-                icon="solar:box-bold"
+                icon="material-symbols:unarchive-outline"
                 sx={{
                   color: '#203ff5',
-                  width: 18,
-                  height: 18,
+                  width: 20,
+                  height: 20,
                 }}
               />
               <Typography
@@ -966,14 +973,14 @@ const CampaignDetailContentClient = ({ campaign }) => {
                 sx={{
                   color: '#221f20',
                   fontWeight: 600,
-                  fontSize: '0.8rem',
+                  fontSize: '0.875rem',
                 }}
               >
                 DELIVERABLES
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            <Box className='body' sx={{ display: 'flex', gap: 1 }}>
               {[
                 { label: 'UGC Videos', value: true },
                 { label: 'Raw Footage', value: campaign?.rawFootage },
@@ -1009,13 +1016,61 @@ const CampaignDetailContentClient = ({ campaign }) => {
             </Box>
           </Box>
 
-          {/* Campaign Admin Box */}
-          <Box sx={{ ...CompactHeaderStyle }}>
+          {/* LOGISTICS */}
+          {campaign?.logisticsType && (
+            <Box sx={{ ...BoxStyle, mt: 1 }}>
+              <Box className="header">
+                <Iconify
+                  icon="material-symbols:inventory-2-outline-sharp"
+                  sx={{
+                    color: '#CFB5F6',
+                    width: 20,
+                    height: 20,
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  LOGISTICS
+                </Typography>
+              </Box>
+              <Box className='body' sx={{ display: 'flex', gap: 1 }}>
+                <Chip
+                  label={logisticsTypeLabel(campaign?.logisticsType) || 'Not specified'}
+                  size="small"
+                  sx={{
+                    bgcolor: '#F5F5F5',
+                    borderRadius: 1,
+                    color: '#231F20',
+                    height: '32px',
+                    '& .MuiChip-label': {
+                      fontWeight: 700,
+                      px: 1.5,
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginTop: '-3px',
+                    },
+                    '&:hover': { bgcolor: '#F5F5F5' },
+                  }}
+                />
+              </Box>
+            </Box>            
+          )}
+
+          {/* CAMPAIGN MANAGERS */}
+          <Box sx={{ ...BoxStyle }}>
             <Box className="header">
               <Iconify
-                icon="solar:user-bold"
+                icon="mdi:shield-person-outline"
                 sx={{
-                  color: '#203ff5',
+                  color: '#026D54',
                   width: 20,
                   height: 20,
                 }}
@@ -1033,16 +1088,18 @@ const CampaignDetailContentClient = ({ campaign }) => {
               </Typography>
             </Box>
 
-            <Stack spacing={1}>
+            <Stack spacing={1} className='body'>
               {campaign?.campaignAdmin?.map((elem) => (
                 <Stack
                   key={elem.id}
                   direction="row"
                   alignItems="center"
-                  spacing={1.5}
-                  sx={{ py: 0.75 }}
+                  spacing={1}
                 >
-                  <Avatar src={elem.admin.user.photoURL} sx={{ width: 34, height: 34 }} />
+                  <Avatar
+                    src={elem.admin.user.role === 'client' ? campaign?.company?.logo : elem.admin.user.photoURL}
+                    sx={{ width: 34, height: 34, border: '2px solid #fff', bgcolor: '#f5f5f5' }}
+                  />
                   <Typography
                     variant="body2"
                     sx={{ flex: 1, fontSize: '0.85rem', fontWeight: 600 }}
@@ -1078,6 +1135,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                         cursor: 'pointer',
                         px: 1.5,
                         py: 2,
+                        minWidth: 85,
                         border: '1px solid #e7e7e7',
                         borderBottom: '3px solid #e7e7e7',
                         borderRadius: 1,
