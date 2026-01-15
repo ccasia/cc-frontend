@@ -533,7 +533,419 @@ const CampaignDetailContentClient = ({ campaign }) => {
             );
           })()}
 
-          {/* ADDITIONAL DETAILS */}
+          {/* ADDITIONAL DETAILS SECTION */}
+          {(() => {
+            const additionalDetails = campaign?.campaignAdditionalDetails;
+            
+            // Check if Additional Details 1 has any data
+            const hasAdditionalDetails1 = 
+              campaign?.campaignBrief?.socialMediaPlatform?.length > 0 ||
+              additionalDetails?.contentFormat?.length > 0 ||
+              campaign?.campaignBrief?.postingStartDate ||
+              additionalDetails?.mainMessage ||
+              additionalDetails?.keyPoints ||
+              additionalDetails?.toneAndStyle ||
+              additionalDetails?.brandGuidelinesUrl ||
+              additionalDetails?.referenceContent ||
+              additionalDetails?.productImage1Url ||
+              additionalDetails?.productImage2Url;
+
+            // Check if Additional Details 2 has any data
+            const hasAdditionalDetails2 = 
+              additionalDetails?.hashtagsToUse ||
+              additionalDetails?.mentionsTagsRequired ||
+              additionalDetails?.creatorCompensation ||
+              additionalDetails?.ctaDesiredAction ||
+              additionalDetails?.ctaLinkUrl ||
+              additionalDetails?.ctaPromoCode ||
+              additionalDetails?.ctaLinkInBioRequirements ||
+              additionalDetails?.specialNotesInstructions ||
+              additionalDetails?.needAds;
+
+            // Don't render if no data at all
+            if (!hasAdditionalDetails1 && !hasAdditionalDetails2) {
+              return null;
+            }
+
+            // Helper to format posting timeline
+            const getPostingTimeline = () => {
+              const start = campaign?.campaignBrief?.postingStartDate;
+              const end = campaign?.campaignBrief?.postingEndDate;
+              if (!start && !end) return 'Not specified';
+              
+              const formatDate = (date) => {
+                if (!date) return '';
+                return new Date(date).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                });
+              };
+              
+              if (start && end) {
+                return `${formatDate(start)} - ${formatDate(end)}`;
+              }
+              return formatDate(start || end);
+            };
+
+            const renderAdditionalDetails1 = () => (
+              <Stack className='body' spacing={3}>
+                <Stack direction="row" spacing={3}>
+                  {/* Left Column */}
+                  <Stack spacing={2} flex={1}>
+                    {campaign?.campaignBrief?.socialMediaPlatform?.length > 0 && (
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                          Preferred Platforms
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {campaign.campaignBrief.socialMediaPlatform.map((platform, idx) => (
+                            <Chip key={idx} label={platform} size="small" sx={ChipStyle} />
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                    {additionalDetails?.contentFormat?.length > 0 && (
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                          Content Format
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {additionalDetails.contentFormat.map((format, idx) => (
+                            <Chip key={idx} label={format} size="small" sx={ChipStyle} />
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                    {(campaign?.campaignBrief?.postingStartDate || campaign?.campaignBrief?.postingEndDate) && (
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                          Posting Timeline
+                        </Typography>
+                        <Typography variant="body2">
+                          {getPostingTimeline()}
+                        </Typography>
+                      </Box>
+                    )}
+                    {additionalDetails?.mainMessage && (
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                          Main Message/Theme
+                        </Typography>
+                        <Typography variant="body2">
+                          {additionalDetails.mainMessage}
+                        </Typography>
+                      </Box>
+                    )}
+                    {additionalDetails?.keyPoints && (
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                          Key Points to Cover
+                        </Typography>
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                          {additionalDetails.keyPoints}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+
+                  {/* Right Column */}
+                  <Stack spacing={2} flex={1}>
+                    {additionalDetails?.toneAndStyle && (
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                          Tone & Style
+                        </Typography>
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                          {additionalDetails.toneAndStyle}
+                        </Typography>
+                      </Box>
+                    )}
+                    {additionalDetails?.brandGuidelinesUrl && (() => {
+                      const url = additionalDetails.brandGuidelinesUrl;
+                      let filename = url.split('/').pop().split('?')[0];
+                      filename = filename.replace(/_v=.*$/, '');
+                      return (
+                        <Box>
+                          <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                            Brand Guidelines Document
+                          </Typography>
+                          <Link 
+                            href={url} 
+                            target="_blank"
+                            sx={{ 
+                              fontSize: '0.875rem',
+                              color: '#203ff5',
+                              textDecoration: 'none',
+                              '&:hover': { textDecoration: 'underline' }
+                            }}
+                          >
+                            {filename}
+                          </Link>
+                        </Box>
+                      );
+                    })()}
+                    {additionalDetails?.referenceContent && (
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                          Reference Content/Inspiration
+                        </Typography>
+                        <Link 
+                          href={additionalDetails.referenceContent} 
+                          target="_blank"
+                          sx={{ 
+                            fontSize: '0.875rem',
+                            color: '#203ff5',
+                            textDecoration: 'none',
+                            '&:hover': { textDecoration: 'underline' }
+                          }}
+                        >
+                          {additionalDetails.referenceContent}
+                        </Link>
+                      </Box>
+                    )}
+                    {(additionalDetails?.productImage1Url || additionalDetails?.productImage2Url) && (
+                      <Box>
+                        <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                          Product Images
+                        </Typography>
+                        <Stack spacing={0.5}>
+                          {additionalDetails?.productImage1Url && (() => {
+                            const url = additionalDetails.productImage1Url;
+                            let filename = url.split('/').pop().split('?')[0];
+                            filename = filename.replace(/_v=.*$/, '');
+                            return (
+                              <Link 
+                                href={url} 
+                                target="_blank"
+                                sx={{ 
+                                  fontSize: '0.875rem',
+                                  color: '#203ff5',
+                                  textDecoration: 'none',
+                                  '&:hover': { textDecoration: 'underline' }
+                                }}
+                              >
+                                {filename}
+                              </Link>
+                            );
+                          })()}
+                          {additionalDetails?.productImage2Url && (() => {
+                            const url = additionalDetails.productImage2Url;
+                            let filename = url.split('/').pop().split('?')[0];
+                            filename = filename.replace(/_v=.*$/, '');
+                            return (
+                              <Link 
+                                href={url} 
+                                target="_blank"
+                                sx={{ 
+                                  fontSize: '0.875rem',
+                                  color: '#203ff5',
+                                  textDecoration: 'none',
+                                  '&:hover': { textDecoration: 'underline' }
+                                }}
+                              >
+                                {filename}
+                              </Link>
+                            );
+                          })()}
+                        </Stack>
+                      </Box>
+                    )}
+                  </Stack>
+                </Stack>
+              </Stack>
+            );
+
+            const renderAdditionalDetails2 = () => (
+              <Stack className='body' spacing={3}>
+                <Stack direction="row" spacing={3}>
+                  {/* Left Column */}
+                  <Stack spacing={2} flex={1}>
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                        Hashtags
+                      </Typography>
+                      <Typography variant="body2">
+                        {additionalDetails?.hashtagsToUse || 'Not specified'}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                        Mentions/Tags Required
+                      </Typography>
+                      <Typography variant="body2">
+                        {additionalDetails?.mentionsTagsRequired || 'Not specified'}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                        Creator Compensation
+                      </Typography>
+                      <Typography variant="body2">
+                        {additionalDetails?.creatorCompensation || 'Not specified'}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                        Desired Action
+                      </Typography>
+                      <Typography variant="body2">
+                        {additionalDetails?.ctaDesiredAction || 'Not specified'}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                        Link/URL
+                      </Typography>
+                      {additionalDetails?.ctaLinkUrl ? (
+                        <Link 
+                          href={additionalDetails.ctaLinkUrl} 
+                          target="_blank"
+                          sx={{ 
+                            fontSize: '0.875rem',
+                            color: '#203ff5',
+                            textDecoration: 'none',
+                            '&:hover': { textDecoration: 'underline' }
+                          }}
+                        >
+                          {additionalDetails.ctaLinkUrl}
+                        </Link>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">Not specified</Typography>
+                      )}
+                    </Box>
+                  </Stack>
+
+                  {/* Right Column */}
+                  <Stack spacing={2} flex={1}>
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                        Promo Code
+                      </Typography>
+                      <Typography variant="body2">
+                        {additionalDetails?.ctaPromoCode || 'Not specified'}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                        Link in Bio Requirements
+                      </Typography>
+                      <Typography variant="body2">
+                        {additionalDetails?.ctaLinkInBioRequirements || 'Not specified'}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                        Special Notes/Instructions
+                      </Typography>
+                      <Typography variant="body2">
+                        {additionalDetails?.specialNotesInstructions || 'Not specified'}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                        Do you need ads?
+                      </Typography>
+                      <Typography variant="body2">
+                        {additionalDetails?.needAds ? capitalizeFirstLetter(additionalDetails.needAds) : 'Not specified'}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Stack>
+              </Stack>
+            );
+
+            // Render based on which sections have data
+            if (hasAdditionalDetails1 && hasAdditionalDetails2) {
+              return (
+                <Stack direction="row" spacing={2}>
+                  {/* ADDITIONAL DETAILS 1 */}
+                  <Box sx={BoxStyle}>
+                    <Box className="header">
+                      <Iconify
+                        icon="material-symbols:note-stack-add-outline"
+                        sx={{
+                          color: '#026D54',
+                          width: 20,
+                          height: 20,
+                        }}
+                      />
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#221f20',
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                        }}
+                      >
+                        ADDITIONAL DETAILS 1
+                      </Typography>
+                    </Box>
+                    {renderAdditionalDetails1()}
+                  </Box>
+
+                  {/* ADDITIONAL DETAILS 2 */}
+                  <Box sx={BoxStyle}>
+                    <Box className="header">
+                      <Iconify
+                        icon="material-symbols:note-stack-add-outline"
+                        sx={{
+                          color: '#026D54',
+                          width: 20,
+                          height: 20,
+                        }}
+                      />
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#221f20',
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                        }}
+                      >
+                        ADDITIONAL DETAILS 2
+                      </Typography>
+                    </Box>
+                    {renderAdditionalDetails2()}
+                  </Box>
+                </Stack>
+              );
+            }
+
+            // Single section - show whichever has data
+            return (
+              <Box sx={BoxStyle}>
+                <Box className="header">
+                  <Iconify
+                    icon="material-symbols:note-stack-add-outline"
+                    sx={{
+                      color: '#026D54',
+                      width: 20,
+                      height: 20,
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#221f20',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    ADDITIONAL DETAILS
+                  </Typography>
+                </Box>
+                {hasAdditionalDetails1 ? renderAdditionalDetails1() : renderAdditionalDetails2()}
+              </Box>
+            );
+          })()}
         </Stack>
 
         {/* Right Column */}
