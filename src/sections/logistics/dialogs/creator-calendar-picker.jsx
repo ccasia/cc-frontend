@@ -127,7 +127,7 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
 
               let color = '#919EAB';
               if (isCurrentMonth && hasSlots) color = '#231F20';
-              if (isSelected) color = '#1340FF';
+              if (isSelected) color = '#F4F6F8';
 
               return (
                 <Box
@@ -140,10 +140,18 @@ export default function CreatorCalendarPicker({ campaignId, onSlotSelect, onCanc
                     justifyContent: 'center',
                     cursor: hasSlots ? 'pointer' : 'default',
                     color,
+                    bgcolor: isSelected ? '#1340FF' : 'transparent',
+                    borderRadius: '50%',
                     opacity: isCurrentMonth ? 1 : 0.3,
                     fontSize: '14px',
                     fontWeight: isSelected || hasSlots ? 700 : 400,
-                    '&:hover': hasSlots ? { bgcolor: '#F4F6F8', borderRadius: '50%' } : {},
+                    '&:hover': hasSlots
+                      ? {
+                          bgcolor: isSelected ? '#1034cc' : '#F4F6F8',
+                          color: isSelected ? '#ffffff' : '#000000',
+                          borderRadius: '50%',
+                        }
+                      : {},
                   }}
                 >
                   {date.getDate()}

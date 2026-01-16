@@ -136,7 +136,7 @@ function ServerDay(props) {
           color: hasConfig ? '#231F20' : '#C0C0C0',
           fontSize: '0.75rem',
           fontWeight: hasConfig ? 600 : 400,
-          opacity: hasConfig ? 1 : 0.5,
+          opacity: hasConfig && !outsideCurrentMonth ? 1 : 0.5,
           '&.Mui-selected': {
             backgroundColor: '#1340FF !important',
             color: '#ffffff',

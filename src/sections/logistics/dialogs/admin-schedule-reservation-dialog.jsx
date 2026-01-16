@@ -40,6 +40,15 @@ import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import { formatReservationSlot } from 'src/utils/reservation-time';
 
+const parseLiteralToLocal = (isoStr) => {
+  if (!isoStr) return null;
+  const [datePart, timePart] = isoStr.split('T');
+  const [y, m, d] = datePart.split('-').map(Number);
+  const [hh, mm] = timePart.split(':').map(Number);
+
+  return new Date(y, m - 1, d, hh, mm);
+};
+
 export default function AdminScheduleReservationDialog({
   open,
   onClose,
@@ -64,6 +73,7 @@ export default function AdminScheduleReservationDialog({
   });
   const [loading, setLoading] = useState(false);
 
+  const dateString = format(selectedDate, 'yyyy-MM-dd');
   const monthQuery = format(currentMonth, 'yyyy-MM-dd');
   const { data: daysData, isLoading } = useSWR(
     open ? `/api/logistics/campaign/${campaignId}/slots?month=${monthQuery}` : null,
@@ -90,25 +100,39 @@ export default function AdminScheduleReservationDialog({
 
   useEffect(() => {
     if (open) {
-      if (confirmedSlot) {
-        const datePart = confirmedSlot.startTime.split('T')[0];
-        const dateObj = parseISO(datePart);
-        setSelectedDate(dateObj);
-        setStartTime(parseISO(confirmedSlot.startTime));
-        setEndTime(parseISO(confirmedSlot.endTime));
-        setCurrentMonth(dateObj);
-      } else if (proposedSlots.length > 0) {
-        const datePart = proposedSlots[0].startTime.split('T')[0];
-        const dateObj = parseISO(datePart);
-        setSelectedDate(dateObj);
-        setStartTime(parseISO(proposedSlots[0].startTime));
-        setEndTime(parseISO(proposedSlots[0].endTime));
-        setCurrentMonth(dateObj);
+      const firstActive = confirmedSlot || proposedSlots[0];
+      if (firstActive) {
+        const datePart = firstActive.startTime.split('T')[0];
+        const localDate = parseISO(datePart);
+
+        setSelectedDate(localDate);
+        setCurrentMonth(localDate);
+      } else {
+        setSelectedDate(new Date());
       }
     }
-  }, [open, confirmedSlot, proposedSlots]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
-  const dateString = format(selectedDate, 'yyyy-MM-dd');
+  useEffect(() => {
+    if (!open || !selectedDate) return;
+
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
+    const myConfirmed = confirmedSlot?.startTime.startsWith(dateStr) ? confirmedSlot : null;
+    const myProposed = proposedSlots.find((p) => p.startTime.startsWith(dateStr));
+
+    if (myConfirmed) {
+      setStartTime(parseLiteralToLocal(myConfirmed.startTime));
+      setEndTime(parseLiteralToLocal(myConfirmed.endTime));
+    } else if (myProposed) {
+      setStartTime(parseLiteralToLocal(myProposed.startTime));
+      setEndTime(parseLiteralToLocal(myProposed.endTime));
+    } else {
+      setStartTime(null);
+      setEndTime(null);
+    }
+  }, [selectedDate, confirmedSlot, proposedSlots, open]);
 
   const hasConflict = useMemo(() => {
     if (
@@ -197,8 +221,15 @@ export default function AdminScheduleReservationDialog({
       }
     }
 
-    // Convert map to array and sort (Target first)
-    return Array.from(creatorsMap.values()).sort((a) => (a.id === logistic?.creatorId ? -1 : 1));
+    return Array.from(creatorsMap.values()).sort((a, b) => {
+      if (a.id === logistic?.creatorId) return -1;
+      if (b.id === logistic?.creatorId) return 1;
+
+      const timeA = a.currentSlot?.start || '';
+      const timeB = b.currentSlot?.start || '';
+
+      return timeA.localeCompare(timeB);
+    });
   }, [
     allFetchedSlots,
     dateString,
@@ -218,7 +249,6 @@ export default function AdminScheduleReservationDialog({
   const handleSchedule = async () => {
     setLoading(true);
     try {
-      // const datePart = format(selectedDate, 'yyyy-MM-dd');
       const startPart = format(new Date(startTime), 'HH:mm:ss');
       const endPart = format(new Date(endTime), 'HH:mm:ss');
 
@@ -545,7 +575,7 @@ export default function AdminScheduleReservationDialog({
             <Stack direction="row" spacing={1} alignItems="center" flexGrow={1}>
               <DesktopTimePicker
                 label="Start Time"
-                // value={new Date(startTime)}
+                value={startTime}
                 onChange={(newValue) => setStartTime(newValue)}
                 slotProps={{
                   popper: {
@@ -577,7 +607,7 @@ export default function AdminScheduleReservationDialog({
               <Typography variant="body2">to</Typography>
               <DesktopTimePicker
                 label="End Time"
-                // value={new Date(endTime)}
+                value={endTime}
                 onChange={(newValue) => setEndTime(newValue)}
                 slotProps={{
                   popper: {
@@ -614,7 +644,7 @@ export default function AdminScheduleReservationDialog({
           variant="contained"
           onClick={handleSchedule}
           loading={loading}
-          disabled={hasConflict}
+          disabled={hasConflict || endTime === null || startTime === null}
           sx={{ height: 44, bgcolor: '#3A3A3C', px: 4, textTransform: 'none', fontWeight: 600 }}
         >
           Confirm
@@ -630,6 +660,11 @@ export default function AdminScheduleReservationDialog({
         {isNotProposedSlot && (
           <Typography variant="caption" color="error" fontWeight={600} display="block">
             Creator did not select this window.
+          </Typography>
+        )}
+        {(endTime === null || startTime === null) && (
+          <Typography variant="caption" color="error" fontWeight={600} display="block">
+            Select a start and end time.
           </Typography>
         )}
       </Box>

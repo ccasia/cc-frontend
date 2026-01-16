@@ -56,7 +56,13 @@ export default function CreatorReservationDialog({ open, onClose, campaign, onUp
       (acc, rule) => acc + (rule.slots?.length || 0),
       0
     );
-    return totalSlotsCount === 1;
+
+    const totalDatesCount = config.availabilityRules.reduce(
+      (acc, rule) => acc + (rule.dates?.length || 0),
+      0
+    );
+
+    return totalSlotsCount === 1 && totalDatesCount === 1;
   }, [config, isAuto]);
 
   const ReservationSchema = Yup.object().shape({
