@@ -72,7 +72,7 @@ export default function ScheduleReservationDialog({
     const dateString = format(selectedDate, 'yyyy-MM-dd');
 
     return allFetchedSlots
-      .filter((slot) => slot.startTime.startsWith(dateString))
+      .filter((slot) => slot.startTime.startsWith(dateString) && slot.label !== 'Custom Slot')
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [selectedDate, allFetchedSlots]);
 
