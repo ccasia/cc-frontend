@@ -118,7 +118,7 @@ function CreatorTableView() {
 
       if (response.data?.success && response.data?.url) {
         const newWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
-        
+
         if (newWindow === null) {
           // Pop-up was blocked
           enqueueSnackbar('Please allow pop-ups to open the spreadsheet', { variant: 'warning' });
