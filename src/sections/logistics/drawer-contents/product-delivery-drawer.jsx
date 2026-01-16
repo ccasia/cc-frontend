@@ -7,8 +7,9 @@ import Iconify from 'src/components/iconify';
 
 import LogisticsStepper from '../logistics-stepper';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
-import AssignLogisticDialog from '../dialogs/assign-logistic-dialog';
+import AssignLogisticDialog, { AdminAssignLogisticDialog } from '../dialogs/assign-logistic-dialog';
 import ScheduleDeliveryDialog from '../dialogs/schedule-delivery-dialog';
+import AdminEditLogisticDialog from '../dialogs/admin-edit-logistic-dialog';
 
 export default function ProductDeliveryDrawer({
   onClose,

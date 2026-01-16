@@ -37,9 +37,9 @@ import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
-import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
 import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
 // Import steps from campaign creation
+import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-slots';
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
 
 import NextSteps from './next-steps';
@@ -49,7 +49,6 @@ import AdditionalDetails2 from './additional-details-2';
 // Import custom client campaign components
 import ClientCampaignGeneralInfo from './campaign-general-info';
 import CampaignTargetAudience from './campaign-target-audience';
-import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-slots';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -955,7 +954,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           values.audienceLanguage?.length > 0 &&
           values.audienceCreatorPersona?.length > 0
         );
-      case 3: // Logistics - optional
+      case 3: {
+        // Logistics - optional
         const type = values.logisticsType;
 
         if (!type) return true;
@@ -969,6 +969,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         }
 
         return true;
+      }
       case 4: // Reservation Slots - optional (shown only for RESERVATION)
       case 5: // Logistic Remarks - optional
         return true;

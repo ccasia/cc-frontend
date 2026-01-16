@@ -64,6 +64,7 @@ const CampaignLogistics = () => {
       appendLocation({ name: '' });
       // setValue('schedulingOption', 'confirmation');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logisticsType]);
 
   const handleEdit = (index, value) => {

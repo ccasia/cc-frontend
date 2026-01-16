@@ -220,14 +220,14 @@ export default function LogisticsScheduledList({
     const rules = reservationConfig.availabilityRules;
 
     return rules
-      .filter((rule) => {
-        return rule.dates?.some((d) => {
+      .filter((rule) =>
+        rule.dates?.some((d) => {
           if (!d) return false;
           const ruleDateString =
             typeof d === 'string' ? d.split('T')[0] : format(new Date(d), 'yyyy-MM-dd');
           return ruleDateString === dateString;
-        });
-      })
+        })
+      )
       .flatMap((rule) => rule.slots || [])
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [isReservation, reservationConfig, dateString]);

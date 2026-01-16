@@ -70,9 +70,10 @@ const ReservationSlotsV2 = () => {
 
   const intervalOptions = [0.5, 1, 1.5, 2, 3, 4];
 
-  const selectedSet = useMemo(() => {
-    return new Set(selectedDates.map((d) => format(d, 'yyyy-MM-dd')));
-  }, [selectedDates]);
+  const selectedSet = useMemo(
+    () => new Set(selectedDates.map((d) => format(d, 'yyyy-MM-dd'))),
+    [selectedDates]
+  );
 
   useEffect(() => {
     generateGrid();
@@ -87,12 +88,14 @@ const ReservationSlotsV2 = () => {
     };
   }, [campaignStartDate, campaignEndDate]);
 
-  const calendarDays = useMemo(() => {
-    return eachDayOfInterval({
-      start: startOfWeek(startOfMonth(currentMonth)),
-      end: endOfWeek(endOfMonth(currentMonth)),
-    });
-  }, [currentMonth]);
+  const calendarDays = useMemo(
+    () =>
+      eachDayOfInterval({
+        start: startOfWeek(startOfMonth(currentMonth)),
+        end: endOfWeek(endOfMonth(currentMonth)),
+      }),
+    [currentMonth]
+  );
 
   const handleDateClick = (date) => {
     if (!date) return;
@@ -454,7 +457,7 @@ const ReservationSlotsV2 = () => {
     let currentGroup = [sorted[0]];
 
     // 2. Group consecutive dates
-    for (let i = 1; i < sorted.length; i++) {
+    for (let i = 1; i < sorted.length; i += 1) {
       const prev = sorted[i - 1];
       const curr = sorted[i];
 

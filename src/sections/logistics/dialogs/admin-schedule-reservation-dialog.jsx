@@ -140,7 +140,15 @@ export default function AdminScheduleReservationDialog({
       const existingEnd = slot.endTime.substring(0, 16);
       return slotStart < existingEnd && slotEnd > existingStart;
     });
-  }, [daysData, selectedDate, startTime, endTime, logistic?.creatorId]);
+  }, [
+    daysData,
+    selectedDate,
+    startTime,
+    endTime,
+    logistic?.creatorId,
+    dateString,
+    reservationConfig?.allowMultipleBookings,
+  ]);
 
   const isNotProposedSlot = useMemo(() => {
     if (!selectedDate || !startTime || !isValid(startTime)) return false;
@@ -191,7 +199,15 @@ export default function AdminScheduleReservationDialog({
 
     // Convert map to array and sort (Target first)
     return Array.from(creatorsMap.values()).sort((a) => (a.id === logistic?.creatorId ? -1 : 1));
-  }, [allFetchedSlots, dateString, logistic, proposedSlots, socialMediaHandle, selectedDate]);
+  }, [
+    allFetchedSlots,
+    dateString,
+    logistic,
+    proposedSlots,
+    socialMediaHandle,
+    selectedDate,
+    confirmedSlot,
+  ]);
 
   const calendarGrid = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth));
@@ -298,15 +314,15 @@ export default function AdminScheduleReservationDialog({
               <CircularProgress size={20} sx={{ m: 'auto', mt: 5 }} />
             ) : (
               calendarGrid.map((day, idx) => {
-                const dateString = format(day, 'yyyy-MM-dd');
+                const dateStr = format(day, 'yyyy-MM-dd');
                 const isSelected = isSameDay(day, selectedDate);
                 const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-                const isProposed = proposedSlots.some((p) => p.startTime.startsWith(dateString));
+                const isProposed = proposedSlots.some((p) => p.startTime.startsWith(dateStr));
                 const hasConfirmed = allFetchedSlots
-                  .filter((s) => s.startTime.startsWith(dateString))
+                  .filter((s) => s.startTime.startsWith(dateStr))
                   .some((s) => s.attendees?.some((a) => a.status === 'SELECTED'));
 
-                const dayData = daysData?.find((d) => d.date === dateString);
+                const dayData = daysData?.find((d) => d.date === dateStr);
                 const canClick = dayData?.available;
 
                 let color = '#919EAB';
@@ -319,7 +335,7 @@ export default function AdminScheduleReservationDialog({
                 }
 
                 return (
-                  <Grid item xs={12 / 7} key={dateString}>
+                  <Grid item xs={12 / 7} key={dateStr}>
                     <Stack alignItems="center" spacing={0.2}>
                       <Box
                         onClick={() => setSelectedDate(day)}

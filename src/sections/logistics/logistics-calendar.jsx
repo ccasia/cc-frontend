@@ -37,9 +37,11 @@ function ServerDay(props) {
   const dateString = format(day, 'yyyy-MM-dd');
 
   const hasConfig = useMemo(() => {
-    if (!isReservation || !reservationConfig?.availabilityRules) return true; // Don't grey out if not reservation mode
+    const availabilityRules = reservationConfig?.availabilityRules;
 
-    return reservationConfig.availabilityRules.some((rule) =>
+    if (!isReservation || !availabilityRules) return true;
+
+    return availabilityRules.some((rule) =>
       rule.dates?.some((d) => {
         const ruleDateString =
           typeof d === 'string' ? d.split('T')[0] : format(new Date(d), 'yyyy-MM-dd');
@@ -159,6 +161,7 @@ ServerDay.propTypes = {
   outsideCurrentMonth: PropTypes.bool,
   logistics: PropTypes.array,
   isReservation: PropTypes.bool,
+  reservationConfig: PropTypes.object,
 };
 
 export default function LogisticsCalendar({
@@ -226,4 +229,5 @@ LogisticsCalendar.propTypes = {
   onChange: PropTypes.func,
   logistics: PropTypes.array,
   isReservation: PropTypes.bool,
+  reservationConfig: PropTypes.object,
 };

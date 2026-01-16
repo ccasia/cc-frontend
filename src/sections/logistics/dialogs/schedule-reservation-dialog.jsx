@@ -88,7 +88,12 @@ export default function ScheduleReservationDialog({
       !isFullDay &&
       slot.attendees?.some((a) => a.id !== logistic?.creatorId && a.status === 'SELECTED')
     );
-  }, [selectedSlotTime, slotsForSelectedDate, logistic?.creatorId]);
+  }, [
+    selectedSlotTime,
+    slotsForSelectedDate,
+    logistic?.creatorId,
+    reservationConfig?.allowMultipleBookings,
+  ]);
 
   const calendarGrid = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);

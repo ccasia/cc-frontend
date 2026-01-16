@@ -43,6 +43,8 @@ export default function ConfirmReservationDetailsDialog({
   const details = logistic?.reservationDetails;
   const creator = logistic?.creator;
   const isEdit = details?.isConfirmed;
+  const picContact = details?.picContact;
+  const picName = details?.picName;
 
   const outlets = useMemo(() => {
     if (config?.locations && Array.isArray(config.locations)) {
@@ -93,10 +95,10 @@ export default function ConfirmReservationDetailsDialog({
     );
 
     if (matchedLocation && typeof matchedLocation === 'object') {
-      setValue('picName', details.picName || matchedLocation.pic || '');
-      setValue('picContact', details.picContact || matchedLocation.contactNumber || '');
+      setValue('picName', picName || matchedLocation.pic || '');
+      setValue('picContact', picContact || matchedLocation.contactNumber || '');
     }
-  }, [selectedOutlet, config, setValue]);
+  }, [selectedOutlet, config, setValue, picContact, picName]);
 
   useEffect(() => {
     if (open && details && config) {
