@@ -2,13 +2,18 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 
-import { Box, Link, Chip, Stack, Avatar, Divider, Typography } from '@mui/material';
+import { Box, Link, Chip, Stack, Avatar, Divider, Typography, useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+
+import { normalizeUrl } from 'src/utils/normalizeUrl';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+
+import CampaignDetailContentMobile from './campaign-detail-content-mobile';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -91,6 +96,8 @@ const getProperInterestLabel = (value) => {
 const CampaignDetailContentClient = ({ campaign }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleChatClick = async (admin) => {
     try {
@@ -121,6 +128,11 @@ const CampaignDetailContentClient = ({ campaign }) => {
   };
 
   const requirement = campaign?.campaignRequirement;
+
+  // Render mobile version on smaller screens
+  if (isMobile) {
+    return <CampaignDetailContentMobile campaign={campaign} />;
+  }
 
   return (
     <Box
@@ -247,7 +259,25 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                     {campaign?.campaignBrief?.secondaryObjectives?.length > 0 ? (
                       campaign.campaignBrief.secondaryObjectives.map((objective, idx) => (
-                        <Chip key={idx} label={objective} size="small" sx={ChipStyle} />
+                        <Box
+                          key={idx}
+                          sx={{
+                            bgcolor: '#FFF',
+                            border: '1px solid #EBEBEB',
+                            borderRadius: 0.8,
+                            color: '#636366',
+                            padding: '0.6rem 0.8rem',
+                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            whiteSpace: 'normal',
+                            wordBreak: 'break-word',
+                            display: 'inline-block',
+                            maxWidth: '100%',
+                          }}
+                        >
+                          {objective}
+                        </Box>
                       ))
                     ) : (
                       <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
@@ -783,12 +813,14 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       <Typography sx={SectionTitleStyle}>Link/URL</Typography>
                       {additionalDetails?.ctaLinkUrl ? (
                         <Link
-                          href={additionalDetails.ctaLinkUrl}
+                          href={normalizeUrl(additionalDetails.ctaLinkUrl)}
                           target="_blank"
                           sx={{
                             fontSize: '0.8rem',
                             color: '#203ff5',
                             textDecoration: 'none',
+                            overflowWrap: 'anywhere',
+                            whiteSpace: 'normal',
                             '&:hover': { textDecoration: 'underline' },
                           }}
                         >
