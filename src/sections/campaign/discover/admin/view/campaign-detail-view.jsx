@@ -56,7 +56,6 @@ import CampaignAnalytics from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
-import CampaignDetailContent from '../campaign-detail-content';
 import CampaignOverviewClient from '../campaign-overview-client';
 import ActivateCampaignDialog from '../activate-campaign-dialog';
 // import CampaignLogisticsClient from '../campaign-logistics-client';
@@ -572,11 +571,7 @@ const CampaignDetailView = ({ id }) => {
     ) : (
       <CampaignOverview campaign={campaign} onUpdate={campaignMutate} />
     ),
-    'campaign-content': isClient ? (
-      <CampaignDetailContentClient campaign={campaign} />
-    ) : (
-      <CampaignDetailContent campaign={campaign} />
-    ),
+    'campaign-content': <CampaignDetailContentClient campaign={campaign} />,
     'creator-master-list': (
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
