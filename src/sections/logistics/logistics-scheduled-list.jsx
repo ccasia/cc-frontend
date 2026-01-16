@@ -1,38 +1,22 @@
 import PropTypes from 'prop-types';
 import { format, isSameDay } from 'date-fns';
 
-import {
-  Box,
-  Link,
-  List,
-  Stack,
-  Avatar,
-  Divider,
-  ListItem,
-  Typography,
-  alpha,
-  useTheme,
-} from '@mui/material';
+import { Box, Link, List, Stack, Avatar, Divider, ListItem, Typography } from '@mui/material';
 
 import Scrollbar from 'src/components/scrollbar';
 import Iconify from 'src/components/iconify';
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
-const getStatusConfig = (currentStatus) => {
+const getStatusConfig = (currentStatus, isReservation) => {
   switch (currentStatus) {
     case 'PENDING_ASSIGNMENT':
-      return {
-        label: 'unassigned',
-        color: '#B0B0B0',
-        bgColor: '#EFEFEF',
-        hasAction: true,
-      };
+      return isReservation
+        ? { label: 'unconfirmed', color: '#B0B0B0', bgColor: '#EFEFEF' }
+        : { label: 'unassigned', color: '#B0B0B0', bgColor: '#EFEFEF', hasAction: true };
     case 'SCHEDULED':
-      return {
-        label: 'yet to ship',
-        color: '#FF9A02',
-        bgColor: '#FFF7DB',
-        hasAction: true,
-      };
+      return isReservation
+        ? { label: 'scheduled', color: '#1340FF', bgColor: '#E3F2FD' }
+        : { label: 'yet to ship', color: '#FF9A02', bgColor: '#FFF7DB' };
     case 'SHIPPED':
       return {
         label: 'shipped out',
@@ -57,7 +41,7 @@ const getStatusConfig = (currentStatus) => {
       };
     case 'ISSUE_REPORTED':
       return {
-        label: 'failed',
+        label: isReservation ? 'issue' : 'failed',
         color: '#FF3500',
         bgColor: '#FFD0C9',
         hasAction: true,
@@ -72,49 +56,89 @@ const getStatusConfig = (currentStatus) => {
   }
 };
 
-function ScheduledItem({ item }) {
-  const theme = useTheme();
-
+function ScheduledItem({ item, isReservation, onClick }) {
   const creator = item.creator || {};
-  const deliveryDetails = item.deliveryDetails || {};
+  const statusConfig = getStatusConfig(item.status, isReservation);
 
-  let productString = '-';
-  if (deliveryDetails.items) {
-    if (Array.isArray(deliveryDetails.items)) {
-      productString = deliveryDetails.items
+  const details = isReservation ? item.reservationDetails : item.deliveryDetails || {};
+
+  let mainInfo = '-';
+  if (isReservation) {
+    mainInfo = details?.outlet || 'No Outlet Selected';
+  } else if (details?.items) {
+    if (Array.isArray(details.items)) {
+      mainInfo = details.items
         .map((i) => i.product?.productName)
         .filter(Boolean)
         .join(', ');
     } else {
-      productString = deliveryDetails.items; // for mock details
+      mainInfo = details.items;
     }
   }
 
-  const statusConfig = getStatusConfig(item.status);
-  const trackingLink = deliveryDetails.trackingLink;
+  // 2. Get Secondary Info (Tracking vs Time Slot)
+  const renderSecondaryInfo = () => {
+    if (isReservation) {
+      const selectedSlot = details?.slots?.find((s) => s.status === 'SELECTED');
+      if (selectedSlot) {
+        return (
+          <Typography variant="body2" sx={{ color: '#231F20', fontWeight: 600 }}>
+            {formatReservationSlot(selectedSlot.startTime, selectedSlot.endTime)}
+          </Typography>
+        );
+      }
+      return (
+        <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
+          Not scheduled
+        </Typography>
+      );
+    }
+
+    // Delivery Logic
+    if (details?.trackingLink) {
+      return (
+        <Link
+          href={details.trackingLink}
+          target="_blank"
+          rel="noopener"
+          variant="body2"
+          sx={{ color: '#0062CD', textDecoration: 'underline' }}
+        >
+          Tracking Link
+        </Link>
+      );
+    }
+    return (
+      <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+        No tracking info
+      </Typography>
+    );
+  };
 
   return (
     <ListItem
       sx={{
-        px: 4,
-        py: 2,
+        px: 3,
+        py: 1,
         alignItems: 'flex-start',
+        cursor: 'pointer',
+        borderRadius: '10px',
+        transition: 'background-color 0.2s',
+        '&:hover': {
+          bgcolor: 'rgba(0, 0, 0, 0.03)',
+        },
       }}
+      onClick={() => onClick(item.id)}
     >
-      <Box
-        sx={{
-          width: '2px',
-          height: 65,
-          bgcolor: '#1340FF',
-          mr: 2,
-          // mt: 0.5,
-          flexShrink: 0,
-        }}
-      />
+      <Box sx={{ width: '2px', height: 65, bgcolor: '#1340FF', mr: 2, flexShrink: 0 }} />
       <Avatar alt={creator?.name} src={creator?.photoURL} sx={{ width: 30, height: 30, mr: 2 }} />
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="subtitle1" noWrap>
+          <Typography
+            variant="body"
+            noWrap
+            sx={{ fontSize: '20px', fontWeight: 500, fontFamily: 'Inter', mt: -0.5 }}
+          >
             {creator.name || 'Unknown Creator'}
           </Typography>
           <Box
@@ -128,49 +152,45 @@ function ScheduledItem({ item }) {
               fontSize: '10px',
               fontWeight: 600,
               textTransform: 'capitalize',
-              whiteSpace: 'nowrap',
+              mt: -0.5,
             }}
           >
             {statusConfig.label}
           </Box>
         </Stack>
 
-        <Typography variant="body2" sx={{ color: 'text.primary' }}>
+        <Typography
+          variant="body"
+          sx={{
+            color: '#8E8E93',
+            fontSize: '14px',
+            fontWeight: 400,
+            fontFamily: 'Inter',
+          }}
+        >
           {creator.phoneNumber || '-'}
         </Typography>
 
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography
             variant="body2"
-            sx={{ color: 'text.secondary', maxWidth: '60%', fontWeight: 600 }}
+            textTransform={isReservation ? 'capitalize' : ''}
+            sx={{
+              color: '#8E8E93',
+              fontSize: '14px',
+              fontFamily: 'Inter',
+              fontWeight: 600,
+              maxWidth: '60%',
+            }}
           >
-            {productString}
+            {mainInfo}
           </Typography>
           <Divider
             orientation="vertical"
             flexItem
             sx={{ height: 14, alignSelf: 'center', color: '#8E8E93' }}
           />
-          {trackingLink ? (
-            <Link
-              href={trackingLink}
-              target="_blank"
-              rel="noopener"
-              variant="body2"
-              sx={{
-                color: '#0062CD',
-                textDecoration: 'underline',
-                fontWeight: 400,
-                cursor: 'pointer',
-              }}
-            >
-              Tracking Link
-            </Link>
-          ) : (
-            <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
-              No tracking info
-            </Typography>
-          )}
+          {renderSecondaryInfo()}
         </Stack>
       </Box>
     </ListItem>
@@ -179,73 +199,108 @@ function ScheduledItem({ item }) {
 
 ScheduledItem.propTypes = {
   item: PropTypes.object,
+  isReservation: PropTypes.bool,
+  onClick: PropTypes.func,
 };
 
-export default function LogisticsScheduledList({ date, logistics }) {
+export default function LogisticsScheduledList({ date, logistics, isReservation, onClick }) {
   const safeLogistics = logistics || [];
+  const dateString = format(date, 'yyyy-MM-dd');
 
-  const dayLogistics = safeLogistics.filter((item) => {
-    if (!item.deliveryDetails?.expectedDeliveryDate) return false;
-    return isSameDay(new Date(item.deliveryDetails.expectedDeliveryDate), date);
-  });
+  const dayLogistics = safeLogistics
+    .filter((item) => {
+      if (isReservation) {
+        const selectedSlot = item.reservationDetails?.slots?.find((s) => s.status === 'SELECTED');
+        if (!selectedSlot) return false;
+        // return isSameDay(new Date(selectedSlot.startTime), date);
+        return selectedSlot?.startTime.startsWith(dateString);
+      }
+
+      if (!item.deliveryDetails?.expectedDeliveryDate) return false;
+      // return isSameDay(new Date(item.deliveryDetails.expectedDeliveryDate), date);
+      return item.deliveryDetails?.expectedDeliveryDate?.startsWith(dateString);
+    })
+    .sort((a, b) => {
+      const getCompareTime = (item) => {
+        if (isReservation) {
+          return (
+            item.reservationDetails?.slots?.find((s) => s.status === 'SELECTED')?.startTime || ''
+          );
+        }
+        return item.deliveryDetails?.expectedDeliveryDate || '';
+      };
+
+      return getCompareTime(a).localeCompare(getCompareTime(b));
+    });
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header Section */}
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={1}
-        sx={{
-          px: '14px',
-          py: '12px',
-        }}
-      >
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ px: '14px', py: '12px' }}>
         <Iconify icon="material-symbols:calendar-clock-outline" sx={{ color: '#1340FF' }} />
         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#231F20', size: '12px' }}>
-          SCHEDULED DELIVERIES
+          {isReservation ? 'SCHEDULED VISITS ' : 'SCHEDULED DELIVERIES'}
         </Typography>
       </Stack>
       <Divider />
-
-      {/* Selected Date Title */}
-      <Typography
-        variant="h6"
-        sx={{
-          // mb: 3,
-          px: '14px',
-          py: '12px',
-        }}
-      >
+      <Typography variant="h6" sx={{ px: '14px', py: '8px' }}>
         {format(date, 'EEEE, d MMMM yyyy')}
       </Typography>
 
-      <Box
-        sx={{
-          flexGrow: 0,
-          overflowY: 'auto',
-          height: 250, // TODO adjust list height
-          px: 0.5,
-        }}
-      >
-        {/* Empty State */}
+      <Box sx={{ flexGrow: 0, overflowY: 'auto', height: 250, px: 0.5 }}>
         {dayLogistics.length === 0 ? (
           <Box
             sx={{
               flexGrow: 1,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'text.disabled',
               minHeight: 200,
             }}
           >
-            <Typography variant="body2">No deliveries scheduled for this day.</Typography>
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                bgcolor: '#F4F6F8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                // mb: 2,
+              }}
+            >
+              <Typography sx={{ fontSize: 40 }}>🤭</Typography>
+            </Box>
+
+            {/* Title */}
+            <Typography
+              variant="h4"
+              sx={{
+                fontFamily: 'instrument serif',
+                color: '#231F20',
+                fontWeight: 400,
+                // mb: 1,
+              }}
+            >
+              No {isReservation ? 'visits' : 'deliveries'} scheduled.
+            </Typography>
+
+            {/* Subtitle */}
+            <Typography variant="body2" sx={{ color: '#636366', fontWeight: 400 }}>
+              Scheduled {isReservation ? 'visits' : 'deliveries'} will show up here.
+            </Typography>
           </Box>
         ) : (
           <List disablePadding>
             {dayLogistics.map((item) => (
-              <ScheduledItem key={item.id} item={item} />
+              <ScheduledItem
+                key={item.id}
+                item={item}
+                isReservation={isReservation}
+                onClick={onClick}
+              />
             ))}
           </List>
         )}
@@ -257,4 +312,6 @@ export default function LogisticsScheduledList({ date, logistics }) {
 LogisticsScheduledList.propTypes = {
   date: PropTypes.object,
   logistics: PropTypes.array,
+  isReservation: PropTypes.bool,
+  onClick: PropTypes.func,
 };
