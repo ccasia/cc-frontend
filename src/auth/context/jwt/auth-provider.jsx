@@ -63,52 +63,6 @@ export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const location = useLocation();
 
-  // const { data: userData, error: err } = useGetMe();
-
-  // const initialize = useCallback(async () => {
-  //   console.log('TEsting');
-  //   // try {
-  //   //   const userData = await axios.get(endpoints.auth.me);
-
-  //   //   console.log(userData);
-
-  //   //   console.log('TEsting');
-
-  //   //   // if (err?.sessionExpired) {
-  //   //   //   dispatch({
-  //   //   //     type: 'LOGOUT',
-  //   //   //   });
-  //   //   // }
-
-  //   //   // if (userData?.user) {
-  //   //   //   const { user } = userData;
-  //   //   //   dispatch({
-  //   //   //     type: 'INITIAL',
-  //   //   //     payload: {
-  //   //   //       user: {
-  //   //   //         ...user,
-  //   //   //       },
-  //   //   //     },
-  //   //   //   });
-  //   //   // } else {
-  //   //   //   dispatch({
-  //   //   //     type: 'INITIAL',
-  //   //   //     payload: {
-  //   //   //       user: null,
-  //   //   //     },
-  //   //   //   });
-  //   //   // }
-  //   // } catch (error) {
-  //   //   console.log(error);
-  //   //   dispatch({
-  //   //     type: 'INITIAL',
-  //   //     payload: {
-  //   //       user: null,
-  //   //     },
-  //   //   });
-  //   // }
-  // }, []);
-
   const initialize = useCallback(async () => {
     try {
       const res = await axios.get(endpoints.auth.me);
@@ -127,10 +81,6 @@ export function AuthProvider({ children }) {
       }
     }
   }, []);
-
-  // useEffect(() => {
-  //   initialize();
-  // }, [initialize]);
 
   useEffect(() => {
     initialize();
@@ -179,7 +129,7 @@ export function AuthProvider({ children }) {
   const registerClient = useCallback(async (data) => {
     try {
       const response = await axios.post(endpoints.auth.registerClient, data);
-      
+
       // Client registration now requires email verification
       // Return email for verification flow instead of auto-login
       return { email: response.data.email };
@@ -272,7 +222,19 @@ export function AuthProvider({ children }) {
       initialize,
       dispatch,
     }),
-    [login, logout, register, registerClient, verify, verifyClient, state.user, status, permission, role, initialize]
+    [
+      login,
+      logout,
+      register,
+      registerClient,
+      verify,
+      verifyClient,
+      state.user,
+      status,
+      permission,
+      role,
+      initialize,
+    ]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;
