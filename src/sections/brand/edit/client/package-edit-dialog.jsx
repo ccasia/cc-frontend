@@ -1,19 +1,23 @@
 import PropTypes from 'prop-types';
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
+  Stack,
   Button,
   Dialog,
+  Divider,
   TextField,
-  DialogTitle,
+  Typography,
   DialogActions,
   DialogContent,
-  CircularProgress,
+  InputAdornment,
 } from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
 
+import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 
 const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {
@@ -25,17 +29,31 @@ const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {
     totalCredits: 0,
     expiredAt: '',
   });
+  const [initialData, setInitialData] = useState(null);
 
   useEffect(() => {
     if (packageData) {
-      setFormData({
+      const newFormData = {
         packagePrice: packageData.packagePrice || 0,
         creditsUsed: packageData.creditsUsed || 0,
         totalCredits: packageData.totalCredits || 0,
         expiredAt: packageData.expiredAt ? new Date(packageData.expiredAt).toISOString().split('T')[0] : '',
-      });
+      };
+      setFormData(newFormData);
+      setInitialData(newFormData);
     }
   }, [packageData]);
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    if (!initialData) return false;
+    return (
+      formData.packagePrice !== initialData.packagePrice ||
+      formData.creditsUsed !== initialData.creditsUsed ||
+      formData.totalCredits !== initialData.totalCredits ||
+      formData.expiredAt !== initialData.expiredAt
+    );
+  }, [formData, initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,7 +66,7 @@ const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
+
       // Update subscription data
       await axiosInstance.patch(`/api/subscription/${packageData.id}`, {
         packagePrice: formData.packagePrice,
@@ -56,10 +74,10 @@ const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {
         totalCredits: formData.totalCredits,
         expiredAt: formData.expiredAt,
       });
-      
+
       // Show success message
       enqueueSnackbar('Package updated successfully!', { variant: 'success' });
-      
+
       onSuccess();
       onClose();
     } catch (error) {
@@ -72,9 +90,34 @@ const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Edit Package</DialogTitle>
-      <DialogContent>
-        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ p: 3, pb: 2 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '10px',
+              bgcolor: '#F0F4FF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Iconify icon="eva:edit-2-fill" width={22} sx={{ color: '#1340FF' }} />
+          </Box>
+          <Box>
+            <Typography fontSize={28} fontFamily="Instrument Serif">
+              Edit Package
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Update package details
+            </Typography>
+          </Box>
+        </Stack>
+      </Box>
+      <Divider sx={{ mx: 2 }} />
+      <DialogContent sx={{ pt: 3 }}>
+        <Stack spacing={2.5}>
           <TextField
             fullWidth
             type="number"
@@ -82,8 +125,15 @@ const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {
             label="Package Value"
             value={formData.packagePrice}
             onChange={handleChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  {packageData?.currency === 'MYR' ? 'RM' : '$'}
+                </InputAdornment>
+              ),
+            }}
           />
-          
+
           <TextField
             fullWidth
             type="number"
@@ -92,7 +142,7 @@ const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {
             value={formData.creditsUsed}
             onChange={handleChange}
           />
-          
+
           <TextField
             fullWidth
             type="number"
@@ -101,7 +151,7 @@ const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {
             value={formData.totalCredits}
             onChange={handleChange}
           />
-          
+
           <TextField
             fullWidth
             type="date"
@@ -113,20 +163,42 @@ const PackageEditDialog = ({ open, onClose, packageData, onSuccess }) => {
               shrink: true,
             }}
           />
-        </Box>
+        </Stack>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="inherit">
+      <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
+        <Button
+          onClick={onClose}
+          sx={{
+            border: '1px solid #E7E7E7',
+            borderRadius: '8px',
+            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            px: 3,
+          }}
+        >
           Cancel
         </Button>
-        <Button 
-          onClick={handleSubmit} 
-          variant="contained" 
-          disabled={loading}
-          startIcon={loading && <CircularProgress size={20} />}
+        <LoadingButton
+          onClick={handleSubmit}
+          variant="contained"
+          loading={loading}
+          disabled={!hasChanges}
+          sx={{
+            bgcolor: '#1340FF',
+            borderRadius: '8px',
+            border: '1px solid #1a32c4',
+            borderBottom: '3px solid #102387',
+            px: 3,
+            '&:hover': { bgcolor: '#1a32c4' },
+            '&.Mui-disabled': {
+              bgcolor: '#E7E7E7',
+              color: '#8E8E93',
+              border: '1px solid #E7E7E7',
+              borderBottom: '3px solid #C4CDD5',
+            },
+          }}
         >
           Save Changes
-        </Button>
+        </LoadingButton>
       </DialogActions>
     </Dialog>
   );

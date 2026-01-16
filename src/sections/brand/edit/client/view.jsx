@@ -12,7 +12,6 @@ import {
   Card,
   Tabs,
   Stack,
-  alpha,
   Button,
   Dialog,
   Divider,
@@ -23,6 +22,7 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  InputAdornment,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -105,6 +105,29 @@ const CompanyEditView = ({ id }) => {
   const dialog = useBoolean();
   const packageDialog = useBoolean();
   const [activeTab, setActiveTab] = useState('package');
+  const [campaignSearch, setCampaignSearch] = useState('');
+  const [inviteChildDialog, setInviteChildDialog] = useState(false);
+  const [mainPicStatus, setMainPicStatus] = useState(null);
+
+  // Fetch main PIC user status
+  useEffect(() => {
+    const fetchPICStatus = async () => {
+      if (!company?.pic?.[0]?.email) {
+        setMainPicStatus(null);
+        return;
+      }
+
+      try {
+        const response = await axiosInstance.get(`/api/user/by-email/${company.pic[0].email}`);
+        setMainPicStatus(response.data?.status || null);
+      } catch (error) {
+        console.error('Error fetching PIC status:', error);
+        setMainPicStatus(null);
+      }
+    };
+
+    fetchPICStatus();
+  }, [company?.pic]);
 
   console.log('Company info: ', company)
   console.log('Has active client: ', company?.clients?.some(client => client.companyId === company.id))
@@ -114,6 +137,12 @@ const CompanyEditView = ({ id }) => {
 
   // Check if company has a valid PIC with email (required for activation)
   const hasValidPIC = company?.pic?.length > 0 && Boolean(company.pic[0]?.email);
+
+  // Check if main PIC has activated their account (status is 'active', not 'pending')
+  const isPicActivated = mainPicStatus === 'active';
+
+  // Can invite child accounts only if client exists AND main PIC is activated
+  const canInviteChildAccounts = hasActiveClient && isPicActivated;
 
   const campaigns = useMemo(() => {
     if (company?.type === 'agency' || company?.brand?.length) {
@@ -154,7 +183,7 @@ const CompanyEditView = ({ id }) => {
     defaultValues,
   });
 
-  const { handleSubmit, reset, control } = methods;
+  const { handleSubmit, reset, control, formState: { isDirty } } = methods;
 
   const fieldsArray = useFieldArray({
     control,
@@ -342,21 +371,29 @@ const CompanyEditView = ({ id }) => {
           <Box textAlign="end" mt={2}>
             {(user?.role === 'superadmin' || user?.role === 'admin') && (
               <Button
-                variant="contained"
-                color="primary"
+                variant={hasActiveClient ? 'outlined' : 'contained'}
+                startIcon={hasActiveClient ? <Iconify icon="eva:checkmark-circle-2-fill" /> : null}
                 onClick={handleActivateButtonClick}
                 disabled={hasActiveClient}
                 sx={{
-                  bgcolor: hasActiveClient ? '#ccc' : '#203ff5',
-                  color: 'white',
-                  borderBottom: hasActiveClient ? '3px solid #999' : '3px solid #102387',
+                  bgcolor: hasActiveClient ? 'white' : '#203ff5',
+                  color: hasActiveClient ? '#1ABF66' : 'white',
+                  border: '1px solid',
+                  borderColor: hasActiveClient ? '#1ABF66' : '#1a32c4',
+                  borderBottom: hasActiveClient ? '2px solid #1ABF66' : '3px solid #102387',
                   borderRadius: '8px',
-                  p: '4px 20px',
-                  fontSize: '0.9rem',
-                  cursor: hasActiveClient ? 'not-allowed' : 'pointer',
+                  px: 2,
+                  py: 0.75,
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  '&.Mui-disabled': {
+                    bgcolor: 'white',
+                    color: '#1ABF66',
+                    borderColor: '#1ABF66',
+                    opacity: 1,
+                  },
                   '&:hover': {
-                    bgcolor: hasActiveClient ? '#ccc' : '#203ff5',
-                    opacity: hasActiveClient ? 1 : 0.9,
+                    bgcolor: hasActiveClient ? 'white' : '#1a32c4',
                   },
                 }}
               >
@@ -367,9 +404,25 @@ const CompanyEditView = ({ id }) => {
               loading={loading}
               type="submit"
               variant="contained"
+              disabled={!isDirty}
               sx={{
-                width: 100,
-                ml: 1
+                ml: 1,
+                px: 3,
+                py: 0.75,
+                borderRadius: '8px',
+                fontWeight: 600,
+                bgcolor: isDirty ? '#1340FF' : '#E7E7E7',
+                color: isDirty ? 'white' : '#8E8E93',
+                border: '1px solid',
+                borderColor: isDirty ? '#1a32c4' : '#E7E7E7',
+                borderBottom: isDirty ? '3px solid #102387' : '3px solid #C4CDD5',
+                '&:hover': {
+                  bgcolor: isDirty ? '#1a32c4' : '#E7E7E7',
+                },
+                '&.Mui-disabled': {
+                  bgcolor: '#E7E7E7',
+                  color: '#8E8E93',
+                },
               }}
             >
               Save
@@ -377,25 +430,157 @@ const CompanyEditView = ({ id }) => {
           </Box>
         </FormProvider>
 
-        <Card sx={{ borderRadius: 1, mt: 2 }}>
-          <Tabs
-            value={activeTab}
-            onChange={(e, val) => setActiveTab(val)}
+        <Card
+          sx={{
+            borderRadius: 2,
+            mt: 3,
+            border: '1px solid #EBEBEB',
+            boxShadow: 'none',
+            overflow: 'hidden',
+          }}
+        >
+          <Box
             sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               px: 2.5,
-              boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+              bgcolor: '#FAFAFA',
+              borderBottom: '1px solid #EBEBEB',
             }}
           >
-            <Tab value="package" label="Package" />
-            <Tab
-              value="campaign"
-              label="Campaign"
-              iconPosition="end"
-              icon={<Label>{campaigns?.length || 0}</Label>}
-            />
-            <Tab value="pic" label="Person In Charge" />
-            <Tab value="child-accounts" label="Child Accounts" />
-          </Tabs>
+            <Tabs
+              value={activeTab}
+              onChange={(e, val) => {
+                setActiveTab(val);
+                setCampaignSearch(''); // Reset search when switching tabs
+              }}
+              sx={{
+                minHeight: 52,
+                '& .MuiTab-root': {
+                  fontWeight: 600,
+                  fontSize: 14,
+                  minHeight: 52,
+                  textTransform: 'none',
+                  color: '#636366',
+                  '&:hover': {
+                    color: '#221f20',
+                  },
+                },
+                '& .Mui-selected': {
+                  color: '#1340FF !important',
+                },
+                '& .MuiTabs-indicator': {
+                  backgroundColor: '#1340FF',
+                  height: 3,
+                  borderRadius: '3px 3px 0 0',
+                },
+              }}
+            >
+              <Tab value="package" label="Package" />
+              <Tab
+                value="campaign"
+                label="Campaign"
+                iconPosition="end"
+                icon={<Label color="default">{campaigns?.length || 0}</Label>}
+              />
+              <Tab value="pic" label="Person In Charge" />
+              <Tab value="child-accounts" label="Child Accounts" />
+            </Tabs>
+
+            {/* Tab Action Bar */}
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              {activeTab === 'campaign' && (
+                <TextField
+                  size="small"
+                  value={campaignSearch}
+                  onChange={(e) => setCampaignSearch(e.target.value)}
+                  placeholder="Search campaigns..."
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Iconify icon="eva:search-fill" sx={{ color: '#8E8E93', width: 18 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    width: 220,
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'white',
+                      borderRadius: '8px',
+                      fontSize: 14,
+                      '& fieldset': {
+                        borderColor: '#E7E7E7',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#C4CDD5',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1340FF',
+                        borderWidth: 1,
+                      },
+                    },
+                    '& .MuiInputBase-input': {
+                      py: 1,
+                    },
+                  }}
+                />
+              )}
+
+              {activeTab === 'package' && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<Iconify icon="eva:plus-fill" width={18} />}
+                  onClick={packageDialog.onTrue}
+                  sx={{
+                    bgcolor: '#1340FF',
+                    border: '1px solid #1a32c4',
+                    borderBottom: '3px solid #102387',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    fontSize: 13,
+                    px: 2,
+                    py: 1,
+                    minHeight: 40,
+                    '&:hover': { bgcolor: '#1a32c4' },
+                  }}
+                >
+                  Add Package
+                </Button>
+              )}
+
+              {activeTab === 'child-accounts' && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<Iconify icon="eva:plus-fill" width={18} />}
+                  onClick={() => setInviteChildDialog(true)}
+                  disabled={!canInviteChildAccounts}
+                  sx={{
+                    bgcolor: '#1340FF',
+                    border: '1px solid #1a32c4',
+                    borderBottom: '3px solid #102387',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    fontSize: 13,
+                    px: 2,
+                    py: 1,
+                    minHeight: 40,
+                    '&:hover': { bgcolor: '#1a32c4' },
+                    '&.Mui-disabled': {
+                      bgcolor: '#E7E7E7',
+                      color: '#8E8E93',
+                      borderColor: '#E7E7E7',
+                      borderBottom: '3px solid #C4CDD5',
+                    },
+                  }}
+                >
+                  Invite Account
+                </Button>
+              )}
+            </Stack>
+          </Box>
 
           <Box p={2}>
             {activeTab === 'package' && (
@@ -415,54 +600,28 @@ const CompanyEditView = ({ id }) => {
                     </Button>
                   </Stack>
                 ) : (
-                  <>
-                    <PackageHistoryList
+                  <PackageHistoryList
                       dataFiltered={company?.subscriptions}
                       onRefresh={() => mutate()}
                     />
-                    <Stack direction="row" alignItems="center" justifyContent="center" my={2}>
-                      {/* <Typography
-                      sx={{
-                        fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                        fontSize: 30,
-                        fontWeight: 'normal',
-                        mb: 2,
-                      }}
-                    >
-                      Package History
-                    </Typography> */}
-
-                      {/* <Button
-                      variant="outlined"
-                      sx={{
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                      }}
-                      // onClick={dialog.onTrue}
-                      disabled={!(currentPackage?.status === 'inactive' && currentPackage)}
-                    >
-                      Renew Package
-                    </Button> */}
-                      <Button
-                        variant="outlined"
-                        sx={{ boxShadow: '0px -3px 0px 0px #E7E7E7 inset' }}
-                        startIcon={<Iconify icon="bx:package" width={22} />}
-                        onClick={packageDialog.onTrue}
-                      >
-                        Add package
-                      </Button>
-                    </Stack>
-                  </>
                 )}
               </>
             )}
 
-            {activeTab === 'campaign' && <CampaignClientList campaigns={campaigns} />}
+            {activeTab === 'campaign' && <CampaignClientList campaigns={campaigns} searchFilter={campaignSearch} />}
 
             {activeTab === 'pic' && (
               <PICList personIncharge={company?.pic} companyId={company?.id} onUpdate={mutate} />
             )}
 
-            {activeTab === 'child-accounts' && <ChildAccountList companyId={id} company={company} />}
+            {activeTab === 'child-accounts' && (
+              <ChildAccountList
+                company={company}
+                inviteDialogOpen={inviteChildDialog}
+                onInviteDialogClose={() => setInviteChildDialog(false)}
+                isPicActivated={isPicActivated}
+              />
+            )}
           </Box>
         </Card>
       </Box>
@@ -486,34 +645,53 @@ const CompanyEditView = ({ id }) => {
 
       {/* PIC Creation Dialog */}
       <Dialog open={picDialogOpen} onClose={() => setPicDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Typography fontSize={32} fontFamily="Instrument Serif">Add Person In Charge</Typography>
-          <Typography variant="body2" color="text.secondary" mt={1}>
-            Please provide PIC information to activate this client account
-          </Typography>
-        </DialogTitle>
-        <Divider />
-        <DialogContent>
-          <Stack spacing={2.5} sx={{ mt: 2 }}>
+        <Box sx={{ p: 3, pb: 2 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '10px',
+                bgcolor: '#F0F4FF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Iconify icon="solar:user-id-bold" width={22} sx={{ color: '#1340FF' }} />
+            </Box>
+            <Box>
+              <Typography fontSize={28} fontFamily="Instrument Serif">
+                Add Person In Charge
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Please provide PIC information to activate this client account
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
+        <Divider sx={{ mx: 2 }} />
+        <DialogContent sx={{ pt: 3 }}>
+          <Stack spacing={2.5}>
             <TextField
-              label="PIC Name"
+              label="Name"
               value={picFormData.name}
               onChange={(e) => setPicFormData({ ...picFormData, name: e.target.value })}
               fullWidth
               required
-              placeholder="Enter PIC name"
+              placeholder="Enter name"
             />
             <TextField
-              label="PIC Email"
+              label="Email"
               type="email"
               value={picFormData.email}
               onChange={(e) => setPicFormData({ ...picFormData, email: e.target.value })}
               fullWidth
               required
-              placeholder="Enter PIC email"
+              placeholder="Enter email address"
             />
             <TextField
-              label="PIC Designation"
+              label="Designation"
               value={picFormData.designation}
               onChange={(e) => setPicFormData({ ...picFormData, designation: e.target.value })}
               fullWidth
@@ -522,33 +700,41 @@ const CompanyEditView = ({ id }) => {
             />
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button 
-            sx={{ 
-              border: '1px solid #E7E7E7', 
-              borderRadius: '8px', 
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset', 
-              px: 3
-            }}
+        <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
+          <Button
             onClick={() => {
               setPicDialogOpen(false);
               setPicFormData({ name: '', email: '', designation: '' });
             }}
             disabled={loading}
+            sx={{
+              border: '1px solid #E7E7E7',
+              borderRadius: '8px',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              px: 3,
+            }}
           >
             Cancel
           </Button>
-          <LoadingButton 
-            sx={{
-              borderRadius: '8px',
-              bgcolor: '#203ff5',
-              boxShadow: '0px -3px 0px 0px #102387 inset',
-              px: 3
-            }}
-            onClick={handleCreatePIC} 
-            variant="contained" 
+          <LoadingButton
+            onClick={handleCreatePIC}
+            variant="contained"
             loading={loading}
             disabled={!picFormData.name || !picFormData.email || !picFormData.designation}
+            sx={{
+              bgcolor: '#1340FF',
+              borderRadius: '8px',
+              border: '1px solid #1a32c4',
+              borderBottom: '3px solid #102387',
+              px: 3,
+              '&:hover': { bgcolor: '#1a32c4' },
+              '&.Mui-disabled': {
+                bgcolor: '#E7E7E7',
+                color: '#8E8E93',
+                border: '1px solid #E7E7E7',
+                borderBottom: '3px solid #C4CDD5',
+              },
+            }}
           >
             Save & Continue
           </LoadingButton>
@@ -556,46 +742,80 @@ const CompanyEditView = ({ id }) => {
       </Dialog>
 
       {/* Client Activation Dialog */}
-      <Dialog open={activateDialogOpen} onClose={() => setActivateDialogOpen(false)}>
-        <Box sx={{ width: 427 }}>
-          <Typography fontSize={40} p={3} fontFamily="Instrument Serif">Activate Client Account?</Typography>
-          <Divider sx={{ mx: 2 }} />
-          <DialogContent>
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Typography variant="body1">
-                <Typography variant='span' color="#636366">Company Name:</Typography> {company?.name || 'N/A'}
+      <Dialog open={activateDialogOpen} onClose={() => setActivateDialogOpen(false)} maxWidth="xs" fullWidth>
+        <Box sx={{ p: 3, pb: 2 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '10px',
+                bgcolor: '#E8F5E9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Iconify icon="eva:checkmark-circle-2-fill" width={22} sx={{ color: '#1ABF66' }} />
+            </Box>
+            <Box>
+              <Typography fontSize={28} fontFamily="Instrument Serif">
+                Activate Client Account?
               </Typography>
-              <Typography variant="body1">
-                <Typography variant='span' color="#636366">Company Email:</Typography> {company?.pic?.[0]?.email || 'N/A'}
-              </Typography>
-              <Typography variant="body1">
-                <Typography variant='span' color="#636366">Package:</Typography> {currentPackage?.package?.name || currentPackage?.customPackage?.customName || 'No package assigned'}
+              <Typography variant="body2" color="text.secondary">
+                Send activation email to the PIC
               </Typography>
             </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button 
-              sx={{ 
-                border: '1px solid #E7E7E7', 
-                borderRadius: '8px', 
-                boxShadow: '0px -3px 0px 0px #E7E7E7 inset', 
-                px: 2
-              }}
-              onClick={() => setActivateDialogOpen(false)}>Cancel</Button>
-            <LoadingButton 
-              sx={{
-                borderRadius: '8px',
-                bgcolor: '#3A3A3C',
-                boxShadow: '0px -3px 0px 0px #00000073 inset'
-              }}
-              onClick={handleActivateClient} 
-              variant="contained" 
-              loading={isActivating}
-            >
-              Yes
-            </LoadingButton>
-          </DialogActions>
+          </Stack>
         </Box>
+        <Divider sx={{ mx: 2 }} />
+        <DialogContent sx={{ pt: 3 }}>
+          <Stack spacing={1.5}>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary">Company Name</Typography>
+              <Typography variant="body2" fontWeight={600}>{company?.name || 'N/A'}</Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary">PIC Email</Typography>
+              <Typography variant="body2" fontWeight={600}>{company?.pic?.[0]?.email || 'N/A'}</Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary">Package</Typography>
+              <Typography variant="body2" fontWeight={600}>
+                {currentPackage?.package?.name || currentPackage?.customPackage?.customName || 'No package assigned'}
+              </Typography>
+            </Stack>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
+          <Button
+            onClick={() => setActivateDialogOpen(false)}
+            disabled={isActivating}
+            sx={{
+              border: '1px solid #E7E7E7',
+              borderRadius: '8px',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              px: 3,
+            }}
+          >
+            Cancel
+          </Button>
+          <LoadingButton
+            onClick={handleActivateClient}
+            variant="contained"
+            loading={isActivating}
+            sx={{
+              bgcolor: '#1ABF66',
+              borderRadius: '8px',
+              border: '1px solid #15A35A',
+              borderBottom: '3px solid #0D8A4A',
+              px: 3,
+              '&:hover': { bgcolor: '#15A35A' },
+            }}
+          >
+            Activate
+          </LoadingButton>
+        </DialogActions>
       </Dialog>
     </Container>
   );
