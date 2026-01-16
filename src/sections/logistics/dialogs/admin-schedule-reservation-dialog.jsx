@@ -146,7 +146,7 @@ export default function AdminScheduleReservationDialog({
     if (!selectedDate || !startTime || !isValid(startTime)) return false;
 
     const currentWindowStart = `${dateString}T${format(startTime, 'HH:mm')}`;
-    
+
     return !proposedSlots.some((p) => p.startTime.startsWith(currentWindowStart));
   }, [dateString, startTime, proposedSlots, selectedDate]);
 
@@ -364,7 +364,7 @@ export default function AdminScheduleReservationDialog({
             {format(selectedDate, 'EEEE, d MMMM yyyy')}
           </Typography>
 
-          <Stack spacing={1.5} sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 320 }}>
+          <Stack spacing={0.5} sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 320 }}>
             {attendeesList.map((attendee) => {
               const isTargetCreator = attendee.id === logistic?.creatorId;
               const tag = getOptionTag(attendee);
