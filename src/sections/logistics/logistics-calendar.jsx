@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
+import { useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
@@ -24,9 +25,30 @@ const getStatusColor = (status) => {
 };
 
 function ServerDay(props) {
-  const { logistics = [], day, outsideCurrentMonth, isReservation, ...other } = props;
+  const {
+    logistics = [],
+    day,
+    outsideCurrentMonth,
+    isReservation,
+    reservationConfig,
+    ...other
+  } = props;
 
   const dateString = format(day, 'yyyy-MM-dd');
+
+  const hasConfig = useMemo(() => {
+    const availabilityRules = reservationConfig?.availabilityRules;
+
+    if (!isReservation || !availabilityRules) return true;
+
+    return availabilityRules.some((rule) =>
+      rule.dates?.some((d) => {
+        const ruleDateString =
+          typeof d === 'string' ? d.split('T')[0] : format(new Date(d), 'yyyy-MM-dd');
+        return ruleDateString === dateString;
+      })
+    );
+  }, [isReservation, reservationConfig, dateString]);
 
   const dayLogistics = logistics.filter((logistic) => {
     if (isReservation) {
@@ -111,14 +133,20 @@ function ServerDay(props) {
         sx={{
           width: 30,
           height: 30,
+          color: hasConfig ? '#231F20' : '#C0C0C0',
           fontSize: '0.75rem',
-          fontWeight: 400,
+          fontWeight: hasConfig ? 600 : 400,
+          opacity: hasConfig ? 1 : 0.5,
           '&.Mui-selected': {
             backgroundColor: '#1340FF !important',
             color: '#ffffff',
+            opacity: 1,
             '&:hover': {
               backgroundColor: '#0b2dad !important',
             },
+          },
+          '&.MuiPickersDay-today': {
+            borderColor: hasConfig ? '#1340FF' : '#E0E0E0',
           },
         }}
       />
@@ -133,9 +161,16 @@ ServerDay.propTypes = {
   outsideCurrentMonth: PropTypes.bool,
   logistics: PropTypes.array,
   isReservation: PropTypes.bool,
+  reservationConfig: PropTypes.object,
 };
 
-export default function LogisticsCalendar({ date, onChange, logistics, isReservation }) {
+export default function LogisticsCalendar({
+  date,
+  onChange,
+  logistics,
+  isReservation,
+  reservationConfig,
+}) {
   const safeLogistics = logistics || [];
 
   return (
@@ -154,6 +189,7 @@ export default function LogisticsCalendar({ date, onChange, logistics, isReserva
             day: {
               logistics: safeLogistics,
               isReservation,
+              reservationConfig,
             },
           }}
           sx={{
@@ -193,4 +229,5 @@ LogisticsCalendar.propTypes = {
   onChange: PropTypes.func,
   logistics: PropTypes.array,
   isReservation: PropTypes.bool,
+  reservationConfig: PropTypes.object,
 };

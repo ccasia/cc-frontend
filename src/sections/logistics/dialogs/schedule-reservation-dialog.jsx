@@ -42,6 +42,7 @@ export default function ScheduleReservationDialog({
   logistic,
   campaignId,
   onUpdate,
+  reservationConfig,
 }) {
   const { enqueueSnackbar } = useSnackbar();
 
@@ -75,13 +76,9 @@ export default function ScheduleReservationDialog({
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [selectedDate, allFetchedSlots]);
 
-  // const isSelectedSlotConflict = slotsForSelectedDate
-  //   .find((s) => s.startTime === selectedSlotTime)
-  //   ?.attendees?.some((a) => a.id !== logistic.creatorId && a.status === 'SELECTED');
-
   const isSelectedSlotConflict = useMemo(() => {
     const slot = slotsForSelectedDate.find((s) => s.startTime === selectedSlotTime);
-    if (!slot) return false;
+    if (!slot || reservationConfig?.allowMultipleBookings) return false;
 
     const start = parseISO(slot.startTime);
     const end = parseISO(slot.endTime);
@@ -91,7 +88,12 @@ export default function ScheduleReservationDialog({
       !isFullDay &&
       slot.attendees?.some((a) => a.id !== logistic?.creatorId && a.status === 'SELECTED')
     );
-  }, [selectedSlotTime, slotsForSelectedDate, logistic?.creatorId]);
+  }, [
+    selectedSlotTime,
+    slotsForSelectedDate,
+    logistic?.creatorId,
+    reservationConfig?.allowMultipleBookings,
+  ]);
 
   const calendarGrid = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -142,15 +144,15 @@ export default function ScheduleReservationDialog({
         setSelectedDate(date);
         setSelectedSlotTime(confirmedSlot.startTime);
         setCurrentMonth(date);
-      } else if (proposedSlots.length > 0) {
-        const datePart = proposedSlots[0].startTime.split('T')[0];
-        const date = parseISO(datePart);
+      } else {
+        const today = new Date();
 
-        setCurrentMonth(date);
-        setSelectedDate(date);
+        setCurrentMonth(today);
+        setSelectedDate(today);
+        setSelectedSlotTime(null);
       }
     }
-  }, [open, confirmedSlot, proposedSlots]);
+  }, [open, confirmedSlot]);
 
   // --- Helpers ---
 
@@ -291,8 +293,10 @@ export default function ScheduleReservationDialog({
                 let color = '#919EAB';
                 if (isSelected) {
                   color = '#fff';
-                } else if (canClick) {
-                  color = '#231F20';
+                } else if (canClick && !isProposed) {
+                  color = '#090708ff';
+                } else if (isProposed) {
+                  color = '#1340FF';
                 }
 
                 return (
@@ -349,7 +353,7 @@ export default function ScheduleReservationDialog({
             <Grid
               item
               xs={5}
-              alignContent="center"
+              alignContent="flex-start"
               sx={{ height: '100%', pr: 2, borderRight: '1px solid #EAEAEA' }}
             >
               <Stack
@@ -382,7 +386,7 @@ export default function ScheduleReservationDialog({
                       variant={isSelected ? 'contained' : 'outlined'}
                       onClick={() => setSelectedSlotTime(slot.startTime)}
                       sx={{
-                        py: 1,
+                        py: 1.2,
                         px: 0.5,
                         fontSize: '15px',
                         bgcolor: isSelected ? '#1340FF' : '#fff',
@@ -427,8 +431,12 @@ export default function ScheduleReservationDialog({
                         key={attendee.id}
                         direction="row"
                         spacing={1}
-                        borderLeft={isTargetCreator ? '2px solid #1340FF' : ''}
-                        pl={1}
+                        sx={{
+                          p: 1,
+                          borderRadius: 1,
+                          borderLeft: isTargetCreator ? '4px solid #1340FF' : 'none',
+                          bgcolor: isTargetCreator ? 'rgba(19, 64, 255, 0.04)' : 'transparent',
+                        }}
                       >
                         <Avatar src={attendee.photoURL} sx={{ width: 32, height: 32 }} />
                         <Box sx={{ flexGrow: 1 }}>
@@ -440,7 +448,6 @@ export default function ScheduleReservationDialog({
                           </Typography>
                           <Typography
                             variant="caption"
-                            // color="text.secondary"
                             sx={{
                               fontWeight: 400,
                               display: 'block',
@@ -452,7 +459,6 @@ export default function ScheduleReservationDialog({
                           </Typography>
                           <Typography
                             variant="caption"
-                            // color="text.secondary"
                             sx={{
                               fontWeight: 400,
                               display: 'block',
@@ -613,4 +619,5 @@ ScheduleReservationDialog.propTypes = {
   logistic: PropTypes.object,
   onUpdate: PropTypes.func,
   campaignId: PropTypes.string,
+  reservationConfig: PropTypes.object,
 };

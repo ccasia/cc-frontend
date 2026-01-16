@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { Box, Stack, Button, Typography } from '@mui/material';
@@ -10,17 +10,26 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { useBoolean } from 'src/hooks/use-boolean';
 
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/creator-logistics-view';
+import ConfirmReservationModal from 'src/sections/logistics/dialogs/confirm-reservation-modal';
 
 import CampaignInfo from './campaign-info';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignV4Activity from './v4/campaign-v4-activity';
 
-const CampaignDetailItem = ({ campaign }) => {
+const CampaignDetailItem = ({ campaign, mutate }) => {
   const router = useRouter();
+  const { user } = useAuthContext();
   const location = useLocation();
+
+  const myLogistic = useMemo(
+    () => campaign?.logistics?.find((item) => item.creatorId === user?.id),
+    [campaign?.logistics, user?.id]
+  );
+
   const [currentTab, setCurrentTab] = useState(() => {
     if (location.state?.tab) {
       return location.state.tab;
@@ -28,13 +37,16 @@ const CampaignDetailItem = ({ campaign }) => {
     // Default to appropriate tab based on submission version
     return campaign?.submissionVersion === 'v4' ? 'tasks-v4' : 'tasks';
   });
-  const { user } = useAuthContext();
+  const showReservationModal = useBoolean();
 
   const isCampaignDone = campaign?.shortlisted?.find(
     (item) => item.userId === user?.id
   )?.isCampaignDone;
 
   const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
+  const isReservation = campaign?.logisticsType === 'RESERVATION';
+  const needsAction = isReservation && myLogistic && myLogistic.status === 'NOT_STARTED';
+  const hasLogistics = campaign?.logistics?.some((item) => item.creatorId === user?.id);
 
   const openLogisticTab = () => {
     setCurrentTab('logistics');
@@ -47,6 +59,33 @@ const CampaignDetailItem = ({ campaign }) => {
       setCurrentTab(defaultTab);
     }
   }, [campaign?.submissionVersion, location.state?.tab]);
+
+  useEffect(() => {
+    if (!myLogistic?.id) return;
+
+    const hasDismissed = localStorage.getItem(`dismissed-res-${myLogistic?.id}`);
+
+    if (currentTab === 'logistics') {
+      if (!hasDismissed) {
+        localStorage.setItem(`dismissed-res-${myLogistic?.id}`, 'true');
+      }
+      showReservationModal.onFalse();
+    } else if (needsAction && !hasDismissed) {
+      showReservationModal.onTrue();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsAction, showReservationModal, currentTab, myLogistic?.id]);
+
+  const handleGoToLogistics = () => {
+    localStorage.setItem(`dismissed-res-${myLogistic?.id}`, 'true');
+    setCurrentTab('logistics');
+    showReservationModal.onFalse();
+  };
+
+  const handleDismiss = () => {
+    localStorage.setItem(`dismissed-res-${myLogistic?.id}`, 'true');
+    showReservationModal.onFalse();
+  };
 
   return (
     <Stack gap={2} sx={{ overflowX: 'hidden', width: '100%' }}>
@@ -74,7 +113,7 @@ const CampaignDetailItem = ({ campaign }) => {
                 : [{ value: 'tasks', label: 'Activity' }]),
               { value: 'info', label: 'Campaign Details' },
               // HIDE: logistics from creator
-              { value: 'logistics', label: 'Logistics' },
+              ...(hasLogistics ? [{ value: 'logistics', label: 'Logistics' }] : []),
             ].map((tab) => (
               <Button
                 key={tab.value}
@@ -147,7 +186,11 @@ const CampaignDetailItem = ({ campaign }) => {
             </Typography>
           </Box>
         )}
-
+        <ConfirmReservationModal
+          open={showReservationModal.value}
+          onClose={handleDismiss}
+          onConfirm={handleGoToLogistics}
+        />
         <Box mt={3} sx={{ overflowX: 'hidden', width: '100%' }}>
           {currentTab === 'tasks' && (
             <CampaignMyTasks
@@ -172,4 +215,5 @@ export default CampaignDetailItem;
 
 CampaignDetailItem.propTypes = {
   campaign: PropTypes.object,
+  mutate: PropTypes.func,
 };

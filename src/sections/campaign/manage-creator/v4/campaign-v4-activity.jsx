@@ -141,6 +141,7 @@ const AgreementSubmission = ({ campaign, agreementSubmission, onUpdate }) => {
 
   const handleRemove = () => {
     setValue('agreementForm', null, { shouldValidate: true });
+    setValue('agreementForm', null, { shouldValidate: true });
   };
 
   const onSubmit = handleSubmit(async (data) => {
@@ -917,7 +918,7 @@ const LogisticsForm = ({ user, campaignId, onUpdate }) => {
                   Apartment, suite, etc.
                 </Typography>
                 <RHFTextField
-                  name="unitNumber"
+                  name="location"
                   placeholder="Apartment, suite, etc."
                   sx={{
                     '& .MuiOutlinedInput-root': {
@@ -1035,6 +1036,7 @@ const CampaignV4Activity = ({ campaign }) => {
   // Fetch logistics data
   const { logistic, logisticLoading, mutate: mutateLogistic } = useGetCreatorLogistic(campaign?.id);
   const isLogisticsCompleted = !!logistic;
+  const isDelivery = campaign?.logisticsType === 'PRODUCT_DELIVERY';
 
   // Get agreement URL from campaign and convert to backend proxy URL to bypass CORS
   const originalAgreementUrl = campaign?.agreement?.agreementUrl;
@@ -1424,12 +1426,12 @@ const CampaignV4Activity = ({ campaign }) => {
           >
             <Stack direction="row" alignItems="center" spacing={2}>
               <Typography
-                variant="subtitle1"
+                variant="h6"
                 sx={{
-                  fontWeight: 600,
-                  color: 'black',
                   fontFamily:
                     'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontWeight: 500,
+                  color: 'black',
                 }}
               >
                 Agreement
@@ -1784,7 +1786,7 @@ const CampaignV4Activity = ({ campaign }) => {
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: 1,
+            mb: isDelivery ? 2 : 1,
           }}
         >
           <Stack
@@ -1801,12 +1803,12 @@ const CampaignV4Activity = ({ campaign }) => {
           >
             <Stack direction="row" alignItems="center" spacing={2}>
               <Typography
-                variant="subtitle1"
+                variant="h6"
                 sx={{
-                  fontWeight: 600,
-                  color: 'black',
                   fontFamily:
                     'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontWeight: 500,
+                  color: 'black',
                 }}
               >
                 Agreement
@@ -1964,7 +1966,7 @@ const CampaignV4Activity = ({ campaign }) => {
       )}
 
       {/* HIDE: Logistics Information Card from creator */}
-      {/* {isAgreementApproved && (
+      {isAgreementApproved && isDelivery && (
         <Card
           sx={{
             overflow: 'visible',
@@ -1972,7 +1974,7 @@ const CampaignV4Activity = ({ campaign }) => {
             boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
             borderRadius: 2,
             border: 'none',
-            mb: 3,
+            mb: 1,
           }}
         >
           <Stack
@@ -1984,11 +1986,12 @@ const CampaignV4Activity = ({ campaign }) => {
           >
             <Stack direction="row" alignItems="center" spacing={2}>
               <Typography
-                variant="subtitle1"
+                variant="h6"
                 sx={{
-                  fontWeight: 600,
+                  fontFamily:
+                    'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  fontWeight: 500,
                   color: 'black',
-                  fontFamily: 'Inter Display, sans-serif',
                 }}
               >
                 Logistics Information
@@ -2006,8 +2009,8 @@ const CampaignV4Activity = ({ campaign }) => {
                   borderRadius: 0.8,
                   bgcolor: 'white',
                   whiteSpace: 'nowrap',
-                  color: '#00AB55',
-                  borderColor: '#00AB55',
+                  color: isLogisticsCompleted ? '#00AB55' : '#8E8E93',
+                  borderColor: isLogisticsCompleted ? '#00AB55' : '#8E8E93',
                 }}
               >
                 <Typography
@@ -2026,10 +2029,84 @@ const CampaignV4Activity = ({ campaign }) => {
 
           <Collapse in={expandedSections.logistics}>
             <Divider />
-            <LogisticsForm user={user} campaignId={campaign.id} onUpdate={() => mutateLogistic()} />
+            {isLogisticsCompleted ? (
+              <Box sx={{ p: 3 }}>
+                <Stack spacing={4}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 3, md: 10 }}>
+                    <Box sx={{ minWidth: 200 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#636366', display: 'block', mb: 1 }}
+                      >
+                        Country of Residence <span style={{ color: '#FF4842' }}>*</span>
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                        {user?.creator?.country}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ minWidth: 200 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#636366', display: 'block', mb: 1 }}
+                      >
+                        State/Territory <span style={{ color: '#FF4842' }}>*</span>
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                        {user?.creator?.state}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#636366', display: 'block', mb: 1 }}
+                      >
+                        Dietary Restrictions/Allergies
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                        {logistic?.deliveryDetails?.dietaryRestrictions || '-'}
+                      </Typography>
+                    </Box>
+                  </Stack>
+
+                  {/* Middle Row: Address */}
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: '#636366', display: 'block', mb: 1 }}
+                    >
+                      Address <span style={{ color: '#FF4842' }}>*</span>
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                      {logistic?.deliveryDetails?.address}
+                    </Typography>
+                  </Box>
+
+                  {/* Bottom Row: Apartment */}
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: '#636366', display: 'block', mb: 1 }}
+                    >
+                      Apartment, suite, etc.
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#636366', fontSize: '14px' }}>
+                      {user?.creator?.location || '-'}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            ) : (
+              <LogisticsForm
+                user={user}
+                campaignId={campaign.id}
+                onUpdate={() => mutateLogistic()}
+              />
+            )}
           </Collapse>
         </Card>
-      )} */}
+      )}
 
       {/* Collapsible Submission Cards */}
       <Stack spacing={2} sx={{ p: 1, mx: -1 }}>
@@ -2127,7 +2204,10 @@ const CampaignV4Activity = ({ campaign }) => {
                   )}
                 </Stack>
                 <IconButton size="small">
-                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
+                  <Iconify
+                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                    width={20}
+                  />
                 </IconButton>
               </Box>
               {/* Collapsible Content */}
@@ -2271,7 +2351,10 @@ const CampaignV4Activity = ({ campaign }) => {
                   )}
                 </Stack>
                 <IconButton size="small">
-                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
+                  <Iconify
+                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                    width={20}
+                  />
                 </IconButton>
               </Box>
 
@@ -2422,7 +2505,7 @@ const CampaignV4Activity = ({ campaign }) => {
                   )}
                 </Stack>
                 <IconButton size="small">
-                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />
+                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} width={20}/>
                 </IconButton>
               </Box>
 
@@ -2489,6 +2572,7 @@ CampaignV4Activity.propTypes = {
     id: PropTypes.string,
     name: PropTypes.string,
     campaignType: PropTypes.string,
+    logisticsType: PropTypes.string,
     agreement: PropTypes.shape({
       agreementUrl: PropTypes.string,
     }),

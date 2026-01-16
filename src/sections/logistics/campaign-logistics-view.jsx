@@ -36,7 +36,7 @@ const DELIVERY_OPTIONS = [
 
 const RESERVATION_OPTIONS = [
   { value: 'all', label: 'All' },
-  { value: 'PENDING_ASSIGNMENT', label: 'Unassigned' },
+  { value: 'PENDING_ASSIGNMENT', label: 'Unconfirmed' },
   { value: 'SCHEDULED', label: 'Scheduled' },
   { value: 'COMPLETED', label: 'Completed' },
   { value: 'ISSUE_REPORTED', label: 'Failed' },
@@ -61,6 +61,13 @@ export default function CampaignLogisticsView({
 
   const { data: logistics, mutate } = useSWR(
     campaign?.id ? `/api/logistics/campaign/${campaign?.id}` : null,
+    fetcher
+  );
+
+  const { data: reservationConfig } = useSWR(
+    campaign?.id && isReservation
+      ? `/api/logistics/campaign/${campaign?.id}/reservation-config`
+      : null,
     fetcher
   );
 
@@ -112,8 +119,8 @@ export default function CampaignLogisticsView({
 
   return (
     <>
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={9}>
+      <Grid container spacing={1.5} sx={{ mb: 2 }}>
+        <Grid item xs={12} md={9.5}>
           <Card
             sx={{
               display: 'flex',
@@ -132,6 +139,7 @@ export default function CampaignLogisticsView({
                 onChange={(newDate) => setDate(newDate)}
                 logistics={safeLogistics}
                 isReservation={isReservation}
+                reservationConfig={reservationConfig}
               />
             </Box>
             {/* Vertical Divider (Desktop) */}
@@ -151,11 +159,12 @@ export default function CampaignLogisticsView({
                 logistics={safeLogistics}
                 isReservation={isReservation}
                 onClick={handleOpenDrawer}
+                reservationConfig={reservationConfig}
               />
             </Box>
           </Card>
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} md={2.5}>
           <LogisticsAnalytics logistics={safeLogistics} isReservation={isReservation} />
         </Grid>
       </Grid>

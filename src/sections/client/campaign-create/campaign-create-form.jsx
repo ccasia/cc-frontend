@@ -37,9 +37,9 @@ import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
-import ReservationSlots from 'src/sections/campaign/create/steps/reservation-slots';
 import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
 // Import steps from campaign creation
+import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-slots';
 import TimelineTypeModal from 'src/sections/campaign/create/steps/timeline-type-modal';
 
 import NextSteps from './next-steps';
@@ -70,7 +70,7 @@ const additionalSteps = [
   { title: 'Additional Details 2', logo: '📝', color: '#D8FF01', indicatorIndex: 6 },
 ];
 
-const getSteps = (showAdditionalDetails) => 
+const getSteps = (showAdditionalDetails) =>
   showAdditionalDetails ? [...baseSteps, ...additionalSteps] : baseSteps;
 
 const backSectionLabels = ['General', 'Objective', 'Audience', 'Logistics'];
@@ -122,16 +122,18 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
 
   // Derive steps based on showAdditionalDetails state
   const steps = getSteps(showAdditionalDetails);
-  
+
   // Determine if we're in the front or back section
   const inFrontSection = isInFrontSection(activeStep);
   const inBackSection = isInBackSection(activeStep);
 
-
-
   // Client brand info for preview
   const clientBrandName =
-    user?.company?.name || user?.client?.company?.name || user?.brandName || user?.name || 'Your Brand';
+    user?.company?.name ||
+    user?.client?.company?.name ||
+    user?.brandName ||
+    user?.name ||
+    'Your Brand';
 
   // Resolve client company logo
   let clientLogoUrl = '';
@@ -271,47 +273,31 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   });
 
   const logisticsSchema = Yup.object().shape({
-    logisticsType: Yup.string(),
+    logisticsType: Yup.string().nullable(),
+    allowMultipleBookings: Yup.boolean(),
     products: Yup.array().when('logisticsType', {
       is: 'PRODUCT_DELIVERY',
       then: (schema) =>
-        schema
-          .of(
-            Yup.object().shape({
-              name: Yup.string().required('Product name is required'),
-            })
-          )
-          .min(1, 'At least on product is required'),
+        schema.test('at-least-one-product', 'Fill at least one product', (value) =>
+          value?.some((p) => p.name?.trim().length > 0)
+        ),
       otherwise: (schema) => schema.notRequired(),
     }),
-    logisticRemarks: Yup.string(),
-    // locations: Yup.array().notRequired(),
-
-    // venueName: Yup.string().when('logisticType', {
-    //   is: 'RESERVATION',
-    //   then: (schema) => schema,
-    //   otherwise: (schema) => schema,
-    // }),
-    // venueAddress: Yup.string().when('logisticsType', {
-    //   is: 'RESERVATION',
-    //   then: (schema) => schema,
-    //   otherwise: (schema) => schema,
-    // }),
-    // reservationNotes: Yup.string().when('logisticsType', {
-    //   is: 'RESERVATION',
-    //   then: (schema) => schema,
-    //   otherwise: (schema) => schema,
-    // }),
+    clientRemarks: Yup.string(),
     locations: Yup.array().when('logisticsType', {
       is: 'RESERVATION',
       then: (schema) =>
         schema
           .of(
             Yup.object().shape({
-              name: Yup.string().trim().required('Location name is required'),
+              name: Yup.string().trim().notRequired(),
+              pic: Yup.string().notRequired(),
+              contactNumber: Yup.string().notRequired(),
             })
           )
-          .min(1, 'At least one location is required'),
+          .test('at-least-one-location', 'At least one outlet is required', (value) =>
+            value?.some((l) => l.name?.trim().length > 0)
+          ),
       otherwise: (schema) => schema.notRequired(),
     }),
 
@@ -448,10 +434,11 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     referencesLinks: [],
     submissionVersion: 'v4',
     logisticsType: '',
-    logisticRemarks: '',
+    clientRemarks: '',
+    allowMultipleBookings: false,
     schedulingOption: 'confirmation',
     products: [{ name: '' }],
-    locations: [{ name: '' }],
+    locations: [{ name: '', pic: '', contactNumber: '' }],
     availabilityRules: [],
     venueName: '',
     venueAddress: '',
@@ -730,14 +717,12 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         referencesLinks: Array.isArray(data.referencesLinks) ? data.referencesLinks : [],
         submissionVersion: data.submissionVersion || '',
         logisticsType: data.logisticsType || '',
-        logisticRemarks: data.logisticRemarks || '',
-        products: data.products || [],
-        locations: data.locations || [],
-        venueName: data.venueName || '',
-        venueAddress: data.venueAddress || '',
-        reservationNotes: data.reservationNotes || '',
-        schedulingOption: data.schedulingOption || 'confirmation',
+        clientRemarks: data.clientRemarks || '',
+        products: data.products?.filter((p) => p.name?.trim().length > 0) || [],
         availabilityRules: data.availabilityRules || [],
+        locations: data.locations?.filter((l) => l.name?.trim().length > 0) || [],
+        schedulingOption: data.schedulingOption,
+        allowMultipleBookings: data.allowMultipleBookings,
         // Additional Details 1 fields
         contentFormat: Array.isArray(data.contentFormat) ? data.contentFormat : [],
         postingStartDate: data.postingStartDate || null,
@@ -882,8 +867,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     }
   });
 
-
-
   // Add function to handle final submission
   const handleFinalSubmit = useCallback(async () => {
     try {
@@ -917,8 +900,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     }
   }, [onSubmit, methods, confirmation]);
 
-
-
   // Modify the step content function to handle client flow with 7 internal steps
   const getStepContent = (step) => {
     switch (step) {
@@ -931,7 +912,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 3:
         return <CampaignLogistics />;
       case 4:
-        return <ReservationSlots />;
+        return <ReservationSlotsV2 />;
       case 5:
         return <LogisticRemarks />;
       case 6:
@@ -973,7 +954,22 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           values.audienceLanguage?.length > 0 &&
           values.audienceCreatorPersona?.length > 0
         );
-      case 3: // Logistics - optional
+      case 3: {
+        // Logistics - optional
+        const type = values.logisticsType;
+
+        if (!type) return true;
+
+        if (type === 'PRODUCT_DELIVERY') {
+          return values.products?.some((p) => p.name?.trim().length > 0);
+        }
+
+        if (type === 'RESERVATION') {
+          return values.locations?.some((l) => l.name?.trim().length > 0);
+        }
+
+        return true;
+      }
       case 4: // Reservation Slots - optional (shown only for RESERVATION)
       case 5: // Logistic Remarks - optional
         return true;
@@ -990,7 +986,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   // Get the current indicator indices for both sections
   const backSectionIndicator = getBackSectionIndicatorIndex(activeStep);
   const frontSectionIndicator = getFrontSectionIndicatorIndex(activeStep);
-  
+
   // Determine if Next Steps should be highlighted (step 6 or beyond)
   const isNextStepsActive = activeStep >= 6;
 
@@ -1035,57 +1031,58 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               sx={{ width: '100%' }}
             >
               {/* Back Section (General, Objective, Audience, Logistics) */}
-              {inBackSection && backSectionLabels.map((label, index) => (
-                <React.Fragment key={label}>
-                  <Box
-                    onClick={() => handleBackSectionStepClick(index)}
-                    sx={{
-                      minWidth: 135,
-                      height: 45,
-                      py: 1.2,
-                      textAlign: 'center',
-                      borderRadius: 1,
-                      fontSize: 14,
-                      fontWeight: 400,
-                      bgcolor:
-                        backSectionIndicator === index
-                          ? '#1340FF'
-                          : backSectionIndicator > index
+              {inBackSection &&
+                backSectionLabels.map((label, index) => (
+                  <React.Fragment key={label}>
+                    <Box
+                      onClick={() => handleBackSectionStepClick(index)}
+                      sx={{
+                        minWidth: 135,
+                        height: 45,
+                        py: 1.2,
+                        textAlign: 'center',
+                        borderRadius: 1,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        bgcolor:
+                          backSectionIndicator === index
                             ? '#1340FF'
-                            : '#fff',
-                      color:
-                        backSectionIndicator === index
-                          ? '#fff'
-                          : backSectionIndicator > index
+                            : backSectionIndicator > index
+                              ? '#1340FF'
+                              : '#fff',
+                        color:
+                          backSectionIndicator === index
                             ? '#fff'
-                            : '#636366',
-                      border: '1px solid #636366',
-                      borderColor: backSectionIndicator >= index ? '#1340FF' : '#636366',
-                      cursor: index <= backSectionIndicator ? 'pointer' : 'default',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        opacity: index <= backSectionIndicator ? 0.85 : 1,
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Box component="span">{label}</Box>
-                  </Box>
-                  {/* Connector Line after each back section label */}
-                  <Box
-                    sx={{
-                      height: 1.2,
-                      flexGrow: 1,
-                      minWidth: 30,
-                      maxWidth: 50,
-                      bgcolor: backSectionIndicator > index ? '#1340FF' : '#636366',
-                    }}
-                  />
-                </React.Fragment>
-              ))}
+                            : backSectionIndicator > index
+                              ? '#fff'
+                              : '#636366',
+                        border: '1px solid #636366',
+                        borderColor: backSectionIndicator >= index ? '#1340FF' : '#636366',
+                        cursor: index <= backSectionIndicator ? 'pointer' : 'default',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          opacity: index <= backSectionIndicator ? 0.85 : 1,
+                        },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Box component="span">{label}</Box>
+                    </Box>
+                    {/* Connector Line after each back section label */}
+                    <Box
+                      sx={{
+                        height: 1.2,
+                        flexGrow: 1,
+                        minWidth: 30,
+                        maxWidth: 50,
+                        bgcolor: backSectionIndicator > index ? '#1340FF' : '#636366',
+                      }}
+                    />
+                  </React.Fragment>
+                ))}
 
               {/* Next Steps Section (Publish or Continue Additional Details) */}
               <Box
@@ -1113,57 +1110,58 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
               </Box>
 
               {/* Front Section Labels (Additional Details 1, Additional Details 2) */}
-              {inFrontSection && frontSectionLabels.map((label, index) => (
-                <React.Fragment key={label}>
-                  {/* Connector Line before each front section label */}
-                  <Box
-                    sx={{
-                      height: 1.2,
-                      flexGrow: 1,
-                      minWidth: 30,
-                      maxWidth: 50,
-                      bgcolor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
-                    }}
-                  />
-                  <Box
-                    onClick={() => handleFrontSectionStepClick(index)}
-                    sx={{
-                      minWidth: 135,
-                      height: 45,
-                      py: 1.2,
-                      textAlign: 'center',
-                      borderRadius: 1,
-                      fontSize: 14,
-                      fontWeight: 400,
-                      bgcolor:
-                        frontSectionIndicator === index
-                          ? '#1340FF'
-                          : frontSectionIndicator > index
+              {inFrontSection &&
+                frontSectionLabels.map((label, index) => (
+                  <React.Fragment key={label}>
+                    {/* Connector Line before each front section label */}
+                    <Box
+                      sx={{
+                        height: 1.2,
+                        flexGrow: 1,
+                        minWidth: 30,
+                        maxWidth: 50,
+                        bgcolor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
+                      }}
+                    />
+                    <Box
+                      onClick={() => handleFrontSectionStepClick(index)}
+                      sx={{
+                        minWidth: 135,
+                        height: 45,
+                        py: 1.2,
+                        textAlign: 'center',
+                        borderRadius: 1,
+                        fontSize: 14,
+                        fontWeight: 400,
+                        bgcolor:
+                          frontSectionIndicator === index
                             ? '#1340FF'
-                            : '#fff',
-                      color:
-                        frontSectionIndicator === index
-                          ? '#fff'
-                          : frontSectionIndicator > index
+                            : frontSectionIndicator > index
+                              ? '#1340FF'
+                              : '#fff',
+                        color:
+                          frontSectionIndicator === index
                             ? '#fff'
-                            : '#636366',
-                      border: '1px solid #636366',
-                      borderColor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
-                      cursor: index <= frontSectionIndicator ? 'pointer' : 'default',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        opacity: index <= frontSectionIndicator ? 0.85 : 1,
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Box component="span">{label}</Box>
-                  </Box>
-                </React.Fragment>
-              ))}
+                            : frontSectionIndicator > index
+                              ? '#fff'
+                              : '#636366',
+                        border: '1px solid #636366',
+                        borderColor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
+                        cursor: index <= frontSectionIndicator ? 'pointer' : 'default',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          opacity: index <= frontSectionIndicator ? 0.85 : 1,
+                        },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Box component="span">{label}</Box>
+                    </Box>
+                  </React.Fragment>
+                ))}
             </Stack>
           </Box>
 
