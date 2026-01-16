@@ -46,6 +46,20 @@ const BoxStyle = {
   },
 };
 
+const SectionTitleStyle = {
+  variant: 'body2',
+  fontSize: '0.8rem',
+  fontFamily: 'InterDisplay',
+  mb: 0.5,
+  fontWeight: 650,
+  color: '#8e8e93',
+};
+
+const SectionBodyStyle = {
+  variant: 'body2',
+  fontSize: '0.8rem',
+};
+
 const capitalizeFirstLetter = (string) => {
   if (!string) return '';
   if (string.toLowerCase() === 'f&b') return 'F&B';
@@ -77,8 +91,6 @@ const getProperInterestLabel = (value) => {
 const CampaignDetailContentClient = ({ campaign }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
-
-  console.log('Campaign details: ', campaign);
 
   const handleChatClick = async (admin) => {
     try {
@@ -177,19 +189,15 @@ const CampaignDetailContentClient = ({ campaign }) => {
 
             <Stack spacing={2} className="body">
               <Box>
-                <Typography variant="subtitle2" color="#8E8E93">
-                  Product / Service Name
-                </Typography>
-                <Typography variant="body2">
+                <Typography sx={SectionTitleStyle}>Product / Service Name</Typography>
+                <Typography sx={SectionBodyStyle}>
                   {campaign?.productName || 'No product/service name.'}
                 </Typography>
               </Box>
 
               <Box>
-                <Typography variant="subtitle2" color="#8E8E93">
-                  Campaign Info
-                </Typography>
-                <Typography variant="body2">
+                <Typography sx={SectionTitleStyle}>Campaign Info</Typography>
+                <Typography sx={SectionBodyStyle}>
                   {campaign?.description || 'No campaign description available.'}
                 </Typography>
               </Box>
@@ -222,14 +230,12 @@ const CampaignDetailContentClient = ({ campaign }) => {
             <Stack className="body" justifyContent="space-between" direction="row" spacing={2}>
               <Stack spacing={2} flex={1}>
                 <Box>
-                  <Typography variant="subtitle2" color="#8E8E93">
-                    Primary Campaign Objective
-                  </Typography>
+                  <Typography sx={SectionTitleStyle}>Primary Campaign Objective</Typography>
                   <Box sx={{ mt: 0.5 }}>
                     {campaign?.campaignBrief?.objectives ? (
                       <Chip label={campaign.campaignBrief.objectives} size="small" sx={ChipStyle} />
                     ) : (
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
                         Not specified
                       </Typography>
                     )}
@@ -237,16 +243,14 @@ const CampaignDetailContentClient = ({ campaign }) => {
                 </Box>
 
                 <Box>
-                  <Typography variant="subtitle2" color="#8E8E93">
-                    Secondary Campaign Objective
-                  </Typography>
+                  <Typography sx={SectionTitleStyle}>Secondary Campaign Objective</Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                     {campaign?.campaignBrief?.secondaryObjectives?.length > 0 ? (
                       campaign.campaignBrief.secondaryObjectives.map((objective, idx) => (
                         <Chip key={idx} label={objective} size="small" sx={ChipStyle} />
                       ))
                     ) : (
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
                         Not specified
                       </Typography>
                     )}
@@ -256,10 +260,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
 
               <Stack spacing={2} flex={1}>
                 <Box>
-                  <Typography variant="subtitle2" color="#8E8E93">
-                    Promote Content
-                  </Typography>
-                  <Typography variant="body2">
+                  <Typography sx={SectionTitleStyle}>Promote Content</Typography>
+                  <Typography sx={SectionBodyStyle}>
                     {campaign?.campaignBrief?.boostContent
                       ? capitalizeFirstLetter(campaign.campaignBrief.boostContent)
                       : 'Not specified'}
@@ -267,19 +269,15 @@ const CampaignDetailContentClient = ({ campaign }) => {
                 </Box>
 
                 <Box>
-                  <Typography variant="subtitle2" color="#8E8E93">
-                    Primary KPI
-                  </Typography>
-                  <Typography variant="body2">
+                  <Typography sx={SectionTitleStyle}>Primary KPI</Typography>
+                  <Typography sx={SectionBodyStyle}>
                     {campaign?.campaignBrief?.primaryKPI || 'Not specified'}
                   </Typography>
                 </Box>
 
                 <Box>
-                  <Typography variant="subtitle2" color="#8E8E93">
-                    Current Performance Baseline
-                  </Typography>
-                  <Typography variant="body2">
+                  <Typography sx={SectionTitleStyle}>Current Performance Baseline</Typography>
+                  <Typography sx={SectionBodyStyle}>
                     {campaign?.campaignBrief?.performanceBaseline || 'Not specified'}
                   </Typography>
                 </Box>
@@ -302,7 +300,9 @@ const CampaignDetailContentClient = ({ campaign }) => {
             // Helper to render Geographic Focus without nested ternary
             const getGeographicFocus = () => {
               if (!requirement?.geographic_focus) return 'Not specified';
-              if (requirement.geographic_focus === 'SEARegion') return 'SEA Region';
+              if (requirement.geographic_focus === 'SEAregion') return 'SEA Region';
+              if (requirement.geographic_focus === 'others')
+                return requirement.geographicFocusOthers;
               return capitalizeFirstLetter(requirement.geographic_focus);
             };
 
@@ -311,7 +311,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
               const prefix = isPrimary ? '' : 'secondary_';
               const gender = requirement?.[`${prefix}gender`];
               const age = requirement?.[`${prefix}age`];
-              const geoLocation = requirement?.[`${prefix}geoLocation`];
+              const country = requirement?.[`${prefix}country`];
               const language = requirement?.[`${prefix}language`];
               const creatorPersona = requirement?.[`${prefix}creator_persona`];
               const userPersona = requirement?.[`${prefix}user_persona`];
@@ -321,12 +321,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   {/* Left Column */}
                   <Stack spacing={2} flex={1}>
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Gender
-                      </Typography>
+                      <Typography sx={SectionTitleStyle}>Gender</Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {gender?.length > 0 ? (
                           gender.map((value, idx) => (
@@ -338,7 +333,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                             />
                           ))
                         ) : (
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
                             Not specified
                           </Typography>
                         )}
@@ -346,55 +341,36 @@ const CampaignDetailContentClient = ({ campaign }) => {
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Age
-                      </Typography>
+                      <Typography sx={SectionTitleStyle}>Age</Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {age?.length > 0 ? (
                           age.map((value, idx) => (
                             <Chip key={idx} label={value} size="small" sx={ChipStyle} />
                           ))
                         ) : (
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
                             Not specified
                           </Typography>
                         )}
                       </Box>
                     </Box>
 
-                    {geoLocation?.length > 0 && (
+                    {country?.length > 0 && (
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                        >
-                          Geo Location
-                        </Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {geoLocation.map((value, idx) => (
-                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                          ))}
-                        </Box>
+                        <Typography sx={SectionTitleStyle}>Country</Typography>
+                        <Typography sx={SectionBodyStyle}>{country || 'Not specified'}</Typography>
                       </Box>
                     )}
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Language
-                      </Typography>
+                      <Typography sx={SectionTitleStyle}>Language</Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {language?.length > 0 ? (
                           language.map((value, idx) => (
                             <Chip key={idx} label={value} size="small" sx={ChipStyle} />
                           ))
                         ) : (
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
                             Not specified
                           </Typography>
                         )}
@@ -405,12 +381,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   {/* Right Column */}
                   <Stack spacing={2} flex={1}>
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Creator&apos;s Interests
-                      </Typography>
+                      <Typography sx={SectionTitleStyle}>Creator&apos;s Interests</Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {creatorPersona?.length > 0 ? (
                           creatorPersona.map((value, idx) => (
@@ -422,7 +393,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                             />
                           ))
                         ) : (
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
                             Not specified
                           </Typography>
                         )}
@@ -430,23 +401,15 @@ const CampaignDetailContentClient = ({ campaign }) => {
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        User Persona
+                      <Typography sx={SectionTitleStyle}>User Persona</Typography>
+                      <Typography sx={SectionBodyStyle}>
+                        {userPersona || 'Not specified'}
                       </Typography>
-                      <Typography variant="body2">{userPersona || 'Not specified'}</Typography>
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Geographic Focus
-                      </Typography>
-                      <Typography variant="body2">{getGeographicFocus()}</Typography>
+                      <Typography sx={SectionTitleStyle}>Geographic Focus</Typography>
+                      <Typography sx={SectionBodyStyle}>{getGeographicFocus()}</Typography>
                     </Box>
                   </Stack>
                 </Stack>
@@ -597,17 +560,12 @@ const CampaignDetailContentClient = ({ campaign }) => {
 
             const renderAdditionalDetails1 = () => (
               <Stack className="body" spacing={3}>
-                <Stack direction="row" spacing={3}>
+                <Stack direction="row" spacing={2}>
                   {/* Left Column */}
                   <Stack spacing={2} flex={1}>
                     {campaign?.campaignBrief?.socialMediaPlatform?.length > 0 && (
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                        >
-                          Preferred Platforms
-                        </Typography>
+                        <Typography sx={SectionTitleStyle}>Preferred Platforms</Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {campaign.campaignBrief.socialMediaPlatform.map((platform, idx) => (
                             <Chip
@@ -622,12 +580,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                     )}
                     {additionalDetails?.contentFormat?.length > 0 && (
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                        >
-                          Content Format
-                        </Typography>
+                        <Typography sx={SectionTitleStyle}>Content Format</Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {additionalDetails.contentFormat.map((format, idx) => (
                             <Chip key={idx} label={format} size="small" sx={ChipStyle} />
@@ -638,35 +591,22 @@ const CampaignDetailContentClient = ({ campaign }) => {
                     {(campaign?.campaignBrief?.postingStartDate ||
                       campaign?.campaignBrief?.postingEndDate) && (
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                        >
-                          Posting Timeline
-                        </Typography>
-                        <Typography variant="body2">{getPostingTimeline()}</Typography>
+                        <Typography sx={SectionTitleStyle}>Posting Timeline</Typography>
+                        <Typography sx={SectionBodyStyle}>{getPostingTimeline()}</Typography>
                       </Box>
                     )}
                     {additionalDetails?.mainMessage && (
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                        >
-                          Main Message/Theme
+                        <Typography sx={SectionTitleStyle}>Main Message/Theme</Typography>
+                        <Typography sx={SectionBodyStyle}>
+                          {additionalDetails.mainMessage}
                         </Typography>
-                        <Typography variant="body2">{additionalDetails.mainMessage}</Typography>
                       </Box>
                     )}
                     {additionalDetails?.keyPoints && (
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                        >
-                          Key Points to Cover
-                        </Typography>
-                        <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                        <Typography sx={SectionTitleStyle}>Key Points to Cover</Typography>
+                        <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                           {additionalDetails.keyPoints}
                         </Typography>
                       </Box>
@@ -677,56 +617,63 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   <Stack spacing={2} flex={1}>
                     {additionalDetails?.toneAndStyle && (
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                        >
-                          Tone & Style
-                        </Typography>
-                        <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                        <Typography sx={SectionTitleStyle}>Tone & Style</Typography>
+                        <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                           {additionalDetails.toneAndStyle}
                         </Typography>
                       </Box>
                     )}
-                    {additionalDetails?.brandGuidelinesUrl && (() => {
-                      const urls = additionalDetails.brandGuidelinesUrl.split(',').map(u => u.trim()).filter(Boolean);
-                      return (
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                          >
-                            Brand Guidelines Document{urls.length > 1 ? 's' : ''}
-                          </Typography>
-                          <Stack spacing={0.5}>
-                            {urls.map((url, idx) => {
-                              let filename = url.split('/').pop().split('?')[0];
-                              filename = filename.replace(/_v=.*$/, '');
-                              return (
-                                <Link
-                                  key={url}
-                                  href={url}
-                                  target="_blank"
-                                  sx={{
-                                    fontSize: '0.875rem',
-                                    color: '#203ff5',
-                                    textDecoration: 'none',
-                                    '&:hover': { textDecoration: 'underline' },
-                                  }}
-                                >
-                                  {filename}
-                                </Link>
-                              );
-                            })}
-                          </Stack>
-                        </Box>
-                      );
-                    })()}
+                    {additionalDetails?.brandGuidelinesUrl &&
+                      (() => {
+                        const urls = additionalDetails.brandGuidelinesUrl
+                          .split(',')
+                          .map((u) => u.trim())
+                          .filter(Boolean);
+                        return (
+                          <Box>
+                            <Typography
+                              sx={{
+                                ...SectionTitleStyle,
+                                overflowWrap: 'anywhere',
+                                whiteSpace: 'normal',
+                              }}
+                            >
+                              Brand Guidelines Document{urls.length > 1 ? 's' : ''}
+                            </Typography>
+                            <Stack spacing={0.5}>
+                              {urls.map((url, idx) => {
+                                let filename = url.split('/').pop().split('?')[0];
+                                filename = filename.replace(/_v=.*$/, '');
+                                return (
+                                  <Link
+                                    key={url}
+                                    href={url}
+                                    target="_blank"
+                                    sx={{
+                                      fontSize: '0.8rem',
+                                      color: '#203ff5',
+                                      textDecoration: 'none',
+                                      overflowWrap: 'anywhere',
+                                      whiteSpace: 'normal',
+                                      '&:hover': { textDecoration: 'underline' },
+                                    }}
+                                  >
+                                    {filename}
+                                  </Link>
+                                );
+                              })}
+                            </Stack>
+                          </Box>
+                        );
+                      })()}
                     {additionalDetails?.referenceContent && (
                       <Box>
                         <Typography
-                          variant="body2"
-                          sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
+                          sx={{
+                            ...SectionTitleStyle,
+                            overflowWrap: 'anywhere',
+                            whiteSpace: 'normal',
+                          }}
                         >
                           Reference Content/Inspiration
                         </Typography>
@@ -734,9 +681,11 @@ const CampaignDetailContentClient = ({ campaign }) => {
                           href={additionalDetails.referenceContent}
                           target="_blank"
                           sx={{
-                            fontSize: '0.875rem',
+                            fontSize: '0.8rem',
                             color: '#203ff5',
                             textDecoration: 'none',
+                            overflowWrap: 'anywhere',
+                            whiteSpace: 'normal',
                             '&:hover': { textDecoration: 'underline' },
                           }}
                         >
@@ -747,12 +696,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                     {(additionalDetails?.productImage1Url ||
                       additionalDetails?.productImage2Url) && (
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                        >
-                          Product Images
-                        </Typography>
+                        <Typography sx={SectionTitleStyle}>Product Images</Typography>
                         <Stack spacing={0.5}>
                           {additionalDetails?.productImage1Url &&
                             (() => {
@@ -764,7 +708,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                                   href={url}
                                   target="_blank"
                                   sx={{
-                                    fontSize: '0.875rem',
+                                    fontSize: '0.8rem',
                                     color: '#203ff5',
                                     textDecoration: 'none',
                                     '&:hover': { textDecoration: 'underline' },
@@ -784,7 +728,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                                   href={url}
                                   target="_blank"
                                   sx={{
-                                    fontSize: '0.875rem',
+                                    fontSize: '0.8rem',
                                     color: '#203ff5',
                                     textDecoration: 'none',
                                     '&:hover': { textDecoration: 'underline' },
@@ -804,70 +748,45 @@ const CampaignDetailContentClient = ({ campaign }) => {
 
             const renderAdditionalDetails2 = () => (
               <Stack className="body" spacing={3}>
-                <Stack direction="row" spacing={3}>
+                <Stack direction="row" spacing={2}>
                   {/* Left Column */}
                   <Stack spacing={2} flex={1}>
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Hashtags
-                      </Typography>
-                      <Typography variant="body2">
+                      <Typography sx={SectionTitleStyle}>Hashtags</Typography>
+                      <Typography sx={SectionBodyStyle}>
                         {additionalDetails?.hashtagsToUse || 'Not specified'}
                       </Typography>
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Mentions/Tags Required
-                      </Typography>
-                      <Typography variant="body2">
+                      <Typography sx={SectionTitleStyle}>Mentions/Tags Required</Typography>
+                      <Typography sx={SectionBodyStyle}>
                         {additionalDetails?.mentionsTagsRequired || 'Not specified'}
                       </Typography>
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Creator Compensation
-                      </Typography>
-                      <Typography variant="body2">
+                      <Typography sx={SectionTitleStyle}>Creator Compensation</Typography>
+                      <Typography sx={SectionBodyStyle}>
                         {additionalDetails?.creatorCompensation || 'Not specified'}
                       </Typography>
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Desired Action
-                      </Typography>
-                      <Typography variant="body2">
+                      <Typography sx={SectionTitleStyle}>Desired Action</Typography>
+                      <Typography sx={SectionBodyStyle}>
                         {additionalDetails?.ctaDesiredAction || 'Not specified'}
                       </Typography>
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Link/URL
-                      </Typography>
+                      <Typography sx={SectionTitleStyle}>Link/URL</Typography>
                       {additionalDetails?.ctaLinkUrl ? (
                         <Link
                           href={additionalDetails.ctaLinkUrl}
                           target="_blank"
                           sx={{
-                            fontSize: '0.875rem',
+                            fontSize: '0.8rem',
                             color: '#203ff5',
                             textDecoration: 'none',
                             '&:hover': { textDecoration: 'underline' },
@@ -876,7 +795,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                           {additionalDetails.ctaLinkUrl}
                         </Link>
                       ) : (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
                           Not specified
                         </Typography>
                       )}
@@ -886,49 +805,29 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   {/* Right Column */}
                   <Stack spacing={2} flex={1}>
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Promo Code
-                      </Typography>
-                      <Typography variant="body2">
+                      <Typography sx={SectionTitleStyle}>Promo Code</Typography>
+                      <Typography sx={SectionBodyStyle}>
                         {additionalDetails?.ctaPromoCode || 'Not specified'}
                       </Typography>
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Link in Bio Requirements
-                      </Typography>
-                      <Typography variant="body2">
+                      <Typography sx={SectionTitleStyle}>Link in Bio Requirements</Typography>
+                      <Typography sx={SectionBodyStyle}>
                         {additionalDetails?.ctaLinkInBioRequirements || 'Not specified'}
                       </Typography>
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Special Notes/Instructions
-                      </Typography>
-                      <Typography variant="body2">
+                      <Typography sx={SectionTitleStyle}>Special Notes/Instructions</Typography>
+                      <Typography sx={SectionBodyStyle}>
                         {additionalDetails?.specialNotesInstructions || 'Not specified'}
                       </Typography>
                     </Box>
 
                     <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}
-                      >
-                        Do you need ads?
-                      </Typography>
-                      <Typography variant="body2">
+                      <Typography sx={SectionTitleStyle}>Do you need ads?</Typography>
+                      <Typography sx={SectionBodyStyle}>
                         {additionalDetails?.needAds
                           ? capitalizeFirstLetter(additionalDetails.needAds)
                           : 'Not specified'}
@@ -942,9 +841,17 @@ const CampaignDetailContentClient = ({ campaign }) => {
             // Render based on which sections have data
             if (hasAdditionalDetails1 && hasAdditionalDetails2) {
               return (
-                <Stack direction="row" spacing={2}>
+                <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
                   {/* ADDITIONAL DETAILS 1 */}
-                  <Box sx={BoxStyle}>
+                  <Box
+                    sx={{
+                      ...BoxStyle,
+                      flex: 1,
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
                     <Box className="header">
                       <Iconify
                         icon="material-symbols:note-stack-add-outline"
@@ -969,7 +876,15 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   </Box>
 
                   {/* ADDITIONAL DETAILS 2 */}
-                  <Box sx={BoxStyle}>
+                  <Box
+                    sx={{
+                      ...BoxStyle,
+                      flex: 1,
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
                     <Box className="header">
                       <Iconify
                         icon="material-symbols:note-stack-add-outline"
@@ -1261,7 +1176,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       borderColor: 'background.paper',
                     }}
                   />
-                  <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8rem' }}>
+                  <Typography sx={{ ...SectionBodyStyle }}>
                     {(campaign?.company?.name ?? campaign?.brand?.name) || 'Company Name'}
                   </Typography>
                 </Stack>
@@ -1302,13 +1217,8 @@ const CampaignDetailContentClient = ({ campaign }) => {
                 },
               ].map((item) => (
                 <Box key={item.label}>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650, fontSize: '0.8rem' }}
-                  >
-                    {item.label}
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                  <Typography sx={SectionTitleStyle}>{item.label}</Typography>
+                  <Typography sx={{ ...SectionBodyStyle }}>
                     {item.value || 'Not specified'}
                   </Typography>
                 </Box>
@@ -1350,19 +1260,14 @@ const CampaignDetailContentClient = ({ campaign }) => {
                 },
               ].map((item) => (
                 <Box key={item.label}>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650, fontSize: '0.8rem' }}
-                  >
-                    {item.label}
-                  </Typography>
+                  <Typography sx={SectionTitleStyle}>{item.label}</Typography>
                   {item.isLink ? (
                     <Link
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
                       sx={{
-                        fontSize: '0.9rem',
+                        fontSize: '0.8rem',
                         color: '#203ff5',
                         textDecoration: 'none',
                         '&:hover': {
@@ -1373,7 +1278,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       {item.value || 'Not specified'}
                     </Link>
                   ) : (
-                    <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                    <Typography sx={{ ...SectionBodyStyle }}>
                       {item.value || 'Not specified'}
                     </Typography>
                   )}
