@@ -2,25 +2,20 @@ import PropTypes from 'prop-types';
 import React, { memo } from 'react';
 import { useFormContext } from 'react-hook-form';
 
-import {
-  Box,
-  Chip,
-  Grid,
-  Stack,
-  MenuItem,
-  FormLabel,
-  Typography,
-} from '@mui/material';
+import { Box, Grid, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
 
 import { langList } from 'src/contants/language';
 import { countriesCities } from 'src/contants/countries';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
-import { RHFSelectV2, RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
+import {
+  RHFSelectV2,
+  RHFTextField,
+  RHFAutocomplete,
+} from 'src/components/hook-form';
 
 import { CustomRHFMultiSelect } from './custom-rhf-multi-select';
-
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -73,23 +68,17 @@ const LANGUAGE_OPTIONS = (() => {
   return orderedLanguages.map((language) => ({ value: language, label: language }));
 })();
 
-const LOCATION_OPTIONS = [
-  { value: 'KlangValley', label: 'Klang Valley' },
-  { value: 'Selangor', label: 'Selangor' },
-  { value: 'KualaLumpur', label: 'Kuala Lumpur' },
-  { value: 'MainCities', label: 'Main cities in Malaysia' },
-  { value: 'EastMalaysia', label: 'East Malaysia' },
-  { value: 'Others', label: 'Others' },
-];
-
 const CREATOR_PERSONA_OPTIONS = interestsLists.map((item) => ({
   value: item.toLowerCase(),
   label: item,
 }));
 
 const GEOGRAPHIC_FOCUS_OPTIONS = [
-  { value: 'SEARegion', label: 'SEA Region' },
+  { value: 'SEAregion', label: 'SEA Region' },
   { value: 'global', label: 'Global' },
+  { value: 'EastMalaysia', label: 'East Malaysia' },
+  { value: 'KualaLumpur', label: 'Kuala Lumpur' },
+  { value: 'others', label: 'Others' },
 ];
 
 const CampaignTargetAudience = () => {
@@ -97,9 +86,16 @@ const CampaignTargetAudience = () => {
 
   const country = watch('country');
   const secondaryCountry = watch('secondaryCountry');
+  const geographicFocus = watch('geographicFocus');
+
+  // Determine which Geographic Focus options to show
+  const showMalaysiaOptions = country === 'Malaysia';
+  const filteredGeographicFocusOptions = showMalaysiaOptions
+    ? GEOGRAPHIC_FOCUS_OPTIONS
+    : GEOGRAPHIC_FOCUS_OPTIONS.slice(0, 2);
 
   return (
-    <Box sx={{ maxWidth: '816px', mx: 'auto', mb: 20 }}>
+    <Box sx={{ maxWidth: '816px', mx: 'auto', mb: { xs: 10, sm: 30 } }}>
       <Box sx={{ mt: 4 }}>
         <Grid container spacing={3}>
           {/* PRIMARY AUDIENCE SECTION */}
@@ -189,32 +185,6 @@ const CampaignTargetAudience = () => {
                 />
               </FormField>
 
-              {/* City/Area - conditional on Malaysia */}
-              {country?.toLowerCase() === 'malaysia' && (
-                <FormField label="Geo Location">
-                  <RHFMultiSelect
-                    name="audienceLocation"
-                    placeholder="Select Geo Location"
-                    checkbox
-                    chip
-                    options={LOCATION_OPTIONS}
-                    rules={{
-                      required: 'At least one option',
-                      validate: (value) => value && value.length > 0 ? true : 'At least one option',
-                    }}
-                  />
-                </FormField>
-              )}
-
-              {/* Other Location */}
-              {watch('audienceLocation')?.includes('Others') && (
-                <RHFTextField
-                  name="othersAudienceLocation"
-                  label="Specify Other Location"
-                  variant="outlined"
-                />
-              )}
-
               {/* Language */}
               <FormField label="Language">
                 <CustomRHFMultiSelect
@@ -245,15 +215,11 @@ const CampaignTargetAudience = () => {
 
               {/* User Persona */}
               <FormField label="User Persona">
-                <RHFTextField
-                  name="audienceUserPersona"
-                  placeholder="User Persona"
-                  size="medium"
-                />
+                <RHFTextField name="audienceUserPersona" placeholder="User Persona" size="medium" />
               </FormField>
             </Stack>
           </Grid>
-          
+
           {/* SECONDARY AUDIENCE SECTION */}
           <Grid item xs={12} md={6}>
             <Typography
@@ -341,28 +307,6 @@ const CampaignTargetAudience = () => {
                 />
               </FormField>
 
-              {/* City/Area - conditional on Malaysia */}
-              {secondaryCountry?.toLowerCase() === 'malaysia' && (
-                <FormField label="City/Area" required={false}>
-                  <RHFMultiSelect
-                    name="secondaryAudienceLocation"
-                    placeholder="Select city"
-                    checkbox
-                    chip
-                    options={LOCATION_OPTIONS}
-                  />
-                </FormField>
-              )}
-
-              {/* Other Location */}
-              {watch('secondaryAudienceLocation')?.includes('Others') && (
-                <RHFTextField
-                  name="secondaryOthersAudienceLocation"
-                  label="Specify Other Location"
-                  variant="outlined"
-                />
-              )}
-
               {/* Language */}
               <FormField label="Language" required={false}>
                 <CustomRHFMultiSelect
@@ -405,19 +349,29 @@ const CampaignTargetAudience = () => {
       </Box>
 
       {/* Geographic Focus */}
-      <Box sx={{ mt: 2, width: { xs: '100%', sm: 500 }, justifySelf: 'center' }}>
+      <Box mt={2} sx={{ display: 'flex', justifyContent: 'center' }}>
         <FormField label="Geographic Focus">
-          <RHFSelectV2
-            name="geographicFocus"
-            placeholder="Select Geographic Focus"
-            multiple={false}
-          >
-            {GEOGRAPHIC_FOCUS_OPTIONS.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </RHFSelectV2>
+          <Stack spacing={1} direction="row">
+            <RHFSelectV2
+              name="geographicFocus"
+              placeholder="Select Geographic Focus"
+              multiple={false}
+              sx={{ minWidth: { sm: geographicFocus === 'others' ? 150 : 400 } }}
+            >
+              {filteredGeographicFocusOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </RHFSelectV2>
+            {geographicFocus === 'others' && (
+              <RHFTextField
+                name="geographicFocusOthers"
+                placeholder="Geopraphic Focus"
+                sx={{ minWidth: { xs: 250, sm: 300 } }}
+              />
+            )}
+          </Stack>
         </FormField>
       </Box>
     </Box>
