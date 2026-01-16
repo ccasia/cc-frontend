@@ -19,6 +19,20 @@ import {
   calculateEngagementRate,
 } from 'src/utils/socialMetricsCalculator';
 
+// Helper function to get background color based on index
+const getImprovedInsightBgColor = (index) => {
+  if (index === 0) return '#1340FFD9';
+  if (index === 1) return '#1340FFBF';
+  return '#1340FFA6';
+};
+
+// Helper function to get opacity based on index
+const getWorkedWellOpacity = (index) => {
+  if (index === 0) return 0.85;
+  if (index === 1) return 0.75;
+  return 0.65;
+};
+
 const PCRReportPage = ({ campaign, onBack }) => {
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -26,50 +40,32 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Show second persona card state
   const [showEducatorCard, setShowEducatorCard] = useState(false);
   
-  // Editable content state
+  // Editable content state - Initialize with empty/default values
   const [editableContent, setEditableContent] = useState({
-    campaignDescription: 'The campaign reached 180K users, generating 19K engagements at an engagement rate of 3.2%, which is above industry benchmarks. With a ROAS of 4.36%, the campaign met performance expectations.',
-    engagementDescription: 'The campaign generated strong engagement across creators. Engagement peaked during Week 3 and Week 4, mainly in the middle of the weeks, indicating that the audience was most active and receptive during these periods. This pattern suggests that posting content mid-week aligns better with the target audience\'s online behaviour. Claude Morgan provided the highest engagement for this campaign (11%)',
-    viewsDescription: 'By the end of the campaign, cumulative views reached 1.2M.\n\nView growth was strongest in Week 3, where cumulative views jumped from 520K to 900K, making it the highest-performing week in terms of view contribution (+380K views). This increase suggests a peak in audience attention, driven by multiple creator posts going live and higher content shareability during that period.',
-    audienceSentimentDescription: 'With 72% positive, 20% neutral, and 8% negative sentiment, the campaign clearly resonated with audiences. The high positivity reflects strong creator–audience alignment and shows that the content successfully built trust, excitement, and brand affinity. Neutral sentiment indicates viewers found the content acceptable and non-disruptive, often engaging through simple questions or casual remarks. The low negative sentiment suggests minimal friction, with most concerns likely tied to product details.',
-    noteworthyCreatorsDescription: 'In addition to Claude Morgan above, these creators also delivered noteworthy results during the campaign.',
-    bestPerformingPersonasDescription: 'The top-performing creator personas who resonated most with audiences and achieved standout campaign results. The best performing creator personas in this campaign were The Comic and The Educator, each driving strong audience engagement through distinct but complementary approaches.',
-    positiveComments: [
-      { username: '@darrenisaac', comment: '"The outfits are soo stunning"' },
-      { username: '@laikha.nur', comment: '"okii kena beli ni sbb memang CANTIK"' },
-      { username: '@lissasarah', comment: 'is asking for the size of the grey set' },
-      { username: '@koutafukami', comment: '"okay now this is fire"' },
-    ],
-    neutralComments: [
-      { username: '@murgandos', comment: '"Is it waterproof?"' },
-      { username: '@rhodesmasuda', comment: '"Is this available for international shipping?"' },
-      { username: '@vecnawashere', comment: 'is curious on how long shipping takes' },
-      { username: '@arifsufri', comment: '"I\'ve seen this before"' },
-    ],
+    campaignDescription: '',
+    engagementDescription: '',
+    viewsDescription: '',
+    audienceSentimentDescription: '',
+    noteworthyCreatorsDescription: '',
+    bestPerformingPersonasDescription: '',
+    positiveComments: [],
+    neutralComments: [],
     comicTitle: 'The Comic',
     comicEmoji: '🎭',
-    comicContentStyle: 'Skits, POV humor, exaggeration',
-    comicWhyWork: 'Strong virality potential',
+    comicContentStyle: '',
+    comicWhyWork: '',
     educatorTitle: 'The Educator',
     educatorEmoji: '👨‍🏫',
-    educatorContentStyle: 'Quick tips, how-tos, problem-solution',
-    educatorWhyWork: 'Positions the product as useful',
-    improvedInsights: [
-      'Some posts felt too similar in structure, limiting freshness and engagement potential.',
-      'Relying solely on videos limited creative diversity — carousel formats could add freshness and storytelling depth.',
-      'Future campaigns should feature more diverse creators across races and allow greater flexibility in storytelling for originality.',
-    ],
-    workedWellInsights: [
-      'Working with creators across different lifestyles and age groups made the campaign feel inclusive and relatable. The best performing creator personas in this campaign were minimal friction, with most concerns likely tied to product details.',
-      'Contest mechanics were communicated naturally',
-      'All-video content delivered authentic festive moments and strong engagement — moving forward, exploring carousel formats can add more variety and visual depth.',
-    ],
-    nextStepsInsights: [
-      'Some posts felt too similar in structure, limiting freshness and engagement potential.',
-      'Adjust posting times for higher reach.',
-      'Double down on content formats that performed best.',
-    ],
+    educatorContentStyle: '',
+    educatorWhyWork: '',
+    improvedInsights: [],
+    workedWellInsights: [],
+    nextStepsInsights: [],
   });
+  
+  // Loading and saving states
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingPCR, setIsLoadingPCR] = useState(true);
   
   // Emoji picker state
   const [emojiPickerAnchor, setEmojiPickerAnchor] = useState(null);
@@ -93,9 +89,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
   }, [insightsData]);
 
   // Filter submissions for all platforms  
-  const filteredSubmissions = useMemo(() => {
-    return postingSubmissions.filter((sub) => sub && sub.platform);
-  }, [postingSubmissions]);
+  const filteredSubmissions = useMemo(() => 
+    postingSubmissions.filter((sub) => sub && sub.platform)
+  , [postingSubmissions]);
 
   // Calculate summary statistics from real data
   const summaryStats = useMemo(() => {
@@ -148,6 +144,57 @@ const PCRReportPage = ({ campaign, onBack }) => {
     data: heatmapApiData,
   });
 
+  // Load PCR data from backend
+  useEffect(() => {
+    const loadPCRData = async () => {
+      if (!campaign?.id) return;
+      
+      try {
+        setIsLoadingPCR(true);
+        console.log('📥 Loading PCR data for campaign:', campaign.id);
+        const response = await axios.get(`/api/campaign/${campaign.id}/pcr`);
+        
+        if (response.data.success && response.data.data.content) {
+          console.log('✅ PCR data loaded:', response.data.data.content);
+          setEditableContent(response.data.data.content);
+        } else {
+          console.log('ℹ️ No PCR data found, using defaults');
+        }
+      } catch (error) {
+        console.error('❌ Error loading PCR data:', error);
+      } finally {
+        setIsLoadingPCR(false);
+      }
+    };
+    
+    loadPCRData();
+  }, [campaign?.id]);
+  
+  // Save PCR data to backend
+  const handleSavePCR = async () => {
+    if (!campaign?.id) return;
+    
+    try {
+      setIsSaving(true);
+      console.log('💾 Saving PCR data for campaign:', campaign.id);
+      
+      const response = await axios.post(`/api/campaign/${campaign.id}/pcr`, {
+        content: editableContent,
+      });
+      
+      if (response.data.success) {
+        console.log('✅ PCR data saved successfully');
+        alert('PCR saved successfully!');
+        setIsEditMode(false);
+      }
+    } catch (error) {
+      console.error('❌ Error saving PCR data:', error);
+      alert(`Failed to save PCR: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
   // Manual refresh function for insights
   const handleRefreshInsights = async () => {
     try {
@@ -159,7 +206,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       window.location.reload();
     } catch (error) {
       console.error('❌ Error refreshing insights:', error);
-      alert('Failed to refresh insights: ' + (error.response?.data?.message || error.message));
+      alert(`Failed to refresh insights: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -167,23 +214,40 @@ const PCRReportPage = ({ campaign, onBack }) => {
   const EngagementRateHeatmap = () => {
     // Process engagement data by day and week
     const heatmapData = useMemo(() => {
-      // If API has data, use it
+      // If API has sufficient data (more than 7 days), use it
       if (heatmapApiData && heatmapApiData.heatmap && heatmapApiData.heatmap.length > 0) {
-        console.log('Heatmap - Using API data');
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        const processedData = {};
-        
-        heatmapApiData.heatmap.forEach((weekData, weekIndex) => {
-          const weekKey = `W${weekIndex + 1}`;
-          processedData[weekKey] = {};
-          
-          weekData.forEach((dayData, dayIndex) => {
-            const dayKey = days[dayIndex];
-            processedData[weekKey][dayKey] = dayData?.engagementRate || 0;
+        // Count how many days have actual data
+        let daysWithData = 0;
+        heatmapApiData.heatmap.forEach(weekData => {
+          weekData.forEach(dayData => {
+            if (dayData && dayData.hasData && dayData.engagementRate !== null) {
+              daysWithData += 1;
+            }
           });
         });
+        
+        console.log(`Heatmap - API has ${daysWithData} days with data`);
+        
+        // Only use API data if we have at least 7 days (1 week) of historical data
+        if (daysWithData >= 7) {
+          console.log('Heatmap - Using API data (sufficient historical data)');
+          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+          const processedData = {};
+          
+          heatmapApiData.heatmap.forEach((weekData, weekIndex) => {
+            const weekKey = `W${weekIndex + 1}`;
+            processedData[weekKey] = {};
+            
+            weekData.forEach((dayData, dayIndex) => {
+              const dayKey = days[dayIndex];
+              processedData[weekKey][dayKey] = dayData?.engagementRate || 0;
+            });
+          });
 
-        return processedData;
+          return processedData;
+        }
+        
+        console.log('Heatmap - API data insufficient, falling back to manual calculation');
       }
 
       // Fall back to manual calculation if API doesn't have data
@@ -208,7 +272,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       
       // Initialize 6 weeks of data
-      for (let week = 1; week <= 6; week++) {
+      for (let week = 1; week <= 6; week += 1) {
         weeklyData[`W${week}`] = {};
         days.forEach(day => {
           weeklyData[`W${week}`][day] = [];
@@ -251,13 +315,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
           
           const engagementRate = parseFloat(calculateEngagementRate(insightData.insight));
           
-          if (!isNaN(engagementRate) && engagementRate >= 0) {
+          if (!Number.isNaN(engagementRate) && engagementRate >= 0) {
             // Fill engagement rate for every day from post date onwards through all 6 weeks
-            for (let week = 1; week <= 6; week++) {
+            for (let week = 1; week <= 6; week += 1) {
               const weekStartDate = new Date(weekStartMonday);
               weekStartDate.setDate(weekStartMonday.getDate() + (week - 1) * 7);
               
-              for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+              for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
                 const currentDate = new Date(weekStartDate);
                 currentDate.setDate(weekStartDate.getDate() + dayIndex);
                 currentDate.setHours(0, 0, 0, 0);
@@ -287,6 +351,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       });
 
       return processedData;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [heatmapApiData, filteredInsightsData, filteredSubmissions, campaign]);
 
     // Get color based on engagement rate
@@ -329,14 +394,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
             letterSpacing: '0%',
             textAlign: 'left',
             color: '#231F20',
-            mb: 2,
           }}
         >
           Engagement Rate Heatmap
         </Typography>
 
         {/* Heatmap Grid */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 2 }}>
           {/* Heatmap rows */}
           {days.map((day) => (
             <Box key={day} sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
@@ -552,6 +616,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         tiktok: tiktokInteractions,
         total
       };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filteredInsightsData, filteredSubmissions]);
 
     // Calculate percentages for the donut chart
@@ -570,13 +635,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
     
     // Calculate rotation for TikTok segment to start after Instagram
     const tiktokRotation = (instagramPercentage / 100) * 360;
-
-    const formatNumber = (num) => {
-      if (num >= 1000) {
-        return `${(num / 1000).toFixed(0)},${(num % 1000).toString().padStart(3, '0')}`;
-      }
-      return num.toString();
-    };
 
     return (
       <Box
@@ -900,7 +958,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       // This assumes views are concentrated in the first few days after posting
       const distributionPattern = [0.12, 0.15, 0.18, 0.22, 0.15, 0.10, 0.08]; 
       
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 7; i += 1) {
         const currentDate = new Date(weekStartDate);
         currentDate.setDate(currentDate.getDate() + i);
         currentDate.setHours(0, 0, 0, 0);
@@ -921,12 +979,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
           day: dayNames[i],
           date: `(${currentDate.getDate()}/${currentDate.getMonth() + 1})`,
           views: dailyViews,
-          dailyViews: dailyViews,
+          dailyViews,
         });
       }
 
       console.log('Chart - Week Data (Monday-Sunday, 7 days):', weekData);
       return weekData;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filteredInsightsData, filteredSubmissions, campaign]);
 
     // If no data, show message
@@ -1049,8 +1108,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
     );
   };
 
-  // TopEngagementCard component
-  const TopEngagementCard = () => {
+  // Calculate top engagement creator
     const topEngagementCreator = useMemo(() => {
       if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
 
@@ -1060,9 +1118,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
       filteredInsightsData.forEach((insightData) => {
         const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
         if (submission) {
-          // Calculate engagement rate using the insight array
+        // Calculate engagement rate using the insight array
           const engagementRate = calculateEngagementRate(insightData.insight);
-          
+        
           if (engagementRate > highestEngagement) {
             highestEngagement = engagementRate;
             topCreator = {
@@ -1075,9 +1133,69 @@ const PCRReportPage = ({ campaign, onBack }) => {
       });
 
       return topCreator;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filteredInsightsData, filteredSubmissions]);
 
-    const { data: creator } = useGetCreatorById(topEngagementCreator?.user);
+  // Calculate most views creator
+  const mostViewsCreator = useMemo(() => {
+    let result = null;
+    let maxViews = 0;
+    
+    filteredInsightsData.forEach((insightData) => {
+      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+      const views = getMetricValue(insightData.insight, 'views');
+      if (views > maxViews) {
+        maxViews = views;
+        result = { submission, insightData, views };
+      }
+    });
+    
+    return result;
+  }, [filteredInsightsData, filteredSubmissions]);
+
+  // Calculate most comments creator
+  const mostCommentsCreator = useMemo(() => {
+    let result = null;
+    let maxComments = 0;
+    
+    filteredInsightsData.forEach((insightData) => {
+      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+      const comments = getMetricValue(insightData.insight, 'comments');
+      if (comments > maxComments) {
+        maxComments = comments;
+        result = { submission, insightData, comments };
+      }
+    });
+    
+    return result;
+  }, [filteredInsightsData, filteredSubmissions]);
+
+  // Calculate most likes creator
+  const mostLikesCreator = useMemo(() => {
+    let result = null;
+    let maxLikes = 0;
+    
+    filteredInsightsData.forEach((insightData) => {
+      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
+      const likes = getMetricValue(insightData.insight, 'likes');
+      if (likes > maxLikes) {
+        maxLikes = likes;
+        result = { submission, insightData, likes };
+      }
+    });
+    
+    return result;
+  }, [filteredInsightsData, filteredSubmissions]);
+
+  // Get creator data for all cards
+  const { data: topEngagementCreatorData } = useGetCreatorById(topEngagementCreator?.user);
+  const { data: mostViewsCreatorData } = useGetCreatorById(mostViewsCreator?.submission?.user);
+  const { data: mostCommentsCreatorData } = useGetCreatorById(mostCommentsCreator?.submission?.user);
+  const { data: mostLikesCreatorData } = useGetCreatorById(mostLikesCreator?.submission?.user);
+
+  // TopEngagementCard component
+  const TopEngagementCard = () => {
+    const creator = topEngagementCreatorData;
 
     if (!topEngagementCreator) {
       return (
@@ -1204,7 +1322,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               sx={{
                 width: '188px',
                 height: '180px',
-                mt: 2,
+                mt: 0,
                 borderRadius: 2,
                 objectFit: 'cover',
                 objectPosition: 'left top',
@@ -1230,6 +1348,82 @@ const PCRReportPage = ({ campaign, onBack }) => {
       position: 'relative'
     }}
   >
+    {/* Loading overlay */}
+    {isLoadingPCR && (
+      <Box sx={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        bgcolor: 'rgba(255, 255, 255, 0.95)', 
+        zIndex: 9999,
+        borderRadius: '12px',
+        backdropFilter: 'blur(4px)'
+      }}>
+        <CircularProgress size={60} thickness={4} sx={{ color: '#1340FF', mb: 3 }} />
+        <Typography sx={{ 
+          fontFamily: 'Inter Display',
+          fontWeight: 600,
+          fontSize: '18px',
+          color: '#231F20',
+          mb: 1
+        }}>
+          Loading Post Campaign Report
+        </Typography>
+        <Typography sx={{ 
+          fontFamily: 'Aileron',
+          fontWeight: 400,
+          fontSize: '14px',
+          color: '#636366'
+        }}>
+          Please wait while we prepare your data...
+        </Typography>
+      </Box>
+    )}
+
+    {/* Saving overlay */}
+    {isSaving && (
+      <Box sx={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        bgcolor: 'rgba(255, 255, 255, 0.95)', 
+        zIndex: 9999,
+        borderRadius: '12px',
+        backdropFilter: 'blur(4px)'
+      }}>
+        <CircularProgress size={60} thickness={4} sx={{ color: '#10B981', mb: 3 }} />
+        <Typography sx={{ 
+          fontFamily: 'Inter Display',
+          fontWeight: 600,
+          fontSize: '18px',
+          color: '#231F20',
+          mb: 1
+        }}>
+          Saving Changes
+        </Typography>
+        <Typography sx={{ 
+          fontFamily: 'Aileron',
+          fontWeight: 400,
+          fontSize: '14px',
+          color: '#636366'
+        }}>
+          Your edits are being saved...
+        </Typography>
+      </Box>
+    )}
+
     {/* Inner white content container */}
     <Box
       sx={{
@@ -1237,7 +1431,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
         borderRadius: '12px',
         padding: '32px',
         minHeight: 'calc(100% - 48px)',
-        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)'
+        boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+        opacity: isLoadingPCR ? 0.5 : 1,
+        pointerEvents: isLoadingPCR ? 'none' : 'auto',
       }}
     >
     {/* Header with Back Button */}
@@ -1335,7 +1531,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
               Redo ↷
             </Button>
             <Button
-              onClick={() => setIsEditMode(false)}
+              onClick={handleSavePCR}
+              disabled={isSaving}
               sx={{
                 height: '44px',
                 borderRadius: '8px',
@@ -1357,10 +1554,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 '&:active': {
                   boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
                   transform: 'translateY(1px)',
+                },
+                '&:disabled': {
+                  background: '#9CA3AF',
+                  color: '#D1D5DB',
                 }
               }}
             >
-              Save
+              {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </>
         ) : (
@@ -1396,32 +1597,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
               onClick={() => setIsEditMode(true)}
         >
               Edit Report
-        </Button>
-        <Button
-          onClick={handleRefreshInsights}
-          sx={{
-            height: '44px',
-            borderRadius: '8px',
-            padding: '10px 16px',
-            background: '#10B981',
-            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-            color: '#FFFFFF',
-            textTransform: 'none',
-            fontFamily: 'Inter Display, sans-serif',
-            fontWeight: 600,
-            fontSize: '16px',
-            lineHeight: '20px',
-            '&:hover': {
-              background: '#059669',
-              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
-            },
-            '&:active': {
-              boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
-              transform: 'translateY(1px)',
-            }
-          }}
-        >
-          🔄 Refresh Data
         </Button>
         <Button
           sx={{
@@ -1558,7 +1733,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
           color: '#231F20'
         }}
       >
-          {editableContent.campaignDescription}
+          {editableContent.campaignDescription || (
+            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
+              Click &quot;Edit Report&quot; to add a campaign description
+            </Box>
+          )}
       </Typography>
       )}
     </Box>
@@ -1830,7 +2009,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
           }
         }}
       >
-          {editableContent.engagementDescription}
+          {editableContent.engagementDescription || (
+            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
+              Click &quot;Edit Report&quot; to add engagement insights
+            </Box>
+          )}
       </Typography>
       )}
 
@@ -1909,31 +2092,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
             mb: 3 
           }}
         >
-          {editableContent.noteworthyCreatorsDescription}
+          {editableContent.noteworthyCreatorsDescription || (
+            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
+              Click &quot;Edit Report&quot; to add noteworthy creators description
+            </Box>
+          )}
         </Typography>
       )}
       
       <Grid container spacing={2}>
         {/* Most Views Card */}
-        {(() => {
-          let mostViewsCreator = null;
-          let maxViews = 0;
-          
-          filteredInsightsData.forEach((insightData) => {
-            const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-            const views = getMetricValue(insightData.insight, 'views');
-            if (views > maxViews) {
-              maxViews = views;
-              mostViewsCreator = { submission, insightData, views };
-            }
-          });
-          
-          const { data: creator } = useGetCreatorById(mostViewsCreator?.submission?.user);
-          const likes = mostViewsCreator ? getMetricValue(mostViewsCreator.insightData.insight, 'likes') : 0;
-          const comments = mostViewsCreator ? getMetricValue(mostViewsCreator.insightData.insight, 'comments') : 0;
-          const engagementRate = mostViewsCreator ? calculateEngagementRate(mostViewsCreator.insightData.insight) : 0;
-          
-          return (
+        {mostViewsCreator && (
             <Grid item xs={12} md={4}>
               <Box sx={{ 
                   padding: '16px',
@@ -1941,29 +2110,30 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   borderRadius: '8px', 
                   border: '1px solid #EBEBEB',
                   boxShadow: '0px -3px 0px 0px #EBEBEB inset',
-                  position: 'relative'
+                  position: 'relative',
+                  mt: 2
               }}>
-                {/* Most Views Badge */}
-                <Box sx={{
-                  position: 'absolute',
-                  top: 12,
-                  right: 12,
-                  bgcolor: '#D1FAE5',
-                  borderRadius: '6px',
-                  px: 1.5,
-                  py: 0.5,
-                  fontFamily: 'Aileron',
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  color: '#065F46'
-                }}>
-                  Most Views
-            </Box>
+                  {/* Most Views Badge */}
+                  <Box sx={{
+                    position: 'absolute',
+                    top: '-10px',
+                    right: '24px',
+                    bgcolor: '#DBFAE6',
+                    borderRadius: '4px',
+                    px: 2,
+                    py: 0.5,
+                    fontFamily: 'Aileron',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    color: '#1ABF66'
+                  }}>
+                    Most Views
+                  </Box>
                 
                 {/* Creator Info */}
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
                   <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
-                    {creator?.user?.name?.charAt(0) || 'U'}
+                    {mostViewsCreatorData?.user?.name?.charAt(0) || 'U'}
                   </Avatar>
                   <Box>
                     <Typography sx={{ 
@@ -1972,14 +2142,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '14px',
                       color: '#231F20' 
                     }}>
-                      {creator?.user?.name || 'Unknown'}
+                      {mostViewsCreatorData?.user?.name || 'Unknown'}
       </Typography>
                     <Typography sx={{ 
                       fontFamily: 'Aileron', 
                       fontSize: '12px',
                       color: '#636366' 
                     }}>
-                      {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
+                      {mostViewsCreatorData?.user?.creator?.instagram || mostViewsCreatorData?.user?.creator?.tiktok || ''}
                     </Typography>
                   </Box>
                 </Box>
@@ -1996,7 +2166,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
-                        {engagementRate}%
+                        {mostViewsCreator ? calculateEngagementRate(mostViewsCreator.insightData.insight) : 0}%
             </Typography>
                       <Typography sx={{
                         fontFamily: 'Aileron',
@@ -2020,7 +2190,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(maxViews)}
+                        {formatNumber(mostViewsCreator.views)}
                       </Typography>
                       <Typography sx={{
                         fontFamily: 'Aileron',
@@ -2044,7 +2214,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(likes)}
+                        {formatNumber(getMetricValue(mostViewsCreator.insightData.insight, 'likes'))}
                       </Typography>
                       <Typography sx={{
                         fontFamily: 'Aileron',
@@ -2068,7 +2238,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
-                        {formatNumber(comments)}
+                        {formatNumber(getMetricValue(mostViewsCreator.insightData.insight, 'comments'))}
                       </Typography>
                       <Typography sx={{
                         fontFamily: 'Aileron',
@@ -2085,29 +2255,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </Grid>
               </Box>
             </Grid>
-          );
-        })()}
+        )}
         
         {/* Most Comments Card */}
+        {/* eslint-disable-next-line react-hooks/rules-of-hooks */}
         {(() => {
-          let mostCommentsCreator = null;
-          let maxComments = 0;
-          
-          filteredInsightsData.forEach((insightData) => {
-            const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-            const comments = getMetricValue(insightData.insight, 'comments');
-            if (comments > maxComments) {
-              maxComments = comments;
-              mostCommentsCreator = { submission, insightData, comments };
-            }
-          });
-          
-          const { data: creator } = useGetCreatorById(mostCommentsCreator?.submission?.user);
           const views = mostCommentsCreator ? getMetricValue(mostCommentsCreator.insightData.insight, 'views') : 0;
           const likes = mostCommentsCreator ? getMetricValue(mostCommentsCreator.insightData.insight, 'likes') : 0;
+          const maxComments = mostCommentsCreator ? mostCommentsCreator.comments : 0;
           const engagementRate = mostCommentsCreator ? calculateEngagementRate(mostCommentsCreator.insightData.insight) : 0;
           
-          return (
+          return mostCommentsCreator && (
         <Grid item xs={12} md={4}>
               <Box sx={{ 
                   padding: '16px',
@@ -2115,29 +2273,30 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 borderRadius: '8px',
                   border: '1px solid #EBEBEB',
                   boxShadow: '0px -3px 0px 0px #EBEBEB inset',
-                  position: 'relative'
+                  position: 'relative',
+                  mt: 2
               }}>
-                {/* Most Comments Badge */}
-                <Box sx={{
-                  position: 'absolute',
-                  top: 12,
-                  right: 12,
-                  bgcolor: '#DBEAFE',
-                  borderRadius: '6px',
-                  px: 1.5,
-                  py: 0.5,
-                  fontFamily: 'Aileron',
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  color: '#1E40AF'
-                }}>
-                  Most Comments
-            </Box>
+                  {/* Most Comments Badge */}
+                  <Box sx={{
+                    position: 'absolute',
+                    top: '-10px',
+                    right: '24px',
+                    bgcolor: '#DBFAE6',
+                    borderRadius: '4px',
+                    px: 2,
+                    py: 0.5,
+                    fontFamily: 'Aileron',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    color: '#1ABF66'
+                  }}>
+                    Most Comments
+                  </Box>
                 
                 {/* Creator Info */}
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
                   <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
-                    {creator?.user?.name?.charAt(0) || 'U'}
+                    {mostCommentsCreatorData?.user?.name?.charAt(0) || 'U'}
                   </Avatar>
                   <Box>
                     <Typography sx={{ 
@@ -2146,14 +2305,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '14px',
                       color: '#231F20' 
                     }}>
-                      {creator?.user?.name || 'Unknown'}
+                      {mostCommentsCreatorData?.user?.name || 'Unknown'}
                     </Typography>
                     <Typography sx={{ 
                       fontFamily: 'Aileron', 
                       fontSize: '12px',
                       color: '#636366' 
                     }}>
-                      {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
+                      {mostCommentsCreatorData?.user?.creator?.instagram || mostCommentsCreatorData?.user?.creator?.tiktok || ''}
                     </Typography>
                   </Box>
                 </Box>
@@ -2263,25 +2422,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
         })()}
         
         {/* Most Likes Card */}
+        {/* eslint-disable-next-line react-hooks/rules-of-hooks */}
         {(() => {
-          let mostLikesCreator = null;
-          let maxLikes = 0;
-          
-          filteredInsightsData.forEach((insightData) => {
-            const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-            const likes = getMetricValue(insightData.insight, 'likes');
-            if (likes > maxLikes) {
-              maxLikes = likes;
-              mostLikesCreator = { submission, insightData, likes };
-            }
-          });
-          
-          const { data: creator } = useGetCreatorById(mostLikesCreator?.submission?.user);
           const views = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'views') : 0;
           const comments = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'comments') : 0;
+          const maxLikes = mostLikesCreator ? mostLikesCreator.likes : 0;
           const engagementRate = mostLikesCreator ? calculateEngagementRate(mostLikesCreator.insightData.insight) : 0;
           
-          return (
+          return mostLikesCreator && (
         <Grid item xs={12} md={4}>
               <Box sx={{ 
                   padding: '16px',
@@ -2289,29 +2437,30 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   borderRadius: '8px', 
                   border: '1px solid #EBEBEB',
                   boxShadow: '0px -3px 0px 0px #EBEBEB inset',
-                  position: 'relative'
+                  position: 'relative',
+                  mt: 2
               }}>
                 {/* Most Likes Badge */}
                 <Box sx={{
                   position: 'absolute',
-                  top: 12,
-                  right: 12,
-                  bgcolor: '#FEF3C7',
-                  borderRadius: '6px',
-                  px: 1.5,
+                  top: '-10px',
+                  right: '24px',
+                  bgcolor: '#DBFAE6',
+                  borderRadius: '4px',
+                  px: 2,
                   py: 0.5,
                   fontFamily: 'Aileron',
                   fontSize: '10px',
                   fontWeight: 600,
-                  color: '#92400E'
-                }}>
+                  color: '#1ABF66'
+                  }}>
                   Most Likes
                 </Box>
                 
                 {/* Creator Info */}
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
                   <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
-                    {creator?.user?.name?.charAt(0) || 'U'}
+                    {mostLikesCreatorData?.user?.name?.charAt(0) || 'U'}
                   </Avatar>
                   <Box>
                     <Typography sx={{ 
@@ -2320,14 +2469,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '14px',
                       color: '#231F20' 
                     }}>
-                      {creator?.user?.name || 'Unknown'}
+                      {mostLikesCreatorData?.user?.name || 'Unknown'}
                     </Typography>
                     <Typography sx={{ 
                       fontFamily: 'Aileron', 
                       fontSize: '12px',
                       color: '#636366' 
                     }}>
-                      {creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok || ''}
+                      {mostLikesCreatorData?.user?.creator?.instagram || mostLikesCreatorData?.user?.creator?.tiktok || ''}
                     </Typography>
                   </Box>
                 </Box>
@@ -2508,7 +2657,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             whiteSpace: 'pre-line'
           }}
         >
-          {editableContent.viewsDescription}
+          {editableContent.viewsDescription || (
+            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
+              Click &quot;Edit Report&quot; to add views analysis
+            </Box>
+          )}
         </Typography>
       )}
       
@@ -2599,13 +2752,36 @@ const PCRReportPage = ({ campaign, onBack }) => {
             mb: 4 
           }}
         >
-          {editableContent.audienceSentimentDescription}
+          {editableContent.audienceSentimentDescription || (
+            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
+              Click &quot;Edit Report&quot; to add audience sentiment analysis
+            </Box>
+          )}
         </Typography>
       )}
       
       {/* Positive Comments */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+      <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
+      <Box
+        sx={{
+          p: 3,
+            border: '2px solid #10B981',
+          borderRadius: '12px',
+            bgcolor: 'white'
+          }}
+        >
+        <Box sx={{ 
+          position: 'absolute', 
+          top: '-10px', 
+          left: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          bgcolor: '#D1FAE5',
+          px: 2,
+          py: 0.5,
+          borderRadius: '4px'
+        }}>
           <Typography 
             sx={{ 
               fontFamily: 'Aileron',
@@ -2620,15 +2796,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {isEditMode && (
             <EditIcon sx={{ fontSize: '16px', color: '#10B981' }} />
           )}
-        </Box>
-      <Box
-        sx={{
-          p: 3,
-            border: '2px solid #10B981',
-          borderRadius: '12px',
-            bgcolor: 'white'
-          }}
-        >
+      </Box>
           {isEditMode ? (
             <>
               <Grid container spacing={2}>
@@ -2651,7 +2819,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
                         {comment.comment}
                       </Typography>
-      </Box>
+    </Box>
                   </Grid>
                 ))}
               </Grid>
@@ -2673,7 +2841,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     value = value.replace(/\s/g, '');
                     // Ensure it always starts with @
                     if (!value.startsWith('@')) {
-                      value = '@' + value;
+                      value = `@${value}`;
                     }
                     // Prevent deleting the @
                     if (value === '') {
@@ -2747,27 +2915,54 @@ const PCRReportPage = ({ campaign, onBack }) => {
               />
             </>
           ) : (
-            <Grid container spacing={2}>
-              {editableContent.positiveComments.map((comment, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
-                  <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
-                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
-                      {comment.username}
+            <>
+              {editableContent.positiveComments.length > 0 ? (
+                <Grid container spacing={2}>
+                  {editableContent.positiveComments.map((comment, index) => (
+                    <Grid item xs={12} sm={6} md={3} key={index}>
+                      <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
+                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
+                          {comment.username}
       </Typography>
-                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
-                      {comment.comment}
+                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
+                          {comment.comment}
       </Typography>
-                  </Box>
+                      </Box>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              ) : (
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', py: 3 }}>
+                  Click &quot;Edit Report&quot; to add positive comments
+                </Typography>
+              )}
+            </>
           )}
       </Box>
     </Box>
 
       {/* Neutral Comments */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+      <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
+      <Box
+        sx={{
+            p: 3,
+            border: '2px solid #F59E0B',
+          borderRadius: '12px',
+            bgcolor: 'white'
+          }}
+        >
+        <Box sx={{ 
+          position: 'absolute', 
+          top: '-10px', 
+          left: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          bgcolor: '#FEF3C7',
+          px: 2,
+          py: 0.5,
+          borderRadius: '4px'
+        }}>
           <Typography 
             sx={{ 
               fontFamily: 'Aileron',
@@ -2778,19 +2973,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             }}
           >
             Neutral Comments
-      </Typography>
+        </Typography>
           {isEditMode && (
             <EditIcon sx={{ fontSize: '16px', color: '#F59E0B' }} />
           )}
-        </Box>
-      <Box
-        sx={{
-            p: 3,
-            border: '2px solid #F59E0B',
-          borderRadius: '12px',
-            bgcolor: 'white'
-          }}
-        >
+      </Box>
           {isEditMode ? (
             <>
               <Grid container spacing={2}>
@@ -2835,7 +3022,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     value = value.replace(/\s/g, '');
                     // Ensure it always starts with @
                     if (!value.startsWith('@')) {
-                      value = '@' + value;
+                      value = `@${value}`;
                     }
                     // Prevent deleting the @
                     if (value === '') {
@@ -2909,20 +3096,28 @@ const PCRReportPage = ({ campaign, onBack }) => {
               />
             </>
           ) : (
-            <Grid container spacing={2}>
-              {editableContent.neutralComments.map((comment, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
-                  <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
-                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
-                      {comment.username}
-                    </Typography>
-                    <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
-                      {comment.comment}
-        </Typography>
-                  </Box>
+            <>
+              {editableContent.neutralComments.length > 0 ? (
+                <Grid container spacing={2}>
+                  {editableContent.neutralComments.map((comment, index) => (
+                    <Grid item xs={12} sm={6} md={3} key={index}>
+                      <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
+                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
+                          {comment.username}
+                        </Typography>
+                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
+                          {comment.comment}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              ) : (
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#9CA3AF', fontStyle: 'italic', textAlign: 'center', py: 3 }}>
+                  Click &quot;Edit Report&quot; to add neutral comments
+                </Typography>
+              )}
+            </>
           )}
         </Box>
       </Box>
@@ -2998,7 +3193,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
             mb: 4 
           }}
         >
-          {editableContent.bestPerformingPersonasDescription}
+          {editableContent.bestPerformingPersonasDescription || (
+            <Box component="span" sx={{ color: '#9CA3AF', fontStyle: 'italic' }}>
+              Click &quot;Edit Report&quot; to add creator personas description
+            </Box>
+          )}
         </Typography>
       )}
       {/* Creator Persona Cards */}
@@ -3344,26 +3543,27 @@ const PCRReportPage = ({ campaign, onBack }) => {
         {/* Show + button if educator card is hidden, otherwise show educator card */}
         {!showEducatorCard ? (
           // Add Persona Button
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 10 }}>
             <IconButton
               onClick={() => setShowEducatorCard(true)}
               sx={{
-                bgcolor: 'transparent',
-                color: 'white',
-                border: 'none',
-                borderRadius: '12px',
-                width: '120px',
-                height: '120px',
-                fontSize: '48px',
-                fontWeight: 300,
-                background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                width: '140px',
+                height: '140px',
+                bgcolor: '#F5F5F5',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mt: 3,
                 '&:hover': { 
-                  opacity: 0.9,
-                  background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                  bgcolor: '#E8E8E8',
                 },
               }}
             >
-              +
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <rect x="32" y="8" width="16" height="64" rx="8" fill="#1340FF"/>
+                <rect x="8" y="32" width="64" height="16" rx="8" fill="#1340FF"/>
+              </svg>
             </IconButton>
           </Box>
         ) : (
@@ -4076,11 +4276,27 @@ const PCRReportPage = ({ campaign, onBack }) => {
           
           {/* Content Boxes */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            {editableContent.improvedInsights.length === 0 && !isEditMode && (
+              <Box sx={{ 
+                bgcolor: '#1340FFD9', 
+                p: 3, 
+                color: 'white', 
+                height: '120px', 
+                display: 'flex', 
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '0 0 12px 12px',
+              }}>
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontStyle: 'italic', opacity: 0.8 }}>
+                  Click &quot;Edit Report&quot; to add improvement suggestions
+                </Typography>
+              </Box>
+            )}
             {editableContent.improvedInsights.map((insight, index) => (
       <Box
                 key={index}
         sx={{
-                  bgcolor: index === 0 ? '#1340FFD9' : index === 1 ? '#1340FFBF' : '#1340FFA6',
+                  bgcolor: getImprovedInsightBgColor(index),
                   p: 2.5, 
                   color: 'white', 
                   height: '120px', 
@@ -4216,12 +4432,29 @@ const PCRReportPage = ({ campaign, onBack }) => {
           
           {/* Content Boxes */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            {editableContent.workedWellInsights.length === 0 && !isEditMode && (
+              <Box sx={{ 
+                background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+                opacity: 0.85,
+                p: 3, 
+                color: 'white', 
+                height: '120px', 
+                display: 'flex', 
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '0 0 12px 12px',
+              }}>
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontStyle: 'italic', opacity: 0.9 }}>
+                  Click &quot;Edit Report&quot; to add what worked well
+                </Typography>
+              </Box>
+            )}
             {editableContent.workedWellInsights.map((insight, index) => (
               <Box 
                 key={index}
                 sx={{ 
                   background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-                  opacity: index === 0 ? 0.85 : index === 1 ? 0.75 : 0.65,
+                  opacity: getWorkedWellOpacity(index),
                   p: 2.5, 
                   color: 'white', 
                   height: '120px', 
@@ -4357,6 +4590,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
           
           {/* Content Boxes */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            {editableContent.nextStepsInsights.length === 0 && !isEditMode && (
+              <Box sx={{ 
+                bgcolor: '#026D54D9',
+                p: 3, 
+                color: 'white', 
+                height: '120px', 
+                display: 'flex', 
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '0 0 12px 12px',
+              }}>
+                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontStyle: 'italic', opacity: 0.9 }}>
+                  Click &quot;Edit Report&quot; to add next steps
+                </Typography>
+    </Box>
+            )}
             {editableContent.nextStepsInsights.map((insight, index) => (
               <Box 
                 key={index}
@@ -4508,6 +4757,8 @@ PCRReportPage.propTypes = {
   campaign: PropTypes.shape({
     id: PropTypes.string,
     name: PropTypes.string,
+    startDate: PropTypes.string,
+    submission: PropTypes.array,
   }),
   onBack: PropTypes.func.isRequired,
 };
