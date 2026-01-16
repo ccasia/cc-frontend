@@ -3071,10 +3071,12 @@ const CampaignAnalytics = ({ campaign }) => {
     <Box>
       {/* Conditionally render PCR Report Page or Performance Summary */}
       {showReportPage ? (
+      {showReportPage ? (
         <PCRReportPage 
           campaign={campaign} 
           onBack={() => setShowReportPage(false)} 
         />
+      ) : (
       ) : (
         <>
       {/* Platform Toggle */}
@@ -3093,6 +3095,7 @@ const CampaignAnalytics = ({ campaign }) => {
       </Typography>
         
         {/* Generate Report Button */}
+        <Button
         <Button
           disabled={reportState === 'loading'}
           sx={{
@@ -3153,6 +3156,7 @@ const CampaignAnalytics = ({ campaign }) => {
           {reportState === 'generate' && 'Generate Report'}
           {reportState === 'loading' && 'Generating...'}
           {reportState === 'view' && 'View Report'}
+        </Button>
         </Button>
       </Box>
 

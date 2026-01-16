@@ -389,7 +389,8 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
         step: 1,
         label: 'Check Availability',
         date: updatedDates?.createdAt,
-        desc: 'Completed on',
+        desc: status === 'NOT_STARTED' ? 'Please provide necessary details.' : 'Completed on',
+        color: '#FF3500',
       },
       {
         step: 2,
@@ -399,6 +400,7 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
           status === 'PENDING_ASSIGNMENT'
             ? 'Waiting for Client to confirm your slot...'
             : 'Completed on',
+        color: '#1340FF',
       },
       {
         step: 3,
@@ -487,7 +489,7 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
                     '& .MuiBadge-badge': {
                       top: 2,
                       right: 2,
-                      border: '2px solid #fff', // Makes it pop
+                      border: '2px solid #fff',
                     },
                   }}
                 >
@@ -512,7 +514,6 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
                   sx={{
                     color: isErrorStep ? '#1340FF' : 'text.secondary',
                     display: 'block',
-                    // mt: 0.5,
                   }}
                 >
                   {step.desc} {step.date && !isErrorStep && fDate(step.date)}
@@ -521,9 +522,9 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
               {activeStep === index && !step.error && index !== 2 && (
                 <Typography
                   variant="caption"
-                  sx={{ color: '#FF3500', display: 'block', fontsize: '10px' }}
+                  sx={{ color: step.color, display: 'block', fontsize: '10px' }}
                 >
-                  Please provide necessary details.
+                  {step.desc}
                 </Typography>
               )}
               {status === 'SCHEDULED' && index === 2 && !isErrorStep && (
