@@ -1,11 +1,17 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
+import { format } from 'date-fns';
+import { enqueueSnackbar } from 'notistack';
+import html2canvas from 'html2canvas';
+// eslint-disable-next-line new-cap
+import { jsPDF } from 'jspdf';
 
-import { Box, Grid, Button, Typography, Avatar, Link, TextField, CircularProgress, Alert, IconButton, Popover } from '@mui/material';
+import { Box, Grid, Button, Typography, Avatar, Link, TextField, CircularProgress, Alert, IconButton, Popover, Snackbar } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EmojiPicker from 'emoji-picker-react';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
@@ -34,6 +40,23 @@ const getWorkedWellOpacity = (index) => {
 };
 
 const PCRReportPage = ({ campaign, onBack }) => {
+  // Helper function to format campaign period (matching campaign detail view format)
+  const formatCampaignPeriod = () => {
+    const startDate = campaign?.startDate || campaign?.campaignBrief?.startDate;
+    const endDate = campaign?.endDate || campaign?.campaignBrief?.endDate;
+    
+    if (!startDate || !endDate) {
+      return 'CAMPAIGN PERIOD NOT SET';
+    }
+    
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      return format(new Date(dateString), 'MMMM d, yyyy');
+    };
+    
+    return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+  };
+
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
   
@@ -70,6 +93,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
   // Emoji picker state
   const [emojiPickerAnchor, setEmojiPickerAnchor] = useState(null);
   const [emojiPickerType, setEmojiPickerType] = useState(null); // 'comic' or 'educator'
+  
+  // Undo/Redo state
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  
+  // Success message state
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  
+  // Ref for PDF export
+  const reportRef = useRef(null);
   
   // Extract posting submissions from campaign data
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
@@ -171,6 +204,59 @@ const PCRReportPage = ({ campaign, onBack }) => {
   }, [campaign?.id]);
   
   // Save PCR data to backend
+  // Save content to history for undo/redo
+  const saveToHistory = (content) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(JSON.parse(JSON.stringify(content)));
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  // Undo function
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setEditableContent(JSON.parse(JSON.stringify(history[newIndex])));
+    }
+  };
+
+  // Redo function
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setEditableContent(JSON.parse(JSON.stringify(history[newIndex])));
+    }
+  };
+
+  // Track changes for undo/redo
+  useEffect(() => {
+    if (isEditMode && history.length === 0) {
+      // Initialize history when entering edit mode
+      saveToHistory(editableContent);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode]);
+
+  // Save to history when content changes (debounced)
+  useEffect(() => {
+    if (!isEditMode || history.length === 0) {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => {
+      // Only save if content actually changed
+      const lastContent = history[historyIndex];
+      if (JSON.stringify(lastContent) !== JSON.stringify(editableContent)) {
+        saveToHistory(editableContent);
+      }
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editableContent, isEditMode]);
+
   const handleSavePCR = async () => {
     if (!campaign?.id) return;
     
@@ -184,14 +270,77 @@ const PCRReportPage = ({ campaign, onBack }) => {
       
       if (response.data.success) {
         console.log('✅ PCR data saved successfully');
-        alert('PCR saved successfully!');
+        setShowSuccessMessage(true);
         setIsEditMode(false);
+        // Clear history after successful save
+        setHistory([]);
+        setHistoryIndex(-1);
       }
     } catch (error) {
       console.error('❌ Error saving PCR data:', error);
-      alert(`Failed to save PCR: ${error.response?.data?.message || error.message}`);
+      enqueueSnackbar(`Failed to save PCR: ${error.response?.data?.message || error.message}`, { 
+        variant: 'error',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // PDF Export function
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+
+    try {
+      enqueueSnackbar('Generating PDF...', { 
+        variant: 'info',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      // eslint-disable-next-line new-cap
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const fileName = `PCR_${campaign?.name || 'Report'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      pdf.save(fileName);
+
+      enqueueSnackbar('PDF downloaded successfully!', { 
+        variant: 'success',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      enqueueSnackbar('Failed to generate PDF', { 
+        variant: 'error',
+        anchorOrigin: { vertical: 'top', horizontal: 'center' }
+      });
     }
   };
   
@@ -1426,6 +1575,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     {/* Inner white content container */}
     <Box
+      ref={reportRef}
       sx={{
         background: '#FFFFFF',
         borderRadius: '12px',
@@ -1473,6 +1623,20 @@ const PCRReportPage = ({ campaign, onBack }) => {
         {isEditMode ? (
           <>
             <Button
+              onClick={handleUndo}
+              disabled={historyIndex <= 0}
+              endIcon={
+                <Box
+                  component="img"
+                  src="/assets/icons/components/undo.svg"
+                  alt="Undo"
+                  sx={{
+                    width: '19px',
+                    height: '18px',
+                    opacity: historyIndex <= 0 ? 0.4 : 1
+                  }}
+                />
+              }
               sx={{
                 height: '44px',
                 borderRadius: '8px',
@@ -1496,12 +1660,30 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 '&:active': {
                   boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
                   transform: 'translateY(1px)',
+                },
+                '&:disabled': {
+                  background: '#F3F4F6',
+                  color: '#9CA3AF',
                 }
               }}
             >
-              Undo ↶
+              Undo
             </Button>
             <Button
+              onClick={handleRedo}
+              disabled={historyIndex >= history.length - 1}
+              endIcon={
+                <Box
+                  component="img"
+                  src="/assets/icons/components/redo.svg"
+                  alt="Redo"
+                  sx={{
+                    width: '19px',
+                    height: '18px',
+                    opacity: historyIndex >= history.length - 1 ? 0.4 : 1
+                  }}
+                />
+              }
               sx={{
                 height: '44px',
                 borderRadius: '8px',
@@ -1525,10 +1707,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 '&:active': {
                   boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
                   transform: 'translateY(1px)',
+                },
+                '&:disabled': {
+                  background: '#F3F4F6',
+                  color: '#9CA3AF',
                 }
               }}
             >
-              Redo ↷
+              Redo
             </Button>
             <Button
               onClick={handleSavePCR}
@@ -1599,6 +1785,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               Edit Report
         </Button>
         <Button
+          onClick={handleExportPDF}
           sx={{
             width: '79px',
             height: '44px',
@@ -1635,6 +1822,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     {/* Report Header */}
     <Box sx={{ mb: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+        <Box>
       <Typography 
         variant="caption" 
         sx={{ 
@@ -1650,16 +1839,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
           display: 'block' 
         }}
       >
-        POST CAMPAIGN REPORT: 17 NOVEMBER 2025 - 17 DECEMBER 2025
+            POST CAMPAIGN REPORT: {formatCampaignPeriod()}
       </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography 
           variant="h4" 
           sx={{ 
             fontFamily: 'Inter Display, sans-serif',
             fontWeight: 700,
             fontStyle: 'normal',
-            fontSize: '40px',
+            fontSize: '56px',
             lineHeight: '100%',
             letterSpacing: '0%',
             color: '#231F20'
@@ -1670,12 +1859,25 @@ const PCRReportPage = ({ campaign, onBack }) => {
         <Typography 
           variant="h4"
           sx={{
-            fontSize: '40px',
+            fontSize: '56px',
             lineHeight: '100%'
           }}
         >
           🍻
         </Typography>
+      </Box>
+        </Box>
+        
+        <Box
+          component="img"
+          src="/logo/CC.svg"
+          alt="Cult Creative"
+          sx={{
+            width: '187px',
+            height: '60px',
+            opacity: 0.8
+          }}
+        />
       </Box>
       
       {isEditMode ? (
@@ -1764,7 +1966,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               fontFamily: 'Inter Display, sans-serif',
               fontWeight: 500,
               fontStyle: 'normal',
-              fontSize: '36px',
+              fontSize: '46px !important',
               lineHeight: '100%',
               letterSpacing: '0%',
               color: '#FFFFFF',
@@ -1809,7 +2011,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               fontFamily: 'Inter Display, sans-serif',
               fontWeight: 500,
               fontStyle: 'normal',
-              fontSize: '36px',
+              fontSize: '46px !important',
               lineHeight: '100%',
               letterSpacing: '0%',
               color: '#FFFFFF',
@@ -1854,7 +2056,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               fontFamily: 'Inter Display, sans-serif',
               fontWeight: 500,
               fontStyle: 'normal',
-              fontSize: '36px',
+              fontSize: '46px !important',
               lineHeight: '100%',
               letterSpacing: '0%',
               color: '#FFFFFF',
@@ -1899,7 +2101,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               fontFamily: 'Inter Display, sans-serif',
               fontWeight: 500,
               fontStyle: 'normal',
-              fontSize: '36px',
+              fontSize: '46px !important',
               lineHeight: '100%',
               letterSpacing: '0%',
               color: '#FFFFFF',
@@ -2159,10 +2361,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2183,10 +2385,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2207,10 +2409,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2231,10 +2433,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2322,10 +2524,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2346,10 +2548,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2370,10 +2572,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2394,10 +2596,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2486,10 +2688,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2510,10 +2712,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2534,10 +2736,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2558,10 +2760,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif',
-                        fontWeight: 400,
-                        fontSize: '20.42px',
-                        lineHeight: '31.9px',
+                        fontFamily: 'Instrument Serif !important',
+                        fontWeight: '400 !important',
+                        fontSize: '48px !important',
+                        lineHeight: '56px !important',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -4749,6 +4951,40 @@ const PCRReportPage = ({ campaign, onBack }) => {
         }}
       />
     </Popover>
+
+    {/* Success Snackbar */}
+    <Snackbar
+      open={showSuccessMessage}
+      autoHideDuration={4000}
+      onClose={() => setShowSuccessMessage(false)}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      sx={{ mt: 8 }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          bgcolor: '#10B981',
+          color: 'white',
+          px: 3,
+          py: 2,
+          borderRadius: '12px',
+          boxShadow: '0px 8px 24px rgba(16, 185, 129, 0.3)',
+          minWidth: '320px',
+        }}
+      >
+        <CheckCircleIcon sx={{ fontSize: '32px' }} />
+        <Box>
+          <Typography sx={{ fontFamily: 'Inter Display', fontWeight: 600, fontSize: '16px', mb: 0.5 }}>
+            Success!
+          </Typography>
+          <Typography sx={{ fontFamily: 'Aileron', fontWeight: 400, fontSize: '14px' }}>
+            PCR saved successfully
+          </Typography>
+        </Box>
+      </Box>
+    </Snackbar>
   </Box>
   );
 };
@@ -4758,6 +4994,11 @@ PCRReportPage.propTypes = {
     id: PropTypes.string,
     name: PropTypes.string,
     startDate: PropTypes.string,
+    endDate: PropTypes.string,
+    campaignBrief: PropTypes.shape({
+      startDate: PropTypes.string,
+      endDate: PropTypes.string,
+    }),
     submission: PropTypes.array,
   }),
   onBack: PropTypes.func.isRequired,
