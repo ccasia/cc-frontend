@@ -22,26 +22,23 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  Divider,
-  Menu,
-  MenuItem,
+  CircularProgress,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
+
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
-import axiosInstance from 'src/utils/axios';
-
-const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPicActivated }) => {
+const ChildAccountList = ({ companyId, company }) => {
   const [childAccounts, setChildAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
+  const [inviteDialog, setInviteDialog] = useState(false);
   const [resendDialog, setResendDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [formData, setFormData] = useState({
@@ -49,6 +46,8 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
     firstName: '',
     lastName: '',
   });
+
+  const mdUp = useResponsive('up', 'md');
 
   // Get client ID from company - use the first active client
   // Note: company.clientId is just a reference (like A01), we need the actual client.id
@@ -90,11 +89,6 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [fetchChildAccounts]);
 
-  const handleCloseInviteDialog = () => {
-    onInviteDialogClose();
-    setFormData({ email: '', firstName: '', lastName: '' });
-  };
-
   const handleInviteChildAccount = async () => {
     if (!clientId) {
       enqueueSnackbar('No client ID found. Cannot invite child account.', { variant: 'error' });
@@ -102,16 +96,14 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
     }
 
     try {
-      setSubmitting(true);
       const response = await axiosInstance.post(`/api/child-account/client/${clientId}`, formData);
       enqueueSnackbar(response.data.message, { variant: 'success' });
-      handleCloseInviteDialog();
+      setInviteDialog(false);
+      setFormData({ email: '', firstName: '', lastName: '' });
       fetchChildAccounts();
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error inviting child account';
       enqueueSnackbar(errorMessage, { variant: 'error' });
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -174,232 +166,111 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
   };
 
   const getStatusChip = (account) => {
-    let status = 'pending';
-    let label = 'Pending';
-
     if (account.isActive) {
-      status = 'active';
-      label = 'Active';
-    } else if (account.tokenExpiresAt && new Date(account.tokenExpiresAt) < new Date()) {
-      status = 'expired';
-      label = 'Expired';
+      return <Chip label="Active" color="success" size="small" />;
     }
+    if (account.tokenExpiresAt && new Date(account.tokenExpiresAt) < new Date()) {
+      return <Chip label="Expired" color="error" size="small" />;
+    }
+    return <Chip label="Pending" color="warning" size="small" />;
+  };
 
-    const statusConfig = {
-      active: { color: '#1ABF66', borderColor: '#1ABF66' },
-      pending: { color: '#FFA902', borderColor: '#FFA902' },
-      expired: { color: '#D4321C', borderColor: '#D4321C' },
-    };
-
-    const config = statusConfig[status];
-
+  if (loading) {
     return (
-      <Typography
-        variant="caption"
-        sx={{
-          textTransform: 'uppercase',
-          fontWeight: 700,
-          display: 'inline-block',
-          px: 1.5,
-          py: 0.5,
-          fontSize: '0.7rem',
-          border: '1px solid',
-          borderBottom: '3px solid',
-          borderRadius: 0.8,
-          bgcolor: 'white',
-          color: config.color,
-          borderColor: config.borderColor,
-        }}
-      >
-        {label}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress />
+      </Box>
     );
-  };
-
-  const renderTableBody = () => {
-    // No client associated
-    if (!clientId) {
-      return (
-        <TableRow>
-          <TableCell colSpan={5} sx={{ py: 6 }}>
-            <Stack alignItems="center" spacing={1.5}>
-              <Box
-                sx={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: '50%',
-                  bgcolor: '#FEF3F2',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Iconify icon="solar:link-broken-bold-duotone" width={32} sx={{ color: '#F04438' }} />
-              </Box>
-              <Typography variant="subtitle1" color="text.primary" fontWeight={600}>
-                No Client Associated
-              </Typography>
-              <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={360}>
-                This company doesn&apos;t have an active client account yet. Activate the account first to manage child accounts.
-              </Typography>
-            </Stack>
-          </TableCell>
-        </TableRow>
-      );
-    }
-
-    // PIC not yet activated
-    if (!isPicActivated) {
-      return (
-        <TableRow>
-          <TableCell colSpan={5} sx={{ py: 6 }}>
-            <Stack alignItems="center" spacing={1.5}>
-              <Box
-                sx={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: '50%',
-                  bgcolor: '#FFF8E6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Iconify icon="solar:hourglass-bold-duotone" width={32} sx={{ color: '#FFA902' }} />
-              </Box>
-              <Typography variant="subtitle1" color="text.primary" fontWeight={600}>
-                Pending Activation
-              </Typography>
-              <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={360}>
-                The primary account holder must activate their account before child accounts can be invited. Check the Person In Charge tab for status.
-              </Typography>
-            </Stack>
-          </TableCell>
-        </TableRow>
-      );
-    }
-
-    // No child accounts yet
-    if (childAccounts.length === 0) {
-      return (
-        <TableRow>
-          <TableCell colSpan={5} sx={{ py: 6 }}>
-            <Stack alignItems="center" spacing={1.5}>
-              <Box
-                sx={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: '50%',
-                  bgcolor: '#F5F5F5',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Iconify icon="solar:users-group-rounded-bold-duotone" width={32} sx={{ color: '#C4CDD5' }} />
-              </Box>
-              <Typography variant="subtitle1" color="text.primary" fontWeight={600}>
-                No Child Accounts
-              </Typography>
-              <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={320}>
-                Invite team members to give them access to this client account. They&apos;ll receive an email to set up their login.
-              </Typography>
-            </Stack>
-          </TableCell>
-        </TableRow>
-      );
-    }
-
-    // Render child accounts list
-    return childAccounts.map((account) => (
-      <TableRow
-        key={account.id}
-        sx={{
-          '&:hover': { bgcolor: 'action.hover' },
-          '& td': { borderBottom: '1px solid #EBEBEB' },
-        }}
-      >
-        <TableCell>
-          <Typography variant="body2" fontWeight={500}>
-            {account.firstName} {account.lastName}
-          </Typography>
-        </TableCell>
-        <TableCell>
-          <Typography variant="body2" color="text.secondary">
-            {account.email}
-          </Typography>
-        </TableCell>
-        <TableCell>{getStatusChip(account)}</TableCell>
-        <TableCell>
-          <Typography variant="body2" color="text.secondary">
-            {new Date(account.invitedAt).toLocaleDateString()}
-          </Typography>
-        </TableCell>
-        <TableCell>
-          <IconButton
-            onClick={(e) => handleMenuOpen(e, account)}
-            size="small"
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: '8px',
-              border: '1px solid #E7E7E7',
-              boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-              bgcolor: '#FFFFFF',
-              '&:hover': { bgcolor: '#F5F5F5' },
-            }}
-          >
-            <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
-        </TableCell>
-      </TableRow>
-    ));
-  };
+  }
 
   return (
     <>
-      <Card sx={{ border: 'none', boxShadow: 'none' }}>
+      <Box sx={{ mb: 3 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">Child Accounts</Typography>
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="eva:plus-fill" />}
+            onClick={() => setInviteDialog(true)}
+            disabled={!clientId}
+            sx={{
+              bgcolor: '#203ff5',
+              '&:hover': { bgcolor: '#102387' },
+            }}
+          >
+            Invite Account
+          </Button>
+        </Stack>
+      </Box>
+
+      <Card>
         <Scrollbar>
           <Table sx={{ minWidth: 800 }}>
             <TableHead>
               <TableRow>
-                {['Name', 'Email', 'Status', 'Invited', 'Actions'].map((label, index, arr) => (
-                  <TableCell
-                    key={label}
-                    sx={{
-                      bgcolor: '#f5f5f5',
-                      color: '#221f20',
-                      fontWeight: 600,
-                      py: 1.5,
-                      whiteSpace: 'nowrap',
-                      borderBottom: 'none',
-                      ...(index === 0 && { borderRadius: '10px 0 0 10px' }),
-                      ...(index === arr.length - 1 && { borderRadius: '0 10px 10px 0' }),
-                    }}
-                  >
-                    {label}
-                  </TableCell>
-                ))}
+                <TableCell>Name</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Invited</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>{renderTableBody()}</TableBody>
+            <TableBody>
+              {/* No client associated */}
+              {!clientId && (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    <EmptyContent
+                      title="No Client Associated"
+                      description="This company does not have an associated client record. Child accounts can only be managed for companies with active client accounts."
+                      filled
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {/* No child accounts */}
+              {clientId && childAccounts.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    <EmptyContent title="No child accounts" filled />
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {/* Child accounts list */}
+              {clientId && childAccounts.length > 0 && (
+                childAccounts.map((account) => (
+                  <TableRow key={account.id}>
+                    <TableCell>
+                      {account.firstName} {account.lastName}
+                    </TableCell>
+                    <TableCell>{account.email}</TableCell>
+                    <TableCell>{getStatusChip(account)}</TableCell>
+                    <TableCell>
+                      {new Date(account.invitedAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        onClick={(e) => handleMenuOpen(e, account)}
+                        size="small"
+                      >
+                        <Iconify icon="eva:more-vertical-fill" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
           </Table>
         </Scrollbar>
       </Card>
 
       {/* Invite Child Account Dialog */}
-      <Dialog open={inviteDialogOpen} onClose={handleCloseInviteDialog} maxWidth="sm" fullWidth>
-        <Box sx={{ p: 3, pb: 2 }}>
-          <Typography fontSize={32} fontFamily="Instrument Serif">
-            Invite Child Account
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
-            Send an invitation to add a new child account
-          </Typography>
-        </Box>
-        <Divider sx={{ mx: 2 }} />
-        <DialogContent sx={{ pt: 3 }}>
-          <Stack spacing={2.5}>
+      <Dialog open={inviteDialog} onClose={() => setInviteDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Invite Account</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Email"
               type="email"
@@ -407,179 +278,72 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               fullWidth
               required
-              placeholder="Enter email address"
             />
             <TextField
               label="First Name"
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               fullWidth
-              placeholder="Enter first name"
             />
             <TextField
               label="Last Name"
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               fullWidth
-              placeholder="Enter last name"
             />
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-          <Button
-            onClick={handleCloseInviteDialog}
-            disabled={submitting}
-            sx={{
-              border: '1px solid #E7E7E7',
-              borderRadius: '8px',
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-              px: 3,
-            }}
-          >
-            Cancel
-          </Button>
-          <LoadingButton
-            onClick={handleInviteChildAccount}
-            variant="contained"
-            loading={submitting}
-            disabled={!formData.email}
-            sx={{
-              bgcolor: '#1340FF',
-              borderRadius: '8px',
-              border: '1px solid #1a32c4',
-              borderBottom: '3px solid #102387',
-              px: 3,
-              '&:hover': { bgcolor: '#1a32c4' },
-              '&.Mui-disabled': {
-                bgcolor: '#E7E7E7',
-                color: '#8E8E93',
-                border: '1px solid #E7E7E7',
-                borderBottom: '3px solid #C4CDD5',
-              },
-            }}
-          >
+        <DialogActions>
+          <Button onClick={() => setInviteDialog(false)}>Cancel</Button>
+          <Button onClick={handleInviteChildAccount} variant="contained">
             Send Invitation
-          </LoadingButton>
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Resend Invitation Dialog */}
-      <Dialog
-        open={resendDialog}
-        onClose={() => {
-          setResendDialog(false);
-          setSelectedAccount(null);
-        }}
-        maxWidth="xs"
-        fullWidth
-      >
-        <Box sx={{ width: '100%' }}>
-          <Box sx={{ p: 3, pb: 2 }}>
-            <Typography fontSize={32} fontFamily="Instrument Serif">
-              Resend Invitation?
-            </Typography>
-          </Box>
-          <Divider sx={{ mx: 2 }} />
-          <DialogContent sx={{ pt: 3 }}>
-            <Typography variant="body1" color="text.secondary">
-              A new invitation email will be sent to:
-            </Typography>
-            <Typography variant="body1" fontWeight={600} mt={1}>
-              {selectedAccount?.email}
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-            <Button
-              onClick={() => {
-                setResendDialog(false);
-                setSelectedAccount(null);
-              }}
-              sx={{
-                border: '1px solid #E7E7E7',
-                borderRadius: '8px',
-                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                px: 3,
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleResendInvitation}
-              variant="contained"
-              sx={{
-                bgcolor: '#FFA902',
-                borderRadius: '8px',
-                border: '1px solid #E69500',
-                borderBottom: '3px solid #CC8400',
-                px: 3,
-                '&:hover': { bgcolor: '#E69500' },
-              }}
-            >
-              Resend
-            </Button>
-          </DialogActions>
-        </Box>
+      <Dialog open={resendDialog} onClose={() => {
+        setResendDialog(false);
+        setSelectedAccount(null);
+      }}>
+        <DialogTitle>Resend Invitation</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to resend the invitation to {selectedAccount?.email}?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setResendDialog(false);
+            setSelectedAccount(null);
+          }}>Cancel</Button>
+          <Button onClick={handleResendInvitation} variant="contained" color="warning">
+            Resend
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Delete Child Account Dialog */}
-      <Dialog
-        open={deleteDialog}
-        onClose={() => {
-          setDeleteDialog(false);
-          setSelectedAccount(null);
-        }}
-        maxWidth="xs"
-        fullWidth
-      >
-        <Box sx={{ width: '100%' }}>
-          <Box sx={{ p: 3, pb: 2 }}>
-            <Typography fontSize={32} fontFamily="Instrument Serif">
-              Delete Child Account?
-            </Typography>
-          </Box>
-          <Divider sx={{ mx: 2 }} />
-          <DialogContent sx={{ pt: 3 }}>
-            <Typography variant="body1" color="text.secondary">
-              Are you sure you want to delete the child account for:
-            </Typography>
-            <Typography variant="body1" fontWeight={600} mt={1}>
-              {selectedAccount?.email}
-            </Typography>
-            <Typography variant="body2" color="error.main" mt={2}>
-              This action cannot be undone.
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-            <Button
-              onClick={() => {
-                setDeleteDialog(false);
-                setSelectedAccount(null);
-              }}
-              sx={{
-                border: '1px solid #E7E7E7',
-                borderRadius: '8px',
-                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                px: 3,
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteChildAccount}
-              variant="contained"
-              sx={{
-                bgcolor: '#D4321C',
-                borderRadius: '8px',
-                border: '1px solid #B82A17',
-                borderBottom: '3px solid #8C1F11',
-                px: 3,
-                '&:hover': { bgcolor: '#B82A17' },
-              }}
-            >
-              Delete
-            </Button>
-          </DialogActions>
-        </Box>
+      <Dialog open={deleteDialog} onClose={() => {
+        setDeleteDialog(false);
+        setSelectedAccount(null);
+      }}>
+        <DialogTitle>Delete Child Account</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the child account for {selectedAccount?.email}?
+            This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setDeleteDialog(false);
+            setSelectedAccount(null);
+          }}>Cancel</Button>
+          <Button onClick={handleDeleteChildAccount} variant="contained" color="error">
+            Delete
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Actions Menu */}
@@ -587,15 +351,6 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
         anchorEl={menuAnchorEl}
         open={Boolean(menuAnchorEl)}
         onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            minWidth: 180,
-            borderRadius: '12px',
-            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12)',
-            border: '1px solid #EBEBEB',
-            mt: 1,
-          },
-        }}
       >
         <MenuItem
           onClick={() => {
@@ -603,32 +358,19 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
             setResendDialog(true);
             handleMenuClose();
           }}
-          sx={{
-            py: 1.25,
-            px: 2,
-            fontSize: 14,
-            '&:hover': { bgcolor: '#F5F5F5' },
-          }}
         >
-          <Iconify icon="eva:refresh-fill" sx={{ mr: 1.5, width: 20, height: 20, color: '#636366' }} />
+          <Iconify icon="eva:refresh-fill" sx={{ mr: 1 }} />
           Resend Invitation
         </MenuItem>
-        <Divider sx={{ my: 0.5 }} />
         <MenuItem
           onClick={() => {
             console.log('Delete clicked for account:', selectedAccount);
             setDeleteDialog(true);
             handleMenuClose();
           }}
-          sx={{
-            py: 1.25,
-            px: 2,
-            fontSize: 14,
-            color: 'error.main',
-            '&:hover': { bgcolor: '#FEF3F2' },
-          }}
+          sx={{ color: 'error.main' }}
         >
-          <Iconify icon="eva:trash-2-fill" sx={{ mr: 1.5, width: 20, height: 20 }} />
+          <Iconify icon="eva:trash-2-fill" sx={{ mr: 1 }} />
           Delete
         </MenuItem>
       </Menu>
@@ -637,10 +379,8 @@ const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPi
 };
 
 ChildAccountList.propTypes = {
+  companyId: PropTypes.string.isRequired,
   company: PropTypes.object,
-  inviteDialogOpen: PropTypes.bool,
-  onInviteDialogClose: PropTypes.func,
-  isPicActivated: PropTypes.bool,
 };
 
 export default ChildAccountList;

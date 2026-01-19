@@ -14,11 +14,11 @@ import {
   Stack,
   Dialog,
   Button,
-  Divider,
   MenuItem,
   FormLabel,
   TextField,
   Typography,
+  DialogTitle,
   DialogContent,
   DialogActions,
   CircularProgress,
@@ -79,7 +79,7 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId, onRefresh
     watch,
     setValue,
     reset,
-    formState: { errors, isValid, isSubmitting },
+    formState: { errors },
   } = methods;
 
   const packageType = watch('packageType');
@@ -165,34 +165,22 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId, onRefresh
 
   return (
     <Dialog open={open} fullWidth maxWidth="sm">
-      <Box sx={{ p: 3, pb: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Box
+      <DialogTitle>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Iconify icon="bx:package" width={30} />
+          <Typography
+            variant="h3"
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: '10px',
-              bgcolor: '#F0F4FF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              letterSpacing: 0.8,
             }}
           >
-            <Iconify icon="bx:package" width={24} sx={{ color: '#1340FF' }} />
-          </Box>
-          <Box>
-            <Typography fontSize={28} fontFamily="Instrument Serif">
-              Create Package
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Add a new package subscription
-            </Typography>
-          </Box>
+            Create Package
+          </Typography>
         </Stack>
-      </Box>
-      <Divider sx={{ mx: 2 }} />
+      </DialogTitle>
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogContent sx={{ pt: 3 }}>
+        <DialogContent>
           <Box
             sx={{
               display: 'grid',
@@ -303,40 +291,22 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId, onRefresh
             )}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
+        <DialogActions>
           <Button
+            variant="outlined"
+            sx={{ borderRadius: 0.6 }}
             onClick={handleClose}
-            disabled={isSubmitting}
-            sx={{
-              border: '1px solid #E7E7E7',
-              borderRadius: '8px',
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-              px: 3,
-            }}
           >
-            Cancel
+            Close
           </Button>
           <LoadingButton
+            //   loading={loading}
             variant="contained"
             type="submit"
-            loading={isSubmitting}
-            disabled={!isValid}
-            sx={{
-              bgcolor: '#1340FF',
-              borderRadius: '8px',
-              border: '1px solid #1a32c4',
-              borderBottom: '3px solid #102387',
-              px: 3,
-              '&:hover': { bgcolor: '#1a32c4' },
-              '&.Mui-disabled': {
-                bgcolor: '#E7E7E7',
-                color: '#8E8E93',
-                border: '1px solid #E7E7E7',
-                borderBottom: '3px solid #C4CDD5',
-              },
-            }}
+            //   onClick={onSubmit}
+            sx={{ borderRadius: 0.6 }}
           >
-            Create Package
+            Create
           </LoadingButton>
         </DialogActions>
       </FormProvider>

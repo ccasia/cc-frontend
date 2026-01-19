@@ -143,9 +143,8 @@ const CampaignInfo = ({ campaign }) => {
                   { label: 'Gender', data: requirement?.gender?.map(capitalizeFirstLetter) },
                   { label: 'Geo Location', data: requirement?.geoLocation },
                   {
-                    label: 'Countries',
-                    data: requirement?.countries || [],
-                    isCountries: true,
+                    label: 'Country',
+                    data: requirement?.country || '',
                   },
                   {
                     label: 'Creator Persona',
@@ -156,13 +155,12 @@ const CampaignInfo = ({ campaign }) => {
                 ]
                   .filter((item, _, arr) => {
                     if (item.label === 'Geo Location') {
-                      const countriesData = arr.find((i) => i.label === 'Countries')?.data;
                       const hasMalaysia =
-                        Array.isArray(countriesData) && countriesData.includes('Malaysia');
+                        arr.find((i) => i.label === 'Country')?.data === 'Malaysia';
                       return hasMalaysia;
                     }
-                    if (item.label === 'Countries') {
-                      return Array.isArray(item.data) && item.data.length > 0;
+                    if (item.label === 'Country') {
+                      return item.data;
                     }
                     return true;
                   })
@@ -174,32 +172,14 @@ const CampaignInfo = ({ campaign }) => {
                       >
                         {item.label}
                       </Typography>
-                      {item.isCountries ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {item.data?.map((countryName, idx) => (
-                            <Box
-                              key={idx}
-                              display="inline-flex"
-                              gap={1}
-                              sx={{ ...ChipStyle, p: 1, px: 1.5 }}
-                              alignItems="center"
-                            >
-                              <Iconify
-                                icon={`emojione:flag-for-${countryName.toLowerCase()}`}
-                                width={20}
-                              />
-                              <Typography variant="subtitle2">{countryName}</Typography>
-                            </Box>
-                          ))}
-                        </Box>
-                      ) : Array.isArray(item.data) ? (
+                      {Array.isArray(item.data) ? (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {item.data?.map((value, idx) => (
                             <Chip key={idx} label={value} size="small" sx={ChipStyle} />
                           ))}
                         </Box>
                       ) : (
-                        item.isCountry && (
+                        item.label === 'Country' && (
                           <Box
                             display="inline-flex"
                             gap={1}

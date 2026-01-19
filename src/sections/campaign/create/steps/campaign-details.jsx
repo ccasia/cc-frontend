@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React, { memo } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
-import { Box, Chip, Grid, Stack, Button, FormLabel, Typography, IconButton } from '@mui/material';
+import { Box, Grid, Stack, Button, FormLabel, Typography, IconButton } from '@mui/material';
 
 import { langList } from 'src/contants/language';
 import { countriesCities } from 'src/contants/countries';
@@ -79,7 +79,6 @@ const CampaignDetails = () => {
 
   const audienceGeoLocation = watch('audienceLocation');
   const country = watch('country');
-  const countries = watch('countries');
 
   const {
     append: doAppend,
@@ -128,19 +127,19 @@ const CampaignDetails = () => {
             />
           </FormField>
 
-          <FormField label="Audience Countries">
+          <FormField label="Audience Country">
             <RHFAutocomplete
-              name="countries"
-              placeholder="Select countries"
-              multiple
+              name="country"
+              placeholder="Select country"
               options={Object.keys(countriesCities)}
               getOptionLabel={(option) => option}
               slotProps={{
                 paper: {
                   sx: {
                     '& .MuiAutocomplete-listbox': {
-                      maxHeight: 300,
+                      maxHeight: 300, // force scroll
                       overflowY: 'auto',
+                      /* Scrollbar customization */
                       '&::-webkit-scrollbar': {
                         width: 8,
                       },
@@ -155,6 +154,7 @@ const CampaignDetails = () => {
                       '&::-webkit-scrollbar-thumb:hover': {
                         backgroundColor: '#555',
                       },
+                      /* Firefox */
                       scrollbarWidth: 'thin',
                       scrollbarColor: '#888 #fff00',
                     },
@@ -172,29 +172,10 @@ const CampaignDetails = () => {
                   </Box>
                 );
               }}
-              renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option}
-                    icon={<Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={16} />}
-                    label={option}
-                    size="small"
-                    variant="outlined"
-                    sx={{
-                      border: 1,
-                      borderColor: '#EBEBEB',
-                      boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                      backgroundColor: '#fff',
-                      py: 1.5,
-                    }}
-                  />
-                ))
-              }
             />
           </FormField>
 
-          {(countries?.includes('Malaysia') || country?.toLowerCase() === 'malaysia') && (
+          {country?.toLowerCase() === 'malaysia' && (
             <FormField label="Audience City/Area">
               <RHFMultiSelect
                 name="audienceLocation"
