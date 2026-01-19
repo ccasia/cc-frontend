@@ -437,9 +437,11 @@ export default function ProductDeliveryDrawer({
       </Box>
       {renderDietary}
       {renderDeliveryDetails}
-      <Stack alignItems="center" sx={{ mb: 3 }}>
-        {renderFooterActions()}
-      </Stack>
+      {isAdmin && (
+        <Stack alignItems="center" sx={{ mb: 3 }}>
+          {renderFooterActions()}
+        </Stack>
+      )}
 
       <AssignLogisticDialog
         open={openAssign}
