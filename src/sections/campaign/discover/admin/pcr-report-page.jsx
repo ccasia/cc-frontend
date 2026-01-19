@@ -2361,10 +2361,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2385,10 +2385,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2409,10 +2409,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2433,10 +2433,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2524,10 +2524,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2548,10 +2548,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2572,10 +2572,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2596,10 +2596,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2688,10 +2688,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2712,10 +2712,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2736,10 +2736,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
@@ -2760,10 +2760,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Grid item xs={3}>
                     <Box>
                       <Typography sx={{
-                        fontFamily: 'Instrument Serif !important',
-                        fontWeight: '400 !important',
-                        fontSize: '48px !important',
-                        lineHeight: '56px !important',
+                        fontFamily: 'Instrument Serif',
+                        fontWeight: 400,
+                        fontSize: '20.42px',
+                        lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
                       }}>
