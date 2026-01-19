@@ -175,9 +175,6 @@ const PackageCreateDialog = ({ packageDialog, companyId }) => {
           >
             <FormField required={false} label="Package Type">
               <RHFSelect name="packageType">
-                <MenuItem disabled sx={{ fontStyle: 'italic' }}>
-                  Select package type
-                </MenuItem>
                 {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
                   <MenuItem key={e} value={e}>
                     {e}
