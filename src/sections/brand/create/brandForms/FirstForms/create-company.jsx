@@ -258,19 +258,26 @@ const CreateCompany = ({
     >
       <FormField required={false} label="Package Type">
         <RHFSelect name="packageType">
-          <MenuItem disabled sx={{ fontStyle: 'italic' }}>
-            Select package type
-          </MenuItem>
-          {/* {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
-            <MenuItem key={e} value={e}>
-              {e}
-            </MenuItem>
-          ))} */}
-          {packages?.filter((item) => item.name.toLowerCase() !== 'custom').map((item) => (
-            <MenuItem key={item.id} value={item.id}>
-              {item.name}
-            </MenuItem>
-          ))}
+          {packages
+            ?.filter((item) => item.name.toLowerCase() !== 'custom')
+            .map((item) => (
+              <MenuItem
+                key={item.id}
+                value={item.id}
+                disabled={item.name === 'Basic'}
+                sx={{
+                  ...(item.name === 'Basic' && {
+                    color: 'text.disabled',
+                    fontStyle: 'italic',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }),
+                }}
+              >
+                {item.name}
+                {item.name === 'Basic' && <span style={{ fontSize: '0.75rem' }}>(2025)</span>}
+              </MenuItem>
+            ))}
           <MenuItem key="custom" value="Custom">
             Custom
           </MenuItem>
