@@ -239,255 +239,38 @@ const CampaignDetailContentClient = ({ campaign }) => {
               </Typography>
             </Box>
 
-            <Stack className="body" justifyContent="space-between" direction="row" spacing={2}>
-              <Stack spacing={2} flex={1}>
-                <Box>
-                  <Typography sx={SectionTitleStyle}>Primary Campaign Objective</Typography>
-                  <Box sx={{ mt: 0.5 }}>
-                    {campaign?.campaignBrief?.objectives ? (
-                      <Chip label={campaign.campaignBrief.objectives} size="small" sx={ChipStyle} />
-                    ) : (
-                      <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
-                        Not specified
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-
-                <Box>
-                  <Typography sx={SectionTitleStyle}>Secondary Campaign Objective</Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                    {campaign?.campaignBrief?.secondaryObjectives?.length > 0 ? (
-                      campaign.campaignBrief.secondaryObjectives.map((objective, idx) => (
-                        <Box
-                          key={idx}
-                          sx={{
-                            bgcolor: '#FFF',
-                            border: '1px solid #EBEBEB',
-                            borderRadius: 0.8,
-                            color: '#636366',
-                            padding: '0.6rem 0.8rem',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            fontSize: '0.8rem',
-                            fontWeight: 700,
-                            whiteSpace: 'normal',
-                            wordBreak: 'break-word',
-                            display: 'inline-block',
-                            maxWidth: '100%',
-                          }}
-                        >
-                          {objective}
-                        </Box>
-                      ))
-                    ) : (
-                      <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
-                        Not specified
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-              </Stack>
-
-              <Stack spacing={2} flex={1}>
-                <Box>
-                  <Typography sx={SectionTitleStyle}>Promote Content</Typography>
-                  <Typography sx={SectionBodyStyle}>
-                    {campaign?.campaignBrief?.boostContent
-                      ? capitalizeFirstLetter(campaign.campaignBrief.boostContent)
-                      : 'Not specified'}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography sx={SectionTitleStyle}>Primary KPI</Typography>
-                  <Typography sx={SectionBodyStyle}>
-                    {campaign?.campaignBrief?.primaryKPI || 'Not specified'}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography sx={SectionTitleStyle}>Current Performance Baseline</Typography>
-                  <Typography sx={SectionBodyStyle}>
-                    {campaign?.campaignBrief?.performanceBaseline || 'Not specified'}
-                  </Typography>
-                </Box>
-              </Stack>
-            </Stack>
-          </Box>
-
-          {/* TARGET AUDIENCE */}
-          {(() => {
-            // Check if secondary audience data exists
-            const hasSecondaryAudience =
-              requirement?.secondary_gender?.length > 0 ||
-              requirement?.secondary_age?.length > 0 ||
-              requirement?.secondary_country ||
-              requirement?.secondary_geoLocation?.length > 0 ||
-              requirement?.secondary_language?.length > 0 ||
-              requirement?.secondary_creator_persona?.length > 0 ||
-              requirement?.secondary_user_persona;
-
-            // Helper to render Geographic Focus without nested ternary
-            const getGeographicFocus = () => {
-              if (!requirement?.geographic_focus) return 'Not specified';
-              if (requirement.geographic_focus === 'SEAregion') return 'SEA Region';
-              if (requirement.geographic_focus === 'others')
-                return requirement.geographicFocusOthers;
-              return capitalizeFirstLetter(requirement.geographic_focus);
-            };
-
-            // Extracted renderAudienceContent for clarity and to avoid inline function
-            function renderAudienceContent(isPrimary = true) {
-              const prefix = isPrimary ? '' : 'secondary_';
-              const gender = requirement?.[`${prefix}gender`];
-              const age = requirement?.[`${prefix}age`];
-              const country = requirement?.[`${prefix}country`];
-              const language = requirement?.[`${prefix}language`];
-              const creatorPersona = requirement?.[`${prefix}creator_persona`];
-              const userPersona = requirement?.[`${prefix}user_persona`];
-
-              return (
-                <Stack className="body" justifyContent="space-between" direction="row" spacing={3}>
-                  {/* Left Column */}
-                  <Stack spacing={2} flex={1}>
-                    <Box>
-                      <Typography sx={SectionTitleStyle}>Gender</Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {gender?.length > 0 ? (
-                          gender.map((value, idx) => (
-                            <Chip
-                              key={idx}
-                              label={capitalizeFirstLetter(value)}
-                              size="small"
-                              sx={ChipStyle}
-                            />
-                          ))
-                        ) : (
-                          <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
-                            Not specified
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-
-                    <Box>
-                      <Typography sx={SectionTitleStyle}>Age</Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {age?.length > 0 ? (
-                          age.map((value, idx) => (
-                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                          ))
-                        ) : (
-                          <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
-                            Not specified
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-
-                    {country?.length > 0 && (
-                      <Box>
-                        <Typography sx={SectionTitleStyle}>Country</Typography>
-                        <Typography sx={SectionBodyStyle}>{country || 'Not specified'}</Typography>
-                      </Box>
-                    )}
-
-                    <Box>
-                      <Typography sx={SectionTitleStyle}>Language</Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {language?.length > 0 ? (
-                          language.map((value, idx) => (
-                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                          ))
-                        ) : (
-                          <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
-                            Not specified
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  </Stack>
-
-                  {/* Right Column */}
-                  <Stack spacing={2} flex={1}>
-                    <Box>
-                      <Typography sx={SectionTitleStyle}>Creator&apos;s Interests</Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {creatorPersona?.length > 0 ? (
-                          creatorPersona.map((value, idx) => (
-                            <Chip
-                              key={idx}
-                              label={getProperInterestLabel(value)}
-                              size="small"
-                              sx={ChipStyle}
-                            />
-                          ))
-                        ) : (
-                          <Typography sx={{ ...SectionBodyStyle, color: 'text.secondary' }}>
-                            Not specified
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-
-                    <Box>
-                      <Typography sx={SectionTitleStyle}>User Persona</Typography>
-                      <Typography sx={SectionBodyStyle}>
-                        {userPersona || 'Not specified'}
-                      </Typography>
-                    </Box>
-
-                    <Box>
-                      <Typography sx={SectionTitleStyle}>Geographic Focus</Typography>
-                      <Typography sx={SectionBodyStyle}>{getGeographicFocus()}</Typography>
-                    </Box>
-                  </Stack>
-                </Stack>
-              );
-            }
-
-            if (hasSecondaryAudience) {
-              return (
-                <Stack direction="row" spacing={2}>
-                  {/* PRIMARY AUDIENCE */}
-                  <Box sx={BoxStyle}>
-                    <Box className="header">
-                      <Iconify
-                        icon="material-symbols-light:groups-outline"
-                        sx={{
-                          color: '#FF3500',
-                          width: 30,
-                          height: 30,
-                          mt: -0.7,
-                        }}
-                      />
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#221f20',
-                          fontWeight: 600,
-                          fontSize: '0.875rem',
-                        }}
-                      >
-                        PRIMARY AUDIENCE
-                      </Typography>
-                    </Box>
-                    {renderAudienceContent(true)}
-                  </Box>
-
-                  {/* SECONDARY AUDIENCE */}
-                  <Box sx={BoxStyle}>
-                    <Box className="header">
-                      <Iconify
-                        icon="material-symbols-light:groups-outline"
-                        sx={{
-                          color: '#FF3500',
-                          width: 30,
-                          height: 30,
-                          mt: -0.7,
-                          mr: -0.2,
-                        }}
-                      />
+            <Stack direction="row" spacing={4}>
+              {/* Left Column */}
+              <Stack spacing={2} sx={{ flex: 1 }}>
+                {[
+                  { label: 'Gender', data: requirement?.gender?.map(capitalizeFirstLetter) },
+                  {
+                    label: 'Countries',
+                    data: requirement?.countries || [],
+                    isCountries: true,
+                  },
+                  { label: 'Geo Location', data: requirement?.geoLocation },
+                  {
+                    label: 'Creator Persona',
+                    data: requirement?.creator_persona?.map((value) =>
+                      value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
+                    ),
+                  },
+                ]
+                  .filter((item, _, arr) => {
+                    if (item.label === 'Geo Location') {
+                      const countriesData = arr.find((i) => i.label === 'Countries')?.data;
+                      const hasMalaysia =
+                        Array.isArray(countriesData) && countriesData.includes('Malaysia');
+                      return hasMalaysia;
+                    }
+                    if (item.label === 'Countries') {
+                      return Array.isArray(item.data) && item.data.length > 0;
+                    }
+                    return true;
+                  })
+                  .map((item) => (
+                    <Box key={item.label}>
                       <Typography
                         variant="body2"
                         sx={{
@@ -498,104 +281,25 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       >
                         SECONDARY AUDIENCE
                       </Typography>
-                    </Box>
-                    {renderAudienceContent(false)}
-                  </Box>
-                </Stack>
-              );
-            }
-
-            return (
-              <Box sx={BoxStyle}>
-                <Box className="header">
-                  <Iconify
-                    icon="material-symbols-light:groups-outline"
-                    sx={{
-                      color: '#FF3500',
-                      width: 30,
-                      height: 30,
-                      mt: -0.7,
-                    }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#221f20',
-                      fontWeight: 600,
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    TARGET AUDIENCE
-                  </Typography>
-                </Box>
-                {renderAudienceContent(true)}
-              </Box>
-            );
-          })()}
-
-          {/* ADDITIONAL DETAILS */}
-          {(() => {
-            const additionalDetails = campaign?.campaignAdditionalDetails;
-
-            // Check if Additional Details 1 has any data
-            const hasAdditionalDetails1 =
-              campaign?.campaignBrief?.socialMediaPlatform?.length > 0 ||
-              additionalDetails?.contentFormat?.length > 0 ||
-              campaign?.campaignBrief?.postingStartDate ||
-              additionalDetails?.mainMessage ||
-              additionalDetails?.keyPoints ||
-              additionalDetails?.toneAndStyle ||
-              additionalDetails?.brandGuidelinesUrl ||
-              additionalDetails?.referenceContent ||
-              additionalDetails?.productImage1Url ||
-              additionalDetails?.productImage2Url;
-
-            // Check if Additional Details 2 has any data
-            const hasAdditionalDetails2 =
-              additionalDetails?.hashtagsToUse ||
-              additionalDetails?.mentionsTagsRequired ||
-              additionalDetails?.creatorCompensation ||
-              additionalDetails?.ctaDesiredAction ||
-              additionalDetails?.ctaLinkUrl ||
-              additionalDetails?.ctaPromoCode ||
-              additionalDetails?.ctaLinkInBioRequirements ||
-              additionalDetails?.specialNotesInstructions ||
-              additionalDetails?.needAds;
-
-            // Don't render if no data at all
-            if (!hasAdditionalDetails1 && !hasAdditionalDetails2) {
-              return null;
-            }
-
-            // Helper to format posting timeline
-            const getPostingTimeline = () => {
-              const start = campaign?.campaignBrief?.postingStartDate;
-              const end = campaign?.campaignBrief?.postingEndDate;
-              if (!start && !end) return 'Not specified';
-
-              const formatDate = (date) => {
-                if (!date) return '';
-                return new Date(date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                });
-              };
-
-              if (start && end) {
-                return `${formatDate(start)} - ${formatDate(end)}`;
-              }
-              return formatDate(start || end);
-            };
-
-            const renderAdditionalDetails1 = () => (
-              <Stack className="body" spacing={3}>
-                <Stack direction="row" spacing={2}>
-                  {/* Left Column */}
-                  <Stack spacing={2} flex={1}>
-                    {campaign?.campaignBrief?.socialMediaPlatform?.length > 0 && (
-                      <Box>
-                        <Typography sx={SectionTitleStyle}>Preferred Platforms</Typography>
+                      {item.isCountries ? (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {item.data?.map((countryName, idx) => (
+                            <Box
+                              key={idx}
+                              display="inline-flex"
+                              gap={1}
+                              sx={{ ...ChipStyle, p: 1, px: 1.5 }}
+                              alignItems="center"
+                            >
+                              <Iconify
+                                icon={`emojione:flag-for-${countryName.toLowerCase()}`}
+                                width={20}
+                              />
+                              <Typography variant="subtitle2">{countryName}</Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : Array.isArray(item.data) ? (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {campaign.campaignBrief.socialMediaPlatform.map((platform, idx) => (
                             <Chip
@@ -606,93 +310,19 @@ const CampaignDetailContentClient = ({ campaign }) => {
                             />
                           ))}
                         </Box>
-                      </Box>
-                    )}
-                    {additionalDetails?.contentFormat?.length > 0 && (
-                      <Box>
-                        <Typography sx={SectionTitleStyle}>Content Format</Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {additionalDetails.contentFormat.map((format, idx) => (
-                            <Chip key={idx} label={format} size="small" sx={ChipStyle} />
-                          ))}
-                        </Box>
-                      </Box>
-                    )}
-                    {(campaign?.campaignBrief?.postingStartDate ||
-                      campaign?.campaignBrief?.postingEndDate) && (
-                      <Box>
-                        <Typography sx={SectionTitleStyle}>Posting Timeline</Typography>
-                        <Typography sx={SectionBodyStyle}>{getPostingTimeline()}</Typography>
-                      </Box>
-                    )}
-                    {additionalDetails?.mainMessage && (
-                      <Box>
-                        <Typography sx={SectionTitleStyle}>Main Message/Theme</Typography>
-                        <Typography sx={SectionBodyStyle}>
-                          {additionalDetails.mainMessage}
-                        </Typography>
-                      </Box>
-                    )}
-                    {additionalDetails?.keyPoints && (
-                      <Box>
-                        <Typography sx={SectionTitleStyle}>Key Points to Cover</Typography>
-                        <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
-                          {additionalDetails.keyPoints}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Stack>
-
-                  {/* Right Column */}
-                  <Stack spacing={2} flex={1}>
-                    {additionalDetails?.toneAndStyle && (
-                      <Box>
-                        <Typography sx={SectionTitleStyle}>Tone & Style</Typography>
-                        <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
-                          {additionalDetails.toneAndStyle}
-                        </Typography>
-                      </Box>
-                    )}
-                    {additionalDetails?.brandGuidelinesUrl &&
-                      (() => {
-                        const urls = additionalDetails.brandGuidelinesUrl
-                          .split(',')
-                          .map((u) => u.trim())
-                          .filter(Boolean);
-                        return (
-                          <Box>
-                            <Typography
-                              sx={{
-                                ...SectionTitleStyle,
-                                overflowWrap: 'anywhere',
-                                whiteSpace: 'normal',
-                              }}
-                            >
-                              Brand Guidelines Document{urls.length > 1 ? 's' : ''}
-                            </Typography>
-                            <Stack spacing={0.5}>
-                              {urls.map((url, idx) => {
-                                let filename = url.split('/').pop().split('?')[0];
-                                filename = filename.replace(/_v=.*$/, '');
-                                return (
-                                  <Link
-                                    key={url}
-                                    href={url}
-                                    target="_blank"
-                                    sx={{
-                                      fontSize: '0.8rem',
-                                      color: '#203ff5',
-                                      textDecoration: 'none',
-                                      overflowWrap: 'anywhere',
-                                      whiteSpace: 'normal',
-                                      '&:hover': { textDecoration: 'underline' },
-                                    }}
-                                  >
-                                    {filename}
-                                  </Link>
-                                );
-                              })}
-                            </Stack>
+                      ) : (
+                        item.isCountry && (
+                          <Box
+                            display="inline-flex"
+                            gap={1}
+                            sx={{ ...ChipStyle, p: 1, px: 1.5 }}
+                            alignItems="center"
+                          >
+                            <Iconify
+                              icon={`emojione:flag-for-${item.data.toLowerCase()}`}
+                              width={20}
+                            />
+                            <Typography variant="subtitle2">{item.data}</Typography>
                           </Box>
                         );
                       })()}

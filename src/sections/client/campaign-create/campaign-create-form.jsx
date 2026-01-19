@@ -233,6 +233,16 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     audienceGender: Yup.array()
       .min(1, 'At least one option')
       .required('Audience Gender is required'),
+    countries: Yup.array()
+      .min(1, 'At least one country is required')
+      .required('Countries is required'),
+    audienceLocation: Yup.array().when('countries', {
+      is: (countries) => countries && countries.includes('Malaysia'),
+      then: (schema) =>
+        schema.min(1, 'At least one option').required('Audience location is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
       .min(1, 'At least one option')
       .required('Audience language is required'),
@@ -390,17 +400,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     audienceLanguage: [],
     audienceCreatorPersona: [],
     country: '',
-    // Secondary Audience
-    secondaryAudienceUserPersona: '',
-    secondaryAudienceGender: [],
-    secondaryAudienceAge: [],
-    secondaryAudienceLocation: [],
-    secondaryOthersAudienceLocation: '',
-    secondaryAudienceLanguage: [],
-    secondaryAudienceCreatorPersona: [],
-    secondaryCountry: '',
-    geographicFocus: '',
-    geographicFocusOthers: '',
+    countries: [],
+    socialMediaPlatform: [],
+    videoAngle: [],
     campaignDo: [{ value: '' }],
     campaignDont: [{ value: '' }],
     campaignImages: [],
@@ -656,26 +658,8 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           ? data.audienceCreatorPersona
           : [],
         audienceUserPersona: data.audienceUserPersona || '',
-        country: data.country || '',
-        secondaryAudienceGender: Array.isArray(data.secondaryAudienceGender)
-          ? data.secondaryAudienceGender
-          : [],
-        secondaryAudienceAge: Array.isArray(data.secondaryAudienceAge)
-          ? data.secondaryAudienceAge
-          : [],
-        secondaryAudienceLocation: Array.isArray(data.secondaryAudienceLocation)
-          ? data.secondaryAudienceLocation.filter((item) => item !== 'Others')
-          : [],
-        secondaryAudienceLanguage: Array.isArray(data.secondaryAudienceLanguage)
-          ? data.secondaryAudienceLanguage
-          : [],
-        secondaryAudienceCreatorPersona: Array.isArray(data.secondaryAudienceCreatorPersona)
-          ? data.secondaryAudienceCreatorPersona
-          : [],
-        secondaryAudienceUserPersona: data.secondaryAudienceUserPersona || '',
-        secondaryCountry: data.secondaryCountry || '',
-        geographicFocus: data.geographicFocus || '',
-        geographicFocusOthers: data.geographicFocusOthers || '',
+        country: data.countries && data.countries.length > 0 ? data.countries : [data.country].filter(Boolean),
+        countries: Array.isArray(data.countries) ? data.countries : [],
         socialMediaPlatform: Array.isArray(data.socialMediaPlatform)
           ? data.socialMediaPlatform
           : [],

@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
 
@@ -288,7 +288,8 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                       : campaign?.status
                   )}
                 </Typography>
-                {campaign?.campaignRequirement?.country && (
+                {(campaign?.campaignRequirement?.countries?.length > 0 ||
+                  campaign?.campaignRequirement?.country) && (
                   <>
                     <Divider
                       orientation="vertical"
@@ -296,45 +297,98 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                       sx={{ bgcolor: 'black', height: 14 }}
                       variant="middle"
                     />
-                    <Tooltip
-                      title={
+                    {campaign?.campaignRequirement?.countries?.length > 0 ? (
+                      <Tooltip
+                        title={
+                          <Stack direction="column" spacing={0.5}>
+                            {campaign.campaignRequirement.countries.map((countryName, idx) => (
+                              <Stack key={idx} direction="row" spacing={1} alignItems="center">
+                                <Iconify
+                                  icon={`emojione:flag-for-${countryName?.toLowerCase()}`}
+                                  width={15}
+                                />
+                                <Typography variant="caption">{countryName}</Typography>
+                              </Stack>
+                            ))}
+                          </Stack>
+                        }
+                        followCursor
+                        slotProps={{
+                          tooltip: {
+                            sx: {
+                              borderRadius: 0.4,
+                            },
+                          },
+                        }}
+                      >
                         <Stack direction="row" spacing={1} alignItems="center">
-                          <Iconify
-                            icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
-                            width={15}
-                          />
-                          <Typography variant="caption">
+                          {campaign.campaignRequirement.countries.map((countryName, idx) => {
+                            const countryCode =
+                              countries.find((item) =>
+                                item.label.toLowerCase().includes(countryName?.toLowerCase())
+                              )?.code || countryName.substring(0, 2).toUpperCase();
+
+                            return (
+                              <React.Fragment key={idx}>
+                                {idx > 0 && (
+                                  <Divider
+                                    orientation="vertical"
+                                    flexItem
+                                    sx={{ bgcolor: 'black', height: 14 }}
+                                    variant="middle"
+                                  />
+                                )}
+                                <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
+                                  {countryCode}
+                                </Typography>
+                              </React.Fragment>
+                            );
+                          })}
+                        </Stack>
+                      </Tooltip>
+                    ) : (
+                      campaign?.campaignRequirement?.country && (
+                        <Tooltip
+                          title={
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Iconify
+                                icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
+                                width={15}
+                              />
+                              <Typography variant="caption">
+                                {
+                                  countries.find((item) =>
+                                    item.label
+                                      .toLowerCase()
+                                      .includes(
+                                        campaign?.campaignRequirement?.country?.toLowerCase()
+                                      )
+                                  ).label
+                                }
+                              </Typography>
+                            </Stack>
+                          }
+                          followCursor
+                          slotProps={{
+                            tooltip: {
+                              sx: {
+                                borderRadius: 0.4,
+                              },
+                            },
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
                             {
                               countries.find((item) =>
                                 item.label
                                   .toLowerCase()
                                   .includes(campaign?.campaignRequirement?.country?.toLowerCase())
-                              ).label
+                              ).code
                             }
                           </Typography>
-                        </Stack>
-                      }
-                      followCursor
-                      slotProps={{
-                        tooltip: {
-                          sx: {
-                            // bgcolor: 'white',
-                            // color: 'black',
-                            borderRadius: 0.4,
-                          },
-                        },
-                      }}
-                    >
-                      <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
-                        {
-                          countries.find((item) =>
-                            item.label
-                              .toLowerCase()
-                              .includes(campaign?.campaignRequirement?.country?.toLowerCase())
-                          ).code
-                        }
-                      </Typography>
-                    </Tooltip>
+                        </Tooltip>
+                      )
+                    )}
                   </>
                 )}
               </Stack>

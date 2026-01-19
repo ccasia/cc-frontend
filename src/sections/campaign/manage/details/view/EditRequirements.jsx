@@ -5,6 +5,7 @@ import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
+  Chip,
   Button,
   Dialog,
   TextField,
@@ -29,6 +30,7 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
   const methods = useForm({
     defaultValues: {
       country: campaign?.campaignRequirement?.country || '',
+      countries: campaign?.campaignRequirement?.countries || [],
       audienceGender: campaign?.campaignRequirement?.gender || [],
       audienceAge: campaign?.campaignRequirement?.age || [],
       audienceLocation: campaign?.campaignRequirement?.geoLocation || [],
@@ -42,6 +44,7 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
 
   const audienceLocation = watch('audienceLocation');
   const country = watch('country');
+  const countries = watch('countries');
 
   const closeDialog = () => onClose('campaignRequirements');
 
@@ -108,18 +111,18 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
               />
 
               <RHFAutocomplete
-                name="country"
-                label="Audience Country"
-                placeholder="Select country"
+                name="countries"
+                label="Audience Countries"
+                placeholder="Select countries"
+                multiple
                 options={Object.keys(countriesCities)}
                 getOptionLabel={(option) => option}
                 slotProps={{
                   paper: {
                     sx: {
                       '& .MuiAutocomplete-listbox': {
-                        maxHeight: 300, // force scroll
+                        maxHeight: 300,
                         overflowY: 'auto',
-                        /* Scrollbar customization */
                         '&::-webkit-scrollbar': {
                           width: 8,
                         },
@@ -134,7 +137,6 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                         '&::-webkit-scrollbar-thumb:hover': {
                           backgroundColor: '#555',
                         },
-                        /* Firefox */
                         scrollbarWidth: 'thin',
                         scrollbarColor: '#888 #fff00',
                       },
@@ -152,9 +154,28 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                     </Box>
                   );
                 }}
+                renderTags={(selected, getTagProps) =>
+                  selected.map((option, index) => (
+                    <Chip
+                      {...getTagProps({ index })}
+                      key={option}
+                      icon={<Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={16} />}
+                      label={option}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        border: 1,
+                        borderColor: '#EBEBEB',
+                        boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                        backgroundColor: '#fff',
+                        py: 1.5,
+                      }}
+                    />
+                  ))
+                }
               />
 
-              {country?.toLowerCase() === 'malaysia' && (
+              {(countries?.includes('Malaysia') || country?.toLowerCase() === 'malaysia') && (
                 <>
                   <RHFMultiSelect
                     name="audienceLocation"

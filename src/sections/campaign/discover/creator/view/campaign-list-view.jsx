@@ -123,17 +123,26 @@ export default function CampaignListView() {
   const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
   
   const targetUserIds = useMemo(() => [
-    'cmeuvjc6b003on401rn4pw62b',
-    'cmf813vtd0000pd3psk46u4lt',
-    'cmipdmkvd0005k43fnfgxrb4t',
-    'user456',
-    'user-id-5',
-    'user-id-6',
-    'user-id-7',
-    'user-id-8',
-    'user-id-9',
-    'user-id-10',
-    // Add more user IDs as needed
+    'cm8gvqtcv01hwph01uof2u9xu',
+    'cm49lve6i00patrd2ax5fj67h',
+    'cm4132k9p00wb54qgcrs71v0t',
+    'cmauqo8oy03ioky0157sbr2jg',
+    'cm8jxuuvy0272ph01nr0h7din',
+    'cm5b5p0zu00r2ylfpo241kqki',
+    'cmewrex4p054ipx01u5xqkqhj',
+    'cm7oe0q15005bms010ujmjb3r',
+    'cm44lei3t00si132zq87a5lan',
+    'cm9kzqz1u00ziqe01q2tsdptg',
+    'cmfb25m4r003vqn01zoe9atng',
+    'cmj9pz1n40a3hs40154b31l90',
+    'cm8mh5ic5032sph011r87rw4e',
+    'cm40womsf001k54qg4epuacmu',
+    'cm4utxiyv02mu9wevfkpyt8qj',
+    'cmfwczmov0t5rqp01aq687n4a',
+    'cmj7kdxxi05sqs401pro45vik',
+    'cmj21yl0102ghpc01xmy9zkwa',
+    'cm3pyp3vm006qm9m8qm1ep02d',
+    'cm4ey6g9401w4trd2ip0zf1et',
   ], []);
 
   const load = useBoolean();
