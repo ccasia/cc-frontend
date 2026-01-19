@@ -5,13 +5,14 @@ import Stack from '@mui/material/Stack';
 import Toolbar from '@mui/material/Toolbar';
 import { grey } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
-import { AppBar, Divider } from '@mui/material';
+import { AppBar, Badge, Box, Chip, Divider, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 
 import { useOffSetTop } from 'src/hooks/use-off-set-top';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { bgBlur } from 'src/theme/css';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Logo from 'src/components/logo';
 import Iconify from 'src/components/iconify';
@@ -32,9 +33,9 @@ export default function Header({ onOpenNav, isOnline }) {
 
   const settings = useSettingsContext();
 
-  const isNavHorizontal = settings.themeLayout === 'horizontal';
+  const { user } = useAuthContext();
 
-  // const isNavMini = settings.themeLayout === 'mini';
+  const isNavHorizontal = settings.themeLayout === 'horizontal';
 
   const lgUp = useResponsive('up', 'lg');
 
@@ -44,17 +45,26 @@ export default function Header({ onOpenNav, isOnline }) {
 
   const renderHeader = (
     <Stack direction="row" alignItems="center" spacing={1}>
-      {/* <Card
-        sx={{
-          borderRadius: 1,
-          boxShadow: theme.customShadows.z2,
-        }}
-      > */}
+      {user?.isImpersonating && (
+        <Chip
+          variant="outlined"
+          color="secondary"
+          label={
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="caption">Impersonating mode</Typography>
+              <Typography variant="caption">Initiated by {user.impersonatingBy}</Typography>
+            </Box>
+          }
+          icon={<Iconify icon="fluent:important-12-regular" />}
+          sx={{
+            height: 'auto',
+          }}
+        />
+      )}
       <NotificationsPopover />
       <ChatPopover />
       {/* </Card> */}
       <Divider
-        // variant="fullWidth"
         orientation="vertical"
         sx={{
           height: '28px',
@@ -69,12 +79,6 @@ export default function Header({ onOpenNav, isOnline }) {
   const renderContent = (
     <>
       {lgUp && isNavHorizontal && <Logo sx={{ mr: 2.5 }} />}
-
-      {/* {!lgUp && (
-        <IconButton onClick={onOpenNav}>
-          <SvgColor src="/assets/icons/navbar/ic_menu_item.svg" />
-        </IconButton>
-      )} */}
 
       {!lgUp && (
         <IconButton
@@ -109,8 +113,6 @@ export default function Header({ onOpenNav, isOnline }) {
         </IconButton>
       )}
 
-      {/* <Searchbar /> */}
-
       <Stack
         flexGrow={1}
         direction="row"
@@ -119,11 +121,6 @@ export default function Header({ onOpenNav, isOnline }) {
         spacing={{ xs: 0.5, sm: 1 }}
       >
         {renderHeader}
-        {/* <NotificationsPopover /> */}
-
-        {/* <SettingsButton /> */}
-
-        {/* <AccountPopover isOnline={isOnline} /> */}
       </Stack>
     </>
   );
