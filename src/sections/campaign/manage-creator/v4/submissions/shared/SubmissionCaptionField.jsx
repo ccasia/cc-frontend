@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Box, Typography, TextField } from '@mui/material';
+
+import { Box, TextField, Typography } from '@mui/material';
 
 /**
  * Shared caption field component for submissions that support captions

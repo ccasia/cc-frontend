@@ -13,7 +13,6 @@ import {
   Alert,
   Button,
   Dialog,
-  Avatar,
   Divider,
   Typography,
   IconButton,

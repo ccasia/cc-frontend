@@ -1,6 +1,8 @@
+import useSWR from 'swr';
 import PropTypes from 'prop-types';
-import useSWR, { mutate } from 'swr';
+
 import { Box, Typography } from '@mui/material';
+
 import { fetcher } from 'src/utils/axios';
 
 export default function CampaignLogisticsClient({ campaign, id }) {

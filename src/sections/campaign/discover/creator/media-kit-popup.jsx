@@ -1,22 +1,20 @@
 import PropTypes from 'prop-types';
-import { useEffect } from 'react';
 
 import {
   Box,
   Modal,
   Button,
   Avatar,
+  useTheme,
   Typography,
   IconButton,
-  Stack,
-  useTheme,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-const MediaKitPopup = ({ open, onClose, userId }) => {
+const MediaKitPopup = ({ open, onClose, userId, showPitchError = false }) => {
   const theme = useTheme();
   
   const handleConnect = () => {
@@ -79,7 +77,7 @@ const MediaKitPopup = ({ open, onClose, userId }) => {
               justifyContent: 'center',
             }}
           >
-            👀
+            {showPitchError ? '🫢' : '👀'}
           </Avatar>
 
           <Typography 
@@ -97,7 +95,7 @@ const MediaKitPopup = ({ open, onClose, userId }) => {
               mx: 'auto'
             }}
           >
-            Hold up! Don&apos;t leave us guessing
+            {showPitchError ? 'Oops! You need to link your media kit' : 'Hold up! Don\'t leave us guessing'}
           </Typography>
           
           <Typography 
@@ -115,7 +113,10 @@ const MediaKitPopup = ({ open, onClose, userId }) => {
               lineHeight: 1.5
             }}
           >
-            Before you shoot your shot, link your socials to your Media Kit so we can vet your stats and see if your profile is a match!
+            {showPitchError 
+              ? 'You need to link your media kit before you can pitch for campaigns.' 
+              : 'Before you shoot your shot, link your socials to your Media Kit so we can vet your stats and see if your profile is a match!'
+            }
           </Typography>
         </Box>
 
@@ -152,6 +153,7 @@ MediaKitPopup.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   userId: PropTypes.string.isRequired,
+  showPitchError: PropTypes.bool,
 };
 
 export default MediaKitPopup;

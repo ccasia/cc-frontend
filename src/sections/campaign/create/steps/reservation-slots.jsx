@@ -1,1219 +1,947 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { format, addDays } from 'date-fns';
+import {
+  format,
+  isSameDay,
+  isBefore,
+  isAfter,
+  isToday,
+  addMinutes,
+  eachDayOfInterval,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addMonths,
+  subMonths,
+  startOfDay,
+  endOfDay,
+  isWithinInterval,
+  subDays,
+  addDays,
+} from 'date-fns';
 
 import {
   Box,
   Grid,
   Stack,
-  Avatar,
-  Button,
-  Checkbox,
-  TextField,
   Typography,
-  FormControlLabel,
   IconButton,
+  Button,
+  Divider,
   Switch,
-  useTheme,
+  Checkbox,
+  FormControlLabel,
+  MenuItem,
   ThemeProvider,
   createTheme,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers';
 import { DesktopTimePicker } from '@mui/x-date-pickers/DesktopTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import dayjs from 'dayjs';
-
+import { useSnackbar } from 'src/components/snackbar';
 import Iconify from 'src/components/iconify';
+import { fontWeight } from '@mui/system';
 
-const ReservationSlots = () => {
-  const theme = useTheme();
+const ReservationSlotsV2 = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const { watch, setValue } = useFormContext();
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(addDays(new Date(), 30));
-  const [startTime, setStartTime] = useState(new Date().setHours(9, 0, 0));
-  const [endTime, setEndTime] = useState(new Date().setHours(17, 0, 0));
-  const [interval, setInterval] = useState(1);
-  const [allDay, setAllDay] = useState(false);
+  const bottomRef = useRef(null);
+
+  const campaignStartDate = watch('campaignStartDate');
+  const campaignEndDate = watch('campaignEndDate');
+  const savedRules = watch('availabilityRules') || [];
+
+  const [currentMonth, setCurrentMonth] = useState(
+    campaignStartDate ? new Date(campaignStartDate) : new Date()
+  );
+
+  // Multi-Range State
   const [selectedDates, setSelectedDates] = useState([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectAllDates, setSelectAllDates] = useState(false);
-  const [dateRange, setDateRange] = useState([null, null]); 
-  const [intervalsChecked, setIntervalsChecked] = useState(false);
-  const [intervalOptions] = useState([0.5, 1, 1.5, 2, 3, 4]);
+  const [selectionStart, setSelectionStart] = useState(null);
+
+  const [startTime, setStartTime] = useState(new Date().setHours(9, 0, 0, 0));
+  const [endTime, setEndTime] = useState(new Date().setHours(17, 0, 0, 0));
+  const [allDay, setAllDay] = useState(false);
+  const [intervalsChecked, setIntervalsChecked] = useState(true);
+  const [interval, setInterval] = useState(1);
   const [showIntervalDropdown, setShowIntervalDropdown] = useState(false);
-  const [generatedTimeSlots, setGeneratedTimeSlots] = useState([]);
-  const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
-  // Direct time input - no need for picker state variables
-  const [savedTimeSlots, setSavedTimeSlots] = useState([]);
+  const [generatedSlots, setGeneratedSlots] = useState([]);
 
-  // Generate time slots when component mounts or when relevant values change
+  const intervalOptions = [0.5, 1, 1.5, 2, 3, 4];
+
+  const selectedSet = useMemo(
+    () => new Set(selectedDates.map((d) => format(d, 'yyyy-MM-dd'))),
+    [selectedDates]
+  );
+
   useEffect(() => {
-    if (intervalsChecked && startTime && endTime) {
-      generateTimeSlots(startTime, endTime, interval, intervalsChecked);
-    }
-  }, [intervalsChecked, startTime, endTime, interval]);
+    generateGrid();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startTime, endTime, interval, intervalsChecked]);
 
-  // Generate calendar data for the current month
-  const generateCalendar = () => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const today = new Date();
-    
-    // Create array for all days in the month
-    const days = [];
+  const campaignInterval = useMemo(() => {
+    if (!campaignStartDate || !campaignEndDate) return null;
+    return {
+      start: startOfDay(new Date(campaignStartDate)),
+      end: endOfDay(new Date(campaignEndDate)),
+    };
+  }, [campaignStartDate, campaignEndDate]);
 
-    for (let i = 0; i < firstDay; i += 1) {
-      days.push({ day: null, date: null });
-    }
-
-    const selectedDatesMap = {};
-    let rangeStartDate = null;
-    let rangeEndDate = null;
-    
-    if (selectedDates.length > 0) {
-
-      const sortedDates = [...selectedDates].sort((a, b) => a - b);
-      rangeStartDate = sortedDates[0];
-      rangeEndDate = sortedDates[sortedDates.length - 1];
-    }
-    
-    selectedDates.forEach(date => {
-      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-
-      const isRangeEndpoint = 
-        (date.getTime() === rangeStartDate?.getTime() || 
-         date.getTime() === rangeEndDate?.getTime());
-      
-      selectedDatesMap[key] = {
-        selected: true,
-        isRangeEndpoint
-      };
-    });
-    
-    for (let i = 1; i <= daysInMonth; i += 1) {
-      const date = new Date(year, month, i);
-      const isToday = (
-        date.getDate() === today.getDate() &&
-        date.getMonth() === today.getMonth() &&
-        date.getFullYear() === today.getFullYear()
-      );
-      
-      const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-      const dateInfo = selectedDatesMap[dateKey] || { selected: false, isRangeEndpoint: false };
-      const isSelected = dateInfo.selected;
-      const { isRangeEndpoint } = dateInfo;
-      
-      const isInRange = rangeStartDate && rangeEndDate && 
-        date >= rangeStartDate && date <= rangeEndDate;
-
-      let isRangeStart = false;
-      let isRangeEnd = false;
-      
-      if (isInRange) {
-        const prevDate = new Date(date);
-        prevDate.setDate(date.getDate() - 1);
-        const isPrevInRange = prevDate.getMonth() === month && 
-                            prevDate.getDate() >= 1 &&
-                            rangeStartDate && rangeEndDate && 
-                            prevDate >= rangeStartDate && prevDate <= rangeEndDate;
-        
-        const nextDate = new Date(date);
-        nextDate.setDate(date.getDate() + 1);
-        const isNextInRange = nextDate.getMonth() === month && 
-                            nextDate.getDate() <= daysInMonth &&
-                            rangeStartDate && rangeEndDate && 
-                            nextDate >= rangeStartDate && nextDate <= rangeEndDate;
-        
-        isRangeStart = !isPrevInRange || date.getDay() === 0;
-        
-        isRangeEnd = !isNextInRange || date.getDay() === 6;
-      }
-      
-      const isPast = date < new Date(today.setHours(0, 0, 0, 0));
-      
-      days.push({
-        day: i,
-        date,
-        isToday,
-        isSelected,
-        isPast,
-        isRangeEndpoint,
-        isInRange,
-        isRangeStart,
-        isRangeEnd
-      });
-    }
-    
-    return days;
-  };
+  const calendarDays = useMemo(
+    () =>
+      eachDayOfInterval({
+        start: startOfWeek(startOfMonth(currentMonth)),
+        end: endOfWeek(endOfMonth(currentMonth)),
+      }),
+    [currentMonth]
+  );
 
   const handleDateClick = (date) => {
     if (!date) return;
-    
-    console.log('Date clicked:', format(date, 'yyyy-MM-dd'));
-    
-    const isDateSelected = selectedDates.some(selectedDate => 
-      selectedDate.getDate() === date.getDate() &&
-      selectedDate.getMonth() === date.getMonth() &&
-      selectedDate.getFullYear() === date.getFullYear()
-    );
-    
-    if (isDateSelected) {
-      const newSelectedDates = selectedDates.filter(selectedDate => 
-        !(selectedDate.getDate() === date.getDate() &&
-        selectedDate.getMonth() === date.getMonth() &&
-        selectedDate.getFullYear() === date.getFullYear())
-      );
-      
-      console.log('Deselected date, new selected dates:', newSelectedDates.map(d => format(d, 'yyyy-MM-dd')));
-      setSelectedDates(newSelectedDates);
-      
-      if (newSelectedDates.length === 0) {
-        setDateRange([null, null]);
-      } else if (newSelectedDates.length === 1) {
-        setDateRange([newSelectedDates[0], null]);
-      } else {
-        const sortedDates = [...newSelectedDates].sort((a, b) => a.getTime() - b.getTime());
-        setDateRange([sortedDates[0], sortedDates[sortedDates.length - 1]]);
+
+    if (campaignInterval && !isWithinInterval(date, campaignInterval)) {
+      enqueueSnackbar('Date is outside campaign active range', { variant: 'warning' });
+      return;
+    }
+
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const prevDateStr = format(subDays(date, 1), 'yyyy-MM-dd');
+    const nextDateStr = format(addDays(date, 1), 'yyyy-MM-dd');
+
+    if (selectionStart) {
+      const start = isBefore(date, selectionStart) ? date : selectionStart;
+      const end = isBefore(date, selectionStart) ? selectionStart : date;
+      const newRange = eachDayOfInterval({ start, end });
+
+      setSelectedDates((prev) => {
+        const combined = [...prev];
+        newRange.forEach((day) => {
+          if (!prev.some((p) => isSameDay(p, day))) combined.push(day);
+        });
+        return combined.sort((a, b) => a - b);
+      });
+      setSelectionStart(null);
+      return;
+    }
+
+    if (selectedSet.has(dateStr)) {
+      const isStartOfRange = !selectedSet.has(prevDateStr) && selectedSet.has(nextDateStr);
+      const isEndOfRange = selectedSet.has(prevDateStr) && !selectedSet.has(nextDateStr);
+
+      if (isStartOfRange) {
+        let cursor = date;
+        while (selectedSet.has(format(addDays(cursor, 1), 'yyyy-MM-dd'))) {
+          cursor = addDays(cursor, 1);
+        }
+        const segmentEnd = cursor;
+
+        setSelectedDates((prev) =>
+          prev.filter(
+            (d) =>
+              !isWithinInterval(startOfDay(d), {
+                start: startOfDay(date),
+                end: startOfDay(subDays(segmentEnd, 1)),
+              })
+          )
+        );
+        setSelectionStart(segmentEnd);
+        return;
       }
-    } else if (dateRange[0] && !dateRange[1]) {
-        if (date < dateRange[0]) {
-          setDateRange([date, dateRange[0]]);
-        } else {
-          setDateRange([dateRange[0], date]);
+
+      if (isEndOfRange) {
+        let cursor = date;
+        while (selectedSet.has(format(subDays(cursor, 1), 'yyyy-MM-dd'))) {
+          cursor = subDays(cursor, 1);
         }
-        
-        const allDatesInRange = [];
-        const start = new Date(dateRange[0]);
-        const end = new Date(date);
-        
-        console.log(`Creating date range from ${format(start, 'yyyy-MM-dd')} to ${format(end, 'yyyy-MM-dd')}`);
-        
-        const current = new Date(start);
-        while (current <= end) {
-          allDatesInRange.push(new Date(current));
-          current.setDate(current.getDate() + 1);
-        }
-        
-        console.log('All dates in range:', allDatesInRange.map(d => format(d, 'yyyy-MM-dd')));
-        setSelectedDates(allDatesInRange);
+        const segmentStart = cursor;
+
+        setSelectedDates((prev) =>
+          prev.filter(
+            (d) =>
+              !isWithinInterval(startOfDay(d), {
+                start: startOfDay(addDays(segmentStart, 1)),
+                end: startOfDay(date),
+              })
+          )
+        );
+        setSelectionStart(segmentStart);
+        return;
+      }
+
+      setSelectedDates((prev) => prev.filter((d) => !isSameDay(d, date)));
+      setSelectionStart(null);
+      return;
+    }
+
+    const isBridging = selectedSet.has(prevDateStr) || selectedSet.has(nextDateStr);
+
+    if (isBridging) {
+      setSelectedDates((prev) => [...prev, date].sort((a, b) => a - b));
+      setSelectionStart(null);
     } else {
-      setDateRange([date, null]);
-      setSelectedDates([date]);
-      console.log('Started new selection with date:', format(date, 'yyyy-MM-dd'));
+      setSelectedDates((prev) => [...prev, date].sort((a, b) => a - b));
+      setSelectionStart(date);
     }
   };
-  
-  const handleDoubleClick = (date) => {
-    if (!date) return;
-    
-    const isSelected = selectedDates.some(selectedDate => 
-      selectedDate.getDate() === date.getDate() &&
-      selectedDate.getMonth() === date.getMonth() &&
-      selectedDate.getFullYear() === date.getFullYear()
-    );
-    
-    if (isSelected) {
-      setSelectedDates(selectedDates.filter(selectedDate => 
-        !(selectedDate.getDate() === date.getDate() &&
-        selectedDate.getMonth() === date.getMonth() &&
-        selectedDate.getFullYear() === date.getFullYear())
-      ));
-    } else {
-      setSelectedDates([...selectedDates, date]);
-    }
-    
-    setDateRange([null, null]);
-  };
 
-  const handlePrevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-  };
-
-  const handleSelectAllDates = (event) => {
-    setSelectAllDates(event.target.checked);
-    if (event.target.checked) {
-      const year = currentMonth.getFullYear();
-      const month = currentMonth.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      
-      const dates = [];
-      for (let i = 1; i <= daysInMonth; i += 1) {
-        dates.push(new Date(year, month, i));
-      }
-      
-      setSelectedDates(dates);
-      setDateRange([dates[0], dates[dates.length - 1]]);
+  const handleSelectAllDates = (e) => {
+    if (e.target.checked && campaignInterval) {
+      const allDays = eachDayOfInterval({
+        start: campaignInterval.start,
+        end: campaignInterval.end,
+      });
+      setSelectedDates(allDays);
     } else {
       setSelectedDates([]);
-      setDateRange([null, null]);
     }
+    setSelectionStart(null);
   };
 
-  const handleAllDayToggle = (event) => {
-    setAllDay(event.target.checked);
-    if (event.target.checked) {
-      setStartTime(null);
-      setEndTime(null);
-    }
+  const handleClear = () => {
+    setSelectedDates([]);
+    setSelectionStart(null);
   };
-  
-  const handleStartTimeChange = (time) => {
-    setStartTime(time);
-    generateTimeSlots(time, endTime, interval, intervalsChecked);
-  };
-  
-  const handleEndTimeChange = (time) => {
-    setEndTime(time);
-    generateTimeSlots(startTime, time, interval, intervalsChecked);
-  };
-  
-  const handleIntervalChange = (newInterval) => {
-    setInterval(newInterval);
-    setShowIntervalDropdown(false);
-    generateTimeSlots(startTime, endTime, newInterval, intervalsChecked);
-  };
-  
-  const handleIntervalsChecked = (event) => {
-    const isChecked = event.target.checked;
-    console.log(`Intervals checkbox ${isChecked ? 'checked' : 'unchecked'}`);
-    setIntervalsChecked(isChecked);
-    generateTimeSlots(startTime, endTime, interval, isChecked);
-  };
-  
-  const generateTimeSlots = (start, end, intervalHours, enabled) => {
-    if (!enabled || !start || !end) {
-      setGeneratedTimeSlots([]);
-      return;
-    }
-    
-    console.log(`Generating time slots from ${format(new Date(start), 'h:mm a')} to ${format(new Date(end), 'h:mm a')} with interval ${intervalHours} hours`);
-    
-    const slots = [];
-    const slotStartDate = new Date(start);
-    const slotEndDate = new Date(end);
-    
-    let currentTime = new Date(slotStartDate);
-    while (currentTime < slotEndDate) {
-      const slotEnd = new Date(currentTime);
-      slotEnd.setHours(currentTime.getHours() + Math.floor(intervalHours));
-      slotEnd.setMinutes(currentTime.getMinutes() + (intervalHours % 1) * 60);
-      
-      if (slotEnd > slotEndDate) {
-        break;
-      }
-      
-      slots.push({
-        start: new Date(currentTime),
-        end: new Date(slotEnd),
-        selected: false
-      });
-      
-      currentTime = new Date(slotEnd);
-    }
-    
-    console.log(`Generated ${slots.length} time slots:`, slots.map(slot => 
-      `${format(slot.start, 'h:mm a')} - ${format(slot.end, 'h:mm a')}`
-    ));
-    
-    setGeneratedTimeSlots(slots);
-  };
-  
-  const toggleTimeSlotSelection = (index) => {
-    const updatedSlots = [...generatedTimeSlots];
-    updatedSlots[index].selected = !updatedSlots[index].selected;
-    setGeneratedTimeSlots(updatedSlots);
-    
-    if (updatedSlots[index].selected) {
-      setSelectedTimeSlots([...selectedTimeSlots, updatedSlots[index]]);
-    } else {
-      setSelectedTimeSlots(selectedTimeSlots.filter(slot => 
-        !(slot.start.getTime() === updatedSlots[index].start.getTime() && 
-          slot.end.getTime() === updatedSlots[index].end.getTime())
-      ));
-    }
-  };
-  
-  const handleSaveTimeSlots = () => {
-    const dateGroups = {};
-    
-    console.log('Selected Time Slots:', selectedTimeSlots);
-    console.log('Selected Dates:', selectedDates);
-    
-    if (selectedDates.length === 0 && selectedTimeSlots.length > 0) {
-      console.log('No dates selected, cannot save time slots without dates');
-      alert('Please select at least one date before saving time slots');
-      return;
-    }
 
-    const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
-    console.log('Sorted selected dates:', sortedDates.map(d => format(d, 'yyyy-MM-dd')));
-    
-    const rangeKey = 'date-range';
-    
-    dateGroups[rangeKey] = {
-      dates: sortedDates.map(date => new Date(date)),
-      slots: selectedTimeSlots.map(slot => ({
-        start: new Date(slot.start),
-        end: new Date(slot.end)
-      }))
+  const getDayStyles = (day) => {
+    const dateStr = format(day, 'yyyy-MM-dd');
+    const isSelected = selectedSet.has(dateStr);
+    const isPendingStart = selectionStart && isSameDay(day, selectionStart);
+    const isTodayDate = isToday(day);
+
+    const isWithinCampaign = campaignInterval ? isWithinInterval(day, campaignInterval) : true;
+    const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+
+    const prevDateStr = format(subDays(day, 1), 'yyyy-MM-dd');
+    const nextDateStr = format(addDays(day, 1), 'yyyy-MM-dd');
+
+    const isPrevSelected = selectedSet.has(prevDateStr);
+    const isNextSelected = selectedSet.has(nextDateStr);
+
+    const isVisualStart = !isPrevSelected;
+    const isVisualEnd = !isNextSelected;
+    const isSingleDay = isVisualStart && isVisualEnd;
+
+    const baseStyles = {
+      height: 40,
+      mx: 'auto',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      transition: '0.2s',
+      borderRadius: '50%',
+      position: 'relative',
+      zIndex: 1,
+      color: isCurrentMonth ? '#212B36' : '#919EAB',
     };
-    
-    console.log('Created date range entry with dates:', 
-      dateGroups[rangeKey].dates.map(d => format(d, 'yyyy-MM-dd')));
-    
-    const groupedSlots = Object.values(dateGroups).sort((a, b) => {
-      const dateA = a.dates ? a.dates[0] : a.date;
-      const dateB = b.dates ? b.dates[0] : b.date;
-      return dateA.getTime() - dateB.getTime();
-    });
-    console.log('Grouped slots by date:', groupedSlots);
-    
-    const consecutiveGroups = [];
-    let currentGroup = null;
-    
-    groupedSlots.forEach(dateSlot => {
-      if (!currentGroup) {
-        currentGroup = {
-          dates: dateSlot.dates || [dateSlot.date],
-          slots: dateSlot.slots
-        };
-        console.log('Initialized current group with dates:', 
-          currentGroup.dates.map(d => format(d, 'yyyy-MM-dd')));
-      } else if (dateSlot.dates) {
-        consecutiveGroups.push(currentGroup);
-        currentGroup = {
-          dates: dateSlot.dates,
-          slots: dateSlot.slots
-        };
-        console.log('Added pre-built date range:', 
-          dateSlot.dates.map(d => format(d, 'yyyy-MM-dd')));
-      } else {
-        const lastDate = currentGroup.dates[currentGroup.dates.length - 1];
-        const dayDiff = Math.round((dateSlot.date - lastDate) / (1000 * 60 * 60 * 24));
-        
-        if (dayDiff === 1 && haveSameTimeSlots(currentGroup.slots, dateSlot.slots)) {
-          currentGroup.dates.push(dateSlot.date);
-          console.log(`Added ${format(dateSlot.date, 'yyyy-MM-dd')} to existing group`);
-        } else {
-          consecutiveGroups.push(currentGroup);
-          console.log(`Created new group for ${format(dateSlot.date, 'yyyy-MM-dd')}`);
-          currentGroup = {
-            dates: [dateSlot.date],
-            slots: dateSlot.slots
-          };
-        }
-      }
-    });
-    
-    if (currentGroup) {
-      consecutiveGroups.push(currentGroup);
+
+    if (!isSelected && !isPendingStart && isTodayDate) {
+      return {
+        ...baseStyles,
+        border: '1.2px solid #1340FF',
+        borderRadius: '50%',
+        color: '#1340FF',
+        // fontWeight: '700',
+        '&:hover': {
+          bgcolor: '#F4F6F8',
+        },
+      };
     }
-    
-    console.log('Final consecutive groups:', consecutiveGroups);
-    console.log('Formatted output:');
-    consecutiveGroups.forEach(group => {
-      console.log(`Dates: ${formatDateRange(group.dates)}`);
-      console.log(`Time Slots: ${formatTimeSlotsForDisplay(group.slots)}`);
-    });
-    
-    setSavedTimeSlots(consecutiveGroups);
-    
-    alert('Time slots saved successfully! Check the console for details.');
+
+    if (!isWithinCampaign) {
+      return {
+        ...baseStyles,
+        color: '#919EAB',
+        opacity: 0.5,
+        cursor: 'default',
+      };
+    }
+
+    if (isPendingStart && !selectedSet.has(prevDateStr) && !selectedSet.has(nextDateStr)) {
+      return {
+        ...baseStyles,
+        bgcolor: 'rgba(19, 64, 255, 0.15)',
+        color: '#1340FF',
+        borderRadius: '50%',
+        fontWeight: 700,
+      };
+    }
+
+    if (!isSelected) {
+      return {
+        ...baseStyles,
+        '&:hover': {
+          bgcolor: '#F4F6F8',
+        },
+      };
+    }
+
+    const selectedStyles = {
+      ...baseStyles,
+      bgcolor: isSingleDay ? '#1340FF' : 'rgba(19, 64, 255, 0.15)',
+      color: isSingleDay ? 'white' : '#1340FF',
+      fontWeight: isSingleDay ? 'normal' : 'bold',
+      borderRadius: 0,
+    };
+
+    if (isSingleDay) {
+      return {
+        ...selectedStyles,
+        borderRadius: '50%',
+      };
+    }
+
+    if (isVisualStart) {
+      return {
+        ...selectedStyles,
+        bgcolor: '#1340FF',
+        color: 'white',
+        borderRadius: '50%',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: '50%',
+          bgcolor: 'rgba(19, 64, 255, 0.15)',
+          zIndex: -1,
+        },
+      };
+    }
+
+    if (isVisualEnd) {
+      return {
+        ...selectedStyles,
+        bgcolor: '#1340FF',
+        color: 'white',
+        borderRadius: '50%',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '50%',
+          bgcolor: 'rgba(19, 64, 255, 0.15)',
+          zIndex: -1,
+        },
+      };
+    }
+
+    // Middle segments
+    return selectedStyles;
   };
-  
-  const haveSameTimeSlots = (slots1, slots2) => {
-    if (slots1.length !== slots2.length) {
-      console.log('Different number of slots:', slots1.length, 'vs', slots2.length);
-      return false;
+
+  const generateGrid = () => {
+    if (!startTime || !endTime) return;
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    if (isBefore(end, start)) {
+      setGeneratedSlots([]);
+      return;
     }
-    
-    // Sort slots by start time
-    const sortedSlots1 = [...slots1].sort((a, b) => a.start - b.start);
-    const sortedSlots2 = [...slots2].sort((a, b) => a.start - b.start);
-    
-    const result = sortedSlots1.every((slot, index) => {
-      const slot2 = sortedSlots2[index];
-      const startMatch = format(slot.start, 'HH:mm') === format(slot2.start, 'HH:mm');
-      const endMatch = format(slot.end, 'HH:mm') === format(slot2.end, 'HH:mm');
-      
-      if (!startMatch || !endMatch) {
-        console.log('Slot mismatch:', 
-          `${format(slot.start, 'HH:mm')}-${format(slot.end, 'HH:mm')}`, 'vs', 
-          `${format(slot2.start, 'HH:mm')}-${format(slot2.end, 'HH:mm')}`);
+
+    const slots = [];
+    if (!intervalsChecked) {
+      slots.push({
+        id: 'full',
+        start,
+        end,
+        label: `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`,
+        isSelected: true,
+      });
+    } else {
+      let curr = new Date(start);
+      while (isBefore(curr, end)) {
+        const next = addMinutes(curr, interval * 60);
+        if (isBefore(end, next)) break;
+        slots.push({
+          id: curr.getTime(),
+          start: new Date(curr),
+          end: new Date(next),
+          label: `${format(curr, 'h:mm a')} - ${format(next, 'h:mm a')}`,
+          isSelected: false,
+        });
+        curr = next;
       }
-      
-      return startMatch && endMatch;
-    });
-    
-    return result;
+    }
+    setGeneratedSlots(slots);
   };
-  
-  // Format date range for display
-  const formatDateRange = (dates) => {
-    console.log('Formatting date range for dates:', dates);
-    
-    if (dates.length === 0) return '';
-    if (dates.length === 1) return format(dates[0], 'd MMM');
-    
-    const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
-    console.log('Sorted dates:', sortedDates.map(d => format(d, 'yyyy-MM-dd')));
-    
-    const ranges = [];
-    let rangeStart = sortedDates[0];
-    let rangeEnd = sortedDates[0];
-    
-    for (let i = 1; i < sortedDates.length; i += 1) {
-      const prevDate = sortedDates[i-1];
-      const currDate = sortedDates[i];
-      const dayDiff = Math.round((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      console.log(`Comparing ${format(prevDate, 'yyyy-MM-dd')} and ${format(currDate, 'yyyy-MM-dd')}, diff: ${dayDiff} days`);
-      
-      if (dayDiff === 1) {
-        rangeEnd = currDate;
-        console.log(`Extended range to ${format(rangeEnd, 'yyyy-MM-dd')}`);
+
+  const toggleSlot = (index) => {
+    const newSlots = [...generatedSlots];
+    newSlots[index].isSelected = !newSlots[index].isSelected;
+    setGeneratedSlots(newSlots);
+  };
+
+  const handleSave = () => {
+    if (selectedDates.length === 0) {
+      enqueueSnackbar('Please select dates first', { variant: 'error' });
+      return;
+    }
+
+    let newRule;
+
+    if (allDay) {
+      newRule = {
+        dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
+        slots: [{ startTime: '00:00', endTime: '23:59', label: 'All Day' }],
+        allDay: true,
+      };
+    } else {
+      const activeSlots = generatedSlots.filter((s) => s.isSelected);
+
+      if (activeSlots.length === 0) {
+        enqueueSnackbar('Please select at least one time slot', { variant: 'error' });
+        return;
+      }
+
+      newRule = {
+        dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
+        slots: activeSlots.map((slot) => ({
+          startTime: format(slot.start, 'HH:mm'),
+          endTime: format(slot.end, 'HH:mm'),
+          label: slot.label,
+        })),
+        allDay: false,
+      };
+    }
+
+    const isDuplicate = savedRules.some((rule) => {
+      if (rule.allDay !== newRule.allDay) return false;
+      const datesMatch = JSON.stringify(rule.dates) === JSON.stringify(newRule.dates);
+      const slotsMatch = JSON.stringify(rule.slots) === JSON.stringify(newRule.slots);
+      return datesMatch && slotsMatch;
+    });
+
+    if (isDuplicate) {
+      enqueueSnackbar('This timeslot has already been saved', { variant: 'error' });
+      return;
+    }
+
+    setValue('availabilityRules', [...savedRules, newRule], {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    enqueueSnackbar('Added successfully', { variant: 'success' });
+
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+
+    // Reset Selection
+    setSelectedDates([]);
+    setSelectionStart(null);
+  };
+
+  const handleRemoveRule = (index) => {
+    const updatedRules = savedRules.filter((_, i) => i !== index);
+    setValue('availabilityRules', updatedRules, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
+  const formatDatesForDisplay = (dateStrings) => {
+    if (!dateStrings || dateStrings.length === 0) return '';
+
+    // 1. Sort dates chronologically
+    const sorted = [...dateStrings]
+      .map((d) => new Date(d))
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    const groups = [];
+    let currentGroup = [sorted[0]];
+
+    // 2. Group consecutive dates
+    for (let i = 1; i < sorted.length; i += 1) {
+      const prev = sorted[i - 1];
+      const curr = sorted[i];
+
+      // Check if the difference is exactly 1 day (approx 86400000ms)
+      const diffTime = Math.abs(curr - prev);
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        currentGroup.push(curr);
       } else {
-        ranges.push([rangeStart, rangeEnd]);
-        console.log(`Added range ${format(rangeStart, 'yyyy-MM-dd')} - ${format(rangeEnd, 'yyyy-MM-dd')}`);
-        rangeStart = currDate;
-        rangeEnd = currDate;
+        groups.push(currentGroup);
+        currentGroup = [curr];
       }
     }
-    
-    ranges.push([rangeStart, rangeEnd]);
-    console.log(`Added final range ${format(rangeStart, 'yyyy-MM-dd')} - ${format(rangeEnd, 'yyyy-MM-dd')}`);
-    
-    const formattedRanges = ranges.map(([start, end]) => {
-      if (start.getTime() === end.getTime()) {
+    groups.push(currentGroup);
+
+    // 3. Format the groups
+    const parts = groups.map((group) => {
+      const start = group[0];
+      const end = group[group.length - 1];
+
+      if (group.length === 1) {
         return format(start, 'd MMM');
       }
       return `${format(start, 'd MMM')} - ${format(end, 'd MMM')}`;
-    }).join(', ');
-    
-    console.log('Formatted date range:', formattedRanges);
-    return formattedRanges;
-  };
-  
-  const formatTimeSlotsForDisplay = (slots) => slots
-    .sort((a, b) => a.start - b.start)
-    .map(slot => `${format(slot.start, 'h:mm a')} - ${format(slot.end, 'h:mm a')}`)
-    .join(', ');
-  
-  const formatTimeSlot = (slot) => `${format(slot.start, 'h:mm a')} - ${format(slot.end, 'h:mm a')}`;
+    });
 
-  // Direct time input - no need for popover handlers
+    // 4. Add the Year to the end
+    const lastDate = sorted[sorted.length - 1];
+    return `${parts.join(', ')} ${format(lastDate, 'yyyy')}`;
+  };
+
+  let renderRightColumn;
+
+  if (allDay) {
+    renderRightColumn = (
+      <Stack spacing={1} alignItems="center" textAlign="center">
+        <Typography sx={{ fontSize: '48px' }}>👌</Typography>
+        <Typography variant="h6" fontWeight={700}>
+          All-Day Events
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Select dates and you’re good to go!
+        </Typography>
+      </Stack>
+    );
+  } else if (generatedSlots.length > 0) {
+    renderRightColumn = (
+      <Box sx={{ width: '100%', maxHeight: 280, overflowY: 'auto' }}>
+        <Grid container spacing={1.5}>
+          {generatedSlots.map((slot, idx) => (
+            <Grid item xs={6} key={idx}>
+              <Box
+                onClick={() => toggleSlot(idx)}
+                sx={{
+                  p: 1.5,
+                  textAlign: 'center',
+                  border: '1.5px solid',
+                  borderRadius: 1.5,
+                  cursor: 'pointer',
+                  borderColor: slot.isSelected ? '#1340FF' : '#F4F6F8',
+                  bgcolor: slot.isSelected ? 'rgba(19, 64, 255, 0.04)' : '#fff',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: slot.isSelected ? '#1340FF' : '#919EAB',
+                  }}
+                >
+                  {slot.label}
+                </Typography>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  } else {
+    renderRightColumn = (
+      <Stack spacing={1} alignItems="center" textAlign="center">
+        <Typography sx={{ fontSize: '48px' }}>😘</Typography>
+        <Typography variant="h6" fontWeight={700}>
+          Add Time Slots
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Select a start/end time and interval.
+        </Typography>
+      </Stack>
+    );
+  }
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 3,
-        p: { xs: 2, sm: 3 },
-        maxWidth: 900,
-        mx: 'auto'
-      }}
-    >
-      <Typography 
-        textAlign="center" 
-        sx={{ 
-          mb: 2,
-          fontFamily: 'Inter Display, sans-serif',
-          fontWeight: 400,
-          fontSize: '16px',
-          lineHeight: '20px',
-          letterSpacing: '0%',
-          color: '#231F20'
+    <Box sx={{ maxWidth: 900, mx: 'auto', p: 2 }}>
+      <Stack alignItems="center" spacing={1} sx={{ mb: 4 }}>
+        <Typography variant="body2" textAlign="center" sx={{ color: '#636366', maxWidth: 500 }}>
+          Add options for creators to select their available time slots. Times are standardized to
+          Malaysian time (UTC+08:00).
+        </Typography>
+      </Stack>
+
+      <Box
+        sx={{
+          border: '1px solid #E0E0E0',
+          borderRadius: 2,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          overflow: 'hidden',
+          bgcolor: '#fff',
         }}
       >
-        Add options for creators to select their available time slots.
-        Times are standardized to Malaysian time (UTC+08:00).
-      </Typography>
-      
-      <Box sx={{ 
-        border: '1px solid #e0e0e0', 
-        borderRadius: 1, 
-        overflow: 'hidden',
-        boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.05)',
-        position: 'relative'
-      }}>
-        <Grid container spacing={{ xs: 0, md: 0 }}>
-          {/* Left side - Date selection */}
-          <Grid item xs={12} md={6} sx={{ 
-            borderRight: { xs: 'none', md: '1px solid #e0e0e0' },
-            borderBottom: { xs: '1px solid #e0e0e0', md: 'none' },
-            p: { xs: 2, sm: 3, md: 4 }
-          }}>
-            <Typography sx={{ 
-              mb: 2, 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 600,
-              fontSize: '18px',
-              lineHeight: '22px',
-              letterSpacing: '0%'
-            }}>
-              Select Dates:
+        <Box
+          sx={{ p: 3, width: { xs: '100%', md: '45%' }, borderRight: { md: '1px solid #E0E0E0' } }}
+        >
+          <Typography sx={{ fontWeight: 600, fontSize: '18px', mb: 1 }}>Select Dates:</Typography>
+
+          <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 2 }}>
+            Between {campaignStartDate ? format(new Date(campaignStartDate), 'd MMMM yyyy') : '...'}{' '}
+            to {campaignEndDate ? format(new Date(campaignEndDate), 'd MMMM yyyy') : '...'}
+          </Typography>
+
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            <Switch
+              size="small"
+              checked={allDay}
+              onChange={(e) => setAllDay(e.target.checked)}
+              sx={{ '& .Mui-checked': { color: '#1340FF' } }}
+            />
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              All Day
             </Typography>
-            
-            <Box sx={{ mb: 2 }}>
-              <Typography sx={{ 
-                mb: 1,
-                fontFamily: 'Inter Display, sans-serif',
-                fontWeight: 500,
-                fontSize: '14px',
-                lineHeight: '18px',
-                letterSpacing: '0%'
-              }}>
-                Between {selectedDates.length > 0 
-                  ? `${format(selectedDates[0], 'd MMMM yyyy')} to ${selectedDates.length > 1 
-                      ? format(selectedDates[selectedDates.length - 1], 'd MMMM yyyy')
-                      : format(selectedDates[0], 'd MMMM yyyy')}` 
-                  : `${format(startDate, 'd MMMM yyyy')} to ${format(endDate, 'd MMMM yyyy')}`}
-              </Typography>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Switch
-                  checked={allDay}
-                  onChange={handleAllDayToggle}
-                  size="small"
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: '#1340FF',
-                    },
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: '#1340FF',
-                    },
-                  }}
-                />
-                <Typography variant="body2" sx={{ ml: 1, color: allDay ? '#1340FF' : 'text.primary' }}>
-                  All Day
-                </Typography>
-              </Box>
-              
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                Click once to select the start date, then click again on the end date
-                to include all days in between. Double-click for a single day, and
-                click a selected date to deselect it.
-              </Typography>
-              
-              <Box sx={{ borderTop: '1px solid #e0e0e0', my: 2 }} />
-            </Box>
-            
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <IconButton onClick={handlePrevMonth} size="small">
-                  <Iconify icon="eva:arrow-ios-back-fill" />
-                </IconButton>
-                <Typography sx={{ 
-                  fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 600,
-                  fontSize: '18px',
-                  lineHeight: '22px',
-                  letterSpacing: '0%'
-                }}>
-                  {format(currentMonth, 'MMM yyyy')}
-                </Typography>
-                <IconButton onClick={handleNextMonth} size="small">
-                  <Iconify icon="eva:arrow-ios-forward-fill" />
-                </IconButton>
-              </Box>
-              
-              <Box sx={{ 
-                width: '100%',
-                maxWidth: { xs: '100%', sm: '450px' },
-                mx: 'auto',
-                pt: 2,
-                pb: 0
-              }}>
-                <Box sx={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(7, 1fr)',
-                  textAlign: 'center',
-                  mb: 2,
-                  mt: 1
-                }}>
-                  {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
-                    <Typography key={day} variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '12px' }}>
-                      {day}
+          </Stack>
+
+          <Box sx={{ borderRadius: '8px', bgcolor: '#1340FF', p: 1, mb: 3 }}>
+            <Typography sx={{ fontSize: '12px', color: 'white', lineHeight: 1.5 }}>
+              Click once to select the start date, then click again on the end date to include all
+              days in between. <br />
+              <strong>Double-click for a single day</strong>, and click a selected date to deselect
+              it.
+            </Typography>
+          </Box>
+
+          <Divider sx={{ mb: 3 }} />
+          <Box sx={{ maxWidth: 300, mx: 'auto' }}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mb: 3 }}
+            >
+              <IconButton onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} size="small">
+                <Iconify icon="eva:arrow-ios-back-fill" />
+              </IconButton>
+              <Typography sx={{ fontWeight: 700 }}>{format(currentMonth, 'MMM yyyy')}</Typography>
+              <IconButton onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} size="small">
+                <Iconify icon="eva:arrow-ios-forward-fill" />
+              </IconButton>
+            </Stack>
+
+            <Grid container columns={7}>
+              {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
+                <Grid item xs={1} key={d} sx={{ textAlign: 'center', mb: 1 }}>
+                  <Typography variant="caption" sx={{ color: '#919EAB', fontWeight: 600 }}>
+                    {d}
+                  </Typography>
+                </Grid>
+              ))}
+              {calendarDays.map((day, i) => (
+                <Grid item xs={1} key={i}>
+                  <Box onClick={() => handleDateClick(day)} sx={getDayStyles(day)}>
+                    <Typography variant="body2" sx={{ fontWeight: 'inherit', color: 'inherit' }}>
+                      {format(day, 'd')}
                     </Typography>
-                  ))}
-                </Box>
-                
-                <Box sx={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(7, 1fr)',
-                  gap: { xs: 0, sm: 0 },
-                  textAlign: 'center', 
-                  mt: 2,
-                  mb: 0,
-                  mx: { xs: -1, sm: 0 }
-                }}>
-                  {generateCalendar().map((day, index) => {
-                    if (!day.day) {
-                      // Empty cell
-                      return <Box key={`empty-${index}`} />;
-                    }
-                    
-                    return (
-                      <Box 
-                        key={`day-${day.day}`}
-                        onClick={() => handleDateClick(day.date)}
-                        onDoubleClick={() => handleDoubleClick(day.date)}
-                        sx={{
-                          position: 'relative',
-                          cursor: 'pointer',
-                          height: { xs: 40, sm: 50 },
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: day.isSelected ? 'rgba(51, 102, 255, 0.08)' : 'transparent',
-                          borderTopLeftRadius: day.isRangeStart ? '20px' : 0,
-                          borderBottomLeftRadius: day.isRangeStart ? '20px' : 0,
-                          borderTopRightRadius: day.isRangeEnd ? '20px' : 0,
-                          borderBottomRightRadius: day.isRangeEnd ? '20px' : 0,
-                          '&:hover': {
-                            '& .MuiTypography-root': {
-                              color: day.isPast ? 'text.secondary' : '#1340FF'
-                            }
-                          },
-                          borderRight: index % 7 === 6 ? 'none' : 'none',
-                          zIndex: day.isSelected ? 2 : 1
-                        }}
-                      >
-                        {day.isRangeEndpoint ? (
-                          <Box 
-                            sx={{ 
-                              width: { xs: 36, sm: 40 }, 
-                              height: { xs: 36, sm: 40 }, 
-                              bgcolor: '#3366FF', 
-                              borderRadius: '50%', 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center',
-                              mx: 'auto'
-                            }}
-                          >
-                            <Typography color="white" sx={{ fontSize: { xs: '14px', sm: '16px' } }}>{day.day}</Typography>
-                          </Box>
-                        ) : (
-                          <Box sx={{ height: { xs: 36, sm: 40 }, width: { xs: 36, sm: 40 }, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto' }}>
-                            <Typography 
-                              color={(() => {
-                                if (day.isPast) return 'text.secondary';
-                                if (day.isSelected || day.isInRange) return '#1340FF';
-                                return 'text.primary';
-                              })()} 
-                              sx={{ 
-                                fontFamily: 'Inter Display, sans-serif',
-                                fontSize: { xs: '14px', sm: '16px' }, 
-                                fontWeight: (day.isSelected || day.isInRange) ? 500 : 400,
-                                lineHeight: { xs: '18px', sm: '20px' },
-                                letterSpacing: '0%',
-                                textAlign: 'center'
-                              }}
-                            >
-                              {day.day}
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-                    );
-                  })}
-                </Box>
-              </Box>
-            </Box>
-            
-            <Box sx={{ mt: -2, mb: 0, display: 'flex', justifyContent: 'flex-end' }}>
-              <FormControlLabel
-                control={
-                  <Checkbox 
-                    checked={selectAllDates}
-                    onChange={handleSelectAllDates}
-                    size="small"
-                  />
-                }
-                label="Select All Dates"
-                sx={{ '& .MuiTypography-root': { fontSize: '14px' } }}
-              />
-            </Box>
-          </Grid>
-          
-          {/* Right side - Time selection */}
-          <Grid item xs={12} md={6} sx={{ p: { xs: 2, sm: 3 }, position: 'relative', minHeight: { xs: 'auto', md: '500px' }, display: 'flex', flexDirection: 'column' }}>
-            <Typography sx={{ 
-              mb: 2, 
-              fontFamily: 'Inter Display, sans-serif',
-              fontWeight: 600,
-              fontSize: '18px',
-              lineHeight: '22px',
-              letterSpacing: '0%'
-            }}>
-              Select Time Slots:
-            </Typography>
-            
-            <ThemeProvider theme={createTheme({
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+          {/* RESET AND SELECT ALL BOX */}
+          <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mt: 2 }}>
+            <Button
+              onClick={handleClear}
+              size="small"
+              sx={{
+                fontSize: '14px',
+                textTransform: 'none',
+                fontWeight: 500,
+                minWidth: 'auto',
+                p: 0,
+                '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+              }}
+            >
+              <Iconify icon="eva:trash-2-outline" color="#FF5630" width={20} sx={{ mr: 1 }} /> Clear
+              Dates
+            </Button>
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={
+                    campaignInterval &&
+                    selectedDates.length > 0 &&
+                    selectedDates.length === eachDayOfInterval(campaignInterval).length
+                  }
+                  onChange={handleSelectAllDates}
+                  size="small"
+                />
+              }
+              label={
+                <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>Select All Dates</Typography>
+              }
+              // sx={{ mr: 0 }}
+            />
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            p: 3,
+            width: { xs: '100%', md: '55%' },
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 500,
+          }}
+        >
+          <Typography sx={{ fontWeight: 600, fontSize: '18px', mb: 3 }}>
+            Select Time Slots:
+          </Typography>
+
+          <ThemeProvider
+            theme={createTheme({
               palette: {
-                primary: {
-                  main: '#1340FF',
-                },
+                primary: { main: '#1340FF' },
               },
               components: {
-                MuiClock: {
-                  styleOverrides: {
-                    pin: {
-                      backgroundColor: '#1340FF',
-                    },
-                    clock: {
-                      '& .MuiClockNumber-root.Mui-selected': {
-                        backgroundColor: '#1340FF',
-                      },
-                    },
-                  },
-                },
-                MuiClockPointer: {
+                MuiIconButton: {
                   styleOverrides: {
                     root: {
-                      backgroundColor: '#1340FF',
-                    },
-                    thumb: {
-                      backgroundColor: '#1340FF',
-                      borderColor: '#1340FF',
+                      color: '#1340FF',
                     },
                   },
                 },
                 MuiMultiSectionDigitalClockSection: {
                   styleOverrides: {
+                    root: {
+                      '&::-webkit-scrollbar': {
+                        display: 'none',
+                      },
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none',
+                    },
                     item: {
                       '&.Mui-selected': {
-                        backgroundColor: '#1340FF',
-                        color: '#fff',
+                        backgroundColor: '#1340FF !important',
+                        color: '#fff !important',
+                        fontWeight: 'bold',
+                        borderRadius: 3.5,
                       },
                     },
                   },
                 },
               },
-            })}>
+            })}
+          >
             <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <Box sx={{
-                display: 'flex', 
-                flexDirection: 'row',
-                gap: 1, 
-                mb: 3, 
-                alignItems: 'center',
-                width: '100%',
-                '& .MuiDesktopTimePicker-root': {
-                  flex: 1,
-                  maxWidth: 'calc(50% - 15px)',
-                },
-                '& .MuiMultiSectionDigitalClockSection-item.Mui-selected': {
-                  backgroundColor: '#1340FF !important',
-                  color: '#fff !important'
-                },
-                '& .MuiMenuItem-root.Mui-selected': {
-                  backgroundColor: '#1340FF !important',
-                  color: '#fff !important'
-                },
-                '& .MuiClock-clock .MuiClockNumber-root.Mui-selected': {
-                  backgroundColor: '#1340FF !important'
-                },
-                '& .MuiClockPointer-root': { 
-                  backgroundColor: '#1340FF !important' 
-                },
-                '& .MuiClockPointer-thumb': { 
-                  backgroundColor: '#1340FF !important', 
-                  borderColor: '#1340FF !important' 
-                },
-                '& .MuiClock-pin': { 
-                  backgroundColor: '#1340FF !important' 
-                },
-                '& .MuiPickersDay-root.Mui-selected': {
-                  backgroundColor: '#1340FF !important'
-                }
-              }}>
+              <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
                 <DesktopTimePicker
-                  value={startTime ? new Date(startTime) : new Date().setHours(9, 0, 0)}
-                  onChange={(newTime) => {
-                    if (newTime) {
-                      handleStartTimeChange(new Date(newTime).getTime());
-                    }
-                  }}
-                  sx={{ width: '100%' }}
+                  disabled={allDay}
+                  onChange={(value) => setStartTime(value?.getTime())}
                   slotProps={{
                     textField: {
+                      size: 'small',
                       fullWidth: true,
                       sx: {
-                        width: '100%',
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        }
-                      }
+                        '& .MuiOutlinedInput-root': { borderRadius: 1.5 },
+                        ...(allDay && { bgcolor: '#F4F6F8' }),
+                      },
                     },
                     openPickerButton: {
-                      sx: { color: '#1340FF' }
+                      sx: { color: allDay ? 'text.disabled' : '#1340FF' },
                     },
-                    digitalClockItem: {
-                      sx: {
-                        '&.MuiMultiSectionDigitalClockSection-item.Mui-selected': {
-                          backgroundColor: '#1340FF !important',
-                          color: '#fff !important'
-                        }
-                      }
-                    },
-                    clock: {
-                      sx: {
-                        '& .MuiClock-clock .MuiClockNumber-root.Mui-selected': {
-                          backgroundColor: '#1340FF !important'
-                        }
-                      }
-                    },
-                    popper: {
-                      sx: {
-                        '& .MuiClockPointer-root': { backgroundColor: '#1340FF' },
-                        '& .MuiClockPointer-thumb': { backgroundColor: '#1340FF', borderColor: '#1340FF' },
-                        '& .MuiClock-pin': { backgroundColor: '#1340FF' },
-                        '& .MuiClockNumber-root.Mui-selected': { backgroundColor: '#1340FF' }
-                      }
-                    }
                   }}
-                  format="h:mm a"
                 />
-                
-                <Typography sx={{ mx: 0.5, alignSelf: 'center', textAlign: 'center', width: '20px' }}>to</Typography>
-                
+                <Typography variant="body2" sx={{ color: allDay ? 'text.disabled' : '#636366' }}>
+                  to
+                </Typography>
                 <DesktopTimePicker
-                  value={endTime ? new Date(endTime) : new Date().setHours(17, 0, 0)}
-                  onChange={(newTime) => {
-                    if (newTime) {
-                      handleEndTimeChange(new Date(newTime).getTime());
-                    }
-                  }}
-                  sx={{ width: '100%' }}
+                  disabled={allDay}
+                  onChange={(value) => setEndTime(value?.getTime())}
                   slotProps={{
                     textField: {
+                      size: 'small',
                       fullWidth: true,
                       sx: {
-                        width: '100%',
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        }
-                      }
+                        '& .MuiOutlinedInput-root': { borderRadius: 1.5 },
+                        ...(allDay && { bgcolor: '#F4F6F8' }),
+                      },
                     },
                     openPickerButton: {
-                      sx: { color: '#1340FF' }
+                      sx: { color: allDay ? 'text.disabled' : '#1340FF' },
                     },
-                    digitalClockItem: {
-                      sx: {
-                        '&.MuiMultiSectionDigitalClockSection-item.Mui-selected': {
-                          backgroundColor: '#1340FF !important',
-                          color: '#fff !important'
-                        }
-                      }
-                    },
-                    clock: {
-                      sx: {
-                        '& .MuiClock-clock .MuiClockNumber-root.Mui-selected': {
-                          backgroundColor: '#1340FF !important'
-                        }
-                      }
-                    },
-                    popper: {
-                      sx: {
-                        '& .MuiClockPointer-root': { backgroundColor: '#1340FF' },
-                        '& .MuiClockPointer-thumb': { backgroundColor: '#1340FF', borderColor: '#1340FF' },
-                        '& .MuiClock-pin': { backgroundColor: '#1340FF' },
-                        '& .MuiClockNumber-root.Mui-selected': { backgroundColor: '#1340FF' }
-                      }
-                    }
                   }}
-                  format="h:mm a"
                 />
-              </Box>
+              </Stack>
             </LocalizationProvider>
-            </ThemeProvider>
-            
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'row',
-              alignItems: 'center', 
-              mb: 3, 
-              position: 'relative' 
-            }}>
-              <Checkbox 
-                size="small" 
-                checked={intervalsChecked}
-                onChange={handleIntervalsChecked}
+          </ThemeProvider>
+
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{
+              mb: 3,
+              position: 'relative',
+              opacity: allDay ? 0.6 : 1,
+            }}
+          >
+            <Checkbox
+              disabled={allDay}
+              checked={intervalsChecked}
+              onChange={(e) => setIntervalsChecked(e.target.checked)}
+              size="small"
+              sx={{ p: 0, '&.Mui-disabled': { color: 'text.disabled' } }}
+            />
+            <Typography
+              sx={{
+                fontSize: '14px',
+                fontWeight: 500,
+                ml: 1,
+                color: allDay ? 'text.disabled' : 'inherit',
+              }}
+            >
+              Intervals
+            </Typography>
+
+            {intervalsChecked && (
+              <Button
+                disabled={allDay}
+                variant="outlined"
+                size="small"
+                onClick={() => !allDay && setShowIntervalDropdown(!showIntervalDropdown)}
+                endIcon={
+                  <Iconify icon="eva:chevron-down-fill" color={allDay ? '#919EAB' : '#1340FF'} />
+                }
                 sx={{
-                  color: '#1340FF',
-                  '&.Mui-checked': {
-                    color: '#1340FF',
-                  },
-                  '& .MuiSvgIcon-root': {
-                    color: '#1340FF',
-                  }
-                }}
-              />
-              <Typography variant="body2">Intervals</Typography>
-              
-              {intervalsChecked && (
-                <Box 
-                  onClick={() => setShowIntervalDropdown(!showIntervalDropdown)}
-                  sx={{ 
-                    ml: 2,
-                    border: '1px solid #e0e0e0', 
-                    borderRadius: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    alignSelf: { xs: 'flex-start', sm: 'center' }
-                  }}
-                >
-                  <Typography sx={{ px: 2 }}>{interval} hr</Typography>
-                  <IconButton size="small" sx={{ color: '#1340FF' }}>
-                    <Iconify icon="mdi:chevron-down" />
-                  </IconButton>
-                </Box>
-              )}
-              
-              {showIntervalDropdown && (
-                <Box sx={{
-                  position: 'absolute',
-                  top: { xs: '40px', sm: '100%' },
-                  left: { xs: '0', sm: 'auto' },
-                  right: { xs: 'auto', sm: '0' },
-                  mt: 1,
-                  bgcolor: 'background.paper',
-                  boxShadow: 3,
-                  borderRadius: 1,
-                  zIndex: 10,
-                  width: { xs: '150px', sm: 'auto' }
-                }}>
-                  {intervalOptions.map((option) => (
-                    <Box 
-                      key={option}
-                      onClick={() => handleIntervalChange(option)}
-                      sx={{ 
-                        p: 1.5, 
-                        borderBottom: '1px solid #e0e0e0',
-                        '&:hover': { bgcolor: 'rgba(51, 102, 255, 0.08)' },
-                        cursor: 'pointer',
-                        bgcolor: interval === option ? 'rgba(51, 102, 255, 0.08)' : 'transparent'
-                      }}
-                    >
-                      <Typography>{option} hr</Typography>
-                    </Box>
-                  ))}
-                </Box>
-              )}
-            </Box>
-            
-            <Box sx={{ borderTop: '1px solid #e0e0e0', my: 2 }} />
-            
-            {/* Time slots display area */}
-            <Box sx={{ mb: 3 }}>
-              {intervalsChecked && startTime && endTime ? (
-                <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-                    {generatedTimeSlots.map((slot, index) => (
-                      <Box 
-                        key={index}
-                        onClick={() => toggleTimeSlotSelection(index)}
-                        sx={{
-                          border: `1px solid ${slot.selected ? '#1340FF' : '#e0e0e0'}`,
-                          borderRadius: 1,
-                          p: 2,
-                          minWidth: { xs: '140px', sm: '180px' },
-                          width: { xs: 'calc(50% - 8px)', sm: 'auto' },
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          color: slot.selected ? '#1340FF' : 'text.primary',
-                          bgcolor: slot.selected ? 'rgba(51, 102, 255, 0.05)' : 'transparent'
-                        }}
-                      >
-                        <Typography sx={{ 
-                          fontFamily: 'Inter Display, sans-serif',
-                          fontWeight: 400,
-                          fontSize: '14px',
-                          lineHeight: '18px',
-                          letterSpacing: '0%',
-                          color: slot.selected ? '#1340FF' : 'inherit'
-                        }}>
-                          {formatTimeSlot(slot)}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              ) : (
-                <Box sx={{ textAlign: 'center', mb: 2 }}>
-                  <Box sx={{ 
-                    border: '1px solid #e0e0e0', 
-                    borderRadius: 1, 
-                    p: 2, 
-                    display: 'inline-block',
-                    minWidth: '200px'
-                  }}>
-                    <Typography sx={{ 
-                      fontFamily: 'Inter Display, sans-serif',
-                      fontWeight: 400,
-                      fontSize: '14px',
-                      lineHeight: '18px',
-                      letterSpacing: '0%',
-                      color: 'text.secondary'
-                    }}>
-                      {startTime && endTime ? 
-                        `${format(new Date(startTime), 'h:mm a')} - ${format(new Date(endTime), 'h:mm a')}` : 
-                        'Select start and end times'}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-            </Box>
-            
-            {/* Flexible spacer */}
-            <Box sx={{ flexGrow: 1 }} />
-            
-            {/* Save Time Slots button positioned at the bottom right of the time slots section */}
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end',
-              position: { xs: 'relative', md: 'absolute' },
-              bottom: { xs: 'auto', md: 20 },
-              right: { xs: 'auto', md: 20 },
-              mt: { xs: 2, md: 0 }
-            }}>
-              <Button 
-                variant="contained" 
-                disabled={!intervalsChecked || selectedTimeSlots.length === 0}
-                onClick={handleSaveTimeSlots}
-                sx={{ 
-                  width: 167,
-                  height: 52,
-                  background: intervalsChecked && selectedTimeSlots.length > 0 ? 
-                    '#3A3A3C' : 
-                    'linear-gradient(0deg, #3A3A3C, #3A3A3C), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-                  '&:hover': { bgcolor: intervalsChecked && selectedTimeSlots.length > 0 ? '#2A2A2C' : undefined },
-                  borderRadius: '12px',
-                  pt: '10px',
-                  pr: '16px',
-                  pb: '13px',
-                  pl: '16px',
-                  boxShadow: intervalsChecked && selectedTimeSlots.length > 0 ? 
-                    '0px -3px 0px 0px #00000073 inset' : 
-                    '0px -3px 0px 0px #0000001A inset',
-                  gap: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: intervalsChecked && selectedTimeSlots.length > 0 ? 1 : 0.7,
-                  cursor: intervalsChecked && selectedTimeSlots.length > 0 ? 'pointer' : 'not-allowed'
+                  ml: 2,
+                  borderColor: '#E0E0E0',
+                  color: allDay ? 'text.disabled' : '#212B36',
+                  textTransform: 'none',
+                  px: 2,
+                  borderRadius: 1.5,
+                  '&.Mui-disabled': { borderColor: '#F4F6F8' },
                 }}
               >
-                <Typography sx={{
-                  fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 600,
-                  fontSize: '16px',
-                  lineHeight: '22px',
-                  letterSpacing: '0%',
-                  color: 'white'
-                }}>
-                  Save Time Slots
-                </Typography>
+                {interval} hr
               </Button>
-            </Box>
-            
-          </Grid>
-        </Grid>
-        
-      </Box>
-      
-      <Box sx={{ 
-        border: '1px solid #e0e0e0', 
-        borderRadius: 1, 
-        p: 3,
-        boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.05)'
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            )}
+
+            {showIntervalDropdown && !allDay && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 100,
+                  zIndex: 10,
+                  bgcolor: '#fff',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  borderRadius: 1,
+                  minWidth: 100,
+                  mt: 1,
+                }}
+              >
+                {intervalOptions.map((opt) => (
+                  <MenuItem
+                    key={opt}
+                    onClick={() => {
+                      setInterval(opt);
+                      setShowIntervalDropdown(false);
+                    }}
+                    sx={{ fontSize: '14px', px: 2 }}
+                  >
+                    {opt} hr
+                  </MenuItem>
+                ))}
+              </Box>
+            )}
+          </Stack>
+
+          <Divider sx={{ mb: 3 }} />
+
           <Box
-            component="img"
-            src="/assets/icons/components/event_note.svg"
-            alt="Reservation Slots"
-            sx={{ width: 12, height: 14, mr: 1 }}
-          />
-          <Typography sx={{ 
-            fontFamily: 'Inter Display, sans-serif',
-            fontWeight: 600,
-            fontSize: '12px',
-            lineHeight: '16px',
-            letterSpacing: '0%',
-            textTransform: 'uppercase',
-            color: '#231F20'
-          }}>
+            sx={{
+              flexGrow: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+            }}
+          >
+            {renderRightColumn}
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2 }}>
+            {(allDay || generatedSlots.length > 0) && (
+              <Button
+                onClick={handleSave}
+                sx={{
+                  mt: 2,
+                  alignSelf: 'flex-end',
+                  width: 'fit-content',
+                  px: 4,
+                  height: 48,
+                  bgcolor: '#3A3A3C',
+                  color: '#fff',
+                  borderRadius: '12px',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  boxShadow: '0px -3px 0px 0px #00000073 inset',
+                  '&:hover': { bgcolor: '#000' },
+                  '&.Mui-disabled': {
+                    bgcolor: '#F4F6F8',
+                    color: '#919EAB',
+                    boxShadow: 'none',
+                  },
+                }}
+              >
+                {allDay ? 'Save All Day' : 'Save Time Slots'}
+              </Button>
+            )}
+          </Box>
+        </Box>
+      </Box>
+
+      <Box
+        ref={bottomRef}
+        sx={{ mt: 3, border: '1px solid #E0E0E0', borderRadius: 2, p: 2, bgcolor: '#fff' }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+          <Iconify icon="eva:calendar-outline" width={18} color="#1340FF" />
+          <Typography variant="overline" sx={{ fontWeight: 800, color: '#212B36', mt: 0.5 }}>
             RESERVATION SLOTS
           </Typography>
-        </Box>
-        
-        <Box sx={{ borderTop: '1px solid #e0e0e0', my: 2 }} />
-        
-        {savedTimeSlots.length > 0 ? (
-          <Box sx={{ mt: 2 }}>
-            {savedTimeSlots.map((group, index) => (
-              <Box key={index} sx={{ mb: 2, display: 'flex', alignItems: 'flex-start' }}>
-                <Box
-                  component="img"
-                  src="/assets/icons/components/slotscom.svg"
-                  alt="Time Slot"
-                  sx={{ width: 14, height: 19, mr: 1, mt: 0.5 }}
-                />
-                <Box>
-                  <Typography sx={{ 
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 400,
-                    fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
-                    color: '#636366'
-                  }}>
-                    {formatDateRange(group.dates)}
-                  </Typography>
-                  <Typography sx={{ 
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 400,
-                    fontSize: '14px',
-                    lineHeight: '18px',
-                    letterSpacing: '0%',
-                    color: '#636366'
-                  }}>
-                    {formatTimeSlotsForDisplay(group.slots)}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        ) : (
-          <Typography sx={{ 
-            fontFamily: 'Inter Display, sans-serif',
-            fontWeight: 400,
-            fontSize: '14px',
-            lineHeight: '18px',
-            letterSpacing: '0%',
-            color: '#636366'
-          }}>
+        </Stack>
+        <Divider />
+        {savedRules.length === 0 ? (
+          <Typography variant="body2" sx={{ color: '#919EAB', py: 3, textAlign: 'center' }}>
             Saved time slots will show up here.
           </Typography>
+        ) : (
+          <Stack spacing={1} sx={{ mt: 2 }}>
+            {savedRules.map((rule, index) => (
+              <Stack
+                key={index}
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ p: 1.5, bgcolor: '#F9FAFB', borderRadius: 1.5 }}
+              >
+                <Stack direction="row" spacing={2}>
+                  <Iconify icon="feather:edit" color="#1340FF" sx={{ mt: 0.5 }} />
+                  <Box>
+                    <Typography sx={{ fontSize: '14px', fontWeight: 600 }}>
+                      {formatDatesForDisplay(rule.dates)}
+                    </Typography>
+                    <Typography sx={{ fontSize: '14px', color: '#636366', mt: 0.5 }}>
+                      {rule.slots.map((slot, i) => (
+                        <span key={i}>
+                          {slot.label}
+                          {i < rule.slots.length - 1 ? ', ' : ''}
+                        </span>
+                      ))}
+                    </Typography>
+                  </Box>
+                </Stack>
+                <IconButton onClick={() => handleRemoveRule(index)} size="small">
+                  <Iconify icon="eva:trash-2-outline" color="#FF5630" width={20} />
+                </IconButton>
+              </Stack>
+            ))}
+          </Stack>
         )}
       </Box>
-      
-      {/* No popovers needed - using direct input fields */}
     </Box>
   );
 };
 
-export default ReservationSlots;
+export default ReservationSlotsV2;

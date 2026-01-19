@@ -36,6 +36,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
+import MediaKitPopup from './media-kit-popup';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 const ChipStyle = {
@@ -79,6 +80,7 @@ const CampaignModal = ({
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
 
   const dialogContentRef = useRef(null);
   const images = campaign?.campaignBrief?.images || [];
@@ -189,6 +191,10 @@ const CampaignModal = ({
     const hasPaymentDetails = isFormCompleted && user?.paymentForm?.bankAccountName;
     
     if (isTargetUser && (!hasMediaKit || !hasPaymentDetails)) {
+      // Show media kit popup with pitch error message if media kit is missing
+      if (!hasMediaKit) {
+        setShowMediaKitPopup(true);
+      }
       return;
     }
     
@@ -1581,6 +1587,13 @@ const CampaignModal = ({
           )}
         </DialogContent>
       </Dialog>
+
+      <MediaKitPopup
+        open={showMediaKitPopup}
+        onClose={() => setShowMediaKitPopup(false)}
+        userId={user?.id || ''}
+        showPitchError
+      />
     </Dialog>
   );
 };

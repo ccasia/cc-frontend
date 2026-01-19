@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import {
@@ -18,10 +18,13 @@ import { countriesCities } from 'src/contants/countries';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
-import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
+import {
+  RHFSelectV2,
+  RHFTextField,
+  RHFAutocomplete,
+} from 'src/components/hook-form';
 
 import { CustomRHFMultiSelect } from './custom-rhf-multi-select';
-
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -34,7 +37,7 @@ const FormField = ({ label, children, required = true }) => (
         fontSize: '0.875rem',
         mb: 0.5,
         '& .MuiFormLabel-asterisk': {
-          color: '#FF3500', // Change this to your desired color
+          color: '#FF3500',
         },
       }}
     >
@@ -74,115 +77,197 @@ const LANGUAGE_OPTIONS = (() => {
   return orderedLanguages.map((language) => ({ value: language, label: language }));
 })();
 
-const LOCATION_OPTIONS = [
-  { value: 'KlangValley', label: 'Klang Valley' },
-  { value: 'Selangor', label: 'Selangor' },
-  { value: 'KualaLumpur', label: 'Kuala Lumpur' },
-  { value: 'MainCities', label: 'Main cities in Malaysia' },
-  { value: 'EastMalaysia', label: 'East Malaysia' },
-  { value: 'Others', label: 'Others' },
-];
-
 const CREATOR_PERSONA_OPTIONS = interestsLists.map((item) => ({
   value: item.toLowerCase(),
   label: item,
 }));
 
-const SOCIAL_MEDIA_OPTIONS = [
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'tiktok', label: 'TikTok' },
-];
-
-const VIDEO_ANGLE_OPTIONS = [
-  { value: 'Product Demo/Review', label: 'Product Demo/Review' },
-  { value: 'Service Demo/Review', label: 'Service Demo/Review' },
-  { value: 'Testimonial', label: 'Testimonial' },
-  { value: 'Story Telling', label: 'Story Telling' },
-  { value: 'Organic (soft sell)', label: 'Organic (soft sell)' },
-  {
-    value: 'Point Of View (experience with product/service)',
-    label: 'Point Of View (experience with product/service)',
-  },
-  { value: 'Walkthrough', label: 'Walkthrough' },
-  { value: 'Problem vs Solution', label: 'Problem vs Solution' },
-  { value: 'Trends', label: 'Trends' },
-  { value: 'Up to cult creative to decide', label: 'Up to cult creative to decide' },
+const GEOGRAPHIC_FOCUS_OPTIONS = [
+  { value: 'SEAregion', label: 'SEA Region' },
+  { value: 'global', label: 'Global' },
+  { value: 'EastMalaysia', label: 'East Malaysia' },
+  { value: 'KualaLumpur', label: 'Kuala Lumpur' },
+  { value: 'others', label: 'Others' },
 ];
 
 const CampaignTargetAudience = () => {
-  const { setValue, watch } = useFormContext();
+  const { watch } = useFormContext();
 
-  const audienceLocation = watch('audienceLocation') || [];
   const country = watch('country');
   const countries = watch('countries');
 
-  // For Do's and Don'ts - using local state for better control
-  const [doItems, setDoItems] = useState([{ id: 1, value: '' }]);
-  const [dontItems, setDontItems] = useState([{ id: 1, value: '' }]);
+  // Determine which Geographic Focus options to show
+  const showMalaysiaOptions = country === 'Malaysia';
+  const filteredGeographicFocusOptions = showMalaysiaOptions
+    ? GEOGRAPHIC_FOCUS_OPTIONS
+    : GEOGRAPHIC_FOCUS_OPTIONS.slice(0, 2);
 
-  // Handle Do's changes
-  const handleDoChange = (index, value) => {
-    const newItems = [...doItems];
-    newItems[index].value = value;
-    setDoItems(newItems);
+  return (
+    <Box sx={{ maxWidth: '816px', mx: 'auto', mb: { xs: 10, sm: 30 } }}>
+      <Box sx={{ mt: 4 }}>
+        <Grid container spacing={3}>
+          {/* PRIMARY AUDIENCE SECTION */}
+          <Grid item xs={12} md={6}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: 15,
+                mb: 1,
+                color: (theme) => (theme.palette.mode === 'light' ? '#000' : '#fff'),
+              }}
+            >
+              Primary Audience
+            </Typography>
+            <Stack spacing={2}>
+              {/* Gender */}
+              <FormField label="Gender">
+                <CustomRHFMultiSelect
+                  name="audienceGender"
+                  placeholder="Select Gender"
+                  options={GENDER_OPTIONS}
+                  size="small"
+                  checkbox
+                  sx={{
+                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                  }}
+                />
+              </FormField>
 
-    // Update the form values
-    const formattedItems = newItems.map((item) => ({ value: item.value }));
-    setValue('campaignDo', formattedItems);
-  };
+              {/* Age */}
+              <FormField label="Age">
+                <CustomRHFMultiSelect
+                  name="audienceAge"
+                  placeholder="Select Age"
+                  options={AGE_OPTIONS}
+                  size="small"
+                  checkbox
+                  sx={{
+                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                  }}
+                />
+              </FormField>
 
-  // Handle Don'ts changes
-  const handleDontChange = (index, value) => {
-    const newItems = [...dontItems];
-    newItems[index].value = value;
-    setDontItems(newItems);
+              {/* Country */}
+              <FormField label="Country">
+                <RHFAutocomplete
+                  name="country"
+                  placeholder="Select Country"
+                  options={Object.keys(countriesCities)}
+                  getOptionLabel={(option) => option || ''}
+                  value={country ?? null}
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        '& .MuiAutocomplete-listbox': {
+                          maxHeight: 300,
+                          overflowY: 'auto',
+                          '&::-webkit-scrollbar': {
+                            width: 8,
+                          },
+                          '&::-webkit-scrollbar-track': {
+                            backgroundColor: '#f1f1f1',
+                            borderRadius: 8,
+                          },
+                          '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: '#888',
+                            borderRadius: 8,
+                          },
+                          '&::-webkit-scrollbar-thumb:hover': {
+                            backgroundColor: '#555',
+                          },
+                          scrollbarWidth: 'thin',
+                          scrollbarColor: '#888 #fff00',
+                        },
+                      },
+                    },
+                  }}
+                  renderOption={(props, option) => {
+                    const { ...optionProps } = props;
+                    return (
+                      <Box {...optionProps} sx={{ display: 'flex', gap: 1 }}>
+                        <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
+                        <Typography variant="subtitle2">{option}</Typography>
+                      </Box>
+                    );
+                  }}
+                />
+              </FormField>
 
-    // Update the form values
-    const formattedItems = newItems.map((item) => ({ value: item.value }));
-    setValue('campaignDont', formattedItems);
-  };
+              {/* Language */}
+              <FormField label="Language">
+                <CustomRHFMultiSelect
+                  name="audienceLanguage"
+                  placeholder="Select Language"
+                  options={LANGUAGE_OPTIONS}
+                  size="small"
+                  checkbox
+                  sx={{
+                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                  }}
+                />
+              </FormField>
 
-  // Add a new Do item
-  const handleAddDo = () => {
-    const newId = doItems.length > 0 ? Math.max(...doItems.map((item) => item.id)) + 1 : 1;
-    const newItems = [...doItems, { id: newId, value: '' }];
-    setDoItems(newItems);
+              {/* Interests */}
+              <FormField label="Creator's Interest">
+                <CustomRHFMultiSelect
+                  name="audienceCreatorPersona"
+                  placeholder="Select Creator's Interest"
+                  options={CREATOR_PERSONA_OPTIONS}
+                  size="small"
+                  checkbox
+                  sx={{
+                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                  }}
+                />
+              </FormField>
 
-    // Update the form values
-    const formattedItems = newItems.map((item) => ({ value: item.value }));
-    setValue('campaignDo', formattedItems);
-  };
+              {/* User Persona */}
+              <FormField label="User Persona">
+                <RHFTextField name="audienceUserPersona" placeholder="User Persona" size="medium" />
+              </FormField>
+            </Stack>
+          </Grid>
 
-  // Add a new Don't item
-  const handleAddDont = () => {
-    const newId = dontItems.length > 0 ? Math.max(...dontItems.map((item) => item.id)) + 1 : 1;
-    const newItems = [...dontItems, { id: newId, value: '' }];
-    setDontItems(newItems);
+          {/* SECONDARY AUDIENCE SECTION */}
+          <Grid item xs={12} md={6}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: 15,
+                mb: 1,
+                color: (theme) => (theme.palette.mode === 'light' ? '#000' : '#fff'),
+              }}
+            >
+              Secondary Audience (if any)
+            </Typography>
+            <Stack spacing={2}>
+              {/* Gender */}
+              <FormField label="Gender" required={false}>
+                <CustomRHFMultiSelect
+                  name="secondaryAudienceGender"
+                  placeholder="Select Gender"
+                  options={GENDER_OPTIONS}
+                  size="small"
+                  checkbox
+                  sx={{
+                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                  }}
+                />
+              </FormField>
 
-    // Update the form values
-    const formattedItems = newItems.map((item) => ({ value: item.value }));
-    setValue('campaignDont', formattedItems);
-  };
-
-  // Remove a Do item
-  const handleRemoveDo = (id) => {
-    const newItems = doItems.filter((item) => item.id !== id);
-    setDoItems(newItems);
-
-    // Update the form values
-    const formattedItems = newItems.map((item) => ({ value: item.value }));
-    setValue('campaignDo', formattedItems);
-  };
-
-  // Remove a Don't item
-  const handleRemoveDont = (id) => {
-    const newItems = dontItems.filter((item) => item.id !== id);
-    setDontItems(newItems);
-
-    // Update the form values
-    const formattedItems = newItems.map((item) => ({ value: item.value }));
-    setValue('campaignDont', formattedItems);
-  };
+              {/* Age */}
+              <FormField label="Age" required={false}>
+                <CustomRHFMultiSelect
+                  name="secondaryAudienceAge"
+                  placeholder="Select Age"
+                  options={AGE_OPTIONS}
+                  size="small"
+                  checkbox
+                  sx={{
+                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                  }}
+                />
+              </FormField>
 
   return (
     <Box sx={{ maxWidth: '650px', mx: 'auto', mb: 10 }}>
@@ -276,305 +361,65 @@ const CampaignTargetAudience = () => {
                   name="audienceLocation"
                   placeholder="Select city"
                   checkbox
-                  chip
-                  options={LOCATION_OPTIONS}
-                  rules={{
-                    required: country?.toLowerCase() === 'malaysia' ? 'At least one option' : false,
-                    validate: (value) => {
-                      if (country?.toLowerCase() !== 'malaysia') return true;
-                      return value && value.length > 0 ? true : 'At least one option';
-                    },
+                  sx={{
+                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
                   }}
                 />
               </FormField>
-            )}
 
-            {audienceLocation?.includes('Others') && (
-              <RHFTextField
-                name="othersAudienceLocation"
-                label="Specify Other Location"
-                variant="outlined"
-              />
-            )}
+              {/* Interests */}
+              <FormField label="Interests" required={false}>
+                <CustomRHFMultiSelect
+                  name="secondaryAudienceCreatorPersona"
+                  placeholder="Select interests"
+                  options={CREATOR_PERSONA_OPTIONS}
+                  size="small"
+                  checkbox
+                  sx={{
+                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
+                  }}
+                />
+              </FormField>
 
-            <FormField label="Age">
-              <CustomRHFMultiSelect
-                name="audienceAge"
-                placeholder="Select Age"
-                options={AGE_OPTIONS}
-                size="small"
-                checkbox
-                sx={{
-                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                }}
-              />
-            </FormField>
-
-            <FormField label="Language">
-              <CustomRHFMultiSelect
-                name="audienceLanguage"
-                placeholder="Select Language"
-                options={LANGUAGE_OPTIONS}
-                size="small"
-                checkbox
-                sx={{
-                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                }}
-              />
-            </FormField>
-          </Stack>
+              {/* User Persona */}
+              <FormField label="User Persona" required={false}>
+                <RHFTextField
+                  name="secondaryAudienceUserPersona"
+                  placeholder="User Persona"
+                  size="medium"
+                />
+              </FormField>
+            </Stack>
+          </Grid>
         </Grid>
-
-        {/* Right column - User Persona */}
-        <Grid item xs={12} sm={6}>
-          <Stack spacing={2}>
-            <FormField label="User Persona">
-              <RHFTextField
-                name="audienceUserPersona"
-                placeholder="Let us know who you want your campaign to reach!"
-                size="small"
-                multiline
-                rows={5}
-                sx={{
-                  '& .MuiOutlinedInput-root': { padding: '8px' },
-                  height: '100%',
-                }}
-              />
-            </FormField>
-            <FormField label="Interests">
-              <CustomRHFMultiSelect
-                name="audienceCreatorPersona"
-                placeholder="Select creator persona"
-                options={CREATOR_PERSONA_OPTIONS}
-                size="small"
-                checkbox
-                sx={{
-                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                }}
-              />
-            </FormField>
-
-            <FormField label="Social Media Platform">
-              <CustomRHFMultiSelect
-                name="socialMediaPlatform"
-                placeholder="Select Platform"
-                options={SOCIAL_MEDIA_OPTIONS}
-                size="small"
-                checkbox
-                sx={{
-                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                }}
-              />
-            </FormField>
-
-            <FormField label="Video Angle">
-              <CustomRHFMultiSelect
-                name="videoAngle"
-                placeholder="Select Angle"
-                options={VIDEO_ANGLE_OPTIONS}
-                size="small"
-                checkbox
-                sx={{
-                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                }}
-              />
-            </FormField>
-          </Stack>
-        </Grid>
-      </Grid>
-
-      {/* Do's and Don'ts Section Header */}
-      <Box sx={{ mt: 5, mb: 2, textAlign: 'center' }}>
-        <Stack direction="row" justifyContent="center" alignItems="baseline" spacing={1}>
-          <Typography
-            sx={{
-              fontWeight: 400,
-              fontSize: 35,
-              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-            }}
-          >
-            Do&apos;s and Don&apos;ts
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#8E8E93', fontSize: '0.7rem' }}>
-            OPTIONAL
-          </Typography>
-        </Stack>
       </Box>
 
-      {/* Do's and Don'ts */}
-      <Grid container spacing={2}>
-        {/* Do's */}
-        <Grid item xs={12} sm={6}>
-          <Box
-            sx={{
-              border: '1px solid #e0e0e0',
-              borderRadius: 1,
-              p: 1.5,
-              height: '100%',
-            }}
-          >
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid #4CAF50',
-                  borderRadius: 0,
-                  width: 20,
-                  height: 20,
-                }}
-              >
-                <Iconify icon="mdi:check" color="#4CAF50" width={12} height={12} />
-              </Box>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>CAMPAIGN DO&apos;S!</Typography>
-            </Stack>
-
-            {doItems.map((item, index) => (
-              <Stack key={item.id} direction="row" spacing={1} sx={{ mb: 1 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder={`No. ${index + 1}`}
-                  value={item.value}
-                  onChange={(e) => handleDoChange(index, e.target.value)}
-                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
-                />
-                <IconButton onClick={() => handleRemoveDo(item.id)} sx={{ p: 0.5 }}>
-                  <Iconify icon="eva:trash-2-fill" />
-                </IconButton>
-              </Stack>
-            ))}
-
-            <Box
-              sx={{
-                mt: doItems.length > 0 ? 2 : 0,
-                display: 'flex',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                width: '100%',
-              }}
-              onClick={handleAddDo}
+      {/* Geographic Focus */}
+      <Box mt={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+        <FormField label="Geographic Focus">
+          <Stack spacing={1} direction="row">
+            <RHFSelectV2
+              name="geographicFocus"
+              placeholder="Select Geographic Focus"
+              multiple={false}
+              sx={{ minWidth: { sm: geographicFocus === 'others' ? 150 : 400 } }}
             >
-              <Box
-                sx={{
-                  bgcolor: '#FFFFFF',
-                  color: '#000000',
-                  border: '1.5px solid',
-                  borderColor: '#e7e7e7',
-                  borderBottom: 3,
-                  borderBottomColor: '#e7e7e7',
-                  borderRadius: 1.15,
-                  py: 0.8,
-                  px: 1.5,
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                  height: '45px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textTransform: 'none',
-                  width: '100%',
-                  maxWidth: '300px',
-                  '&:hover': {
-                    bgcolor: '#f5f5f5',
-                    borderColor: '#1ABF66',
-                  },
-                }}
-              >
-                Add another Do
-              </Box>
-            </Box>
-          </Box>
-        </Grid>
-
-        {/* Don'ts */}
-        <Grid item xs={12} sm={6}>
-          <Box
-            sx={{
-              border: '1px solid #e0e0e0',
-              borderRadius: 1,
-              p: 1.5,
-              height: '100%',
-            }}
-          >
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid #F44336',
-                  borderRadius: 0,
-                  width: 20,
-                  height: 20,
-                }}
-              >
-                <Iconify icon="mdi:close" color="#F44336" width={12} height={12} />
-              </Box>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>
-                CAMPAIGN DONT&apos;S!
-              </Typography>
-            </Stack>
-
-            {dontItems.map((item, index) => (
-              <Stack key={item.id} direction="row" spacing={1} sx={{ mb: 1 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder={`No. ${index + 1}`}
-                  value={item.value}
-                  onChange={(e) => handleDontChange(index, e.target.value)}
-                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
-                />
-                <IconButton onClick={() => handleRemoveDont(item.id)} sx={{ p: 0.5 }}>
-                  <Iconify icon="eva:trash-2-fill" />
-                </IconButton>
-              </Stack>
-            ))}
-
-            <Box
-              sx={{
-                mt: dontItems.length > 0 ? 2 : 0,
-                display: 'flex',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                width: '100%',
-              }}
-              onClick={handleAddDont}
-            >
-              <Box
-                sx={{
-                  bgcolor: '#FFFFFF',
-                  color: '#000000',
-                  border: '1.5px solid',
-                  borderColor: '#e7e7e7',
-                  borderBottom: 3,
-                  borderBottomColor: '#e7e7e7',
-                  borderRadius: 1.15,
-                  py: 0.8,
-                  px: 1.5,
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                  height: '45px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textTransform: 'none',
-                  width: '100%',
-                  maxWidth: '300px',
-                  '&:hover': {
-                    bgcolor: '#f5f5f5',
-                    borderColor: '#D4321C',
-                  },
-                }}
-              >
-                Add another Don&apos;t
-              </Box>
-            </Box>
-          </Box>
-        </Grid>
-      </Grid>
+              {filteredGeographicFocusOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </RHFSelectV2>
+            {geographicFocus === 'others' && (
+              <RHFTextField
+                name="geographicFocusOthers"
+                placeholder="Geopraphic Focus"
+                sx={{ minWidth: { xs: 250, sm: 300 } }}
+              />
+            )}
+          </Stack>
+        </FormField>
+      </Box>
     </Box>
   );
 };

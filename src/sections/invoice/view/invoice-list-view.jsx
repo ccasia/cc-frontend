@@ -305,7 +305,7 @@ export default function InvoiceListView({ campId, invoices }) {
       );
 
       // Get the creator details from the data passed from the modal
-      const creatorDetails = formData.creatorDetails;
+      const {creatorDetails} = formData;
       console.log('Creator Details:', creatorDetails);
 
       // Get the payment form from the creator details or other locations

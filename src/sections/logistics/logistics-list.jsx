@@ -1,48 +1,72 @@
-import PropTypes from 'prop-types';
 import useSWR from 'swr';
-import { useState, useMemo } from 'react';
-import { useSnackbar } from 'src/components/snackbar';
+import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 
 import {
   Box,
   Card,
   Stack,
   Table,
-  TableBody,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableCell,
   Popover,
+  TableRow,
   MenuItem,
-  Typography,
+  TableBody,
+  TableHead,
+  TableCell,
+  TableContainer,
   CircularProgress,
 } from '@mui/material';
 
 import axiosInstance, { fetcher } from 'src/utils/axios';
-import Iconify from 'src/components/iconify';
-import { LoadingScreen } from 'src/components/loading-screen';
-import EmptyContent from 'src/components/empty-content';
 
-import { LogisticsDrawer, LogisticsAdminDrawer } from './logistics-drawer';
+import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
+import EmptyContent from 'src/components/empty-content';
+import { LoadingScreen } from 'src/components/loading-screen';
+
 import LogisticsTableRow from './logistics-table-row';
 import ConfirmStatusChangeDialog from './dialogs/confirm-status-change-dialog';
 
-const TABLE_HEAD = [
-  { id: 'name', label: 'Name', width: '40%' },
-  { id: 'product', label: 'Product Assigned', width: '40%' },
-  { id: 'status', label: 'Status', width: '20%' },
+const getTableHead = (isReservation) => [
+  { id: 'name', label: 'Name', width: '20%', align: 'left' },
+  {
+    id: isReservation ? 'details' : 'product',
+    label: isReservation ? 'Details' : 'Product Assigned',
+    width: '55%',
+    align: 'center',
+  },
+  { id: 'status', label: 'Status', width: '25%', align: 'left' },
 ];
 
-const STATUS_OPTIONS = [
-  { value: 'PENDING_ASSIGNMENT', label: 'UNASSIGNED', color: '#B0B0B0' },
-  { value: 'SCHEDULED', label: 'YET TO SHIP', color: '#FF9A02' },
-  { value: 'SHIPPED', label: 'SHIPPED OUT', color: '#8A5AFE' },
-  { value: 'DELIVERED', label: 'DELIVERED', color: '#1ABF66' },
-  { value: 'ISSUE_REPORTED', label: 'FAILED', color: '#D4321C' },
-];
+const getStatusOption = (isReservation) =>
+  [
+    !isReservation && { value: 'PENDING_ASSIGNMENT', label: 'UNASSIGNED', color: '#B0B0B0' },
+    isReservation && {
+      value: 'NOT_STARTED' || 'PENDING_ASSIGNMENT',
+      label: 'UNCONFIRMED',
+      color: '#B0B0B0',
+    },
+    {
+      value: 'SCHEDULED',
+      label: isReservation ? 'SCHEDULED' : 'YET TO SHIP',
+      color: isReservation ? '#1340FF' : '#FF9A02',
+    },
+    !isReservation && { value: 'SHIPPED', label: 'SHIPPED OUT', color: '#8A5AFE' },
+    {
+      value: isReservation ? 'COMPLETED' : 'DELIVERED',
+      label: isReservation ? 'COMPLETED' : 'DELIVERED',
+      color: '#1ABF66',
+    },
+    { value: 'ISSUE_REPORTED', label: isReservation ? 'ISSUE' : 'FAILED', color: '#D4321C' },
+  ].filter(Boolean);
 
-export default function LogisticsList({ campaignId, isAdmin, logistics: propLogistics }) {
+export default function LogisticsList({
+  campaignId,
+  isAdmin,
+  logistics: propLogistics,
+  isReservation,
+  onClick,
+}) {
   const { enqueueSnackbar } = useSnackbar();
   const {
     data: fetchedLogistics,
@@ -52,18 +76,14 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
 
   const logistics = propLogistics || fetchedLogistics;
 
-  const [selectedLogisticId, setSelectedLogisticId] = useState(null);
-  const [openDrawer, setOpenDrawer] = useState(false);
+  const STATUS_OPTIONS = getStatusOption(isReservation);
+  const TABLE_HEAD = getTableHead(isReservation);
+
   const [statusAnchorEl, setStatusAnchorEl] = useState(null);
   const [statusTargetId, setStatusTargetId] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingNewStatus, setPendingNewStatus] = useState(null);
   const [statusLoading, setStatusLoading] = useState(false);
-
-  const selectedLogistic = useMemo(
-    () => logistics?.find((item) => item.id === selectedLogisticId),
-    [logistics, selectedLogisticId]
-  );
 
   const statusLogistic = useMemo(
     () => logistics?.find((item) => item.id === statusTargetId),
@@ -71,12 +91,7 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
   );
 
   const handleClick = (logisticId) => {
-    setSelectedLogisticId(logisticId);
-    setOpenDrawer(true);
-  };
-
-  const handleCloseDrawer = () => {
-    setOpenDrawer(false);
+    onClick(logisticId);
   };
 
   const handleEditStatus = (e, id) => {
@@ -144,6 +159,7 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
                 {TABLE_HEAD.map((heading) => (
                   <TableCell
                     key={heading.id}
+                    align={heading.align || 'left'}
                     sx={{ width: heading.width, py: 1, height: 40, color: '#231F20' }}
                   >
                     {heading.label}
@@ -157,6 +173,7 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
                 <LogisticsTableRow
                   key={row.id}
                   row={row}
+                  isReservation={isReservation}
                   onClick={() => handleClick(row.id)}
                   onEditStatus={isAdmin ? (e) => handleEditStatus(e, row.id) : null}
                 />
@@ -166,8 +183,8 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
                 <TableRow>
                   <TableCell colSpan={4}>
                     <EmptyContent
-                      title="No deliveries scheduled"
-                      description="Click 'Edit & Bulk Assign' to get started."
+                      title="No logistic found"
+                      // description="Click 'Edit & Bulk Assign' to get started."
                       imgUrl="/assets/icons/empty/ic_content.svg"
                     />
                   </TableCell>
@@ -178,23 +195,6 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
         </TableContainer>
       </Card>
 
-      {isAdmin ? (
-        <LogisticsAdminDrawer
-          open={openDrawer}
-          onClose={handleCloseDrawer}
-          logistic={selectedLogistic}
-          onUpdate={mutate}
-          campaignId={campaignId}
-        />
-      ) : (
-        <LogisticsDrawer
-          open={openDrawer}
-          onClose={handleCloseDrawer}
-          logistic={selectedLogistic}
-          onUpdate={mutate}
-          campaignId={campaignId}
-        />
-      )}
       {isAdmin && (
         <Popover
           open={Boolean(statusAnchorEl)}
@@ -294,6 +294,7 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
           oldStatus={statusLogistic.status}
           newStatus={pendingNewStatus}
           loading={statusLoading}
+          isReservation={isReservation}
         />
       )}
     </>
@@ -302,6 +303,8 @@ export default function LogisticsList({ campaignId, isAdmin, logistics: propLogi
 
 LogisticsList.propTypes = {
   campaignId: PropTypes.string,
-  logistics: PropTypes.string,
+  logistics: PropTypes.array,
   isAdmin: PropTypes.bool,
+  isReservation: PropTypes.bool,
+  onClick: PropTypes.func,
 };

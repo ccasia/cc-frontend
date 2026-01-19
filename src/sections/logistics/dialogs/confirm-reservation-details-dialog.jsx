@@ -1,0 +1,319 @@
+import useSWR from 'swr';
+import * as Yup from 'yup';
+import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
+import { useMemo, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
+
+import LoadingButton from '@mui/lab/LoadingButton';
+import {
+  Box,
+  Stack,
+  Dialog,
+  Avatar,
+  Divider,
+  MenuItem,
+  Typography,
+  IconButton,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+
+import axiosInstance, { fetcher } from 'src/utils/axios';
+
+import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
+import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
+
+export default function ConfirmReservationDetailsDialog({
+  open,
+  onClose,
+  logistic,
+  onUpdate,
+  campaignId,
+}) {
+  const { enqueueSnackbar } = useSnackbar();
+
+  const { data: config } = useSWR(
+    open && campaignId ? `/api/logistics/campaign/${campaignId}/reservation-config` : null,
+    fetcher
+  );
+
+  const details = logistic?.reservationDetails;
+  const creator = logistic?.creator;
+  const isEdit = details?.isConfirmed;
+  const picContact = details?.picContact;
+  const picName = details?.picName;
+
+  const outlets = useMemo(() => {
+    if (config?.locations && Array.isArray(config.locations)) {
+      return config.locations;
+    }
+    const current = details?.outlet;
+    return current ? [current] : [];
+  }, [config, details]);
+
+  const ConfirmationSchema = Yup.object().shape({
+    outlet: Yup.string().required('Outlet is required'),
+    clientRemarks: Yup.string(),
+    picName: Yup.string(),
+    picContact: Yup.string(),
+    promoCode: Yup.string(),
+    budget: Yup.string(),
+  });
+
+  const defaultValues = {
+    outlet: '',
+    clientRemarks: '',
+    picName: '',
+    picContact: '',
+    promoCode: '',
+    budget: '',
+  };
+
+  const methods = useForm({
+    resolver: yupResolver(ConfirmationSchema),
+    defaultValues,
+  });
+
+  const {
+    handleSubmit,
+    setValue,
+    reset,
+    watch,
+    formState: { isSubmitting, isDirty },
+  } = methods;
+
+  const selectedOutlet = watch('outlet');
+
+  useEffect(() => {
+    if (!selectedOutlet || !config?.locations) return;
+
+    const matchedLocation = config.locations.find(
+      (loc) => (typeof loc === 'string' ? loc : loc.name) === selectedOutlet
+    );
+
+    if (matchedLocation && typeof matchedLocation === 'object') {
+      setValue('picName', picName || matchedLocation.pic || '');
+      setValue('picContact', picContact || matchedLocation.contactNumber || '');
+    }
+  }, [selectedOutlet, config, setValue, picContact, picName]);
+
+  useEffect(() => {
+    if (open && details && config) {
+      reset({
+        outlet: typeof details.outlet === 'string' ? details.outlet : details.outlet?.name || '',
+        clientRemarks: details.clientRemarks || config.clientRemarks || '',
+        promoCode: details.promoCode || '',
+        budget: details.budget || '',
+      });
+    }
+  }, [open, details, config, reset]);
+
+  const onSubmit = async (data) => {
+    try {
+      await axiosInstance.patch(
+        `/api/logistics/campaign/${campaignId}/${logistic.id}/reservation-detail`,
+        {
+          ...data,
+          isConfirmed: true,
+        }
+      );
+
+      onUpdate();
+      enqueueSnackbar('Reservation details confirmed successfully!');
+      onClose();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Failed to update details', { variant: 'error' });
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{
+        sx: { bgcolor: '#F4F4F4', borderRadius: 2 },
+      }}
+    >
+      <DialogTitle sx={{ pb: 1 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+          <Box>
+            <Typography
+              variant="h3"
+              fontFamily="instrument serif"
+              sx={{ fontWeight: 400, color: '#231F20' }}
+            >
+              {isEdit ? 'Edit Details' : 'Confirm Details'}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#636366', mt: 0.5 }}>
+              Please confirm the creator&apos;s selection and add any notes.
+            </Typography>
+          </Box>
+          <IconButton onClick={onClose}>
+            <Iconify icon="eva:close-outline" />
+          </IconButton>
+        </Stack>
+      </DialogTitle>
+
+      <Divider sx={{ mb: 2 }} />
+
+      <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+        <DialogContent sx={{ overflowY: 'auto', maxHeight: '70vh' }}>
+          <Stack spacing={3}>
+            <Stack direction="row">
+              {/* Participant Info (Read Only) */}
+              <Stack direction="column" alignItems="start" sx={{ width: '50%' }}>
+                <Typography variant="subtitle2" sx={{ color: '#636366', mb: 0.5 }}>
+                  Participant{' '}
+                </Typography>
+                <Stack direction="row" spacing={2}>
+                  <Avatar src={creator?.photoURL} sx={{ width: 48, height: 48 }} />
+                  <Box>
+                    <Typography variant="subtitle1">{creator?.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {creator?.phoneNumber}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Stack>
+
+              {/* Creator Remarks (Read Only) */}
+              <Box sx={{ width: '50%' }}>
+                <Typography variant="subtitle2" sx={{ color: '#636366', mb: 0.5 }}>
+                  Creator Remarks
+                </Typography>
+                <Typography variant="body2">
+                  {details?.creatorRemarks || 'No remarks provided.'}
+                </Typography>
+              </Box>
+            </Stack>
+            {/* Outlet Selection */}
+            <Box>
+              <Typography variant="caption" sx={{ color: '#636366', display: 'block', mb: 0.5 }}>
+                Confirm Outlet <span style={{ color: '#FF4842' }}>*</span>
+              </Typography>
+              <RHFSelect
+                name="outlet"
+                placeholder="Select Outlet"
+                sx={{ bgcolor: '#FFFFFF', borderRadius: 1 }}
+              >
+                {outlets.map((option, idx) => {
+                  const name = typeof option === 'string' ? option : option.name;
+                  return (
+                    <MenuItem key={idx} value={name}>
+                      {name}
+                    </MenuItem>
+                  );
+                })}
+              </RHFSelect>
+            </Box>
+
+            {/* Admin/Client Remarks */}
+            <Box>
+              <Typography variant="caption" sx={{ color: '#636366', display: 'block', mb: 0.5 }}>
+                Add Remarks
+              </Typography>
+              <RHFTextField
+                name="clientRemarks"
+                placeholder="Enter any extra remarks..."
+                sx={{ bgcolor: '#FFFFFF', borderRadius: 1 }}
+              />
+            </Box>
+
+            {/* Two Column Section for Optional Fields */}
+            <Stack direction="row" spacing={2}>
+              <Box sx={{ width: '50%' }}>
+                <Typography variant="caption" sx={{ color: '#636366', mb: 0.5, display: 'block' }}>
+                  PIC (Optional)
+                </Typography>
+                <RHFTextField
+                  name="picName"
+                  placeholder="Person In Charge"
+                  sx={{ bgcolor: '#FFFFFF', borderRadius: 1 }}
+                />
+              </Box>
+              <Box sx={{ width: '50%' }}>
+                <Typography variant="caption" sx={{ color: '#636366', mb: 0.5, display: 'block' }}>
+                  Contact Number (Optional)
+                </Typography>
+                <RHFTextField
+                  name="picContact"
+                  placeholder="PIC Contact Number"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#FFFFFF',
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+              </Box>
+            </Stack>
+
+            <Stack direction="row" spacing={2}>
+              <Box sx={{ width: '50%' }}>
+                <Typography variant="caption" sx={{ color: '#636366', mb: 0.5, display: 'block' }}>
+                  Promo (Optional)
+                </Typography>
+                <RHFTextField
+                  name="promoCode"
+                  placeholder="Enter Promo or Menu"
+                  sx={{ bgcolor: '#FFFFFF', borderRadius: 1 }}
+                />
+              </Box>
+              <Box sx={{ width: '50%' }}>
+                <Typography variant="caption" sx={{ color: '#636366', mb: 0.5, display: 'block' }}>
+                  Budget (Optional)
+                </Typography>
+                <RHFTextField
+                  name="budget"
+                  placeholder="Enter Spend Limit"
+                  sx={{
+                    borderRadius: 1,
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#FFFFFF',
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+              </Box>
+            </Stack>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
+          <LoadingButton
+            type="submit"
+            variant="contained"
+            size="large"
+            loading={isSubmitting}
+            // disabled={!isDirty} //strictly for editing
+            sx={{
+              bgcolor: '#3A3A3C',
+              color: '#FFFFFF',
+              px: 6,
+              py: 1.2,
+              borderRadius: 1,
+              fontSize: '1rem',
+              '&:hover': { bgcolor: '#000000' },
+            }}
+          >
+            Confirm
+          </LoadingButton>
+        </DialogActions>
+      </FormProvider>
+    </Dialog>
+  );
+}
+
+ConfirmReservationDetailsDialog.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  logistic: PropTypes.object,
+  onUpdate: PropTypes.func,
+  campaignId: PropTypes.string,
+};

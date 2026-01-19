@@ -29,8 +29,8 @@ import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
-import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
 import SocialLinksModal from 'src/components/social-links-modal';
+import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
 import Main from './main';
 import Header from './header';

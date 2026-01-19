@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 
@@ -21,8 +21,14 @@ import { useRouter } from 'src/routes/hooks';
 import { useGetMyCampaign } from 'src/hooks/use-get-my-campaign';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
+import axiosInstance from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
+
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+import toast from 'react-hot-toast';
+import { LoadingButton } from '@mui/lab';
 
 const BoxStyle = {
   border: '1px solid #e0e0e0',
@@ -47,26 +53,40 @@ const BoxStyle = {
 const CreatorProfileView = ({ id }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const { data: campaigns = [] } = useGetMyCampaign(id);
+  const { initialize } = useAuthContext();
   const router = useRouter();
 
+  const [isLoadingImpersonation, setIsLoading] = useState(false);
+
   // Calculate total UGC videos from campaigns
-  const ugcCredits = React.useMemo(
-    () => {
-      // Calculate total from all campaigns
-      const totalFromCampaigns = campaigns.reduce((total, campaign) => {
-        // Check if the shortlisted object belongs to this user
-        const isUserShortlisted = campaign.shortlisted?.userId === id;
-        
-        // Get ugcVideos from the shortlisted object if it belongs to this user
-        const creditsForThisCampaign = isUserShortlisted ? (campaign.shortlisted?.ugcVideos || 0) : 0;
-        
-        return total + creditsForThisCampaign;
-      }, 0);
-      
-      return totalFromCampaigns;
-    },
-    [campaigns, id]
-  );
+  const ugcCredits = React.useMemo(() => {
+    // Calculate total from all campaigns
+    const totalFromCampaigns = campaigns.reduce((total, campaign) => {
+      // Check if the shortlisted object belongs to this user
+      const isUserShortlisted = campaign.shortlisted?.userId === id;
+
+      // Get ugcVideos from the shortlisted object if it belongs to this user
+      const creditsForThisCampaign = isUserShortlisted ? campaign.shortlisted?.ugcVideos || 0 : 0;
+
+      return total + creditsForThisCampaign;
+    }, 0);
+
+    return totalFromCampaigns;
+  }, [campaigns, id]);
+
+  const impersonateCreator = async (userId) => {
+    try {
+      setIsLoading(true);
+      await axiosInstance.post('/api/admin/impersonate-creator', { userId });
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      initialize();
+    } catch (error) {
+      console.log(error);
+      toast.error('Failed to impersonate');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -83,22 +103,6 @@ const CreatorProfileView = ({ id }) => {
     );
   }
 
-  // const approvedCampaigns =
-  //   campaigns.filter(
-  //     (campaign) => campaign.status !== 'COMPLETED' && campaign.pitch.status === 'APPROVED'
-  //   ) || [];
-  // const pendingCampaigns =
-  //   campaigns.filter(
-  //     (campaign) =>
-  //       campaign.pitch.status === 'PENDING_REVIEW' || campaign.pitch.status === 'SENT_TO_CLIENT'
-  //   ) || [];
-  // const rejectedCampaigns =
-  //   campaigns.filter((campaign) => campaign.pitch.status === 'REJECTED') || [];
-  // const pastCampaigns =
-  //   campaigns.filter(
-  //     (campaign) => campaign.status === 'COMPLETED' && campaign.pitch.status === 'APPROVED'
-  //   ) || [];
-
   const groupsSetup = {
     approved: [],
     pending: [],
@@ -108,10 +112,16 @@ const CreatorProfileView = ({ id }) => {
 
   const groupedCampaigns = campaigns.reduce((groups, campaign) => {
     const pitchStatus = campaign.pitch?.status;
+    const isUserShortlisted = campaign.shortlisted?.userId === id;
     const campaignStatus = campaign.status;
 
-    if (!pitchStatus) {
-      return groups
+    // include retrospective campaigns that have not pitch when shortlisted
+    if (!pitchStatus && isUserShortlisted) {
+      if (campaignStatus === 'COMPLETED') {
+        groups.past.push(campaign);
+      } else {
+        groups.approved.push(campaign);
+      }
     }
 
     if (pitchStatus === 'PENDING_REVIEW' || pitchStatus === 'SENT_TO_CLIENT') {
@@ -143,18 +153,40 @@ const CreatorProfileView = ({ id }) => {
       }}
     >
       {/* Back button */}
-      <Button
-        color="inherit"
-        startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-        onClick={() => router.back()}
+      <Box
         sx={{
-          alignSelf: 'flex-start',
-          color: '#636366',
-          fontSize: { xs: '0.875rem', sm: '1rem' },
+          display: 'flex',
+          justifyContent: 'space-between',
         }}
       >
-        Back
-      </Button>
+        <Button
+          color="inherit"
+          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
+          onClick={() => router.back()}
+          sx={{
+            alignSelf: 'flex-start',
+            color: '#636366',
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+          }}
+        >
+          Back
+        </Button>
+        {data.user.status === 'active' && (
+          <LoadingButton
+            variant="outlined"
+            startIcon={<Iconify icon="solar:user-linear" width={20} />}
+            onClick={() => impersonateCreator(id)}
+            sx={{
+              alignSelf: 'flex-start',
+              color: '#636366',
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+            }}
+            loading={isLoadingImpersonation}
+          >
+            Impersonate creator
+          </LoadingButton>
+        )}
+      </Box>
 
       {/* Profile Info section */}
       <Box sx={{ p: 3, mb: -2 }}>
@@ -223,19 +255,22 @@ const CreatorProfileView = ({ id }) => {
                   fontSize: '0.875rem',
                 }}
               >
-                Campaign Information</Typography>
+                Campaign Information
+              </Typography>
             </Box>
             {/* Creator Information Box */}
-            <Box sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'repeat(1, 1fr)',
-                sm: 'repeat(2, 1fr)',
-                md: 'repeat(2, 1fr)',
-                lg: 'repeat(4, 1fr)'
-              },
-              gap: { xs: 2, sm: 2, md: 2, lg: 2 }
-            }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'repeat(1, 1fr)',
+                  sm: 'repeat(2, 1fr)',
+                  md: 'repeat(2, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                },
+                gap: { xs: 2, sm: 2, md: 2, lg: 2 },
+              }}
+            >
               {[
                 {
                   label: 'Pronouns',
@@ -273,7 +308,7 @@ const CreatorProfileView = ({ id }) => {
                       overflowWrap: 'break-word',
                       maxWidth: '100%',
                       whiteSpace: 'normal',
-                      display: 'block'
+                      display: 'block',
                     }}
                   >
                     {item.value || item.fallback}
@@ -291,14 +326,16 @@ const CreatorProfileView = ({ id }) => {
                   display: 'block',
                   mb: 1,
                   mt: -1,
-                  fontSize: '0.875rem'
+                  fontSize: '0.875rem',
                 }}
               >
                 Interests
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {data?.user?.creator?.interests?.length > 0 ?
-                  [...new Set(data?.user?.creator?.interests?.map((interest) => interest.name))].map((name) => (
+                {data?.user?.creator?.interests?.length > 0 ? (
+                  [
+                    ...new Set(data?.user?.creator?.interests?.map((interest) => interest.name)),
+                  ].map((name) => (
                     <Box
                       key={name}
                       component="span"
@@ -319,14 +356,12 @@ const CreatorProfileView = ({ id }) => {
                     >
                       {name}
                     </Box>
-                  )) :
-                  <Typography
-                    variant="body2"
-                    sx={{ fontSize: '0.875rem' }}
-                  >
+                  ))
+                ) : (
+                  <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
                     Not specified
                   </Typography>
-                }
+                )}
               </Box>
             </Box>
           </Box>
@@ -355,16 +390,18 @@ const CreatorProfileView = ({ id }) => {
               </Typography>
             </Box>
 
-            <Box sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'repeat(1, 1fr)',
-                sm: 'repeat(2, 1fr)',
-                md: 'repeat(2, 1fr)',
-                lg: 'repeat(4, 1fr)'
-              },
-              gap: { xs: 2, sm: 2, md: 2, lg: 2 }
-            }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'repeat(1, 1fr)',
+                  sm: 'repeat(2, 1fr)',
+                  md: 'repeat(2, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                },
+                gap: { xs: 2, sm: 2, md: 2, lg: 2 },
+              }}
+            >
               {[
                 {
                   label: 'Account Name',
@@ -399,7 +436,7 @@ const CreatorProfileView = ({ id }) => {
                       maxWidth: '100%',
                       whiteSpace: 'normal',
                       display: 'block',
-                      mt: 0.5
+                      mt: 0.5,
                     }}
                   >
                     {item.value}
@@ -426,14 +463,29 @@ const CreatorProfileView = ({ id }) => {
             </Box>
 
             <Stack direction="row" spacing={1}>
-              <Tooltip title={data?.user?.creator?.instagram ? "Instagram account connected" : "Instagram account not connected"}>
+              <Tooltip
+                title={
+                  data?.user?.creator?.instagram
+                    ? 'Instagram account connected'
+                    : 'Instagram account not connected'
+                }
+              >
                 <span style={{ display: 'inline-block' }}>
                   <Button
-                    component={data?.user?.creator?.instagram ? "a" : "button"}
-                    href={data?.user?.creator?.instagram ? `https://instagram.com/${data?.user?.creator?.instagram}` : undefined}
+                    component={data?.user?.creator?.instagram ? 'a' : 'button'}
+                    href={
+                      data?.user?.creator?.instagram
+                        ? `https://instagram.com/${data?.user?.creator?.instagram}`
+                        : undefined
+                    }
                     target="_blank"
                     disabled={!data?.user?.creator?.instagram}
-                    startIcon={<Iconify icon="mdi:instagram" color={data?.user?.creator?.instagram ? "#231F20" : "#8e8e93"} />}
+                    startIcon={
+                      <Iconify
+                        icon="mdi:instagram"
+                        color={data?.user?.creator?.instagram ? '#231F20' : '#8e8e93'}
+                      />
+                    }
                     sx={{
                       px: 1.5,
                       py: 0.5,
@@ -444,7 +496,9 @@ const CreatorProfileView = ({ id }) => {
                       cursor: data?.user?.creator?.instagram ? 'pointer' : 'not-allowed',
                       opacity: data?.user?.creator?.instagram ? 1 : 0.6,
                       '&:hover': {
-                        bgcolor: data?.user?.creator?.instagram ? alpha('#636366', 0.08) : 'transparent',
+                        bgcolor: data?.user?.creator?.instagram
+                          ? alpha('#636366', 0.08)
+                          : 'transparent',
                       },
                       '&.Mui-disabled': {
                         color: '#8e8e93',
@@ -457,14 +511,29 @@ const CreatorProfileView = ({ id }) => {
                   </Button>
                 </span>
               </Tooltip>
-              <Tooltip title={data?.user?.creator?.tiktok ? "TikTok account connected" : "TikTok account not connected"}>
+              <Tooltip
+                title={
+                  data?.user?.creator?.tiktok
+                    ? 'TikTok account connected'
+                    : 'TikTok account not connected'
+                }
+              >
                 <span style={{ display: 'inline-block' }}>
                   <Button
-                    component={data?.user?.creator?.tiktok ? "a" : "button"}
-                    href={data?.user?.creator?.tiktok ? `https://tiktok.com/@${data?.user?.creator?.tiktok}` : undefined}
+                    component={data?.user?.creator?.tiktok ? 'a' : 'button'}
+                    href={
+                      data?.user?.creator?.tiktok
+                        ? `https://tiktok.com/@${data?.user?.creator?.tiktok}`
+                        : undefined
+                    }
                     target="_blank"
                     disabled={!data?.user?.creator?.tiktok}
-                    startIcon={<Iconify icon="ic:baseline-tiktok" color={data?.user?.creator?.tiktok ? "#231F20" : "#8e8e93"} />}
+                    startIcon={
+                      <Iconify
+                        icon="ic:baseline-tiktok"
+                        color={data?.user?.creator?.tiktok ? '#231F20' : '#8e8e93'}
+                      />
+                    }
                     sx={{
                       px: 2,
                       py: 0.5,
@@ -475,7 +544,9 @@ const CreatorProfileView = ({ id }) => {
                       cursor: data?.user?.creator?.tiktok ? 'pointer' : 'not-allowed',
                       opacity: data?.user?.creator?.tiktok ? 1 : 0.6,
                       '&:hover': {
-                        bgcolor: data?.user?.creator?.tiktok ? alpha('#636366', 0.08) : 'transparent',
+                        bgcolor: data?.user?.creator?.tiktok
+                          ? alpha('#636366', 0.08)
+                          : 'transparent',
                       },
                       '&.Mui-disabled': {
                         color: '#8e8e93',
@@ -512,7 +583,9 @@ const CreatorProfileView = ({ id }) => {
                   fontWeight: 600,
                   fontSize: '0.875rem',
                 }}
-              >Campaign History</Typography>
+              >
+                Campaign History
+              </Typography>
             </Box>
 
             {approvedCampaigns.length > 0 && (
@@ -647,14 +720,14 @@ const CreatorProfileView = ({ id }) => {
             </Box>
 
             <Typography variant="subtitle2">
-              <Label 
-                color="info" 
-                sx={{ 
-                  bgcolor: '#F5F5F5', 
-                  color: '#231F20', 
-                  px: 1.5, 
-                  py: 2, 
-                  fontSize: '0.8rem' 
+              <Label
+                color="info"
+                sx={{
+                  bgcolor: '#F5F5F5',
+                  color: '#231F20',
+                  px: 1.5,
+                  py: 2,
+                  fontSize: '0.8rem',
                 }}
               >
                 {ugcCredits} UGC Videos
@@ -671,4 +744,4 @@ CreatorProfileView.propTypes = {
   id: PropTypes.string,
 };
 
-export default CreatorProfileView; 
+export default CreatorProfileView;
