@@ -2,16 +2,7 @@ import PropTypes from 'prop-types';
 import React, { memo } from 'react';
 import { useFormContext } from 'react-hook-form';
 
-import {
-  Box,
-  Chip,
-  Grid,
-  Stack,
-  FormLabel,
-  TextField,
-  IconButton,
-  Typography,
-} from '@mui/material';
+import { Box, Grid, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
 
 import { langList } from 'src/contants/language';
 import { countriesCities } from 'src/contants/countries';
@@ -94,7 +85,8 @@ const CampaignTargetAudience = () => {
   const { watch } = useFormContext();
 
   const country = watch('country');
-  const countries = watch('countries');
+  const secondaryCountry = watch('secondaryCountry');
+  const geographicFocus = watch('geographicFocus');
 
   // Determine which Geographic Focus options to show
   const showMalaysiaOptions = country === 'Malaysia';
@@ -269,97 +261,59 @@ const CampaignTargetAudience = () => {
                 />
               </FormField>
 
-  return (
-    <Box sx={{ maxWidth: '650px', mx: 'auto', mb: 10 }}>
-      {/* First row - Gender and User Persona */}
-      <Grid container spacing={2} alignItems="stretch">
-        {/* Left column - Audience Gender and City/Area */}
-        <Grid item xs={12} sm={6}>
-          <Stack spacing={2}>
-            <FormField label="Gender">
-              <CustomRHFMultiSelect
-                name="audienceGender"
-                placeholder="Select Gender"
-                options={GENDER_OPTIONS}
-                size="small"
-                checkbox
-                sx={{ 
-                  '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                }}
-              />
-            </FormField>
-            
-            <FormField label="Audience Countries">
-              <RHFAutocomplete
-                name="countries"
-                placeholder="Select countries"
-                multiple
-                options={Object.keys(countriesCities)}
-                getOptionLabel={(option) => option}
-                slotProps={{
-                  paper: {
-                    sx: {
-                      '& .MuiAutocomplete-listbox': {
-                        maxHeight: 300,
-                        overflowY: 'auto',
-                        '&::-webkit-scrollbar': {
-                          width: 8,
+              {/* Country */}
+              <FormField label="Country" required={false}>
+                <RHFAutocomplete
+                  name="secondaryCountry"
+                  placeholder="Select country"
+                  options={Object.keys(countriesCities)}
+                  getOptionLabel={(option) => option || ''}
+                  value={secondaryCountry ?? null}
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        '& .MuiAutocomplete-listbox': {
+                          maxHeight: 300,
+                          overflowY: 'auto',
+                          '&::-webkit-scrollbar': {
+                            width: 8,
+                          },
+                          '&::-webkit-scrollbar-track': {
+                            backgroundColor: '#f1f1f1',
+                            borderRadius: 8,
+                          },
+                          '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: '#888',
+                            borderRadius: 8,
+                          },
+                          '&::-webkit-scrollbar-thumb:hover': {
+                            backgroundColor: '#555',
+                          },
+                          scrollbarWidth: 'thin',
+                          scrollbarColor: '#888 #fff00',
                         },
-                        '&::-webkit-scrollbar-track': {
-                          backgroundColor: '#f1f1f1',
-                          borderRadius: 8,
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                          backgroundColor: '#888',
-                          borderRadius: 8,
-                        },
-                        '&::-webkit-scrollbar-thumb:hover': {
-                          backgroundColor: '#555',
-                        },
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: '#888 #fff00',
                       },
                     },
-                  },
-                }}
-                renderOption={(props, option) => {
-                  // eslint-disable-next-line react/prop-types
-                  const { key, ...optionProps } = props;
+                  }}
+                  renderOption={(props, option) => {
+                    const { ...optionProps } = props;
+                    return (
+                      <Box {...optionProps} sx={{ display: 'flex', gap: 1 }}>
+                        <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
+                        <Typography variant="subtitle2">{option}</Typography>
+                      </Box>
+                    );
+                  }}
+                />
+              </FormField>
 
-                  return (
-                    <Box key={key} {...optionProps} sx={{ display: 'flex', gap: 1 }}>
-                      <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
-                      <Typography variant="subtitle2">{option}</Typography>
-                    </Box>
-                  );
-                }}
-                renderTags={(selected, getTagProps) =>
-                  selected.map((option, index) => (
-                    <Chip
-                      {...getTagProps({ index })}
-                      key={option}
-                      icon={<Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={16} />}
-                      label={option}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        border: 1,
-                        borderColor: '#EBEBEB',
-                        boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                        backgroundColor: '#fff',
-                        py: 1.5,
-                      }}
-                    />
-                  ))
-                }
-              />
-            </FormField>
-
-            {(countries?.includes('Malaysia') || country?.toLowerCase() === 'malaysia') && (
-              <FormField label="Audience City/Area">
-                <RHFMultiSelect
-                  name="audienceLocation"
-                  placeholder="Select city"
+              {/* Language */}
+              <FormField label="Language" required={false}>
+                <CustomRHFMultiSelect
+                  name="secondaryAudienceLanguage"
+                  placeholder="Select Language"
+                  options={LANGUAGE_OPTIONS}
+                  size="small"
                   checkbox
                   sx={{
                     '& .MuiOutlinedInput-root': { minHeight: '50px' },

@@ -79,12 +79,14 @@ const defaultFilters = {
 
 export default function InvoiceListView({ campId, invoices }) {
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const settings = useSettingsContext();
 
   const { user } = useAuthContext();
-
+  
   const [openNewInvoiceModal, setOpenNewInvoiceModal] = useState(false);
 
-  const { data } = useGetAgreements(campId);
+  const { data, isLoading, error } = useGetAgreements(campId);
 
   const router = useRouter();
 
@@ -117,8 +119,8 @@ export default function InvoiceListView({ campId, invoices }) {
   const dataFiltered = useMemo(() => {
     if (alphabetical) {
       return [...filteredData].sort((a, b) => {
-        const nameA = ((a.creator.user.name ?? a.invoiceFrom?.name) || '').toLowerCase();
-        const nameB = ((b.creator.user.name ?? b.invoiceFrom?.name) || '').toLowerCase();
+        const nameA = (a.invoiceFrom?.name || '').toLowerCase();
+        const nameB = (b.invoiceFrom?.name || '').toLowerCase();
         return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
       });
     }
@@ -255,7 +257,7 @@ export default function InvoiceListView({ campId, invoices }) {
     },
     [router]
   );
-
+  
   const handleOpenNewInvoiceModal = () => {
     setOpenNewInvoiceModal(true);
   };
@@ -267,61 +269,53 @@ export default function InvoiceListView({ campId, invoices }) {
   const handleCreateInvoice = async (formData) => {
     try {
       // Format the services for the deliverables field
-      const deliverables = formData.service
-        .map((service) => {
-          // If service is 'Other', use the otherService value
-          if (service === 'Other' && formData.otherService) {
-            return formData.otherService;
-          }
-          return service;
-        })
-        .join(', ');
+      const deliverables = formData.service.map(service => {
+        // If service is 'Other', use the otherService value
+        if (service === 'Other' && formData.otherService) {
+          return formData.otherService;
+        }
+        return service;
+      }).join(', ');
 
       // Get the selected creator from the data passed from the modal
       console.log('Creator ID:', formData.creatorId);
       console.log('Creator Data:', formData.creatorData);
       console.log('Agreement Data:', formData.agreementData);
-
+      
       // Use the complete creator data passed from the modal
       let selectedCreator = formData.agreementData;
-
+      
       if (!selectedCreator && formData.creatorId && Array.isArray(data)) {
-        selectedCreator = data.find(
-          (agreement) =>
-            agreement?.user?.id === formData.creatorId ||
-            agreement?.userId === formData.creatorId ||
-            agreement?.creatorId === formData.creatorId
+        selectedCreator = data.find(agreement => 
+          agreement?.user?.id === formData.creatorId || 
+          agreement?.userId === formData.creatorId ||
+          agreement?.creatorId === formData.creatorId
         );
       }
-
+      
       console.log('Selected Creator:', selectedCreator);
-
+      
       // Debug payment form data
       console.log('User Object:', selectedCreator?.user);
       console.log('Creator Object:', selectedCreator?.user?.creator);
-      console.log(
-        'Payment Form:',
-        selectedCreator?.user?.paymentForm || selectedCreator?.user?.creator?.paymentForm
-      );
-
+      console.log('Payment Form:', selectedCreator?.user?.paymentForm || selectedCreator?.user?.creator?.paymentForm);
+      
       // Get the creator details from the data passed from the modal
       const {creatorDetails} = formData;
       console.log('Creator Details:', creatorDetails);
-
+      
       // Get the payment form from the creator details or other locations
-      const paymentForm =
-        creatorDetails?.creator?.paymentForm ||
-        selectedCreator?.user?.paymentForm ||
-        selectedCreator?.user?.creator?.paymentForm ||
-        selectedCreator?.creator?.paymentForm ||
-        selectedCreator?.paymentForm ||
-        {};
-
+      const paymentForm = creatorDetails?.creator?.paymentForm || 
+                         selectedCreator?.user?.paymentForm || 
+                         selectedCreator?.user?.creator?.paymentForm || 
+                         selectedCreator?.creator?.paymentForm || 
+                         selectedCreator?.paymentForm || {};
+      
       console.log('Payment Form Found:', paymentForm);
       console.log('Bank Name:', paymentForm.bankName);
       console.log('Bank Account Name:', paymentForm.bankAccountName);
       console.log('Bank Account Number:', paymentForm.bankAccountNumber);
-
+      
       // Currency symbol mapping
       const currencySymbols = {
         MYR: 'RM',
@@ -331,10 +325,10 @@ export default function InvoiceListView({ campId, invoices }) {
         JPY: '¥',
         IDR: 'Rp',
       };
-
+      
       // Get the currency symbol based on selected currency
       const currencySymbol = currencySymbols[formData.currency] || '';
-
+      
       // Prepare invoice data to match the backend's expected structure
       const invoiceData = {
         invoiceNumber: `INV-${Math.floor(Math.random() * 10000)}`, // Will be regenerated by the backend
@@ -342,7 +336,7 @@ export default function InvoiceListView({ campId, invoices }) {
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         status: 'draft',
         campaignId: campId,
-
+        
         // Creator information
         invoiceFrom: {
           id: formData.creatorId,
@@ -352,22 +346,21 @@ export default function InvoiceListView({ campId, invoices }) {
           fullAddress: selectedCreator?.user?.creator?.fullAddress || '',
           company: selectedCreator?.user?.creator?.employment || '',
           addressType: 'Home',
-          primary: false,
+          primary: false
         },
-
+        
         // Company information
         invoiceTo: {
           id: '1',
           name: 'Cult Creative Sdn. Bhd.',
-          fullAddress:
-            '5-3A, Block A, Jaya One, No.72A, Jalan Universiti, 46200 Petaling Jaya, Selangor',
+          fullAddress: '5-3A, Block A, Jaya One, No.72A, Jalan Universiti, 46200 Petaling Jaya, Selangor',
           phoneNumber: '(+60)12-849 6499',
           company: 'Cult Creative',
           addressType: 'Hq',
           email: 'support@cultcreative.asia',
-          primary: true,
+          primary: true
         },
-
+        
         // Invoice items
         items: [
           {
@@ -378,10 +371,10 @@ export default function InvoiceListView({ campId, invoices }) {
             price: parseFloat(formData.amount) || 0,
             total: parseFloat(formData.amount) || 0,
             currency: formData.currency, // Add currency to the item
-            currencySymbol, // Add currency symbol to the item
-          },
+            currencySymbol // Add currency symbol to the item
+          }
         ],
-
+        
         // Bank information
         bankInfo: {
           // Use the payment form we found
@@ -389,50 +382,46 @@ export default function InvoiceListView({ campId, invoices }) {
           accountName: paymentForm.bankAccountName || formData.creator,
           payTo: formData.creator,
           accountNumber: paymentForm.bankAccountNumber || '',
-
+          
           // Email from the creator data
-          accountEmail:
-            creatorDetails?.email ||
-            selectedCreator?.user?.email ||
-            selectedCreator?.email ||
-            formData.creatorData?.email ||
-            '',
-
+          accountEmail: creatorDetails?.email || 
+                       selectedCreator?.user?.email || 
+                       selectedCreator?.email || 
+                       formData.creatorData?.email || '',
+          
           // Add these fields to match what's expected in the invoice PDF
           recipientName: formData.creator,
-          recipientEmail:
-            creatorDetails?.email ||
-            selectedCreator?.user?.email ||
-            selectedCreator?.email ||
-            formData.creatorData?.email ||
-            '',
+          recipientEmail: creatorDetails?.email || 
+                         selectedCreator?.user?.email || 
+                         selectedCreator?.email || 
+                         formData.creatorData?.email || ''
         },
-
+        
         subTotal: parseFloat(formData.amount) || 0,
         totalAmount: parseFloat(formData.amount) || 0,
         currency: formData.currency, // Add currency to the invoice
-        currencySymbol, // Add currency symbol to the invoice
+        currencySymbol // Add currency symbol to the invoice
       };
-
+      
       // Log the bank information specifically
       console.log('Bank Information:', invoiceData.bankInfo);
-
+      
       console.log('Creating invoice with data:', invoiceData);
-
+      
       // Make API call to create the invoice
       const response = await axiosInstance.post(endpoints.invoice.create, invoiceData);
-
+      
       // Show success message
       enqueueSnackbar('Invoice created successfully', { variant: 'success' });
-
+      
       // Add the new invoice to the table data
       if (response.data) {
         setTableData((prevData) => [response.data, ...prevData]);
       }
-
+      
       // Close the modal
       handleCloseNewInvoiceModal();
-
+      
       return response.data;
     } catch (err) {
       console.error('Error creating invoice:', err);
@@ -503,108 +492,110 @@ export default function InvoiceListView({ campId, invoices }) {
               mr: 1,
             }}
           >
-            {TABS.map((tab) => (
+              {TABS.map((tab) => (
+                <Button
+                  key={tab.value}
+                  fullWidth={!smUp}
+                  onClick={() => handleFilters('status', tab.value)}
+                  sx={{
+                    px: 1.25,
+                    py: 1.5,
+                    height: '38px',
+                    minWidth: 'auto',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    borderRadius: 1,
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    whiteSpace: 'nowrap',
+                    ...(filters.status === tab.value
+                      ? {
+                          color: '#203ff5',
+                          bgcolor: 'rgba(32, 63, 245, 0.04)',
+                        }
+                      : {
+                          color: '#637381',
+                          bgcolor: 'transparent',
+                        }),
+                    '&:hover': {
+                      bgcolor:
+                        filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                    },
+                  }}
+                >
+                  {`${tab.label} (${tab.count})`}
+                </Button>
+              ))}
               <Button
-                key={tab.value}
-                fullWidth={!smUp}
-                onClick={() => handleFilters('status', tab.value)}
+                onClick={handleToggleSort}
+                endIcon={
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    {sortDirection === 'asc' ? (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                        >
+                          A
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                        >
+                          Z
+                        </Typography>
+                      </Stack>
+                    ) : (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                        >
+                          Z
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                        >
+                          A
+                        </Typography>
+                      </Stack>
+                    )}
+                    <Iconify
+                      icon={
+                        sortDirection === 'asc'
+                          ? 'eva:arrow-downward-fill'
+                          : 'eva:arrow-upward-fill'
+                      }
+                      width={12}
+                    />
+                  </Stack>
+                }
                 sx={{
                   px: 1.25,
-                  py: 1.5,
+                  py: 0.75,
                   height: '38px',
                   minWidth: 'auto',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.8rem',
+                  color: '#637381',
                   fontWeight: 600,
+                  fontSize: '0.8rem',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: 1,
                   textTransform: 'none',
                   whiteSpace: 'nowrap',
-                  ...(filters.status === tab.value
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
+                  boxShadow: 'none',
                   '&:hover': {
-                    bgcolor:
-                      filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                    backgroundColor: 'rgba(32, 63, 245, 0.04)',
+                    color: '#221f20',
                   },
                 }}
               >
-                {`${tab.label} (${tab.count})`}
+                Alphabetical
               </Button>
-            ))}
-            <Button
-              onClick={handleToggleSort}
-              endIcon={
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  {sortDirection === 'asc' ? (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                      >
-                        A
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                      >
-                        Z
-                      </Typography>
-                    </Stack>
-                  ) : (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                      >
-                        Z
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                      >
-                        A
-                      </Typography>
-                    </Stack>
-                  )}
-                  <Iconify
-                    icon={
-                      sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                    }
-                    width={12}
-                  />
-                </Stack>
-              }
-              sx={{
-                px: 1.25,
-                py: 0.75,
-                height: '38px',
-                minWidth: 'auto',
-                color: '#637381',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: 1,
-                textTransform: 'none',
-                whiteSpace: 'nowrap',
-                boxShadow: 'none',
-                '&:hover': {
-                  backgroundColor: 'rgba(32, 63, 245, 0.04)',
-                  color: '#221f20',
-                },
-              }}
-            >
-              Alphabetical
-            </Button>
-          </Box>
-
+            </Box>
+          
           <Box
             sx={{
               display: 'flex',
@@ -629,12 +620,12 @@ export default function InvoiceListView({ campId, invoices }) {
                 bgcolor: '#1340FF',
                 boxShadow: '0px -3px 0px 0px #00000073 inset',
                 '&:hover': {
-                  bgcolor: '#0035DF',
+                  bgcolor: '#0035DF'
                 },
                 textTransform: 'none',
                 fontWeight: 600,
                 whiteSpace: 'nowrap',
-                fontSize: '0.85rem',
+                fontSize: '0.85rem'
               }}
             >
               New Invoice
@@ -860,15 +851,14 @@ export default function InvoiceListView({ campId, invoices }) {
                         >
                           <TableCell sx={{ width: 300, display: 'flex', alignItems: 'center' }}>
                             <Avatar alt={row.invoiceFrom?.name} sx={{ mr: 2 }}>
-                              {row.creator?.user?.name?.charAt(0).toUpperCase() ??
-                                row.invoiceFrom?.name?.charAt(0).toUpperCase()}
+                              {row.invoiceFrom?.name?.charAt(0).toUpperCase()}
                             </Avatar>
 
                             <ListItemText
                               disableTypography
                               primary={
                                 <Typography variant="body2" noWrap sx={{ mt: 1 }}>
-                                  {row.creator?.user?.name ?? row.invoiceFrom?.name}
+                                  {row.invoiceFrom?.name}
                                 </Typography>
                               }
                               secondary={
@@ -912,8 +902,8 @@ export default function InvoiceListView({ campId, invoices }) {
 
                           <TableCell sx={{ width: 100 }}>
                             {formatCurrencyAmount(
-                              row.amount,
-                              row.currency,
+                              row.amount, 
+                              row.currency, 
                               row.task?.currencySymbol || row.currencySymbol
                             )}
                           </TableCell>
@@ -1140,13 +1130,14 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
   if (status !== 'all') {
     inputData = inputData.filter((invoice) => invoice.status === status);
   }
-
+  
   // Filter by currency
   if (currency) {
     inputData = inputData.filter((invoice) => {
       // Check for currency in different possible locations
-      const invoiceCurrency =
-        invoice.currency || invoice.task?.currency || (invoice.items && invoice.items[0]?.currency);
+      const invoiceCurrency = invoice.currency || 
+                            invoice.task?.currency || 
+                            (invoice.items && invoice.items[0]?.currency);
       return invoiceCurrency === currency;
     });
   }

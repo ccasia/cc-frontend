@@ -2,7 +2,7 @@ import React from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Button, Avatar, TableRow, TableCell, Typography } from '@mui/material';
+import { Stack, Button, TableRow, TableCell } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -10,7 +10,6 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Label from 'src/components/label';
-import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 
 const dictionary = {
@@ -80,13 +79,8 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
     rawFootage,
     photos,
     ads,
-    campaignBrief,
+    campaignBrief: { industries, startDate },
   } = row;
-
-  // Safely access campaignBrief properties
-  const industries = campaignBrief?.industries || null;
-  const startDate = campaignBrief?.startDate || null;
-  const campaignImage = campaignBrief?.images?.[0] || null;
 
   const confirm = useBoolean();
   const router = useRouter();
@@ -97,100 +91,42 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
         key={id}
         hover
         selected={selected}
-        sx={{
-          cursor: 'pointer',
-          '&:hover': { bgcolor: 'action.hover' },
-          '& td': { borderBottom: '1px solid #EBEBEB' },
-        }}
+        sx={{ cursor: 'pointer' }}
         onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(id))}
       >
         <TableCell>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar
-              src={campaignImage}
-              variant="rounded"
-              sx={{
-                width: 48,
-                height: 48,
-                mr: 2,
-                borderRadius: 1,
-                bgcolor: '#f5f5f5',
-                flexShrink: 0,
-              }}
-            >
-              <Iconify icon="solar:gallery-bold" width={24} sx={{ color: '#C4CDD5' }} />
-            </Avatar>
-            <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: 180 }}>
-              <HighlightText text={name} search={filter} />
-            </Typography>
-          </Box>
+          <Label>
+            <HighlightText text={name} search={filter} />
+          </Label>
         </TableCell>
         <TableCell>
-          <Typography variant="body2" color="text.secondary">
-            {campaignId || '-'}
-          </Typography>
+          <Label>{campaignId || 'None'}</Label>
         </TableCell>
         <TableCell>
-          <Typography variant="body2" fontWeight={600} color="primary.main">
-            {campaignCredits || 0}
-          </Typography>
+          <Label>{campaignCredits || 0}</Label>
         </TableCell>
 
         <TableCell>
-          <Typography variant="body2" color="text.secondary" noWrap>
-            {industries || '-'}
-          </Typography>
+          <Label>{industries || 'None'}</Label>
         </TableCell>
 
         <TableCell>
-          <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
+          <Stack direction="row" spacing={1} flexWrap="wrap">
             {[
-              { label: 'UGC', value: true },
-              { label: 'Raw', value: rawFootage },
+              { label: 'UGC Videos', value: true },
+              { label: 'Raw Footage', value: rawFootage },
               { label: 'Photos', value: photos },
               { label: 'Ads', value: ads },
-            ].map(
-              (deliverable) =>
-                deliverable.value && (
-                  <Label key={deliverable.label} variant="soft" color="default" sx={{ fontSize: 11 }}>
-                    {deliverable.label}
-                  </Label>
-                )
-            )}
+            ].map((deliverable) => deliverable.value && <Label>{deliverable.label}</Label>)}
           </Stack>
         </TableCell>
 
         <TableCell>
-          <Typography variant="body2" color="text.secondary">
-            {dayjs(startDate).format('MMM D, YYYY') || '-'}
-          </Typography>
+          <Label>{dayjs(startDate).format('LL') || 'None'}</Label>
         </TableCell>
 
         <TableCell>
-          <Typography
-            variant="caption"
-            sx={{
-              textTransform: 'uppercase',
-              fontWeight: 700,
-              display: 'inline-block',
-              px: 1.5,
-              py: 0.5,
-              fontSize: '0.7rem',
-              border: '1px solid',
-              borderBottom: '3px solid',
-              borderRadius: 0.8,
-              bgcolor: 'white',
-              ...(status === 'ACTIVE' && { color: '#1ABF66', borderColor: '#1ABF66' }),
-              ...(status === 'COMPLETED' && { color: '#1340FF', borderColor: '#1340FF' }),
-              ...(status === 'DRAFT' && { color: '#8E8E93', borderColor: '#C4CDD5' }),
-              ...(!['ACTIVE', 'COMPLETED', 'DRAFT'].includes(status) && {
-                color: '#FFA902',
-                borderColor: '#FFA902',
-              }),
-            }}
-          >
-            {status || '-'}
-          </Typography>
+          <Label>{status || 'None'}</Label>
         </TableCell>
       </TableRow>
 

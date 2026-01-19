@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
+import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
+import { useState, useCallback } from 'react';
 
 import { Table, Tooltip, TableBody, IconButton, TableContainer } from '@mui/material';
 
@@ -17,33 +18,72 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
+import CampaignToolBar from '../campaign-toolbar';
 import CampaignTableRow from '../campaign-table-row';
 
+const defaultFilters = {
+  name: '',
+  status: 'all',
+};
+
 const TABLE_HEAD = [
-  { id: 'title', label: 'Campaign', width: 250 },
-  { id: 'campaignId', label: 'ID', width: 80 },
-  { id: 'ugcCredits', label: 'Credits', width: 80 },
-  { id: 'industries', label: 'Industry', width: 120 },
-  { id: 'deliverable', label: 'Deliverables', width: 150 },
+  { id: 'title', label: 'Campaign Title', width: 180 },
+  { id: 'campaignId', label: 'Campaign ID', width: 100 },
+  { id: 'ugcCredits', label: 'UGC Credits', width: 100 },
+  { id: 'industries', label: 'Industries', width: 100 },
+  { id: 'deliverable', label: 'Deliverables', width: 100 },
   { id: 'startDate', label: 'Start Date', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
 ];
 
-const CampaignClientList = ({ campaigns, searchFilter = '' }) => {
+const STATUS_OPTIONS = [
+  {
+    value: 'all',
+    label: 'All',
+  },
+  {
+    value: 'ACTIVE',
+    label: 'Active',
+  },
+  {
+    value: 'INACTIVE',
+    label: 'Inactive',
+  },
+  {
+    value: 'unlinkPackage',
+    label: 'Unlinked package',
+  },
+];
+
+const CampaignClientList = ({ campaigns }) => {
   const table = useTable();
+  const [filters, setFilters] = useState(defaultFilters);
 
   const denseHeight = table.dense ? 56 : 56 + 20;
+  const canReset = !isEqual(defaultFilters, filters);
 
-  const dataFiltered = useMemo(() => applyFilter({
+  const dataFiltered = applyFilter({
     inputData: campaigns,
     comparator: getComparator(table.order, table.orderBy),
-    searchFilter,
-  }), [campaigns, table.order, table.orderBy, searchFilter]);
+    filters,
+  });
 
-  const notFound = !dataFiltered?.length;
+  const handleFilters = useCallback(
+    (name, value) => {
+      table.onResetPage();
+      setFilters((prevState) => ({
+        ...prevState,
+        [name]: value,
+      }));
+    },
+    [table]
+  );
+
+  const notFound = (!dataFiltered?.length && canReset) || !dataFiltered?.length;
 
   return (
     <>
+      <CampaignToolBar onFilters={handleFilters} filters={filters} />
       <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
         <TableSelectedAction
           dense={table.dense}
@@ -67,7 +107,7 @@ const CampaignClientList = ({ campaigns, searchFilter = '' }) => {
         <Scrollbar>
           <Table
             size={table.dense ? 'small' : 'medium'}
-            sx={{ minWidth: 960 }}
+            sx={{ minWidth: 960, borderRadius: 1, overflow: 'hidden' }}
           >
             <TableHeadCustom
               order={table.order}
@@ -75,18 +115,6 @@ const CampaignClientList = ({ campaigns, searchFilter = '' }) => {
               headLabel={TABLE_HEAD}
               rowCount={dataFiltered.length}
               numSelected={table.selected.length}
-              sx={{
-                '& .MuiTableCell-head': {
-                  bgcolor: '#f5f5f5',
-                  color: '#221f20',
-                  fontWeight: 600,
-                  py: 1.5,
-                  whiteSpace: 'nowrap',
-                  borderBottom: 'none',
-                  '&:first-of-type': { borderRadius: '10px 0 0 10px' },
-                  '&:last-of-type': { borderRadius: '0 10px 10px 0' },
-                },
-              }}
             />
 
             <TableBody>
@@ -101,7 +129,7 @@ const CampaignClientList = ({ campaigns, searchFilter = '' }) => {
                     row={row}
                     selected={table.selected.includes(row.id)}
                     onSelectRow={() => table.onSelectRow(row.id)}
-                    filter={searchFilter}
+                    filter={filters.name}
                   />
                 ))}
 
@@ -133,29 +161,40 @@ export default CampaignClientList;
 
 CampaignClientList.propTypes = {
   campaigns: PropTypes.array,
-  searchFilter: PropTypes.string,
 };
 
-function applyFilter({ inputData, comparator, searchFilter }) {
-  if (!inputData) return [];
+function applyFilter({ inputData, comparator, filters }) {
+  const { name, status } = filters;
 
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
+  console.log(status);
 
-  stabilizedThis.sort((a, b) => {
+  const stabilizedThis = inputData?.map((el, index) => [el, index]);
+
+  stabilizedThis?.sort((a, b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     return a[1] - b[1];
   });
 
-  let result = stabilizedThis
-    .map((el) => el[0])
+  inputData = stabilizedThis
+    ?.map((el) => el[0])
     .sort((a, b) => (dayjs(a.createdAt).isBefore(dayjs(b.createdAt)) ? 1 : -1));
 
-  if (searchFilter) {
-    result = result.filter(
-      (campaign) => campaign?.name?.toLowerCase().indexOf(searchFilter.toLowerCase()) !== -1
+  if (name) {
+    inputData = inputData.filter(
+      (user) => user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 
-  return result;
+  // if (status === 'unlinkPackage') {
+  //   inputData = inputData?.filter((client) => findLatestPackage(client?.subscriptions) === null);
+  // }
+
+  // if (status !== 'all' && status !== 'unlinkPackage') {
+  //   inputData = inputData?.filter(
+  //     (client) => findLatestPackage(client.subscriptions)?.status === status
+  //   );
+  // }
+
+  return inputData;
 }

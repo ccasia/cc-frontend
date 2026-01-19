@@ -415,18 +415,6 @@ function MobileCreatorRowWithSubmissions({ creator, campaign, isExpanded, onTogg
     return null;
   }
 
-  // Check if the creator has an approved agreement submission
-  // Only show creators whose agreement has been approved by CSM admin
-  const agreementSubmission = submissions.find(
-    (s) => s.submissionType?.type === 'AGREEMENT_FORM'
-  );
-  const isAgreementApproved = agreementSubmission?.status === 'APPROVED';
-
-  // Don't render if agreement doesn't exist or isn't approved
-  if (!agreementSubmission || !isAgreementApproved) {
-    return null;
-  }
-
   return (
     <MobileCreatorRow
       creator={creator}
