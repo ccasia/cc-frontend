@@ -1,12 +1,12 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import React, { memo, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { memo, useMemo, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Card, Grid, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
+import { Box, Grid, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -15,13 +15,13 @@ import { countriesCities } from 'src/contants/countries';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
+import FormProvider from 'src/components/hook-form/form-provider';
 import {
   RHFSelectV2,
   RHFTextField,
-  RHFAutocomplete,
   RHFMultiSelect,
+  RHFAutocomplete,
 } from 'src/components/hook-form';
-import FormProvider from 'src/components/hook-form/form-provider';
 
 // Form field component with consistent styling (matching campaign-target-audience.jsx)
 const FormField = ({ label, children, required = true }) => (
