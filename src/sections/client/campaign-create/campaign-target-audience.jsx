@@ -9,11 +9,7 @@ import { countriesCities } from 'src/contants/countries';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
-import {
-  RHFSelectV2,
-  RHFTextField,
-  RHFAutocomplete,
-} from 'src/components/hook-form';
+import { RHFSelectV2, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import { CustomRHFMultiSelect } from './custom-rhf-multi-select';
 
@@ -215,7 +211,12 @@ const CampaignTargetAudience = () => {
 
               {/* User Persona */}
               <FormField label="User Persona">
-                <RHFTextField name="audienceUserPersona" placeholder="User Persona" size="medium" />
+                <RHFTextField
+                  name="audienceUserPersona"
+                  placeholder="User Persona"
+                  size="medium"
+                  multiline
+                />
               </FormField>
             </Stack>
           </Grid>
@@ -341,6 +342,7 @@ const CampaignTargetAudience = () => {
                   name="secondaryAudienceUserPersona"
                   placeholder="User Persona"
                   size="medium"
+                  multiline
                 />
               </FormField>
             </Stack>
