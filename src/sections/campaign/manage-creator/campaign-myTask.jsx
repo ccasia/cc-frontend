@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 import { Box, Card, Stack, Typography, useMediaQuery, CircularProgress } from '@mui/material';
 
@@ -74,6 +74,9 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
   const { data, isLoading, mutate: deliverableMutate } = useGetDeliverables(user?.id, campaign.id);
   const isMobile = useMediaQuery('(max-width: 900px)');
+  
+  // Track if user has manually selected a stage (to prevent auto-selection from overriding)
+  const hasManualSelection = useRef(false);
 
   // Initialize viewedStages from localStorage if available
   const [viewedStages, setViewedStages] = useState(() => {
@@ -196,11 +199,16 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     };
   }, [campaign, submissionMutate, socket]);
 
-  // Auto-select posting stage when it becomes available
+  // Auto-select posting stage when it becomes available (only on initial load or when submissions change)
   useEffect(() => {
-    const firstDraftSubmission = value('FIRST_DRAFT');
-    const finalDraftSubmission = value('FINAL_DRAFT');
-    const postingSubmission = value('POSTING');
+    // Don't auto-select if user has manually selected a stage
+    if (hasManualSelection.current || !submissions) {
+      return;
+    }
+    
+    const firstDraftSubmission = submissions.find((item) => item.submissionType?.type === 'FIRST_DRAFT');
+    const finalDraftSubmission = submissions.find((item) => item.submissionType?.type === 'FINAL_DRAFT');
+    const postingSubmission = submissions.find((item) => item.submissionType?.type === 'POSTING');
     
     // If First Draft or Final Draft is approved and posting is available, select posting stage
     if (
@@ -211,6 +219,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     ) {
       console.log('Auto-selecting POSTING stage');
       setSelectedStage('POSTING');
+      return; // Don't check other conditions if posting is selected
     }
     
     // Auto-select Final Draft if First Draft has changes required or client feedback
@@ -222,7 +231,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       console.log('Auto-selecting FINAL_DRAFT stage (changes required or client feedback from First Draft)');
       setSelectedStage('FINAL_DRAFT');
     }
-  }, [value, selectedStage]);
+  }, [submissions, selectedStage]); // Depend on submissions and selectedStage
 
   const getVisibleStages = useCallback(() => {
     let stages = [];
@@ -442,6 +451,10 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     console.log('Current selectedStage:', selectedStage);
     console.log('Stage value:', value(stageType));
     console.log('Stage status:', value(stageType)?.status);
+    
+    // Mark that user has manually selected a stage
+    hasManualSelection.current = true;
+    
     setSelectedStage(stageType);
     if (!viewedStages.includes(stageType)) {
       const newViewedStages = [...viewedStages, stageType];

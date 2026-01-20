@@ -121,6 +121,8 @@ function CreatorAccordionWithSubmissions({ creator, campaign }) {
     submissionsLoading
   } = useGetV4Submissions(campaign?.id, creator?.userId);
 
+
+
   // Don't render if loading or if no submissions exist
   if (submissionsLoading || submissions.length === 0) {
     return null;
@@ -613,6 +615,8 @@ function CreatorAccordion({ creator, campaign }) {
         </Box>
       );
     });
+
+    console.log(pills)
 
     return pills;
   };
