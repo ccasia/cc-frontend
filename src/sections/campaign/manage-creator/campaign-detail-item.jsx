@@ -19,16 +19,14 @@ import ConfirmReservationModal from 'src/sections/logistics/dialogs/confirm-rese
 import CampaignInfo from './campaign-info';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignV4Activity from './v4/campaign-v4-activity';
+import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
 
 const CampaignDetailItem = ({ campaign, mutate }) => {
   const router = useRouter();
   const { user } = useAuthContext();
   const location = useLocation();
 
-  const myLogistic = useMemo(
-    () => campaign?.logistics?.find((item) => item.creatorId === user?.id),
-    [campaign?.logistics, user?.id]
-  );
+  const { logistic: myLogistic, mutate: mutateLogistic } = useGetCreatorLogistic(campaign?.id);
 
   const [currentTab, setCurrentTab] = useState(() => {
     if (location.state?.tab) {
@@ -46,7 +44,8 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
   const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
   const isReservation = campaign?.logisticsType === 'RESERVATION';
   const needsAction = isReservation && myLogistic && myLogistic.status === 'NOT_STARTED';
-  const hasLogistics = campaign?.logistics?.some((item) => item.creatorId === user?.id);
+  const hasLogistics =
+    !!myLogistic || campaign?.logistics?.some((item) => item.creatorId === user?.id);
 
   const openLogisticTab = () => {
     setCurrentTab('logistics');
@@ -199,7 +198,13 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
               setCurrentTab={setCurrentTab}
             />
           )}
-          {currentTab === 'tasks-v4' && <CampaignV4Activity campaign={campaign} />}
+          {currentTab === 'tasks-v4' && (
+            <CampaignV4Activity
+              campaign={campaign}
+              mutateLogistic={mutateLogistic}
+              logistic={myLogistic}
+            />
+          )}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
           {/* {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />} */}
           {/* HIDE: logistics */}
