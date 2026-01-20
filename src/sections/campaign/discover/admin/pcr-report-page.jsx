@@ -8,10 +8,11 @@ import html2canvas from 'html2canvas';
 // eslint-disable-next-line new-cap
 import { jsPDF } from 'jspdf';
 
-import { Box, Grid, Button, Typography, Avatar, Link, TextField, CircularProgress, Alert, IconButton, Popover, Snackbar } from '@mui/material';
+import { Box, Grid, Button, Typography, Avatar, Link, TextField, CircularProgress, Alert, IconButton, Popover, Snackbar, InputAdornment } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import SendIcon from '@mui/icons-material/Send';
 import EmojiPicker from 'emoji-picker-react';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
@@ -297,14 +298,29 @@ const PCRReportPage = ({ campaign, onBack }) => {
         anchorOrigin: { vertical: 'top', horizontal: 'center' }
       });
 
-      const canvas = await html2canvas(reportRef.current, {
+      // Get the parent element that includes the gradient border
+      const pdfContainer = reportRef.current.parentElement;
+      
+      // Hide buttons before capturing
+      const buttonsToHide = pdfContainer.querySelectorAll('.hide-in-pdf');
+      buttonsToHide.forEach(el => {
+        el.style.display = 'none';
+      });
+
+      const canvas = await html2canvas(pdfContainer, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: null,
+        windowWidth: 1078,
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      // Show buttons again after capturing
+      buttonsToHide.forEach(el => {
+        el.style.display = '';
+      });
+
+      const imgData = canvas.toDataURL('image/png', 1.0);
       // eslint-disable-next-line new-cap
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -1498,7 +1514,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
   >
     {/* Loading overlay */}
     {isLoadingPCR && (
-      <Box sx={{ 
+      <Box className="hide-in-pdf" sx={{ 
         position: 'absolute', 
         top: 0, 
         left: 0, 
@@ -1536,7 +1552,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     {/* Saving overlay */}
     {isSaving && (
-      <Box sx={{ 
+      <Box className="hide-in-pdf" sx={{ 
         position: 'absolute', 
         top: 0, 
         left: 0, 
@@ -1571,10 +1587,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Typography>
       </Box>
     )}
+    
+    {/* PDF Capture Wrapper - includes gradient border */}
+    <Box ref={reportRef}>
 
     {/* Inner white content container */}
     <Box
-      ref={reportRef}
       sx={{
         background: '#FFFFFF',
         borderRadius: '12px',
@@ -1586,7 +1604,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }}
     >
     {/* Header with Back Button */}
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box className="hide-in-pdf" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
       <Button
         onClick={onBack}
         sx={{
@@ -1842,7 +1860,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography 
-          variant="h4" 
+          variant="h3" 
           sx={{ 
             fontFamily: 'Inter Display, sans-serif',
             fontWeight: 700,
@@ -1855,28 +1873,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
         >
           {campaign?.name || 'Crafting Unforgettable Nights'}
         </Typography>
-        <Typography 
-          variant="h4"
-          sx={{
-            fontSize: '56px',
-            lineHeight: '100%'
-          }}
-        >
-          🍻
-        </Typography>
+
       </Box>
         </Box>
         
-        <Box
-          component="img"
-          src="/logo/CC.svg"
-          alt="Cult Creative"
-          sx={{
-            width: '187px',
-            height: '60px',
-            opacity: 0.8
-          }}
-        />
+        <Box sx={{ position: 'relative', right: '-20px' }}>
+          <Box
+            component="img"
+            src="/logo/CC.svg"
+            alt="Cult Creative"
+            sx={{
+              width: '187px',
+              height: '60px',
+              opacity: 0.8,
+            }}
+          />
+        </Box>
       </Box>
       
       {isEditMode ? (
@@ -3129,6 +3141,40 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     }
                   }
                 }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => {
+                          const username = document.getElementById('positive-username-input').value;
+                          const postlink = document.getElementById('positive-postlink-input').value;
+                          const comment = document.getElementById('positive-comment-input').value;
+                          
+                          if (username && username !== '@' && comment) {
+                            const newComments = [...editableContent.positiveComments, { username, comment }];
+                            setEditableContent({ ...editableContent, positiveComments: newComments });
+                            document.getElementById('positive-username-input').value = '@';
+                            document.getElementById('positive-postlink-input').value = '';
+                            document.getElementById('positive-comment-input').value = '';
+                          }
+                        }}
+                        disabled={editableContent.positiveComments.length >= 4}
+                        edge="end"
+                        sx={{
+                          color: '#1ABF66',
+                          '&:hover': {
+                            backgroundColor: 'rgba(26, 191, 102, 0.08)',
+                          },
+                          '&.Mui-disabled': {
+                            color: 'rgba(0, 0, 0, 0.12)',
+                          },
+                        }}
+                      >
+                        <SendIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </>
           ) : (
@@ -3309,6 +3355,40 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       document.getElementById('neutral-comment-input').value = '';
                     }
                   }
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => {
+                          const username = document.getElementById('neutral-username-input').value;
+                          const postlink = document.getElementById('neutral-postlink-input').value;
+                          const comment = document.getElementById('neutral-comment-input').value;
+                          
+                          if (username && username !== '@' && comment) {
+                            const newComments = [...editableContent.neutralComments, { username, comment }];
+                            setEditableContent({ ...editableContent, neutralComments: newComments });
+                            document.getElementById('neutral-username-input').value = '@';
+                            document.getElementById('neutral-postlink-input').value = '';
+                            document.getElementById('neutral-comment-input').value = '';
+                          }
+                        }}
+                        disabled={editableContent.neutralComments.length >= 4}
+                        edge="end"
+                        sx={{
+                          color: '#FF9800',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 152, 0, 0.08)',
+                          },
+                          '&.Mui-disabled': {
+                            color: 'rgba(0, 0, 0, 0.12)',
+                          },
+                        }}
+                      >
+                        <SendIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
                 }}
               />
             </>
@@ -4704,7 +4784,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 key={index}
         sx={{
                   bgcolor: getImprovedInsightBgColor(index),
-                  p: 2.5, 
+                  p: 1, 
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -4718,10 +4798,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
           borderRadius: '12px',
-                    p: 2, 
+                    p: 2.5,
+                    px: 1,
                     flex: 1,
                     display: 'flex',
-                    gap: 1,
+                    gap: 0.5,
                   }}>
                     <Box sx={{ position: 'relative', flex: 1 }}>
                       <Box
@@ -4754,7 +4835,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           maxLength: 120,
                         }}
                         sx={{
-                          mt: 2.5,
+                          mt: 1.5,
                           '& .MuiInputBase-root': {
                             fontFamily: 'Aileron',
                             fontSize: '12px',
@@ -4787,6 +4868,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}>
                     {insight}
                   </Typography>
@@ -4872,7 +4954,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 sx={{ 
                   background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
                   opacity: getWorkedWellOpacity(index),
-                  p: 2.5, 
+                  p: 1, 
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -4886,10 +4968,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
           borderRadius: '12px',
-          p: 2,
+          p: 2.5,
+                    px: 1,
                     flex: 1,
                     display: 'flex',
-                    gap: 1,
+                    gap: 0.5,
                   }}>
                     <Box sx={{ position: 'relative', flex: 1 }}>
                       <Box
@@ -4922,7 +5005,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           maxLength: 120,
                         }}
                         sx={{
-                          mt: 2.5,
+                          mt: 1.5,
                           '& .MuiInputBase-root': {
                             fontFamily: 'Aileron',
                             fontSize: '12px',
@@ -4955,6 +5038,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}>
                     {insight}
                   </Typography>
@@ -5038,7 +5122,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 key={index}
                 sx={{ 
                   bgcolor: index === 0 ? '#026D54D9' : '#026D54BF',
-                  p: 2.5, 
+                  p: 1, 
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -5052,10 +5136,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
                     borderRadius: '12px', 
-                    p: 2, 
+                    p: 2.5,
+                    px: 1,
                     flex: 1,
                     display: 'flex',
-                    gap: 1,
+                    gap: 0.5,
                   }}>
                     <Box sx={{ position: 'relative', flex: 1 }}>
                       <Box
@@ -5088,7 +5173,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                           maxLength: 120,
                         }}
                         sx={{
-                          mt: 2.5,
+                          mt: 1.5,
                           '& .MuiInputBase-root': {
                             fontFamily: 'Aileron',
                             fontSize: '12px',
@@ -5121,6 +5206,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}>
                     {insight}
                   </Typography>
@@ -5220,6 +5306,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Box>
       </Box>
     </Snackbar>
+    </Box>
   </Box>
   );
 };
