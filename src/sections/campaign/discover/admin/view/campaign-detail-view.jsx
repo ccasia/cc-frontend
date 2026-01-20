@@ -762,14 +762,12 @@ const CampaignDetailView = ({ id }) => {
           variant="outlined"
           size="small"
           startIcon={
-            <img
-              src="/assets/icons/overview/editButton.svg"
-              alt="edit"
-              style={{
-                width: 20,
-                height: 20,
-                opacity: isDisabled ? 0.3 : 1,
-              }}
+            <Iconify
+              icon="lucide:edit"
+              width={15}
+              height={15}
+              color={isDisabled ? '#bdbdbd' : '#221f20'}
+              style={{ opacity: isDisabled ? 0.3 : 1 }}
             />
           }
           onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
@@ -866,7 +864,7 @@ const CampaignDetailView = ({ id }) => {
             direction={{ xs: 'column', sm: 'row' }}
             alignItems={{ xs: 'stretch', sm: 'center' }}
             spacing={{ xs: 1, sm: 0 }}
-            width={{ xs: '100%', sm: 'auto' }}
+            width={{ xs: '100%' }}
             justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
           >
             <Stack
@@ -891,7 +889,9 @@ const CampaignDetailView = ({ id }) => {
                 sx={{
                   color: '#221f20',
                   fontWeight: 500,
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  fontSize: { xs: 12, sm: 15 },
+                  overflow: 'hidden',
+                  whiteSpace: 'none'
                 }}
               >
                 {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
