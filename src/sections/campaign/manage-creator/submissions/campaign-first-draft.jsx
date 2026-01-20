@@ -34,6 +34,7 @@ import {
   DialogContent,
   DialogActions,
   LinearProgress,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -1006,53 +1007,97 @@ const CampaignFirstDraft = ({
                               <Typography fontSize={{ xs: 12, md: 14}} noWrap>
                                 {truncateText(currentFile?.fileName, 25) || 'Uploading file...'}
                               </Typography>
-                              <Stack spacing={1}>
-                                <LinearProgress
-                                  variant="determinate"
-                                  value={(() => {
+                              <Stack direction="row" spacing={2} alignItems="center">
+                                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                                  {(() => {
                                     const server = Number(currentFile?.serverProgress || 0);
                                     const shown = Number(currentFile?.progressShown || 0);
-                                    if (server >= 100) return 100;
-                                    // map server 0-90 to shown 1-90
-                                    const mapped = Math.max(1, Math.min(90, server));
-                                    // ease towards mapped
-                                    const step = Math.max(0.5, (mapped - shown) * 0.2);
-                                    const next = Math.min(mapped, shown + step);
-                                    currentFile.progressShown = next;
-                                    return next;
+                                    let progressValue = 0;
+                                    if (server >= 100) {
+                                      progressValue = 100;
+                                    } else {
+                                      // map server 0-90 to shown 1-90
+                                      const mapped = Math.max(1, Math.min(90, server));
+                                      // ease towards mapped
+                                      const step = Math.max(0.5, (mapped - shown) * 0.2);
+                                      const next = Math.min(mapped, shown + step);
+                                      currentFile.progressShown = next;
+                                      progressValue = next;
+                                    }
+                                    const isComplete = Number(currentFile?.serverProgress || 0) >= 100;
+                                    return (
+                                      <>
+                                        <CircularProgress
+                                          variant="determinate"
+                                          value={100}
+                                          size={56}
+                                          thickness={4}
+                                          sx={{
+                                            color: 'grey.200',
+                                            position: 'absolute',
+                                          }}
+                                        />
+                                        <CircularProgress
+                                          variant="determinate"
+                                          value={progressValue}
+                                          size={56}
+                                          thickness={4}
+                                          sx={{
+                                            color: isComplete ? 'success.main' : 'primary.main',
+                                            strokeLinecap: 'round',
+                                            transition: 'stroke-dashoffset 0.3s ease 0s',
+                                          }}
+                                        />
+                                        <Box
+                                          sx={{
+                                            top: 0,
+                                            left: 0,
+                                            bottom: 0,
+                                            right: 0,
+                                            position: 'absolute',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                          }}
+                                        >
+                                          <Typography
+                                            variant="caption"
+                                            component="div"
+                                            sx={{
+                                              fontSize: '0.75rem',
+                                              fontWeight: 600,
+                                              color: isComplete ? 'success.main' : 'text.primary',
+                                            }}
+                                          >
+                                            {`${Math.round(progressValue)}%`}
+                                          </Typography>
+                                        </Box>
+                                      </>
+                                    );
                                   })()}
-                                  sx={{
-                                    width: { xs: 165, md: '100%'},
-                                    maxWidth: '100%',
-                                    height: 6,
-                                    borderRadius: 1,
-                                    bgcolor: 'background.paper',
-                                    '& .MuiLinearProgress-bar': {
-                                      borderRadius: 1,
-                                      bgcolor: (Number(currentFile?.serverProgress || 0) >= 100) ? 'success.main' : 'primary.main',
-                                    },
-                                  }}
-                                />
-                                <Stack
-                                  direction="row"
-                                  justifyContent="space-between"
-                                  alignItems="center"
-                                >
-                                  <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
-                                    {Number(currentFile?.serverProgress || 0) >= 100 ? (
-                                      <Box
-                                        component="span"
-                                        sx={{ color: 'success.main', fontWeight: 600 }}
-                                      >
-                                        Upload Complete
-                                      </Box>
-                                    ) : (
-                                      `${currentFile?.name || 'Uploading'}... ${Math.floor(Number(currentFile?.progressShown || 0))}%`
-                                    )}
-                                  </Typography>
-                                  <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
-                                    {formatFileSize(currentFile?.fileSize || 0)}
-                                  </Typography>
+                                </Box>
+                                <Stack spacing={0.5} flexGrow={1}>
+                                  <Stack
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                  >
+                                    <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
+                                      {Number(currentFile?.serverProgress || 0) >= 100 ? (
+                                        <Box
+                                          component="span"
+                                          sx={{ color: 'success.main', fontWeight: 600 }}
+                                        >
+                                          Upload Complete
+                                        </Box>
+                                      ) : (
+                                        `${currentFile?.name || 'Uploading'}...`
+                                      )}
+                                    </Typography>
+                                    <Typography fontSize={{ xs: 11, md: 12 }} sx={{ color: 'text.secondary' }}>
+                                      {formatFileSize(currentFile?.fileSize || 0)}
+                                    </Typography>
+                                  </Stack>
                                 </Stack>
                               </Stack>
                             </Stack>
