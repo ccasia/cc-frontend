@@ -24,6 +24,8 @@ import {
   DialogContent,
   DialogActions,
   TableContainer,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -400,6 +402,7 @@ AgreementDialog.propTypes = {
 const CampaignAgreements = ({ campaign }) => {
   const { data, isLoading } = useGetAgreements(campaign?.id);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [sortColumn, setSortColumn] = useState('name'); // 'name', 'date', 'status'
@@ -417,6 +420,42 @@ const CampaignAgreements = ({ campaign }) => {
 
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
+
+  // Get tier data for an agreement item
+  const getTierDataForItem = (item) => {
+    if (!campaign?.isCreditTier) return null;
+    
+    // First try: creditTier from shortlisted record
+    const shortlisted = item?.user?.shortlisted?.[0] || item?.shortlistedCreator;
+    if (shortlisted?.creditTier) {
+      return {
+        name: shortlisted.creditTier?.name || 'Unknown Tier',
+        creditsPerVideo: shortlisted.creditPerVideo ?? shortlisted.creditTier?.creditsPerVideo ?? 1,
+      };
+    }
+
+    // Second try: creditTier from creator record (current tier)
+    const creatorTier = item?.user?.creator?.creditTier;
+    if (creatorTier) {
+      return {
+        name: creatorTier.name || 'Unknown Tier',
+        creditsPerVideo: creatorTier.creditsPerVideo ?? 1,
+      };
+    }
+
+    // Third try: look in campaign.shortlisted for this user
+    const campaignShortlisted = campaign?.shortlisted?.find(
+      (s) => s.userId === item?.user?.id
+    );
+    if (campaignShortlisted?.creditTier) {
+      return {
+        name: campaignShortlisted.creditTier?.name || 'Unknown Tier',
+        creditsPerVideo: campaignShortlisted.creditPerVideo ?? campaignShortlisted.creditTier?.creditsPerVideo ?? 1,
+      };
+    }
+
+    return null;
+  };
 
   // Handle column sort click
   const handleColumnSort = (column) => {
@@ -561,6 +600,20 @@ const CampaignAgreements = ({ campaign }) => {
       result = pitchApprovedAgreements;
     }
 
+    // Search functionality
+    if (searchQuery?.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((item) => {
+        const creatorName = (item.user?.name || '').toLowerCase();
+        const creatorEmail = (item.user?.email || '').toLowerCase();
+        
+        return (
+          creatorName.includes(query) ||
+          creatorEmail.includes(query)
+        );
+      });
+    }
+
     // Sort by selected column
     return [...result].sort((a, b) => {
       let comparison = 0;
@@ -596,7 +649,7 @@ const CampaignAgreements = ({ campaign }) => {
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [selectedFilter, sortColumn, sortDirection, pitchApprovedAgreements]);
+  }, [selectedFilter, sortColumn, sortDirection, pitchApprovedAgreements, searchQuery]);
 
   const handleViewAgreement = (url, item) => {
     setSelectedUrl(url);
@@ -733,9 +786,10 @@ const CampaignAgreements = ({ campaign }) => {
       <Stack direction="column" spacing={2}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
-          spacing={1}
+          spacing={2}
           justifyContent="flex-start"
           alignItems={{ xs: 'flex-start', md: 'center' }}
+          sx={{ mb: 1 }}
         >
           {/* Alphabetical Sort Button */}
           <Button
@@ -794,6 +848,7 @@ const CampaignAgreements = ({ campaign }) => {
               textTransform: 'none',
               whiteSpace: 'nowrap',
               boxShadow: 'none',
+              alignSelf: 'self-start',
               '&:hover': {
                 backgroundColor: 'transparent',
                 color: '#221f20',
@@ -1000,6 +1055,54 @@ const CampaignAgreements = ({ campaign }) => {
               {`Approved (${filterCounts.approved})`}
             </Button>
           </Stack>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
+            <TextField
+              placeholder="Search creators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{
+                width: { xs: '100%', sm: 300 },
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#FFFFFF',
+                  border: '1.5px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  borderRadius: 1.15,
+                  height: 44,
+                  fontSize: '0.85rem',
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                  '&.Mui-focused': {
+                    border: '1.5px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                  },
+                },
+                '& .MuiOutlinedInput-input': {
+                  py: 1.25,
+                  px: 0,
+                  color: '#637381',
+                  fontWeight: 600,
+                  '&::placeholder': {
+                    color: '#637381',
+                    opacity: 1,
+                    fontWeight: 400,
+                  },
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify
+                      icon="eva:search-fill"
+                      width={18}
+                      sx={{ color: '#637381' }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
         </Stack>
 
         {!filteredData || filteredData.length < 1 ? (
@@ -1046,6 +1149,23 @@ const CampaignAgreements = ({ campaign }) => {
                     }}
                   >
                     Creator&apos;s Email
+                  </TableCell>
+                )}
+                {campaign?.isCreditTier && (
+                  <TableCell
+                    sx={{
+                      py: { xs: 0.5, sm: 1 },
+                      px: { xs: 1, sm: 2 },
+                      color: '#221f20',
+                      fontWeight: 600,
+                      width: { xs: 90, sm: '12%' },
+                      minWidth: { xs: 90, sm: 'auto' },
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    }}
+                  >
+                    Tier
                   </TableCell>
                 )}
                 <SortableHeader
@@ -1134,6 +1254,34 @@ const CampaignAgreements = ({ campaign }) => {
                     {smUp && (
                       <TableCell>
                         {item?.user?.email?.endsWith('@tempmail.com') ? '' : item?.user?.email}
+                      </TableCell>
+                    )}
+                    {campaign?.isCreditTier && (
+                      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
+                        {(() => {
+                          const tierData = getTierDataForItem(item);
+                          if (!tierData) {
+                            return <Typography fontSize={13.5}>-</Typography>;
+                          }
+                          return (
+                            <Stack alignItems="start">
+                              <Typography fontSize={13.5} whiteSpace="nowrap">
+                                {tierData.name}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                fontSize={13.5}
+                                sx={{
+                                  color: '#8e8e93',
+                                  display: 'block',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {tierData.creditsPerVideo} credit{tierData.creditsPerVideo !== 1 ? 's' : ''}
+                              </Typography>
+                            </Stack>
+                          );
+                        })()}
                       </TableCell>
                     )}
                     <TableCell

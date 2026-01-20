@@ -69,7 +69,7 @@ const getStatusText = (status, pitch, campaign) => {
   return statusTextMap[status] || status;
 };
 
-const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch, onRemoved }) => {
+const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, isCreditTier, onViewPitch, onRemoved }) => {
   const smUp = useResponsive('up', 'sm');
 
   // Helper to extract username from stats or profile link
@@ -84,7 +84,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
   const instagramUsername = getUsername(instagramStats, instagramProfileLink);
   const tiktokUsername = getUsername(tiktokStats, tiktokProfileLink);
   const profileUsername = profileLink ? extractUsernameFromProfileLink(profileLink) : undefined;
-  
+
   // Check if we have any social usernames to display
   const hasSocialUsernames = instagramUsername || tiktokUsername;
 
@@ -100,9 +100,30 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
       followerCount: resolveMetric(
         instagramStats?.followers_count,
         tiktokStats?.follower_count,
-        pitch.followerCount
+        pitch.followerCount,
+        pitch.user?.creator?.manualFollowerCount // Fallback for manually entered count
       ),
     };
+  };
+
+  // Get tier data from synthetic shortlisted row or creator's current tier
+  const getTierData = () => {
+    // For synthetic shortlisted rows (manually added creators), use the tier snapshot
+    if (pitch._isShortlistedOnly && pitch._creditTier) {
+      return {
+        name: pitch._creditTier.name,
+        creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
+      };
+    }
+    // For regular pitches, use creator's current tier
+    const creatorTier = pitch.user?.creator?.creditTier;
+    if (creatorTier) {
+      return {
+        name: creatorTier.name,
+        creditsPerVideo: creatorTier.creditsPerVideo,
+      };
+    }
+    return null;
   };
 
   const displayData = getDisplayData();
@@ -111,7 +132,12 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
     <TableRow
     // hover
     >
-      <TableCell>
+      <TableCell
+        sx={{
+          py: { xs: 0.5, sm: 1 },
+          px: { xs: 1, sm: 2 },
+        }}
+      >
         <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1 }}>
           <Avatar
             src={pitch.user?.photoURL}
@@ -184,12 +210,61 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           </Stack>
         </Stack>
       </TableCell>
-      <TableCell sx={{ px: 1 }}>
-        <Typography variant="body2" fontSize={13.5}>
-          {displayData.followerCount ? formatNumber(displayData.followerCount) : '-'}
-        </Typography>
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
+        {displayData.followerCount ? (
+          <Tooltip 
+            title={displayData.followerCount.toLocaleString()} 
+            arrow
+            placement="top"
+            componentsProps={{
+              tooltip: {
+                sx: {
+                  bgcolor: '#221f20',
+                  fontSize: '0.75rem',
+                  '& .MuiTooltip-arrow': {
+                    color: '#221f20',
+                  },
+                },
+              },
+            }}
+          >
+            <Typography variant="body2" fontSize={13.5} sx={{ cursor: 'help', display: 'inline-block' }}>
+              {formatNumber(displayData.followerCount)}
+            </Typography>
+          </Tooltip>
+        ) : (
+          <Typography variant="body2" fontSize={13.5}>-</Typography>
+        )}
       </TableCell>
-      <TableCell sx={{ px: 1 }}>
+      {isCreditTier && (
+        <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
+          {(() => {
+            const tierData = getTierData();
+            if (!tierData) {
+              return <Typography fontSize={13.5}>-</Typography>;
+            }
+            return (
+              <Stack alignItems="start">
+                <Typography fontSize={13.5} whiteSpace="nowrap">
+                  {tierData.name}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  fontSize={13.5}
+                  sx={{
+                    color: '#8e8e93',
+                    display: 'block',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {tierData.creditsPerVideo} credit{tierData.creditsPerVideo !== 1 ? 's' : ''}
+                </Typography>
+              </Stack>
+            );
+          })()}
+        </TableCell>
+      )}
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         <Stack alignItems="start">
           <Typography fontSize={13.5} whiteSpace="nowrap">
             {fDate(pitch.createdAt)}
@@ -206,10 +281,10 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           </Typography>
         </Stack>
       </TableCell>
-      <TableCell sx={{ px: 1 }}>
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         <PitchTypeCell type={pitch.type} isGuestCreator={isGuestCreator} />
       </TableCell>
-      <TableCell sx={{ px: 1 }}>
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         <Box
           sx={{
             textTransform: 'uppercase',
@@ -242,7 +317,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
           )}
         </Box>
       </TableCell>
-      <TableCell sx={{ padding: 0, paddingRight: 1 }}>
+      <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
         {smUp ? (
           <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} campaignId={campaign?.id} onRemoved={onRemoved} />
         ) : (
@@ -261,6 +336,7 @@ PitchRow.propTypes = {
   statusInfo: PropTypes.object.isRequired,
   isGuestCreator: PropTypes.bool,
   campaign: PropTypes.object,
+  isCreditTier: PropTypes.bool,
   onViewPitch: PropTypes.func.isRequired,
   onRemoved: PropTypes.func,
 };

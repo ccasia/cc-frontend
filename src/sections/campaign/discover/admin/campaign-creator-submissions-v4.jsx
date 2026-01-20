@@ -11,6 +11,7 @@ import {
   TextField,
   Typography,
   useMediaQuery,
+  InputAdornment,
 } from '@mui/material';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
@@ -824,49 +825,125 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
   return (
     <Box>
       <Box sx={{ mx: { xs: 1, sm: 0 }, mb: 2 }}>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          sx={{ width: '100%' }}
+        >
           <TextField
-            fullWidth
-            size="medium"
             placeholder="Search creators..."
             value={searchTerm}
             onChange={handleSearchChange}
             sx={{
-              flex: 1,
-              maxWidth: { xs: '100%', sm: 400 },
+              width: { xs: '100%', sm: 300 },
+              flexShrink: 0,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#FFFFFF',
+                border: '1.5px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1.15,
+                height: 44,
+                fontSize: '0.85rem',
+                '& fieldset': {
+                  border: 'none',
+                },
+                '&.Mui-focused': {
+                  border: '1.5px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                },
+              },
+              '& .MuiOutlinedInput-input': {
+                py: 1.25,
+                px: 0,
+                color: '#637381',
+                fontWeight: 600,
+                '&::placeholder': {
+                  color: '#637381',
+                  opacity: 1,
+                  fontWeight: 400,
+                },
+              },
             }}
             InputProps={{
-              startAdornment: <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />,
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify
+                    icon="eva:search-fill"
+                    width={18}
+                    sx={{ color: '#637381' }}
+                  />
+                </InputAdornment>
+              ),
             }}
           />
-
+          {/* Alphabetical Sort Button */}
           <Button
             onClick={toggleSortDirection}
+            endIcon={
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {sortDirection === 'asc' ? (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                  </Stack>
+                )}
+                <Iconify
+                  icon={
+                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+                  }
+                  width={12}
+                />
+              </Stack>
+            }
             sx={{
-              height: { xs: 45, sm: '100%' },
-              whiteSpace: 'nowrap',
+              px: 1.5,
+              py: 0.75,
+              height: '42px',
+              color: '#637381',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              backgroundColor: 'transparent',
+              border: 'none',
               borderRadius: 1,
-              border: '1px solid #E7E7E7',
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-              px: 2,
-              py: 1.8,
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              boxShadow: 'none',
+              alignSelf: { xs: 'flex-start', sm: 'center' },
               '&:hover': {
-                border: '1px solid #E7E7E7',
-                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                bgcolor: '#fff'
-              }
+                backgroundColor: 'transparent',
+                color: '#221f20',
+              },
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Typography variant="body" color="#636366">Alphabetical</Typography>
-              <Iconify
-                icon={sortDirection === 'asc' ? 'mdi:sort-alphabetical-ascending' : 'mdi:sort-alphabetical-descending'}
-                width={18}
-                sx={{ color: '#636366' }}
-              />
-            </Box>
+            Alphabetical
           </Button>
-        </Box>
+        </Stack>
       </Box>
 
       {/* Mobile View */}

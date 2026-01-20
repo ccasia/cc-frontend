@@ -16,12 +16,8 @@ export default function CreatorTableFilter({
   onFilters,
   onResetFilters,
   results,
-  pronounceOptions,
   ...other
 }) {
-  const handleRemovePronounce = useCallback(() => {
-    onFilters('pronounce', []);
-  }, [onFilters]);
 
   const handleRemoveKeyword = useCallback(() => {
     onFilters('name', '');
@@ -61,21 +57,6 @@ export default function CreatorTableFilter({
           </Block>
         )}
 
-        {filters.pronounce.length > 0 && (
-          <Block label="Gender:">
-            {filters.pronounce.map((item) => (
-              <Chip
-                key={item}
-                label={item}
-                size="small"
-                onDelete={() => {
-                  const newPronounce = filters.pronounce.filter((pronounce) => pronounce !== item);
-                  onFilters('pronounce', newPronounce);
-                }}
-              />
-            ))}
-          </Block>
-        )}
 
         {!!filters.name && (
           <Block label="Keyword:">
@@ -100,7 +81,6 @@ CreatorTableFilter.propTypes = {
   onFilters: PropTypes.func,
   onResetFilters: PropTypes.func,
   results: PropTypes.number,
-  pronounceOptions: PropTypes.array,
 };
 
 // ----------------------------------------------------------------------

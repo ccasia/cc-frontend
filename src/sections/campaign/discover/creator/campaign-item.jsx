@@ -349,6 +349,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
 
       {!isMobile && (
         <CampaignModal
+          key={`modal-${campaign.id}-${campaign.pitch?.length || 0}`}
           dialog={dialog}
           open={campaignInfo.value}
           // handleClose={() => {
@@ -377,6 +378,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
           onSaveCampaign={saveCampaign}
           onUnsaveCampaign={unSaveCampaign}
           onOpenCreatorForm={onOpenCreatorForm}
+          mutate={mutate}
         />
       )}
     </>

@@ -23,13 +23,13 @@ import MediaKitPopup from './media-kit-popup';
 import CampaignPitchTextModal from './pitch/pitch-text-modal';
 import CampaignPitchVideoModal from './pitch/pitch-video-modal';
 
-const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video }) => {
+const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video, mutate }) => {
   const smUp = useResponsive('sm', 'down');
   const { user } = useAuthContext();
   const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
 
   const hasDraft = useMemo(
-    () => campaign?.draftPitch && campaign.draftPitch.find((item) => item.userId === user?.id),
+    () => campaign?.pitch?.find((item) => item.userId === user?.id && item.status === 'draft'),
     [campaign, user]
   );
   const handlePitchClick = () => {
@@ -238,8 +238,9 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
         onBack={() => {
           text.onFalse();
         }}
+        mutate={mutate}
       />
-      <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} />
+      <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} mutate={mutate} />
 
       <MediaKitPopup
         open={showMediaKitPopup}
@@ -259,4 +260,5 @@ CampaignPitchOptionsModal.propTypes = {
   campaign: PropTypes.object,
   text: PropTypes.object,
   video: PropTypes.object,
+  mutate: PropTypes.func,
 };

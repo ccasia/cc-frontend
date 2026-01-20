@@ -565,7 +565,39 @@ const CreatorProfileView = ({ id }) => {
 
         {/* Right column - Campaign History */}
         <Grid item xs={12} md={5}>
+          {/* Creator Tier Box */}
           <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify icon="ri:coin-line" width={20} color="#1340FF" />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                }}
+              >
+                Creator Tier
+              </Typography>
+            </Box>
+
+            <Typography variant="subtitle2">
+              <Label
+                color="info"
+                sx={{
+                  bgcolor: '#F5F5F5',
+                  color: '#231F20',
+                  px: 1.5,
+                  py: 2,
+                  fontSize: '0.8rem',
+                }}
+              >
+                {data?.user?.creator?.creditTier?.name || '-'}
+              </Label>
+            </Typography>
+          </Box>
+
+          <Box sx={{ ...BoxStyle, mt: 3 }}>
             <Box className="header">
               <img
                 src="/assets/icons/overview/vector.svg"

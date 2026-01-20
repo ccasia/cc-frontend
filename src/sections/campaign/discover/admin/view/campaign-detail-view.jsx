@@ -766,8 +766,8 @@ const CampaignDetailView = ({ id }) => {
               src="/assets/icons/overview/editButton.svg"
               alt="edit"
               style={{
-                width: 20,
-                height: 20,
+                width: 64,
+                height: 64,
                 opacity: isDisabled ? 0.3 : 1,
               }}
             />
@@ -892,6 +892,7 @@ const CampaignDetailView = ({ id }) => {
                   color: '#221f20',
                   fontWeight: 500,
                   fontSize: { xs: '0.875rem', sm: '1rem' },
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
@@ -1014,7 +1015,7 @@ const CampaignDetailView = ({ id }) => {
                     },
                   }}
                 >
-                  <Iconify icon="eva:more-horizontal-fill" width={24} />
+                  <Iconify icon="eva:more-horizontal-fill" width={18} />
                 </Box>
                 // </>
               )}
