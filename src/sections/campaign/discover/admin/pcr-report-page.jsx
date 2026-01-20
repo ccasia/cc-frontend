@@ -719,9 +719,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
       console.log('Platform Chart - Submissions:', filteredSubmissions?.length);
       
       if (!filteredInsightsData || filteredInsightsData.length === 0) {
-        console.log('Platform Chart - No data, returning mock data');
-        // Hardcoded data for display
-        return { instagram: 5034, tiktok: 9203, total: 14237 };
+        console.log('Platform Chart - No data, returning zeros');
+        return { instagram: 0, tiktok: 0, total: 0 };
       }
 
       let instagramInteractions = 0;
@@ -1932,7 +1931,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
           fontSize: '20px',
           lineHeight: '24px',
           letterSpacing: '0%',
-          color: '#231F20'
+          color: '#231F20',
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
+          whiteSpace: 'pre-line'
         }}
       >
           {editableContent.campaignDescription || (
@@ -2200,6 +2203,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
           letterSpacing: '0%',
           color: '#231F20',
           mb: 3,
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
           '& strong': {
             fontFamily: 'Inter Display, sans-serif',
             fontWeight: 700,
@@ -2291,7 +2297,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '20px',
             lineHeight: '24px',
             color: '#231F20',
-            mb: 3 
+            mb: 3,
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word'
           }}
         >
           {editableContent.noteworthyCreatorsDescription || (
@@ -2856,7 +2865,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             lineHeight: '24px',
             color: '#374151',
             mb: 3,
-            whiteSpace: 'pre-line'
+            whiteSpace: 'pre-line',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word'
           }}
         >
           {editableContent.viewsDescription || (
@@ -2951,7 +2963,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '16px',
             lineHeight: '24px',
             color: '#374151',
-            mb: 4 
+            mb: 4,
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word'
           }}
         >
           {editableContent.audienceSentimentDescription || (
@@ -3392,7 +3407,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '16px',
             lineHeight: '24px',
             color: '#374151',
-            mb: 4 
+            mb: 4,
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word'
           }}
         >
           {editableContent.bestPerformingPersonasDescription || (
@@ -3544,6 +3562,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 onChange={(e) => setEditableContent({ ...editableContent, comicTitle: e.target.value })}
                   fullWidth
                   inputProps={{
+                    maxLength: 30,
                     style: {
                       fontFamily: 'Instrument Serif, serif',
                       fontWeight: 400,
@@ -3595,7 +3614,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <Typography
                 sx={{
                   fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 500,
+                  fontWeight: 700,
                   fontStyle: 'normal',
                   fontSize: '14px',
                   lineHeight: '18px',
@@ -3630,6 +3649,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fullWidth
                     multiline
                     rows={2}
+                  inputProps={{
+                    maxLength: 50,
+                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -3658,6 +3680,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.comicContentStyle}
@@ -3669,7 +3695,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <Typography
                 sx={{
                   fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 500,
+                  fontWeight: 700,
                   fontStyle: 'normal',
                   fontSize: '14px',
                   lineHeight: '18px',
@@ -3704,6 +3730,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fullWidth
                     multiline
                     rows={2}
+                  inputProps={{
+                    maxLength: 50,
+                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -3732,6 +3761,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.comicWhyWork}
@@ -3927,6 +3960,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 onChange={(e) => setEditableContent({ ...editableContent, educatorTitle: e.target.value })}
                   fullWidth
                   inputProps={{
+                    maxLength: 30,
                     style: {
                       fontFamily: 'Instrument Serif, serif',
                       fontWeight: 400,
@@ -3978,7 +4012,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <Typography
                 sx={{
                   fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 500,
+                  fontWeight: 700,
                   fontStyle: 'normal',
                   fontSize: '14px',
                   lineHeight: '18px',
@@ -4013,6 +4047,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fullWidth
                     multiline
                     rows={2}
+                  inputProps={{
+                    maxLength: 50,
+                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -4041,6 +4078,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.educatorContentStyle}
@@ -4052,7 +4093,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <Typography
                 sx={{
                   fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 500,
+                  fontWeight: 700,
                   fontStyle: 'normal',
                   fontSize: '14px',
                   lineHeight: '18px',
@@ -4087,6 +4128,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fullWidth
                     multiline
                     rows={2}
+                  inputProps={{
+                    maxLength: 50,
+                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -4115,6 +4159,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.educatorWhyWork}
@@ -4127,10 +4175,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
         )}
         </Box>
       ) : (
-        // Non-edit Mode: Horizontal layout
-        <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+        // Non-edit Mode: Conditional layout based on number of personas
+        <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: showEducatorCard ? 'center' : 'flex-start' }}>
           {/* The Comic Card with Number */}
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3, ml: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: showEducatorCard ? 'center' : 'flex-start', gap: showEducatorCard ? 2 : 3, ml: showEducatorCard ? 7 : 0 }}>
             {/* Number - Outside the card */}
             <Typography
               sx={{
@@ -4141,44 +4189,189 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 lineHeight: '44px',
                 letterSpacing: '0%',
                 color: '#1340FF',
-                mt: 12,
+                ...(showEducatorCard ? {
+                  position: 'relative',
+                  left: '-55px',
+                } : {
+                  mt: 12,
+                }),
               }}
             >
               1.
             </Typography>
             
-            {/* Emoji Circle */}
-            <Box
-              sx={{
-                width: '160px',
-                height: '160px',
-                borderRadius: '50%',
-                background: '#FFFFFF',
-                border: '10px solid #FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '-4px 4px 4px 0px #8E8E9340',
-                flexShrink: 0,
-                mt: 3,
-              }}
-            >
-              {/* Inner gradient circle */}
+            {showEducatorCard ? (
+              // Compact horizontal layout when there are 2 personas
               <Box
                 sx={{
-                  width: '130px',
-                  height: '130px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '64px',
+                  width: '347px',
+                  height: '189px',
+                  borderRadius: '20px',
+                  background: '#F5F5F5',
+                  border: '10px solid #FFFFFF',
+                  boxShadow: '0px 4px 4px 0px #8E8E9340',
+                  position: 'relative',
                 }}
               >
-                {editableContent.comicEmoji}
+                {/* Circle with Icon */}
+                <Box
+                  sx={{
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
+                    background: '#FFFFFF',
+                    border: '8px solid #FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'absolute',
+                    left: '-70px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    zIndex: 1,
+                    boxShadow: '-4px 4px 4px 0px #8E8E9340',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: '95px',
+                      height: '95px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '32px',
+                    }}
+                  >
+                    {editableContent.comicEmoji}
       </Box>
     </Box>
+
+                {/* Content */}
+                <Box 
+                  sx={{ 
+                    position: 'absolute',
+                    right: '12px',
+                    left: '70px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    maxWidth: 'calc(347px - 82px)',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontStyle: 'normal',
+                      fontSize: '36px',
+                      lineHeight: '40px',
+                      letterSpacing: '0%',
+                      color: '#0067D5',
+                      mb: 1.5,
+                      textAlign: 'center',
+                      ml: -3,
+                    }}
+                  >
+                    {editableContent.comicTitle}
+      </Typography>
+                  
+                  <Box sx={{ mb: 0.75, textAlign: 'left' }}>
+                    <Typography
+                      sx={{
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 500,
+                        fontStyle: 'normal',
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                        mb: 0.5,
+                      }}
+                    >
+                      Content Style
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 400,
+                        fontStyle: 'normal',
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                      }}
+                    >
+                      {editableContent.comicContentStyle}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography
+                      sx={{
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 500,
+                        fontStyle: 'normal',
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                        mb: 0.5,
+                      }}
+                    >
+                      Why They Work
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 400,
+                        fontStyle: 'normal',
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                      }}
+                    >
+                      {editableContent.comicWhyWork}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            ) : (
+              // Large vertical layout when there's only 1 persona
+              <>
+                {/* Emoji Circle */}
+      <Box
+        sx={{
+                    width: '160px',
+                    height: '160px',
+                    borderRadius: '50%',
+                    background: '#FFFFFF',
+                    border: '10px solid #FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '-4px 4px 4px 0px #8E8E9340',
+                    flexShrink: 0,
+                    mt: 3,
+                  }}
+                >
+                  {/* Inner gradient circle */}
+                  <Box
+                    sx={{
+                      width: '130px',
+                      height: '130px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '64px',
+                    }}
+                  >
+                    {editableContent.comicEmoji}
+                  </Box>
+                </Box>
 
             {/* Content Box */}
             <Box sx={{ flex: 1, maxWidth: '950px', display: 'flex', gap: 3 }}>
@@ -4247,6 +4440,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '16px',
                       lineHeight: '24px',
                       color: '#000000',
+                      whiteSpace: 'pre-line',
                     }}
                   >
                     {editableContent.comicContentStyle}
@@ -4274,6 +4468,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '16px',
                       lineHeight: '24px',
                       color: '#000000',
+                      whiteSpace: 'pre-line',
                     }}
                   >
                     {editableContent.comicWhyWork}
@@ -4281,6 +4476,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </Box>
               </Box>
             </Box>
+              </>
+            )}
           </Box>
 
           {/* The Educator Card with Number - Only show if showEducatorCard is true */}
@@ -4384,7 +4581,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Typography
                   sx={{
                     fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 500,
+                    fontWeight: 700,
                     fontStyle: 'normal',
                     fontSize: '14px',
                     lineHeight: '18px',
@@ -4404,6 +4601,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.educatorContentStyle}
@@ -4414,7 +4615,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Typography
                   sx={{
                     fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 500,
+                    fontWeight: 700,
                     fontStyle: 'normal',
                     fontSize: '14px',
                     lineHeight: '18px',
@@ -4434,6 +4635,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.educatorWhyWork}
@@ -4545,6 +4750,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fullWidth
                         multiline
                         rows={2}
+                        inputProps={{
+                          maxLength: 120,
+                        }}
                         sx={{
                           mt: 2.5,
                           '& .MuiInputBase-root': {
@@ -4572,7 +4780,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     </IconButton>
                   </Box>
                 ) : (
-                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', lineHeight: '18px' }}>
+                  <Typography sx={{ 
+                    fontFamily: 'Aileron', 
+                    fontSize: '12px', 
+                    lineHeight: '18px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                  }}>
                     {insight}
                   </Typography>
                 )}
@@ -4703,6 +4918,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fullWidth
                         multiline
                         rows={2}
+                        inputProps={{
+                          maxLength: 120,
+                        }}
                         sx={{
                           mt: 2.5,
                           '& .MuiInputBase-root': {
@@ -4730,7 +4948,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     </IconButton>
                   </Box>
                 ) : (
-                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', lineHeight: '18px' }}>
+                  <Typography sx={{ 
+                    fontFamily: 'Aileron', 
+                    fontSize: '12px', 
+                    lineHeight: '18px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                  }}>
                     {insight}
                   </Typography>
                 )}
@@ -4859,6 +5084,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fullWidth
                         multiline
                         rows={2}
+                        inputProps={{
+                          maxLength: 120,
+                        }}
                         sx={{
                           mt: 2.5,
                           '& .MuiInputBase-root': {
@@ -4886,7 +5114,14 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     </IconButton>
                   </Box>
                 ) : (
-                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', lineHeight: '18px' }}>
+                  <Typography sx={{ 
+                    fontFamily: 'Aileron', 
+                    fontSize: '12px', 
+                    lineHeight: '18px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                  }}>
                     {insight}
                   </Typography>
                 )}
