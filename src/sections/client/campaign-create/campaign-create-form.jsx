@@ -130,35 +130,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   const inFrontSection = isInFrontSection(activeStep);
   const inBackSection = isInBackSection(activeStep);
 
-
-
-  // Client brand info for preview
-  const clientBrandName =
-    user?.company?.name || user?.client?.company?.name || user?.brandName || user?.name || 'Your Brand';
-
-  // Resolve client company logo
-  let clientLogoUrl = '';
-  try {
-    const stored = localStorage.getItem('client_company_logo');
-    clientLogoUrl = stored || user?.company?.logo || user?.client?.company?.logo || '';
-  } catch {
-    clientLogoUrl = user?.company?.logo || user?.client?.company?.logo || '';
-  }
-
-  // Format date helper
-  const formatDate = (date) => {
-    if (!date) return 'Not set';
-    try {
-      return new Date(date).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return 'Invalid date';
-    }
-  };
-
   const campaignSchema = Yup.object().shape({
     campaignIndustries: Yup.array()
       .min(1, 'At least one industry is required')
@@ -1461,8 +1432,6 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         onClose={openPackage.onFalse}
         setValue={setValue}
       />
-
-      <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
 
       <PDFEditor
         open={pdfModal.value}
