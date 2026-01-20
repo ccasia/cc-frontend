@@ -248,6 +248,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       mutate();
       enqueueSnackbar(response?.data?.message || 'Pitch approved successfully');
       setConfirmDialog({ open: false, type: null });
+      onClose();
     } catch (error) {
       console.error('Error approving pitch:', error);
       enqueueSnackbar('Error approving pitch', { variant: 'error' });
@@ -296,8 +297,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       if (onUpdate) {
         onUpdate(updatedPitch);
       }
+      mutate();
       enqueueSnackbar(response?.data?.message || 'Pitch declined successfully');
       setConfirmDialog({ open: false, type: null });
+      onClose();
     } catch (error) {
       console.error('Error declining pitch:', error);
       enqueueSnackbar('Error declining pitch', { variant: 'error' });
@@ -342,10 +345,12 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         setCurrentPitch(updatedPitch);
         onUpdate?.(updatedPitch);
 
+        mutate();
         enqueueSnackbar(response?.data?.message || 'Pitch marked as Maybe');
         setMaybeOpen(false);
         setMaybeReason('');
         setMaybeNote('');
+        onClose();
       } else {
         console.warn('Maybe action is only available for client-created campaigns by clients');
       }
