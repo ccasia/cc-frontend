@@ -1,38 +1,37 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useForm, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import React, { memo, useMemo, useState, useEffect, useRef } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
+import React, { memo, useRef, useMemo, useState, useEffect } from 'react';
 import {
   format,
-  isSameDay,
-  isBefore,
   isAfter,
-  eachDayOfInterval,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
+  isToday,
+  subDays,
+  addDays,
+  isBefore,
+  endOfDay,
+  isSameDay,
   endOfWeek,
   addMonths,
   subMonths,
+  endOfMonth,
   startOfDay,
-  endOfDay,
-  isWithinInterval,
   addMinutes,
-	isToday,
-	subDays,
-	addDays,
+  startOfWeek,
+	startOfMonth,
+	isWithinInterval,
+	eachDayOfInterval,
 } from 'date-fns';
 
 import { LoadingButton } from '@mui/lab';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DesktopTimePicker } from '@mui/x-date-pickers/DesktopTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
 import {
   Box,
-  Card,
   Grid,
   Stack,
   Radio,
@@ -116,14 +115,15 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
   // Get existing values from campaign
   const defaultValues = useMemo(() => {
     const reservationConfig = campaign?.reservationConfig;
+    let schedulingOption = '';
+    if (reservationConfig?.mode === 'AUTO_SCHEDULE') {
+      schedulingOption = 'auto';
+    } else if (reservationConfig?.mode === 'MANUAL_CONFIRMATION') {
+      schedulingOption = 'confirmation';
+    }
     return {
       logisticsType: campaign?.logisticsType || '',
-      schedulingOption:
-        reservationConfig?.mode === 'AUTO_SCHEDULE'
-          ? 'auto'
-          : reservationConfig?.mode === 'MANUAL_CONFIRMATION'
-            ? 'confirmation'
-            : '',
+      schedulingOption,
       allowMultipleBookings: reservationConfig?.allowMultipleBookings || false,
       products:
         campaign?.products?.length > 0
@@ -1193,17 +1193,19 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
                     textAlign: 'center',
                   }}
                 >
-                  {allDay ? (
+                  {/* Lint fix: no-nested-ternary */}
+                  {allDay && (
                     <Stack spacing={1} alignItems="center" textAlign="center">
                       <Typography sx={{ fontSize: '48px' }}>👌</Typography>
                       <Typography variant="h6" fontWeight={700}>
                         All-Day Events
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Select dates and you're good to go!
+                        Select dates and you&apos;re good to go!
                       </Typography>
                     </Stack>
-                  ) : generatedSlots.length > 0 ? (
+                  )}
+                  {!allDay && generatedSlots.length > 0 && (
                     <Box sx={{ width: '100%', maxHeight: 280, overflowY: 'auto' }}>
                       <Grid container spacing={1.5}>
                         {generatedSlots.map((slot, idx) => (
@@ -1234,7 +1236,8 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
                         ))}
                       </Grid>
                     </Box>
-                  ) : (
+                  )}
+                  {!allDay && generatedSlots.length === 0 && (
                     <Stack spacing={1} alignItems="center" textAlign="center">
                       <Typography sx={{ fontSize: '48px' }}>😘</Typography>
                       <Typography variant="h6" fontWeight={700}>
