@@ -34,13 +34,15 @@ import withPermission from 'src/auth/guard/withPermissions';
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
-import UpdateRequirements from '../UpdateRequirements';
+import UpdateAudience from '../UpdateAudience';
+import UpdateObjectives from '../UpdateObjectives';
 import UpdateGeneralInformation from '../UpdateGeneralInformation';
 
 // Tab configuration
 const TABS = [
-  { label: 'General Information', value: 'general-info' },
-  { label: 'Requirements', value: 'requirements' },
+  { label: 'General Information', value: 'general' },
+  { label: 'Campaign Objectives', value: 'objective' },
+  { label: 'Target Audience', value: 'audience' },
 ];
 
 const CampaignDetailManageViewV2 = ({ id }) => {
@@ -58,7 +60,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
     [campaign, campaignLoading]
   );
 
-  const [currentTab, setCurrentTab] = useState('general-info');
+  const [currentTab, setCurrentTab] = useState('general');
 
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
@@ -151,10 +153,9 @@ const CampaignDetailManageViewV2 = ({ id }) => {
 
   // Tab content mapping
   const renderTabContent = {
-    'general-info': (
-      <UpdateGeneralInformation campaign={campaign} campaignMutate={campaignMutate} />
-    ),
-    requirements: <UpdateRequirements campaign={campaign} campaignMutate={campaignMutate} />,
+    general: <UpdateGeneralInformation campaign={campaign} campaignMutate={campaignMutate} />,
+    objective: <UpdateObjectives campaign={campaign} campaignMutate={campaignMutate} />,
+    audience: <UpdateAudience campaign={campaign} campaignMutate={campaignMutate} />,
   };
 
   console.log('Campaign object: ', campaign)
@@ -210,7 +211,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                 fontSize: { xs: '0.9rem', sm: '1.05rem' },
                 fontWeight: 650,
                 whiteSpace: 'nowrap',
-                mr: { xs: 1, sm: 2 },
+                mr: { xs: 2, sm: 3 },
                 transition: 'transform 0.1s ease-in-out',
                 '&:focus': {
                   outline: 'none',
