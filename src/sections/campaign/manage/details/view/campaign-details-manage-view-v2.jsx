@@ -2,8 +2,10 @@ import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
+import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useCallback } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
@@ -18,9 +20,13 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import withPermission from 'src/auth/guard/withPermissions';
@@ -30,11 +36,6 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 
 import UpdateRequirements from '../UpdateRequirements';
 import UpdateGeneralInformation from '../UpdateGeneralInformation';
-import { useRouter } from 'src/routes/hooks';
-import { LoadingButton } from '@mui/lab';
-import { enqueueSnackbar } from 'notistack';
-import axiosInstance, { endpoints } from 'src/utils/axios';
-import { useBoolean } from 'src/hooks/use-boolean';
 
 // Tab configuration
 const TABS = [
