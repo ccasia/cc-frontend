@@ -37,7 +37,10 @@ export default function RHFAutocomplete({
               id={`autocomplete-${name}`}
               autoHighlight={!multiple}
               disableCloseOnSelect={multiple}
-              onChange={(event, newValue) => setValue(name, newValue, { shouldValidate: true })}
+              onChange={(event, newValue) => {
+                field.onChange(newValue);
+                setValue(name, newValue, { shouldValidate: true });
+              }}
               renderOption={(props, option) => {
                 const country = getCountry(option);
 
@@ -125,7 +128,10 @@ export default function RHFAutocomplete({
             {...field}
             id={`autocomplete-${name}`}
             freeSolo={freeSolo}
-            onChange={(event, newValue) => setValue(name, newValue, { shouldValidate: true })}
+            onChange={(event, newValue) => {
+              field.onChange(newValue);
+              setValue(name, newValue, { shouldValidate: true });
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
