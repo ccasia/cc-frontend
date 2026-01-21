@@ -2,15 +2,16 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import React, { useState, useEffect, useCallback } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Card,
-  Chip,
   Menu,
   Table,
   Stack,
   Button,
   Dialog,
+  Divider,
   TableRow,
   MenuItem,
   TableBody,
@@ -19,17 +20,14 @@ import {
   TextField,
   Typography,
   IconButton,
-  DialogTitle,
   DialogContent,
   DialogActions,
-  Divider,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
+
+import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
-
-import axiosInstance from 'src/utils/axios';
 
 const ChildAccountList = ({ company, inviteDialogOpen, onInviteDialogClose, isPicActivated }) => {
   const [childAccounts, setChildAccounts] = useState([]);
