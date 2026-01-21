@@ -16,11 +16,12 @@ import {
   Dialog,
   Divider,
   Container,
+  TextField,
   Typography,
   DialogContent,
   DialogActions,
-  CircularProgress,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -100,6 +101,8 @@ const CompanyEditView = ({ id }) => {
   const [campaignSearch, setCampaignSearch] = useState('');
   const [inviteChildDialog, setInviteChildDialog] = useState(false);
   const [mainPicStatus, setMainPicStatus] = useState(null);
+  const [picDialogOpen, setPicDialogOpen] = useState(false);
+  const [picFormData, setPicFormData] = useState({ name: '', email: '', designation: '' });
 
   // Fetch main PIC user status
   useEffect(() => {
@@ -227,6 +230,34 @@ const CompanyEditView = ({ id }) => {
       setLoading(false);
     }
   });
+
+  const handleActivateButtonClick = () => {
+    if (!hasValidPIC) {
+      // Open PIC dialog if no PIC exists
+      setPicDialogOpen(true);
+    } else {
+      // Open activation dialog if PIC exists
+      setActivateDialogOpen(true);
+    }
+  };
+
+  const handleCreatePIC = async () => {
+    try {
+      setLoading(true);
+      await axiosInstance.post(`/api/pic/company/${id}`, picFormData);
+      enqueueSnackbar('Person In Charge added successfully!', { variant: 'success' });
+      setPicDialogOpen(false);
+      setPicFormData({ name: '', email: '', designation: '' });
+      mutate(); // Refresh company data
+      // After creating PIC, open activation dialog
+      setActivateDialogOpen(true);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Error adding Person In Charge';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleActivateClient = async () => {
     setIsActivating(true);

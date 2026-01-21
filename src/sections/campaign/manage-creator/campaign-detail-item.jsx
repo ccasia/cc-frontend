@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { Box, Stack, Button, Typography } from '@mui/material';
@@ -9,9 +9,10 @@ import { Box, Stack, Button, Typography } from '@mui/material';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/creator-logistics-view';

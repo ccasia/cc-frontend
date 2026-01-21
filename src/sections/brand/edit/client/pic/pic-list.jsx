@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import React, { useState, useEffect } from 'react';
 
-import EditIcon from '@mui/icons-material/Edit';
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Menu,
@@ -23,13 +23,12 @@ import {
   DialogActions,
   TableContainer,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
 
 import axiosInstance from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import Scrollbar from 'src/components/scrollbar';
 import { useTable } from 'src/components/table';
+import Scrollbar from 'src/components/scrollbar';
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 200 },

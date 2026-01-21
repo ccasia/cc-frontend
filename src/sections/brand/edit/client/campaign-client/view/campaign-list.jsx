@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import PropTypes from 'prop-types';
 import { useMemo } from 'react';
+import PropTypes from 'prop-types';
 
 import { Table, Tooltip, TableBody, IconButton, TableContainer } from '@mui/material';
 

@@ -33,7 +33,6 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
-  LinearProgress,
   CircularProgress,
 } from '@mui/material';
 

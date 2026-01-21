@@ -1,11 +1,11 @@
+import useSWR from 'swr';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { config } from '@fullcalendar/core/internal';
-import useSWR from 'swr';
-import { fetcher } from 'src/utils/axios';
 
 import { Box, Stack, Badge, Button, Divider, Typography } from '@mui/material';
 
+import { fetcher } from 'src/utils/axios';
 import { formatReservationSlot } from 'src/utils/reservation-time';
 
 import Iconify from 'src/components/iconify';

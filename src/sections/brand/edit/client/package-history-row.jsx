@@ -2,11 +2,9 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
 
-import EditIcon from '@mui/icons-material/Edit';
 import { Tooltip, TableRow, TableCell, IconButton, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
-import Label from 'src/components/label';
 
 import PackageEditDialog from './package-edit-dialog';
 

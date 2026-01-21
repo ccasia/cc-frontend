@@ -32,7 +32,6 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
