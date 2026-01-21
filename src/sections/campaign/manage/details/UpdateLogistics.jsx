@@ -507,7 +507,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
         }}
       >
         {/* Logistics Type Selection */}
-        <Stack spacing={2}>
+        <Stack spacing={2} maxWidth={logisticsType === 'RESERVATION' ? 800 : 600}>
           <FormField label="Logistics Type" required={false}>
             <RHFSelect
               name="logisticsType"
@@ -1358,7 +1358,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
         )}
 
         {/* Submit Button */}
-        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
+        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3, maxWidth: logisticsType === 'RESERVATION' ? 800 : 600 }}>
           <LoadingButton
             type="submit"
             variant="contained"
