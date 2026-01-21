@@ -1020,7 +1020,7 @@ const LogisticsForm = ({ user, campaignId, onUpdate }) => {
   );
 };
 
-const CampaignV4Activity = ({ campaign }) => {
+const CampaignV4Activity = ({ campaign, mutateLogistic, logistic }) => {
   const [expandedSections, setExpandedSections] = useState({});
   const [numPages, setNumPages] = useState(null);
   const [uploadingSubmissions, setUploadingSubmissions] = useState({}); // Track which submissions are uploading
@@ -1034,7 +1034,6 @@ const CampaignV4Activity = ({ campaign }) => {
   const { user } = useAuthContext();
 
   // Fetch logistics data
-  const { logistic, logisticLoading, mutate: mutateLogistic } = useGetCreatorLogistic(campaign?.id);
   const isLogisticsCompleted = !!logistic;
   const isDelivery = campaign?.logisticsType === 'PRODUCT_DELIVERY';
 
@@ -1374,10 +1373,10 @@ const CampaignV4Activity = ({ campaign }) => {
   const isAgreementApproved = overviewData?.isAgreementApproved;
 
   useEffect(() => {
-    if (isAgreementApproved && !isLogisticsCompleted && !expandedSections.logistics) {
+    if (isAgreementApproved && !isLogisticsCompleted) {
       setExpandedSections((prev) => ({ ...prev, logistics: true }));
     }
-  }, [isAgreementApproved, isLogisticsCompleted, expandedSections.logistics]);
+  }, [isAgreementApproved, isLogisticsCompleted]);
 
   if (error) {
     return (
@@ -1483,263 +1482,6 @@ const CampaignV4Activity = ({ campaign }) => {
       </Box>
     );
   }
-
-  // HIDE: Logistics Information from creator - skip directly to submissions
-  // if (isAgreementApproved && !isLogisticsCompleted) {
-  //   return (
-  //     <Box>
-  //       <Card
-  //         sx={{
-  //           overflow: 'visible',
-  //           bgcolor: '#F5F5F5',
-  //           boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-  //           borderRadius: 2,
-  //           border: 'none',
-  //           mb: 1,
-  //         }}
-  //       >
-  //         <Stack
-  //           direction="row"
-  //           alignItems="center"
-  //           justifyContent="space-between"
-  //           sx={{ p: 2, cursor: 'pointer' }}
-  //           onClick={() =>
-  //             setExpandedSections((prev) => ({
-  //               ...prev,
-  //               approvedAgreement: !prev.approvedAgreement,
-  //             }))
-  //           }
-  //         >
-  //           <Stack direction="row" alignItems="center" spacing={2}>
-  //             <Typography
-  //               variant="subtitle1"
-  //               sx={{
-  //                 fontWeight: 600,
-  //                 color: 'black',
-  //                 fontFamily:
-  //                   'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  //               }}
-  //             >
-  //               Agreement
-  //             </Typography>
-  //             <Typography
-  //               variant="caption"
-  //               sx={{
-  //                 px: 1.5,
-  //                 py: 0.5,
-  //                 fontWeight: 600,
-  //                 border: '1px solid',
-  //                 borderBottom: '3px solid',
-  //                 borderRadius: 0.8,
-  //                 bgcolor: 'white',
-  //                 whiteSpace: 'nowrap',
-  //                 color: '#00AB55',
-  //                 borderColor: '#00AB55',
-  //                 fontSize: '0.75rem',
-  //               }}
-  //             >
-  //               APPROVED
-  //             </Typography>
-  //           </Stack>
-  //           <Iconify
-  //             icon={
-  //               expandedSections.approvedAgreement ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'
-  //             }
-  //             width={20}
-  //           />
-  //         </Stack>
-  //
-  //         <Collapse in={expandedSections.approvedAgreement}>
-  //           <Box sx={{ p: 2, pt: 0 }}>
-  //             <Stack spacing={2}>
-  //               <Typography
-  //                 variant="body2"
-  //                 sx={{
-  //                   color: '#221f20',
-  //                   fontFamily:
-  //                     'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  //                   fontWeight: 500,
-  //                 }}
-  //               >
-  //                 ✅ Your agreement has been approved!{' '}
-  //                 {signedAgreementUrl ? 'Below is your signed agreement.' : ''} You can now proceed
-  //                 with the campaign submissions.
-  //               </Typography>
-  //
-  //               {/* Agreement PDF Preview */}
-  //               {(signedAgreementUrl || agreementUrl) && (
-  //                 <Box
-  //                   sx={{
-  //                     display: 'flex',
-  //                     flexDirection: { xs: 'column', md: 'row' },
-  //                     gap: 2,
-  //                     mt: 1,
-  //                   }}
-  //                 >
-  //                   {/* PDF Preview */}
-  //                   <Box sx={{ flex: 1 }}>
-  //                     <Box
-  //                       sx={{
-  //                         width: '100%',
-  //                         height: { xs: '250px', sm: '300px' },
-  //                         borderRadius: 1,
-  //                         border: '1px solid',
-  //                         borderColor: 'divider',
-  //                         overflow: 'auto',
-  //                         bgcolor: 'background.neutral',
-  //                         '& .react-pdf__Document': {
-  //                           display: 'flex',
-  //                           flexDirection: 'column',
-  //                           alignItems: 'center',
-  //                         },
-  //                         '&::-webkit-scrollbar': {
-  //                           width: '8px',
-  //                         },
-  //                         '&::-webkit-scrollbar-thumb': {
-  //                           backgroundColor: 'rgba(0,0,0,0.2)',
-  //                           borderRadius: '4px',
-  //                         },
-  //                         '&::-webkit-scrollbar-track': {
-  //                           backgroundColor: 'rgba(0,0,0,0.1)',
-  //                         },
-  //                       }}
-  //                     >
-  //                       <Document
-  //                         file={signedAgreementUrl || agreementUrl}
-  //                         onLoadSuccess={onDocumentLoadSuccess}
-  //                         onLoadError={onDocumentLoadError}
-  //                       >
-  //                         {Array.from(new Array(numPages), (el, index) => (
-  //                           <Box
-  //                             key={index}
-  //                             sx={{
-  //                               p: 1,
-  //                               width: '100%',
-  //                               display: 'flex',
-  //                               justifyContent: 'center',
-  //                               '&:not(:last-child)': {
-  //                                 borderBottom: '1px solid',
-  //                                 borderColor: 'divider',
-  //                               },
-  //                             }}
-  //                           >
-  //                             <Page
-  //                               key={`page-${index + 1}`}
-  //                               pageNumber={index + 1}
-  //                               scale={isSmallScreen ? 0.3 : 0.4}
-  //                               renderAnnotationLayer={false}
-  //                               renderTextLayer={false}
-  //                             />
-  //                           </Box>
-  //                         ))}
-  //                       </Document>
-  //                     </Box>
-  //                   </Box>
-  //
-  //                   {/* Download Button */}
-  //                   <Box
-  //                     sx={{
-  //                       display: 'flex',
-  //                       flexDirection: 'column',
-  //                       justifyContent: 'center',
-  //                       alignItems: { xs: 'center', md: 'flex-start' },
-  //                     }}
-  //                   >
-  //                     <Button
-  //                       variant="contained"
-  //                       startIcon={<Iconify icon="material-symbols:download" width={20} />}
-  //                       onClick={() => handleDownload(signedAgreementUrl || agreementUrl)}
-  //                       sx={{
-  //                         bgcolor: '#203ff5',
-  //                         color: 'white',
-  //                         borderBottom: 3,
-  //                         borderBottomColor: '#112286',
-  //                         borderRadius: 1.5,
-  //                         px: 2.5,
-  //                         py: 1.2,
-  //                         '&:hover': {
-  //                           bgcolor: '#203ff5',
-  //                           opacity: 0.9,
-  //                         },
-  //                       }}
-  //                     >
-  //                       {signedAgreementUrl ? 'Download Signed Agreement' : 'Download Agreement'}
-  //                     </Button>
-  //                   </Box>
-  //                 </Box>
-  //               )}
-  //             </Stack>
-  //           </Box>
-  //         </Collapse>
-  //       </Card>
-  //       <Card
-  //         sx={{
-  //           overflow: 'visible',
-  //           bgcolor: '#F5F5F5',
-  //           boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-  //           borderRadius: 2,
-  //           border: 'none',
-  //           mb: 3,
-  //         }}
-  //       >
-  //         <Stack
-  //           direction="row"
-  //           alignItems="center"
-  //           justifyContent="space-between"
-  //           sx={{ p: 2, cursor: 'pointer' }}
-  //           onClick={() => setExpandedSections((prev) => ({ ...prev, logistics: !prev.logistics }))}
-  //         >
-  //           <Stack direction="row" alignItems="center" spacing={2}>
-  //             <Typography
-  //               variant="subtitle1"
-  //               sx={{
-  //                 fontWeight: 600,
-  //                 color: 'black',
-  //                 fontFamily: 'Inter Display, sans-serif',
-  //               }}
-  //             >
-  //               Logistics Information
-  //             </Typography>
-  //             <Box
-  //               sx={{
-  //                 display: 'flex',
-  //                 alignItems: 'center',
-  //                 gap: 0.5,
-  //                 px: 1.5,
-  //                 py: 0.5,
-  //                 fontWeight: 600,
-  //                 border: '1px solid',
-  //                 borderBottom: '3px solid',
-  //                 borderRadius: 0.8,
-  //                 bgcolor: 'white',
-  //                 whiteSpace: 'nowrap',
-  //                 color: '#8B5CF6',
-  //                 borderColor: '#8B5CF6', // Purple for Action Required
-  //               }}
-  //             >
-  //               <Typography
-  //                 variant="caption"
-  //                 sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'inherit' }}
-  //               >
-  //                 NOT STARTED
-  //               </Typography>
-  //             </Box>
-  //           </Stack>
-  //           <Iconify
-  //             icon={expandedSections.logistics ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-  //             width={20}
-  //           />
-  //         </Stack>
-  //
-  //         <Collapse in={expandedSections.logistics}>
-  //           <Divider />
-  //           {/* The Form Component */}
-  //           <LogisticsForm user={user} campaignId={campaign.id} onUpdate={() => mutateLogistic()} />
-  //         </Collapse>
-  //       </Card>
-  //     </Box>
-  //   );
-  // }
 
   return (
     <Box>
@@ -2017,7 +1759,7 @@ const CampaignV4Activity = ({ campaign }) => {
                   variant="caption"
                   sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'inherit' }}
                 >
-                  COMPLETED{' '}
+                  {isLogisticsCompleted ? 'COMPLETED' : 'NOT STARTED'}
                 </Typography>
               </Box>
             </Stack>
@@ -2101,468 +1843,493 @@ const CampaignV4Activity = ({ campaign }) => {
               <LogisticsForm
                 user={user}
                 campaignId={campaign.id}
-                onUpdate={() => mutateLogistic()}
+                onUpdate={() => {
+                  mutateLogistic();
+                  mutate();
+                  setExpandedSections((prev) => ({
+                    ...prev,
+                    logistics: false,
+                  }));
+                }}
               />
             )}
           </Collapse>
         </Card>
       )}
-
       {/* Collapsible Submission Cards */}
-      <Stack spacing={2} sx={{ p: 1, mx: -1 }}>
-        {/* Video Submissions */}
-        {grouped?.videos?.map((video, index) => {
-          const isExpanded = expandedSections[video.id];
-          const isNew = isNewSubmission(video);
-          const title = getSubmissionTitle(video, index);
-          const status = getSubmissionStatus(video);
-          const statusInfo = getSubmissionStatusInfo(status);
+      {isAgreementApproved && (!isDelivery || isLogisticsCompleted) && (
+        <Stack spacing={2} sx={{ p: 1, mx: -1 }}>
+          {/* Video Submissions */}
+          {grouped?.videos?.map((video, index) => {
+            const isExpanded = expandedSections[video.id];
+            const isNew = isNewSubmission(video);
+            const title = getSubmissionTitle(video, index);
+            const status = getSubmissionStatus(video);
+            const statusInfo = getSubmissionStatusInfo(status);
 
-          return (
-            <Card
-              key={video.id}
-              sx={{
-                overflow: 'visible',
-                bgcolor: '#F5F5F5',
-                boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-                borderRadius: 2,
-                border: 'none',
-              }}
-            >
-              {/* Header */}
-              <Box
+            return (
+              <Card
+                key={video.id}
                 sx={{
-                  p: 2,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                  },
+                  overflow: 'visible',
+                  bgcolor: '#F5F5F5',
+                  boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+                  borderRadius: 2,
+                  border: 'none',
                 }}
-                onClick={() => handleToggleSection(video.id)}
               >
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontFamily:
-                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: 500,
-                      color: 'black',
-                    }}
-                  >
-                    {title}
-                  </Typography>
-
-                  {/* Status Badge with Loading Indicator */}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      px: 1.5,
-                      py: 0.5,
-                      fontWeight: 600,
-                      border: '1px solid',
-                      borderBottom: '3px solid',
-                      borderRadius: 0.8,
-                      bgcolor: 'white',
-                      whiteSpace: 'nowrap',
-                      color: statusInfo.color,
-                      borderColor: statusInfo.color,
-                      transition: 'all 0.3s ease-in-out', // Smooth color transitions
-                    }}
-                  >
-                    {status === 'UPLOADING...' && (
-                      <CircularProgress size={12} thickness={4} sx={{ color: statusInfo.color }} />
-                    )}
+                {/* Header */}
+                <Box
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    '&:hover': {
+                      bgcolor: 'transparent',
+                    },
+                  }}
+                  onClick={() => handleToggleSection(video.id)}
+                >
+                  <Stack direction="row" alignItems="center" spacing={2}>
                     <Typography
-                      variant="caption"
+                      variant="h6"
                       sx={{
-                        fontWeight: 600,
-                        fontSize: '0.75rem',
-                        color: 'inherit',
+                        fontFamily:
+                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: 500,
+                        color: 'black',
                       }}
                     >
-                      {status}
+                      {title}
                     </Typography>
-                  </Box>
 
-                  {isNew && (
-                    <Chip
-                      label="NEW"
-                      size="small"
+                    {/* Status Badge with Loading Indicator */}
+                    <Box
                       sx={{
-                        bgcolor: 'error.main',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        fontSize: '0.75rem',
-                      }}
-                    />
-                  )}
-                </Stack>
-                <IconButton size="small">
-                  <Iconify
-                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-                    width={20}
-                  />
-                </IconButton>
-              </Box>
-              {/* Collapsible Content */}
-              <Collapse in={isExpanded}>
-                <Divider />
-                <Box sx={{ p: 3 }}>
-                  <V4VideoSubmission
-                    submission={video}
-                    campaign={campaign}
-                    onUploadStateChange={(isUploading) => {
-                      setUploadingSubmissions((prev) => ({
-                        ...prev,
-                        [video.id]: isUploading,
-                      }));
-                    }}
-                    onUpdate={async () => {
-                      // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
-                      await mutate(
-                        (currentData) => {
-                          if (!currentData?.grouped) return currentData;
-                          return {
-                            ...currentData,
-                            grouped: {
-                              ...currentData.grouped,
-                              videos: currentData.grouped.videos.map((v) =>
-                                v.id === video.id
-                                  ? {
-                                      ...v,
-                                      status: 'PENDING_REVIEW',
-                                      // Keep video data to prevent UI flickering
-                                      video: v.video,
-                                      caption: v.caption,
-                                    }
-                                  : v
-                              ),
-                            },
-                          };
-                        },
-                        { revalidate: false }
-                      );
-
-                      setExpandedSections((prev) => ({ ...prev, [video.id]: false }));
-                    }}
-                  />
-                </Box>
-              </Collapse>
-            </Card>
-          );
-        })}
-        {/* Photo Submissions */}
-        {grouped?.photos?.map((photo, index) => {
-          const isExpanded = expandedSections[photo.id];
-          const isNew = isNewSubmission(photo);
-          const title = getSubmissionTitle(photo, index);
-          const status = getSubmissionStatus(photo);
-          const statusInfo = getSubmissionStatusInfo(status);
-
-          return (
-            <Card
-              key={photo.id}
-              sx={{
-                overflow: 'visible',
-                bgcolor: '#F5F5F5',
-                boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-                borderRadius: 2,
-                border: 'none',
-              }}
-            >
-              {/* Header */}
-              <Box
-                sx={{
-                  p: 2,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                  },
-                }}
-                onClick={() => handleToggleSection(photo.id)}
-              >
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontFamily:
-                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: 500,
-                      color: 'black',
-                    }}
-                  >
-                    {title}
-                  </Typography>
-
-                  {/* Status Badge with Loading Indicator */}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      px: 1.5,
-                      py: 0.5,
-                      fontWeight: 600,
-                      border: '1px solid',
-                      borderBottom: '3px solid',
-                      borderRadius: 0.8,
-                      bgcolor: 'white',
-                      whiteSpace: 'nowrap',
-                      color: statusInfo.color,
-                      borderColor: statusInfo.color,
-                      transition: 'all 0.3s ease-in-out', // Smooth color transitions
-                    }}
-                  >
-                    {status === 'UPLOADING...' && (
-                      <CircularProgress size={12} thickness={4} sx={{ color: statusInfo.color }} />
-                    )}
-                    <Typography
-                      variant="caption"
-                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        px: 1.5,
+                        py: 0.5,
                         fontWeight: 600,
-                        fontSize: '0.75rem',
-                        color: 'inherit',
+                        border: '1px solid',
+                        borderBottom: '3px solid',
+                        borderRadius: 0.8,
+                        bgcolor: 'white',
+                        whiteSpace: 'nowrap',
+                        color: statusInfo.color,
+                        borderColor: statusInfo.color,
+                        transition: 'all 0.3s ease-in-out', // Smooth color transitions
                       }}
                     >
-                      {status}
-                    </Typography>
-                  </Box>
+                      {status === 'UPLOADING...' && (
+                        <CircularProgress
+                          size={12}
+                          thickness={4}
+                          sx={{ color: statusInfo.color }}
+                        />
+                      )}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          color: 'inherit',
+                        }}
+                      >
+                        {status}
+                      </Typography>
+                    </Box>
 
-                  {isNew && (
-                    <Chip
-                      label="NEW"
-                      size="small"
-                      sx={{
-                        bgcolor: 'error.main',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        fontSize: '0.75rem',
+                    {isNew && (
+                      <Chip
+                        label="NEW"
+                        size="small"
+                        sx={{
+                          bgcolor: 'error.main',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    )}
+                  </Stack>
+                  <IconButton size="small">
+                    <Iconify
+                      icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                      width={20}
+                    />
+                  </IconButton>
+                </Box>
+                {/* Collapsible Content */}
+                <Collapse in={isExpanded}>
+                  <Divider />
+                  <Box sx={{ p: 3 }}>
+                    <V4VideoSubmission
+                      submission={video}
+                      campaign={campaign}
+                      onUploadStateChange={(isUploading) => {
+                        setUploadingSubmissions((prev) => ({
+                          ...prev,
+                          [video.id]: isUploading,
+                        }));
+                      }}
+                      onUpdate={async () => {
+                        // Optimistically update status to PENDING_REVIEW immediately (no revalidation)
+                        await mutate(
+                          (currentData) => {
+                            if (!currentData?.grouped) return currentData;
+                            return {
+                              ...currentData,
+                              grouped: {
+                                ...currentData.grouped,
+                                videos: currentData.grouped.videos.map((v) =>
+                                  v.id === video.id
+                                    ? {
+                                        ...v,
+                                        status: 'PENDING_REVIEW',
+                                        // Keep video data to prevent UI flickering
+                                        video: v.video,
+                                        caption: v.caption,
+                                      }
+                                    : v
+                                ),
+                              },
+                            };
+                          },
+                          { revalidate: false }
+                        );
+
+                        setExpandedSections((prev) => ({ ...prev, [video.id]: false }));
                       }}
                     />
-                  )}
-                </Stack>
-                <IconButton size="small">
-                  <Iconify
-                    icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
-                    width={20}
-                  />
-                </IconButton>
-              </Box>
+                  </Box>
+                </Collapse>
+              </Card>
+            );
+          })}
+          {/* Photo Submissions */}
+          {grouped?.photos?.map((photo, index) => {
+            const isExpanded = expandedSections[photo.id];
+            const isNew = isNewSubmission(photo);
+            const title = getSubmissionTitle(photo, index);
+            const status = getSubmissionStatus(photo);
+            const statusInfo = getSubmissionStatusInfo(status);
 
-              {/* Collapsible Content */}
-              <Collapse in={isExpanded}>
-                <Divider />
-                <Box sx={{ p: 3 }}>
-                  <V4PhotoSubmission
-                    submission={photo}
-                    campaign={campaign}
-                    onUpdate={async () => {
-                      await mutate(
-                        (currentData) => {
-                          console.log(
-                            '[Photo Submission] Before update - status:',
-                            currentData?.grouped?.photos?.find((p) => p.id === photo.id)?.status
-                          );
-
-                          if (!currentData?.grouped) return currentData;
-
-                          const updated = {
-                            ...currentData,
-                            grouped: {
-                              ...currentData.grouped,
-                              photos: currentData.grouped.photos.map((p) =>
-                                p.id === photo.id
-                                  ? {
-                                      ...p,
-                                      status: 'PENDING_REVIEW',
-                                      // Update individual photo statuses to PENDING
-                                      photos: p.photos?.map((photoItem) => ({
-                                        ...photoItem,
-                                        status: 'PENDING',
-                                      })),
-                                    }
-                                  : p
-                              ),
-                            },
-                          };
-
-                          console.log(
-                            '[Photo Submission] After update - status:',
-                            updated.grouped.photos.find((p) => p.id === photo.id)?.status
-                          );
-                          return updated;
-                        },
-                        { revalidate: false }
-                      );
-                      setExpandedSections((prev) => ({ ...prev, [photo.id]: false }));
-                    }}
-                  />
-                </Box>
-              </Collapse>
-            </Card>
-          );
-        })}
-        {/* Raw Footage Submissions */}
-        {grouped?.rawFootage?.map((rawFootage, index) => {
-          const isExpanded = expandedSections[rawFootage.id];
-          const isNew = isNewSubmission(rawFootage);
-          const title = getSubmissionTitle(rawFootage, index);
-          const status = getSubmissionStatus(rawFootage);
-          const statusInfo = getSubmissionStatusInfo(status);
-
-          return (
-            <Card
-              key={rawFootage.id}
-              sx={{
-                overflow: 'visible',
-                bgcolor: '#F5F5F5',
-                boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
-                borderRadius: 2,
-                border: 'none',
-              }}
-            >
-              {/* Header */}
-              <Box
+            return (
+              <Card
+                key={photo.id}
                 sx={{
-                  p: 2,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                  },
+                  overflow: 'visible',
+                  bgcolor: '#F5F5F5',
+                  boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+                  borderRadius: 2,
+                  border: 'none',
                 }}
-                onClick={() => handleToggleSection(rawFootage.id)}
               >
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontFamily:
-                        'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: 500,
-                      color: 'black',
-                    }}
-                  >
-                    {title}
-                  </Typography>
-
-                  {/* Status Badge with Loading Indicator */}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      px: 1.5,
-                      py: 0.5,
-                      fontWeight: 600,
-                      border: '1px solid',
-                      borderBottom: '3px solid',
-                      borderRadius: 0.8,
-                      bgcolor: 'white',
-                      whiteSpace: 'nowrap',
-                      color: statusInfo.color,
-                      borderColor: statusInfo.color,
-                      transition: 'all 0.3s ease-in-out', // Smooth color transitions
-                    }}
-                  >
-                    {status === 'UPLOADING...' && (
-                      <CircularProgress size={12} thickness={4} sx={{ color: statusInfo.color }} />
-                    )}
+                {/* Header */}
+                <Box
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    '&:hover': {
+                      bgcolor: 'transparent',
+                    },
+                  }}
+                  onClick={() => handleToggleSection(photo.id)}
+                >
+                  <Stack direction="row" alignItems="center" spacing={2}>
                     <Typography
-                      variant="caption"
+                      variant="h6"
                       sx={{
-                        fontWeight: 600,
-                        fontSize: '0.75rem',
-                        color: 'inherit',
+                        fontFamily:
+                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: 500,
+                        color: 'black',
                       }}
                     >
-                      {status}
+                      {title}
                     </Typography>
-                  </Box>
 
-                  {isNew && (
-                    <Chip
-                      label="NEW"
-                      size="small"
+                    {/* Status Badge with Loading Indicator */}
+                    <Box
                       sx={{
-                        bgcolor: 'error.main',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        fontSize: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        px: 1.5,
+                        py: 0.5,
+                        fontWeight: 600,
+                        border: '1px solid',
+                        borderBottom: '3px solid',
+                        borderRadius: 0.8,
+                        bgcolor: 'white',
+                        whiteSpace: 'nowrap',
+                        color: statusInfo.color,
+                        borderColor: statusInfo.color,
+                        transition: 'all 0.3s ease-in-out', // Smooth color transitions
+                      }}
+                    >
+                      {status === 'UPLOADING...' && (
+                        <CircularProgress
+                          size={12}
+                          thickness={4}
+                          sx={{ color: statusInfo.color }}
+                        />
+                      )}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          color: 'inherit',
+                        }}
+                      >
+                        {status}
+                      </Typography>
+                    </Box>
+
+                    {isNew && (
+                      <Chip
+                        label="NEW"
+                        size="small"
+                        sx={{
+                          bgcolor: 'error.main',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    )}
+                  </Stack>
+                  <IconButton size="small">
+                    <Iconify
+                      icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                      width={20}
+                    />
+                  </IconButton>
+                </Box>
+
+                {/* Collapsible Content */}
+                <Collapse in={isExpanded}>
+                  <Divider />
+                  <Box sx={{ p: 3 }}>
+                    <V4PhotoSubmission
+                      submission={photo}
+                      campaign={campaign}
+                      onUpdate={async () => {
+                        await mutate(
+                          (currentData) => {
+                            console.log(
+                              '[Photo Submission] Before update - status:',
+                              currentData?.grouped?.photos?.find((p) => p.id === photo.id)?.status
+                            );
+
+                            if (!currentData?.grouped) return currentData;
+
+                            const updated = {
+                              ...currentData,
+                              grouped: {
+                                ...currentData.grouped,
+                                photos: currentData.grouped.photos.map((p) =>
+                                  p.id === photo.id
+                                    ? {
+                                        ...p,
+                                        status: 'PENDING_REVIEW',
+                                        // Update individual photo statuses to PENDING
+                                        photos: p.photos?.map((photoItem) => ({
+                                          ...photoItem,
+                                          status: 'PENDING',
+                                        })),
+                                      }
+                                    : p
+                                ),
+                              },
+                            };
+
+                            console.log(
+                              '[Photo Submission] After update - status:',
+                              updated.grouped.photos.find((p) => p.id === photo.id)?.status
+                            );
+                            return updated;
+                          },
+                          { revalidate: false }
+                        );
+                        setExpandedSections((prev) => ({ ...prev, [photo.id]: false }));
                       }}
                     />
-                  )}
-                </Stack>
-                <IconButton size="small">
-                  <Iconify icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} width={20}/>
-                </IconButton>
-              </Box>
+                  </Box>
+                </Collapse>
+              </Card>
+            );
+          })}
+          {/* Raw Footage Submissions */}
+          {grouped?.rawFootage?.map((rawFootage, index) => {
+            const isExpanded = expandedSections[rawFootage.id];
+            const isNew = isNewSubmission(rawFootage);
+            const title = getSubmissionTitle(rawFootage, index);
+            const status = getSubmissionStatus(rawFootage);
+            const statusInfo = getSubmissionStatusInfo(status);
 
-              {/* Collapsible Content */}
-              <Collapse in={isExpanded}>
-                <Divider />
-                <Box sx={{ p: 3 }}>
-                  <V4RawFootageSubmission
-                    submission={rawFootage}
-                    onUpdate={async () => {
-                      await mutate(
-                        (currentData) => {
-                          console.log(
-                            '[Raw Footage] Before update - status:',
-                            currentData?.grouped?.rawFootage?.find((rf) => rf.id === rawFootage.id)
-                              ?.status
-                          );
+            return (
+              <Card
+                key={rawFootage.id}
+                sx={{
+                  overflow: 'visible',
+                  bgcolor: '#F5F5F5',
+                  boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
+                  borderRadius: 2,
+                  border: 'none',
+                }}
+              >
+                {/* Header */}
+                <Box
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    '&:hover': {
+                      bgcolor: 'transparent',
+                    },
+                  }}
+                  onClick={() => handleToggleSection(rawFootage.id)}
+                >
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontFamily:
+                          'Inter Display, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: 500,
+                        color: 'black',
+                      }}
+                    >
+                      {title}
+                    </Typography>
 
-                          if (!currentData?.grouped) return currentData;
+                    {/* Status Badge with Loading Indicator */}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        px: 1.5,
+                        py: 0.5,
+                        fontWeight: 600,
+                        border: '1px solid',
+                        borderBottom: '3px solid',
+                        borderRadius: 0.8,
+                        bgcolor: 'white',
+                        whiteSpace: 'nowrap',
+                        color: statusInfo.color,
+                        borderColor: statusInfo.color,
+                        transition: 'all 0.3s ease-in-out', // Smooth color transitions
+                      }}
+                    >
+                      {status === 'UPLOADING...' && (
+                        <CircularProgress
+                          size={12}
+                          thickness={4}
+                          sx={{ color: statusInfo.color }}
+                        />
+                      )}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          color: 'inherit',
+                        }}
+                      >
+                        {status}
+                      </Typography>
+                    </Box>
 
-                          const updated = {
-                            ...currentData,
-                            grouped: {
-                              ...currentData.grouped,
-                              rawFootage: currentData.grouped.rawFootage.map((rf) =>
-                                rf.id === rawFootage.id
-                                  ? {
-                                      ...rf,
-                                      status: 'PENDING_REVIEW',
-                                      // Update individual raw footage statuses to PENDING
-                                      rawFootages: rf.rawFootages?.map((footage) => ({
-                                        ...footage,
-                                        status: 'PENDING',
-                                      })),
-                                    }
-                                  : rf
-                              ),
-                            },
-                          };
-
-                          console.log(
-                            '[Raw Footage] After update - status:',
-                            updated.grouped.rawFootage.find((rf) => rf.id === rawFootage.id)?.status
-                          );
-                          return updated;
-                        },
-                        { revalidate: false }
-                      );
-                      setExpandedSections((prev) => ({ ...prev, [rawFootage.id]: false }));
-                    }}
-                  />
+                    {isNew && (
+                      <Chip
+                        label="NEW"
+                        size="small"
+                        sx={{
+                          bgcolor: 'error.main',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    )}
+                  </Stack>
+                  <IconButton size="small">
+                    <Iconify
+                      icon={isExpanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'}
+                      width={20}
+                    />
+                  </IconButton>
                 </Box>
-              </Collapse>
-            </Card>
-          );
-        })}
-      </Stack>
+
+                {/* Collapsible Content */}
+                <Collapse in={isExpanded}>
+                  <Divider />
+                  <Box sx={{ p: 3 }}>
+                    <V4RawFootageSubmission
+                      submission={rawFootage}
+                      onUpdate={async () => {
+                        await mutate(
+                          (currentData) => {
+                            console.log(
+                              '[Raw Footage] Before update - status:',
+                              currentData?.grouped?.rawFootage?.find(
+                                (rf) => rf.id === rawFootage.id
+                              )?.status
+                            );
+
+                            if (!currentData?.grouped) return currentData;
+
+                            const updated = {
+                              ...currentData,
+                              grouped: {
+                                ...currentData.grouped,
+                                rawFootage: currentData.grouped.rawFootage.map((rf) =>
+                                  rf.id === rawFootage.id
+                                    ? {
+                                        ...rf,
+                                        status: 'PENDING_REVIEW',
+                                        // Update individual raw footage statuses to PENDING
+                                        rawFootages: rf.rawFootages?.map((footage) => ({
+                                          ...footage,
+                                          status: 'PENDING',
+                                        })),
+                                      }
+                                    : rf
+                                ),
+                              },
+                            };
+
+                            console.log(
+                              '[Raw Footage] After update - status:',
+                              updated.grouped.rawFootage.find((rf) => rf.id === rawFootage.id)
+                                ?.status
+                            );
+                            return updated;
+                          },
+                          { revalidate: false }
+                        );
+                        setExpandedSections((prev) => ({ ...prev, [rawFootage.id]: false }));
+                      }}
+                    />
+                  </Box>
+                </Collapse>
+              </Card>
+            );
+          })}
+        </Stack>
+      )}
     </Box>
   );
 };
@@ -2577,6 +2344,13 @@ CampaignV4Activity.propTypes = {
       agreementUrl: PropTypes.string,
     }),
   }).isRequired,
+  mutateLogistic: PropTypes.func,
+  logistic: PropTypes.shape({
+    deliveryDetails: PropTypes.shape({
+      dietaryRestrictions: PropTypes.string,
+      address: PropTypes.string,
+    }),
+  }),
 };
 
 AgreementSubmission.propTypes = {
