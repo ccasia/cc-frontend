@@ -231,7 +231,7 @@ const UpdateObjectives = ({ campaign, campaignMutate }) => {
               },
             }}
           >
-            Save Changes
+            Save Campaign Objectives
           </LoadingButton>
         </Stack>
       </Box>

@@ -516,7 +516,7 @@ const UpdateAudience = ({ campaign, campaignMutate }) => {
               },
             }}
           >
-            Save Changes
+            Save Target Audience
           </LoadingButton>
         </Stack>
       </Box>
