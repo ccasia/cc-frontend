@@ -33,7 +33,6 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
-  LinearProgress,
   CircularProgress,
 } from '@mui/material';
 

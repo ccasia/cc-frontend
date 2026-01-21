@@ -21,12 +21,36 @@ import {
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 
+import { fetcher, endpoints } from 'src/utils/axios';
+
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import FirstDraft from './creator-stuff/submissions/firstDraft';
 import FinalDraft from './creator-stuff/submissions/finalDraft';
 import Posting from './creator-stuff/submissions/posting/posting';
+
+const getEffectiveSubmissionStatus = (submission) => submission?.displayStatus || submission?.status;
+
+const isNotStartedStatus = (status) => !status || status === 'NOT_STARTED';
+
+// Derive the creator-row overall status chip.
+// Rule:
+// - Prefer latest deliverable step in workflow: Posting > Final Draft > First Draft
+// - but if that preferred step exists and its effective status is NOT_STARTED, fall back to the next step.
+// - Agreement status is intentionally ignored for this chip.
+const deriveCreatorOverallStatus = ({ firstDraft, finalDraft, posting }) => {
+  const postingStatus = getEffectiveSubmissionStatus(posting);
+  if (posting && !isNotStartedStatus(postingStatus)) return postingStatus;
+
+  const finalDraftStatus = getEffectiveSubmissionStatus(finalDraft);
+  if (finalDraft && !isNotStartedStatus(finalDraftStatus)) return finalDraftStatus;
+
+  const firstDraftStatus = getEffectiveSubmissionStatus(firstDraft);
+  if (firstDraft && !isNotStartedStatus(firstDraftStatus)) return firstDraftStatus;
+
+  return 'NOT_STARTED';
+};
 
 const CampaignCreatorDeliverables = ({ campaign }) => {
   const theme = useTheme();
@@ -243,15 +267,10 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
             }
 
             try {
-              // Use legacy API endpoint
-              const response = await fetch(
-                `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
+              // Use the same submissions endpoint as detail views to ensure displayStatus is present
+              const data = await fetcher(
+                `${endpoints.submission.root}?creatorId=${creator.userId}&campaignId=${campaign.id}`
               );
-              if (!response.ok) {
-                statusMap[creator.userId] = 'NOT_STARTED';
-                return;
-              }
-              const data = await response.json();
 
               if (!data || data.length === 0) {
                 console.log(`⚠️ No submissions found for creator ${creator.userId}`);
@@ -282,9 +301,6 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
               }
 
               // Find submissions by type
-              const agreementSubmission = allSubmissions.find(
-                (item) => item.submissionType.type === 'AGREEMENT_FORM'
-              );
               const creatorFirstDraft = deliverableSubmissions.find(
                 (item) => item.submissionType.type === 'FIRST_DRAFT'
               );
@@ -295,23 +311,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                 (item) => item.submissionType.type === 'POSTING'
               );
 
-              // Determine the status based on the latest stage in the workflow
-              // Priority: Posting > Final Draft > First Draft > Agreement
-              if (creatorPosting) {
-                statusMap[creator.userId] = creatorPosting.status;
-              } else if (creatorFinalDraft) {
-                statusMap[creator.userId] = creatorFinalDraft.status;
-              } else if (creatorFirstDraft) {
-                statusMap[creator.userId] = creatorFirstDraft.status;
-              } else if (agreementSubmission) {
-                // If only agreement exists, use its status
-                // This ensures creators with approved agreements show up
-                const agreementStatus = agreementSubmission.status;
-                statusMap[creator.userId] =
-                  agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
-              } else {
-                statusMap[creator.userId] = 'NOT_STARTED';
-              }
+              statusMap[creator.userId] = deriveCreatorOverallStatus({
+                firstDraft: creatorFirstDraft,
+                finalDraft: creatorFinalDraft,
+                posting: creatorPosting,
+              });
             } catch (error) {
               console.error(`Error fetching status for creator ${creator.userId}:`, error);
               statusMap[creator.userId] = 'NOT_STARTED';
@@ -361,9 +365,6 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         }
 
         // Find submissions by type
-        const agreementSubmission = allSubmissions.find(
-          (item) => item.submissionType.type === 'AGREEMENT_FORM'
-        );
         const firstDraftSubmissionA = deliverableSubmissions.find(
           (item) => item.submissionType.type === 'FIRST_DRAFT'
         );
@@ -374,22 +375,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
           (item) => item.submissionType.type === 'POSTING'
         );
 
-        // Determine the status based on the latest stage in the workflow
-        // Priority: Posting > Final Draft > First Draft > Agreement
-        if (postingSubmissionC) {
-          newStatuses[selectedCreator.userId] = postingSubmissionC.status;
-        } else if (finalDraftSubmissionB) {
-          newStatuses[selectedCreator.userId] = finalDraftSubmissionB.status;
-        } else if (firstDraftSubmissionA) {
-          newStatuses[selectedCreator.userId] = firstDraftSubmissionA.status;
-        } else if (agreementSubmission) {
-          // If only agreement exists, use its status
-          const agreementStatus = agreementSubmission.status;
-          newStatuses[selectedCreator.userId] =
-            agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
-        } else {
-          newStatuses[selectedCreator.userId] = 'NOT_STARTED';
-        }
+        newStatuses[selectedCreator.userId] = deriveCreatorOverallStatus({
+          firstDraft: firstDraftSubmissionA,
+          finalDraft: finalDraftSubmissionB,
+          posting: postingSubmissionC,
+        });
 
         return newStatuses;
       });
@@ -425,14 +415,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
               (item) => item.submissionType.type === 'POSTING'
             );
 
-            // Determine the status based on the latest stage in the workflow
-            if (postingSubmissionC) {
-              statusMap[selectedCreator.userId] = postingSubmissionC.status;
-            } else if (finalDraftSubmissionB) {
-              statusMap[selectedCreator.userId] = finalDraftSubmissionB.status;
-            } else if (firstDraftSubmissionA) {
-              statusMap[selectedCreator.userId] = firstDraftSubmissionA.status;
-            }
+            statusMap[selectedCreator.userId] = deriveCreatorOverallStatus({
+              firstDraft: firstDraftSubmissionA,
+              finalDraft: finalDraftSubmissionB,
+              posting: postingSubmissionC,
+            });
           }
 
           setCreatorStatuses(statusMap);
@@ -457,107 +444,6 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   // Toggle sort direction
   const handleToggleSort = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-  };
-
-  // Manual refresh function for creator statuses
-  const handleRefreshStatuses = async () => {
-    if (!shortlistedCreators.length || !campaign?.id) return;
-
-    setLoadingStatuses(true);
-    const statusMap = {};
-
-    try {
-      // Process all creators in parallel
-      await Promise.all(
-        shortlistedCreators.map(async (creator) => {
-          // Safety check to ensure creator has required data
-          if (!creator?.userId) {
-            console.warn('⚠️ Skipping creator without userId:', creator);
-            return;
-          }
-
-          try {
-            // Use legacy API endpoint for admin-origin campaigns
-            const response = await fetch(
-              `/api/submissions?userId=${creator.userId}&campaignId=${campaign.id}`
-            );
-            if (!response.ok) {
-              statusMap[creator.userId] = 'NOT_STARTED';
-              return;
-            }
-            const data = await response.json();
-
-            if (!data || data.length === 0) {
-              statusMap[creator.userId] = 'NOT_STARTED';
-              return;
-            }
-
-            // Include all submission types to determine creator status
-            const allSubmissions = data.filter(
-              (submission) =>
-                submission.submissionType?.type === 'AGREEMENT_FORM' ||
-                submission.submissionType?.type === 'FIRST_DRAFT' ||
-                submission.submissionType?.type === 'FINAL_DRAFT' ||
-                submission.submissionType?.type === 'POSTING'
-            );
-
-            // Filter deliverable submissions (excluding agreement for status determination)
-            const deliverableSubmissions = data.filter(
-              (submission) =>
-                submission.submissionType?.type === 'FIRST_DRAFT' ||
-                submission.submissionType?.type === 'FINAL_DRAFT' ||
-                submission.submissionType?.type === 'POSTING'
-            );
-
-            if (allSubmissions.length === 0) {
-              statusMap[creator.userId] = 'NOT_STARTED';
-              return;
-            }
-
-            // Find submissions by type
-            const agreementSubmission = allSubmissions.find(
-              (item) => item.submissionType.type === 'AGREEMENT_FORM'
-            );
-            const refreshFirstDraft = deliverableSubmissions.find(
-              (item) => item.submissionType.type === 'FIRST_DRAFT'
-            );
-            const refreshFinalDraft = deliverableSubmissions.find(
-              (item) => item.submissionType.type === 'FINAL_DRAFT'
-            );
-            const refreshPosting = deliverableSubmissions.find(
-              (item) => item.submissionType.type === 'POSTING'
-            );
-
-            // Determine the status based on the latest stage in the workflow
-            // Priority: Posting > Final Draft > First Draft > Agreement
-            // For campaigns, use status if available
-            if (refreshPosting) {
-              statusMap[creator.userId] = refreshPosting.status;
-            } else if (refreshFinalDraft) {
-              statusMap[creator.userId] = refreshFinalDraft.status;
-            } else if (refreshFirstDraft) {
-              statusMap[creator.userId] = refreshFirstDraft.status;
-            } else if (agreementSubmission) {
-              // If only agreement exists, use its status
-              const agreementStatus = agreementSubmission.status;
-              statusMap[creator.userId] =
-                agreementStatus === 'APPROVED' ? 'AGREEMENT_APPROVED' : agreementStatus;
-            } else {
-              statusMap[creator.userId] = 'NOT_STARTED';
-            }
-          } catch (error) {
-            console.error(`Error fetching status for creator ${creator.userId}:`, error);
-            statusMap[creator.userId] = 'NOT_STARTED';
-          }
-        })
-      );
-
-      setCreatorStatuses(statusMap);
-    } catch (error) {
-      console.error('Error refreshing creator statuses:', error);
-    } finally {
-      setLoadingStatuses(false);
-    }
   };
 
   // Set first creator as selected by default, or use target creator from localStorage

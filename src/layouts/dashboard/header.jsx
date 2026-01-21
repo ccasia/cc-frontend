@@ -5,8 +5,8 @@ import Stack from '@mui/material/Stack';
 import Toolbar from '@mui/material/Toolbar';
 import { grey } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
-import { AppBar, Badge, Box, Chip, Divider, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
+import { Box, Chip, AppBar, Divider, Typography } from '@mui/material';
 
 import { useOffSetTop } from 'src/hooks/use-off-set-top';
 import { useResponsive } from 'src/hooks/use-responsive';

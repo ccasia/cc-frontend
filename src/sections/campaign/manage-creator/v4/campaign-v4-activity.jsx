@@ -32,7 +32,6 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
@@ -2344,6 +2343,13 @@ CampaignV4Activity.propTypes = {
       agreementUrl: PropTypes.string,
     }),
   }).isRequired,
+  mutateLogistic: PropTypes.func,
+  logistic: PropTypes.shape({
+    deliveryDetails: PropTypes.shape({
+      dietaryRestrictions: PropTypes.string,
+      address: PropTypes.string,
+    }),
+  }),
 };
 
 AgreementSubmission.propTypes = {
