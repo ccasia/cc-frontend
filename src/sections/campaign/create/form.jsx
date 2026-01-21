@@ -62,7 +62,7 @@ const steps = [
   { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
   { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
   { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
-  { title: 'Finalise Campaign', logo: '🖇📝', color: '#FF3500' },
+  { title: 'Finalise Campaign', logo: '📝', color: '#FF3500' },
 ];
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
