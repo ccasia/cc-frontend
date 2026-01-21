@@ -11,6 +11,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
 
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/creator-logistics-view';
@@ -19,7 +20,6 @@ import ConfirmReservationModal from 'src/sections/logistics/dialogs/confirm-rese
 import CampaignInfo from './campaign-info';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignV4Activity from './v4/campaign-v4-activity';
-import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
 
 const CampaignDetailItem = ({ campaign, mutate }) => {
   const router = useRouter();

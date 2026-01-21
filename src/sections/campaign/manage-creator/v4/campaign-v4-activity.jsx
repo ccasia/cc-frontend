@@ -2344,6 +2344,13 @@ CampaignV4Activity.propTypes = {
       agreementUrl: PropTypes.string,
     }),
   }).isRequired,
+  mutateLogistic: PropTypes.func,
+  logistic: PropTypes.shape({
+    deliveryDetails: PropTypes.shape({
+      dietaryRestrictions: PropTypes.string,
+      address: PropTypes.string,
+    }),
+  }),
 };
 
 AgreementSubmission.propTypes = {
