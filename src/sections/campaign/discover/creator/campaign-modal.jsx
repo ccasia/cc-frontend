@@ -179,6 +179,12 @@ const CampaignModal = ({
       'cmj21yl0102ghpc01xmy9zkwa',
       'cm3pyp3vm006qm9m8qm1ep02d',
       'cm4ey6g9401w4trd2ip0zf1et',
+      'cmh0bsyrv0bftp301prsp7y2k',
+      'cm857tk4w03rhmr01r0pjlxkq',
+      'cmang4buw01afn7010m7uzuni',
+      'cmbvekkhd00sxqh01ittftmd4',
+      'cmdgbxxdx01l7mc01xz9bx3v8',
+      'cm5q6r86y007p11jxkphbe7ht',
     ];
     const isTargetUser = targetUserIds.includes(user?.id);
     
@@ -726,6 +732,12 @@ const CampaignModal = ({
                         'cmj21yl0102ghpc01xmy9zkwa',
                         'cm3pyp3vm006qm9m8qm1ep02d',
                         'cm4ey6g9401w4trd2ip0zf1et',
+                        'cmh0bsyrv0bftp301prsp7y2k',
+                        'cm857tk4w03rhmr01r0pjlxkq',
+                        'cmang4buw01afn7010m7uzuni',
+                        'cmbvekkhd00sxqh01ittftmd4',
+                        'cmdgbxxdx01l7mc01xz9bx3v8',
+                        'cm5q6r86y007p11jxkphbe7ht',
                       ];
                       const isTargetUser = targetUserIds.includes(user?.id);
                       
@@ -819,6 +831,12 @@ const CampaignModal = ({
                 'cmj21yl0102ghpc01xmy9zkwa',
                 'cm3pyp3vm006qm9m8qm1ep02d',
                 'cm4ey6g9401w4trd2ip0zf1et',
+                'cmh0bsyrv0bftp301prsp7y2k',
+                'cm857tk4w03rhmr01r0pjlxkq',
+                'cmang4buw01afn7010m7uzuni',
+                'cmbvekkhd00sxqh01ittftmd4',
+                'cmdgbxxdx01l7mc01xz9bx3v8',
+                'cm5q6r86y007p11jxkphbe7ht',
               ];
               const isTargetUser = targetUserIds.includes(user?.id);
               
