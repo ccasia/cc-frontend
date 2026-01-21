@@ -1376,7 +1376,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
               },
             }}
           >
-            Save Changes
+            Save Logistics
           </LoadingButton>
         </Stack>
       </Box>

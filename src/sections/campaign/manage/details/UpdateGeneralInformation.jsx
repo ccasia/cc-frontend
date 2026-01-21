@@ -343,7 +343,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
               },
             }}
           >
-            Save Changes
+            Save General Information
           </LoadingButton>
         </Stack>
       </Box>
