@@ -246,6 +246,7 @@ export const endpoints = {
     editCampaignRequirements: '/api/campaign/editCampaignRequirements',
     editCampaignLogistics: '/api/campaign/editCampaignLogistics',
     editCampaignFinalise: '/api/campaign/editCampaignFinalise',
+    editCampaignAdditionalDetails: '/api/campaign/editCampaignAdditionalDetails',
     editCampaignDosAndDonts: '/api/campaign/editCampaignDosandDonts',
     editCampaignImages: (id) => `/api/campaign/editCampaignImages/${id}`,
     editCampaignAttachments: (id) => `/api/campaign/editCampaignAttachments/${id}`,
