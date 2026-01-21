@@ -38,6 +38,7 @@ import UpdateAudience from '../UpdateAudience';
 import UpdateLogistics from '../UpdateLogistics';
 import UpdateObjectives from '../UpdateObjectives';
 import UpdateGeneralInformation from '../UpdateGeneralInformation';
+import UpdateFinaliseCampaign from '../UpdateFinaliseCampaign';
 
 // Tab configuration
 const TABS = [
@@ -45,6 +46,7 @@ const TABS = [
   { label: 'Campaign Objectives', value: 'objective' },
   { label: 'Target Audience', value: 'audience' },
   { label: 'Logistics', value: 'logistics' },
+  { label: 'Finalise', value: 'finalise' },
 ];
 
 const CampaignDetailManageViewV2 = ({ id }) => {
@@ -158,7 +160,8 @@ const CampaignDetailManageViewV2 = ({ id }) => {
     general: <UpdateGeneralInformation campaign={campaign} campaignMutate={campaignMutate} />,
     objective: <UpdateObjectives campaign={campaign} campaignMutate={campaignMutate} />,
     audience: <UpdateAudience campaign={campaign} campaignMutate={campaignMutate} />,
-    logistics: <UpdateLogistics campaign={campaign} campaignMutate={campaignMutate} />
+    logistics: <UpdateLogistics campaign={campaign} campaignMutate={campaignMutate} />,
+    finalise: <UpdateFinaliseCampaign campaign={campaign} campaignMutate={campaignMutate} />
   };
 
   console.log('Campaign object: ', campaign)
