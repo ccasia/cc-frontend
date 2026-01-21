@@ -1,15 +1,15 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
 
-import { Box, Badge, Stack, Button, Divider, Typography, Link } from '@mui/material';
+import { Box, Link, Badge, Stack, Button, Divider, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
 import LogisticsStepper from '../logistics-stepper';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
-import AssignLogisticDialog, { AdminAssignLogisticDialog } from '../dialogs/assign-logistic-dialog';
 import ScheduleDeliveryDialog from '../dialogs/schedule-delivery-dialog';
 import AdminEditLogisticDialog from '../dialogs/admin-edit-logistic-dialog';
+import AssignLogisticDialog, { AdminAssignLogisticDialog } from '../dialogs/assign-logistic-dialog';
 
 export default function ProductDeliveryDrawer({
   onClose,

@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 import { useMemo, useState, useEffect } from 'react';
 import {
   format,
+  isValid,
   parseISO,
   isSameDay,
-  isValid,
   addMonths,
   subMonths,
   endOfWeek,
@@ -17,7 +17,7 @@ import {
 
 import { LoadingButton } from '@mui/lab';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider, DesktopTimePicker } from '@mui/x-date-pickers';
+import { DesktopTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import {
   Box,
   Grid,
@@ -26,19 +26,19 @@ import {
   Avatar,
   Dialog,
   Tooltip,
+  Divider,
   Typography,
   IconButton,
   createTheme,
   ThemeProvider,
   CircularProgress,
-  Divider,
 } from '@mui/material';
 
 import axiosInstance, { fetcher } from 'src/utils/axios';
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import { formatReservationSlot } from 'src/utils/reservation-time';
 
 const parseLiteralToLocal = (isoStr) => {
   if (!isoStr) return null;

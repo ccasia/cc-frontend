@@ -58,14 +58,27 @@ const PackageHistoryList = ({ dataFiltered, onRefresh }) => {
   }, [onRefresh]);
 
   return (
-    <Card>
-      <TableContainer sx={{ maxHeight: 500 }}>
+    <Card sx={{ border: 'none', boxShadow: 'none' }}>
+      <TableContainer sx={{ overflow: 'unset' }}>
         <Scrollbar>
-          <Table>
+          <Table sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
-                {TABLE_HEAD.map((item) => (
-                  <TableCell key={item.id} align="left">
+                {TABLE_HEAD.map((item, index) => (
+                  <TableCell
+                    key={item.id}
+                    align="left"
+                    sx={{
+                      bgcolor: '#f5f5f5',
+                      color: '#221f20',
+                      fontWeight: 600,
+                      py: 1.5,
+                      whiteSpace: 'nowrap',
+                      borderBottom: 'none',
+                      ...(index === 0 && { borderRadius: '10px 0 0 10px' }),
+                      ...(index === TABLE_HEAD.length - 1 && { borderRadius: '0 10px 10px 0' }),
+                    }}
+                  >
                     {item.label}
                   </TableCell>
                 ))}

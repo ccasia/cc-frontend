@@ -4,8 +4,8 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import {
   Box,
   Stack,
-  Switch,
   Radio,
+  Switch,
   Button,
   MenuItem,
   TextField,
@@ -120,7 +120,7 @@ const CampaignLogistics = () => {
         setting a reservation for a restaurant
       </Typography>
 
-      <Stack spacing={2}>
+      <Stack spacing={2} mb={10}>
         <Stack spacing={1}>
           <FormLabel
             sx={{

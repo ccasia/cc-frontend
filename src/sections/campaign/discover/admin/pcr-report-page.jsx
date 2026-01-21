@@ -1,19 +1,19 @@
-import PropTypes from 'prop-types';
-import { useMemo, useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
-import { format } from 'date-fns';
-import { enqueueSnackbar } from 'notistack';
-import html2canvas from 'html2canvas';
 // eslint-disable-next-line new-cap
 import { jsPDF } from 'jspdf';
+import { format } from 'date-fns';
+import PropTypes from 'prop-types';
+import html2canvas from 'html2canvas';
+import { enqueueSnackbar } from 'notistack';
+import EmojiPicker from 'emoji-picker-react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 
-import { Box, Grid, Button, Typography, Avatar, Link, TextField, CircularProgress, Alert, IconButton, Popover, Snackbar, InputAdornment } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import SendIcon from '@mui/icons-material/Send';
-import EmojiPicker from 'emoji-picker-react';
+import { Box, Grid, Link, Button, Avatar, Popover, Snackbar, TextField, Typography, IconButton, InputAdornment, CircularProgress } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -3065,7 +3065,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     }
                   }}
                   onChange={(e) => {
-                    let value = e.target.value;
+                    let {value} = e.target;
                     // Remove spaces
                     value = value.replace(/\s/g, '');
                     // Ensure it always starts with @
@@ -3280,7 +3280,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     }
                   }}
                   onChange={(e) => {
-                    let value = e.target.value;
+                    let {value} = e.target;
                     // Remove spaces
                     value = value.replace(/\s/g, '');
                     // Ensure it always starts with @

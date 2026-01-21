@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
-import { Box, Stack, Button, Dialog, Typography, DialogContent } from '@mui/material';
+
 import { LoadingButton } from '@mui/lab';
+import { Box, Stack, Button, Dialog, Typography, DialogContent } from '@mui/material';
 
 export default function ConfirmReservationModal({ open, onClose, onConfirm }) {
   return (

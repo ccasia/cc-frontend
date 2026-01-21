@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 
 import { normalizeUrl } from 'src/utils/normalizeUrl';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';

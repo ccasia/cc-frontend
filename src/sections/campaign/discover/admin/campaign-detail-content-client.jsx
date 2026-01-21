@@ -2,11 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 
-import { Box, Link, Chip, Stack, Avatar, Divider, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { Box, Link, Chip, Stack, Avatar, Divider, Typography, useMediaQuery } from '@mui/material';
 
 import { normalizeUrl } from 'src/utils/normalizeUrl';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
