@@ -37,6 +37,8 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 import UpdateAudience from '../UpdateAudience';
 import UpdateLogistics from '../UpdateLogistics';
 import UpdateObjectives from '../UpdateObjectives';
+import UpdateAdditionalOne from '../UpdateAdditionalOne';
+import UpdateAdditionalTwo from '../UpdateAdditionalTwo';
 import UpdateGeneralInformation from '../UpdateGeneralInformation';
 import UpdateFinaliseCampaign from '../UpdateFinaliseCampaign';
 
@@ -47,6 +49,8 @@ const TABS = [
   { label: 'Target Audience', value: 'audience' },
   { label: 'Logistics', value: 'logistics' },
   { label: 'Finalise', value: 'finalise' },
+  { label: 'Additional Fields 1', value: 'additional1' },
+  { label: 'Additional Fields 2', value: 'additional2' },
 ];
 
 const CampaignDetailManageViewV2 = ({ id }) => {
@@ -161,7 +165,9 @@ const CampaignDetailManageViewV2 = ({ id }) => {
     objective: <UpdateObjectives campaign={campaign} campaignMutate={campaignMutate} />,
     audience: <UpdateAudience campaign={campaign} campaignMutate={campaignMutate} />,
     logistics: <UpdateLogistics campaign={campaign} campaignMutate={campaignMutate} />,
-    finalise: <UpdateFinaliseCampaign campaign={campaign} campaignMutate={campaignMutate} />
+    finalise: <UpdateFinaliseCampaign campaign={campaign} campaignMutate={campaignMutate} />,
+    additional1: <UpdateAdditionalOne campaign={campaign} campaignMutate={campaignMutate} />,
+    additional2: <UpdateAdditionalTwo campaign={campaign} campaignMutate={campaignMutate} />
   };
 
   console.log('Campaign object: ', campaign)
@@ -345,6 +351,14 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                   onClick={() => handleChangeStatus('ACTIVE')}
                   loading={loadingButton.value}
                   disabled={isDisabled}
+                  sx={{ 
+                    bgcolor: 'primary', 
+                    boxShadow: '0px -3px 0px 0px #00000073 inset',
+                    '&:hover': {
+                      bgcolor: 'primary',
+                      boxShadow: '0px -3px 0px 0px #00000073 inset',
+                    },
+                  }}
                 >
                   Publish
                 </LoadingButton>
