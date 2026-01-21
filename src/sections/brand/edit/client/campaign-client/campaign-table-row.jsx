@@ -2,7 +2,7 @@ import React from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 
-import { Stack, Button, TableRow, TableCell } from '@mui/material';
+import { Box, Stack, Button, Avatar, TableRow, TableCell, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -10,6 +10,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 
 const dictionary = {
@@ -79,8 +80,13 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
     rawFootage,
     photos,
     ads,
-    campaignBrief: { industries, startDate },
+    campaignBrief,
   } = row;
+
+  // Safely access campaignBrief properties
+  const industries = campaignBrief?.industries || null;
+  const startDate = campaignBrief?.startDate || null;
+  const campaignImage = campaignBrief?.images?.[0] || null;
 
   const confirm = useBoolean();
   const router = useRouter();
@@ -91,42 +97,100 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, 
         key={id}
         hover
         selected={selected}
-        sx={{ cursor: 'pointer' }}
+        sx={{
+          cursor: 'pointer',
+          '&:hover': { bgcolor: 'action.hover' },
+          '& td': { borderBottom: '1px solid #EBEBEB' },
+        }}
         onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(id))}
       >
         <TableCell>
-          <Label>
-            <HighlightText text={name} search={filter} />
-          </Label>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar
+              src={campaignImage}
+              variant="rounded"
+              sx={{
+                width: 48,
+                height: 48,
+                mr: 2,
+                borderRadius: 1,
+                bgcolor: '#f5f5f5',
+                flexShrink: 0,
+              }}
+            >
+              <Iconify icon="solar:gallery-bold" width={24} sx={{ color: '#C4CDD5' }} />
+            </Avatar>
+            <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: 180 }}>
+              <HighlightText text={name} search={filter} />
+            </Typography>
+          </Box>
         </TableCell>
         <TableCell>
-          <Label>{campaignId || 'None'}</Label>
+          <Typography variant="body2" color="text.secondary">
+            {campaignId || '-'}
+          </Typography>
         </TableCell>
         <TableCell>
-          <Label>{campaignCredits || 0}</Label>
+          <Typography variant="body2" fontWeight={600} color="primary.main">
+            {campaignCredits || 0}
+          </Typography>
         </TableCell>
 
         <TableCell>
-          <Label>{industries || 'None'}</Label>
+          <Typography variant="body2" color="text.secondary" noWrap>
+            {industries || '-'}
+          </Typography>
         </TableCell>
 
         <TableCell>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
             {[
-              { label: 'UGC Videos', value: true },
-              { label: 'Raw Footage', value: rawFootage },
+              { label: 'UGC', value: true },
+              { label: 'Raw', value: rawFootage },
               { label: 'Photos', value: photos },
               { label: 'Ads', value: ads },
-            ].map((deliverable) => deliverable.value && <Label>{deliverable.label}</Label>)}
+            ].map(
+              (deliverable) =>
+                deliverable.value && (
+                  <Label key={deliverable.label} variant="soft" color="default" sx={{ fontSize: 11 }}>
+                    {deliverable.label}
+                  </Label>
+                )
+            )}
           </Stack>
         </TableCell>
 
         <TableCell>
-          <Label>{dayjs(startDate).format('LL') || 'None'}</Label>
+          <Typography variant="body2" color="text.secondary">
+            {dayjs(startDate).format('MMM D, YYYY') || '-'}
+          </Typography>
         </TableCell>
 
         <TableCell>
-          <Label>{status || 'None'}</Label>
+          <Typography
+            variant="caption"
+            sx={{
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              display: 'inline-block',
+              px: 1.5,
+              py: 0.5,
+              fontSize: '0.7rem',
+              border: '1px solid',
+              borderBottom: '3px solid',
+              borderRadius: 0.8,
+              bgcolor: 'white',
+              ...(status === 'ACTIVE' && { color: '#1ABF66', borderColor: '#1ABF66' }),
+              ...(status === 'COMPLETED' && { color: '#1340FF', borderColor: '#1340FF' }),
+              ...(status === 'DRAFT' && { color: '#8E8E93', borderColor: '#C4CDD5' }),
+              ...(!['ACTIVE', 'COMPLETED', 'DRAFT'].includes(status) && {
+                color: '#FFA902',
+                borderColor: '#FFA902',
+              }),
+            }}
+          >
+            {status || '-'}
+          </Typography>
         </TableCell>
       </TableRow>
 

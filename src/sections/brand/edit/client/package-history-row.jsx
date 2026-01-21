@@ -3,8 +3,9 @@ import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
 
 import EditIcon from '@mui/icons-material/Edit';
-import { Chip, Tooltip, TableRow, TableCell, IconButton } from '@mui/material';
+import { Tooltip, TableRow, TableCell, IconButton, Typography } from '@mui/material';
 
+import Iconify from 'src/components/iconify';
 import Label from 'src/components/label';
 
 import PackageEditDialog from './package-edit-dialog';
@@ -57,47 +58,90 @@ const PackageHistoryRow = ({ row, selected, onEditSuccess }) => {
 
   return (
     <>
-      <TableRow hover selected={selected}>
+      <TableRow
+        hover
+        selected={selected}
+        sx={{
+          '&:hover': { bgcolor: 'action.hover' },
+          '& td': { borderBottom: '1px solid #EBEBEB' },
+        }}
+      >
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          <Label>{subscriptionId || 'None'}</Label>
+          <Typography variant="body2" fontWeight={500}>
+            {subscriptionId || 'None'}
+          </Typography>
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          <Label>{packageItem?.name || customPackage?.customName}</Label>
+          <Typography variant="body2" fontWeight={500}>
+            {packageItem?.name || customPackage?.customName}
+          </Typography>
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          <Label>
+          <Typography variant="body2" color="text.secondary">
             {currency === 'MYR'
               ? `RM ${new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2 }).format(packagePrice)}`
               : `$ ${new Intl.NumberFormat('en-SG', { minimumFractionDigits: 2 }).format(packagePrice)}`}
-          </Label>
+          </Typography>
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-          <Label>{creditsUsed || 'None'}</Label>
+          <Typography variant="body2" color="text.secondary">
+            {creditsUsed || 0}
+          </Typography>
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-          <Label> {totalCredits - creditsUsed || 'None'}</Label>
+          <Typography variant="body2" fontWeight={600} color="primary.main">
+            {totalCredits - creditsUsed || 0}
+          </Typography>
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-          <Label>{validity}</Label>
+          <Typography variant="body2" color="text.secondary">
+            {validity}
+          </Typography>
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'left' }}>
-          <Chip
-            label={dictionary[status]}
-            variant="outlined"
-            color={status === 'ACTIVE' ? 'success' : 'error'}
-          />
+          <Typography
+            variant="caption"
+            sx={{
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              display: 'inline-block',
+              px: 1.5,
+              py: 0.5,
+              fontSize: '0.7rem',
+              border: '1px solid',
+              borderBottom: '3px solid',
+              borderRadius: 0.8,
+              bgcolor: 'white',
+              color: status === 'ACTIVE' ? '#1ABF66' : '#D4321C',
+              borderColor: status === 'ACTIVE' ? '#1ABF66' : '#D4321C',
+            }}
+          >
+            {dictionary[status]}
+          </Typography>
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
           <Tooltip title="Edit Package">
-            <IconButton size="small" color="primary" onClick={handleOpenEditDialog}>
-              <EditIcon fontSize="small" />
+            <IconButton
+              size="small"
+              onClick={handleOpenEditDialog}
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: '8px',
+                border: '1px solid #E7E7E7',
+                boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                bgcolor: '#FFFFFF',
+                '&:hover': { bgcolor: '#F5F5F5' },
+              }}
+            >
+              <Iconify icon="eva:edit-fill" width={18} />
             </IconButton>
           </Tooltip>
         </TableCell>
