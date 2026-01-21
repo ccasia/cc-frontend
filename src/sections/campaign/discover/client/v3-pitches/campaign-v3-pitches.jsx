@@ -26,6 +26,7 @@ import {
   DialogContent,
   TableContainer,
   CircularProgress,
+  InputAdornment,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -59,6 +60,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const [sortColumn, setSortColumn] = useState('name'); // 'name', 'followers', 'date', 'type', 'status'
   const [sortDirection, setSortDirection] = useState('asc');
+  const [searchQuery, setSearchQuery] = useState('');
   const [addCreatorOpen, setAddCreatorOpen] = useState(false);
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
@@ -219,7 +221,15 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       );
     }
 
-    // Search functionality removed (search state variable removed)
+    // Search by name or email
+    if (searchQuery?.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      filtered = filtered?.filter((pitch) => {
+        const name = (pitch.user?.name || '').toLowerCase();
+        const email = (pitch.user?.email || '').toLowerCase();
+        return name.includes(query) || email.includes(query);
+      });
+    }
 
     return [...(filtered || [])].sort((a, b) => {
       let comparison = 0;
@@ -272,7 +282,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [mergedPitchesAndShortlisted, selectedFilter, sortColumn, sortDirection, campaign]);
+  }, [mergedPitchesAndShortlisted, selectedFilter, sortColumn, sortDirection, campaign, searchQuery]);
 
   // Reopen modal when returning from media kit if state indicates
   useEffect(() => {
@@ -419,69 +429,119 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   return (
     <Box sx={{ overflowX: 'auto' }}>
       <Stack direction="column" spacing={2}>
-        <Button
-          onClick={handleToggleSort}
-          endIcon={
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              {sortDirection === 'asc' ? (
-                <Stack direction="column" alignItems="center" spacing={0}>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                  >
-                    A
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                  >
-                    Z
-                  </Typography>
-                </Stack>
-              ) : (
-                <Stack direction="column" alignItems="center" spacing={0}>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                  >
-                    Z
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                  >
-                    A
-                  </Typography>
-                </Stack>
-              )}
-              <Iconify
-                icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
-                width={12}
-              />
-            </Stack>
-          }
-          sx={{
-            px: 1.5,
-            py: 0.75,
-            height: '42px',
-            color: '#637381',
-            fontWeight: 600,
-            fontSize: '0.875rem',
-            backgroundColor: 'transparent',
-            border: 'none',
-            borderRadius: 1,
-            textTransform: 'none',
-            whiteSpace: 'nowrap',
-            boxShadow: 'none',
-            '&:hover': {
+        <Stack direction="row" spacing={1} alignItems="center">
+          <TextField
+            placeholder="Search by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            sx={{
+              minWidth: { xs: '100%', sm: 280 },
+              '& .MuiOutlinedInput-root': {
+                height: '42px',
+                px: 1.5,
+                py: 2.5,
+                backgroundColor: 'transparent',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                '& fieldset': {
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  borderRadius: 1,
+                },
+                '&:hover fieldset': {
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                },
+                '&.Mui-focused fieldset': {
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                },
+              },
+              '& .MuiInputBase-input': {
+                color: '#637381',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                '&::placeholder': {
+                  color: '#637381',
+                  opacity: 1,
+                },
+              },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify
+                    icon="eva:search-fill"
+                    sx={{ color: '#637381', width: 18, height: 18 }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button
+            onClick={handleToggleSort}
+            endIcon={
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                {sortDirection === 'asc' ? (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Stack direction="column" alignItems="center" spacing={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                    >
+                      Z
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                    >
+                      A
+                    </Typography>
+                  </Stack>
+                )}
+                <Iconify
+                  icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
+                  width={12}
+                />
+              </Stack>
+            }
+            sx={{
+              px: 1.5,
+              py: 0.75,
+              height: '42px',
+              color: '#637381',
+              fontWeight: 600,
+              fontSize: '0.875rem',
               backgroundColor: 'transparent',
-              color: '#221f20',
-            },
-            alignSelf: 'self-start',
-          }}
-        >
-          Alphabetical
-        </Button>
+              border: 'none',
+              borderRadius: 1,
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+              boxShadow: 'none',
+              '&:hover': {
+                backgroundColor: 'transparent',
+                color: '#221f20',
+              },
+            }}
+          >
+            Alphabetical
+          </Button>
+        </Stack>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           spacing={2}
@@ -1105,6 +1165,15 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
                 onChange={(e, val) => setSelected(val)}
                 getOptionLabel={(opt) => opt?.name || ''}
                 isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                filterOptions={(options, { inputValue }) => {
+                  const searchTerm = inputValue.toLowerCase().trim();
+                  if (!searchTerm) return options;
+                  return options.filter((option) => {
+                    const name = (option?.name || '').toLowerCase();
+                    const email = (option?.email || '').toLowerCase();
+                    return name.includes(searchTerm) || email.includes(searchTerm);
+                  });
+                }}
                 renderOption={(props, option) => (
                   <Box component="li" {...props} key={option.id} sx={{ display: 'flex', gap: 1 }}>
                     <Avatar
@@ -1127,7 +1196,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
                   <TextField
                     {...params}
                     label="Select creators to shortlist"
-                    placeholder="Search…"
+                    placeholder="Search by name or email…"
                   />
                 )}
               />
