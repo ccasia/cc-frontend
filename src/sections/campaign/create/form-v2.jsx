@@ -32,6 +32,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
+import NextStepsIcon from 'src/assets/icons/next-steps-icon';
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
 import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
 
@@ -75,7 +76,7 @@ const additionalSteps = [
 const getSteps = (showAdditionalDetails) =>
   showAdditionalDetails ? [...baseSteps, ...additionalSteps] : baseSteps;
 
-const backSectionLabels = ['Client', 'General', 'Objective', 'Audience', 'Logistics', 'Finalise', 'Next Steps'];
+const backSectionLabels = ['Client', 'General', 'Objective', 'Audience', 'Logistics', 'Finalise'];
 
 const frontSectionLabels = ['Additional 1', 'Additional 2'];
 
@@ -990,6 +991,9 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   const backSectionIndicator = getBackSectionIndicatorIndex(activeStep);
   const frontSectionIndicator = getFrontSectionIndicatorIndex(activeStep);
 
+  // Determine if Next Steps should be highlighted (step 8 or beyond)
+  const isNextStepsActive = activeStep >= 8;
+
   const campaignStartDate = watch('campaignStartDate');
 
   const handlePackageLinkSuccess = async () => {
@@ -1105,40 +1109,46 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
                   </React.Fragment>
                 ))}
 
+              {/* Next Steps Section (icon-based navigation) */}
+              {inBackSection && (
+                <Box
+                  sx={{
+                    height: 1.2,
+                    flexGrow: 1,
+                    minWidth: 20,
+                    maxWidth: 40,
+                    bgcolor: isNextStepsActive ? '#1340FF' : '#636366',
+                  }}
+                />
+              )}
+
+              <Box
+                onClick={() => {
+                  if (activeStep >= 9) {
+                    setActiveStep(8);
+                    setShowAdditionalDetails(false);
+                    localStorage.setItem('adminActiveStep', 8);
+                  }
+                }}
+                px={1}
+                py={0.5}
+                borderRadius={1}
+                border="1px solid #636366"
+                bgcolor={isNextStepsActive ? '#1340FF' : '#fff'}
+                sx={{
+                  borderColor: isNextStepsActive ? '#1340FF' : '#636366',
+                  '&:hover': {
+                    opacity: activeStep >= 9 ? 0.85 : 1,
+                  },
+                  cursor: activeStep >= 9 ? 'pointer' : 'default',
+                }}
+              >
+                <NextStepsIcon active={isNextStepsActive} size={35} />
+              </Box>
+
               {/* Front Section Labels (Additional Details 1, Additional Details 2) */}
               {inFrontSection && (
                 <>
-                  {/* Show Next Steps as clickable to go back */}
-                  <Box
-                    onClick={() => {
-                      setActiveStep(8);
-                      setShowAdditionalDetails(false);
-                      localStorage.setItem('adminActiveStep', 8);
-                    }}
-                    sx={{
-                      minWidth: 100,
-                      height: 45,
-                      py: 1.2,
-                      textAlign: 'center',
-                      borderRadius: 1,
-                      fontSize: 13,
-                      fontWeight: 400,
-                      bgcolor: '#1340FF',
-                      color: '#fff',
-                      border: '1px solid #1340FF',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        opacity: 0.85,
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Box component="span">Next Steps</Box>
-                  </Box>
                   {frontSectionLabels.map((label, index) => (
                     <React.Fragment key={label}>
                       {/* Connector Line before each front section label */}
