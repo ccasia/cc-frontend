@@ -7,15 +7,15 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useMemo, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers';
+import { DatePicker , LocalizationProvider } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import FormProvider from 'src/components/hook-form/form-provider';
+import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form/rhf-upload';
+import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 import { RHFUploadCover } from 'src/components/hook-form/rhf-upload-cover';
 
@@ -133,9 +133,6 @@ const UpdateAdditionalOne = ({ campaign, campaignMutate }) => {
 
   const postingStartDateDayjs = postingStartDate ? dayjs(postingStartDate) : null;
   const postingEndDateDayjs = postingEndDate ? dayjs(postingEndDate) : null;
-
-  console.log(postingStartDateDayjs)
-  console.log(postingEndDateDayjs)
 
   const onSubmit = useCallback(
     async (data) => {
@@ -281,6 +278,11 @@ const UpdateAdditionalOne = ({ campaign, campaignMutate }) => {
                           }
                         }
                       }}
+                      slots={{
+                        openPickerIcon: () => (
+                          <Iconify icon="meteor-icons:calendar" width={22} />
+                        ),
+                      }}
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -302,6 +304,11 @@ const UpdateAdditionalOne = ({ campaign, campaignMutate }) => {
                         });
                       }}
                       format="DD/MM/YY"
+                      slots={{
+                        openPickerIcon: () => (
+                          <Iconify icon="meteor-icons:calendar" width={22} />
+                        ),
+                      }}
                       slotProps={{
                         textField: {
                           fullWidth: true,

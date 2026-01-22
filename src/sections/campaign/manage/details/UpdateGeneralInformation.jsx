@@ -7,6 +7,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import React, { memo, useMemo, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
 
@@ -14,10 +15,10 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { interestsLists } from 'src/contants/interestLists';
 
+import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 import { RHFUploadCover } from 'src/components/hook-form/rhf-upload-cover';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -238,6 +239,11 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                       onChange={(newValue) => {
                         setValue('campaignStartDate', newValue ? newValue.toISOString() : '', { shouldValidate: true, shouldDirty: true });
                       }}
+                      slots={{
+                        openPickerIcon: () => (
+                          <Iconify icon="meteor-icons:calendar" width={22} />
+                        ),
+                      }}
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -257,6 +263,11 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                       format='DD/MM/YY'
                       onChange={(newValue) => {
                         setValue('campaignEndDate', newValue ? newValue.toISOString() : '', { shouldValidate: true, shouldDirty: true });
+                      }}
+                      slots={{
+                        openPickerIcon: () => (
+                          <Iconify icon="meteor-icons:calendar" width={22} />
+                        ),
                       }}
                       slotProps={{
                         textField: {
