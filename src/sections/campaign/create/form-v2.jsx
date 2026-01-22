@@ -18,10 +18,8 @@ import Button from '@mui/material/Button';
 import {
   Stack,
   Avatar,
-  Dialog,
   IconButton,
   Typography,
-  ListItemText,
   LinearProgress,
 } from '@mui/material';
 
@@ -32,7 +30,6 @@ import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { NextStepsIcon } from 'src/assets/icons';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
@@ -44,15 +41,15 @@ import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-s
 import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
 
 import CreateBrand from './brandDialog';
+import NextSteps from './stepsV2/next-steps';
 // Import V2 step components
 import SelectBrand from './stepsV2/select-brand';
-import NextSteps from './stepsV2/next-steps';
+import FinaliseCampaign from './stepsV2/finalise-campaign';
 import CampaignObjective from './stepsV2/campaign-objective';
 import AdditionalDetails1 from './stepsV2/additional-details-1';
 import AdditionalDetails2 from './stepsV2/additional-details-2';
 import CampaignGeneralInfo from './stepsV2/campaign-general-info';
 import CampaignTargetAudience from './stepsV2/campaign-target-audience';
-import FinaliseCampaign from './stepsV2/finalise-campaign';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -586,12 +583,11 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     setActiveStep(prevStep);
   };
 
-  // Handle clicking "Continue Additional Details" from Next Steps
-  const handleContinueAdditionalDetails = () => {
+  const handleContinueAdditionalDetails = useCallback(() => {
     setShowAdditionalDetails(true);
     setActiveStep(9);
     localStorage.setItem('adminActiveStep', 9);
-  };
+  }, []);
 
   const onSubmit = handleSubmit(async (data, stage) => {
     const formData = new FormData();
@@ -778,15 +774,19 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     formData.append('data', JSON.stringify(campaignData));
 
     // Append images
-    for (const i in data.campaignImages) {
-      if (data.campaignImages[i] instanceof File || data.campaignImages[i].type) {
-        formData.append('campaignImages', data.campaignImages[i]);
-      }
+    if (Array.isArray(data.campaignImages)) {
+      data.campaignImages.forEach((img) => {
+        if (img instanceof File || img.type) {
+          formData.append('campaignImages', img);
+        }
+      });
     }
 
     // Append other attachments
-    for (const i in data.otherAttachments) {
-      formData.append('otherAttachments', data.otherAttachments[i]);
+    if (Array.isArray(data.otherAttachments)) {
+      data.otherAttachments.forEach((attachment) => {
+        formData.append('otherAttachments', attachment);
+      });
     }
 
     // Append brand guidelines files if available
@@ -905,7 +905,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           return null;
       }
     },
-    [openCompany, openBrand, openPackage, confirmation, isLoading, getValues]
+    [openCompany, openBrand, openPackage, isLoading, getValues, onSubmit, handleContinueAdditionalDetails]
   );
 
   // Check if current step has required fields filled
