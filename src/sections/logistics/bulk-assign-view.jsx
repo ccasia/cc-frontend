@@ -149,11 +149,6 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     setTempQuantity('');
   };
 
-  const handleQuantityCancel = () => {
-    setEditingProductId(null);
-    setTempQuantity('');
-  };
-
   // Handle individual creator-product quantity editing
   const handleCreatorQuantityClick = (creatorId, productId, currentQuantity, e) => {
     e.preventDefault();
@@ -344,7 +339,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
     }
   };
 
-  const handleSelectAll = (event) => {
+  const handleSelectAllCreators = (event) => {
     if (event.target.checked) {
       // 1. Select All IDs
       const allCreatorIds = creators.map((creator) => creator.id);
@@ -459,7 +454,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
           </Box>
         </Box>
         <Box fullWidth>
-          <Stack alignItems="center" sx={{ flexGrow: 1, mb: 4 }}>
+          <Stack alignItems="center" sx={{ flexGrow: 1, mb: 1 }}>
             <Box
               sx={{
                 width: 56,
@@ -486,23 +481,42 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
             </Typography>
           </Stack>
 
-          <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 4 }}>
-            <Grid container spacing={4}>
-              <Grid item xs={12} md={4} display="flex" flexDirection="column" alignItems="center">
-                <Typography variant="body2" sx={{ mb: 2, alignItems: 'center', fontWeight: 600 }}>
-                  Product List
+          {/* --- MAIN CONTENT AREA --- */}
+          <Box sx={{ flexGrow: 1, px: 4, p: 4, overflow: 'hidden', display: 'flex' }}>
+            <Grid container sx={{ height: '100%' }} spacing={0}>
+              {/* COLUMN 1: STEP 1 (Left Sidebar) */}
+              <Grid
+                item
+                xs={6}
+                md={3}
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  pr: 3,
+                  pl: 12,
+                }}
+              >
+                <Box sx={{ height: 40, mb: 2 }} /> {/* Spacer to align with search bar */}
+                <Stack alignItems="flex-start">
                   <Typography
-                    component="span"
                     variant="caption"
-                    color="text.secondary"
-                    sx={{ ml: 1 }}
+                    sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1 }}
                   >
+                    STEP 1 <br />
+                    <Typography component="span" variant="subtitle2" color="text.primary">
+                      Product List
+                    </Typography>{' '}
                     ({selectedProductIds.length} Selected)
                   </Typography>
-                </Typography>
-                <Stack spacing={1.5} sx={{ alignItems: 'flex-start', width: '33%' }}>
+                </Stack>
+                <Stack
+                  alignItems="flex-start"
+                  spacing={1}
+                  sx={{ overflowY: 'auto', flexGrow: 1, pb: 2 }}
+                >
                   {products?.map((product) => (
-                    <Stack direction="row" spacing={1}>
+                    <Stack direction="row" spacing={0.5}>
                       <Box
                         key={product.id}
                         onClick={() => handleSelectProduct(product)}
@@ -511,8 +525,8 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                           alignItems: 'center',
                           justifyContent: 'center',
                           width: 'fit-content',
-                          p: 1,
-                          pl: 2,
+                          px: 1.5,
+                          py: 0.5,
                           borderRadius: '8px',
                           transition: 'all 0.2s ease',
                           bgcolor: selectedProductIds.includes(product.id) ? '#1340FF' : '#FFFFFF',
@@ -521,7 +535,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                             ? '1px solid #1340FF'
                             : '1px solid #D6D6D6',
                           boxShadow: selectedProductIds.includes(product.id)
-                            ? 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)' // Subtle darkened bottom lip
+                            ? 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)'
                             : 'inset 0px -3px 0px #D6D6D6',
                           '&:hover': {
                             bgcolor: selectedProductIds.includes(product.id)
@@ -540,7 +554,6 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                           variant="body2"
                           sx={{
                             fontWeight: 600,
-                            mr: 1,
                             cursor: 'pointer',
                             flex: 1,
                           }}
@@ -556,19 +569,21 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                               sx={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                mx: 1,
+                                ml: 1,
                               }}
                             >
                               <input
                                 ref={(input) => input && input.focus()}
                                 type="text"
                                 value={tempQuantity}
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
                                 onChange={handleQuantityChange}
                                 onBlur={() => handleQuantitySubmit(product.id)}
                                 style={{
-                                  width: '28px',
-                                  height: '20px',
-                                  borderRadius: '12px', // More curvy/rounded
+                                  width: '30px',
+                                  height: '22px',
+                                  borderRadius: '14px', // More curvy/rounded
                                   border: '1px solid #EBEBEB',
                                   textAlign: 'center',
                                   fontSize: '0.75rem',
@@ -589,15 +604,15 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                width: '28px',
-                                height: '20px',
+                                width: '30px',
+                                height: '22px',
                                 bgcolor: '#FFFFFF',
                                 color: '#000000',
-                                borderRadius: '12px',
+                                borderRadius: '14px',
                                 border: '1px solid #EBEBEB',
                                 fontSize: '0.75rem',
                                 fontWeight: 700,
-                                mx: 1,
+                                ml: 1,
                                 cursor: 'pointer',
                                 opacity: 1,
                                 boxSizing: 'border-box',
@@ -619,7 +634,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                           setProductToDelete({ id: product.id, name: product.productName });
                         }}
                         sx={{
-                          width: 50,
+                          width: 40,
                           borderRadius: 1,
                           '&:hover': { bgcolor: '#FFF5F5' },
                         }}
@@ -635,8 +650,8 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                       alignItems: 'center',
                       justifyContent: 'center',
                       width: 'fit-content',
-                      p: 1,
-                      pl: 2,
+                      px: 1.5,
+                      py: 0.5,
                       cursor: 'pointer',
                       borderRadius: '8px',
                       transition: 'all 0.2s ease',
@@ -669,299 +684,337 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                   </Box>
                 </Stack>
               </Grid>
-              <Grid item xs={12} md={8} sx={{ pl: 2 }}>
-                <Stack direction="row" justifyContent="space-between" sx={{ mb: 2 }}>
-                  <TextField
-                    placeholder="Search Creator"
-                    size="small"
-                    value={searchCreator}
-                    onChange={(e) => setSearchCreator(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
-                        </InputAdornment>
-                      ),
-                    }}
+
+              {/* COLUMNS 2 & 3: THE SYNCED WORKSPACE */}
+              <Grid item xs={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {/* 2A: STATIC HEADER (Step 2 & 3 titles) */}
+                <Grid container spacing={0}>
+                  {/* Step 2 Header */}
+                  <Grid
+                    item
+                    xs={6}
                     sx={{
-                      width: '400px',
-                      height: '40px',
-                      bgcolor: '#FFFFFF',
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '8px',
-                        border: '1px solid #E7E7E7',
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                        height: '40px',
-                        '& fieldset': {
-                          border: 'none',
-                        },
-                        '&:hover fieldset': {
-                          border: 'none',
-                        },
-                        '&.Mui-focused fieldset': {
-                          border: 'none',
-                        },
-                      },
-                      '& .MuiOutlinedInput-input': {
-                        padding: '6px 12px 9px 12px',
-                        height: 'auto',
-                      },
-                    }}
-                  />
-                  <Select
-                    size="small"
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    IconComponent={() => (
-                      <Iconify
-                        icon="material-symbols:filter-list-rounded"
-                        width={20}
-                        sx={{
-                          color: '#231F20',
-                          pointerEvents: 'none', // Allows clicking through to the select
-                          position: 'absolute',
-                          right: 12,
-                        }}
-                      />
-                    )}
-                    sx={{
-                      width: 120,
-                      bgcolor: '#fff',
-                      borderColor: '#EBEBEB',
-                      borderRadius: '8px',
-                      color: '#1340FF',
-                      mr: 14,
+                      pl: 3,
+                      pr: 3,
+                      pb: 0,
+                      borderRight: '1px solid #EAEAEA',
+                      borderLeft: '1px solid #EAEAEA',
                     }}
                   >
-                    <MenuItem value="all">All</MenuItem>
-                    <MenuItem value="selected">Selected</MenuItem>
-                    <MenuItem value="assigned">Assigned</MenuItem>
-                    <MenuItem value="unassigned">Unassigned</MenuItem>
-                  </Select>
-                </Stack>
-                <Stack
-                  spacing={0}
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="Search Creator"
+                      value={searchCreator}
+                      onChange={(e) => setSearchCreator(e.target.value)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Iconify icon="eva:search-fill" width={18} />
+                          </InputAdornment>
+                        ),
+                        sx: { height: 40, borderRadius: 1.5, bgcolor: '#F9FAFB' },
+                      }}
+                      sx={{
+                        mb: 2,
+                        height: '40px',
+                        bgcolor: '#FFFFFF',
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '8px',
+                          border: '1px solid #E7E7E7',
+                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                          height: '40px',
+                          '& fieldset': {
+                            border: 'none',
+                          },
+                          '&:hover fieldset': {
+                            border: 'none',
+                          },
+                          '&.Mui-focused fieldset': {
+                            border: 'none',
+                          },
+                        },
+                        '& .MuiOutlinedInput-input': {
+                          padding: '6px 12px 9px 12px',
+                          height: 'auto',
+                        },
+                      }}
+                    />
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography
+                        variant="caption"
+                        sx={{ fontWeight: 700, color: 'text.secondary' }}
+                      >
+                        STEP 2 <br />{' '}
+                        <Typography component="span" variant="subtitle2" color="text.primary">
+                          Assigning to
+                        </Typography>{' '}
+                        ({selectedCreatorIds.length} Selected)
+                      </Typography>
+                      <Select
+                        size="small"
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        IconComponent={() => (
+                          <Iconify
+                            icon="material-symbols:filter-list-rounded"
+                            width={15}
+                            sx={{
+                              height: 32,
+                              color: '#231F20',
+                              pointerEvents: 'none',
+                              position: 'absolute',
+                              right: 12,
+                              ml: 5,
+                            }}
+                          />
+                        )}
+                        sx={{
+                          height: 32,
+                          bgcolor: '#fff',
+                          borderColor: '#EBEBEB',
+                          borderRadius: '8px',
+                          color: '#1340FF',
+                        }}
+                      >
+                        <MenuItem value="all">All</MenuItem>
+                        <MenuItem value="selected">Selected</MenuItem>
+                        <MenuItem value="assigned">Assigned</MenuItem>
+                        <MenuItem value="unassigned">Unassigned</MenuItem>
+                      </Select>
+                    </Stack>
+                    <Box display="flex" alignItems="center" sx={{ ml: -1 }}>
+                      <Checkbox
+                        size="small"
+                        checked={
+                          selectedCreatorIds.length === creators.length && creators.length > 0
+                        }
+                        onChange={handleSelectAllCreators}
+                      />
+                      <Typography variant="caption" fontWeight={600}>
+                        Select all
+                      </Typography>
+                    </Box>
+                  </Grid>
+
+                  {/* Step 3 Header */}
+                  <Grid item xs={6} sx={{ pl: 3, pb: 2 }}>
+                    <Box sx={{ height: 40, mb: 2, display: 'flex', alignItems: 'center' }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={handleAssign}
+                        disabled={
+                          selectedCreatorIds.length === 0 || selectedProductIds.length === 0
+                        }
+                        sx={{
+                          width: 'fit-content',
+                          height: 40,
+                          padding: { xs: '4px 8px', sm: '6px 10px' },
+                          borderRadius: '8px',
+                          boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                          backgroundColor: '#1340FF',
+                          color: '#FFFFFF',
+                          fontSize: { xs: 12, sm: 14, md: 16 },
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          '&:hover': {
+                            backgroundColor: '#133effd3',
+                            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                          },
+                          '&:active': {
+                            boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                            transform: 'translateY(1px)',
+                          },
+                        }}
+                      >
+                        <Iconify icon="eva:save-outline" width={20} sx={{ mr: 1 }} />
+                        Save
+                      </Button>
+                    </Box>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                      STEP 3 <br />{' '}
+                      <Typography component="span" variant="subtitle2" color="text.primary">
+                        Products
+                      </Typography>
+                    </Typography>
+                  </Grid>
+                </Grid>
+
+                {/* 2B: SCROLLABLE CREATORS (Steps 2 & 3 synced) */}
+                <Box
                   sx={{
-                    bgcolor: '#fff',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    ml: -3, // Move slightly to the left
-                    maxHeight: '400px', // Limit maximum height
-                    display: 'flex',
-                    flexDirection: 'column',
+                    flexGrow: 1,
+                    overflowY: 'auto',
+                    maxHeight: '320px',
+                    msOverflowStyle: 'none' /* IE/Edge */,
+                    scrollbarWidth: 'none' /* Firefox */,
+                    '&::-webkit-scrollbar': { display: 'none' } /* Chrome/Safari */,
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      p: 2,
-                    }}
-                  >
-                    <Grid container>
-                      <Grid item xs={6} display="flex" alignItems="center">
-                        <Checkbox
-                          checked={
-                            selectedCreatorIds.length === creators.length && creators.length > 0
-                          }
-                          indeterminate={
-                            selectedCreatorIds.length > 0 &&
-                            selectedCreatorIds.length < creators.length
-                          }
-                          onChange={handleSelectAll}
-                        />
-                        <Typography variant="subtitle2" sx={{ ml: 1 }}>
-                          Assigning to{' '}
-                          <Typography component="span" variant="caption">
-                            ({selectedCreatorIds.length} Selected)
-                          </Typography>
-                        </Typography>
-                      </Grid>
-                      <Grid
-                        item
-                        xs={6}
-                        display="flex"
-                        alignItems="center"
-                        sx={{ justifyContent: 'flex-start', ml: -4 }}
-                      >
-                        <Typography variant="subtitle2">Products</Typography>
-                      </Grid>
-                    </Grid>
-                  </Box>
+                  {filteredCreators.map((creator) => {
+                    const isSelected = selectedCreatorIds.includes(creator.id);
+                    const assigned = assignments[creator.id] || [];
 
-                  {/* Scrollable creators list container */}
-                  <Box
-                    sx={{
-                      overflowY: 'auto',
-                      maxHeight: '320px',
-                      flex: 1,
-                    }}
-                  >
-                    {filteredCreators.map((creator) => {
-                      const isSelected = selectedCreatorIds.includes(creator.id);
-                      const assigned = assignments[creator.id] || [];
-
-                      return (
-                        <Box
-                          key={creator.id}
+                    return (
+                      <Grid container spacing={0} key={creator.id}>
+                        {/* Creator Info (Matches Step 2 Header) */}
+                        <Grid
+                          item
+                          xs={6}
                           sx={{
+                            display: 'flex',
+                            alignItems: 'center',
                             py: 1,
                             px: 2,
+                            borderRight: '1px solid #EAEAEA',
+                            borderLeft: '1px solid #EAEAEA',
                           }}
                         >
-                          <Grid container alignItems="center">
-                            <Grid item xs={6} sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Checkbox
-                                checked={isSelected}
-                                onChange={() => handleSelectCreator(creator.id)}
-                                sx={{
-                                  mr: 1,
-                                  color: '#1340FF',
-                                  '&.Mui-checked': {
-                                    color: '#1340FF',
-                                  },
-                                }}
-                              />
-                              <Avatar
-                                src={creator.photoURL}
-                                sx={{ width: 40, height: 40, mr: 2 }}
-                              />
-                              <Box>
-                                <Typography variant="subtitle2" sx={{ lineHeight: 0.5 }}>
-                                  {creator.name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {creator.handle}
-                                </Typography>
-                              </Box>
-                            </Grid>
-                            <Grid item xs={6} sx={{ ml: -4 }}>
-                              {assigned.length > 0 ? (
-                                <Box
-                                  sx={{
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    gap: 1,
-                                    alignItems: 'center',
-                                  }}
-                                >
-                                  {assigned
-                                    .filter((item) => activeProductIds.has(item.productId))
-                                    .map((item, index, filteredArray) => (
-                                      <Box
-                                        key={item.productId}
-                                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                                      >
-                                        <Typography variant="body2" sx={{ color: 'text.primary' }}>
-                                          {item.name}
-                                        </Typography>
-                                        {editingCreatorProduct?.creatorId === creator.id &&
-                                        editingCreatorProduct?.productId === item.productId ? (
-                                          <input
-                                            ref={(input) => input && input.focus()}
-                                            type="text"
-                                            value={tempCreatorQuantity}
-                                            onChange={handleCreatorQuantityChange}
-                                            onBlur={handleCreatorQuantitySubmit}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter') {
-                                                handleCreatorQuantitySubmit();
-                                              } else if (e.key === 'Escape') {
-                                                handleCreatorQuantityCancel();
-                                              }
-                                            }}
-                                            style={{
-                                              width: '28px',
-                                              height: '20px',
-                                              borderRadius: '12px',
-                                              border: '1px solid #1340FF',
-                                              textAlign: 'center',
-                                              fontSize: '0.75rem',
-                                              fontWeight: 700,
-                                              color: '#000000',
-                                              backgroundColor: '#FFFFFF',
-                                              outline: 'none',
-                                              boxSizing: 'border-box',
-                                            }}
-                                          />
-                                        ) : (
-                                          <Box
-                                            onClick={(e) =>
-                                              handleCreatorQuantityClick(
-                                                creator.id,
-                                                item.productId,
-                                                item.quantity,
-                                                e
-                                              )
-                                            }
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                            sx={{
-                                              display: 'inline-flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              width: '28px',
-                                              height: '20px',
-                                              bgcolor: '#FFFFFF',
-                                              color: '#000000',
-                                              borderRadius: '12px',
-                                              border: '1px solid #1340FF',
-                                              fontSize: '0.75rem',
-                                              fontWeight: 700,
-                                              cursor: 'pointer',
-                                              opacity: 1,
-                                              boxSizing: 'border-box',
-                                              zIndex: 10,
-                                              position: 'relative',
-                                              '&:hover': {
-                                                bgcolor: '#f5f5f5',
-                                              },
-                                            }}
-                                          >
-                                            {item.quantity}
-                                          </Box>
-                                        )}
-                                        {index < filteredArray.length - 1 && (
-                                          <Typography
-                                            variant="body2"
-                                            sx={{ color: 'text.primary' }}
-                                          >
-                                            ,
-                                          </Typography>
-                                        )}
-                                      </Box>
-                                    ))}
-                                </Box>
-                              ) : (
-                                <Typography variant="body2" sx={{ color: 'text.disabled' }}>
-                                  -
-                                </Typography>
-                              )}
-                            </Grid>
-                          </Grid>
-                        </Box>
-                      );
-                    })}
+                          <Checkbox
+                            checked={isSelected}
+                            onChange={() => handleSelectCreator(creator.id)}
+                            sx={{
+                              mr: 1,
+                              color: '#1340FF',
+                              '&.Mui-checked': {
+                                color: '#1340FF',
+                              },
+                            }}
+                          />
+                          <Avatar src={creator.photoURL} sx={{ width: 40, height: 40, mr: 2 }} />
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="subtitle2" sx={{ lineHeight: 0.5 }}>
+                              {creator.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" noWrap>
+                              {creator.handle}
+                            </Typography>
+                          </Box>
+                        </Grid>
 
-                    {filteredCreators.length === 0 && (
-                      <Box sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>
-                        <Typography>No creators found.</Typography>
-                      </Box>
-                    )}
-                  </Box>
-                </Stack>
+                        {/* Product Info (Matches Step 3 Header) */}
+                        <Grid
+                          item
+                          xs={6}
+                          sx={{ display: 'flex', alignItems: 'center', pl: 3, py: 2 }}
+                        >
+                          {assigned.length > 0 ? (
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 0.5,
+                                alignItems: 'center',
+                              }}
+                            >
+                              {assigned
+                                .filter((i) => activeProductIds.has(i.productId))
+                                .map((item, idx, arr) => (
+                                  <Stack
+                                    key={item.productId}
+                                    direction="row"
+                                    alignItems="center"
+                                    spacing={0.5}
+                                  >
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ color: '#231F20', fontWeight: 500 }}
+                                    >
+                                      {item.name}
+                                    </Typography>
+
+                                    {/* Internal Creator Quantity Edit */}
+                                    {editingCreatorProduct?.creatorId === creator.id &&
+                                    editingCreatorProduct?.productId === item.productId ? (
+                                      <input
+                                        ref={(input) => input && input.focus()}
+                                        type="text"
+                                        value={tempCreatorQuantity}
+                                        onChange={handleCreatorQuantityChange}
+                                        onBlur={handleCreatorQuantitySubmit}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            handleCreatorQuantitySubmit();
+                                          } else if (e.key === 'Escape') {
+                                            handleCreatorQuantityCancel();
+                                          }
+                                        }}
+                                        style={{
+                                          width: '30px',
+                                          height: '22px',
+                                          borderRadius: '12px',
+                                          border: '1.5px solid #1340FF',
+                                          textAlign: 'center',
+                                          fontSize: '0.75rem',
+                                          fontWeight: 700,
+                                          color: '#000000',
+                                          backgroundColor: '#FFFFFF',
+                                          outline: 'none',
+                                          boxSizing: 'border-box',
+                                        }}
+                                      />
+                                    ) : (
+                                      <Box
+                                        onClick={(e) =>
+                                          handleCreatorQuantityClick(
+                                            creator.id,
+                                            item.productId,
+                                            item.quantity,
+                                            e
+                                          )
+                                        }
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        sx={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          width: '30px',
+                                          height: '22px',
+                                          bgcolor: '#FFFFFF',
+                                          color: '#000000',
+                                          borderRadius: '12px',
+                                          border: '1.5px solid #133eff70',
+                                          fontSize: '0.75rem',
+                                          fontWeight: 700,
+                                          cursor: 'pointer',
+                                          opacity: 1,
+                                          boxSizing: 'border-box',
+                                          zIndex: 10,
+                                          position: 'relative',
+                                          '&:hover': {
+                                            bgcolor: '#f5f5f5',
+                                          },
+                                        }}
+                                      >
+                                        {item.quantity}
+                                      </Box>
+                                    )}
+                                    {idx < arr.length - 1 && (
+                                      <Typography variant="caption">,</Typography>
+                                    )}
+                                  </Stack>
+                                ))}
+                            </Box>
+                          ) : (
+                            <Typography
+                              variant="caption"
+                              color="text.disabled"
+                              sx={{ fontSize: 18 }}
+                            >
+                              -
+                            </Typography>
+                          )}
+                        </Grid>
+                      </Grid>
+                    );
+                  })}
+                </Box>
               </Grid>
             </Grid>
           </Box>
         </Box>
       </Box>
-      {/* <EditQuantityDialog
-        open={openEditQuantity}
-        onClose={() => setOpenEditQuantity(false)}
-        selectedCreatorIds={selectedCreatorIds}
-        creators={creators}
-        assignments={assignments}
-        onSave={handleUpdateAssignment}
-      /> */}
       <DeleteProductDialog
         open={Boolean(productToDelete)}
         onClose={() => setProductToDelete(null)}
