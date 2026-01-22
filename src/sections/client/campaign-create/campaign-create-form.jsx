@@ -198,6 +198,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   });
 
   const campaignRequirementSchema = Yup.object().shape({
+    country: Yup.string().required('Country is required'),
     audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
     audienceGender: Yup.array()
       .min(1, 'At least one option')
@@ -215,7 +216,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     secondaryAudienceLanguage: Yup.array(),
     secondaryAudienceCreatorPersona: Yup.array(),
     secondaryAudienceUserPersona: Yup.string(),
-    geographicFocus: Yup.string(),
+    geographicFocus: Yup.string().required('Geographic focus is required'),
     geographicFocusOthers: Yup.string(),
   });
 
@@ -461,6 +462,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           'audienceGender',
           'audienceLanguage',
           'audienceCreatorPersona',
+          'geographicFocus',
         ];
       case 3: // Logistics
         return ['logisticsType'];
@@ -872,10 +874,12 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return values.campaignObjectives?.length > 0;
       case 2: // Audience
         return (
+          values.country &&
           values.audienceAge?.length > 0 &&
           values.audienceGender?.length > 0 &&
           values.audienceLanguage?.length > 0 &&
-          values.audienceCreatorPersona?.length > 0
+          values.audienceCreatorPersona?.length > 0 &&
+          values.geographicFocus
         );
       case 3: // Logistics - optional
       case 4: // Reservation Slots - optional (shown only for RESERVATION)
