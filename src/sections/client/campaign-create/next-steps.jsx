@@ -1,5 +1,7 @@
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useFormContext } from 'react-hook-form';
 
 import {
   Box,
@@ -24,6 +26,10 @@ NextSteps.propTypes = {
 
 export default function NextSteps({ onPublish, onContinueAdditionalDetails, isLoading = false }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const { watch } = useFormContext();
+
+  const campaignStartDate = watch('campaignStartDate');
 
   const handleOpenConfirm = () => setConfirmOpen(true);
   const handleCloseConfirm = () => setConfirmOpen(false);
@@ -156,24 +162,45 @@ export default function NextSteps({ onPublish, onContinueAdditionalDetails, isLo
           <Button variant="contained" onClick={handleCloseConfirm} sx={{ px: 2, py: 1.2 }}>
             Cancel
           </Button>
-          <Button
-            variant="contained"
-            onClick={handlePublish}
-            disabled={isLoading}
-            startIcon={<Iconify icon="mdi:rocket-launch" />}
-            sx={{
-              bgcolor: '#1340FF',
-              px: 4,
-              py: 1.2,
-              fontWeight: 600,
-              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-              '&:hover': {
-                bgcolor: '#0030e0',
-              },
-            }}
-          >
-            {isLoading ? 'Publishing...' : 'Confirm & Publish'}
-          </Button>
+          {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
+            <Button
+              variant="contained"
+              onClick={handlePublish}
+              startIcon={<Iconify icon="material-symbols:publish" />}
+              disabled={isLoading}
+              sx={{
+                bgcolor: '#1340FF',
+                px: 4,
+                py: 1.2,
+                fontWeight: 600,
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                '&:hover': {
+                  bgcolor: '#0030e0',
+                },
+              }}
+            >
+              {isLoading ? 'Publishing...' : 'Publish Now'}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={handlePublish}
+              disabled={isLoading}
+              startIcon={<Iconify icon="mdi:calendar-clock" />}
+              sx={{
+                bgcolor: '#1340FF',
+                px: 4,
+                py: 1.2,
+                fontWeight: 600,
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                '&:hover': {
+                  bgcolor: '#0030e0',
+                },
+              }}
+            >
+              {isLoading ? 'Scheduling...' : `Schedule on ${dayjs(campaignStartDate).format('ddd LL')}`}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>
