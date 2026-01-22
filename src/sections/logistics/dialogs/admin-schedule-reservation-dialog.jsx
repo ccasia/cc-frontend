@@ -249,6 +249,11 @@ export default function AdminScheduleReservationDialog({
   const handleSchedule = async () => {
     setLoading(true);
     try {
+      if (startTime === null || endTime === null) {
+        enqueueSnackbar('Select a start and end time.', { variant: 'warning' });
+        return;
+      }
+
       const startPart = format(new Date(startTime), 'HH:mm:ss');
       const endPart = format(new Date(endTime), 'HH:mm:ss');
 
@@ -644,7 +649,7 @@ export default function AdminScheduleReservationDialog({
           variant="contained"
           onClick={handleSchedule}
           loading={loading}
-          disabled={hasConflict || endTime === null || startTime === null}
+          disabled={hasConflict}
           sx={{ height: 44, bgcolor: '#3A3A3C', px: 4, textTransform: 'none', fontWeight: 600 }}
         >
           Confirm
