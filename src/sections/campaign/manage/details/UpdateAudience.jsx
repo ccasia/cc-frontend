@@ -196,7 +196,7 @@ const UpdateAudience = ({ campaign, campaignMutate }) => {
 
         await axiosInstance.patch(endpoints.campaign.editCampaignRequirements, payload);
 
-        enqueueSnackbar('Requirements updated successfully!', { variant: 'success' });
+        enqueueSnackbar('Target audience updated successfully!', { variant: 'success' });
 
         if (campaignMutate) {
           campaignMutate();
