@@ -184,6 +184,7 @@ export const endpoints = {
   campaign: {
     total: '/api/campaign/total',
     createCampaign: '/api/campaign/createCampaign',
+    createCampaignV2: '/api/campaign/createCampaignV2',
     spreadsheet: '/api/campaign/spreadsheet',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
     updateOrCreateDefaultTimeline: '/api/campaign/updateOrCreateDefaultTimeline',
