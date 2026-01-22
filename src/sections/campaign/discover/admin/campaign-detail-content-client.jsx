@@ -437,10 +437,12 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       </Typography>
                     </Box>
 
-                    <Box>
-                      <Typography sx={SectionTitleStyle}>Geographic Focus</Typography>
-                      <Typography sx={SectionBodyStyle}>{getGeographicFocus()}</Typography>
-                    </Box>
+                    {isPrimary && (
+                      <Box>
+                        <Typography sx={SectionTitleStyle}>Geographic Focus</Typography>
+                        <Typography sx={SectionBodyStyle}>{getGeographicFocus()}</Typography>
+                      </Box>
+                    )}
                   </Stack>
                 </Stack>
               );
