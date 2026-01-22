@@ -1,4 +1,5 @@
 /* eslint-disable no-nested-ternary */
+import dayjs from 'dayjs';
 /* eslint-disable no-unused-vars */
 import * as Yup from 'yup';
 import { pdfjs } from 'react-pdf';
@@ -36,10 +37,10 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
-import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
+import LogisticRemarks from 'src/sections/campaign/create/stepsV2/logistic-remarks';
 // Import steps from admin campaign creation
-import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
-import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-slots';
+import CampaignLogistics from 'src/sections/campaign/create/stepsV2/campaign-logistics';
+import ReservationSlotsV2 from 'src/sections/campaign/create/stepsV2/reservation-slots';
 
 import NextSteps from './next-steps';
 import CampaignObjective from './campaign-objective';
@@ -431,11 +432,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     handleSubmit,
     getValues,
     reset,
-    control,
     setValue,
     watch,
     trigger,
-    formState: { isValid, errors },
   } = methods;
 
   const values = watch();
@@ -835,7 +834,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 6:
         return (
           <NextSteps
-            onPublish={handleSubmit(onSubmit)}
+            onPublish={() => {
+              const campaignStart = getValues('campaignStartDate');
+              const campaignStatus = dayjs(campaignStart).isSame(dayjs(), 'date')
+                ? 'ACTIVE'
+                : 'SCHEDULED';
+              setStatus(campaignStatus);
+              onSubmit(campaignStatus);
+            }}
             onContinueAdditionalDetails={handleContinueAdditionalDetails}
             isLoading={isLoading}
           />
