@@ -114,7 +114,7 @@ export default function LogisticsStepper({ logistic, isReservation }) {
     if (hasIssue) {
       completionDescription = 'Please review issue to continue';
     } else if (isCompleted) {
-      completionDescription = 'Visit completed';
+      completionDescription = 'Visit completed on';
     }
 
     if (isDetailsDone && isScheduled && !isCompleted) activeStep = 2;
@@ -130,22 +130,24 @@ export default function LogisticsStepper({ logistic, isReservation }) {
           : 'Add any details you want the creator to note.',
         isCompleted: isDetailsDone,
         isActive: !isDetailsDone,
-        color: '#FF3500',
+        color: isDetailsDone ? 'text.secondary' : '#FF3500',
       },
       {
         step: 2,
-        label: 'Schedule',
+        label: 'Confirm Slot',
         description: isScheduled
           ? `Completed on ${fDate(updatedAt)}`
           : 'Schedule a slot for the creator.',
         isCompleted: isScheduled,
         isActive: !isScheduled,
-        color: '#1340FF',
+        color: isScheduled ? 'text.secondary' : '#1340FF',
       },
       {
         step: 3,
-        label: hasIssue ? 'Issue Reported' : `Completed on ${fDate(completedAt)}`,
-        description: completionDescription,
+        label: hasIssue ? 'Issue Reported' : 'Completed',
+        description: isCompleted
+          ? `${completionDescription} ${fDate(completedAt)}`
+          : completionDescription,
         isCompleted,
         isActive: isScheduled && isDetailsDone && !isCompleted,
         error: hasIssue,
@@ -170,7 +172,7 @@ export default function LogisticsStepper({ logistic, isReservation }) {
       {
         step: 2,
         label: 'Schedule Delivery',
-        description: 'Enter delivery details to continue',
+        description: 'Schedule a delivery to continue',
         completedDate: logistic.shippedAt,
         color: '#FF3500',
       },
@@ -261,7 +263,7 @@ export default function LogisticsStepper({ logistic, isReservation }) {
                 )}
 
                 {/* 2. Current Active Step */}
-                {activeStep === index && (
+                {isReservation && isStepCompleted && (
                   <Typography variant="caption" sx={{ color: step.color, fontWeight: 400 }}>
                     {step.description}
                   </Typography>
@@ -273,94 +275,6 @@ export default function LogisticsStepper({ logistic, isReservation }) {
       })}
     </Stepper>
   );
-  // }
-  // return (
-  //   <Stepper
-  //     activeStep={activeStep}
-  //     orientation="vertical"
-  //     sx={{
-  //       '& .MuiStepLabel-root': {
-  //         padding: 0,
-  //       },
-  //       '& .MuiStepConnector-line': {
-  //         display: 'none',
-  //       },
-  //     }}
-  //   >
-  //     {steps.map((step, index) => {
-  //       // For Reservation, we use explicit flags. For Product, we use the activeStep logic.
-  //       const isActive = isReservation ? step.isActive : activeStep === index;
-  //       const isCompleted = isReservation ? step.isCompleted : activeStep > index;
-  //       const isLastStep = index === steps.length - 1;
-
-  //       // Logic for the line color:
-  //       // - Green (#1ABF66) if the step is completed AND it's not the immediate parent of the active step.
-  //       // - Blue (#1340FF) if the step is completed AND it is leading directly into the active step.
-  //       // - Grey (#EFEFEF) otherwise.
-  //       const isLineBlue = activeStep === index + 1;
-  //       const lineColor = isCompleted ? (isLineBlue ? '#1340FF' : '#1ABF66') : '#EFEFEF';
-
-  //       return (
-  //         <Step key={step.label} expanded>
-  //           <StepLabel
-  //             StepIconComponent={CustomStepIcon}
-  //             StepIconProps={{
-  //               active: isActive,
-  //               completed: isCompleted,
-  //               error: step.error && isActive,
-  //             }}
-  //             sx={{
-  //               py: 0,
-  //               '& .MuiStepLabel-label': {
-  //                 color: 'text.primary',
-  //                 fontWeight: 600,
-  //               },
-  //               '& .MuiStepLabel-iconContainer': {
-  //                 paddingRight: 2,
-  //               },
-  //             }}
-  //           >
-  //             <Typography variant="caption" component="span" sx={{ color: 'text.secondary' }}>
-  //               STEP {step.step || index + 1}
-  //             </Typography>
-  //           </StepLabel>
-  //           <StepContent
-  //             sx={{
-  //               mt: 0,
-  //               borderLeft: isLastStep ? 'none' : '2px solid',
-  //               borderColor: lineColor,
-  //               pb: isLastStep ? 0 : 2,
-  //               pl: 3.5,
-  //               ml: '11px',
-  //             }}
-  //           >
-  //             <Box display="flex" flexDirection="column">
-  //               <Typography variant="subtitle2" component="span" sx={{ fontWeight: 700 }}>
-  //                 {step.label}
-  //               </Typography>
-
-  //               {/* Completed State: Show Date */}
-  //               {isCompleted && (step.completedDate || step.description) && (
-  //                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-  //                   {step.completedDate
-  //                     ? `Completed on ${format(new Date(step.completedDate), 'dd/MM/yyyy')}`
-  //                     : step.description}
-  //                 </Typography>
-  //               )}
-
-  //               {/* Active State: Show Actionable Description */}
-  //               {isActive && (
-  //                 <Typography variant="caption" sx={{ color: step.color, fontWeight: 400 }}>
-  //                   {step.description}
-  //                 </Typography>
-  //               )}
-  //             </Box>
-  //           </StepContent>
-  //         </Step>
-  //       );
-  //     })}
-  //   </Stepper>
-  // );
 }
 
 LogisticsStepper.propTypes = {
@@ -370,14 +284,16 @@ LogisticsStepper.propTypes = {
 
 // ----------------------------------------------------------------------
 
-export function CreatorLogisticsStepper({ status, updatedDates, isReservation }) {
+export function CreatorLogisticsStepper({ status, logistic, isReservation }) {
   const isIssue = status === 'ISSUE_REPORTED';
-  const reservationDetails = updatedDates?.reservationDetails;
-  const isAutoSchedule = updatedDates?.campaign?.reservationConfig?.mode === 'AUTO_SCHEDULE';
+  const reservationDetails = logistic?.reservationDetails;
+  const isAutoSchedule = logistic?.campaign?.reservationConfig?.mode === 'AUTO_SCHEDULE';
+  const deliveryDetails = logistic?.deliveryDetails;
+  const isConfirmed = deliveryDetails?.isConfirmed;
 
   let activeStep = 0;
   let steps = [];
-  console.log('isReservation:', isReservation);
+  
   if (isReservation) {
     if (status === 'NOT_STARTED') activeStep = 0;
     else if (status === 'PENDING_ASSIGNMENT') activeStep = 1;
@@ -388,14 +304,14 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
       {
         step: 1,
         label: 'Check Availability',
-        date: updatedDates?.createdAt,
+        date: logistic?.createdAt,
         desc: status === 'NOT_STARTED' ? 'Please provide necessary details.' : 'Completed on',
         color: '#FF3500',
       },
       {
         step: 2,
         label: 'Confirm Slot',
-        date: activeStep > 1 ? updatedDates?.updatedAt : null,
+        date: activeStep > 1 ? logistic?.updatedAt : null,
         desc:
           status === 'PENDING_ASSIGNMENT'
             ? 'Waiting for Client to confirm your slot...'
@@ -405,7 +321,7 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
       {
         step: 3,
         label: isIssue ? 'Issue Reported' : 'Complete Visit',
-        date: updatedDates?.completedAt,
+        date: logistic?.completedAt,
         desc: isIssue ? 'We’ll review your issue and resolve it shortly.' : 'Completed on',
         error: isIssue,
       },
@@ -429,19 +345,21 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
       {
         step: 1,
         label: 'Confirm Details',
-        date: updatedDates?.createdAt,
-        desc: 'Completed on',
+        date: deliveryDetails?.createdAt,
+        desc: isConfirmed ? '' : 'Please confirm your details',
+        color: '#1340FF',
       },
       {
         step: 2,
         label: 'Delivery Scheduled',
-        date: updatedDates?.shippedAt ? updatedDates.createdAt : null, // Use createdAt logic or similar as per requirement
-        desc: 'Completed on',
+        date: logistic?.shippedAt ? logistic.createdAt : null, // Use createdAt logic or similar as per requirement
+        desc: 'Waiting for Client to update delivery details...',
+        color: '#1340FF',
       },
       {
         step: 3,
         label: isIssue ? 'Issue Reported' : 'Receive Product',
-        date: updatedDates?.deliveredAt || updatedDates?.receivedAt,
+        date: logistic?.deliveredAt || logistic?.receivedAt,
         desc: isIssue ? 'We’ll review your issue and resolve it shortly.' : 'Completed on',
         error: isIssue,
       },
@@ -449,7 +367,7 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
   }
 
   const hasNewInfo = useMemo(() => {
-    if (!isAutoSchedule || !reservationDetails || !updatedDates?.id) return false;
+    if (!isAutoSchedule || !reservationDetails || !logistic?.id) return false;
 
     const fields = [
       { key: 'pic', val: reservationDetails.picName },
@@ -458,8 +376,8 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
       { key: 'remarks', val: reservationDetails.clientRemarks },
     ];
 
-    return fields.some((f) => f.val && !localStorage.getItem(`seen-${updatedDates.id}-${f.key}`));
-  }, [isAutoSchedule, reservationDetails, updatedDates?.id]);
+    return fields.some((f) => f.val && !localStorage.getItem(`seen-${logistic.id}-${f.key}`));
+  }, [isAutoSchedule, reservationDetails, logistic?.id]);
 
   return (
     <Stepper
@@ -498,42 +416,103 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
               )}
               error={isErrorStep}
             >
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
-                STEP {step.step}
-              </Typography>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#231F20' }}>
-                {step.label}
-              </Typography>
-              {(activeStep > index ||
-                (activeStep === index && step.error) ||
-                (activeStep === index &&
-                  index === 2 &&
-                  ['RECEIVED', 'COMPLETED'].includes(status))) && (
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: isErrorStep ? '#1340FF' : 'text.secondary',
-                    display: 'block',
-                  }}
-                >
-                  {step.desc} {step.date && !isErrorStep && fDate(step.date)}
-                </Typography>
-              )}
-              {activeStep === index && !step.error && index !== 2 && (
-                <Typography
-                  variant="caption"
-                  sx={{ color: step.color, display: 'block', fontsize: '10px' }}
-                >
-                  {step.desc}
-                </Typography>
-              )}
-              {status === 'SCHEDULED' && index === 2 && !isErrorStep && (
-                <Typography
-                  variant="caption"
-                  sx={{ color: '#FF3500', display: 'block', fontWeight: 500 }}
-                >
-                  Mark visit as complete.
-                </Typography>
+              {isReservation ? (
+                <>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 'bold', color: 'text.secondary' }}
+                  >
+                    STEP {step.step}
+                  </Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#231F20' }}>
+                    {step.label}
+                  </Typography>
+                  {(activeStep > index ||
+                    (activeStep === index && step.error) ||
+                    (activeStep === index &&
+                      index === 2 &&
+                      ['RECEIVED', 'COMPLETED'].includes(status))) && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: isErrorStep ? '#1340FF' : 'text.secondary',
+                        display: 'block',
+                      }}
+                    >
+                      {step.desc} {step.date && !isErrorStep && fDate(step.date)}
+                    </Typography>
+                  )}
+                  {activeStep === index && !step.error && index !== 2 && (
+                    <Typography
+                      variant="caption"
+                      sx={{ color: step.color, display: 'block', fontsize: '10px' }}
+                    >
+                      {step.desc}
+                    </Typography>
+                  )}
+                  {status === 'SCHEDULED' && index === 2 && !isErrorStep && (
+                    <Typography
+                      variant="caption"
+                      sx={{ color: '#FF3500', display: 'block', fontWeight: 500 }}
+                    >
+                      Mark visit as complete.
+                    </Typography>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 'bold', color: 'text.secondary' }}
+                  >
+                    STEP {step.step}
+                  </Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#231F20' }}>
+                    {step.label}
+                  </Typography>
+                  {(activeStep > index ||
+                    (activeStep === index && step.error) ||
+                    (activeStep === index &&
+                      index === 2 &&
+                      ['RECEIVED', 'COMPLETED'].includes(status))) && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: isErrorStep ? '#1340FF' : 'text.secondary',
+                        display: 'block',
+                      }}
+                    >
+                      Completed on {step.date && !isErrorStep && fDate(step.date)}
+                    </Typography>
+                  )}
+                  {isConfirmed && activeStep === 0 && index === 0 && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: isErrorStep ? '#1340FF' : 'text.secondary',
+                        display: 'block',
+                      }}
+                    >
+                      Completed on {step.date && !isErrorStep && fDate(step.date)}
+                    </Typography>
+                  )}
+                  {activeStep === index && !step.error && index !== 2 && (
+                    <Typography
+                      variant="caption"
+                      sx={{ color: step.color, display: 'block', fontsize: '10px' }}
+                    >
+                      {step.desc}
+                    </Typography>
+                  )}
+                  {status === 'SHIPPED' && index === 2 && !isErrorStep && (
+                    <Typography
+                      variant="caption"
+                      sx={{ color: '#FF3500', display: 'block', fontWeight: 500 }}
+                    >
+                      Please confirm when products are received
+                    </Typography>
+                  )}
+                </>
               )}
             </StepLabel>
           </Step>
@@ -545,6 +524,6 @@ export function CreatorLogisticsStepper({ status, updatedDates, isReservation })
 
 CreatorLogisticsStepper.propTypes = {
   status: PropTypes.string,
-  updatedDates: PropTypes.object,
+  logistic: PropTypes.object,
   isReservation: PropTypes.bool,
 };
