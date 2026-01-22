@@ -810,7 +810,7 @@ export default function CreatorLogisticsView({ campaign }) {
         <Box sx={{ py: 6, px: { xs: 3, md: 14 }, borderBottom: '1px solid #EDEFF2' }}>
           <CreatorLogisticsStepper
             status={status}
-            updatedDates={logistic}
+            logistic={logistic}
             isReservation={isReservation}
           />
         </Box>
