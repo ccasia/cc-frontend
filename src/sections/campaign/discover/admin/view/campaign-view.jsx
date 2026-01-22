@@ -32,7 +32,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import CreateCampaignForm from 'src/sections/campaign/create/form';
+import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 
 import CampaignLists from '../campaign-list';
 
@@ -629,7 +629,7 @@ const CampaignView = () => {
         scroll="paper"
         open={create.value}
       >
-        <CreateCampaignForm onClose={create.onFalse} mutate={mutate} />
+        <CreateCampaignFormV2 onClose={create.onFalse} mutate={mutate} />
       </Dialog>
     </Container>
   );
