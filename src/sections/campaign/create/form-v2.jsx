@@ -10,7 +10,7 @@ import { enqueueSnackbar } from 'notistack';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
-import React, { lazy, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -29,27 +29,26 @@ import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
-import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
-import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
-import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-slots';
 import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
 
 import CreateBrand from './brandDialog';
-import NextSteps from './stepsV2/next-steps';
-// Import V2 step components
-import SelectBrand from './stepsV2/select-brand';
-import FinaliseCampaign from './stepsV2/finalise-campaign';
-import CampaignObjective from './stepsV2/campaign-objective';
-import AdditionalDetails1 from './stepsV2/additional-details-1';
-import AdditionalDetails2 from './stepsV2/additional-details-2';
-import CampaignGeneralInfo from './stepsV2/campaign-general-info';
-import CampaignTargetAudience from './stepsV2/campaign-target-audience';
+import {
+  NextSteps,
+  SelectBrand,
+  LogisticRemarks,
+  FinaliseCampaign,
+  CampaignObjective,
+  CampaignLogistics,
+  AdditionalDetails1,
+  AdditionalDetails2,
+  ReservationSlotsV2,
+  CampaignGeneralInfo,
+  CampaignTargetAudience,
+} from './stepsV2';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -113,10 +112,7 @@ const getFrontSectionIndicatorIndex = (internalStep) => {
   return 0; // Additional Details 1
 };
 
-const PDFEditor = lazy(() => import('./pdf-editor'));
-
 function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
-  const { user } = useAuthContext();
   const openCompany = useBoolean();
   const openBrand = useBoolean();
   const confirmation = useBoolean();
@@ -226,7 +222,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     secondaryAudienceLanguage: Yup.array(),
     secondaryAudienceCreatorPersona: Yup.array(),
     secondaryAudienceUserPersona: Yup.string(),
-    geographicFocus: Yup.string(),
+    geographicFocus: Yup.string().required('Geographic focus is required'),
     geographicFocusOthers: Yup.string(),
   });
 
@@ -338,23 +334,22 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   };
 
   const defaultValues = {
-    // Client/Brand selection
+    // General info fields
     hasBrand: false,
     client: null,
     campaignBrand: null,
     campaignCredits: null,
-    // General Campaign Info
     campaignName: '',
     campaignDescription: '',
+    brandAbout: '',
     campaignStartDate: null,
     campaignEndDate: null,
-    campaignIndustries: [],
-    brandTone: '',
-    brandAbout: '',
     productName: '',
+    campaignIndustries: [],
     websiteLink: '',
     campaignImages: [],
-    // Campaign Objectives
+
+    // Campaign objectives
     campaignObjectives: '',
     secondaryObjectives: [],
     boostContent: '',
@@ -362,55 +357,57 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     performanceBaseline: '',
     campaignDo: [{ value: '' }],
     campaignDont: [{ value: '' }],
-    // Target Audience
+
+    // Target audience
     country: '',
+    countries: [],
     audienceGender: [],
     audienceAge: [],
     audienceLocation: [],
-    othersAudienceLocation: '',
     audienceLanguage: [],
     audienceCreatorPersona: [],
     audienceUserPersona: '',
-    // Secondary Audience
-    secondaryAudienceUserPersona: '',
+    geographicFocus: '',
+    geographicFocusOthers: '',
+
+    // Target audience secondary
     secondaryAudienceGender: [],
     secondaryAudienceAge: [],
     secondaryAudienceLocation: [],
-    secondaryOthersAudienceLocation: '',
     secondaryAudienceLanguage: [],
     secondaryAudienceCreatorPersona: [],
+    secondaryAudienceUserPersona: '',
     secondaryCountry: '',
-    geographicFocus: '',
-    geographicFocusOthers: '',
+    secondaryOthersAudienceLocation: '',
+
     // Logistics
     logisticsType: '',
-    clientRemarks: '',
-    allowMultipleBookings: false,
-    schedulingOption: 'confirmation',
     products: [{ name: '' }],
+    schedulingOption: 'confirmation',
     locations: [{ name: '', pic: '', contactNumber: '' }],
     availabilityRules: [],
+    allowMultipleBookings: false,
+    clientRemarks: '',
     venueName: '',
     venueAddress: '',
     reservationNotes: '',
-    // Finalise Campaign
+
+    // Campaign management
     campaignManager: [],
-    agreementFrom: null,
     campaignType: '',
     deliverables: ['UGC_VIDEOS'],
     rawFootage: false,
     photos: false,
+    crossPosting: false,
     ads: false,
-    otherAttachments: [],
-    referencesLinks: [],
+    agreementFrom: null,
+    timeline: [],
+
+    // Additional Details 1 fields
+    socialMediaPlatform: [],
+    contentFormat: [],
     postingStartDate: null,
     postingEndDate: null,
-    socialMediaPlatform: [],
-    videoAngle: [],
-    isV4Submission: false,
-    submissionVersion: 'v2',
-    // Additional Details 1
-    contentFormat: [],
     mainMessage: '',
     keyPoints: '',
     toneAndStyle: '',
@@ -418,7 +415,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     referenceContent: '',
     productImage1: [],
     productImage2: [],
-    // Additional Details 2
+
+    // Additional Details 2 fields
     hashtagsToUse: '',
     mentionsTagsRequired: '',
     creatorCompensation: '',
@@ -428,6 +426,9 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     ctaLinkInBioRequirements: '',
     specialNotesInstructions: '',
     needAds: '',
+    submissionVersion: 'v2',
+
+    isV4Submission: false,
   };
 
   const methods = useForm({
@@ -443,8 +444,10 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     setValue,
     watch,
     trigger,
-    formState: { isValid, errors },
   } = methods;
+
+  // Watch all form values to trigger re-render when values change
+  const formValues = watch();
 
   useEffect(() => {
     if (brandState) {
@@ -475,6 +478,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           'audienceGender',
           'audienceLanguage',
           'audienceCreatorPersona',
+          'geographicFocus'
         ];
       case 4: // Logistics
         return ['logisticsType'];
@@ -912,64 +916,65 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   const isStepValid = () => {
     switch (activeStep) {
       case 0: {
-        const client = getValues('client');
-        const credits = getValues('campaignCredits');
-        const brand = getValues('campaignBrand');
+        const client = formValues.client;
+        const credits = formValues.campaignCredits;
+        const brand = formValues.campaignBrand;
         // If client is agency type, brand is required
         if (client?.type === 'agency' && !brand) return false;
         return client && credits && credits > 0 && !hasCreditError;
       }
       case 1: {
-        const title = getValues('campaignName');
-        const desc = getValues('campaignDescription');
-        const industries = getValues('campaignIndustries');
-        const images = getValues('campaignImages');
-        const startDate = getValues('campaignStartDate');
-        const endDate = getValues('campaignEndDate');
+        const title = formValues.campaignName;
+        const desc = formValues.campaignDescription;
+        const industries = formValues.campaignIndustries;
+        const images = formValues.campaignImages;
+        const startDate = formValues.campaignStartDate;
+        const endDate = formValues.campaignEndDate;
         return (
           title && desc && industries?.length > 0 && images?.length > 0 && startDate && endDate
         );
       }
       case 2: {
-        const objectives = getValues('campaignObjectives');
-        const dos = getValues('campaignDo');
-        const donts = getValues('campaignDont');
+        const objectives = formValues.campaignObjectives;
+        const dos = formValues.campaignDo;
+        const donts = formValues.campaignDont;
         return objectives && dos?.length > 0 && donts?.length > 0;
       }
       case 3: {
-        const country = getValues('country');
-        const age = getValues('audienceAge');
-        const gender = getValues('audienceGender');
-        const language = getValues('audienceLanguage');
-        const persona = getValues('audienceCreatorPersona');
-        return country && age?.length > 0 && gender?.length > 0 && language?.length > 0 && persona?.length > 0;
+        const country = formValues.country;
+        const age = formValues.audienceAge;
+        const gender = formValues.audienceGender;
+        const language = formValues.audienceLanguage;
+        const persona = formValues.audienceCreatorPersona;
+        const geographicFocus = formValues.geographicFocus;
+        return country && age?.length > 0 && gender?.length > 0 && language?.length > 0 && persona?.length > 0 && geographicFocus;
       }
       case 4: {
-        const type = getValues('logisticsType');
+        const type = formValues.logisticsType;
         if (!type) return true; // Optional step
 
         if (type === 'PRODUCT_DELIVERY') {
-          const products = getValues('products');
+          const products = formValues.products;
           return products?.some((p) => p.name?.trim().length > 0);
         }
 
         if (type === 'RESERVATION') {
-          const locations = getValues('locations');
+          const locations = formValues.locations;
           return locations?.some((l) => l.name?.trim().length > 0);
         }
 
         return true;
       }
       case 5: {
-        const rules = getValues('availabilityRules');
+        const rules = formValues.availabilityRules;
         return rules?.length > 0;
       }
       case 6:
         return true; // Optional
       case 7: {
-        const manager = getValues('campaignManager');
-        const type = getValues('campaignType');
-        const deliverables = getValues('deliverables');
+        const manager = formValues.campaignManager;
+        const type = formValues.campaignType;
+        const deliverables = formValues.deliverables;
         return manager?.length > 0 && type && deliverables?.length > 0;
       }
       case 8: // Next Steps - navigation only
@@ -985,7 +990,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   const backSectionIndicator = getBackSectionIndicatorIndex(activeStep);
   const frontSectionIndicator = getFrontSectionIndicatorIndex(activeStep);
 
-  const startDate = getValues('campaignStartDate');
   const campaignStartDate = watch('campaignStartDate');
 
   const handlePackageLinkSuccess = async () => {
