@@ -14,6 +14,7 @@ import {
   TableHead,
   TableCell,
   TableContainer,
+  TablePagination,
   CircularProgress,
 } from '@mui/material';
 
@@ -145,6 +146,19 @@ export default function LogisticsList({
     setStatusTargetId(null);
   };
 
+  //pagination handle
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(+event.target.value);
+    setPage(0);
+  };
+
   if (isLoading) return <LoadingScreen />;
 
   const notFound = !logistics || logistics.length === 0;
@@ -152,8 +166,8 @@ export default function LogisticsList({
   return (
     <>
       <Card>
-        <TableContainer sx={{ position: 'relative' }}>
-          <Table>
+        <TableContainer sx={{ position: 'relative', maxHeight: 450 }}>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
                 {TABLE_HEAD.map((heading) => (
@@ -169,7 +183,7 @@ export default function LogisticsList({
             </TableHead>
 
             <TableBody>
-              {logistics?.map((row) => (
+              {logistics?.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
                 <LogisticsTableRow
                   key={row.id}
                   row={row}
@@ -193,6 +207,15 @@ export default function LogisticsList({
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          rowsPerPageOptions={[10, 25, 100]}
+          component="div"
+          count={logistics.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
       </Card>
 
       {isAdmin && (
