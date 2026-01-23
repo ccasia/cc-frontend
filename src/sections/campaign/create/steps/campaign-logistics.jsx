@@ -175,107 +175,38 @@ const CampaignLogistics = () => {
                   </Typography>
                 </Box>
 
-                {editingIndex === index ? (
-                  <Box>
-                    <TextField
-                      fullWidth
-                      placeholder="Product Name"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        },
-                        mb: 1,
-                      }}
-                      autoFocus
-                    />
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      <Button
-                        onClick={() => handleCancel()}
-                        sx={{
-                          height: 38,
-                          borderRadius: '8px',
-                          padding: '8px 12px',
-                          background: '#FFFFFF',
-                          border: '1px solid #E7E7E7',
-                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                          color: 'text.primary',
-                          '&:hover': { bgcolor: '#f5f5f5' },
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={() => handleSave(index)}
-                        sx={{
-                          height: 38,
-                          borderRadius: '8px',
-                          padding: '8px 12px',
-                          background: '#FFFFFF',
-                          border: '1px solid #E7E7E7',
-                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                          color: 'text.primary',
-                          '&:hover': { bgcolor: '#f5f5f5' },
-                        }}
-                      >
-                        Save
-                      </Button>
-                    </Box>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <RHFTextField
-                      fullWidth
-                      placeholder="Product Name"
-                      name={`products.${index}.name`}
-                      // value={field.name}
-                      disabled={index !== lastAddedIndex && editingIndex !== index}
-                      // onChange={(e) => {
-                      //   const newProducts = [...productFields];
-                      //   newProducts[index].name = e.target.value;
-                      //   setValue(`products.${index}.name`, e.target.value, {
-                      //     shouldValidate: true,
-                      //     shouldDirty: true,
-                      //   });
-                      // }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        },
-                      }}
-                    />
-                    {index !== lastAddedIndex && (
-                      <IconButton
-                        onClick={() => handleEdit(index, getValues(`products.${index}.name`))}
-                        sx={{ ml: 1 }}
-                      >
-                        <Iconify icon="feather:edit" />
-                      </IconButton>
-                    )}
-                  </Box>
-                )}
+                <Stack direction="row" spacing={1} sx={{ display: 'flex', alignItems: 'center' }}>
+                  <RHFTextField
+                    fullWidth
+                    placeholder="Product Name"
+                    name={`products.${index}.name`}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1,
+                      },
+                    }}
+                  />
+
+                  <IconButton
+                    onClick={() => removeProduct(index)}
+                    disabled={productFields.length === 1}
+                    sx={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: 1,
+                      border: '1px solid #E7E7E7',
+                      color: '#FF3030',
+                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      '&:hover': { bgcolor: '#FFF5F5' },
+                    }}
+                  >
+                    <Iconify icon="eva:trash-2-outline" width={22} />
+                  </IconButton>
+                </Stack>
               </Stack>
             ))}
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-              {productFields.length > 1 && (
-                <Button
-                  onClick={() => removeProduct(productFields.length - 1)}
-                  sx={{
-                    height: 38,
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    background: '#FFFFFF',
-                    border: '1px solid #E7E7E7',
-                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                    color: '#FF3030',
-                    '&:hover': { bgcolor: '#f5f5f5' },
-                  }}
-                >
-                  Remove
-                </Button>
-              )}
               <IconButton
                 onClick={handleAddProduct}
                 sx={{
