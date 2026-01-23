@@ -39,6 +39,10 @@ import CampaignLists from '../campaign-list';
 const CampaignView = () => {
   const settings = useSettingsContext();
 
+  const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
+
+  console.log('LAST CAMPAIGN OPEN ID:', lastCampaignOpenId);
+
   const [search, setSearch] = useState({
     query: '',
     results: [],
@@ -51,9 +55,6 @@ const CampaignView = () => {
     debounce((q) => setDebouncedQuery(q), 300), // 300ms delay
     []
   );
-
-  // Remove the useGetCampaigns hook since we're using useSWRInfinite for the actual data
-  // const { campaigns } = useGetCampaigns();
 
   const create = useBoolean();
 
@@ -87,8 +88,8 @@ const CampaignView = () => {
     if (pageIndex === 0) {
       let status = filter.toUpperCase();
       if (filter === 'pending') {
-              // For pending tab, we need to search for all pending statuses
-      status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
+        // For pending tab, we need to search for all pending statuses
+        status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
       }
       return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}`;
     }
@@ -108,9 +109,9 @@ const CampaignView = () => {
   const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher, {
     revalidateFirstPage: false,
   });
-  
+
   // Make mutate function available globally for campaign activation
-  React.useEffect(() => {
+  useEffect(() => {
     window.swrMutate = mutate;
     return () => {
       delete window.swrMutate;
@@ -123,15 +124,23 @@ const CampaignView = () => {
   );
 
   // Persistent counts across tabs: fetch per-status counts independently of current filter
-  const buildCountKey = useCallback((statusString) => 
-     `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(
-      debouncedQuery
-    )}&status=${statusString}&limit=${500}` // larger limit to approximate full count
-  , [user?.id, debouncedQuery]);
+  const buildCountKey = useCallback(
+    (statusString) =>
+      `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(
+        debouncedQuery
+      )}&status=${statusString}&limit=${500}`, // larger limit to approximate full count
+    [user?.id, debouncedQuery]
+  );
 
-  const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, { revalidateOnFocus: false });
-  const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, { revalidateOnFocus: false });
-  const { data: pausedData } = useSWR(buildCountKey('PAUSED'), fetcher, { revalidateOnFocus: false });
+  const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, {
+    revalidateOnFocus: false,
+  });
+  const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, {
+    revalidateOnFocus: false,
+  });
+  const { data: pausedData } = useSWR(buildCountKey('PAUSED'), fetcher, {
+    revalidateOnFocus: false,
+  });
   const { data: pendingData } = useSWR(
     buildCountKey('SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION'),
     fetcher,
@@ -162,12 +171,26 @@ const CampaignView = () => {
 
   useEffect(() => {
     // Debug: verify counts persist across tabs
-    console.log('[CampaignView] Counts -> Active:', activeCount, 'Pending:', pendingCount, 'Completed:', completedCount, 'Paused:', pausedCount);
+    console.log(
+      '[CampaignView] Counts -> Active:',
+      activeCount,
+      'Pending:',
+      pendingCount,
+      'Completed:',
+      completedCount,
+      'Paused:',
+      pausedCount
+    );
   }, [activeCount, pendingCount, completedCount, pausedCount]);
 
   // Reset filter if non-superadmin/non-CSM tries to access pending tab
   useEffect(() => {
-    if (filter === 'pending' && !isSuperAdmin && user?.admin?.role?.name !== 'CSM' && user?.admin?.role?.name !== 'Customer Success Manager') {
+    if (
+      filter === 'pending' &&
+      !isSuperAdmin &&
+      user?.admin?.role?.name !== 'CSM' &&
+      user?.admin?.role?.name !== 'Customer Success Manager'
+    ) {
       setFilter('active');
     }
   }, [filter, isSuperAdmin, user]);
@@ -192,6 +215,18 @@ const CampaignView = () => {
       scrollContainer.removeEventListener('scroll', handleScroll);
     };
   }, [handleScroll, mainRef, lgUp]);
+
+  useEffect(() => {
+    if (lastCampaignOpenId) {
+      const el = document.getElementById(`campaign-${lastCampaignOpenId}`);
+      if (!el) return;
+
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [mainRef, lastCampaignOpenId]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
@@ -282,7 +317,9 @@ const CampaignView = () => {
               Active ({activeCount})
             </Button>
             {/* Show Pending tab for superadmins and CSM users */}
-            {(isSuperAdmin || user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager') && (
+            {(isSuperAdmin ||
+              user?.admin?.role?.name === 'CSM' ||
+              user?.admin?.role?.name === 'Customer Success Manager') && (
               <Button
                 disableRipple
                 size="large"
@@ -574,6 +611,7 @@ const CampaignView = () => {
         (dataFiltered?.length > 0 ? (
           <Box mt={2}>
             <CampaignLists campaigns={dataFiltered} />
+
             {isValidating && (
               <Box sx={{ textAlign: 'center', my: 2 }}>
                 <CircularProgress
@@ -598,16 +636,7 @@ const CampaignView = () => {
             })()} campaigns available`}
           />
         ))}
-      {/* <CampaignFilter
-        open={openFilters.value}
-        onOpen={openFilters.onTrue}
-        onClose={openFilters.onFalse}
-        //
-        filters={filters}
-        onFilters={handleFilters}
-        reset={handleResetFitlers}
-        brands={brandOptions}
-      /> */}
+
       <Dialog
         fullWidth
         fullScreen

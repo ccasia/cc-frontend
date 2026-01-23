@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
-import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
+import React, { useRef, useState } from 'react';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
@@ -31,7 +31,6 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-import { useSnackbar } from 'src/components/snackbar';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import ActivateCampaignDialog from './activate-campaign-dialog';
@@ -50,7 +49,8 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
   const theme = useTheme();
   const { user } = useAuthContext();
-  const { enqueueSnackbar } = useSnackbar();
+  const ref = useRef(null);
+
   const router = useRouter();
   const isCopy = useBoolean();
 
@@ -727,7 +727,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
   return (
     <Card
+      component={Box}
+      id={`campaign-${campaign?.id}`}
+      ref={ref}
       onClick={() => {
+        localStorage.setItem('lastCampaignOpenId', campaign?.id);
         router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
       }}
       sx={{
@@ -748,24 +752,6 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         },
       }}
     >
-      {/* <Box
-        sx={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 1,
-          border: 0.5,
-          borderRadius: 20,
-          display: 'inline-flex',
-          borderColor: 'gray',
-          boxShadow: '0px 0px 5px 0px #5c5c5c',
-        }}
-      >
-        <Iconify
-          icon={`emojione:flag-for-${campaign?.campaignRequirement?.country?.toLowerCase()}`}
-          width={40}
-        />
-      </Box> */}
       {false && (
         <Box
           mt={4}
