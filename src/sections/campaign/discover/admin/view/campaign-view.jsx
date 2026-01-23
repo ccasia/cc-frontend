@@ -61,10 +61,6 @@ const CampaignView = () => {
 
   const theme = useTheme();
 
-  const [anchorEl, setAnchorEl] = useState(null);
-
-  const open = Boolean(anchorEl);
-
   const { user } = useAuthContext();
 
   const { mainRef } = useMainContext();
@@ -147,17 +143,8 @@ const CampaignView = () => {
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
   const handleNewCampaign = () => {
     create.onTrue();
-    handleClose();
   };
 
   useEffect(() => {
@@ -429,19 +416,18 @@ const CampaignView = () => {
 
           <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
             <Button
-              onClick={handleClick}
-              endIcon={<Iconify icon="eva:chevron-down-fill" width={20} height={20} />}
+              onClick={handleNewCampaign}
               disabled={isDisabled}
               sx={{
                 bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
                 color: isDisabled ? '#9e9e9e' : 'white',
                 borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
                 borderRadius: '8px',
-                padding: '8px 20px',
+                px: 2.5,
+                py: 1,
                 position: 'absolute',
                 right: 0,
                 top: -3,
-                minWidth: '150px',
                 fontSize: '0.9rem',
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
                 '&:hover': {
@@ -453,75 +439,8 @@ const CampaignView = () => {
               New Campaign
             </Button>
           </Box>
-
-          <IconButton
-            onClick={handleClick}
-            sx={{
-              display: { xs: 'flex', sm: 'none' },
-              position: 'fixed',
-              right: 20,
-              bottom: 20,
-              width: 56,
-              height: 56,
-              bgcolor: '#203ff5',
-              color: 'white',
-              zIndex: 1100,
-              boxShadow: '0 2px 12px rgba(32, 63, 245, 0.3)',
-              '&:hover': {
-                bgcolor: '#203ff5',
-                opacity: 0.9,
-              },
-            }}
-          >
-            <Iconify icon="eva:plus-fill" width={24} height={24} />
-          </IconButton>
         </Stack>
       </Box>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            mt: { xs: -8, sm: 0 },
-            mb: { xs: 1, sm: 1 },
-            width: 200,
-            bgcolor: 'white',
-            border: '1px solid #e7e7e7',
-            borderBottom: '2px solid #e7e7e7',
-            borderRadius: 1,
-            '& .MuiMenuItem-root': {
-              px: 2,
-              py: 1.5,
-              borderRadius: 1,
-              color: '#000000',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-            },
-          },
-        }}
-      >
-        <MenuItem onClick={handleNewCampaign} disabled={isDisabled}>
-          <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2 }} />
-          New Campaign
-        </MenuItem>
-        {/* <MenuItem onClick={handleClose}>
-          <Iconify icon="mdi:note-text" width={20} height={20} sx={{ mr: 2 }} />
-          Drafts
-        </MenuItem> */}
-      </Menu>
 
       <Box
         sx={{
