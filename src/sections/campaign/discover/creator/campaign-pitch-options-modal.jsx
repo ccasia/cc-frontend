@@ -43,7 +43,6 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
     // Check if user is in the target list for media kit requirement
     const targetUserIds = [
       'cm8gvqtcv01hwph01uof2u9xu',
-      'cm49lve6i00patrd2ax5fj67h',
       'cm4132k9p00wb54qgcrs71v0t',
       'cmauqo8oy03ioky0157sbr2jg',
       'cm8jxuuvy0272ph01nr0h7din',
