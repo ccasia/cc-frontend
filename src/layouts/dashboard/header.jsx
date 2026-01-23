@@ -5,11 +5,15 @@ import Stack from '@mui/material/Stack';
 import Toolbar from '@mui/material/Toolbar';
 import { grey } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
-import { AppBar, Badge, Box, Chip, Divider, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
+import { Box, Chip, AppBar, Button, Divider, Typography } from '@mui/material';
+
+import { useRouter } from 'src/routes/hooks';
 
 import { useOffSetTop } from 'src/hooks/use-off-set-top';
 import { useResponsive } from 'src/hooks/use-responsive';
+
+import axiosInstance from 'src/utils/axios';
 
 import { bgBlur } from 'src/theme/css';
 import { useAuthContext } from 'src/auth/hooks';
@@ -33,7 +37,9 @@ export default function Header({ onOpenNav, isOnline }) {
 
   const settings = useSettingsContext();
 
-  const { user } = useAuthContext();
+  const router = useRouter();
+
+  const { user, initialize } = useAuthContext();
 
   const isNavHorizontal = settings.themeLayout === 'horizontal';
 
@@ -43,23 +49,39 @@ export default function Header({ onOpenNav, isOnline }) {
 
   const offsetTop = offset && !isNavHorizontal;
 
+  const endSession = async () => {
+    await axiosInstance.post('/api/admin/impersonate-creator/end');
+    initialize();
+    router.replace('/dashboard');
+  };
+
   const renderHeader = (
     <Stack direction="row" alignItems="center" spacing={1}>
       {user?.isImpersonating && (
-        <Chip
-          variant="outlined"
-          color="secondary"
-          label={
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="caption">Impersonating mode</Typography>
-              <Typography variant="caption">Initiated by {user.impersonatingBy}</Typography>
-            </Box>
-          }
-          icon={<Iconify icon="fluent:important-12-regular" />}
-          sx={{
-            height: 'auto',
-          }}
-        />
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Iconify icon="lets-icons:cancel" />}
+            onClick={endSession}
+          >
+            End session
+          </Button>
+          <Chip
+            variant="outlined"
+            color="secondary"
+            label={
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="caption">Impersonating mode</Typography>
+                <Typography variant="caption">Initiated by {user.impersonatingBy?.name}</Typography>
+              </Box>
+            }
+            icon={<Iconify icon="fluent:important-12-regular" />}
+            sx={{
+              height: 'auto',
+            }}
+          />
+        </Box>
       )}
       <NotificationsPopover />
       <ChatPopover />

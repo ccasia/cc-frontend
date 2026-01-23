@@ -80,6 +80,7 @@ const CreatorProfileView = ({ id }) => {
       await axiosInstance.post('/api/admin/impersonate-creator', { userId });
       await new Promise((resolve) => setTimeout(resolve, 3000));
       initialize();
+      router.replace('/dashboard');
     } catch (error) {
       console.log(error);
       toast.error('Failed to impersonate');

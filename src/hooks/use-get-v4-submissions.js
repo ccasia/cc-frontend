@@ -6,16 +6,20 @@ import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 export const useGetV4Submissions = (campaignId, userId) => {
   const URL = `${endpoints.submission.v4.getSubmissions}?campaignId=${campaignId}${userId ? `&userId=${userId}` : ''}`;
-  
-  const { data, isLoading, error, mutate } = useSWR(
-    campaignId ? URL : null,
-    fetcher,
-    {
-      revalidateIfStale: true,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
+
+  const { data, isLoading, error, mutate } = useSWR(campaignId ? URL : null, fetcher, {
+    revalidateIfStale: true,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+
+  const test = data?.grouped;
+
+  if (test?.agreement?.userId === 'cmiduug6103x6l7013wl2pxbs') {
+    console.log(test);
+  }
+
+  // console.log(test?.filter((a) => a.agreement.userId === 'cmiduug6103x6l7013wl2pxbs'));
 
   const memoizedValue = {
     submissions: data?.submissions || [],

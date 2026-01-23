@@ -30,7 +30,7 @@ import Posting from './creator-stuff/submissions/posting/posting';
 
 const CampaignCreatorDeliverables = ({ campaign }) => {
   const theme = useTheme();
-
+  
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [expandedAccordion, setExpandedAccordion] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
