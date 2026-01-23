@@ -23,6 +23,8 @@ export default function ScheduleDeliveryDialog({ open, onClose, logistic, campai
   const [trackingLink, setTrackingLink] = useState('');
   const [expectedDate, setExpectedDate] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [linkError, setLinkError] = useState('');
+
   const address = logistic?.deliveryDetails?.address;
 
   useEffect(() => {
@@ -33,15 +35,33 @@ export default function ScheduleDeliveryDialog({ open, onClose, logistic, campai
           ? new Date(logistic.deliveryDetails.expectedDeliveryDate)
           : null
       );
+      setLinkError('');
     }
   }, [open, logistic]);
+
+  const handleTrackingChange = (value) => {
+    setTrackingLink(value);
+
+    // Check if the link starts with www.
+    if (value.toLowerCase().startsWith('www.') || value.toLowerCase().startsWith('http')) {
+      setLinkError('');
+    } else {
+      setLinkError('Please enter a valid link "www.courier.com" or "https://www.courier.com"');
+    }
+  };
 
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
+      const utcDate = expectedDate
+        ? new Date(
+            Date.UTC(expectedDate.getFullYear(), expectedDate.getMonth(), expectedDate.getDate())
+          )
+        : null;
+
       await axiosInstance.patch(`/api/logistics/campaign/${campaignId}/${logistic.id}/schedule`, {
         trackingLink,
-        expectedDeliveryDate: expectedDate,
+        expectedDeliveryDate: utcDate,
         address,
       });
       onUpdate();
@@ -119,17 +139,19 @@ export default function ScheduleDeliveryDialog({ open, onClose, logistic, campai
           </Typography>
           <TextField
             fullWidth
-            placeholder="Enter Tracking Link"
+            placeholder="www.courier.com/tracking/123"
             value={trackingLink}
-            onChange={(e) => setTrackingLink(e.target.value)}
+            onChange={(e) => handleTrackingChange(e.target.value)}
+            error={!!linkError}
+            helperText={linkError}
             variant="outlined"
             sx={{
               '& .MuiOutlinedInput-root': {
                 bgcolor: '#fff',
                 borderRadius: 1.5,
-                '& fieldset': { borderColor: '#E0E0E0' },
-                '&:hover fieldset': { borderColor: '#BDBDBD' },
-                '&.Mui-focused fieldset': { borderColor: '#231F20' },
+                '& fieldset': { borderColor: linkError ? 'error.main' : '#E0E0E0' },
+                '&:hover fieldset': { borderColor: linkError ? 'error.main' : '#BDBDBD' },
+                '&.Mui-focused fieldset': { borderColor: linkError ? 'error.main' : '#231F20' },
               },
             }}
           />
@@ -140,6 +162,7 @@ export default function ScheduleDeliveryDialog({ open, onClose, logistic, campai
             Expected Delivery Date
           </Typography>
           <DatePicker
+            minDate={new Date()}
             value={expectedDate}
             format="dd/MM/yyyy"
             onChange={(newValue) => setExpectedDate(newValue)}
@@ -180,7 +203,6 @@ export default function ScheduleDeliveryDialog({ open, onClose, logistic, campai
                 },
               },
             }}
-            minDate={new Date()}
           />
         </Grid>
       </Grid>
@@ -191,7 +213,7 @@ export default function ScheduleDeliveryDialog({ open, onClose, logistic, campai
           variant="contained"
           size="large"
           onClick={handleSave}
-          disabled={!trackingLink || !expectedDate || isSubmitting}
+          disabled={!trackingLink || !expectedDate || isSubmitting || !!linkError}
           sx={{
             bgcolor: '#333333',
             color: '#fff',
