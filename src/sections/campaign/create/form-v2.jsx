@@ -29,17 +29,14 @@ import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+import NextStepsIcon from 'src/assets/icons/next-steps-icon';
+
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
-import NextStepsIcon from 'src/assets/icons/next-steps-icon';
-import PackageCreateDialog from 'src/sections/packages/package-dialog';
-import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
-
-import CreateBrand from './brandDialog';
 import {
   NextSteps,
-  SelectBrand,
   LogisticRemarks,
   FinaliseCampaign,
   CampaignObjective,
@@ -54,62 +51,60 @@ import {
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
 // Base internal steps (includes sub-steps for logistics)
-// Visual indicator maps: 0=Client/Brand, 1=General, 2=Objective, 3=Audience, 4-6=Logistics, 7=Finalise, 8=Next Steps
+// Visual indicator maps: 0=General, 1=Objective, 2=Audience, 3-5=Logistics, 6=Finalise, 7=Next Steps
 const baseSteps = [
-  { title: 'Select a Client or Brand', logo: '👾', color: '#D8FF01', indicatorIndex: 0 },
-  { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE', indicatorIndex: 1 },
-  { title: 'Campaign Objectives', logo: '🎯', color: '#026D54', indicatorIndex: 2 },
-  { title: 'Target Audience', logo: '👥', color: '#FFF0E5', indicatorIndex: 3 },
-  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01', indicatorIndex: 4 },
-  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01', indicatorIndex: 4 },
-  { title: 'Additional Logistic Remarks', logo: '✏️', color: '#D8FF01', indicatorIndex: 4 },
-  { title: 'Finalise Campaign', logo: '📝', color: '#FF3500', indicatorIndex: 5 },
-  { title: 'Next Steps', logo: '👣', color: '#D8FF01', indicatorIndex: 6 },
+  { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE', indicatorIndex: 0 },
+  { title: 'Campaign Objectives', logo: '🎯', color: '#026D54', indicatorIndex: 1 },
+  { title: 'Target Audience', logo: '👥', color: '#FFF0E5', indicatorIndex: 2 },
+  { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01', indicatorIndex: 3 },
+  { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01', indicatorIndex: 3 },
+  { title: 'Additional Logistic Remarks', logo: '✏️', color: '#D8FF01', indicatorIndex: 3 },
+  { title: 'Finalise Campaign', logo: '📝', color: '#FF3500', indicatorIndex: 4 },
+  { title: 'Next Steps', logo: '👣', color: '#D8FF01', indicatorIndex: 5 },
 ];
 
 // Additional detail steps that appear after clicking "Continue Additional Details"
 const additionalSteps = [
-  { title: 'Additional Details 1', logo: '📝', color: '#FF3500', indicatorIndex: 7 },
-  { title: 'Additional Details 2', logo: '📝', color: '#D8FF01', indicatorIndex: 8 },
+  { title: 'Additional Details 1', logo: '📝', color: '#FF3500', indicatorIndex: 6 },
+  { title: 'Additional Details 2', logo: '📝', color: '#D8FF01', indicatorIndex: 7 },
 ];
 
 const getSteps = (showAdditionalDetails) =>
   showAdditionalDetails ? [...baseSteps, ...additionalSteps] : baseSteps;
 
-const backSectionLabels = ['Client', 'General', 'Objective', 'Audience', 'Logistics', 'Finalise'];
+const backSectionLabels = ['General', 'Objective', 'Audience', 'Logistics', 'Finalise'];
 
 const frontSectionLabels = ['Additional 1', 'Additional 2'];
 
 const backSectionIndicatorToStepMap = {
-  0: 0, // Client/Brand
-  1: 1, // General
-  2: 2, // Objective
-  3: 3, // Audience
-  4: 4, // Logistics (first sub-step)
-  5: 7, // Finalise
-  6: 8, // Next Steps
+  0: 0, // General
+  1: 1, // Objective
+  2: 2, // Audience
+  3: 3, // Logistics (first sub-step)
+  4: 6, // Finalise
+  5: 7, // Next Steps
 };
 
 const frontSectionIndicatorToStepMap = {
-  0: 9, // Additional Details 1
-  1: 10, // Additional Details 2
+  0: 8, // Additional Details 1
+  1: 9, // Additional Details 2
 };
 
-// Determine if we're in back section (steps 0-8) or front section (steps 9-10)
-const isInFrontSection = (activeStep) => activeStep >= 9;
-const isInBackSection = (activeStep) => activeStep <= 8;
+// Determine if we're in back section (steps 0-7) or front section (steps 8-9)
+const isInFrontSection = (activeStep) => activeStep >= 8;
+const isInBackSection = (activeStep) => activeStep <= 7;
 
 // Get which indicator is active in back section
 const getBackSectionIndicatorIndex = (internalStep) => {
-  if (internalStep >= 8) return 6; // Next Steps
-  if (internalStep >= 7) return 5; // Finalise
-  if (internalStep >= 4) return 4; // Logistics (includes sub-steps 4, 5, 6)
-  return internalStep; // 0, 1, 2, 3 map directly
+  if (internalStep >= 7) return 5; // Next Steps
+  if (internalStep >= 6) return 4; // Finalise
+  if (internalStep >= 3) return 3; // Logistics (includes sub-steps 3, 4, 5)
+  return internalStep; // 0, 1, 2 map directly
 };
 
 // Get which indicator is active in front section (0 for Details 1, 1 for Details 2)
 const getFrontSectionIndicatorIndex = (internalStep) => {
-  if (internalStep >= 10) return 1; // Additional Details 2
+  if (internalStep >= 9) return 1; // Additional Details 2
   return 0; // Additional Details 1
 };
 
@@ -118,6 +113,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   const openBrand = useBoolean();
   const confirmation = useBoolean();
   const openPackage = useBoolean();
+
+  const { user } = useAuthContext();
 
   const { data: companyListData, mutate: mutateCompanyList } = useGetCompany();
   const { data: defaultTimelines } = useGetDefaultTimeLine();
@@ -129,8 +126,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   const [hasCreditError, setHasCreditError] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
-  const pdfModal = useBoolean();
-
   // Derive steps based on showAdditionalDetails state
   const steps = getSteps(showAdditionalDetails);
 
@@ -138,22 +133,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   const inFrontSection = isInFrontSection(activeStep);
   const inBackSection = isInBackSection(activeStep);
 
-  // Client/Brand selection schema (Step 0)
-  const clientSchema = Yup.object().shape({
-    client: Yup.object().required('Client is required.'),
-    campaignBrand: Yup.object()
-      .nullable()
-      .when('client', {
-        is: (val) => val?.type === 'agency',
-        then: (s) => s.required('Brand is required.'),
-        otherwise: (s) => s,
-      }),
-    campaignCredits: Yup.number()
-      .min(1, 'Minimum need to be 1')
-      .required('Campaign credits is required'),
-  });
-
-  // General Campaign Information schema (Step 1)
+  // General Campaign Information schema (Step 0)
   const campaignInformationSchema = Yup.object().shape({
     campaignIndustries: Yup.array()
       .min(1, 'At least one industry is required')
@@ -283,51 +263,60 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       .required(),
   });
 
-  // Finalise Campaign schema (Step 7)
+  // Finalise Campaign schema (Step 6) - includes client/brand/credits fields
   const finaliseCampaignSchema = Yup.object().shape({
+    client: Yup.object().required('Client is required.'),
+    campaignBrand: Yup.object()
+      .nullable()
+      .when('client', {
+        is: (val) => val?.type === 'agency',
+        then: (s) => s.required('Brand is required.'),
+        otherwise: (s) => s,
+      }),
+    campaignCredits: Yup.number()
+      .min(1, 'Minimum need to be 1')
+      .required('Campaign credits is required.'),
     campaignManager: Yup.array()
-      .min(1, 'At least 1 manager is required')
-      .required('Campaign Manager is required'),
+      .min(1, 'At least 1 manager is required.')
+      .required('Campaign Manager is required.'),
     campaignType: Yup.string().required('Campaign type is required.'),
     deliverables: Yup.array()
-      .min(1, 'At least one deliverable is required')
-      .required('Deliverables are required'),
+      .min(1, 'At least one deliverable is required.')
+      .required('Deliverables are required.'),
     rawFootage: Yup.boolean(),
     photos: Yup.boolean(),
   });
 
-  // Next Steps schema (Step 8) - no validation, just navigation
+  // Next Steps schema (Step 7) - no validation, just navigation
   const nextStepsSchema = Yup.object().shape({});
 
-  // Additional Details 1 schema (Step 9) - optional
+  // Additional Details 1 schema (Step 8) - optional
   const additionalDetails1Schema = Yup.object().shape({});
 
-  // Additional Details 2 schema (Step 10) - optional
+  // Additional Details 2 schema (Step 9) - optional
   const additionalDetails2Schema = Yup.object().shape({});
 
   const getSchemaForStep = (step) => {
     switch (step) {
       case 0:
-        return clientSchema;
-      case 1:
         return campaignInformationSchema;
-      case 2:
+      case 1:
         return objectiveSchema;
-      case 3:
+      case 2:
         return campaignRequirementSchema;
-      case 4:
+      case 3:
         return logisticsSchema;
-      case 5:
+      case 4:
         return reservationSlotsSchema;
-      case 6:
+      case 5:
         return Yup.object().shape({}); // Logistic remarks - optional
-      case 7:
+      case 6:
         return finaliseCampaignSchema;
-      case 8:
+      case 7:
         return nextStepsSchema;
-      case 9:
+      case 8:
         return additionalDetails1Schema;
-      case 10:
+      case 9:
         return additionalDetails2Schema;
       default:
         return Yup.object().shape({});
@@ -336,7 +325,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
 
   const defaultValues = {
     // General info fields
-    hasBrand: false,
     client: null,
     campaignBrand: null,
     campaignCredits: null,
@@ -394,8 +382,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     reservationNotes: '',
 
     // Campaign management
-    campaignManager: [],
-    campaignType: '',
+    campaignManager: user?.role === 'admin' ? [user] : [],
+    campaignType: 'normal',
     deliverables: ['UGC_VIDEOS'],
     rawFootage: false,
     photos: false,
@@ -459,9 +447,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   // Get fields to validate for each step
   const getFieldsForStep = (step) => {
     switch (step) {
-      case 0: // Client/Brand
-        return ['client', 'campaignCredits'];
-      case 1: // General
+      case 0: // General
         return [
           'campaignName',
           'campaignDescription',
@@ -470,9 +456,9 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           'campaignStartDate',
           'campaignEndDate',
         ];
-      case 2: // Objective
+      case 1: // Objective
         return ['campaignObjectives', 'campaignDo', 'campaignDont'];
-      case 3: // Audience
+      case 2: // Audience
         return [
           'country',
           'audienceAge',
@@ -481,19 +467,19 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           'audienceCreatorPersona',
           'geographicFocus'
         ];
-      case 4: // Logistics
+      case 3: // Logistics
         return ['logisticsType'];
-      case 5: // Reservation Slots
+      case 4: // Reservation Slots
         return ['availabilityRules'];
-      case 6: // Logistic Remarks
+      case 5: // Logistic Remarks
         return [];
-      case 7: // Finalise
-        return ['campaignManager', 'campaignType', 'deliverables'];
-      case 8: // Next Steps
+      case 6: // Finalise (now includes client, brand, credits)
+        return ['client', 'campaignCredits', 'campaignManager', 'campaignType', 'deliverables'];
+      case 7: // Next Steps
         return [];
-      case 9: // Additional Details 1
+      case 8: // Additional Details 1
         return [];
-      case 10: // Additional Details 2
+      case 9: // Additional Details 2
         return [];
       default:
         return [];
@@ -505,29 +491,31 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     const fieldsToValidate = getFieldsForStep(activeStep);
     const result = fieldsToValidate.length > 0 ? await trigger(fieldsToValidate) : true;
 
-    if (result && !hasCreditError) {
+    // For finalise step (6), also check credit error
+    const shouldCheckCreditError = activeStep === 6;
+    if (result && (!shouldCheckCreditError || !hasCreditError)) {
       const logisticsType = getValues('logisticsType');
       let nextStep = activeStep + 1;
 
       // Handle logistics sub-step navigation
-      if (activeStep === 4) {
+      if (activeStep === 3) {
         // From Logistics step, skip to Finalise if not RESERVATION type
         if (logisticsType !== 'RESERVATION') {
-          nextStep = 7; // Skip to Finalise
+          nextStep = 6; // Skip to Finalise
         }
-        // Otherwise go to step 5 (Reservation Slots)
-      } else if (activeStep === 5) {
+        // Otherwise go to step 4 (Reservation Slots)
+      } else if (activeStep === 4) {
         // From Reservation Slots, go to Logistic Remarks
+        nextStep = 5;
+      } else if (activeStep === 5) {
+        // From Logistic Remarks, go to Finalise
         nextStep = 6;
       } else if (activeStep === 6) {
-        // From Logistic Remarks, go to Finalise
-        nextStep = 7;
-      } else if (activeStep === 7) {
         // From Finalise, go to Next Steps
-        nextStep = 8;
-      } else if (activeStep === 9) {
+        nextStep = 7;
+      } else if (activeStep === 8) {
         // From Additional Details 1, go to Additional Details 2
-        nextStep = 10;
+        nextStep = 9;
       }
 
       localStorage.setItem('adminActiveStep', nextStep);
@@ -538,7 +526,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   // Handle clicking on step indicator to navigate directly
   const handleBackSectionStepClick = (indicatorIndex) => {
     const currentBackIndicator = getBackSectionIndicatorIndex(activeStep);
-    if (indicatorIndex <= currentBackIndicator && activeStep <= 8) {
+    if (indicatorIndex <= currentBackIndicator && activeStep <= 7) {
       const targetStep = backSectionIndicatorToStepMap[indicatorIndex];
       setActiveStep(targetStep);
       localStorage.setItem('adminActiveStep', targetStep);
@@ -548,7 +536,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   const handleFrontSectionStepClick = (indicatorIndex) => {
     const currentFrontIndicator = getFrontSectionIndicatorIndex(activeStep);
     // Allow navigation to any indicator that has been visited or previous indicators
-    if (indicatorIndex <= currentFrontIndicator && activeStep >= 9) {
+    if (indicatorIndex <= currentFrontIndicator && activeStep >= 8) {
       const targetStep = frontSectionIndicatorToStepMap[indicatorIndex];
       setActiveStep(targetStep);
       localStorage.setItem('adminActiveStep', targetStep);
@@ -559,29 +547,29 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     const logisticsType = getValues('logisticsType');
     let prevStep = activeStep - 1;
 
-    if (activeStep === 10) {
+    if (activeStep === 9) {
       // From Additional Details 2, go to Additional Details 1
-      prevStep = 9;
-    } else if (activeStep === 9) {
-      // From Additional Details 1, go back to Next Steps
       prevStep = 8;
     } else if (activeStep === 8) {
-      // From Next Steps, go back to Finalise and hide additional details
+      // From Additional Details 1, go back to Next Steps
       prevStep = 7;
-      setShowAdditionalDetails(false);
     } else if (activeStep === 7) {
+      // From Next Steps, go back to Finalise and hide additional details
+      prevStep = 6;
+      setShowAdditionalDetails(false);
+    } else if (activeStep === 6) {
       // From Finalise, go back based on logistics type
       if (logisticsType === 'RESERVATION') {
-        prevStep = 6; // Go to Logistic Remarks
+        prevStep = 5; // Go to Logistic Remarks
       } else {
-        prevStep = 4; // Go back to Logistics
+        prevStep = 3; // Go back to Logistics
       }
-    } else if (activeStep === 6) {
-      // From Logistic Remarks, go to Reservation Slots
-      prevStep = 5;
     } else if (activeStep === 5) {
-      // From Reservation Slots, go to Logistics
+      // From Logistic Remarks, go to Reservation Slots
       prevStep = 4;
+    } else if (activeStep === 4) {
+      // From Reservation Slots, go to Logistics
+      prevStep = 3;
     }
 
     localStorage.setItem('adminActiveStep', prevStep);
@@ -590,8 +578,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
 
   const handleContinueAdditionalDetails = useCallback(() => {
     setShowAdditionalDetails(true);
-    setActiveStep(9);
-    localStorage.setItem('adminActiveStep', 9);
+    setActiveStep(8);
+    localStorage.setItem('adminActiveStep', 8);
   }, []);
 
   const onSubmit = handleSubmit(async (data, stage) => {
@@ -860,33 +848,50 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     }
   });
 
+  const handlePackageLinkSuccess = useCallback(async () => {
+    const currentClientId = getValues('client')?.id;
+
+    openPackage.onFalse();
+    enqueueSnackbar('Package linked successfully!', { variant: 'success' });
+
+    const newCompanyList = await mutateCompanyList();
+
+    if (newCompanyList && currentClientId) {
+      const updatedClient = newCompanyList.find((c) => c.id === currentClientId);
+
+      if (updatedClient) {
+        setValue('client', updatedClient, { shouldValidate: true });
+      }
+    }
+  }, [getValues, openPackage, mutateCompanyList, setValue]);
+
   const getStepContent = useCallback(
     (step) => {
       switch (step) {
         case 0:
+          return <CampaignGeneralInfo />;
+        case 1:
+          return <CampaignObjective />;
+        case 2:
+          return <CampaignTargetAudience />;
+        case 3:
+          return <CampaignLogistics />;
+        case 4:
+          return <ReservationSlotsV2 />;
+        case 5:
+          return <LogisticRemarks />;
+        case 6:
           return (
-            <SelectBrand
+            <FinaliseCampaign
               openCompany={openCompany}
               openBrand={openBrand}
               openPackage={openPackage}
               onValidationChange={setHasCreditError}
+              setBrandState={setBrandState}
+              onPackageLinkSuccess={handlePackageLinkSuccess}
             />
           );
-        case 1:
-          return <CampaignGeneralInfo />;
-        case 2:
-          return <CampaignObjective />;
-        case 3:
-          return <CampaignTargetAudience />;
-        case 4:
-          return <CampaignLogistics />;
-        case 5:
-          return <ReservationSlotsV2 />;
-        case 6:
-          return <LogisticRemarks />;
         case 7:
-          return <FinaliseCampaign />;
-        case 8:
           return (
             <NextSteps
               onPublish={() => {
@@ -902,29 +907,21 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
               isLoading={isLoading}
             />
           );
-        case 9:
+        case 8:
           return <AdditionalDetails1 />;
-        case 10:
+        case 9:
           return <AdditionalDetails2 />;
         default:
           return null;
       }
     },
-    [openCompany, openBrand, openPackage, isLoading, getValues, onSubmit, handleContinueAdditionalDetails]
+    [openCompany, openBrand, openPackage, isLoading, getValues, onSubmit, handleContinueAdditionalDetails, handlePackageLinkSuccess]
   );
 
   // Check if current step has required fields filled
   const isStepValid = () => {
     switch (activeStep) {
       case 0: {
-        const client = formValues.client;
-        const credits = formValues.campaignCredits;
-        const brand = formValues.campaignBrand;
-        // If client is agency type, brand is required
-        if (client?.type === 'agency' && !brand) return false;
-        return client && credits && credits > 0 && !hasCreditError;
-      }
-      case 1: {
         const title = formValues.campaignName;
         const desc = formValues.campaignDescription;
         const industries = formValues.campaignIndustries;
@@ -935,52 +932,58 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           title && desc && industries?.length > 0 && images?.length > 0 && startDate && endDate
         );
       }
-      case 2: {
+      case 1: {
         const objectives = formValues.campaignObjectives;
         const dos = formValues.campaignDo;
         const donts = formValues.campaignDont;
         return objectives && dos?.length > 0 && donts?.length > 0;
       }
-      case 3: {
-        const country = formValues.country;
+      case 2: {
+        const {country} = formValues;
         const age = formValues.audienceAge;
         const gender = formValues.audienceGender;
         const language = formValues.audienceLanguage;
         const persona = formValues.audienceCreatorPersona;
-        const geographicFocus = formValues.geographicFocus;
+        const {geographicFocus} = formValues;
         return country && age?.length > 0 && gender?.length > 0 && language?.length > 0 && persona?.length > 0 && geographicFocus;
       }
-      case 4: {
+      case 3: {
         const type = formValues.logisticsType;
         if (!type) return true; // Optional step
 
         if (type === 'PRODUCT_DELIVERY') {
-          const products = formValues.products;
+          const {products} = formValues;
           return products?.some((p) => p.name?.trim().length > 0);
         }
 
         if (type === 'RESERVATION') {
-          const locations = formValues.locations;
+          const {locations} = formValues;
           return locations?.some((l) => l.name?.trim().length > 0);
         }
 
         return true;
       }
-      case 5: {
+      case 4: {
         const rules = formValues.availabilityRules;
         return rules?.length > 0;
       }
-      case 6:
+      case 5:
         return true; // Optional
-      case 7: {
+      case 6: {
+        // Finalise step - includes client/brand/credits validation
+        const {client} = formValues;
+        const credits = formValues.campaignCredits;
+        const brand = formValues.campaignBrand;
         const manager = formValues.campaignManager;
         const type = formValues.campaignType;
-        const deliverables = formValues.deliverables;
-        return manager?.length > 0 && type && deliverables?.length > 0;
+        const {deliverables} = formValues;
+        // If client is agency type, brand is required
+        if (client?.type === 'agency' && !brand) return false;
+        return client && credits && credits > 0 && !hasCreditError && manager?.length > 0 && type && deliverables?.length > 0;
       }
-      case 8: // Next Steps - navigation only
+      case 7: // Next Steps - navigation only
+      case 8:
       case 9:
-      case 10:
         return true; // Optional
       default:
         return true;
@@ -991,27 +994,10 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
   const backSectionIndicator = getBackSectionIndicatorIndex(activeStep);
   const frontSectionIndicator = getFrontSectionIndicatorIndex(activeStep);
 
-  // Determine if Next Steps should be highlighted (step 8 or beyond)
-  const isNextStepsActive = activeStep >= 8;
+  // Determine if Next Steps should be highlighted (step 7 or beyond)
+  const isNextStepsActive = activeStep >= 7;
 
   const campaignStartDate = watch('campaignStartDate');
-
-  const handlePackageLinkSuccess = async () => {
-    const currentClientId = getValues('client')?.id;
-
-    openPackage.onFalse();
-    enqueueSnackbar('Package linked successfully!', { variant: 'success' });
-
-    const newCompanyList = await mutateCompanyList();
-
-    if (newCompanyList && currentClientId) {
-      const updatedClient = newCompanyList.find((c) => c.id === currentClientId);
-
-      if (updatedClient) {
-        setValue('client', updatedClient, { shouldValidate: true });
-      }
-    }
-  };
 
   return (
     <Box>
@@ -1124,10 +1110,10 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
 
               <Box
                 onClick={() => {
-                  if (activeStep >= 9) {
-                    setActiveStep(8);
+                  if (activeStep >= 8) {
+                    setActiveStep(7);
                     setShowAdditionalDetails(false);
-                    localStorage.setItem('adminActiveStep', 8);
+                    localStorage.setItem('adminActiveStep', 7);
                   }
                 }}
                 px={1}
@@ -1138,9 +1124,9 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
                 sx={{
                   borderColor: isNextStepsActive ? '#1340FF' : '#636366',
                   '&:hover': {
-                    opacity: activeStep >= 9 ? 0.85 : 1,
+                    opacity: activeStep >= 8 ? 0.85 : 1,
                   },
-                  cursor: activeStep >= 9 ? 'pointer' : 'default',
+                  cursor: activeStep >= 8 ? 'pointer' : 'default',
                 }}
               >
                 <NextStepsIcon active={isNextStepsActive} size={35} />
@@ -1237,8 +1223,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
 
             <Box sx={{ flexGrow: 1 }} />
 
-            {/* Steps 0-7: Show Next button */}
-            {activeStep >= 0 && activeStep <= 7 && (
+            {/* Steps 0-6: Show Next button */}
+            {activeStep >= 0 && activeStep <= 6 && (
               <Button
                 variant="contained"
                 onClick={handleNext}
@@ -1257,10 +1243,10 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
               </Button>
             )}
 
-            {/* Step 8 (Next Steps): No navigation buttons - handled by component */}
+            {/* Step 7 (Next Steps): No navigation buttons - handled by component */}
 
-            {/* Step 9: Show Next and Confirm Campaign buttons */}
-            {activeStep === 9 && (
+            {/* Step 8: Show Next and Confirm Campaign buttons */}
+            {activeStep === 8 && (
               <Stack direction="row" spacing={1}>
                 <Button
                   variant="contained"
@@ -1303,8 +1289,8 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
               </Stack>
             )}
 
-            {/* Step 10: Show only Confirm Campaign button (last step) */}
-            {activeStep === 10 && (
+            {/* Step 9: Show only Confirm Campaign button (last step) */}
+            {activeStep === 9 && (
               <LoadingButton
                 variant="contained"
                 onClick={() => {
@@ -1375,34 +1361,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
           </Box>
         </Box>
       </FormProvider>
-
-      <CreateBrand
-        open={openBrand.value}
-        onClose={() => {
-          if (getValues('campaignBrand')?.inputValue) {
-            setValue('campaignBrand', null);
-          }
-          openBrand.onFalse();
-        }}
-        brandName={getValues('campaignBrand')?.inputValue}
-        setBrand={(e) => setValue('campaignBrand', e)}
-        client={getValues('client')}
-      />
-
-      <CreateCompany
-        setOpenCreate={() => openCompany.onFalse()}
-        openCreate={openCompany.value}
-        set={setValue}
-        isForCampaign
-      />
-
-      <PackageCreateDialog
-        open={openPackage.value}
-        onClose={openPackage.onFalse}
-        companyId={getValues('client')?.id}
-        companyName={getValues('client')?.name}
-        onSuccess={handlePackageLinkSuccess}
-      />
 
       {/* Loading Overlay for Campaign Creation */}
       {isLoading && (
