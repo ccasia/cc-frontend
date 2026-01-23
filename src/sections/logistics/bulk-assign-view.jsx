@@ -477,7 +477,54 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
               Select products and creators to assign.
             </Typography>
             <Typography variant="body2" sx={{ color: '#231F20' }}>
-              You can set different product quantities under Product List
+              You can set different product quantities under Product List.
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#231F20' }}>
+              Only creators that are{' '}
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  px: 0.5,
+                  py: 0.5,
+                  mx: 0.5,
+                  borderRadius: '6px',
+                  border: `1px solid #B0B0B0`,
+                  boxShadow: `0px -2px 0px 0px #B0B0B0 inset`,
+                  color: '#B0B0B0',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  verticalAlign: 'middle',
+                  cursor: 'default',
+                }}
+              >
+                Unassigned
+              </Box>{' '}
+              and{' '}
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  px: 0.5,
+                  py: 0.5,
+                  mx: 0.5,
+                  borderRadius: '6px',
+                  border: `1px solid #FF9A02`,
+                  boxShadow: `0px -2px 0px 0px #FF9A02 inset`,
+                  color: '#FF9A02',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  verticalAlign: 'middle',
+                  cursor: 'default',
+                }}
+              >
+                Yet To Ship
+              </Box>{' '}
+              will appear here.
             </Typography>
           </Stack>
 
