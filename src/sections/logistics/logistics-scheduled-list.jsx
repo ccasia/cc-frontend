@@ -346,7 +346,7 @@ export default function LogisticsScheduledList({
             </Box>
           </Box>
         ) : (
-          <Box sx={{ flexGrow: 0, overflowY: 'auto', height: 150, px: 0.5 }}>
+          <Box sx={{ flexGrow: 0, overflowY: 'auto', height: isReservation ? 150 : 280, px: 0.5 }}>
             <List disablePadding>
               {dayLogistics.map((item) => (
                 <ScheduledItem
