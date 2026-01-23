@@ -6,7 +6,6 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import React, { memo, useRef, useMemo, useState, useEffect } from 'react';
 import {
   format,
-  isAfter,
   isToday,
   subDays,
   addDays,
@@ -20,9 +19,9 @@ import {
   startOfDay,
   addMinutes,
   startOfWeek,
-	startOfMonth,
-	isWithinInterval,
-	eachDayOfInterval,
+  startOfMonth,
+  isWithinInterval,
+  eachDayOfInterval,
 } from 'date-fns';
 
 import { LoadingButton } from '@mui/lab';
@@ -40,7 +39,6 @@ import {
   Divider,
   Checkbox,
   MenuItem,
-  TextField,
   FormLabel,
   Typography,
   IconButton,
@@ -151,7 +149,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
     reset,
     control,
     getValues,
-    formState: { isSubmitting, isDirty },
+    formState: { isSubmitting, isDirty, errors },
   } = methods;
 
   // Product editing state
@@ -190,20 +188,6 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
   }, [campaign, defaultValues, reset]);
 
   // Product editing handlers
-  const handleEdit = (index, value) => {
-    setEditingIndex(index);
-    setEditValue(value);
-  };
-
-  const handleSaveEdit = (index) => {
-    setValue(`products.${index}.name`, editValue, { shouldDirty: true });
-    setEditingIndex(-1);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingIndex(-1);
-  };
-
   const handleAddProduct = () => {
     appendProduct({ name: '' });
     setLastAddedIndex(productFields.length);
@@ -262,214 +246,393 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
   }, [startTime, endTime, interval, intervalsChecked]);
 
   const generateGrid = () => {
-    if (!intervalsChecked) {
-      setGeneratedSlots([{ label: 'All Day', selected: true }]);
+    if (!startTime || !endTime) return;
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    if (isBefore(end, start)) {
+      setGeneratedSlots([]);
       return;
     }
-    const slots = [];
-    let current = new Date(startTime);
-    const end = new Date(endTime);
 
-    while (isBefore(current, end)) {
-      const slotEnd = addMinutes(current, interval * 60);
-      if (isAfter(slotEnd, end)) break;
+    const slots = [];
+    if (!intervalsChecked) {
       slots.push({
-        label: `${format(current, 'h:mm a')} - ${format(slotEnd, 'h:mm a')}`,
-        start: format(current, 'HH:mm'),
-        end: format(slotEnd, 'HH:mm'),
-        selected: true,
+        id: 'full',
+        start,
+        end,
+        label: `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`,
+        isSelected: true,
       });
-      current = slotEnd;
+    } else {
+      let curr = new Date(start);
+      while (isBefore(curr, end)) {
+        const next = addMinutes(curr, interval * 60);
+        if (isBefore(end, next)) break;
+        slots.push({
+          id: curr.getTime(),
+          start: new Date(curr),
+          end: new Date(next),
+          label: `${format(curr, 'h:mm a')} - ${format(next, 'h:mm a')}`,
+          isSelected: false,
+        });
+        curr = next;
+      }
     }
     setGeneratedSlots(slots);
   };
 
   const toggleSlot = (index) => {
     const updated = [...generatedSlots];
-    updated[index].selected = !updated[index].selected;
+    updated[index].isSelected = !updated[index].isSelected;
     setGeneratedSlots(updated);
   };
 
   const handleDateClick = (date) => {
-    if (!campaignInterval) return;
-    if (!isWithinInterval(date, campaignInterval)) return;
+    if (!date) return;
+
+    if (campaignInterval && !isWithinInterval(date, campaignInterval)) {
+      enqueueSnackbar('Date is outside campaign active range', { variant: 'warning' });
+      return;
+    }
 
     const dateStr = format(date, 'yyyy-MM-dd');
+    const prevDateStr = format(subDays(date, 1), 'yyyy-MM-dd');
+    const nextDateStr = format(addDays(date, 1), 'yyyy-MM-dd');
+
+    if (selectionStart) {
+      const start = isBefore(date, selectionStart) ? date : selectionStart;
+      const end = isBefore(date, selectionStart) ? selectionStart : date;
+      const newRange = eachDayOfInterval({ start, end });
+
+      setSelectedDates((prev) => {
+        const combined = [...prev];
+        newRange.forEach((day) => {
+          if (!prev.some((p) => isSameDay(p, day))) combined.push(day);
+        });
+        return combined.sort((a, b) => a - b);
+      });
+      setSelectionStart(null);
+      return;
+    }
+
     if (selectedSet.has(dateStr)) {
-      setSelectedDates(selectedDates.filter((d) => format(d, 'yyyy-MM-dd') !== dateStr));
+      const isStartOfRange = !selectedSet.has(prevDateStr) && selectedSet.has(nextDateStr);
+      const isEndOfRange = selectedSet.has(prevDateStr) && !selectedSet.has(nextDateStr);
+
+      if (isStartOfRange) {
+        let cursor = date;
+        while (selectedSet.has(format(addDays(cursor, 1), 'yyyy-MM-dd'))) {
+          cursor = addDays(cursor, 1);
+        }
+        const segmentEnd = cursor;
+
+        setSelectedDates((prev) =>
+          prev.filter(
+            (d) =>
+              !isWithinInterval(startOfDay(d), {
+                start: startOfDay(date),
+                end: startOfDay(subDays(segmentEnd, 1)),
+              })
+          )
+        );
+        setSelectionStart(segmentEnd);
+        return;
+      }
+
+      if (isEndOfRange) {
+        let cursor = date;
+        while (selectedSet.has(format(subDays(cursor, 1), 'yyyy-MM-dd'))) {
+          cursor = subDays(cursor, 1);
+        }
+        const segmentStart = cursor;
+
+        setSelectedDates((prev) =>
+          prev.filter(
+            (d) =>
+              !isWithinInterval(startOfDay(d), {
+                start: startOfDay(addDays(segmentStart, 1)),
+                end: startOfDay(date),
+              })
+          )
+        );
+        setSelectionStart(segmentStart);
+        return;
+      }
+
+      setSelectedDates((prev) => prev.filter((d) => !isSameDay(d, date)));
+      setSelectionStart(null);
+      return;
+    }
+
+    const isBridging = selectedSet.has(prevDateStr) || selectedSet.has(nextDateStr);
+
+    if (isBridging) {
+      setSelectedDates((prev) => [...prev, date].sort((a, b) => a - b));
+      setSelectionStart(null);
     } else {
-      setSelectedDates([...selectedDates, date]);
+      setSelectedDates((prev) => [...prev, date].sort((a, b) => a - b));
+      setSelectionStart(date);
     }
   };
 
   const handleSaveRule = () => {
     if (selectedDates.length === 0) {
-      enqueueSnackbar('Please select at least one date', { variant: 'warning' });
+      enqueueSnackbar('Please select dates first', { variant: 'error' });
       return;
     }
 
-    const selectedSlots = generatedSlots.filter((s) => s.selected);
-    if (selectedSlots.length === 0) {
-      enqueueSnackbar('Please select at least one time slot', { variant: 'warning' });
+    let newRule;
+
+    if (allDay) {
+      newRule = {
+        dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
+        slots: [{ startTime: '00:00', endTime: '23:59', label: 'All Day' }],
+        allDay: true,
+      };
+    } else {
+      const activeSlots = generatedSlots.filter((s) => s.isSelected);
+
+      if (activeSlots.length === 0) {
+        enqueueSnackbar('Please select at least one time slot', { variant: 'error' });
+        return;
+      }
+
+      newRule = {
+        dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
+        slots: activeSlots.map((slot) => ({
+          startTime: format(slot.start, 'HH:mm'),
+          endTime: format(slot.end, 'HH:mm'),
+          label: slot.label,
+        })),
+        allDay: false,
+      };
+    }
+
+    const isDuplicate = savedRules.some((rule) => {
+      if (rule.allDay !== newRule.allDay) return false;
+      const datesMatch = JSON.stringify(rule.dates) === JSON.stringify(newRule.dates);
+      const slotsMatch = JSON.stringify(rule.slots) === JSON.stringify(newRule.slots);
+      return datesMatch && slotsMatch;
+    });
+
+    if (isDuplicate) {
+      enqueueSnackbar('This timeslot has already been saved', { variant: 'error' });
       return;
     }
 
-    const newRule = {
-      dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
-      slots: allDay
-        ? [{ label: 'All Day', allDay: true }]
-        : selectedSlots.map((s) => ({ startTime: s.start, endTime: s.end, label: s.label })),
-      allDay,
-    };
+    setValue('availabilityRules', [...savedRules, newRule], {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
 
-    setValue('availabilityRules', [...savedRules, newRule], { shouldDirty: true });
+    enqueueSnackbar('Added successfully', { variant: 'success' });
+
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+
+    // Reset Selection
     setSelectedDates([]);
-    setGeneratedSlots([]);
-    enqueueSnackbar('Availability rule added', { variant: 'success' });
+    setSelectionStart(null);
   };
 
   const handleRemoveRule = (index) => {
     const updatedRules = savedRules.filter((_, i) => i !== index);
-    setValue('availabilityRules', updatedRules, { shouldDirty: true });
+    setValue('availabilityRules', updatedRules, { shouldValidate: true, shouldDirty: true });
   };
 
-	const getDayStyles = (day) => {
-		const dateStr = format(day, 'yyyy-MM-dd');
-		const isSelected = selectedSet.has(dateStr);
-		const isPendingStart = selectionStart && isSameDay(day, selectionStart);
-		const isTodayDate = isToday(day);
+  const handleClear = () => {
+    setSelectedDates([]);
+    setSelectionStart(null);
+  };
 
-		const isWithinCampaign = campaignInterval ? isWithinInterval(day, campaignInterval) : true;
-		const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+  const handleSelectAllDates = (e) => {
+    if (e.target.checked && campaignInterval) {
+      const allDays = eachDayOfInterval({
+        start: campaignInterval.start,
+        end: campaignInterval.end,
+      });
+      setSelectedDates(allDays);
+    } else {
+      setSelectedDates([]);
+    }
+    setSelectionStart(null);
+  };
 
-		const prevDateStr = format(subDays(day, 1), 'yyyy-MM-dd');
-		const nextDateStr = format(addDays(day, 1), 'yyyy-MM-dd');
+  const getDayStyles = (day) => {
+    const dateStr = format(day, 'yyyy-MM-dd');
+    const isSelected = selectedSet.has(dateStr);
+    const isPendingStart = selectionStart && isSameDay(day, selectionStart);
+    const isTodayDate = isToday(day);
 
-		const isPrevSelected = selectedSet.has(prevDateStr);
-		const isNextSelected = selectedSet.has(nextDateStr);
+    const isWithinCampaign = campaignInterval ? isWithinInterval(day, campaignInterval) : true;
+    const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
 
-		const isVisualStart = !isPrevSelected;
-		const isVisualEnd = !isNextSelected;
-		const isSingleDay = isVisualStart && isVisualEnd;
+    const prevDateStr = format(subDays(day, 1), 'yyyy-MM-dd');
+    const nextDateStr = format(addDays(day, 1), 'yyyy-MM-dd');
 
-		const baseStyles = {
-			height: 40,
-			mx: 'auto',
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			cursor: 'pointer',
-			transition: '0.2s',
-			borderRadius: '50%',
-			position: 'relative',
-			zIndex: 1,
-			color: isCurrentMonth ? '#212B36' : '#919EAB',
-		};
+    const isPrevSelected = selectedSet.has(prevDateStr);
+    const isNextSelected = selectedSet.has(nextDateStr);
 
-		if (!isSelected && !isPendingStart && isTodayDate) {
-			return {
-				...baseStyles,
-				border: '1.2px solid #1340FF',
-				borderRadius: '50%',
-				color: '#1340FF',
-				// fontWeight: '700',
-				'&:hover': {
-					bgcolor: '#F4F6F8',
-				},
-			};
-		}
+    const isVisualStart = !isPrevSelected;
+    const isVisualEnd = !isNextSelected;
+    const isSingleDay = isVisualStart && isVisualEnd;
 
-		if (!isWithinCampaign) {
-			return {
-				...baseStyles,
-				color: '#919EAB',
-				opacity: 0.5,
-				cursor: 'default',
-			};
-		}
+    const baseStyles = {
+      height: 40,
+      mx: 'auto',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      transition: '0.2s',
+      borderRadius: '50%',
+      position: 'relative',
+      zIndex: 1,
+      color: isCurrentMonth ? '#212B36' : '#919EAB',
+    };
 
-		if (isPendingStart && !selectedSet.has(prevDateStr) && !selectedSet.has(nextDateStr)) {
-			return {
-				...baseStyles,
-				bgcolor: 'rgba(19, 64, 255, 0.15)',
-				color: '#1340FF',
-				borderRadius: '50%',
-				fontWeight: 700,
-			};
-		}
+    if (!isSelected && !isPendingStart && isTodayDate) {
+      return {
+        ...baseStyles,
+        border: '1.2px solid #1340FF',
+        borderRadius: '50%',
+        color: '#1340FF',
+        // fontWeight: '700',
+        '&:hover': {
+          bgcolor: '#F4F6F8',
+        },
+      };
+    }
 
-		if (!isSelected) {
-			return {
-				...baseStyles,
-				'&:hover': {
-					bgcolor: '#F4F6F8',
-				},
-			};
-		}
+    if (!isWithinCampaign) {
+      return {
+        ...baseStyles,
+        color: '#919EAB',
+        opacity: 0.5,
+        cursor: 'default',
+      };
+    }
 
-		const selectedStyles = {
-			...baseStyles,
-			bgcolor: isSingleDay ? '#1340FF' : 'rgba(19, 64, 255, 0.15)',
-			color: isSingleDay ? 'white' : '#1340FF',
-			fontWeight: isSingleDay ? 'normal' : 'bold',
-			borderRadius: 0,
-		};
+    if (isPendingStart && !selectedSet.has(prevDateStr) && !selectedSet.has(nextDateStr)) {
+      return {
+        ...baseStyles,
+        bgcolor: 'rgba(19, 64, 255, 0.15)',
+        color: '#1340FF',
+        borderRadius: '50%',
+        fontWeight: 700,
+      };
+    }
 
-		if (isSingleDay) {
-			return {
-				...selectedStyles,
-				borderRadius: '50%',
-			};
-		}
+    if (!isSelected) {
+      return {
+        ...baseStyles,
+        '&:hover': {
+          bgcolor: '#F4F6F8',
+        },
+      };
+    }
 
-		if (isVisualStart) {
-			return {
-				...selectedStyles,
-				bgcolor: '#1340FF',
-				color: 'white',
-				borderRadius: '50%',
-				'&::after': {
-					content: '""',
-					position: 'absolute',
-					right: 0,
-					top: 0,
-					bottom: 0,
-					width: '50%',
-					bgcolor: 'rgba(19, 64, 255, 0.15)',
-					zIndex: -1,
-				},
-			};
-		}
+    const selectedStyles = {
+      ...baseStyles,
+      bgcolor: isSingleDay ? '#1340FF' : 'rgba(19, 64, 255, 0.15)',
+      color: isSingleDay ? 'white' : '#1340FF',
+      fontWeight: isSingleDay ? 'normal' : 'bold',
+      borderRadius: 0,
+    };
 
-		if (isVisualEnd) {
-			return {
-				...selectedStyles,
-				bgcolor: '#1340FF',
-				color: 'white',
-				borderRadius: '50%',
-				'&::after': {
-					content: '""',
-					position: 'absolute',
-					left: 0,
-					top: 0,
-					bottom: 0,
-					width: '50%',
-					bgcolor: 'rgba(19, 64, 255, 0.15)',
-					zIndex: -1,
-				},
-			};
-		}
+    if (isSingleDay) {
+      return {
+        ...selectedStyles,
+        borderRadius: '50%',
+      };
+    }
 
-		// Middle segments
-		return selectedStyles;
-	};
+    if (isVisualStart) {
+      return {
+        ...selectedStyles,
+        bgcolor: '#1340FF',
+        color: 'white',
+        borderRadius: '50%',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: '50%',
+          bgcolor: 'rgba(19, 64, 255, 0.15)',
+          zIndex: -1,
+        },
+      };
+    }
+
+    if (isVisualEnd) {
+      return {
+        ...selectedStyles,
+        bgcolor: '#1340FF',
+        color: 'white',
+        borderRadius: '50%',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '50%',
+          bgcolor: 'rgba(19, 64, 255, 0.15)',
+          zIndex: -1,
+        },
+      };
+    }
+
+    // Middle segments
+    return selectedStyles;
+  };
 
   const formatDatesForDisplay = (dateStrings) => {
     if (!dateStrings || dateStrings.length === 0) return '';
-    const dates = dateStrings.map((d) => new Date(d)).sort((a, b) => a - b);
-    if (dates.length === 1) return format(dates[0], 'MMM d, yyyy');
-    if (dates.length <= 3) return dates.map((d) => format(d, 'MMM d')).join(', ');
-    return `${format(dates[0], 'MMM d')} - ${format(dates[dates.length - 1], 'MMM d')} (${dates.length} days)`;
+
+    // 1. Sort dates chronologically
+    const sorted = [...dateStrings]
+      .map((d) => new Date(d))
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    const groups = [];
+    let currentGroup = [sorted[0]];
+
+    // 2. Group consecutive dates
+    for (let i = 1; i < sorted.length; i += 1) {
+      const prev = sorted[i - 1];
+      const curr = sorted[i];
+
+      // Check if the difference is exactly 1 day (approx 86400000ms)
+      const diffTime = Math.abs(curr - prev);
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        currentGroup.push(curr);
+      } else {
+        groups.push(currentGroup);
+        currentGroup = [curr];
+      }
+    }
+    groups.push(currentGroup);
+
+    // 3. Format the groups
+    const parts = groups.map((group) => {
+      const start = group[0];
+      const end = group[group.length - 1];
+
+      if (group.length === 1) {
+        return format(start, 'd MMM');
+      }
+      return `${format(start, 'd MMM')} - ${format(end, 'd MMM')}`;
+    });
+
+    // 4. Add the Year to the end
+    const lastDate = sorted[sorted.length - 1];
+    return `${parts.join(', ')} ${format(lastDate, 'yyyy')}`;
   };
 
   const onSubmit = async (data) => {
@@ -496,6 +659,67 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
     }
   };
 
+  let renderRightColumn;
+
+  if (allDay) {
+    renderRightColumn = (
+      <Stack spacing={1} alignItems="center" textAlign="center">
+        <Typography sx={{ fontSize: '48px' }}>👌</Typography>
+        <Typography variant="h6" fontWeight={700}>
+          All-Day Events
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Select dates and you’re good to go!
+        </Typography>
+      </Stack>
+    );
+  } else if (generatedSlots.length > 0) {
+    renderRightColumn = (
+      <Box sx={{ width: '100%', maxHeight: 280, overflowY: 'auto' }}>
+        <Grid container spacing={1.5}>
+          {generatedSlots.map((slot, idx) => (
+            <Grid item xs={6} key={idx}>
+              <Box
+                onClick={() => toggleSlot(idx)}
+                sx={{
+                  p: 1.5,
+                  textAlign: 'center',
+                  border: '1.5px solid',
+                  borderRadius: 1.5,
+                  cursor: 'pointer',
+                  borderColor: slot.isSelected ? '#1340FF' : '#F4F6F8',
+                  bgcolor: slot.isSelected ? 'rgba(19, 64, 255, 0.04)' : '#fff',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: slot.isSelected ? '#1340FF' : '#919EAB',
+                  }}
+                >
+                  {slot.label}
+                </Typography>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  } else {
+    renderRightColumn = (
+      <Stack spacing={1} alignItems="center" textAlign="center">
+        <Typography sx={{ fontSize: '48px' }}>😘</Typography>
+        <Typography variant="h6" fontWeight={700}>
+          Add Time Slots
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Select a start/end time and interval.
+        </Typography>
+      </Stack>
+    );
+  }
+
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Box
@@ -503,16 +727,13 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
           display: 'flex',
           flexDirection: 'column',
           gap: 3,
-					maxWidth: logisticsType === 'PRODUCT_DELIVERY' ? 600 : 800
+          maxWidth: logisticsType === 'PRODUCT_DELIVERY' ? 600 : 800,
         }}
       >
         {/* Logistics Type Selection */}
         <Stack spacing={2} maxWidth={logisticsType === 'RESERVATION' ? 800 : 600}>
           <FormField label="Logistics Type" required={false}>
-            <RHFSelect
-              name="logisticsType"
-              placeholder="Select logistics type"
-            >
+            <RHFSelect name="logisticsType" placeholder="Select logistics type">
               <MenuItem value="">No Logistics</MenuItem>
               <MenuItem value="PRODUCT_DELIVERY">Product Delivery</MenuItem>
               <MenuItem value="RESERVATION">Reservation</MenuItem>
@@ -537,100 +758,43 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
                   </Typography>
                 </Box>
 
-                {editingIndex === index ? (
-                  <Box>
-                    <TextField
-                      fullWidth
-                      placeholder="Product Name"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        },
-                        mb: 1,
-                      }}
-                      autoFocus
-                    />
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      <Button
-                        onClick={() => handleCancelEdit()}
-                        sx={{
-                          height: 38,
-                          borderRadius: '8px',
-                          padding: '8px 12px',
-                          background: '#FFFFFF',
-                          border: '1px solid #E7E7E7',
-                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                          color: 'text.primary',
-                          '&:hover': { bgcolor: '#f5f5f5' },
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={() => handleSaveEdit(index)}
-                        sx={{
-                          height: 38,
-                          borderRadius: '8px',
-                          padding: '8px 12px',
-                          background: '#FFFFFF',
-                          border: '1px solid #E7E7E7',
-                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                          color: 'text.primary',
-                          '&:hover': { bgcolor: '#f5f5f5' },
-                        }}
-                      >
-                        Save
-                      </Button>
-                    </Box>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <RHFTextField
-                      fullWidth
-                      placeholder="Product Name"
-                      name={`products.${index}.name`}
-                      disabled={index !== lastAddedIndex && editingIndex !== index}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        },
-                      }}
-                    />
-                    {index !== lastAddedIndex && (
-                      <IconButton
-                        onClick={() => handleEdit(index, getValues(`products.${index}.name`))}
-                        sx={{ ml: 1 }}
-                      >
-                        <Iconify icon="feather:edit" sx={{ color: '#231F20' }} width={18} />
-                      </IconButton>
-                    )}
-                  </Box>
-                )}
+                <Stack direction="row" spacing={1} sx={{ display: 'flex', alignItems: 'center' }}>
+                  <RHFTextField
+                    fullWidth
+                    placeholder="Product Name"
+                    name={`products.${index}.name`}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1,
+                      },
+                    }}
+                  />
+
+                  <IconButton
+                    onClick={() => removeProduct(index)}
+                    disabled={productFields.length === 1}
+                    sx={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: 1,
+                      border: '1px solid #E7E7E7',
+                      color: '#FF3030',
+                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      '&:hover': { bgcolor: '#FFF5F5' },
+                    }}
+                  >
+                    <Iconify icon="eva:trash-2-outline" width={22} />
+                  </IconButton>
+                </Stack>
               </Stack>
             ))}
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-              {productFields.length > 1 && (
-                <Button
-                  onClick={() => removeProduct(productFields.length - 1)}
-                  sx={{
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    background: '#FFFFFF',
-                    border: '1px solid #E7E7E7',
-                    boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
-                    color: '#D4321C',
-                    '&:hover': { bgcolor: '#f5f5f5' },
-                  }}
-                >
-                  Remove
-                </Button>
-              )}
               <IconButton
                 onClick={handleAddProduct}
                 sx={{
+                  width: 38,
+                  height: 38,
                   gap: '4px',
                   opacity: 1,
                   borderRadius: '8px',
@@ -638,7 +802,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
                   borderWidth: '1px',
                   background: '#FFFFFF',
                   border: '1px solid #E7E7E7',
-                  boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                   '&:hover': { bgcolor: '#f5f5f5' },
                 }}
               >
@@ -651,8 +815,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
         {/* Reservation Section */}
         {logisticsType === 'RESERVATION' && (
           <>
-            {/* Scheduling Option */}
-            <Stack spacing={1} maxWidth={800}>
+            <Stack spacing={1}>
               <FormLabel
                 sx={{
                   fontWeight: 600,
@@ -676,9 +839,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
                     bgcolor: schedulingOption === 'confirmation' ? '#F0F7FF' : 'transparent',
                     cursor: 'pointer',
                   }}
-                  onClick={() =>
-                    setValue('schedulingOption', 'confirmation', { shouldDirty: true })
-                  }
+                  onClick={() => setValue('schedulingOption', 'confirmation')}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                     <Radio
@@ -726,7 +887,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
                     bgcolor: schedulingOption === 'auto' ? '#F0F7FF' : 'transparent',
                     cursor: 'pointer',
                   }}
-                  onClick={() => setValue('schedulingOption', 'auto', { shouldDirty: true })}
+                  onClick={() => setValue('schedulingOption', 'auto')}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                     <Radio
@@ -765,32 +926,30 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
               </Box>
             </Stack>
 
-            {/* Multiple Bookings Toggle */}
             <Stack spacing={0}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    Allow multiple creators to book the same timeslot
-                  </Typography>
-                  <Switch
-                    checked={allowMultipleBookings}
-                    onChange={(e) =>
-                      setValue('allowMultipleBookings', e.target.checked, { shouldDirty: true })
-                    }
-                    sx={{
-                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#1340FF',
-                      },
-                    }}
-                  />
-                </Stack>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  Enabling this option allows <strong>multiple</strong> creators to visit your outlet
-                  at the same time. Leaving this option disabled restricts <strong>one</strong>{' '}
-                  timeslot to <strong>one</strong> creator only.
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  Allow multiple creators to book the same timeslot
                 </Typography>
+                <Switch
+                  checked={allowMultipleBookings}
+                  onChange={(e) =>
+                    setValue('allowMultipleBookings', e.target.checked, { shouldValidate: true })
+                  }
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      backgroundColor: '#1340FF',
+                    },
+                  }}
+                />
               </Stack>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Enabling this option allows <strong>multiple</strong> creators to visit your outlet
+                at the same time. Leaving this option disabled restricts <strong>one</strong>{' '}
+                timeslot to <strong>one</strong> creator only.
+              </Typography>
+            </Stack>
 
-            {/* Locations */}
             <Stack spacing={1}>
               <FormLabel
                 sx={{
@@ -815,7 +974,7 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
                   </Box>
                 </Typography>
                 <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
-                  Contact{' '}
+                  Contact Number{' '}
                   <Box component="span" sx={{ fontWeight: 400 }}>
                     (Optional)
                   </Box>
@@ -829,6 +988,17 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
                     <RHFTextField
                       name={`locations.${index}.name`}
                       placeholder="Outlet"
+                      onChange={(e) => {
+                        setValue(`locations.${index}.name`, e.target.value, {
+                          shouldValidate: true,
+                        });
+                        trigger('locations');
+                      }}
+                      error={
+                        index === 0
+                          ? !!errors.locations && !Array.isArray(errors.locations)
+                          : !!errors?.locations?.[index]?.name
+                      }
                       sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                     />
                     <RHFTextField
@@ -861,6 +1031,12 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
                 ))}
               </Stack>
 
+              {errors.locations && !Array.isArray(errors.locations) && (
+                <Typography variant="caption" color="error" sx={{ fontWeight: 400 }}>
+                  {errors.locations.message}
+                </Typography>
+              )}
+
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <IconButton
                   onClick={() => appendLocation({ name: '' })}
@@ -883,482 +1059,453 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
               </Box>
             </Stack>
 
-            {/* Availability Rules */}
-            <Box
-              sx={{
-                border: '1px solid #E0E0E0',
-                borderRadius: 2,
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                overflow: 'hidden',
-                bgcolor: '#fff',
-              }}
-            >
-              <Box
-                sx={{ p: 3, width: { xs: '100%', md: '45%' }, borderRight: { md: '1px solid #E0E0E0' } }}
-              >
-                <Typography sx={{ fontWeight: 600, fontSize: '18px', mb: 1 }}>Select Dates:</Typography>
-
-                <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 2 }}>
-                  Between {campaignStartDate ? format(new Date(campaignStartDate), 'd MMMM yyyy') : '...'}{' '}
-                  to {campaignEndDate ? format(new Date(campaignEndDate), 'd MMMM yyyy') : '...'}
+            <Box sx={{ maxWidth: 900, mx: 'auto', p: 2, mb: 10 }}>
+              <Stack alignItems="center" spacing={1} sx={{ mb: 4 }}>
+                <Typography
+                  variant="body2"
+                  textAlign="center"
+                  sx={{ color: '#636366', maxWidth: 500 }}
+                >
+                  Add options for creators to select their available time slots. Times are
+                  standardized to Malaysian time (UTC+08:00).
                 </Typography>
+              </Stack>
 
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-                  <Switch
-                    size="small"
-                    checked={allDay}
-                    onChange={(e) => setAllDay(e.target.checked)}
-                    sx={{ '& .Mui-checked': { color: '#1340FF' } }}
-                  />
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    All Day
+              <Box
+                sx={{
+                  border: '1px solid #E0E0E0',
+                  borderRadius: 2,
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  overflow: 'hidden',
+                  bgcolor: '#fff',
+                }}
+              >
+                <Box
+                  sx={{
+                    p: 3,
+                    width: { xs: '100%', md: '45%' },
+                    borderRight: { md: '1px solid #E0E0E0' },
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 600, fontSize: '18px', mb: 1 }}>
+                    Select Dates:
                   </Typography>
-                </Stack>
 
-                <Box sx={{ borderRadius: '8px', bgcolor: '#1340FF', p: 1, mb: 3 }}>
-                  <Typography sx={{ fontSize: '12px', color: 'white', lineHeight: 1.5 }}>
-                    Click once to select the start date, then click again on the end date to include all
-                    days in between. <br />
-                    <strong>Double-click for a single day</strong>, and click a selected date to deselect
-                    it.
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 2 }}>
+                    Between{' '}
+                    {campaignStartDate ? format(new Date(campaignStartDate), 'd MMMM yyyy') : '...'}{' '}
+                    to {campaignEndDate ? format(new Date(campaignEndDate), 'd MMMM yyyy') : '...'}
                   </Typography>
-                </Box>
 
-                <Divider sx={{ mb: 3 }} />
-                <Box sx={{ maxWidth: 300, mx: 'auto' }}>
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ mb: 3 }}
-                  >
-                    <IconButton onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} size="small">
-                      <Iconify icon="eva:arrow-ios-back-fill" />
-                    </IconButton>
-                    <Typography sx={{ fontWeight: 700 }}>{format(currentMonth, 'MMM yyyy')}</Typography>
-                    <IconButton onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} size="small">
-                      <Iconify icon="eva:arrow-ios-forward-fill" />
-                    </IconButton>
+                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                    <Switch
+                      size="small"
+                      checked={allDay}
+                      onChange={(e) => setAllDay(e.target.checked)}
+                      sx={{ '& .Mui-checked': { color: '#1340FF' } }}
+                    />
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      All Day
+                    </Typography>
                   </Stack>
 
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
-                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
-                      <Box key={d} sx={{ textAlign: 'center', mb: 1 }}>
-                        <Typography variant="caption" sx={{ color: '#919EAB', fontWeight: 600 }}>
-                          {d}
-                        </Typography>
-                      </Box>
-                    ))}
-                    {calendarDays.map((day, i) => (
-                      <Box key={i}>
-                        <Box onClick={() => handleDateClick(day)} sx={getDayStyles(day)}>
-                          <Typography variant="body2" sx={{ fontWeight: 'inherit', color: 'inherit' }}>
-                            {format(day, 'd')}
+                  <Box sx={{ borderRadius: '8px', bgcolor: '#1340FF', p: 1, mb: 3 }}>
+                    <Typography sx={{ fontSize: '12px', color: 'white', lineHeight: 1.5 }}>
+                      Click once to select the start date, then click again on the end date to
+                      include all days in between. <br />
+                      <strong>Double-click for a single day</strong>, and click a selected date to
+                      deselect it.
+                    </Typography>
+                  </Box>
+
+                  <Divider sx={{ mb: 3 }} />
+                  <Box sx={{ maxWidth: 300, mx: 'auto' }}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ mb: 3 }}
+                    >
+                      <IconButton
+                        onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                        size="small"
+                      >
+                        <Iconify icon="eva:arrow-ios-back-fill" />
+                      </IconButton>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {format(currentMonth, 'MMM yyyy')}
+                      </Typography>
+                      <IconButton
+                        onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                        size="small"
+                      >
+                        <Iconify icon="eva:arrow-ios-forward-fill" />
+                      </IconButton>
+                    </Stack>
+
+                    <Grid container columns={7}>
+                      {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
+                        <Grid item xs={1} key={d} sx={{ textAlign: 'center', mb: 1 }}>
+                          <Typography variant="caption" sx={{ color: '#919EAB', fontWeight: 600 }}>
+                            {d}
                           </Typography>
-                        </Box>
-                      </Box>
-                    ))}
+                        </Grid>
+                      ))}
+                      {calendarDays.map((day, i) => (
+                        <Grid item xs={1} key={i}>
+                          <Box onClick={() => handleDateClick(day)} sx={getDayStyles(day)}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 'inherit', color: 'inherit' }}
+                            >
+                              {format(day, 'd')}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
+                  {/* RESET AND SELECT ALL BOX */}
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mt: 2 }}
+                  >
+                    <Button
+                      onClick={handleClear}
+                      size="small"
+                      sx={{
+                        fontSize: '14px',
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        minWidth: 'auto',
+                        p: 0,
+                        '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+                      }}
+                    >
+                      <Iconify
+                        icon="eva:trash-2-outline"
+                        color="#FF5630"
+                        width={20}
+                        sx={{ mr: 1 }}
+                      />{' '}
+                      Clear Dates
+                    </Button>
+
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={
+                            campaignInterval &&
+                            selectedDates.length > 0 &&
+                            selectedDates.length === eachDayOfInterval(campaignInterval).length
+                          }
+                          onChange={handleSelectAllDates}
+                          size="small"
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>
+                          Select All Dates
+                        </Typography>
+                      }
+                      // sx={{ mr: 0 }}
+                    />
                   </Box>
                 </Box>
 
-                {/* Clear Dates and Select All */}
-                <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mt: 2 }}>
-                  <Button
-                    onClick={() => {
-                      setSelectedDates([]);
-                      setSelectionStart(null);
-                    }}
-                    size="small"
+                <Box
+                  sx={{
+                    p: 3,
+                    width: { xs: '100%', md: '55%' },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: 500,
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 600, fontSize: '18px', mb: 3 }}>
+                    Select Time Slots:
+                  </Typography>
+
+                  <ThemeProvider
+                    theme={createTheme({
+                      palette: {
+                        primary: { main: '#1340FF' },
+                      },
+                      components: {
+                        MuiIconButton: {
+                          styleOverrides: {
+                            root: {
+                              color: '#1340FF',
+                            },
+                          },
+                        },
+                        MuiMultiSectionDigitalClockSection: {
+                          styleOverrides: {
+                            root: {
+                              '&::-webkit-scrollbar': {
+                                display: 'none',
+                              },
+                              scrollbarWidth: 'none',
+                              msOverflowStyle: 'none',
+                            },
+                            item: {
+                              '&.Mui-selected': {
+                                backgroundColor: '#1340FF !important',
+                                color: '#fff !important',
+                                fontWeight: 'bold',
+                                borderRadius: 3.5,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    })}
+                  >
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+                        <DesktopTimePicker
+                          disabled={allDay}
+                          onChange={(value) => setStartTime(value?.getTime())}
+                          slotProps={{
+                            textField: {
+                              size: 'small',
+                              fullWidth: true,
+                              sx: {
+                                '& .MuiOutlinedInput-root': { borderRadius: 1.5 },
+                                ...(allDay && { bgcolor: '#F4F6F8' }),
+                              },
+                            },
+                            openPickerButton: {
+                              sx: { color: allDay ? 'text.disabled' : '#1340FF' },
+                            },
+                          }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{ color: allDay ? 'text.disabled' : '#636366' }}
+                        >
+                          to
+                        </Typography>
+                        <DesktopTimePicker
+                          disabled={allDay}
+                          onChange={(value) => setEndTime(value?.getTime())}
+                          slotProps={{
+                            textField: {
+                              size: 'small',
+                              fullWidth: true,
+                              sx: {
+                                '& .MuiOutlinedInput-root': { borderRadius: 1.5 },
+                                ...(allDay && { bgcolor: '#F4F6F8' }),
+                              },
+                            },
+                            openPickerButton: {
+                              sx: { color: allDay ? 'text.disabled' : '#1340FF' },
+                            },
+                          }}
+                        />
+                      </Stack>
+                    </LocalizationProvider>
+                  </ThemeProvider>
+
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={1}
                     sx={{
-                      fontSize: '14px',
-                      textTransform: 'none',
-                      fontWeight: 500,
-                      minWidth: 'auto',
-                      p: 0,
-                      '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+                      mb: 3,
+                      position: 'relative',
+                      opacity: allDay ? 0.6 : 1,
                     }}
                   >
-                    <Iconify icon="eva:trash-2-outline" color="#FF5630" width={20} sx={{ mr: 1 }} /> Clear
-                    Dates
-                  </Button>
-
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={
-                          campaignInterval &&
-                          selectedDates.length > 0 &&
-                          selectedDates.length === eachDayOfInterval(campaignInterval).length
+                    <Checkbox
+                      disabled={allDay}
+                      checked={intervalsChecked}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setIntervalsChecked(isChecked);
+                        if (!isChecked) {
+                          setShowIntervalDropdown(false);
                         }
-                        onChange={(e) => {
-                          if (e.target.checked && campaignInterval) {
-                            setSelectedDates(eachDayOfInterval(campaignInterval));
-                          } else {
-                            setSelectedDates([]);
-                          }
-                          setSelectionStart(null);
-                        }}
+                      }}
+                      size="small"
+                      sx={{ p: 0, '&.Mui-disabled': { color: 'text.disabled' } }}
+                    />
+                    <Typography
+                      sx={{
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        ml: 1,
+                        color: allDay ? 'text.disabled' : 'inherit',
+                      }}
+                    >
+                      Intervals
+                    </Typography>
+
+                    {intervalsChecked && (
+                      <Button
+                        disabled={allDay}
+                        variant="outlined"
                         size="small"
-                      />
-                    }
-                    label={
-                      <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>Select All Dates</Typography>
-                    }
-                  />
+                        onClick={() => !allDay && setShowIntervalDropdown(!showIntervalDropdown)}
+                        endIcon={
+                          <Iconify
+                            icon="eva:chevron-down-fill"
+                            color={allDay ? '#919EAB' : '#1340FF'}
+                          />
+                        }
+                        sx={{
+                          ml: 2,
+                          borderColor: '#E0E0E0',
+                          color: allDay ? 'text.disabled' : '#212B36',
+                          textTransform: 'none',
+                          px: 2,
+                          borderRadius: 1.5,
+                          '&.Mui-disabled': { borderColor: '#F4F6F8' },
+                        }}
+                      >
+                        {interval} hr
+                      </Button>
+                    )}
+
+                    {showIntervalDropdown && !allDay && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 100,
+                          zIndex: 10,
+                          bgcolor: '#fff',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                          borderRadius: 1,
+                          minWidth: 100,
+                          mt: 1,
+                        }}
+                      >
+                        {intervalOptions.map((opt) => (
+                          <MenuItem
+                            key={opt}
+                            onClick={() => {
+                              setInterval(opt);
+                              setShowIntervalDropdown(false);
+                            }}
+                            sx={{ fontSize: '14px', px: 2 }}
+                          >
+                            {opt} hr
+                          </MenuItem>
+                        ))}
+                      </Box>
+                    )}
+                  </Stack>
+
+                  <Divider sx={{ mb: 3 }} />
+
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {renderRightColumn}
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2 }}>
+                    {(allDay || generatedSlots.length > 0) && (
+                      <Button
+                        onClick={handleSaveRule}
+                        sx={{
+                          mt: 2,
+                          alignSelf: 'flex-end',
+                          width: 'fit-content',
+                          px: 4,
+                          height: 48,
+                          bgcolor: '#3A3A3C',
+                          color: '#fff',
+                          borderRadius: '12px',
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          boxShadow: '0px -3px 0px 0px #00000073 inset',
+                          '&:hover': { bgcolor: '#000' },
+                          '&.Mui-disabled': {
+                            bgcolor: '#F4F6F8',
+                            color: '#919EAB',
+                            boxShadow: 'none',
+                          },
+                        }}
+                      >
+                        {allDay ? 'Save All Day' : 'Save Time Slots'}
+                      </Button>
+                    )}
+                  </Box>
                 </Box>
               </Box>
 
               <Box
-                sx={{
-                  p: 3,
-                  width: { xs: '100%', md: '55%' },
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 500,
-                }}
+                ref={bottomRef}
+                sx={{ mt: 3, border: '1px solid #E0E0E0', borderRadius: 2, p: 2, bgcolor: '#fff' }}
               >
-                <Typography sx={{ fontWeight: 600, fontSize: '18px', mb: 3 }}>
-                  Select Time Slots:
-                </Typography>
-
-                <ThemeProvider
-                  theme={createTheme({
-                    palette: {
-                      primary: { main: '#1340FF' },
-                    },
-                    components: {
-                      MuiIconButton: {
-                        styleOverrides: {
-                          root: {
-                            color: '#1340FF',
-                          },
-                        },
-                      },
-                      MuiMultiSectionDigitalClockSection: {
-                        styleOverrides: {
-                          root: {
-                            '&::-webkit-scrollbar': {
-                              display: 'none',
-                            },
-                            scrollbarWidth: 'none',
-                            msOverflowStyle: 'none',
-                          },
-                          item: {
-                            '&.Mui-selected': {
-                              backgroundColor: '#1340FF !important',
-                              color: '#fff !important',
-                              fontWeight: 'bold',
-                              borderRadius: 3.5,
-                            },
-                          },
-                        },
-                      },
-                    },
-                  })}
-                >
-                  <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                      <DesktopTimePicker
-                        disabled={allDay}
-                        onChange={(value) => setStartTime(value?.getTime())}
-                        slotProps={{
-                          textField: {
-                            size: 'small',
-                            fullWidth: true,
-                            sx: {
-                              '& .MuiOutlinedInput-root': { borderRadius: 1.5 },
-                              ...(allDay && { bgcolor: '#F4F6F8' }),
-                            },
-                          },
-                          openPickerButton: {
-                            sx: { color: allDay ? 'text.disabled' : '#1340FF' },
-                          },
-                        }}
-                      />
-                      <Typography variant="body2" sx={{ color: allDay ? 'text.disabled' : '#636366' }}>
-                        to
-                      </Typography>
-                      <DesktopTimePicker
-                        disabled={allDay}
-                        onChange={(value) => setEndTime(value?.getTime())}
-                        slotProps={{
-                          textField: {
-                            size: 'small',
-                            fullWidth: true,
-                            sx: {
-                              '& .MuiOutlinedInput-root': { borderRadius: 1.5 },
-                              ...(allDay && { bgcolor: '#F4F6F8' }),
-                            },
-                          },
-                          openPickerButton: {
-                            sx: { color: allDay ? 'text.disabled' : '#1340FF' },
-                          },
-                        }}
-                      />
-                    </Stack>
-                  </LocalizationProvider>
-                </ThemeProvider>
-
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  spacing={1}
-                  sx={{
-                    mb: 3,
-                    position: 'relative',
-                    opacity: allDay ? 0.6 : 1,
-                  }}
-                >
-                  <Checkbox
-                    disabled={allDay}
-                    checked={intervalsChecked}
-                    onChange={(e) => setIntervalsChecked(e.target.checked)}
-                    size="small"
-                    sx={{ p: 0, '&.Mui-disabled': { color: 'text.disabled' } }}
-                  />
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                  <Iconify icon="eva:calendar-outline" width={18} color="#1340FF" />
                   <Typography
-                    sx={{
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      ml: 1,
-                      color: allDay ? 'text.disabled' : 'inherit',
-                    }}
+                    variant="overline"
+                    sx={{ fontWeight: 800, color: '#212B36', mt: 0.5 }}
                   >
-                    Intervals
+                    RESERVATION SLOTS
                   </Typography>
-
-                  {intervalsChecked && (
-                    <Button
-                      disabled={allDay}
-                      variant="outlined"
-                      size="small"
-                      onClick={() => !allDay && setShowIntervalDropdown(!showIntervalDropdown)}
-                      endIcon={
-                        <Iconify icon="eva:chevron-down-fill" color={allDay ? '#919EAB' : '#1340FF'} />
-                      }
-                      sx={{
-                        ml: 2,
-                        borderColor: '#E0E0E0',
-                        color: allDay ? 'text.disabled' : '#212B36',
-                        textTransform: 'none',
-                        px: 2,
-                        borderRadius: 1.5,
-                        '&.Mui-disabled': { borderColor: '#F4F6F8' },
-                      }}
-                    >
-                      {interval} hr
-                    </Button>
-                  )}
-
-                  {showIntervalDropdown && !allDay && (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 100,
-                        zIndex: 10,
-                        bgcolor: '#fff',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                        borderRadius: 1,
-                        minWidth: 100,
-                        mt: 1,
-                      }}
-                    >
-                      {intervalOptions.map((opt) => (
-                        <MenuItem
-                          key={opt}
-                          onClick={() => {
-                            setInterval(opt);
-                            setShowIntervalDropdown(false);
-                          }}
-                          sx={{ fontSize: '14px', px: 2 }}
-                        >
-                          {opt} hr
-                        </MenuItem>
-                      ))}
-                    </Box>
-                  )}
                 </Stack>
-
-                <Divider sx={{ mb: 3 }} />
-
-                {/* Generated Slots - Matching reservation-slots.jsx styling */}
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                  }}
-                >
-                  {/* Lint fix: no-nested-ternary */}
-                  {allDay && (
-                    <Stack spacing={1} alignItems="center" textAlign="center">
-                      <Typography sx={{ fontSize: '48px' }}>👌</Typography>
-                      <Typography variant="h6" fontWeight={700}>
-                        All-Day Events
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Select dates and you&apos;re good to go!
-                      </Typography>
-                    </Stack>
-                  )}
-                  {!allDay && generatedSlots.length > 0 && (
-                    <Box sx={{ width: '100%', maxHeight: 280, overflowY: 'auto' }}>
-                      <Grid container spacing={1.5}>
-                        {generatedSlots.map((slot, idx) => (
-                          <Grid item xs={6} key={idx}>
-                            <Box
-                              onClick={() => toggleSlot(idx)}
-                              sx={{
-                                p: 1.5,
-                                textAlign: 'center',
-                                border: '1.5px solid',
-                                borderRadius: 1.5,
-                                cursor: 'pointer',
-                                borderColor: slot.selected ? '#1340FF' : '#F4F6F8',
-                                bgcolor: slot.selected ? 'rgba(19, 64, 255, 0.04)' : '#fff',
-                              }}
-                            >
-                              <Typography
-                                sx={{
-                                  fontSize: '13px',
-                                  fontWeight: 600,
-                                  color: slot.selected ? '#1340FF' : '#919EAB',
-                                }}
-                              >
-                                {slot.label}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </Box>
-                  )}
-                  {!allDay && generatedSlots.length === 0 && (
-                    <Stack spacing={1} alignItems="center" textAlign="center">
-                      <Typography sx={{ fontSize: '48px' }}>😘</Typography>
-                      <Typography variant="h6" fontWeight={700}>
-                        Add Time Slots
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Select a start/end time and interval.
-                      </Typography>
-                    </Stack>
-                  )}
-                </Box>
-
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2 }}>
-                  {(allDay || generatedSlots.length > 0) && (
-                    <Button
-                      onClick={handleSaveRule}
-                      sx={{
-                        mt: 2,
-                        alignSelf: 'flex-end',
-                        width: 'fit-content',
-                        px: 4,
-                        height: 48,
-                        bgcolor: '#3A3A3C',
-                        color: '#fff',
-                        borderRadius: '12px',
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        boxShadow: '0px -3px 0px 0px #00000073 inset',
-                        '&:hover': { bgcolor: '#000' },
-                        '&.Mui-disabled': {
-                          bgcolor: '#F4F6F8',
-                          color: '#919EAB',
-                          boxShadow: 'none',
-                        },
-                      }}
-                    >
-                      {allDay ? 'Save All Day' : 'Save Time Slots'}
-                    </Button>
-                  )}
-                </Box>
+                <Divider />
+                {savedRules.length === 0 ? (
+                  <Typography variant="body2" sx={{ color: '#919EAB', py: 3, textAlign: 'center' }}>
+                    Saved time slots will show up here.
+                  </Typography>
+                ) : (
+                  <Stack spacing={1} sx={{ mt: 2 }}>
+                    {savedRules.map((rule, index) => (
+                      <Stack
+                        key={index}
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        sx={{ p: 1.5, bgcolor: '#F9FAFB', borderRadius: 1.5 }}
+                      >
+                        <Stack direction="row" spacing={2}>
+                          <Iconify icon="feather:edit" color="#1340FF" sx={{ mt: 0.5 }} />
+                          <Box>
+                            <Typography sx={{ fontSize: '14px', fontWeight: 600 }}>
+                              {formatDatesForDisplay(rule.dates)}
+                            </Typography>
+                            <Typography sx={{ fontSize: '14px', color: '#636366', mt: 0.5 }}>
+                              {rule.slots.map((slot, i) => (
+                                <span key={i}>
+                                  {slot.label}
+                                  {i < rule.slots.length - 1 ? ', ' : ''}
+                                </span>
+                              ))}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                        <IconButton onClick={() => handleRemoveRule(index)} size="small">
+                          <Iconify icon="eva:trash-2-outline" color="#FF5630" width={20} />
+                        </IconButton>
+                      </Stack>
+                    ))}
+                  </Stack>
+                )}
               </Box>
             </Box>
-
-            {/* Saved Rules Display */}
-            <Box
-              ref={bottomRef}
-              sx={{ mt: 3, border: '1px solid #E0E0E0', borderRadius: 2, p: 2, bgcolor: '#fff' }}
-            >
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-                <Iconify icon="eva:calendar-outline" width={18} color="#1340FF" />
-                <Typography variant="overline" sx={{ fontWeight: 800, color: '#212B36', mt: 0.5 }}>
-                  RESERVATION SLOTS
-                </Typography>
-              </Stack>
-              <Divider />
-              {savedRules.length === 0 ? (
-                <Typography variant="body2" sx={{ color: '#919EAB', py: 3, textAlign: 'center' }}>
-                  Saved time slots will show up here.
-                </Typography>
-              ) : (
-                <Stack spacing={1} sx={{ mt: 2 }}>
-                  {savedRules.map((rule, index) => (
-                    <Stack
-                      key={index}
-                      direction="row"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      sx={{ p: 1.5, bgcolor: '#F9FAFB', borderRadius: 1.5 }}
-                    >
-                      <Stack direction="row" spacing={2}>
-                        <Iconify icon="feather:edit" color="#1340FF" sx={{ mt: 0.5 }} />
-                        <Box>
-                          <Typography sx={{ fontSize: '14px', fontWeight: 600 }}>
-                            {formatDatesForDisplay(rule.dates)}
-                          </Typography>
-                          <Typography sx={{ fontSize: '14px', color: '#636366', mt: 0.5 }}>
-                            {rule.slots.map((slot, i) => (
-                              <span key={i}>
-                                {slot.label}
-                                {i < rule.slots.length - 1 ? ', ' : ''}
-                              </span>
-                            ))}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                      <IconButton onClick={() => handleRemoveRule(index)} size="small">
-                        <Iconify icon="eva:trash-2-outline" color="#FF5630" width={20} />
-                      </IconButton>
-                    </Stack>
-                  ))}
-                </Stack>
-              )}
-            </Box>
-
-            {/* Client Remarks */}
-            <Stack spacing={1}>
-              <FormLabel
-                sx={{
-                  fontWeight: 600,
-                  color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                }}
-              >
-                Remarks for Creators
-              </FormLabel>
-              <Typography variant="body2" sx={{ color: '#636366', mb: 1 }}>
-                Add details you want to send to all participants. This could include payment
-                arrangements, venue policies, cancellation penalties, or instructions.
-              </Typography>
-              <RHFTextField
-                name="clientRemarks"
-                placeholder="Type your remarks here..."
-                multiline
-                rows={4}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-              />
-            </Stack>
           </>
         )}
 
         {/* Submit Button */}
-        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3, maxWidth: logisticsType === 'RESERVATION' ? 800 : 600 }}>
+        <Stack
+          direction="row"
+          justifyContent="flex-end"
+          sx={{ mt: 3, maxWidth: logisticsType === 'RESERVATION' ? 800 : 600 }}
+        >
           <LoadingButton
             type="submit"
             variant="contained"
