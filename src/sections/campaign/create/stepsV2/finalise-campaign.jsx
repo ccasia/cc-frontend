@@ -1,7 +1,8 @@
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { Page, pdfjs, Document } from 'react-pdf';
 import { useFormContext } from 'react-hook-form';
-import React, { memo, lazy, useMemo, useState, useEffect, useCallback } from 'react';
+import { Page, pdfjs, Document } from 'react-pdf';
+import React, { memo, lazy, useMemo, useState, useEffect } from 'react';
 
 // Loading spinner
 import CircularProgress from '@mui/material/CircularProgress';
@@ -15,15 +16,20 @@ import {
   Avatar,
   Button,
   Dialog,
+  Tooltip,
   MenuItem,
   FormLabel,
+  TextField,
   Typography,
   DialogTitle,
+  ListItemText,
   DialogContent,
   DialogActions,
+  createFilterOptions,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import useGetCompany from 'src/hooks/use-get-company';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetTemplate } from 'src/hooks/use-get-template';
 
@@ -31,14 +37,17 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import {
-  RHFUpload,
   RHFSwitch,
   RHFSelectV2,
+  RHFTextField,
   RHFMultiSelect,
   RHFAutocomplete,
 } from 'src/components/hook-form';
 
+import CreateBrand from '../brandDialog';
 import { useGetAdmins } from '../hooks/get-am';
+import PackageCreateDialog from '../../../packages/package-dialog';
+import CreateCompany from '../../../brand/create/brandForms/FirstForms/create-company';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
 
@@ -55,38 +64,57 @@ const deliverableOptions = [
   { value: 'RAW_FOOTAGES', label: 'Raw Footage' },
 ];
 
-const FormField = ({ label, children, required = true }) => (
+const FormField = ({ label, labelColor, children, required = true, action }) => (
   <Stack spacing={0.5}>
-    <FormLabel
-      required={required}
-      sx={{
-        fontWeight: 700,
-        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-        fontSize: '0.875rem',
-        mb: 0.5,
-        '& .MuiFormLabel-asterisk': {
-          color: '#FF3500',
-        },
-      }}
-    >
-      {label}
-    </FormLabel>
+    <Stack direction="row" alignItems="center" spacing={0.5} mb={0.5}>
+      <FormLabel
+        required={required}
+        sx={{
+          fontWeight: 700,
+          color: labelColor || ((theme) => (theme.palette.mode === 'light' ? 'black' : 'white')),
+          fontSize: '0.875rem',
+          '& .MuiFormLabel-asterisk': {
+            color: '#FF3500',
+          },
+        }}
+      >
+        {label}
+      </FormLabel>
+      {action}
+    </Stack>
     {children}
   </Stack>
 );
 
 FormField.propTypes = {
   label: PropTypes.string.isRequired,
+  labelColor: PropTypes.string,
   children: PropTypes.node.isRequired,
   required: PropTypes.bool,
+  action: PropTypes.node,
 };
 
 const PDFEditor = lazy(() => import('../pdf-editor'));
 
-const FinaliseCampaign = () => {
+const filter = createFilterOptions();
+
+const getRemainingTime = (invoiceDate) => {
+  const remainingDays = dayjs(invoiceDate).diff(dayjs(), 'days');
+  return remainingDays;
+};
+
+const FinaliseCampaign = ({
+  openBrand,
+  openCompany,
+  openPackage,
+  onValidationChange,
+  setBrandState,
+  onPackageLinkSuccess,
+}) => {
   const { data: admins } = useGetAdmins('active');
+  const { data: companyData, isLoading: companyLoading, mutate: mutateCompanyList } = useGetCompany();
   const { user } = useAuthContext();
-  const { watch, setValue } = useFormContext();
+  const { watch, setValue, getValues, formState: { errors } } = useFormContext();
   const lgUp = useResponsive('up', 'lg');
 
   const isV4Submission = watch('isV4Submission');
@@ -106,6 +134,31 @@ const FinaliseCampaign = () => {
   // Use agreementFrom from form state for selection
   const currentAgreement = watch('agreementFrom');
 
+  // Client and brand state
+  const client = watch('client');
+  const brand = getValues('campaignBrand');
+  const campaignCredits = watch('campaignCredits');
+
+  const creditSummary = useMemo(() => client?.creditSummary || null, [client]);
+
+  const requestedCredits = Number(campaignCredits || 0);
+  const availableCredits = creditSummary?.remainingCredits ?? 0;
+
+  let creditError = false;
+  let creditHelperText = '';
+
+  if (requestedCredits > availableCredits) {
+    creditError = true;
+    creditHelperText = `Exceeds limit - credits available: ${availableCredits}`;
+  }
+
+  // Notify parent of credit validation status
+  useEffect(() => {
+    if (onValidationChange) {
+      onValidationChange(creditError);
+    }
+  }, [creditError, onValidationChange]);
+
   // Auto-select first template if none selected and templates exist
   useEffect(() => {
     if (
@@ -122,6 +175,27 @@ const FinaliseCampaign = () => {
     templateModal.onFalse();
   };
 
+  // Open create company dialog when new client is typed
+  useEffect(() => {
+    if (client && client.inputValue) {
+      openCompany.onTrue();
+    }
+  }, [client, openCompany]);
+
+  // Open create brand dialog when new brand is typed
+  useEffect(() => {
+    if (brand?.inputValue) {
+      openBrand.onTrue();
+    }
+  }, [brand, openBrand]);
+
+  // Clear brand when switching to direct client
+  useEffect(() => {
+    if (client && client?.type === 'directClient') {
+      setValue('campaignBrand', null, { shouldValidate: true });
+    }
+  }, [client, setValue]);
+
   const filteredCampaignManagers = useMemo(
     () =>
       admins
@@ -130,25 +204,191 @@ const FinaliseCampaign = () => {
     [admins]
   );
 
-  const images = watch('campaignImages');
-
-  const handleDropCampaignImages = useCallback(
-    (acceptedFiles) => {
-      const files = images || [];
-
-      const newFiles = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-      );
-
-      setValue('campaignImages', [...files, ...newFiles], { shouldValidate: true });
-    },
-    [setValue, images]
-  );
+  console.log(filteredCampaignManagers)
 
   return (
     <Stack spacing={3} sx={{ maxWidth: '800px', mx: 'auto', mt: 4, mb: 8 }}>
+      {/* Client Selection */}
+      <FormField label="Select/Create a Client">
+        <RHFAutocomplete
+          name="client"
+          placeholder="Select or Create Client"
+          options={companyData || []}
+          loading={companyLoading}
+          getOptionLabel={(option) => {
+            if (option.inputValue) {
+              return option.inputValue;
+            }
+            return option.name;
+          }}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          selectOnFocus
+          clearOnBlur
+          renderOption={(props, option) => {
+            const { ...optionProps } = props;
+            return (
+              <Stack
+                component="li"
+                direction="row"
+                spacing={1}
+                p={1}
+                {...optionProps}
+                key={option?.id}
+              >
+                <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                <ListItemText primary={option.name} />
+              </Stack>
+            );
+          }}
+          filterOptions={(options, params) => {
+            const { inputValue } = params;
+            const filtered = filter(options, params);
+            const isExisting = options.some(
+              (option) => option.name.toLowerCase() === inputValue.toLowerCase()
+            );
+            if (inputValue !== '' && !isExisting) {
+              filtered.push({
+                inputValue,
+                name: `Add "${inputValue}"`,
+              });
+            }
+            return filtered;
+          }}
+        />
+      </FormField>
+
+      {/* Brand Selection - only show for agency type or if client has brands */}
+      {client && (client?.type === 'agency' || !!client?.brand?.length) && (
+        <FormField label="Select/Create a Brand">
+          <RHFAutocomplete
+            name="campaignBrand"
+            placeholder="Select or Create Brand"
+            options={client?.brand || []}
+            loading={companyLoading}
+            getOptionLabel={(option) => {
+              if (option.inputValue) {
+                return option.inputValue;
+              }
+              return option.name;
+            }}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            selectOnFocus
+            clearOnBlur
+            renderOption={(props, option) => {
+              const { ...optionProps } = props;
+              return (
+                <Stack
+                  component="li"
+                  direction="row"
+                  spacing={1}
+                  p={1}
+                  {...optionProps}
+                  key={option?.id}
+                >
+                  <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                  <ListItemText primary={option.name} />
+                </Stack>
+              );
+            }}
+            filterOptions={(options, params) => {
+              const { inputValue } = params;
+              const filtered = filter(options, params);
+              const isExisting = options.some(
+                (option) => option.name.toLowerCase() === inputValue.toLowerCase()
+              );
+              if (inputValue !== '' && !isExisting) {
+                filtered.push({
+                  inputValue,
+                  name: `Add "${inputValue}"`,
+                });
+              }
+              return filtered;
+            }}
+          />
+        </FormField>
+      )}
+
+      {/* Credit Summary Section */}
+      {client &&
+        (!creditSummary || !creditSummary.remainingCredits ? (
+          <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#F9F9F9', borderRadius: 1 }}>
+            <Typography variant="subtitle1" color="text.secondary">
+              No active package found
+            </Typography>
+            <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
+              Link a package
+            </Button>
+          </Box>
+        ) : (
+          <>
+            {dayjs(creditSummary.nextExpiryDate).isBefore(dayjs(), 'date') ? (
+              <Stack alignItems="center" spacing={1} sx={{ p: 3, bgcolor: '#FFF8E5', borderRadius: 1 }}>
+                <Avatar
+                  sx={{ bgcolor: (theme) => theme.palette.warning.light, width: 60, height: 60 }}
+                >
+                  <Iconify icon="pajamas:expire" width={26} />
+                </Avatar>
+                <Typography variant="subtitle2">Package has expired</Typography>
+                <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
+                  Renew package
+                </Button>
+              </Stack>
+            ) : (
+              <Stack
+                direction={{ sm: 'column', md: 'row' }}
+                spacing={1}
+              >
+                <Box flex={1}>
+                  <FormField
+                    label="Total Available Credits"
+                    labelColor="text.disabled"
+                    required={false}
+                    action={
+                      <Tooltip
+                        title={`Total remaining credits from ${creditSummary.activePackagesCount} active package(s).`}
+                      >
+                        <Iconify
+                          icon="material-symbols:info-outline-rounded"
+                          color="text.secondary"
+                          width={15}
+                        />
+                      </Tooltip>
+                    }
+                  >
+                    <TextField
+                      value={`${creditSummary.remainingCredits} UGC Credits`}
+                      InputProps={{
+                        disabled: true,
+                      }}
+                    />
+                  </FormField>
+                </Box>
+                <Box flex={1}>
+                  <FormField label="Validity" labelColor="text.disabled" required={false}>
+                    <TextField
+                      value={`${getRemainingTime(creditSummary.nextExpiryDate)} days left`}
+                      InputProps={{
+                        disabled: true,
+                      }}
+                    />
+                  </FormField>
+                </Box>
+                <Box flex={1}>
+                  <FormField label="Campaign Credits">
+                    <RHFTextField
+                      name="campaignCredits"
+                      type="number"
+                      placeholder="UGC Credits"
+                      error={creditError || errors?.campaignCredits}
+                      helperText={errors?.campaignCredits?.message || creditHelperText}
+                    />
+                  </FormField>
+                </Box>
+              </Stack>
+            )}
+          </>
+        ))}
+
       {/* Submission Version Toggle */}
       <Stack>
         <Stack direction="row" alignItems="center" mb={-0.5}>
@@ -398,8 +638,74 @@ const FinaliseCampaign = () => {
           if (newTemplate) setValue('agreementFrom', newTemplate, { shouldValidate: true });
         }}
       />
+
+      {/* Create Brand Dialog */}
+      <CreateBrand
+        open={openBrand.value}
+        onClose={() => {
+          // Clear the invalid inputValue object when dialog is closed without creating
+          const currentBrand = getValues('campaignBrand');
+          if (currentBrand?.inputValue) {
+            setValue('campaignBrand', null, { shouldValidate: false });
+          }
+          openBrand.onFalse();
+        }}
+        setBrand={async (newBrand) => {
+          // Refresh company list to get updated brand data
+          const updatedCompanyList = await mutateCompanyList();
+          
+          // Find the updated client with the new brand
+          if (updatedCompanyList && client?.id) {
+            const updatedClient = updatedCompanyList.find((c) => c.id === client.id);
+            if (updatedClient) {
+              // Update the client in form to include the new brand in its brand list
+              setValue('client', updatedClient, { shouldValidate: true });
+            }
+          }
+          
+          // Set the newly created brand as selected
+          setValue('campaignBrand', newBrand, { shouldValidate: true });
+          if (setBrandState) setBrandState(newBrand);
+        }}
+        brandName={brand?.inputValue}
+        client={client}
+      />
+
+      {/* Create Company Dialog */}
+      <CreateCompany
+        openCreate={openCompany.value}
+        setOpenCreate={() => {
+          // Clear the invalid inputValue object when dialog is closed without creating
+          const currentClient = getValues('client');
+          if (currentClient?.inputValue) {
+            setValue('client', null, { shouldValidate: false });
+          }
+          openCompany.onFalse();
+        }}
+        set={setValue}
+        isDialog
+        isForCampaign
+        companyName={client?.inputValue}
+      />
+
+      {/* Package Create Dialog - for linking package to existing company */}
+      <PackageCreateDialog
+        open={openPackage.value}
+        onClose={openPackage.onFalse}
+        clientId={client?.id}
+        onRefresh={onPackageLinkSuccess}
+      />
     </Stack>
   );
+};
+
+FinaliseCampaign.propTypes = {
+  openBrand: PropTypes.object,
+  openCompany: PropTypes.object,
+  openPackage: PropTypes.object,
+  onValidationChange: PropTypes.func,
+  setBrandState: PropTypes.func,
+  onPackageLinkSuccess: PropTypes.func,
 };
 
 export default memo(FinaliseCampaign);
