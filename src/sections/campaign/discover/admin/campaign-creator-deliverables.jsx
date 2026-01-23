@@ -55,7 +55,7 @@ const deriveCreatorOverallStatus = ({ firstDraft, finalDraft, posting }) => {
 
 const CampaignCreatorDeliverables = ({ campaign, isDisabled = false }) => {
   const theme = useTheme();
-
+  
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [expandedAccordion, setExpandedAccordion] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
