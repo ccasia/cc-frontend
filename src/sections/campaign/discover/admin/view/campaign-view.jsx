@@ -3,8 +3,6 @@ import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
@@ -14,7 +12,6 @@ import {
   Container,
   InputBase,
   Typography,
-  IconButton,
   CircularProgress,
 } from '@mui/material';
 
