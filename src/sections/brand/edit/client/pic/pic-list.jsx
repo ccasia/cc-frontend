@@ -69,7 +69,8 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
       const userDataPromises = personIncharge.map(async (pic) => {
         try {
           // Find user by email since PIC email should match User email
-          const response = await axiosInstance.get(`/api/user/by-email/${pic.email}`);
+          // Normalize email to lowercase for case-insensitive matching
+          const response = await axiosInstance.get(`/api/user/by-email/${pic.email?.toLowerCase()}`);
           return { picId: pic.id, userData: response.data };
         } catch (error) {
           console.error(`Error fetching user for PIC ${pic.id}:`, error);
@@ -148,15 +149,16 @@ const PICList = ({ personIncharge, companyId, onUpdate }) => {
     }
 
     const userData = picUsers[pic.id];
-    const status = userData?.status || 'inactive';
+    // Use 'no_account' when no User record exists for this PIC email
+    const status = userData?.status || 'no_account';
 
     const statusConfig = {
       active: { color: '#1ABF66', borderColor: '#1ABF66', label: 'Active' },
       pending: { color: '#FFA902', borderColor: '#FFA902', label: 'Pending' },
-      inactive: { color: '#8E8E93', borderColor: '#C4CDD5', label: 'Inactive' },
+      no_account: { color: '#8E8E93', borderColor: '#C4CDD5', label: 'No Account' },
     };
 
-    const config = statusConfig[status] || statusConfig.inactive;
+    const config = statusConfig[status] || statusConfig.no_account;
 
     return (
       <Typography

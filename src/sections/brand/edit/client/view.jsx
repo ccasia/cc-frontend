@@ -113,7 +113,8 @@ const CompanyEditView = ({ id }) => {
       }
 
       try {
-        const response = await axiosInstance.get(`/api/user/by-email/${company.pic[0].email}`);
+        // Normalize email to lowercase for case-insensitive matching
+        const response = await axiosInstance.get(`/api/user/by-email/${company.pic[0].email?.toLowerCase()}`);
         setMainPicStatus(response.data?.status || null);
       } catch (error) {
         console.error('Error fetching PIC status:', error);
