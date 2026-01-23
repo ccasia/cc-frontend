@@ -151,7 +151,7 @@ export default function LogisticsStepper({ logistic, isReservation }) {
         isCompleted,
         isActive: isScheduled && isDetailsDone && !isCompleted,
         error: hasIssue,
-        color: hasIssue ? '#FF3500' : '#1ABF66',
+        color: hasIssue ? '#FF3500' : '#1340FF',
       },
     ];
   } else {
@@ -268,6 +268,12 @@ export default function LogisticsStepper({ logistic, isReservation }) {
                     {step.description}
                   </Typography>
                 )}
+
+                {isActive && (
+                  <Typography variant="caption" sx={{ color: step.color, fontWeight: 400 }}>
+                    {step.description}
+                  </Typography>
+                )}
               </Box>
             </StepContent>
           </Step>
@@ -293,7 +299,7 @@ export function CreatorLogisticsStepper({ status, logistic, isReservation }) {
 
   let activeStep = 0;
   let steps = [];
-  
+
   if (isReservation) {
     if (status === 'NOT_STARTED') activeStep = 0;
     else if (status === 'PENDING_ASSIGNMENT') activeStep = 1;
