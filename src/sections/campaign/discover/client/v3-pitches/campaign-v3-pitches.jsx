@@ -866,7 +866,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
       <NonPlatformCreatorFormDialog
         open={nonPlatformOpen}
         onClose={() => setNonPlatformOpen(false)}
-        campaignId={campaign.id}
+        campaignId={campaign?.id}
         onUpdated={() => {
           onUpdate?.();
         }}
