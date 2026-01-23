@@ -834,8 +834,12 @@ const ReservationSlotsV2 = () => {
                   <MenuItem
                     key={opt}
                     onClick={() => {
-                      setInterval(opt);
-                      setShowIntervalDropdown(false);
+                      const isChecked = e.target.checked;
+                      setIntervalsChecked(isChecked);
+                      if (!isChecked) {
+                        setInterval(opt);
+                        setShowIntervalDropdown(false);
+                      }
                     }}
                     sx={{ fontSize: '14px', px: 2 }}
                   >
