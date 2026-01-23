@@ -123,6 +123,7 @@ const CreateCompany = ({
   set,
   isDialog = true,
   isForCampaign = false,
+  companyName = '',
 }) => {
   const { data: packages, isLoading } = useGetPackages();
   const [image, setImage] = useState(null);
@@ -189,11 +190,14 @@ const CreateCompany = ({
 
       if (isDialog) {
         if (isForCampaign) {
-          set(
-            'client',
-            { value: res.data?.company.id, name: res?.data?.company?.name },
-            { shouldValidate: true }
-          );
+          // Refresh company list first to get the latest data
+          const updatedCompanyList = await mutate();
+          
+          // Find the newly created company in the refreshed list
+          const newCompany = updatedCompanyList?.find((c) => c.id === res.data?.company.id);
+          
+          // Set the full company object (with creditSummary, type, brand, etc.)
+          set('client', newCompany || res.data?.company, { shouldValidate: true });
           setOpenCreate();
         } else {
           set(
@@ -201,7 +205,7 @@ const CreateCompany = ({
             { value: res.data?.company.id, name: res?.data?.company?.name },
             { shouldValidate: true }
           );
-          setOpenCreate(false);
+          setOpenCreate();
         }
       }
 
@@ -228,15 +232,27 @@ const CreateCompany = ({
       openConfirmation.onTrue();
       return;
     }
-
-    setOpenCreate(false);
+    
+    // Clear invalid autocomplete value if user typed but didn't create
+    if (isForCampaign && set) {
+      set('client', null, { shouldValidate: false });
+    }
+    
+    reset();
+    setActiveStep(0);
+    setOpenCreate();
   };
 
   const confirmClose = () => {
+    // Clear invalid autocomplete value if user typed but didn't create
+    if (isForCampaign && set) {
+      set('client', null, { shouldValidate: false });
+    }
+    
     reset();
     openConfirmation.onFalse();
     setActiveStep(0);
-    setOpenCreate(false);
+    setOpenCreate();
   };
 
   const renderPICForm = (
@@ -410,6 +426,13 @@ const CreateCompany = ({
     }
   }, [setValue, type, getUniqueId]);
 
+  // Pre-populate company name when provided
+  useEffect(() => {
+    if (companyName && setValue) {
+      setValue('companyName', companyName);
+    }
+  }, [companyName, setValue]);
+
   useEffect(() => {
     if (packageType && currency) {
       getUniqueId();
@@ -442,11 +465,12 @@ const CreateCompany = ({
       {isDialog ? (
         <Dialog
           fullWidth
-          open={openCreate}
+          open={!!openCreate}
           fullScreen={!smUp}
           PaperProps={{
             sx: { maxWidth: 720, borderRadius: 0.8 },
           }}
+          onClose={handleClose}
         >
           <DialogTitle>
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -457,7 +481,13 @@ const CreateCompany = ({
               >
                 Create a new company
               </Typography>
-              <IconButton size="small" sx={{ borderRadius: 1 }} onClick={handleClose}>
+              <IconButton
+                type="button"
+                size="small"
+                sx={{ borderRadius: 1 }}
+                onClick={handleClose}
+                aria-label="close"
+              >
                 <Iconify icon="material-symbols:close-rounded" width={24} />
               </IconButton>
             </Stack>
@@ -578,6 +608,7 @@ const CreateCompany = ({
               <Stack direction="row" spacing={1} justifyContent="end" my={3}>
                 {activeStep > 0 && (
                   <Button
+                    type="button"
                     onClick={() => setActiveStep(activeStep - 1)}
                     disabled={activeStep === 0}
                     variant="outlined"
@@ -589,6 +620,7 @@ const CreateCompany = ({
 
                 {activeStep === companySteps.length - 1 ? (
                   <LoadingButton
+                    type="button"
                     loading={loading}
                     variant="contained"
                     onClick={onSubmit}
@@ -598,6 +630,7 @@ const CreateCompany = ({
                   </LoadingButton>
                 ) : (
                   <Button
+                    type="button"
                     variant="contained"
                     sx={{ borderRadius: 0.6 }}
                     onClick={onNext}
@@ -721,6 +754,7 @@ const CreateCompany = ({
           <Stack direction="row" spacing={1} justifyContent="end" my={3}>
             {activeStep > 0 && (
               <Button
+                type="button"
                 onClick={() => setActiveStep(activeStep - 1)}
                 disabled={activeStep === 0}
                 variant="outlined"
@@ -732,6 +766,7 @@ const CreateCompany = ({
 
             {activeStep === companySteps.length - 1 ? (
               <LoadingButton
+                type="button"
                 loading={loading}
                 variant="contained"
                 onClick={onSubmit}
@@ -741,6 +776,7 @@ const CreateCompany = ({
               </LoadingButton>
             ) : (
               <Button
+                type="button"
                 variant="contained"
                 sx={{ borderRadius: 0.6 }}
                 onClick={onNext}
@@ -759,7 +795,7 @@ const CreateCompany = ({
         open={openConfirmation.value}
         onClose={openConfirmation.onFalse}
         action={
-          <Button variant="contained" onClick={confirmClose}>
+          <Button type="button" variant="contained" onClick={confirmClose}>
             Confirm
           </Button>
         }
@@ -776,4 +812,5 @@ CreateCompany.propTypes = {
   set: PropTypes.func,
   isDialog: PropTypes.bool,
   isForCampaign: PropTypes.bool,
+  companyName: PropTypes.string,
 };

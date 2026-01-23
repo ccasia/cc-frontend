@@ -1,5 +1,4 @@
 export { default as NextSteps } from './next-steps';
-export { default as SelectBrand } from './select-brand';
 export { default as LogisticRemarks } from './logistic-remarks';
 export { default as FinaliseCampaign } from './finalise-campaign';
 export { default as CampaignObjective } from './campaign-objective';
