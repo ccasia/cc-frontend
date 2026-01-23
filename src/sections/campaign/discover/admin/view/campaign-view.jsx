@@ -100,10 +100,6 @@ const CampaignView = () => {
 
   const theme = useTheme();
 
-  const [anchorEl, setAnchorEl] = useState(null);
-
-  const open = Boolean(anchorEl);
-
   const { user } = useAuthContext();
 
   const { mainRef } = useMainContext();
@@ -199,17 +195,8 @@ const CampaignView = () => {
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
   const handleNewCampaign = () => {
     create.onTrue();
-    handleClose();
   };
 
   useEffect(() => {
@@ -617,19 +604,19 @@ const CampaignView = () => {
 
           <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
             <Button
-              onClick={create.onTrue}
               startIcon={<Iconify icon="eva:plus-fill" width={20} height={20} />}
+              onClick={handleNewCampaign}
               disabled={isDisabled}
               sx={{
                 bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
                 color: isDisabled ? '#9e9e9e' : 'white',
                 borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
                 borderRadius: '8px',
-                padding: '8px 20px',
+                px: 2.5,
+                py: 1,
                 position: 'absolute',
                 right: 0,
                 top: -3,
-                minWidth: '150px',
                 fontSize: '0.9rem',
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
                 '&:hover': {
