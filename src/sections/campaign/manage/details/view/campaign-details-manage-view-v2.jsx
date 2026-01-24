@@ -39,8 +39,8 @@ import UpdateLogistics from '../UpdateLogistics';
 import UpdateObjectives from '../UpdateObjectives';
 import UpdateAdditionalOne from '../UpdateAdditionalOne';
 import UpdateAdditionalTwo from '../UpdateAdditionalTwo';
-import UpdateGeneralInformation from '../UpdateGeneralInformation';
 import UpdateFinaliseCampaign from '../UpdateFinaliseCampaign';
+import UpdateGeneralInformation from '../UpdateGeneralInformation';
 
 // Tab configuration
 const TABS = [

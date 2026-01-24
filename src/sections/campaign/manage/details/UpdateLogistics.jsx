@@ -148,14 +148,13 @@ const UpdateLogistics = ({ campaign, campaignMutate }) => {
     watch,
     reset,
     control,
-    getValues,
+    trigger,
     formState: { isSubmitting, isDirty, errors },
   } = methods;
 
   // Product editing state
-  const [editingIndex, setEditingIndex] = useState(-1);
-  const [editValue, setEditValue] = useState('');
-  const [lastAddedIndex, setLastAddedIndex] = useState(0);
+  const [, setEditingIndex] = useState(-1);
+  const [, setLastAddedIndex] = useState(0);
 
   // Field arrays for products and locations
   const {
