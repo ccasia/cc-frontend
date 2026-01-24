@@ -1235,17 +1235,9 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       return uniqueIndustries.length > 0
                         ? uniqueIndustries.join(', ')
                         : 'Not specified';
-                    }
-                    // fallback for old structure (single brand)
-                    if (brands?.industries) {
-                      if (Array.isArray(brands.industries)) {
-                        return brands.industries.length > 0
-                          ? brands.industries.join(', ')
-                          : 'Not specified';
-                      }
-                      return brands.industries;
-                    }
-                    return 'Not specified';
+                    } 
+                      return campaign?.campaignBrief.industries
+                    
                   })(),
                 },
               ].map((item) => (
