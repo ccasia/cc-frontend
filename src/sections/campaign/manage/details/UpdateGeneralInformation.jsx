@@ -7,13 +7,15 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import React, { memo, useMemo, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { DatePicker } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { interestsLists } from 'src/contants/interestLists';
 
+import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 import { RHFUploadCover } from 'src/components/hook-form/rhf-upload-cover';
@@ -203,7 +205,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
                   name="campaignDescription"
                   placeholder="Explain more about the campaign..."
                   multiline
-                  rows={5}
+                  rows={3}
                   size="small"
                   sx={{ '& .MuiOutlinedInput-root': { padding: '12px' } }}
                 />
@@ -227,58 +229,60 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate }) => {
             </Box>
 
             {/* Campaign start/end date - Two columns */}
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <FormField label="Campaign Start Date">
-                  {startDateDayjs && (
-                    <Typography variant='caption' sx={{ display: 'block', color: '#666' }}>
-                      Current: {startDateDayjs.format('MMMM D, YYYY')}
-                    </Typography>
-                  )}
-                  <DatePicker
-                    value={startDateDayjs}
-                    onChange={(newValue) => {
-                      // Convert dayjs to ISO string for storage
-                      setValue('campaignStartDate', newValue ? newValue.toISOString() : '', { shouldValidate: true, shouldDirty: true });
-                    }}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        placeholder: 'Select date',
-                        error: false,
-                        size: 'small',
-                        sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                      },
-                    }}
-                  />
-                </FormField>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <FormField label="Campaign Start Date">
+                    <DatePicker
+                      value={startDateDayjs}
+                      format='DD/MM/YY'
+                      onChange={(newValue) => {
+                        setValue('campaignStartDate', newValue ? newValue.toISOString() : '', { shouldValidate: true, shouldDirty: true });
+                      }}
+                      slots={{
+                        openPickerIcon: () => (
+                          <Iconify icon="meteor-icons:calendar" width={22} />
+                        ),
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          placeholder: 'Select date',
+                          error: false,
+                          size: 'small',
+                          sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                        },
+                      }}
+                    />
+                  </FormField>
+                </Grid>
+                <Grid item xs={6}>
+                  <FormField label="Campaign End Date">
+                    <DatePicker
+                      value={endDateDayjs}
+                      format='DD/MM/YY'
+                      onChange={(newValue) => {
+                        setValue('campaignEndDate', newValue ? newValue.toISOString() : '', { shouldValidate: true, shouldDirty: true });
+                      }}
+                      slots={{
+                        openPickerIcon: () => (
+                          <Iconify icon="meteor-icons:calendar" width={22} />
+                        ),
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          placeholder: 'Select date',
+                          error: false,
+                          size: 'small',
+                          sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
+                        },
+                      }}
+                    />
+                  </FormField>
+                </Grid>
               </Grid>
-              <Grid item xs={6}>
-                <FormField label="Campaign End Date">
-                  {endDateDayjs && (
-                    <Typography variant='caption' sx={{ display: 'block', color: '#666' }}>
-                      Current: {endDateDayjs.format('MMMM D, YYYY')}
-                    </Typography>
-                  )}
-                  <DatePicker
-                    value={endDateDayjs}
-                    onChange={(newValue) => {
-                      // Convert dayjs to ISO string for storage
-                      setValue('campaignEndDate', newValue ? newValue.toISOString() : '', { shouldValidate: true, shouldDirty: true });
-                    }}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        placeholder: 'Select date',
-                        error: false,
-                        size: 'small',
-                        sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                      },
-                    }}
-                  />
-                </FormField>
-              </Grid>
-            </Grid>
+            </LocalizationProvider>
 
             {/* Product/Service Name - Full width */}
             <Box sx={{ mt: 2 }}>

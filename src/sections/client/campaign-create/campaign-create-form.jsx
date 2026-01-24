@@ -1,4 +1,5 @@
 /* eslint-disable no-nested-ternary */
+import dayjs from 'dayjs';
 /* eslint-disable no-unused-vars */
 import * as Yup from 'yup';
 import { pdfjs } from 'react-pdf';
@@ -36,10 +37,10 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
-import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
+import LogisticRemarks from 'src/sections/campaign/create/stepsV2/logistic-remarks';
 // Import steps from admin campaign creation
-import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
-import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-slots';
+import CampaignLogistics from 'src/sections/campaign/create/stepsV2/campaign-logistics';
+import ReservationSlotsV2 from 'src/sections/campaign/create/stepsV2/reservation-slots';
 
 import NextSteps from './next-steps';
 import CampaignObjective from './campaign-objective';
@@ -197,6 +198,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
   });
 
   const campaignRequirementSchema = Yup.object().shape({
+    country: Yup.string().required('Country is required'),
     audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
     audienceGender: Yup.array()
       .min(1, 'At least one option')
@@ -214,7 +216,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     secondaryAudienceLanguage: Yup.array(),
     secondaryAudienceCreatorPersona: Yup.array(),
     secondaryAudienceUserPersona: Yup.string(),
-    geographicFocus: Yup.string(),
+    geographicFocus: Yup.string().required('Geographic focus is required'),
     geographicFocusOthers: Yup.string(),
   });
 
@@ -424,11 +426,9 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
     handleSubmit,
     getValues,
     reset,
-    control,
     setValue,
     watch,
     trigger,
-    formState: { isValid, errors },
   } = methods;
 
   const values = watch();
@@ -455,6 +455,7 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
           'audienceGender',
           'audienceLanguage',
           'audienceCreatorPersona',
+          'geographicFocus',
         ];
       case 3: // Logistics
         return ['logisticsType'];
@@ -831,7 +832,14 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
       case 6:
         return (
           <NextSteps
-            onPublish={handleSubmit(onSubmit)}
+            onPublish={() => {
+              const campaignStart = getValues('campaignStartDate');
+              const campaignStatus = dayjs(campaignStart).isSame(dayjs(), 'date')
+                ? 'ACTIVE'
+                : 'SCHEDULED';
+              setStatus(campaignStatus);
+              onSubmit(campaignStatus);
+            }}
             onContinueAdditionalDetails={handleContinueAdditionalDetails}
             isLoading={isLoading}
           />
@@ -862,10 +870,12 @@ function ClientCampaignCreateForm({ onClose, mutate }) {
         return values.campaignObjectives?.length > 0;
       case 2: // Audience
         return (
+          values.country &&
           values.audienceAge?.length > 0 &&
           values.audienceGender?.length > 0 &&
           values.audienceLanguage?.length > 0 &&
-          values.audienceCreatorPersona?.length > 0
+          values.audienceCreatorPersona?.length > 0 &&
+          values.geographicFocus
         );
       case 3: {
         // Logistics - optional
