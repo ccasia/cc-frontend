@@ -135,21 +135,19 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
 
   // General Campaign Information schema (Step 0)
   const campaignInformationSchema = Yup.object().shape({
-    campaignIndustries: Yup.array()
-      .min(1, 'At least one industry is required')
-      .required('Campaign industry is required.'),
-    campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignName: Yup.string()
       .required('Campaign title is required')
       .max(40, 'Campaign title must be 40 characters or less'),
-    campaignImages: Yup.array()
-      .min(1, 'Must have at least 1 image')
-      .max(3, 'Must have at most 3 images'),
+    campaignDescription: Yup.string().required('Campaign Description is required.'),
+    brandAbout: Yup.string(),
     campaignStartDate: Yup.date().required('Campaign Start Date is required.'),
     campaignEndDate: Yup.date().required('Campaign End Date is required.'),
-    brandTone: Yup.string(),
-    brandAbout: Yup.string(),
-    productName: Yup.string(),
+    productName: Yup.string().required('Product/service name required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required')
+      .required('Campaign industry is required.'),
+    campaignImages: Yup.array()
+      .min(1, 'Must have at least 1 image'),
     websiteLink: Yup.string(),
   });
 
@@ -160,50 +158,36 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     boostContent: Yup.string(),
     primaryKPI: Yup.string(),
     performanceBaseline: Yup.string(),
-    campaignDo: Yup.array()
-      .min(1, 'At least one option')
-      .of(
-        Yup.object().shape({
-          value: Yup.string(),
-        })
-      ),
-    campaignDont: Yup.array()
-      .min(1, 'At least one option')
-      .of(
-        Yup.object().shape({
-          value: Yup.string(),
-        })
-      ),
   });
 
   // Target Audience schema (Step 3)
-  const campaignRequirementSchema = Yup.object().shape({
-    audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
+  const targetAudienceSchema = Yup.object().shape({
     audienceGender: Yup.array()
-      .min(1, 'At least one option')
-      .required('Audience Gender is required'),
-    country: Yup.string().required('Country is required'),
+      .min(1, 'At least 1 option')
+      .required('Audience Gender is required.'),
+    audienceAge: Yup.array().min(1, 'At least 1 option').required('Audience age is required.'),
+    country: Yup.string().required('Country is required.'),
     audienceLocation: Yup.array().when('country', {
       is: 'Malaysia',
       then: (schema) =>
-        schema.min(1, 'At least one option').required('Audience location is required'),
+        schema.min(1, 'At least 1 option').required('Audience location is required.'),
       otherwise: (schema) => schema.notRequired(),
     }),
     othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
-      .min(1, 'At least one option')
-      .required('Audience language is required'),
+      .min(1, 'At least 1 option')
+      .required('Audience language is required.'),
     audienceCreatorPersona: Yup.array()
-      .min(1, 'At least one option')
-      .required('Audience creator persona is required'),
-    audienceUserPersona: Yup.string(),
+      .min(1, 'At least 1 option')
+      .required('Audience creator interests is required.'),
+    audienceUserPersona: Yup.string().required('Audience user persona is required.'),
     // Secondary Audience - all optional
     secondaryAudienceGender: Yup.array(),
     secondaryAudienceAge: Yup.array(),
     secondaryAudienceLanguage: Yup.array(),
     secondaryAudienceCreatorPersona: Yup.array(),
     secondaryAudienceUserPersona: Yup.string(),
-    geographicFocus: Yup.string().required('Geographic focus is required'),
+    geographicFocus: Yup.string().required('Geographic focus is required.'),
     geographicFocusOthers: Yup.string(),
   });
 
@@ -303,7 +287,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       case 1:
         return objectiveSchema;
       case 2:
-        return campaignRequirementSchema;
+        return targetAudienceSchema;
       case 3:
         return logisticsSchema;
       case 4:
@@ -451,13 +435,14 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         return [
           'campaignName',
           'campaignDescription',
-          'campaignIndustries',
-          'campaignImages',
           'campaignStartDate',
           'campaignEndDate',
+          'productName',
+          'campaignIndustries',
+          'campaignImages',
         ];
       case 1: // Objective
-        return ['campaignObjectives', 'campaignDo', 'campaignDont'];
+        return ['campaignObjectives', 'secondaryObjectives', 'boostContent', 'primaryKPI', 'performanceBaseline'];
       case 2: // Audience
         return [
           'country',
@@ -924,28 +909,32 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       case 0: {
         const title = formValues.campaignName;
         const desc = formValues.campaignDescription;
-        const industries = formValues.campaignIndustries;
-        const images = formValues.campaignImages;
         const startDate = formValues.campaignStartDate;
         const endDate = formValues.campaignEndDate;
+        const {productName} = formValues;
+        const industries = formValues.campaignIndustries;
+        const images = formValues.campaignImages;
         return (
-          title && desc && industries?.length > 0 && images?.length > 0 && startDate && endDate
+          title && desc && productName && industries?.length > 0 && images?.length > 0 && startDate && endDate 
         );
       }
       case 1: {
         const objectives = formValues.campaignObjectives;
-        const dos = formValues.campaignDo;
-        const donts = formValues.campaignDont;
-        return objectives && dos?.length > 0 && donts?.length > 0;
+        const secObjectives = formValues.secondaryObjectives;
+        const boost = formValues.boostContent;
+        const kpi = formValues.primaryKPI;
+        const baseline = formValues.performanceBaseline;
+        return objectives && secObjectives && boost && kpi && baseline
       }
       case 2: {
         const {country} = formValues;
         const age = formValues.audienceAge;
         const gender = formValues.audienceGender;
         const language = formValues.audienceLanguage;
-        const persona = formValues.audienceCreatorPersona;
+        const interests = formValues.audienceCreatorPersona;
+        const persona = formValues.audienceUserPersona;
         const {geographicFocus} = formValues;
-        return country && age?.length > 0 && gender?.length > 0 && language?.length > 0 && persona?.length > 0 && geographicFocus;
+        return country && age?.length > 0 && gender?.length > 0 && language?.length > 0 && interests?.length > 0 && persona && geographicFocus;
       }
       case 3: {
         const type = formValues.logisticsType;
