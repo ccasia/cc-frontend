@@ -9,7 +9,6 @@ import { enqueueSnackbar } from 'notistack';
 import EmojiPicker from 'emoji-picker-react';
 import { useRef, useMemo, useState, useEffect } from 'react';
 
-import EditIcon from '@mui/icons-material/Edit';
 import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -1919,7 +1918,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
             </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -2189,7 +2187,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
             </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -2286,7 +2283,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
       </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -2854,7 +2850,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
             </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -2953,7 +2948,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
       </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -3034,9 +3028,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
           >
             Positive Comments
           </Typography>
-          {isEditMode && (
-            <EditIcon sx={{ fontSize: '16px', color: '#10B981' }} />
-          )}
       </Box>
           {isEditMode ? (
             <>
@@ -3249,9 +3240,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
           >
             Neutral Comments
         </Typography>
-          {isEditMode && (
-            <EditIcon sx={{ fontSize: '16px', color: '#F59E0B' }} />
-          )}
       </Box>
           {isEditMode ? (
             <>
@@ -3466,7 +3454,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
             </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -3518,22 +3505,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
       <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: 'center' }}>
         {/* The Comic Card with Number */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 7 }}>
-          {/* Number - Outside the card */}
-          <Typography
-            sx={{
-              fontFamily: 'Instrument Serif, serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '40px',
-              lineHeight: '44px',
-              letterSpacing: '0%',
-              color: '#1340FF',
-              position: 'relative',
-              left: '-55px',
-            }}
-          >
-            1.
-          </Typography>
+          {/* Number - Outside the card - only show if educator card is visible */}
+          {showEducatorCard && (
+            <Typography
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontWeight: 400,
+                fontStyle: 'normal',
+                fontSize: '40px',
+                lineHeight: '44px',
+                letterSpacing: '0%',
+                color: '#1340FF',
+                position: 'relative',
+                left: '-55px',
+              }}
+            >
+              1.
+            </Typography>
+          )}
           
           {/* Card */}
           <Box
@@ -3589,7 +3578,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
                   Editable
                 </Typography>
-                <EditIcon sx={{ fontSize: '14px', color: '#3A3A3C' }} />
               </Box>
             )}
             {/* Inner gradient circle */}
@@ -3647,7 +3635,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                     Editable
                   </Typography>
-                  <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                 </Box>
               <TextField
                 value={editableContent.comicTitle}
@@ -3733,7 +3720,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                       Editable
                     </Typography>
-                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                   </Box>
                 <TextField
                   value={editableContent.comicContentStyle}
@@ -3814,7 +3800,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                       Editable
                     </Typography>
-                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                   </Box>
                 <TextField
                   value={editableContent.comicWhyWork}
@@ -3917,21 +3902,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </IconButton>
 
           {/* Number - Outside the card */}
-          <Typography
-            sx={{
-              fontFamily: 'Instrument Serif, serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '40px',
-              lineHeight: '44px',
-              letterSpacing: '0%',
-              color: '#1340FF',
-              position: 'relative',
-              left: '-55px',
-            }}
-          >
-            2.
-          </Typography>
+          {showEducatorCard && (
+            <Typography
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontWeight: 400,
+                fontStyle: 'normal',
+                fontSize: '40px',
+                lineHeight: '44px',
+                letterSpacing: '0%',
+                color: '#1340FF',
+                position: 'relative',
+                left: '-55px',
+              }}
+            >
+              2.
+            </Typography>
+          )}
           
           {/* Card */}
           <Box
@@ -3987,7 +3974,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
                   Editable
                 </Typography>
-                <EditIcon sx={{ fontSize: '14px', color: '#3A3A3C' }} />
               </Box>
             )}
             {/* Inner gradient circle */}
@@ -4045,7 +4031,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                     Editable
                   </Typography>
-                  <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                 </Box>
               <TextField
                 value={editableContent.educatorTitle}
@@ -4131,7 +4116,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                       Editable
                     </Typography>
-                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                   </Box>
                 <TextField
                   value={editableContent.educatorContentStyle}
@@ -4212,7 +4196,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                       Editable
                     </Typography>
-                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                   </Box>
                 <TextField
                   value={editableContent.educatorWhyWork}
@@ -4271,26 +4254,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
         <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: showEducatorCard ? 'center' : 'flex-start' }}>
           {/* The Comic Card with Number */}
           <Box sx={{ display: 'flex', alignItems: showEducatorCard ? 'center' : 'flex-start', gap: showEducatorCard ? 2 : 3, ml: showEducatorCard ? 7 : 0 }}>
-            {/* Number - Outside the card */}
-            <Typography
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontWeight: 400,
-                fontStyle: 'normal',
-                fontSize: '40px',
-                lineHeight: '44px',
-                letterSpacing: '0%',
-                color: '#1340FF',
-                ...(showEducatorCard ? {
+            {/* Number - Outside the card - only show if educator card is visible */}
+            {showEducatorCard && (
+              <Typography
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '40px',
+                  lineHeight: '44px',
+                  letterSpacing: '0%',
+                  color: '#1340FF',
                   position: 'relative',
                   left: '-55px',
-                } : {
-                  mt: 12,
-                }),
-              }}
-            >
-              1.
-            </Typography>
+                }}
+              >
+                1.
+              </Typography>
+            )}
             
             {showEducatorCard ? (
               // Compact horizontal layout when there are 2 personas
@@ -4576,21 +4557,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
           {showEducatorCard && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {/* Number - Outside the card */}
-              <Typography
-                sx={{
-                  fontFamily: 'Instrument Serif, serif',
-                  fontWeight: 400,
-                  fontStyle: 'normal',
-                  fontSize: '40px',
-                  lineHeight: '44px',
-                  letterSpacing: '0%',
-                  color: '#1340FF',
-                  position: 'relative',
-                  left: '-55px',
-                }}
-              >
-              2.
-            </Typography>
+              {showEducatorCard && (
+                <Typography
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    fontSize: '40px',
+                    lineHeight: '44px',
+                    letterSpacing: '0%',
+                    color: '#1340FF',
+                    position: 'relative',
+                    left: '-55px',
+                  }}
+                >
+                  2.
+                </Typography>
+              )}
             
             {/* Card */}
       <Box
@@ -4838,7 +4821,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                           Editable
         </Typography>
-                        <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
       </Box>
                       <TextField
                         value={insight}
@@ -5015,7 +4997,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                           Editable
                         </Typography>
-                        <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                       </Box>
                       <TextField
                         value={insight}
@@ -5190,7 +5171,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                           Editable
                         </Typography>
-                        <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
     </Box>
                       <TextField
                         value={insight}
