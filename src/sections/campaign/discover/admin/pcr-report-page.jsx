@@ -887,17 +887,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 strokeDasharray={`${instagramPathLength} ${circumference}`}
                 strokeLinecap="round"
                 // Start at 135 degrees (bottom-right where arrow connects)
-                // Position after TikTok with gap
-                transform={`rotate(${-45 + (tiktokPercentage / 100) * 360 + gapDegrees} 140 120)`}
+                transform="rotate(135 140 120)"
               />
             )}
             
             {/* TikTok leader line - top left */}
             {platformData.tiktok > 0 && (
               <>
-                {/* Calculate connection point: from center (140, 120) to (85, 60) at radius 80 */}
-                {/* Angle: atan2(60-120, 85-140) = atan2(-60, -55) ≈ -132 degrees, but we need the point on circle */}
-                {/* Point on circle at -45 degrees: 140 + 80*cos(-45), 120 + 80*sin(-45) = 140-56.57, 120-56.57 = 83.43, 63.43 */}
                 <line x1="83" y1="63" x2="80" y2="30" stroke="#000000" strokeWidth="1.5" />
                 <line x1="80" y1="30" x2="15" y2="30" stroke="#000000" strokeWidth="1.5" />
               </>
@@ -906,8 +902,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             {/* Instagram leader line - bottom right */}
             {platformData.instagram > 0 && (
               <>
-                {/* Calculate connection point: from center (140, 120) to (195, 180) at radius 80 */}
-                {/* Point on circle at 135 degrees: 140 + 80*cos(135), 120 + 80*sin(135) = 140-56.57, 120+56.57 = 83.43, 176.57 */}
                 <line x1="197" y1="177" x2="200" y2="210" stroke="#C13584" strokeWidth="1.5" />
                 <line x1="200" y1="210" x2="265" y2="210" stroke="#C13584" strokeWidth="1.5" />
               </>
@@ -960,12 +954,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box
             sx={{
               position: 'absolute',
-              // The horizontal line segment is at y=30 in SVG viewBox (0 0 280 240)
-              // SVG height is 240, container height is 280px
-              // Line position: (30/240) * 280 = 35px from top of container
-              // Position so the line goes between the two text elements
-              top: '28px', // Adjusted to align with line at y=30
-              left: '5px', // Moved more to the left to match Instagram positioning
+              top: '28px', 
+              left: '5px', 
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-start',
@@ -982,7 +972,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 letterSpacing: '0%',
                 color: '#000000B2',
                 mb: 0,
-                pb: '6px', // Gap below the word (above the line)
+                pb: '6px', 
               }}
             >
               TikTok
@@ -1010,13 +1000,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
           <Box
             sx={{
               position: 'absolute',
-              // The horizontal line segment is at y=210 in SVG viewBox (0 0 280 240)
-              // SVG height is 240, container height is 280px
-              // Line position: (210/240) * 280 = 245px from top of container
-              // From bottom: 280 - 245 = 35px, but we need to center the label on the line
-              // Position so the line goes between the two text elements
-              bottom: '32px', // Adjusted to align with line at y=210
-              right: '5px', // Moved more to the right
+              bottom: '32px', 
+              right: '5px', 
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-end',
@@ -1033,7 +1018,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 letterSpacing: '0%',
                 color: '#000000B2',
                 mb: 0,
-                pb: '6px', // Increased gap below the word
+                pb: '6px',
               }}
             >
               Instagram
@@ -1048,7 +1033,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 letterSpacing: '0%',
                 color: '#000000B2',
                 mt: 0,
-                pt: '2px', // Space below the line
+                pt: '2px',
               }}
             >
               {formatNumber(platformData.instagram)}
@@ -1070,7 +1055,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
         return [];
       }
 
-      // Get actual post dates from Instagram/TikTok video data
       const actualPostDates = filteredInsightsData
         .filter(insight => insight.video?.timestamp || insight.video?.create_time)
         .map(insight => new Date(insight.video.timestamp || insight.video.create_time).getTime());
@@ -1080,19 +1064,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
       
       console.log('Chart - Campaign Start:', campaignStart);
 
-      // Group views by week - based on actual Instagram/TikTok post dates
       const weeklyData = {};
       
       filteredInsightsData.forEach((insightData) => {
         if (insightData.insight && insightData.video) {
-          // Use actual post timestamp from Instagram/TikTok
           const actualPostTimestamp = insightData.video.timestamp || insightData.video.create_time;
           
           if (actualPostTimestamp) {
             const postDate = new Date(actualPostTimestamp);
             const views = getMetricValue(insightData.insight, 'views');
             
-            // Calculate which week this post belongs to
             const daysSinceStart = Math.floor((postDate - campaignStart) / (24 * 60 * 60 * 1000));
             const weekNumber = Math.min(6, Math.max(1, Math.floor(daysSinceStart / 7) + 1));
             
@@ -1134,7 +1115,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
         return [];
       }
 
-      // Find the earliest post date in the highest week
       const firstPostDate = new Date(Math.min(...highestWeek.posts.map(p => new Date(p.date).getTime())));
       const dayOfWeek = firstPostDate.getDay(); 
       
@@ -1152,8 +1132,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
       const totalWeekViews = highestWeek.totalViews;
       
-      // Simulate daily view distribution for the week
-      // This assumes views are concentrated in the first few days after posting
       const distributionPattern = [0.12, 0.15, 0.18, 0.22, 0.15, 0.10, 0.08]; 
       
       for (let i = 0; i < 7; i += 1) {
