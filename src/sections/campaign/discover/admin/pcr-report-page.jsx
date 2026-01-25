@@ -786,19 +786,26 @@ const PCRReportPage = ({ campaign, onBack }) => {
     // Calculate percentages for the donut chart
     const instagramPercentage = platformData.total > 0 ? (platformData.instagram / platformData.total) * 100 : 0;
     const tiktokPercentage = platformData.total > 0 ? (platformData.tiktok / platformData.total) * 100 : 0;
-
-    // SVG donut chart parameters
-    const size = 200;
-    const strokeWidth = 20;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
     
-    // Calculate stroke dash arrays for the segments
-    const instagramStrokeDasharray = `${(instagramPercentage / 100) * circumference} ${circumference}`;
-    const tiktokStrokeDasharray = `${(tiktokPercentage / 100) * circumference} ${circumference}`;
+    // Add gap between segments (2 degrees gap = ~2.8 units at radius 80)
+    const gapDegrees = 2;
+    const gapLength = (gapDegrees / 360) * (80 * 2 * Math.PI);
     
-    // Calculate rotation for TikTok segment to start after Instagram
-    const tiktokRotation = (instagramPercentage / 100) * 360;
+    // Calculate angles for segments
+    // TikTok starts at -45 degrees (top-left), goes clockwise
+    const tiktokStartAngle = -45;
+    const tiktokSweepAngle = (tiktokPercentage / 100) * 360 - gapDegrees;
+    const tiktokEndAngle = tiktokStartAngle + tiktokSweepAngle;
+    
+    // Instagram starts at 135 degrees (bottom-right), goes counter-clockwise
+    const instagramStartAngle = 135;
+    const instagramSweepAngle = (instagramPercentage / 100) * 360 - gapDegrees;
+    const instagramEndAngle = instagramStartAngle - instagramSweepAngle;
+    
+    // Calculate path lengths for stroke-dasharray
+    const circumference = 80 * 2 * Math.PI;
+    const tiktokPathLength = (tiktokPercentage / 100) * circumference - gapLength;
+    const instagramPathLength = (instagramPercentage / 100) * circumference - gapLength;
 
     return (
       <Box
@@ -840,8 +847,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Typography>
 
         {/* Donut Chart with External Labels */}
-        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '280px' }}>
-          <svg width="280" height="240" viewBox="0 0 280 240">
+        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '280px', overflow: 'visible' }}>
+          <svg width="280" height="240" viewBox="0 0 280 240" style={{ overflow: 'visible' }}>
             {/* Background circle */}
             <circle
               cx="140"
@@ -852,45 +859,57 @@ const PCRReportPage = ({ campaign, onBack }) => {
               strokeWidth="18"
             />
             
-            {/* Instagram segment (pink) - starts from bottom */}
-            <circle
-              cx="140"
-              cy="120"
-              r="80"
-              fill="transparent"
-              stroke="#C13584"
-              strokeWidth="18"
-              strokeDasharray={`${(instagramPercentage / 100) * (80 * 2 * Math.PI)} ${80 * 2 * Math.PI}`}
-              strokeLinecap={platformData.tiktok === 0 ? "butt" : "round"}
-              transform="rotate(90 140 120)"
-            />
-            
-            {/* TikTok segment (black) - starts after Instagram - only show if TikTok has data */}
+            {/* TikTok segment (black) - connects to top-left arrow */}
             {platformData.tiktok > 0 && (
-              <>
-            <circle
-                  cx="140"
-                  cy="120"
-                  r="80"
-              fill="transparent"
-              stroke="#000000"
-                  strokeWidth="18"
-                  strokeDasharray={`${(tiktokPercentage / 100) * (80 * 2 * Math.PI)} ${80 * 2 * Math.PI}`}
-                  strokeLinecap={platformData.instagram === 0 ? "butt" : "round"}
-                  transform={`rotate(${90 + (instagramPercentage / 100) * 360} 140 120)`}
-            />
+              <circle
+                cx="140"
+                cy="120"
+                r="80"
+                fill="transparent"
+                stroke="#000000"
+                strokeWidth="18"
+                strokeDasharray={`${tiktokPathLength} ${circumference}`}
+                strokeLinecap="round"
+                // Start at -45 degrees (top-left where arrow connects)
+                transform="rotate(-45 140 120)"
+              />
+            )}
+            
+            {/* Instagram segment (magenta/pink) - connects to bottom-right arrow */}
+            {platformData.instagram > 0 && (
+              <circle
+                cx="140"
+                cy="120"
+                r="80"
+                fill="transparent"
+                stroke="#C13584"
+                strokeWidth="18"
+                strokeDasharray={`${instagramPathLength} ${circumference}`}
+                strokeLinecap="round"
+                // Start at 135 degrees (bottom-right where arrow connects)
+                // Position after TikTok with gap
+                transform={`rotate(${-45 + (tiktokPercentage / 100) * 360 + gapDegrees} 140 120)`}
+              />
+            )}
             
             {/* TikTok leader line - top left */}
-                <line x1="85" y1="60" x2="50" y2="30" stroke="#000000" strokeWidth="1" />
-                <line x1="50" y1="30" x2="15" y2="30" stroke="#000000" strokeWidth="1" />
+            {platformData.tiktok > 0 && (
+              <>
+                {/* Calculate connection point: from center (140, 120) to (85, 60) at radius 80 */}
+                {/* Angle: atan2(60-120, 85-140) = atan2(-60, -55) ≈ -132 degrees, but we need the point on circle */}
+                {/* Point on circle at -45 degrees: 140 + 80*cos(-45), 120 + 80*sin(-45) = 140-56.57, 120-56.57 = 83.43, 63.43 */}
+                <line x1="83" y1="63" x2="80" y2="30" stroke="#000000" strokeWidth="1.5" />
+                <line x1="80" y1="30" x2="15" y2="30" stroke="#000000" strokeWidth="1.5" />
               </>
             )}
             
-            {/* Instagram leader line - bottom right - only show if Instagram has data */}
+            {/* Instagram leader line - bottom right */}
             {platformData.instagram > 0 && (
               <>
-                <line x1="195" y1="180" x2="230" y2="210" stroke="#C13584" strokeWidth="1" />
-                <line x1="230" y1="210" x2="265" y2="210" stroke="#C13584" strokeWidth="1" />
+                {/* Calculate connection point: from center (140, 120) to (195, 180) at radius 80 */}
+                {/* Point on circle at 135 degrees: 140 + 80*cos(135), 120 + 80*sin(135) = 140-56.57, 120+56.57 = 83.43, 176.57 */}
+                <line x1="197" y1="177" x2="200" y2="210" stroke="#C13584" strokeWidth="1.5" />
+                <line x1="200" y1="210" x2="265" y2="210" stroke="#C13584" strokeWidth="1.5" />
               </>
             )}
           </svg>
@@ -936,16 +955,21 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </Typography>
           </Box>
 
-          {/* TikTok external label - positioned on the leader line - only show if TikTok has data */}
+          {/* TikTok external label - positioned on the leader line at top-left */}
           {platformData.tiktok > 0 && (
           <Box
             sx={{
               position: 'absolute',
-                top: '15px', // Positioned on the horizontal leader line
-                left: '10px',
+              // The horizontal line segment is at y=30 in SVG viewBox (0 0 280 240)
+              // SVG height is 240, container height is 280px
+              // Line position: (30/240) * 280 = 35px from top of container
+              // Position so the line goes between the two text elements
+              top: '28px', // Adjusted to align with line at y=30
+              left: '5px', // Moved more to the left to match Instagram positioning
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-start',
+              justifyContent: 'center',
             }}
           >
             <Typography
@@ -954,11 +978,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontWeight: 400,
                 fontStyle: 'italic',
                 fontSize: '12px',
-                lineHeight: '100%',
+                lineHeight: '14px',
                 letterSpacing: '0%',
                 color: '#000000B2',
-                textDecoration: 'underline',
-                mb: 0.5,
+                mb: 0,
+                pb: '6px', // Gap below the word (above the line)
               }}
             >
               TikTok
@@ -969,9 +993,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontWeight: 400,
                 fontStyle: 'normal',
                 fontSize: '12px',
-                lineHeight: '100%',
+                lineHeight: '14px',
                 letterSpacing: '0%',
                 color: '#000000B2',
+                mt: 0,
+                pt: '6px', // Increased gap above the number (below the line)
               }}
             >
               {formatNumber(platformData.tiktok)}
@@ -979,16 +1005,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Box>
           )}
 
-          {/* Instagram external label - positioned on the leader line - only show if Instagram has data */}
+          {/* Instagram external label - positioned on the leader line at bottom-right */}
           {platformData.instagram > 0 && (
           <Box
             sx={{
               position: 'absolute',
-                bottom: '15px', // Positioned on the horizontal leader line
-                right: '10px',
+              // The horizontal line segment is at y=210 in SVG viewBox (0 0 280 240)
+              // SVG height is 240, container height is 280px
+              // Line position: (210/240) * 280 = 245px from top of container
+              // From bottom: 280 - 245 = 35px, but we need to center the label on the line
+              // Position so the line goes between the two text elements
+              bottom: '32px', // Adjusted to align with line at y=210
+              right: '5px', // Moved more to the right
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-end',
+              justifyContent: 'center',
             }}
           >
             <Typography
@@ -997,11 +1029,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontWeight: 400,
                 fontStyle: 'italic',
                 fontSize: '12px',
-                lineHeight: '100%',
+                lineHeight: '14px',
                 letterSpacing: '0%',
                 color: '#000000B2',
-                textDecoration: 'underline',
-                mb: 0.5,
+                mb: 0,
+                pb: '6px', // Increased gap below the word
               }}
             >
               Instagram
@@ -1012,9 +1044,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontWeight: 400,
                 fontStyle: 'normal',
                 fontSize: '12px',
-                lineHeight: '100%',
+                lineHeight: '14px',
                 letterSpacing: '0%',
                 color: '#000000B2',
+                mt: 0,
+                pt: '2px', // Space below the line
               }}
             >
               {formatNumber(platformData.instagram)}
@@ -2384,7 +2418,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2394,8 +2428,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2408,7 +2442,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2418,8 +2452,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2432,7 +2466,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2442,8 +2476,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2456,7 +2490,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2466,8 +2500,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2547,7 +2581,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2557,8 +2591,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2571,7 +2605,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2581,8 +2615,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2595,7 +2629,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2605,8 +2639,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2619,7 +2653,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2629,8 +2663,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2711,7 +2745,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2721,8 +2755,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2735,7 +2769,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2745,8 +2779,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2759,7 +2793,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2769,8 +2803,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2783,7 +2817,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2793,8 +2827,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -4745,16 +4779,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
               p: 2,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 1
             }}
           >
-            <Box sx={{ fontSize: '24px' }}>📋</Box>
+            <Box
+              component="img"
+              src="/assets/icons/pcr/problem.svg"
+              alt="Problem icon"
+              sx={{ width: '24px', height: '24px' }}
+            />
             <Typography 
               sx={{ 
                 fontFamily: 'Aileron',
                 fontWeight: 700,
                 fontSize: '18px',
-                color: 'white'
+                color: 'white',
+                textAlign: 'center'
               }}
             >
               What Could Be Improved
@@ -4913,16 +4954,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
               p: 2,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 1
             }}
           >
-            <Box sx={{ fontSize: '24px' }}>🏆</Box>
+            <Box
+              component="img"
+              src="/assets/icons/pcr/rewarded_ads.svg"
+              alt="Rewarded ads icon"
+              sx={{ width: '24px', height: '24px' }}
+            />
             <Typography 
               sx={{ 
                 fontFamily: 'Aileron',
                 fontWeight: 700,
                 fontSize: '18px',
-                color: 'white'
+                color: 'white',
+                textAlign: 'center'
               }}
             >
               What Worked Well
@@ -5083,16 +5131,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
               p: 2,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 1
             }}
           >
-            <Box sx={{ fontSize: '24px' }}>🎯</Box>
+            <Box
+              component="img"
+              src="/assets/icons/pcr/ads_click.svg"
+              alt="Ads click icon"
+              sx={{ width: '24px', height: '24px' }}
+            />
             <Typography 
               sx={{ 
                 fontFamily: 'Aileron',
           fontWeight: 700,
                 fontSize: '18px',
-                color: 'white'
+                color: 'white',
+                textAlign: 'center'
         }}
       >
               What To Do Next
