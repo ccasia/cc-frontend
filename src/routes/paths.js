@@ -80,6 +80,7 @@ export const paths = {
         general: `${ROOTS.DASHBOARD}/user/profile/general`,
         security: `${ROOTS.DASHBOARD}/user/profile/security`,
         api: `${ROOTS.DASHBOARD}/user/profile/api`,
+        campaignSettings: `${ROOTS.DASHBOARD}/user/profile/campaign-settings`,
         // Creator profile tabs
         account: `${ROOTS.DASHBOARD}/user/profile/account`,
         socials: `${ROOTS.DASHBOARD}/user/profile/socials`,
