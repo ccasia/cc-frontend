@@ -135,37 +135,19 @@ export function useNavData() {
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD', 'CSL'],
             title: 'Campaigns',
-            path: paths.dashboard.campaign.root,
+            path: paths.dashboard.campaign.view,
             icon: ICONS.mycampaigns,
-            children: [
-              {
-                // title: 'Manage Campaign',
-                title: 'Lists',
-                path: paths.dashboard.campaign.view,
-              },
-              {
-                roles: ['superadmin', 'CSL'],
-                title: 'Settings',
-                path: paths.dashboard.campaign.settings,
-              },
-            ],
           },
           {
             roles: ['superadmin', 'CSM'],
             title: 'Admin',
             path: paths.dashboard.admins,
             icon: ICONS.admin,
-            children: [
-              {
-                title: 'Lists',
-                path: paths.dashboard.admins,
-              },
-            ],
           },
           {
             roles: ['superadmin', 'CSM'],
             title: 'Creator',
-            path: paths.dashboard.creator.root,
+            path: paths.dashboard.creator.list,
             icon: ICONS.creator,
             children: [
               {
@@ -181,18 +163,8 @@ export function useNavData() {
           {
             roles: ['superadmin', 'CSM', 'god', 'CSL'],
             title: 'Clients',
-            path: paths.dashboard.company.root,
+            path: paths.dashboard.company.discover,
             icon: ICONS.clients,
-            children: [
-              {
-                title: 'List',
-                path: paths.dashboard.company.discover,
-              },
-              {
-                title: 'Create',
-                path: paths.dashboard.company.create,
-              },
-            ],
           },
           {
             title: 'My Tasks',
