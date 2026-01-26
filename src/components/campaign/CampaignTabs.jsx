@@ -2,6 +2,7 @@ import axios from 'axios';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { m, AnimatePresence } from 'framer-motion';
 
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -75,6 +76,21 @@ export default function CampaignTabs({ filter = 'active' }) {
   
   // Filter tabs based on current filter and campaign status
   useEffect(() => {
+    // If filter is empty or "all", show only active campaign tabs
+    if (!filter || filter.toLowerCase() === 'all') {
+      if (window.campaignTabsStatus) {
+        const filtered = tabs.filter(tab => {
+          const status = window.campaignTabsStatus[tab.id]?.status?.toLowerCase() || '';
+          return status === 'active';
+        });
+        setFilteredTabs(filtered);
+      } else {
+        // If no status data, show all tabs (fallback)
+        setFilteredTabs(tabs);
+      }
+      return;
+    }
+    
     // If we don't have campaignStatus data in the tabs, we show all tabs
     if (window.campaignTabsStatus) {
       const filtered = tabs.filter(tab => {
@@ -142,108 +158,181 @@ export default function CampaignTabs({ filter = 'active' }) {
   
   // Get the display text based on current filter
   const getCampaignTypeText = () => {
+    if (!filter || filter.toLowerCase() === 'all') {
+      return 'All Campaigns';
+    }
     const type = filter.charAt(0).toUpperCase() + filter.slice(1);
     return `${type} Campaigns`;
   };
   
   return (
     <Box sx={{ width: '100%' }}>
-      {filteredTabs.length > 0 && (
-        <Box sx={{ mb: 2 }}>
-          <Stack 
-            direction="row" 
-            spacing={0} 
-            alignItems="center"
-            sx={{ 
-              overflowX: 'auto', 
-              pb: 1,
-              '&::-webkit-scrollbar': { height: '4px' },
-              '&::-webkit-scrollbar-thumb': { backgroundColor: '#e0e0e0', borderRadius: '4px' } 
-            }}
+      <AnimatePresence mode="wait">
+        {filteredTabs.length > 0 && (
+          <m.div
+            key={filter || 'all'}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           >
-            <Typography 
-              variant="caption" 
-              onClick={() => router.push(paths.dashboard.campaign.root)}
-              sx={{ 
-                color: '#1340FF', 
-                fontSize: '0.875rem', 
-                fontWeight: 600, 
-                flexShrink: 0, 
-                display: 'flex', 
-                alignItems: 'center',
-                cursor: 'pointer',
-                '&:hover': {
-                  textDecoration: 'underline'
-                }
-              }}
-            >
-              {getCampaignTypeText()}
-              <ArrowForwardIosIcon sx={{ fontSize: '0.8rem', mx: 1 }} />
-            </Typography>
-            {filteredTabs.map((tab) => {
-              const isActive = activeTabId === tab.id;
-              return (
-                <Button
-                  key={tab.id}
-                  variant="text"
-                  onClick={() => handleTabClick(tab.id)}
-                  sx={{
-                    minWidth: 'auto',
-                    px: 1.5,
-                    py: 0.5,
-                    borderRadius: '8px',
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    border: 'none',
-                    borderRight: '1px solid',
-                    borderBottom: '2px solid',
-                    borderColor: isActive ? '#1340FF' : '#e0e0e0',
-                    color: isActive ? '#1340FF' : '#8E8E93',
-                    backgroundColor: isActive ? '#FFFFFF' : 'transparent',
+            <Box sx={{ mb: 2, width: '100%', overflow: 'hidden' }}>
+              <Stack 
+                direction="row" 
+                spacing={0} 
+                alignItems="center"
+                sx={{ 
+                  width: '100%',
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  pb: 1,
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#e0e0e0 transparent',
+                  '&::-webkit-scrollbar': { 
+                    height: '6px',
+                    display: 'block'
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    backgroundColor: 'transparent'
+                  },
+                  '&::-webkit-scrollbar-thumb': { 
+                    backgroundColor: '#e0e0e0', 
+                    borderRadius: '4px',
                     '&:hover': {
-                      color: 'rgba(19, 64, 255, 0.7)',
-                      border: 'none',
-                      borderRight: '1px solid',
-                      borderBottom: '2px solid',
-                      borderColor: 'rgba(19, 64, 255, 0.7)',
-                      backgroundColor: 'rgba(19, 64, 255, 0.04)',
-                    },
-                  }}
-                  endIcon={
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleCloseTab(e, tab.id)}
-                      onMouseOver={(e) => e.stopPropagation()}
-                      sx={{ 
-                        p: 0,
-                        height: '20px',
-                        width: '20px',
-                        minWidth: '20px',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        color: '#8E8E93',
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                          color: '#FF3B30',
-                        }
-                      }}
+                      backgroundColor: '#bdbdbd'
+                    }
+                  },
+                  // Smooth scrolling
+                  scrollBehavior: 'smooth',
+                  // Hide scrollbar on mobile but keep functionality
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
+                <AnimatePresence mode="popLayout">
+                  {filteredTabs.length > 0 && (
+                    <m.div
+                      key="campaign-label"
+                      initial={{ opacity: 0, scale: 0.8, x: -20 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, x: -20 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      style={{ display: 'inline-flex' }}
                     >
-                      <CloseIcon fontSize="small" sx={{ fontSize: '16px' }} />
-                    </IconButton>
-                  }
-                >
-                  {tab.name}
-                </Button>
-              );
-            })}
-          </Stack>
-        </Box>
-      )}
+                      <Typography 
+                        variant="caption" 
+                        onClick={() => router.push(paths.dashboard.campaign.root)}
+                        sx={{ 
+                          color: '#1340FF', 
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          fontWeight: 600, 
+                          flexShrink: 0, 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          '&:hover': {
+                            textDecoration: 'underline'
+                          }
+                        }}
+                      >
+                        {getCampaignTypeText()}
+                        <ArrowForwardIosIcon sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' }, mx: { xs: 0.5, sm: 1 } }} />
+                      </Typography>
+                    </m.div>
+                  )}
+                  {filteredTabs.map((tab) => {
+                    const isActive = activeTabId === tab.id;
+                    return (
+                      <m.div
+                        key={tab.id}
+                        initial={{ opacity: 0, scale: 0.8, x: -20 }}
+                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, x: -20 }}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                        style={{ display: 'inline-flex' }}
+                      >
+                        <Button
+                          variant="text"
+                          onClick={() => handleTabClick(tab.id)}
+                          title={tab.name}
+                          sx={{
+                            minWidth: 'auto',
+                            maxWidth: { xs: '120px', sm: '200px', md: 'none' },
+                            px: { xs: 1, sm: 1.5 },
+                            py: 0.5,
+                            borderRadius: '8px',
+                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            flexShrink: 0,
+                            border: 'none',
+                            borderRight: '1px solid',
+                            borderBottom: '2px solid',
+                            borderColor: isActive ? '#1340FF' : '#e0e0e0',
+                            color: isActive ? '#1340FF' : '#8E8E93',
+                            backgroundColor: isActive ? '#FFFFFF' : 'transparent',
+                            '& .MuiButton-endIcon': {
+                              flexShrink: 0,
+                            },
+                            '&:hover': {
+                              color: 'rgba(19, 64, 255, 0.7)',
+                              border: 'none',
+                              borderRight: '1px solid',
+                              borderBottom: '2px solid',
+                              borderColor: 'rgba(19, 64, 255, 0.7)',
+                              backgroundColor: 'rgba(19, 64, 255, 0.04)',
+                            },
+                          }}
+                          endIcon={
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleCloseTab(e, tab.id)}
+                              onMouseOver={(e) => e.stopPropagation()}
+                              sx={{ 
+                                p: 0,
+                                height: '20px',
+                                width: '20px',
+                                minWidth: '20px',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                color: '#8E8E93',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                  color: '#FF3B30',
+                                }
+                              }}
+                            >
+                              <CloseIcon fontSize="small" sx={{ fontSize: '16px' }} />
+                            </IconButton>
+                          }
+                        >
+                          <Box
+                            component="span"
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '100%',
+                            }}
+                          >
+                            {tab.name}
+                          </Box>
+                        </Button>
+                      </m.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </Stack>
+            </Box>
+          </m.div>
+        )}
+      </AnimatePresence>
     </Box>
   );
 }
