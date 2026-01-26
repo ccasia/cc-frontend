@@ -770,12 +770,14 @@ const CampaignDetailView = ({ id }) => {
           variant="outlined"
           size="small"
           startIcon={
-            <Iconify
-              icon="lucide:edit"
-              width={15}
-              height={15}
-              color={isDisabled ? '#9e9e9e' : '#221f20'}
-              style={{ opacity: isDisabled ? 0.6 : 1 }}
+            <img
+              src="/assets/icons/overview/editButton.svg"
+              alt="edit"
+              style={{
+                width: 64,
+                height: 64,
+                opacity: isDisabled ? 0.3 : 1,
+              }}
             />
           }
           onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
@@ -913,9 +915,8 @@ const CampaignDetailView = ({ id }) => {
                 sx={{
                   color: '#221f20',
                   fontWeight: 500,
-                  fontSize: { xs: 12, sm: 15 },
-                  overflow: 'hidden',
-                  whiteSpace: 'none'
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
@@ -1040,7 +1041,7 @@ const CampaignDetailView = ({ id }) => {
                     },
                   }}
                 >
-                  <Iconify icon="eva:more-horizontal-fill" width={24} />
+                  <Iconify icon="eva:more-horizontal-fill" width={18} />
                 </Box>
                 // </>
               )}

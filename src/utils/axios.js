@@ -331,9 +331,15 @@ export const endpoints = {
     create: '/api/package/',
     root: '/api/package/',
     seed: '/api/packages/seedPackages',
-    get: (id) => `/api/packages/${id}`,
-    update: (id) => `/api/packages/${id}`,
+    get: (id) => `/api/package/${id}`,
+    update: (id) => `/api/package/${id}`,
     history: `/api/packages/history/`,
+  },
+  creditTier: {
+    root: '/api/credit-tier',
+    create: '/api/credit-tier',
+    update: (id) => `/api/credit-tier/${id}`,
+    delete: (id) => `/api/credit-tier/${id}`,
   },
   invoice: {
     getAll: '/api/invoice/',

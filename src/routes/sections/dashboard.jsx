@@ -104,6 +104,9 @@ const InvoiceDetail = lazy(() => import('src/pages/dashboard/creator/invoice-det
 // import the packages pages
 const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 
+// Credit Tier
+const CreditTier = lazy(() => import('src/pages/dashboard/credit-tier/credit-tier'));
+
 // Mobile View
 const MobileModalView = lazy(
   () => import('src/sections/campaign/discover/creator/mobile-modal-view')
@@ -600,6 +603,14 @@ export const dashboardRoutes = [
       {
         path: 'packages',
         element: <Packages />,
+      },
+      {
+        path: 'credit-tier',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+            <CreditTier />
+          </RoleBasedGuard>
+        ),
       },
       {
         path: 'template',

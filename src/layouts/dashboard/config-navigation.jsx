@@ -190,6 +190,12 @@ export function useNavData() {
             path: paths.dashboard.packages.root,
             icon: <Iconify icon="carbon:package" width={25} />,
           },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Credit Tier',
+            path: paths.dashboard.creditTier.root,
+            icon: <Iconify icon="mdi:account-star" width={25} />,
+          },
         ],
       },
 

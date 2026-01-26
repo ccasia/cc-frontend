@@ -73,6 +73,7 @@ const CampaignModal = ({
   onSaveCampaign,
   onUnsaveCampaign,
   dialog,
+  mutate,
 }) => {
   const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
   const [textPitchOpen, setTextPitchOpen] = useState(false);
@@ -93,23 +94,23 @@ const CampaignModal = ({
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const existingPitch = useMemo(
-    () => user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id),
+    () => campaign?.pitch?.find((item) => item.userId === user?.id && item.status !== 'draft'),
     [campaign, user]
   );
 
   const draftPitch = useMemo(
-    () => user?.draftPitch && user?.draftPitch.find((item) => item.campaignId === campaign?.id),
+    () => campaign?.pitch?.find((item) => item.userId === user?.id && item.status === 'draft'),
     [campaign, user]
   );
 
   const hasPitched = useMemo(
-    () => !!existingPitch && existingPitch.status !== 'draft',
+    () => !!existingPitch,
     [existingPitch]
   );
 
   const hasDraft = useMemo(
-    () => !!draftPitch || (existingPitch && existingPitch.status === 'draft'),
-    [draftPitch, existingPitch]
+    () => !!draftPitch,
+    [draftPitch]
   );
 
   const { isFormCompleted } = user.creator;
@@ -1405,6 +1406,7 @@ const CampaignModal = ({
           value: videoPitchOpen,
           onFalse: handleCloseVideoPitch,
         }}
+        mutate={mutate}
       />
 
       {/* Updated full-size image Dialog */}
@@ -1531,4 +1533,5 @@ CampaignModal.propTypes = {
   onSaveCampaign: PropTypes.func,
   onUnsaveCampaign: PropTypes.func,
   dialog: PropTypes.object,
+  mutate: PropTypes.func,
 };

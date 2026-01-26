@@ -97,29 +97,28 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled 
     <>
       <Stack direction="row" spacing={1}>
         <Button
-          variant="outlined"
-          size="small"
           onClick={() => onViewPitch(pitch)}
           sx={{
-            cursor: 'pointer',
-            px: 2,
-            py: 2,
-            minWidth: '90px',
-            border: '1px solid #e7e7e7',
+            bgcolor: '#FFFFFF',
+            border: '1.5px solid #e7e7e7',
             borderBottom: '3px solid #e7e7e7',
             borderRadius: 1,
-            color: '#203ff5',
-            fontSize: '0.85rem',
+            color: '#1340FF',
+            height: 36,
+            px: 2,
+            py: 1.5,
             fontWeight: 600,
+            fontSize: '0.85rem',
+            textTransform: 'none',
+            whiteSpace: 'nowrap',
+            minWidth: '90px',
             display: 'flex',
             alignItems: 'center',
-            textTransform: 'none',
-            bgcolor: 'transparent',
-            whiteSpace: 'nowrap',
             '&:hover': {
-              bgcolor: 'rgba(32, 63, 245, 0.04)',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
+              bgcolor: 'rgba(19, 64, 255, 0.08)',
+              border: '1.5px solid #1340FF',
+              borderBottom: '3px solid #1340FF',
+              color: '#1340FF',
             },
           }}
         >

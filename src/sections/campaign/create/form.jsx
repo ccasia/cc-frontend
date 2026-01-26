@@ -358,6 +358,7 @@ function CreateCampaignForm({ onClose, mutate: mutateCampaignList }) {
     campaignCredits: null,
     isV4Submission: false,
     submissionVersion: 'v2',
+    isCreditTier: false,
   };
 
   const methods = useForm({

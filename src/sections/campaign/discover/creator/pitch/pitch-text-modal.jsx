@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { mutate } from 'swr';
+import { mutate as globalMutate } from 'swr';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
 import { useForm } from 'react-hook-form';
@@ -17,6 +17,7 @@ import {
   ListItemText,
   DialogActions,
   DialogContent,
+  TextField,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -30,10 +31,10 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { RHFEditor } from 'src/components/hook-form';
+import { RHFEditor, RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
+const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack, mutate }) => {
   const smUp = useResponsive('sm', 'down');
   const modal = useBoolean();
   const dialog = useBoolean();
@@ -42,18 +43,21 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const router = useRouter();
 
+  // Find submitted pitch (non-draft status)
   const pitch = useMemo(
-    () => campaign?.pitch?.find((elem) => elem.userId === user?.id),
+    () => campaign?.pitch?.find((elem) => elem.userId === user?.id && elem.status !== 'draft'),
     [campaign, user]
   );
 
+  // Find draft pitch from the same pitch array (status === 'draft')
   const draftPitch = useMemo(
-    () => campaign?.draftPitch?.find((elem) => elem.userId === user?.id),
+    () => campaign?.pitch?.find((elem) => elem.userId === user?.id && elem.status === 'draft'),
     [campaign, user]
   );
 
   const schema = Yup.object().shape({
     content: Yup.string().required('Pitch is required.'),
+    followerCount: Yup.string().optional(),
   });
 
   const methods = useForm({
@@ -62,6 +66,11 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
     resolver: yupResolver(schema),
     defaultValues: {
       content: draftPitch?.content || pitch?.content || '',
+      followerCount:
+        draftPitch?.followerCount ||
+        pitch?.followerCount ||
+        user?.creator?.manualFollowerCount?.toString() ||
+        '',
     },
   });
 
@@ -73,6 +82,28 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
   } = methods;
 
   const value = watch('content');
+  const followerCountValue = watch('followerCount');
+
+  // Reset form when modal opens or campaign data changes (for fresh draft content)
+  useEffect(() => {
+    if (open && campaign) {
+      const currentDraft = campaign?.pitch?.find(
+        (elem) => elem.userId === user?.id && elem.status === 'draft'
+      );
+      const currentPitch = campaign?.pitch?.find(
+        (elem) => elem.userId === user?.id && elem.status !== 'draft'
+      );
+
+      reset({
+        content: currentDraft?.content || currentPitch?.content || '',
+        followerCount:
+          currentDraft?.followerCount ||
+          currentPitch?.followerCount ||
+          user?.creator?.manualFollowerCount?.toString() ||
+          '',
+      });
+    }
+  }, [open, campaign, user, reset]);
 
   const LoadingDots = () => {
     const [dots, setDots] = useState('');
@@ -107,8 +138,11 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
 
       console.log('Submitting text pitch with status:', 'undecided');
       enqueueSnackbar(res?.data?.message);
-      mutate(endpoints.auth.me);
-      mutate(endpoints.campaign.getMatchedCampaign);
+      globalMutate(endpoints.auth.me);
+      // Use the passed mutate function to refresh the campaign list (for useSWRInfinite)
+      if (mutate) {
+        await mutate();
+      }
       setSubmitStatus('success');
     } catch (error) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -122,13 +156,19 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
 
   const saveAsDraft = async () => {
     try {
+      const formData = methods.getValues();
       const res = await axiosInstance.post(endpoints.campaign.pitch.draft, {
         content: value,
+        followerCount: formData.followerCount,
         userId: user?.id,
         campaignId: campaign?.id,
       });
       enqueueSnackbar(res?.data?.message);
-      mutate(endpoints.campaign.getMatchedCampaign);
+      // Await mutate to ensure data is refreshed before closing
+      // Use the passed mutate function to refresh the campaign list (for useSWRInfinite)
+      if (mutate) {
+        await mutate();
+      }
       dialog.onFalse();
       handleClose();
     } catch (error) {
@@ -508,9 +548,9 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
       fullScreen={smUp}
     >
       <FormProvider methods={methods}>
-        <DialogTitle>
+        <DialogTitle sx={{ pb: 2 }}>
           <Stack direction="column" spacing={2}>
-            <Button
+            {/* <Button
               startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
               onClick={() => {
                 if (value && value !== pitch?.content) {
@@ -527,6 +567,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
                 fontSize: '0.9rem',
                 mb: -2,
                 ml: -1,
+                textTransform: 'none',
                 '&:hover': {
                   backgroundColor: 'transparent',
                   color: 'text.primary',
@@ -534,93 +575,115 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
               }}
             >
               Back
-            </Button>
-            <Stack direction="row" alignItems="center" gap={2}>
-              <ListItemText
-                primary={<Typography fontSize={36} fontFamily="Instrument Serif">Letter Pitch</Typography>}
-                secondary={
-                  <Box>
-                    <Typography variant="body1" color="#636366" sx={{ fontSize: 16 }}>
-                      Start pitching your idea!
-                    </Typography>
-                    <Typography variant="body2" color="#636366" >
-                      • Express how your unique style can be incorporated in the campaign
-                    </Typography>
-                  </Box>
-                }
-              />
+            </Button> */}
+            <Stack direction="column" spacing={1}>
+              <Typography 
+                fontSize={36} 
+                fontFamily="Instrument Serif"
+                sx={{ fontWeight: 400, lineHeight: 1.2 }}
+              >
+                Letter Pitch
+              </Typography>
+              <Typography variant="body1" color="#636366" sx={{ fontSize: 16, fontWeight: 500 }}>
+                Start pitching your idea!
+              </Typography>
+              <Typography variant="body2" color="#636366" sx={{ fontSize: 14 }}>
+                • Express how your unique style can be incorporated in the campaign
+              </Typography>
             </Stack>
           </Stack>
         </DialogTitle>
-        <DialogContent sx={{ p: 2 }}>
-          <RHFEditor
-            simple
-            name="content"
-            sx={{
-              '& .ql-container, & .ql-editor': {
-                bgcolor: '#FFFFFF',
-                backgroundColor: '#FFFFFF',
-              },
-            }}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Stack spacing={2} width="100%">
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={modal.onTrue}
-              disabled={!value || value === pitch?.content}
-              sx={{
-                mb: -1,
-                backgroundColor: '#3a3a3c',
-                color: 'white',
-                borderBottom: '3px solid',
-                borderBottomColor:
-                  !value || value === pitch?.content ? 'rgba(0, 0, 0, 0.12)' : '#202021',
-                '&:hover': {
-                  backgroundColor: '#202021',
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: '#b0b0b1',
-                  color: '#FFFFFF',
-                  borderBottom: '4px solid',
-                  borderBottomColor: '#9e9e9f',
-                },
-                fontSize: '1rem',
-                padding: '12px 24px',
-                height: '48px',
-              }}
-            >
-              Send Pitch
-            </Button>
-
-            {value && value !== pitch?.content && (
-              <Button
+        <DialogContent sx={{ p: 3, pt: 2 }}>
+          <Stack spacing={2}>
+            <Box>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#636366',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  mb: 1,
+                  display: 'block',
+                }}
+              >
+                Instagram or TikTok Followers (use the highest between the two){' '}
+                <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+              </Typography>
+              <RHFTextField
+                name="followerCount"
                 fullWidth
+                placeholder="Instagram or TikTok Followers"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#FFFFFF',
+                    borderRadius: 1.2,
+                    '& fieldset': {
+                      borderColor: '#e7e7e7',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#d0d0d0',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#1340FF',
+                    },
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    color: '#221f20',
+                    '&::placeholder': {
+                      color: '#B0B0B0',
+                      opacity: 1,
+                    },
+                  },
+                }}
+              />
+            </Box>
+            <RHFEditor
+              simple
+              name="content"
+              sx={{
+                '& .ql-container, & .ql-editor': {
+                  bgcolor: '#FFFFFF',
+                  backgroundColor: '#FFFFFF',
+                  minHeight: '200px',
+                },
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
+          <Stack direction="row" spacing={1.5} width="100%" justifyContent="flex-end">
+            {((value && value !== (draftPitch?.content || pitch?.content)) ||
+              (followerCountValue && followerCountValue !== (draftPitch?.followerCount || pitch?.followerCount || user?.creator?.manualFollowerCount?.toString() || ''))) && (
+              <Button
                 variant="outlined"
-                size="large"
                 onClick={saveAsDraft}
                 sx={{
-                  mb: -1,
                   fontSize: '1rem',
+                  fontWeight: 600,
                   padding: '12px 24px',
                   height: '48px',
                   border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid',
+                  borderBottom: '3px solid',
                   borderBottomColor: '#e7e7e7',
                   backgroundColor: '#FFFFFF',
+                  color: '#221f20',
+                  textTransform: 'none',
+                  borderRadius: 1,
+                  minWidth: 120,
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  },
                 }}
               >
                 Save As Draft
               </Button>
             )}
-
             <Button
-              fullWidth
               variant="outlined"
               onClick={() => {
-                if (value && value !== pitch?.content) {
+                const hasContentChanges = value && value !== (draftPitch?.content || pitch?.content);
+                const hasFollowerChanges = followerCountValue && followerCountValue !== (draftPitch?.followerCount || pitch?.followerCount || user?.creator?.manualFollowerCount?.toString() || '');
+                if (hasContentChanges || hasFollowerChanges) {
                   dialog.onTrue();
                 } else {
                   handleClose();
@@ -629,15 +692,53 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
               }}
               sx={{
                 fontSize: '1rem',
+                fontWeight: 600,
                 padding: '12px 24px',
                 height: '48px',
                 border: '1px solid #e7e7e7',
-                borderBottom: '4px solid',
+                borderBottom: '3px solid',
                 borderBottomColor: '#e7e7e7',
                 backgroundColor: '#FFFFFF',
+                color: '#221f20',
+                textTransform: 'none',
+                borderRadius: 1,
+                minWidth: 120,
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                },
               }}
             >
               Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={modal.onTrue}
+              disabled={!value || (pitch?.content && value === pitch?.content)}
+              sx={{
+                backgroundColor: '#3a3a3c',
+                color: 'white',
+                borderBottom: '3px solid',
+                borderBottomColor:
+                  !value || (pitch?.content && value === pitch?.content) ? 'rgba(0, 0, 0, 0.12)' : '#202021',
+                '&:hover': {
+                  backgroundColor: '#202021',
+                },
+                '&.Mui-disabled': {
+                  backgroundColor: '#b0b0b1',
+                  color: '#FFFFFF',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#9e9e9f',
+                },
+                fontSize: '1rem',
+                fontWeight: 600,
+                padding: '12px 24px',
+                height: '48px',
+                textTransform: 'none',
+                borderRadius: 1,
+                minWidth: 120,
+              }}
+            >
+              Send Pitch
             </Button>
           </Stack>
         </DialogActions>
@@ -656,4 +757,5 @@ CampaignPitchTextModal.propTypes = {
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
   onBack: PropTypes.func,
+  mutate: PropTypes.func,
 };

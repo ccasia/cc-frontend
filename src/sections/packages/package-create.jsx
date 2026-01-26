@@ -12,6 +12,7 @@ import {
   Stack,
   Button,
   Dialog,
+  Divider,
   FormLabel,
   TextField,
   Typography,
@@ -95,27 +96,33 @@ const PackageCreate = ({ open, onClose }) => {
       fullWidth
       open={open}
       onClose={onClose}
+      maxWidth="sm"
       PaperProps={{
-        sx: { maxWidth: 720, borderRadius: 0.8 },
+        sx: {
+          borderRadius: 2,
+          bgcolor: '#F4F4F4',
+        },
       }}
     >
-      <DialogTitle>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Iconify icon="mdi:package-variant-closed" width={28} />
-          <Typography
-            sx={{
-              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-              flexGrow: 1,
-            }}
-            fontSize={30}
-          >
-            Create a new package
-          </Typography>
-          <IconButton size="small" sx={{ borderRadius: 1 }} onClick={onClose}>
-            <Iconify icon="material-symbols:close-rounded" width={24} />
-          </IconButton>
-        </Stack>
+      <DialogTitle
+        sx={{
+          fontFamily: 'Instrument Serif',
+          fontSize: '40px !important',
+          fontWeight: 400,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          pb: 2,
+          lineHeight: 1.2,
+        }}
+      >
+        Create Package
+        <IconButton onClick={onClose} size="small">
+          <Iconify icon="mdi:close" width={24} />
+        </IconButton>
       </DialogTitle>
+
+      <Divider sx={{ borderColor: '#EBEBEB', mx: 3 }} />
 
       <DialogContent>
         <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -131,7 +138,17 @@ const PackageCreate = ({ open, onClose }) => {
             }}
           >
             <FormField label="Package Name">
-              <RHFTextField name="packageName" placeholder="Package Name" />
+              <RHFTextField
+                name="packageName"
+                placeholder="Package Name"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#fff',
+                    minHeight: 48,
+                    borderRadius: 1,
+                  },
+                }}
+              />
             </FormField>
 
             <FormField label="Price in MYR">
@@ -148,6 +165,13 @@ const PackageCreate = ({ open, onClose }) => {
                 fullWidth
                 error={errors.priceMYR}
                 helperText={errors.priceMYR && errors.priceMYR.message}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#fff',
+                    minHeight: 48,
+                    borderRadius: 1,
+                  },
+                }}
               />
             </FormField>
 
@@ -165,6 +189,13 @@ const PackageCreate = ({ open, onClose }) => {
                 fullWidth
                 error={errors.priceSGD}
                 helperText={errors.priceSGD && errors.priceSGD.message}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#fff',
+                    minHeight: 48,
+                    borderRadius: 1,
+                  },
+                }}
               />
             </FormField>
             <FormField label="Total UGC Credits">
@@ -176,6 +207,13 @@ const PackageCreate = ({ open, onClose }) => {
                   if (e.key === '-' || e.key === 'e') {
                     e.preventDefault();
                   }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#fff',
+                    minHeight: 48,
+                    borderRadius: 1,
+                  },
                 }}
               />
             </FormField>
@@ -189,6 +227,13 @@ const PackageCreate = ({ open, onClose }) => {
                     e.preventDefault();
                   }
                 }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#fff',
+                    minHeight: 48,
+                    borderRadius: 1,
+                  },
+                }}
               />
             </FormField>
 
@@ -198,12 +243,53 @@ const PackageCreate = ({ open, onClose }) => {
           </Box>
 
           <Box mt={2} mb={2} display="flex" justifyContent="flex-end">
-            <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 0.8 }}>
+            <Button
+              onClick={onClose}
+              sx={{
+                bgcolor: '#FFFFFF',
+                border: '1.5px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1.15,
+                color: '#1340FF',
+                height: 44,
+                px: 2.5,
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: 'rgba(19, 64, 255, 0.08)',
+                  border: '1.5px solid #1340FF',
+                  borderBottom: '3px solid #1340FF',
+                  color: '#1340FF',
+                },
+              }}
+            >
               Cancel
             </Button>
             <Box mr={1} />
 
-            <LoadingButton type="submit" variant="contained" sx={{ borderRadius: 0.8 }}>
+            <LoadingButton
+              type="submit"
+              variant="contained"
+              sx={{
+                bgcolor: '#203ff5',
+                border: '1px solid #203ff5',
+                borderBottom: '3px solid #1933cc',
+                height: 44,
+                color: '#ffffff',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                px: 3,
+                textTransform: 'none',
+                '&:hover': { bgcolor: '#1933cc', opacity: 0.9 },
+                '&:disabled': {
+                  bgcolor: '#e7e7e7',
+                  color: '#999999',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #d1d1d1',
+                },
+              }}
+            >
               Create
             </LoadingButton>
           </Box>

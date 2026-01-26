@@ -54,7 +54,7 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
-  { id: 'pronounce', label: 'Pronounce', width: 100 },
+  { id: 'tier', label: 'Tier', width: 100 },
   // { id: 'tiktok', label: 'Tiktok', width: 120 },
   // { id: 'instagram', label: 'Instagram', width: 150 },
   { id: 'country', label: 'Country', width: 100 },
@@ -68,7 +68,6 @@ const defaultFilters = {
   name: '',
   status: 'all',
   ageRange: [0, 100],
-  pronounce: [],
 };
 
 // ----------------------------------------------------------------------
@@ -330,7 +329,6 @@ function CreatorTableView() {
             onFilters={handleFilters}
             ageRange={ageRange}
             onAgeRangeChange={handleAgeRangeChange}
-            pronounceOptions={['he/him', 'she/her', 'they/them', 'others']}
           />
 
           {canReset && (
@@ -483,10 +481,6 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
 
   if (status !== 'all') {
     inputData = inputData?.filter((user) => user.status.toLowerCase() === status.toLowerCase());
-  }
-
-  if (filters.pronounce.length) {
-    inputData = inputData?.filter((user) => filters.pronounce.includes(user.creator.pronounce));
   }
 
   // Filter by age range
