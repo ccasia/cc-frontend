@@ -11,8 +11,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useGetAllInvoices } from 'src/api/invoices';
-
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
@@ -24,8 +22,6 @@ function CampaignPage() {
   const location = useLocation();
   const { user } = useAuthContext();
   const dialog = useBoolean();
-
-  const { data: invoices, isLoading: invoicesLoading } = useGetAllInvoices();
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -58,27 +54,6 @@ function CampaignPage() {
     }
   }, [user, dialog]);
 
-  if (invoicesLoading) {
-    return (
-      <Box
-        sx={{
-          position: 'relative',
-          top: 200,
-          textAlign: 'center',
-        }}
-      >
-        <CircularProgress
-          thickness={7}
-          size={25}
-          sx={{
-            color: (theme) => theme.palette.common.black,
-            strokeLinecap: 'round',
-          }}
-        />
-      </Box>
-    );
-  }
-
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -95,7 +70,7 @@ function CampaignPage() {
         }}
       />
 
-      <InvoiceLists invoices={invoices} />
+      <InvoiceLists />
     </Container>
   );
 }

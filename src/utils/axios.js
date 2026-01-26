@@ -341,7 +341,8 @@ export const endpoints = {
     updateInvoice: '/api/invoice/update',
     create: '/api/invoice/create',
     getInvoicesByCampaignId: (id) => `/api/invoice/getInvoicesByCampaignId/${id}`,
-    getInvoiceStats: (campaignId) => `/api/invoice/stats/${campaignId}`,
+    getStats: '/api/invoice/stats', // Stats for all invoices
+    getStatsByCampaign: (campaignId) => `/api/invoice/stats/${campaignId}`, // Stats for specific campaign
     getInvoiceById: (id) => `/api/invoice/${id}`,
     getInvoicesByCreatorAndCampiagn: (creatorId, campaignId) =>
       `/api/invoice/creator/${creatorId}/campaign/${campaignId}`,
