@@ -12,6 +12,10 @@ export const BUTTON_STYLES = {
       backgroundColor: '#F5F5F5',
       boxShadow: 'inset 0px -2px 0px 0px #E7E7E7'
     },
+    '&.Mui-disabled': {
+      cursor: 'not-allowed',
+      pointerEvents: 'auto',
+    },
   },
   success: {
     color: '#1ABF66',

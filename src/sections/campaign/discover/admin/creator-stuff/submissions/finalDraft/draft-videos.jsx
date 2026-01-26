@@ -33,12 +33,12 @@ import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook
 import { options_changes } from './constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 
-const VideoCard = ({ 
-  videoItem, 
-  index, 
-  submission, 
-  onVideoClick, 
-  handleApprove, 
+const VideoCard = ({
+  videoItem,
+  index,
+  submission,
+  onVideoClick,
+  handleApprove,
   handleRequestChange,
   selectedVideosForChange,
   handleVideoSelection,
@@ -56,6 +56,8 @@ const VideoCard = ({
   // V3 admin feedback handlers
   handleAdminEditFeedback,
   handleAdminSendToCreator,
+  // View-only mode
+  isDisabled = false,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -346,7 +348,7 @@ const VideoCard = ({
                   }}
                   size="small"
                   variant="contained"
-                  disabled={isProcessing}
+                  disabled={isProcessing || isDisabled}
                   sx={{
                     bgcolor: '#FFFFFF',
                     border: 1.5,
@@ -365,6 +367,10 @@ const VideoCard = ({
                     fontWeight: 600,
                     height: '40px',
                     flex: 2,
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Request a Change
@@ -436,6 +442,7 @@ const VideoCard = ({
                       variant="contained"
                       size="small"
                       loading={isSubmitting || isProcessing}
+                      disabled={isDisabled}
                       sx={{
                         bgcolor: '#FFFFFF',
                         color: '#1ABF66',
@@ -454,6 +461,10 @@ const VideoCard = ({
                         height: '40px',
                         textTransform: 'none',
                         flex: 1,
+                        '&.Mui-disabled': {
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
+                        },
                       }}
                     >
                       Approve
@@ -497,7 +508,7 @@ const VideoCard = ({
                   }}
                   size="small"
                   variant="contained"
-                  disabled={isProcessing}
+                  disabled={isProcessing || isDisabled}
                   sx={{
                     bgcolor: '#FFFFFF',
                     border: 1.5,
@@ -516,6 +527,10 @@ const VideoCard = ({
                     fontWeight: 600,
                     height: '40px',
                     flex: 1,
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Approve
@@ -526,6 +541,7 @@ const VideoCard = ({
                   variant="contained"
                   size="small"
                   loading={isSubmitting || isProcessing}
+                  disabled={isDisabled}
                   sx={{
                     bgcolor: '#FFFFFF',
                     color: '#D4321C',
@@ -544,6 +560,10 @@ const VideoCard = ({
                     height: '40px',
                     textTransform: 'none',
                     flex: 2,
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Request Changes
@@ -923,6 +943,8 @@ VideoCard.propTypes = {
   // V3 admin feedback handlers
   handleAdminEditFeedback: PropTypes.func,
   handleAdminSendToCreator: PropTypes.func,
+  // View-only mode
+  isDisabled: PropTypes.bool,
 };
 
 const DraftVideos = ({
@@ -1167,8 +1189,8 @@ const DraftVideos = ({
                 flexShrink: 0,
               }}
             >
-              <VideoCard 
-                videoItem={video} 
+              <VideoCard
+                videoItem={video}
                 index={index}
                 submission={submission}
                 onVideoClick={onVideoClick}
@@ -1190,6 +1212,8 @@ const DraftVideos = ({
                 // V3 admin feedback handlers
                 handleAdminEditFeedback={handleAdminEditFeedback}
                 handleAdminSendToCreator={handleAdminSendToCreator}
+                // View-only mode
+                isDisabled={isDisabled}
               />
             </Box>
           ))}
@@ -1199,14 +1223,14 @@ const DraftVideos = ({
       {shouldUseGrid && (
         <Grid container spacing={2}>
           {deliverables.videos.map((video, index) => (
-            <Grid 
-              item 
-              xs={12} 
-              md={7} 
+            <Grid
+              item
+              xs={12}
+              md={7}
               key={video.id || index}
             >
-              <VideoCard 
-                videoItem={video} 
+              <VideoCard
+                videoItem={video}
                 index={index}
                 submission={submission}
                 onVideoClick={onVideoClick}
@@ -1228,6 +1252,8 @@ const DraftVideos = ({
                 // V3 admin feedback handlers
                 handleAdminEditFeedback={handleAdminEditFeedback}
                 handleAdminSendToCreator={handleAdminSendToCreator}
+                // View-only mode
+                isDisabled={isDisabled}
               />
             </Grid>
           ))}

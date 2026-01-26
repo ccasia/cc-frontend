@@ -26,11 +26,11 @@ import {
   ConfirmationRequestModal,
 } from './firstDraft/confirmation-modals';
 
-const FirstDraft = ({ 
-  campaign, 
-  submission, 
-  creator, 
-  deliverablesData, 
+const FirstDraft = ({
+  campaign,
+  submission,
+  creator,
+  deliverablesData,
   // Individual client approval handlers
   handleClientApproveVideo,
   handleClientApprovePhoto,
@@ -38,6 +38,7 @@ const FirstDraft = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  isDisabled: propIsDisabled = false,
 }) => {
   const { deliverables, deliverableMutate, submissionMutate } = deliverablesData;
   const { user } = useAuthContext();
@@ -62,10 +63,12 @@ const FirstDraft = ({
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [currentSectionType, setCurrentSectionType] = useState('video');
 
-  const isDisabled = useMemo(
+  // Merge prop-based isDisabled with existing Finance role check
+  const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+  const isDisabled = propIsDisabled || financeDisabled;
 
   // Shared function to check if all CLIENT_FEEDBACK items across all media types have been processed
   const checkAllClientFeedbackProcessed = () => {
@@ -943,6 +946,7 @@ FirstDraft.propTypes = {
   handleClientRejectVideo: PropTypes.func,
   handleClientRejectPhoto: PropTypes.func,
   handleClientRejectRawFootage: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };
 
 export default FirstDraft;

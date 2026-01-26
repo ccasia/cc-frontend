@@ -27,12 +27,12 @@ import DraftVideos from './finalDraft/draft-videos';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
-const FinalDraft = ({ 
-  campaign, 
-  submission, 
-  creator, 
-  deliverablesData, 
-  firstDraftSubmission, 
+const FinalDraft = ({
+  campaign,
+  submission,
+  creator,
+  deliverablesData,
+  firstDraftSubmission,
   // Individual client approval handlers
   handleClientApproveVideo,
   handleClientApprovePhoto,
@@ -40,6 +40,8 @@ const FinalDraft = ({
   handleClientRejectVideo,
   handleClientRejectPhoto,
   handleClientRejectRawFootage,
+  // View-only mode
+  isDisabled: propIsDisabled = false,
 }) => {
   // Create wrapper functions that call SWR mutations after client actions
   const handleClientApproveVideoWithMutation = async (...args) => {
@@ -131,10 +133,12 @@ const FinalDraft = ({
     return Array.from(itemsWithClientFeedback).every(itemKey => sentToCreatorItems.has(itemKey));
   }, [deliverables, sentToCreatorItems]);
 
-  const isDisabled = useMemo(
+  // Merge prop-based isDisabled with existing Finance role check
+  const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+  const isDisabled = propIsDisabled || financeDisabled;
 
   const checkSubmissionReadiness = async () => {
     try {
@@ -1016,6 +1020,8 @@ FinalDraft.propTypes = {
   handleClientRejectVideo: PropTypes.func,
   handleClientRejectPhoto: PropTypes.func,
   handleClientRejectRawFootage: PropTypes.func,
+  // View-only mode
+  isDisabled: PropTypes.bool,
 };
 
 export default FinalDraft;

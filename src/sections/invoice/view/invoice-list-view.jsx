@@ -79,7 +79,7 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceListView({ campId, invoices }) {
+export default function InvoiceListView({ campId, invoices, isDisabled: propIsDisabled = false }) {
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const settings = useSettingsContext();
@@ -502,10 +502,12 @@ export default function InvoiceListView({ campId, invoices }) {
 
   const smUp = useResponsive('up', 'sm');
 
-  const isDisabled = useMemo(
+  // Merge prop-based isDisabled with existing Finance role check
+  const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+  const isDisabled = propIsDisabled || financeDisabled;
 
   console.log('creatorAgreement Data: ', data);
 
@@ -680,6 +682,7 @@ export default function InvoiceListView({ campId, invoices }) {
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}
               onClick={handleOpenNewInvoiceModal}
+              disabled={isDisabled}
               sx={{
                 width: { xs: 'auto', sm: '130px' },
                 height: 38,
@@ -691,6 +694,10 @@ export default function InvoiceListView({ campId, invoices }) {
                 boxShadow: '0px -3px 0px 0px #00000073 inset',
                 '&:hover': {
                   bgcolor: '#0035DF'
+                },
+                '&.Mui-disabled': {
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
                 },
                 textTransform: 'none',
                 fontWeight: 600,
@@ -792,7 +799,12 @@ export default function InvoiceListView({ campId, invoices }) {
                       </Tooltip>
 
                       <Tooltip title="Delete">
-                        <IconButton color="primary" onClick={confirm.onTrue} disabled={isDisabled}>
+                        <IconButton
+                          color="primary"
+                          onClick={confirm.onTrue}
+                          disabled={isDisabled}
+                          sx={{ '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
+                        >
                           <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                       </Tooltip>
@@ -1054,6 +1066,7 @@ export default function InvoiceListView({ campId, invoices }) {
                               {/* Edit Button */}
                               <Button
                                 startIcon={<Iconify icon="solar:pen-bold" width={16} />}
+                                disabled={isDisabled}
                                 sx={{
                                   textTransform: 'none',
                                   fontWeight: 700,
@@ -1067,6 +1080,10 @@ export default function InvoiceListView({ campId, invoices }) {
                                   color: '#221f20',
                                   minWidth: '65px',
                                   height: '32px',
+                                  '&.Mui-disabled': {
+                                    cursor: 'not-allowed',
+                                    pointerEvents: 'auto',
+                                  },
                                 }}
                                 onClick={() => handleEditRow(row.id)}
                               >
@@ -1075,6 +1092,7 @@ export default function InvoiceListView({ campId, invoices }) {
 
                               {/* Delete Button */}
                               <Button
+                                disabled={isDisabled}
                                 sx={{
                                   textTransform: 'none',
                                   fontWeight: 700,
@@ -1088,6 +1106,10 @@ export default function InvoiceListView({ campId, invoices }) {
                                   color: '#ff4842',
                                   minWidth: '65px',
                                   height: '32px',
+                                  '&.Mui-disabled': {
+                                    cursor: 'not-allowed',
+                                    pointerEvents: 'auto',
+                                  },
                                 }}
                                 onClick={() => {
                                   confirm.onTrue();
@@ -1160,6 +1182,12 @@ export default function InvoiceListView({ campId, invoices }) {
               handleDeleteRows();
               confirm.onFalse();
             }}
+            sx={{
+              '&.Mui-disabled': {
+                cursor: 'not-allowed',
+                pointerEvents: 'auto',
+              },
+            }}
           >
             Delete
           </Button>
@@ -1172,6 +1200,7 @@ export default function InvoiceListView({ campId, invoices }) {
 InvoiceListView.propTypes = {
   campId: PropTypes.string,
   invoices: PropTypes.object,
+  isDisabled: PropTypes.bool,
 };
 
 // ----------------------------------------------------------------------

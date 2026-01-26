@@ -35,7 +35,7 @@ import { useGetAllCreators } from 'src/api/creator';
 import Iconify from 'src/components/iconify';
 
 
-const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
+const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = false }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const navigate = useNavigate();
@@ -273,6 +273,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
         isAdmin={isAdmin}
         campaign={campaign}
         onSwapped={onUpdate}
+        isDisabled={isDisabled}
       />
     );
   }
@@ -1320,7 +1321,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 <Button
                   variant="contained"
                   onClick={() => setRejectDialogOpen(true)}
-                  disabled={loading}
+                  disabled={loading || isDisabled}
                   sx={{
                     textTransform: 'none',
                     minHeight: 42,
@@ -1341,6 +1342,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                       borderBottom: '3px solid',
                       borderBottomColor: '#D4321C',
                     },
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Reject
@@ -1350,7 +1355,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 <Button
                   variant="contained"
                   onClick={handleApprove}
-                  disabled={loading}
+                  disabled={loading || isDisabled}
                   sx={{
                     textTransform: 'none',
                     minHeight: 42,
@@ -1371,6 +1376,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                       borderBottom: '3px solid',
                       borderBottomColor: '#1ABF66',
                     },
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   {loading ? (
@@ -1385,7 +1394,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                 <Button
                   variant="contained"
                   onClick={handleSetAgreement}
-                  disabled={loading}
+                  disabled={loading || isDisabled}
                   sx={{
                     textTransform: 'none',
                     minHeight: 42,
@@ -1405,6 +1414,10 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
                       borderColor: '#203FF5',
                       borderBottom: '3px solid',
                       borderBottomColor: '#203FF5',
+                    },
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
                     },
                   }}
                 >
@@ -1552,7 +1565,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate }) => {
 };
 
 // Modal for Guest Creator
-export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign, onSwapped }) {
+export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign, onSwapped, isDisabled = false }) {
   const { enqueueSnackbar } = useSnackbar();
   const { data: allCreators, isLoading: creatorsLoading } = useGetAllCreators();
 
@@ -1980,7 +1993,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
           <>
             <Button
               onClick={() => setShowCreatorSelection(true)}
-              disabled={submitting}
+              disabled={submitting || isDisabled}
               sx={{
                 bgcolor: '#ffffff',
                 color: 'text.primary',
@@ -1992,6 +2005,10 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
                 px: 2,
                 '&:hover': {
                   bgcolor: '#F7F7F7',
+                },
+                '&.Mui-disabled': {
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
                 },
               }}
               startIcon={
@@ -2006,7 +2023,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
             </Button>
             <Button
               onClick={handleUpdateGuestCreator}
-              disabled={submitting}
+              disabled={submitting || isDisabled}
               sx={{
                 bgcolor: '#203ff5',
                 color: '#fff',
@@ -2018,6 +2035,8 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
                 '&.Mui-disabled': {
                   bgcolor: '#C7C7CC',
                   color: '#fff',
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
                 },
               }}
             >
@@ -2098,6 +2117,7 @@ ViewGuestCreatorModal.propTypes = {
   isAdmin: PropTypes.bool,
   campaign: PropTypes.object,
   onSwapped: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };
 
 export default V3PitchModal;
@@ -2108,4 +2128,5 @@ V3PitchModal.propTypes = {
   pitch: PropTypes.object,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };

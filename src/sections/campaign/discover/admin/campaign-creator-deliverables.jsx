@@ -52,7 +52,7 @@ const deriveCreatorOverallStatus = ({ firstDraft, finalDraft, posting }) => {
   return 'NOT_STARTED';
 };
 
-const CampaignCreatorDeliverables = ({ campaign }) => {
+const CampaignCreatorDeliverables = ({ campaign, isDisabled = false }) => {
   const theme = useTheme();
 
   const [selectedCreator, setSelectedCreator] = useState(null);
@@ -1035,6 +1035,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                           deliverableMutate,
                           submissionMutate,
                         }}
+                        isDisabled={isDisabled}
                       />
                     ) : (
                       <Box sx={{ p: 3 }}>
@@ -1139,6 +1140,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                           deliverableMutate,
                           submissionMutate,
                         }}
+                        isDisabled={isDisabled}
                       />
                     ) : (
                       <Box sx={{ p: 3 }}>
@@ -1238,6 +1240,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                         campaign={campaign}
                         creator={selectedCreator}
                         isV3={false}
+                        isDisabled={isDisabled}
                       />
                     ) : (
                       <Box sx={{ p: 3 }}>
@@ -1259,4 +1262,5 @@ export default CampaignCreatorDeliverables;
 
 CampaignCreatorDeliverables.propTypes = {
   campaign: PropTypes.object,
+  isDisabled: PropTypes.bool,
 };

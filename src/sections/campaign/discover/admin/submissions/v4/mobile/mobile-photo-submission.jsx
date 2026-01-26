@@ -23,7 +23,7 @@ import { PhotoModal } from '../../../creator-stuff/submissions/firstDraft/media-
 
 // ----------------------------------------------------------------------
 
-export default function MobilePhotoSubmission({ submission, campaign, onUpdate }) {
+export default function MobilePhotoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
@@ -424,6 +424,7 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
                 submission={submission}
                 onUpdate={onUpdate}
                 onViewLogs={() => setShowFeedbackLogs(true)}
+                isDisabled={isDisabled}
               />
             ) : (
               <FeedbackSection
@@ -452,6 +453,7 @@ export default function MobilePhotoSubmission({ submission, campaign, onUpdate }
             handleRequestChanges={handleRequestChanges}
             hasPostingLink={hasPostingLink}
             onViewLogs={() => setShowFeedbackLogs(true)}
+            isDisabled={isDisabled}
           />
         </>
       )}
@@ -475,4 +477,5 @@ MobilePhotoSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };
