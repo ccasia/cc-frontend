@@ -47,6 +47,7 @@ import UploadPhoto from './dropzone';
 import AccountSecurity from './security';
 import ClientProfile from './client-profile';
 import ChildAccounts from './child-accounts';
+import CampaignSettingsTab from './campaign-settings';
 import { Billing } from '../creator/profile/billing';
 import Preference from '../creator/profile/preferences';
 import AccountSocialLinks from '../creator/profile/social';
@@ -75,6 +76,7 @@ const Profile = () => {
 
     if (path.includes('/security')) return 'security';
     if (path.includes('/api')) return 'api';
+    if (path.includes('/campaign-settings')) return 'campaignSettings';
     if (path.includes('/socials')) return 'Social Links';
     if (path.includes('/payment')) return 'paymentForm';
     if (path.includes('/billing')) return 'Billing';
@@ -490,6 +492,57 @@ const Profile = () => {
             startIcon={<Iconify icon="material-symbols:api" width={20} />}
           >
             API
+          </Button>
+        )}
+
+        {(user?.role === 'superadmin' || user?.admin?.role?.name === 'CSL') && (
+          <Button
+            component={Link}
+            to={paths.dashboard.user.profileTabs.campaignSettings}
+            disableRipple
+            size="large"
+            sx={{
+              px: 0.5,
+              py: 0.5,
+              pb: 0.5,
+              ml: 2,
+              minWidth: 'fit-content',
+              color: currentTab === 'campaignSettings' ? '#221f20' : '#8e8e93',
+              position: 'relative',
+              fontSize: '1.05rem',
+              fontWeight: 650,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              '&:focus': {
+                outline: 'none',
+                bgcolor: 'transparent',
+              },
+              '&:active': {
+                bgcolor: 'transparent',
+              },
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: -0.5,
+                left: 0,
+                right: 0,
+                height: '2px',
+                width: currentTab === 'campaignSettings' ? '100%' : '0%',
+                bgcolor: '#1340ff',
+                transform: 'scaleX(1)',
+                transformOrigin: 'left',
+              },
+              '&:hover': {
+                bgcolor: 'transparent',
+                '&::after': {
+                  width: '100%',
+                  opacity: currentTab === 'campaignSettings' ? 1 : 0.5,
+                },
+              },
+            }}
+            startIcon={<Iconify icon="solar:settings-bold" width={20} />}
+          >
+            Campaign Settings
           </Button>
         )}
       </Stack>
@@ -1145,6 +1198,8 @@ const Profile = () => {
       )}
       {(user?.admin?.role?.name === 'Finance' || user?.role === 'superadmin') &&
         currentTab === 'api' && <API />}
+      {(user?.role === 'superadmin' || user?.admin?.role?.name === 'CSL') &&
+        currentTab === 'campaignSettings' && <CampaignSettingsTab />}
     </>
   );
 
