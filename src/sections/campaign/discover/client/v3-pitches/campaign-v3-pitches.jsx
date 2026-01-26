@@ -53,7 +53,7 @@ const countPitchesByStatus = (pitches, statusList) =>
 
 // Using SortableHeader component from components/table to avoid defining components during render
 
-const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
+const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisabled = false }) => {
   const { user } = useAuthContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedPitch, setSelectedPitch] = useState(null);
@@ -66,10 +66,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const isDisabled = useMemo(
+  // Merge prop-based isDisabled with existing Finance role check
+  const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+  const isDisabled = propIsDisabled || financeDisabled;
   const smUp = useResponsive('up', 'sm');
   const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');
@@ -781,8 +783,16 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
             {!smUp ? (
               <IconButton
-                sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}
+                sx={{
+                  bgcolor: (theme) => theme.palette.background.paper,
+                  borderRadius: 1,
+                  '&.Mui-disabled': {
+                    cursor: 'not-allowed',
+                    pointerEvents: 'auto',
+                  },
+                }}
                 onClick={handleModalOpen}
+                disabled={isDisabled}
               >
                 <Iconify icon="fluent:people-add-28-filled" width={18} />
               </IconButton>
@@ -802,6 +812,10 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                   '&:hover': {
                     bgcolor: alpha('#636366', 0.08),
                     opacity: 0.9,
+                  },
+                  '&.Mui-disabled': {
+                    cursor: 'not-allowed',
+                    pointerEvents: 'auto',
                   },
                 }}
                 startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
@@ -900,6 +914,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
                     campaign={campaign}
                     onViewPitch={handleViewPitch}
                     onRemoved={handleRemoveCreator}
+                    isDisabled={isDisabled}
                   />
                 );
               })}
@@ -949,6 +964,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           pitch={selectedPitch}
           campaign={campaign}
           onUpdate={handlePitchUpdate}
+          isDisabled={isDisabled}
         />
       )}
 
@@ -959,6 +975,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           onClose={handleClosePitchModal}
           onUpdate={handlePitchUpdate}
           campaign={campaign}
+          isDisabled={isDisabled}
         />
       ) : (
         <V3PitchModal
@@ -967,6 +984,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate }) => {
           pitch={selectedPitch}
           campaign={campaign}
           onUpdate={handlePitchUpdate}
+          isDisabled={isDisabled}
         />
       )}
     </Box>
@@ -1741,4 +1759,5 @@ CampaignV3Pitches.propTypes = {
   pitches: PropTypes.array,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };

@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 
-import { Box, Card, Chip, Stack, Divider, MenuItem, IconButton, Typography } from '@mui/material';
+import { Box, Card, Chip, Stack, Avatar, Divider, MenuItem, IconButton, Typography } from '@mui/material';
 
 import { formatText } from 'src/utils/format-test';
 
@@ -15,7 +15,7 @@ import CustomPopover from 'src/components/custom-popover/custom-popover';
 
 import { CampaignLog } from './CampaignLog';
 
-const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
+const CampaignList = ({ campaign, onView, onEdit, onDelete, showAdmins = false, viewOnly = false }) => {
   const { user } = useAuthContext();
   const popover = usePopover();
 
@@ -102,6 +102,28 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
                 {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
               </Typography>
             </Stack>
+            {/* Show managing admins - only in "All Campaigns" view */}
+            {showAdmins && campaign?.campaignAdmin?.length > 0 && (() => {
+              const admins = campaign.campaignAdmin.filter((ca) => ca.admin?.user);
+              const mainAdmin = admins[0];
+              const additionalCount = admins.length - 1;
+
+              return (
+                <Stack direction="row" alignItems="center" spacing={1} color="text.disabled">
+                  <Avatar
+                    src={mainAdmin?.admin?.user?.photoURL}
+                    alt={mainAdmin?.admin?.user?.name}
+                    sx={{ width: 16, height: 16, fontSize: '0.5rem' }}
+                  >
+                    {mainAdmin?.admin?.user?.name?.charAt(0)}
+                  </Avatar>
+                  <Typography variant="caption">
+                    {mainAdmin?.admin?.user?.name}
+                    {additionalCount > 0 && ` +${additionalCount}`}
+                  </Typography>
+                </Stack>
+              );
+            })()}
           </Box>
 
           <IconButton
@@ -136,7 +158,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
         sx={{ width: 140 }}
       >
         <MenuItem
-          disabled={isDisabled}
+          disabled={isDisabled || viewOnly}
           onClick={() => {
             popover.onClose();
             onView();
@@ -179,4 +201,6 @@ CampaignList.propTypes = {
   onView: PropTypes.func,
   onEdit: PropTypes.func,
   onDelete: PropTypes.func,
+  showAdmins: PropTypes.bool,
+  viewOnly: PropTypes.bool,
 };

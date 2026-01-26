@@ -22,7 +22,7 @@ import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
 import { PhotoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
-export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
+export default function V4PhotoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
@@ -374,6 +374,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                             submission={submission}
                             onUpdate={onUpdate}
                             onViewLogs={() => setShowFeedbackLogs(true)}
+                            isDisabled={isDisabled}
                           />
                         ) : (
                           <FeedbackSection
@@ -402,6 +403,7 @@ export default function V4PhotoSubmission({ submission, campaign, onUpdate }) {
                         handleRequestChanges={handleRequestChanges}
                         hasPostingLink={hasPostingLink}
                         onViewLogs={() => setShowFeedbackLogs(true)}
+                        isDisabled={isDisabled}
                       />
                     </>
                   )}
@@ -577,4 +579,5 @@ V4PhotoSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };

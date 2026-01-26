@@ -6,7 +6,7 @@ import CampaignItem from './campaign-item';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignLists({ campaigns }) {
+export default function CampaignLists({ campaigns, showAdmins = false }) {
   // const [page, setPage] = useState(1);
   // const MAX_ITEM = 9;
 
@@ -32,7 +32,7 @@ export default function CampaignLists({ campaigns }) {
           <CampaignItem key={campaign.id} campaign={campaign} status={campaign?.status} />
         ))} */}
         {campaigns?.map((campaign) => (
-          <CampaignItem key={campaign?.id} campaign={campaign} status={campaign?.status} />
+          <CampaignItem key={campaign?.id} campaign={campaign} status={campaign?.status} showAdmins={showAdmins} />
         ))}
       </Box>
 
@@ -55,4 +55,5 @@ export default function CampaignLists({ campaigns }) {
 
 CampaignLists.propTypes = {
   campaigns: PropTypes.array,
+  showAdmins: PropTypes.bool,
 };
