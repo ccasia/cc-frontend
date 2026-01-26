@@ -352,14 +352,12 @@ const CampaignTargetAudience = () => {
       </Box>
 
       {/* Geographic Focus */}
-      <Box mt={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box mt={2} sx={{ display: { xs: 'inherit', sm: 'flex' },  justifyContent: 'center' }}>
         <FormField label="Geographic Focus">
-          <Stack spacing={1} direction="row">
+          <Stack spacing={1} direction="row" minWidth={{ xs: '100%', sm: 400 }}>
             <RHFSelectV2
               name="geographicFocus"
               placeholder="Select Geographic Focus"
-              multiple={false}
-              sx={{ minWidth: { sm: geographicFocus === 'others' ? 150 : 400 } }}
             >
               {filteredGeographicFocusOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -371,7 +369,7 @@ const CampaignTargetAudience = () => {
               <RHFTextField
                 name="geographicFocusOthers"
                 placeholder="Geographic Focus"
-                sx={{ minWidth: { xs: 250, sm: 300 } }}
+                sx={{ minWidth: { xs: '50%', sm: 300 } }}
               />
             )}
           </Stack>

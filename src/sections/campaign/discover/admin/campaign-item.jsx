@@ -73,23 +73,53 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     setAnchorEl(null);
   };
 
-  // Handle open in new tab
+  // Check if tab exists (for menu item text)
+  const checkTabExists = () => {
+    if (typeof window !== 'undefined') {
+      if (!window.campaignTabs) {
+        try {
+          const storedTabs = localStorage.getItem('campaignTabs');
+          window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
+        } catch (error) {
+          console.error('Error loading campaign tabs from localStorage:', error);
+          window.campaignTabs = [];
+        }
+      }
+      return window.campaignTabs?.some((tab) => tab.id === campaign.id) || false;
+    }
+    return false;
+  };
+
+  // Handle open in new tab / close tab
   const handleOpenInNewTab = (event) => {
     event.stopPropagation();
 
     const campaignName = campaign?.name || 'Campaign Details';
 
+    // Initialize window.campaignTabs if it doesn't exist
+    if (typeof window !== 'undefined') {
+      if (!window.campaignTabs) {
+        try {
+          const storedTabs = localStorage.getItem('campaignTabs');
+          window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
+        } catch (error) {
+          console.error('Error loading campaign tabs from localStorage:', error);
+          window.campaignTabs = [];
+        }
+      }
+    }
+
     // Check if this campaign is already in campaignTabs
-    const tabExists = window.campaignTabs.some((tab) => tab.id === campaign.id);
+    const tabExists = window.campaignTabs?.some((tab) => tab.id === campaign.id) || false;
 
     if (tabExists) {
-      // If tab already exists, update the name to ensure it's current
-      window.campaignTabs = window.campaignTabs.map((tab) => {
-        if (tab.id === campaign.id) {
-          return { ...tab, name: campaignName };
-        }
-        return tab;
-      });
+      // If tab exists, close/remove it
+      window.campaignTabs = window.campaignTabs.filter((tab) => tab.id !== campaign.id);
+      
+      // Remove from status tracking
+      if (window.campaignTabsStatus && window.campaignTabsStatus[campaign.id]) {
+        delete window.campaignTabsStatus[campaign.id];
+      }
 
       // Save updated tabs to localStorage
       try {
@@ -99,10 +129,12 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       }
     } else {
       // If tab doesn't exist yet, add it to campaignTabs
-      window.campaignTabs.push({
-        id: campaign.id,
-        name: campaignName,
-      });
+      if (window.campaignTabs) {
+        window.campaignTabs.push({
+          id: campaign.id,
+          name: campaignName,
+        });
+      }
 
       // Update status tracking for tabs
       if (typeof window !== 'undefined') {
@@ -582,16 +614,16 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             sx={{
               borderRadius: 1,
               backgroundColor: 'white',
-              color: 'black',
+              color: checkTabExists() ? '#FF3B30' : 'black',
               fontWeight: 600,
               fontSize: '0.95rem',
               p: 1.5,
               '&:hover': {
-                backgroundColor: '#f5f5f5',
+                backgroundColor: checkTabExists() ? '#FFEBEE' : '#f5f5f5',
               },
             }}
           >
-            Open in New Tab
+            {checkTabExists() ? 'Close Tab' : 'Open in New Tab'}
           </MenuItem>
 
           {/* Activate Campaign - Different behavior based on user role and campaign status */}

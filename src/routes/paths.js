@@ -129,6 +129,9 @@ export const paths = {
     packages: {
       root: `${ROOTS.DASHBOARD}/packages`,
     },
+    creditTier: {
+      root: `${ROOTS.DASHBOARD}/credit-tier`,
+    },
     report: {
       root: `${ROOTS.DASHBOARD}/report`,
     },
