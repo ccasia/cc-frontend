@@ -402,6 +402,7 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     submissionVersion: 'v2',
 
     isV4Submission: false,
+    isCreditTier: false,
   };
 
   const methods = useForm({

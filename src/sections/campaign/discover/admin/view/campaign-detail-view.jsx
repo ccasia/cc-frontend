@@ -774,8 +774,8 @@ const CampaignDetailView = ({ id }) => {
               src="/assets/icons/overview/editButton.svg"
               alt="edit"
               style={{
-                width: 64,
-                height: 64,
+                width: 18,
+                height: 18,
                 opacity: isDisabled ? 0.3 : 1,
               }}
             />
