@@ -50,23 +50,24 @@ import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 export default function ActivateCampaignDialog({ open, onClose, campaignId, onSuccess }) {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
-  
+
   // Check if user is superadmin/CSL
   const isCSL = user?.admin?.role?.name === 'CSL';
   const isSuperAdmin = user?.admin?.mode === 'god';
   const isSuperUser = isCSL || isSuperAdmin;
-  
+
   // Check if user is CSM (for completing activation)
-  const isCSM = user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
-  
+  const isCSM =
+    user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
+
   console.log('ActivateCampaignDialog - User check:', {
     userRole: user?.role,
     adminMode: user?.admin?.mode,
     adminRole: user?.admin?.role?.name,
     isSuperUser,
-    isCSM
+    isCSM,
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [campaignType, setCampaignType] = useState('');
@@ -80,18 +81,76 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   const deliverablesWatch = deliverablesForm.watch('deliverables');
   const [campaignManagers, setCampaignManagers] = useState([]);
   const [agreementTemplateId, setAgreementTemplateId] = useState('');
-  
+
   const [adminOptions, setAdminOptions] = useState([]);
   const [, setAgreementTemplates] = useState([]); // agreementTemplates unused
   const [campaignDetails, setCampaignDetails] = useState(null);
-  
+
+  console.log('Campaign details: ', campaignDetails);
+
   // Posting dates state
   const [postingStartDate, setPostingStartDate] = useState(null);
   const [postingEndDate, setPostingEndDate] = useState(null);
-  
-  // Step state (1: Admin Assignment, 2: Agreement, 3: Campaign Type, 4: Deliverables, 5: Posting Dates)
+
+  // Step state (0: Confirm with existing details, 1: Admin Assignment, 2: Agreement, 3: Campaign Type, 4: Deliverables, 5: Posting Dates)
   const [currentStep, setCurrentStep] = useState(1);
-  
+
+  // Check if all campaign details already exist
+  const checkAllDetailsExist = useCallback(() => {
+    if (!campaignDetails) return false;
+
+    // 1. Admin assigned (campaignDetails.campaignAdmin array)
+    const hasAdmin = campaignDetails.campaignAdmin && campaignDetails.campaignAdmin.length > 0;
+
+    // 2. Agreement template (campaignDetails.agreementTemplate)
+    const hasAgreementTemplate = !!campaignDetails.agreementTemplate;
+
+    // 3. Campaign type (campaignDetails.campaignType)
+    const hasCampaignType = !!campaignDetails.campaignType;
+
+    // 4. Deliverables (photos, rawFootages, or both false = WITHOUT_RAW_PHOTOS)
+    // If photos or rawFootages is explicitly set (true or false), we have deliverables configured
+    const hasDeliverables =
+      campaignDetails.photos !== undefined || campaignDetails.rawFootages !== undefined;
+
+    // 5. Posting dates (campaignDetails.campaignBrief.postingStartDate and postingEndDate)
+    const hasPostingDates =
+      campaignDetails.campaignBrief?.postingStartDate &&
+      campaignDetails.campaignBrief?.postingEndDate;
+
+    console.log('Checking all details exist:', {
+      hasAdmin,
+      hasAgreementTemplate,
+      hasCampaignType,
+      hasDeliverables,
+      hasPostingDates,
+      campaignDetails,
+    });
+
+    return (
+      hasAdmin && hasAgreementTemplate && hasCampaignType && hasDeliverables && hasPostingDates
+    );
+  }, [campaignDetails]);
+
+  // Get existing deliverables display text
+  const getExistingDeliverablesText = useCallback(() => {
+    if (!campaignDetails) return '';
+
+    const deliverables = [];
+    if (campaignDetails.photos) deliverables.push('Photos');
+    if (campaignDetails.rawFootages) deliverables.push('Raw Footage');
+    if (!campaignDetails.photos && !campaignDetails.rawFootages) {
+      deliverables.push('Without Raw Footage and Photos');
+    }
+    return deliverables.join(', ');
+  }, [campaignDetails]);
+
+  // Get campaign type display label
+  const getCampaignTypeLabel = useCallback(() => {
+    if (!campaignDetails?.campaignType) return '';
+    return campaignDetails.campaignType === 'normal' ? 'UGC (With Posting)' : 'UGC (No Posting)';
+  }, [campaignDetails]);
+
   // Form validation
   const [errors, setErrors] = useState({
     campaignType: '',
@@ -114,11 +173,14 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   useEffect(() => {
     if (adminOptions.length > 0) {
       console.log('Admin structure example:', adminOptions[0]);
-      console.log('Admin IDs being used:', adminOptions.map(admin => ({
-        id: admin.id,
-        userId: admin.userId,
-        userName: admin.user?.name
-      })));
+      console.log(
+        'Admin IDs being used:',
+        adminOptions.map((admin) => ({
+          id: admin.id,
+          userId: admin.userId,
+          userName: admin.user?.name,
+        }))
+      );
     }
   }, [adminOptions]);
 
@@ -126,14 +188,17 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   useEffect(() => {
     if (campaignManagers.length > 0) {
       console.log('Selected admin IDs:', campaignManagers);
-      const selectedAdmins = adminOptions.filter(admin => 
+      const selectedAdmins = adminOptions.filter((admin) =>
         campaignManagers.includes(admin.userId)
       );
-      console.log('Selected admin details:', selectedAdmins.map(admin => ({
-        id: admin.id,
-        userId: admin.userId,
-        userName: admin.user?.name
-      })));
+      console.log(
+        'Selected admin details:',
+        selectedAdmins.map((admin) => ({
+          id: admin.id,
+          userId: admin.userId,
+          userName: admin.user?.name,
+        }))
+      );
     }
   }, [campaignManagers, adminOptions]);
 
@@ -141,9 +206,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   useEffect(() => {
     if (open && campaignId) {
       setLoading(true);
-      
+
       // Fetch campaign details
-      axios.get(`/api/campaign/getCampaignById/${campaignId}`)
+      axios
+        .get(`/api/campaign/getCampaignById/${campaignId}`)
         .then((response) => {
           if (response.data) {
             setCampaignDetails(response.data);
@@ -153,26 +219,28 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           console.error('Error fetching campaign details:', error);
           enqueueSnackbar('Failed to fetch campaign details', { variant: 'error' });
         });
-      
+
       // Fetch admin users with CSM role
-      axios.get('/api/admin/getAllAdmins')
+      axios
+        .get('/api/admin/getAllAdmins')
         .then((response) => {
           if (response.data) {
             // Filter for admins with CSM role - check for various possible role names
-            const csmAdmins = response.data.filter(admin => 
-              admin.role?.name === 'CSM' || 
-              admin.role?.name === 'Customer Success Manager' ||
-              admin.role?.name?.toLowerCase().includes('csm') ||
-              admin.role?.name?.toLowerCase().includes('customer success')
+            const csmAdmins = response.data.filter(
+              (admin) =>
+                admin.role?.name === 'CSM' ||
+                admin.role?.name === 'Customer Success Manager' ||
+                admin.role?.name?.toLowerCase().includes('csm') ||
+                admin.role?.name?.toLowerCase().includes('customer success')
             );
-            
+
             if (csmAdmins.length === 0) {
               console.warn('No CSM admins found in the system');
             }
-            
+
             // Log the admin data for debugging
             console.log('CSM Admins found:', csmAdmins);
-            
+
             setAdminOptions(csmAdmins);
           }
         })
@@ -182,9 +250,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           // Set empty array to prevent undefined errors
           setAdminOptions([]);
         });
-      
+
       // Fetch agreement templates
-      axios.get('/api/campaign/template')
+      axios
+        .get('/api/campaign/template')
         .then((response) => {
           if (response.data) {
             setAgreementTemplates(response.data);
@@ -203,22 +272,39 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
   // Update current step when campaign details are loaded
   useEffect(() => {
     if (campaignDetails) {
+      // Pre-populate posting dates if they exist
+      if (campaignDetails.campaignBrief?.postingStartDate) {
+        setPostingStartDate(dayjs(campaignDetails.campaignBrief.postingStartDate));
+      }
+      if (campaignDetails.campaignBrief?.postingEndDate) {
+        setPostingEndDate(dayjs(campaignDetails.campaignBrief.postingEndDate));
+      }
+
+      // Check if all details already exist - if so, go to confirmation step
+      if (checkAllDetailsExist()) {
+        setCurrentStep(0); // Show confirmation dialog
+        return;
+      }
+
       // If user is admin/CSM and campaign is PENDING_ADMIN_ACTIVATION, skip admin assignment (step 1)
-      if ((isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
+      if (
+        (isCSM || user?.role === 'admin') &&
+        campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION'
+      ) {
         setCurrentStep(2); // Start at Agreement Form
-        
+
         // Pre-fill admin managers from campaign admin list
         if (campaignDetails?.campaignAdmin && campaignDetails.campaignAdmin.length > 0) {
-          const assignedAdminIds = campaignDetails.campaignAdmin.map(admin => 
-            admin.adminId || admin.admin?.userId || admin.admin?.user?.id
-          ).filter(Boolean);
+          const assignedAdminIds = campaignDetails.campaignAdmin
+            .map((admin) => admin.adminId || admin.admin?.userId || admin.admin?.user?.id)
+            .filter(Boolean);
           setCampaignManagers(assignedAdminIds);
         }
       } else {
         setCurrentStep(1); // Start at Admin Assignment
       }
     }
-  }, [campaignDetails, isCSM, user?.role]);
+  }, [campaignDetails, isCSM, user?.role, checkAllDetailsExist]);
 
   // Only update RHF state, not local
   const handleDeliverableChange = (valueOrEvent) => {
@@ -243,8 +329,9 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
 
   const validateForm = () => {
     // Skip admin manager validation for admin/CSM users completing activation
-    const skipAdminValidation = (isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION';
-    
+    const skipAdminValidation =
+      (isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION';
+
     const getCampaignManagersError = () => {
       if (skipAdminValidation) return '';
       if (adminOptions.length === 0) {
@@ -258,32 +345,38 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
 
     // Always get the latest deliverables value from RHF
     const currentDeliverables = deliverablesForm.getValues('deliverables');
-    
-    
+
     const getPostingStartDateError = () => {
       if (!postingStartDate) return 'Posting start date is required';
       return '';
     };
-    
+
     const getPostingEndDateError = () => {
       if (!postingEndDate) return 'Posting end date is required';
-      if (postingStartDate && postingEndDate && dayjs(postingEndDate).isBefore(dayjs(postingStartDate))) {
+      if (
+        postingStartDate &&
+        postingEndDate &&
+        dayjs(postingEndDate).isBefore(dayjs(postingStartDate))
+      ) {
         return 'End date must be after start date';
       }
       return '';
     };
-    
+
     const newErrors = {
       campaignType: !campaignType ? 'Campaign type is required' : '',
-      deliverables: !currentDeliverables || currentDeliverables.length === 0 ? 'At least one deliverable is required' : '',
+      deliverables:
+        !currentDeliverables || currentDeliverables.length === 0
+          ? 'At least one deliverable is required'
+          : '',
       campaignManagers: getCampaignManagersError(),
       agreementTemplateId: !agreementTemplateId ? 'Agreement template is required' : '',
       postingStartDate: getPostingStartDateError(),
       postingEndDate: getPostingEndDateError(),
     };
-    
+
     setErrors(newErrors);
-    
+
     return !Object.values(newErrors).some((error) => error);
   };
 
@@ -294,9 +387,9 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       enqueueSnackbar('Please fill in all required fields', { variant: 'error' });
       return;
     }
-    
+
     setSubmitting(true);
-    
+
     try {
       // Log what we're sending to help debug
       const currentDeliverables = deliverablesForm.getValues('deliverables');
@@ -308,36 +401,42 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         postingStartDate: postingStartDate ? dayjs(postingStartDate).toISOString() : null,
         postingEndDate: postingEndDate ? dayjs(postingEndDate).toISOString() : null,
       });
-      
+
       const formData = new FormData();
-      formData.append('data', JSON.stringify({
-        campaignType,
-        deliverables: currentDeliverables,
-        campaignManager: campaignManagers, // These are the admin user IDs
-        agreementTemplateId,
-        postingStartDate: postingStartDate ? dayjs(postingStartDate).toISOString() : null,
-        postingEndDate: postingEndDate ? dayjs(postingEndDate).toISOString() : null,
-        status: 'ACTIVE', // Explicitly set status to ACTIVE
-      }));
-      
-      const response = await axios.post(`/api/campaign/activateClientCampaign/${campaignId}`, formData);
+      formData.append(
+        'data',
+        JSON.stringify({
+          campaignType,
+          deliverables: currentDeliverables,
+          campaignManager: campaignManagers, // These are the admin user IDs
+          agreementTemplateId,
+          postingStartDate: postingStartDate ? dayjs(postingStartDate).toISOString() : null,
+          postingEndDate: postingEndDate ? dayjs(postingEndDate).toISOString() : null,
+          status: 'ACTIVE', // Explicitly set status to ACTIVE
+        })
+      );
+
+      const response = await axios.post(
+        `/api/campaign/activateClientCampaign/${campaignId}`,
+        formData
+      );
       console.log('Activation response:', response.data);
-      
+
       // Get assigned admin names for success message
       const assignedAdminNames = adminOptions
-        .filter(admin => campaignManagers.includes(admin.userId))
-        .map(admin => admin.user?.name || admin.name)
+        .filter((admin) => campaignManagers.includes(admin.userId))
+        .map((admin) => admin.user?.name || admin.name)
         .join(', ');
-      
+
       const campaignName = campaignDetails?.name ? `"${campaignDetails.name}"` : 'Campaign';
-      
-      const successMessage = assignedAdminNames 
+
+      const successMessage = assignedAdminNames
         ? `🎉 ${campaignName} successfully activated and assigned to ${assignedAdminNames}! The campaign is now live and ready for creator submissions.`
         : `🎉 ${campaignName} activated successfully and assigned to CSM admins! The campaign is now live and ready for creator submissions.`;
-      
+
       enqueueSnackbar(successMessage, { variant: 'success' });
       onClose();
-      
+
       // Trigger data revalidation
       if (onSuccess) {
         onSuccess();
@@ -345,7 +444,9 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     } catch (error) {
       console.error('Error activating campaign:', error);
       console.error('Error details:', error.response?.data);
-      enqueueSnackbar(error.response?.data?.message || 'Failed to activate campaign', { variant: 'error' });
+      enqueueSnackbar(error.response?.data?.message || 'Failed to activate campaign', {
+        variant: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -359,14 +460,17 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       setAgreementTemplateId('');
       setPostingStartDate(null);
       setPostingEndDate(null);
-      
+
       // Reset step based on user role and campaign status
-      if ((isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
+      if (
+        (isCSM || user?.role === 'admin') &&
+        campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION'
+      ) {
         setCurrentStep(2); // Start at Agreement Form for admin/CSM
       } else {
         setCurrentStep(1); // Start at Admin Assignment for superadmin/CSL
       }
-      
+
       setErrors({
         campaignType: '',
         deliverables: '',
@@ -375,11 +479,11 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
         postingStartDate: '',
         postingEndDate: '',
       });
-      
+
       onClose();
     }
   };
-  
+
   // Generate new agreement template
   const generateNewAgreement = useCallback(async (template) => {
     try {
@@ -420,55 +524,294 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
     { value: 'normal', label: 'UGC (With Posting)' },
     { value: 'ugc', label: 'UGC (No Posting)' },
   ];
-  
+
   const deliverableOptions = [
     { value: 'PHOTOS', label: 'Photos' },
     { value: 'RAW_FOOTAGES', label: 'Raw Footage' },
     { value: 'WITHOUT_RAW_PHOTOS', label: 'Without Raw Footage and Photos' },
   ];
-  
+
+  // Handler for activating campaign with existing details
+  const handleActivateWithExistingDetails = async () => {
+    setSubmitting(true);
+
+    try {
+      // Build deliverables array from existing campaign data
+      const existingDeliverables = [];
+      if (campaignDetails.photos) existingDeliverables.push('PHOTOS');
+      if (campaignDetails.rawFootages) existingDeliverables.push('RAW_FOOTAGES');
+      if (!campaignDetails.photos && !campaignDetails.rawFootages) {
+        existingDeliverables.push('WITHOUT_RAW_PHOTOS');
+      }
+
+      // Get existing admin IDs
+      const existingAdminIds =
+        campaignDetails.campaignAdmin
+          ?.map((admin) => admin.adminId || admin.admin?.userId || admin.admin?.user?.id)
+          .filter(Boolean) || [];
+
+      console.log('Activating with existing details:', {
+        campaignType: campaignDetails.campaignType,
+        deliverables: existingDeliverables,
+        campaignManager: existingAdminIds,
+        agreementTemplateId: campaignDetails.agreementTemplate?.id,
+        postingStartDate: campaignDetails.campaignBrief?.postingStartDate,
+        postingEndDate: campaignDetails.campaignBrief?.postingEndDate,
+      });
+
+      const formData = new FormData();
+      formData.append(
+        'data',
+        JSON.stringify({
+          campaignType: campaignDetails.campaignType,
+          deliverables: existingDeliverables,
+          campaignManager: existingAdminIds,
+          agreementTemplateId: campaignDetails.agreementTemplate?.id,
+          postingStartDate: campaignDetails.campaignBrief?.postingStartDate,
+          postingEndDate: campaignDetails.campaignBrief?.postingEndDate,
+          status: 'ACTIVE',
+        })
+      );
+
+      const response = await axios.post(
+        `/api/campaign/activateClientCampaign/${campaignId}`,
+        formData
+      );
+      console.log('Activation response:', response.data);
+
+      const campaignName = campaignDetails?.name ? `"${campaignDetails.name}"` : 'Campaign';
+      const successMessage = `🎉 ${campaignName} has been activated successfully! The campaign is now live and ready for creator submissions.`;
+
+      enqueueSnackbar(successMessage, { variant: 'success' });
+      onClose();
+
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error activating campaign:', error);
+      console.error('Error details:', error.response?.data);
+      enqueueSnackbar(error.response?.data?.message || 'Failed to activate campaign', {
+        variant: 'error',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const renderStepContent = () => {
     // Show the full multi-step process for all users
     switch (currentStep) {
+      case 0: // Confirmation dialog when all details exist
+        return (
+          <Box sx={{ py: 2 }}>
+            <Typography
+              variant="h3"
+              sx={{
+                mb: 3,
+                fontFamily: 'Instrument Serif',
+                textAlign: 'left',
+                fontWeight: 100,
+              }}
+            >
+              Confirm Campaign Activation
+            </Typography>
+
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              All required details for this campaign are already configured. Please review the
+              information below and confirm activation.
+            </Typography>
+
+            <Stack spacing={2}>
+              {/* Admin Assignment */}
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <Iconify icon="mdi:account-group" width={24} color="primary.main" />
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Assigned Admins
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {campaignDetails?.campaignAdmin
+                        ?.map((admin) => admin.admin?.user?.name || admin.adminId)
+                        .join(', ') || 'N/A'}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+
+              {/* Agreement Template */}
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <Iconify icon="mdi:file-document-outline" width={24} color="primary.main" />
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Agreement Template
+                    </Typography>
+                    {campaignDetails?.agreementTemplate?.url ? (
+                      <Typography
+                        component="a"
+                        href={campaignDetails.agreementTemplate.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="body2"
+                        sx={{
+                          color: 'primary.main',
+                          textDecoration: 'underline',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            color: 'primary.dark',
+                          },
+                        }}
+                      >
+                        View Template
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Template Selected
+                      </Typography>
+                    )}
+                  </Box>
+                </Stack>
+              </Paper>
+
+              {/* Campaign Type */}
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <Iconify icon="mdi:tag-outline" width={24} color="primary.main" />
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Campaign Type
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {getCampaignTypeLabel()}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+
+              {/* Deliverables */}
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <Iconify icon="mdi:package-variant" width={24} color="primary.main" />
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Deliverables
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {getExistingDeliverablesText()}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+
+              {/* Posting Dates */}
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <Iconify icon="mdi:calendar-range" width={24} color="primary.main" />
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Posting Period
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {dayjs(campaignDetails?.campaignBrief?.postingStartDate).format(
+                        'MMM D, YYYY'
+                      )}{' '}
+                      -{' '}
+                      {dayjs(campaignDetails?.campaignBrief?.postingEndDate).format('MMM D, YYYY')}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+            </Stack>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
+              <Button
+                variant="outlined"
+                onClick={handleClose}
+                disabled={submitting}
+                sx={{
+                  borderRadius: '8px',
+                  border: '1px solid #E7E7E7',
+                  backgroundColor: '#FFFFFF',
+                  color: '#666',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  height: 36,
+                  minWidth: 80,
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  '&:hover': {
+                    backgroundColor: '#F8F9FA',
+                  },
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleActivateWithExistingDetails}
+                disabled={submitting}
+                sx={{
+                  borderRadius: '8px',
+                  backgroundColor: '#1340ff',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  height: 36,
+                  minWidth: 160,
+                  boxShadow: '0px -3px 0px 0px #102387 inset',
+                  '&:hover': {
+                    backgroundColor: '#1935dd',
+                  },
+                }}
+              >
+                {submitting ? <CircularProgress size={20} color="inherit" /> : 'Activate Campaign'}
+              </Button>
+            </Box>
+          </Box>
+        );
+
       case 1: // CS Admin Assignment
         // For admin/CSM users completing activation, show a message that admin is already assigned
-        if ((isCSM || user?.role === 'admin') && campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION') {
+        if (
+          (isCSM || user?.role === 'admin') &&
+          campaignDetails?.status === 'PENDING_ADMIN_ACTIVATION'
+        ) {
           return (
             <Box sx={{ py: 2 }}>
-              <Typography 
-                variant="h3" 
-                sx={{ 
-                  mb: 4, 
+              <Typography
+                variant="h3"
+                sx={{
+                  mb: 4,
                   fontFamily: 'Instrument Serif',
                   textAlign: 'left',
-                  fontWeight: 100
+                  fontWeight: 100,
                 }}
               >
                 Admin Already Assigned
               </Typography>
-              
-              <Paper 
-                variant="outlined" 
-                sx={{ p: 3, borderRadius: 1, bgcolor: '#E8F5E9' }}
-              >
+
+              <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: '#E8F5E9' }}>
                 <Typography variant="body1" color="success.dark" sx={{ mb: 2 }}>
-                  The campaign has already been assigned to an admin/CSM. You can proceed to complete the setup.
+                  The campaign has already been assigned to an admin/CSM. You can proceed to
+                  complete the setup.
                 </Typography>
-                
+
                 {campaignDetails?.campaignAdmin && campaignDetails.campaignAdmin.length > 0 && (
                   <Typography variant="body2" color="text.secondary">
-                    Assigned to: {campaignDetails.campaignAdmin.map(admin => 
-                      admin.admin?.user?.name || admin.adminId
-                    ).join(', ')}
+                    Assigned to:{' '}
+                    {campaignDetails.campaignAdmin
+                      .map((admin) => admin.admin?.user?.name || admin.adminId)
+                      .join(', ')}
                   </Typography>
                 )}
               </Paper>
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <Button
                   variant="contained"
                   onClick={() => setCurrentStep(2)}
-                  sx={{ 
+                  sx={{
                     borderRadius: '8px',
                     backgroundColor: '#1340ff',
                     color: 'white',
@@ -488,34 +831,32 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
             </Box>
           );
         }
-        
+
         // For superadmin/CSL users, show the normal admin assignment form
         return (
           <Box sx={{ py: 2 }}>
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                mb: 4, 
+            <Typography
+              variant="h4"
+              sx={{
+                mb: 4,
                 fontFamily: 'Instrument Serif',
-                textAlign: 'left'
+                textAlign: 'left',
               }}
             >
               Choose CS admin(s) to assign
             </Typography>
-            
+
             {adminOptions.length === 0 && (
               <Box sx={{ mb: 3 }}>
-                <Paper 
-                  variant="outlined" 
-                  sx={{ p: 2, borderRadius: 1, bgcolor: '#FFF9C4' }}
-                >
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: '#FFF9C4' }}>
                   <Typography variant="body1" color="warning.dark">
-                    No CSM admins found in the system. Please create an admin with the CSM role first.
+                    No CSM admins found in the system. Please create an admin with the CSM role
+                    first.
                   </Typography>
                 </Paper>
               </Box>
             )}
-            
+
             <FormControl fullWidth error={!!errors.campaignManagers} sx={{ mb: 4 }}>
               <InputLabel>CS Admins</InputLabel>
               <Select
@@ -526,14 +867,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {selected.map((value) => {
-                      const admin = adminOptions.find(a => a.userId === value);
-                      return (
-                        <Chip 
-                          key={value} 
-                          label={admin?.user?.name || value} 
-                          size="small"
-                        />
-                      );
+                      const admin = adminOptions.find((a) => a.userId === value);
+                      return <Chip key={value} label={admin?.user?.name || value} size="small" />;
                     })}
                   </Box>
                 )}
@@ -543,8 +878,8 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                     <MenuItem key={admin.id} value={admin.userId}>
                       <Stack direction="row" spacing={1} alignItems="center">
                         {admin.user?.photoURL ? (
-                          <Avatar 
-                            src={admin.user.photoURL} 
+                          <Avatar
+                            src={admin.user.photoURL}
                             alt={admin.user?.name}
                             sx={{ width: 32, height: 32 }}
                           />
@@ -555,10 +890,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                         )}
                         <Typography>{admin.user?.name || admin.id}</Typography>
                         {admin.role?.name && (
-                          <Chip 
-                            label={admin.role.name} 
+                          <Chip
+                            label={admin.role.name}
                             size="small"
-                            color="primary" 
+                            color="primary"
                             sx={{ height: 20, fontSize: '0.7rem' }}
                           />
                         )}
@@ -573,13 +908,13 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 <FormHelperText>{errors.campaignManagers}</FormHelperText>
               )}
             </FormControl>
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
               <Button
                 variant="contained"
                 onClick={() => setCurrentStep(2)}
                 disabled={campaignManagers.length === 0}
-                sx={{ 
+                sx={{
                   borderRadius: '8px',
                   backgroundColor: '#1340ff',
                   color: 'white',
@@ -598,27 +933,27 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
             </Box>
           </Box>
         );
-        
+
       case 2: // Agreement Form
         return (
           <Box sx={{ py: 2 }}>
-            <Typography 
-              variant="h3" 
-              sx={{ 
-                mb: 4, 
+            <Typography
+              variant="h3"
+              sx={{
+                mb: 4,
                 fontFamily: 'Instrument Serif',
                 textAlign: 'left',
-                fontWeight: 100
+                fontWeight: 100,
               }}
             >
               Agreement Form
             </Typography>
-            
+
             <Box sx={{ mb: 4 }}>
               {user?.agreementTemplate?.length < 1 ? (
                 <Stack spacing={3} alignItems="flex-start">
-                  <Paper 
-                    variant="outlined" 
+                  <Paper
+                    variant="outlined"
                     sx={{ p: 2, borderRadius: 1, width: '100%', bgcolor: '#FFF9C4' }}
                   >
                     <Typography variant="body1" color="warning.dark">
@@ -636,15 +971,15 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 </Stack>
               ) : (
                 <Stack spacing={3} alignItems="flex-start">
-                  <Paper 
-                    variant="outlined" 
+                  <Paper
+                    variant="outlined"
                     sx={{ p: 2, borderRadius: 1, width: '100%', bgcolor: '#E8F5E9' }}
                   >
                     <Typography variant="body1" color="success.dark">
                       {user?.agreementTemplate?.length} templates found
                     </Typography>
                   </Paper>
-                  
+
                   <Stack direction="row" spacing={2}>
                     <Button
                       size="large"
@@ -666,15 +1001,17 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 </Stack>
               )}
             </Box>
-            
+
             {selectedTemplate && (
               <Box sx={{ mt: 4, mb: 2 }}>
-                <Paper 
-                  variant="outlined" 
-                  sx={{ p: 3, borderRadius: 1, bgcolor: '#F5F5F5' }}
-                >
+                <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: '#F5F5F5' }}>
                   <Stack direction="row" spacing={2} alignItems="center">
-                    <Iconify icon="mdi:file-document-outline" width={40} height={40} color="primary.main" />
+                    <Iconify
+                      icon="mdi:file-document-outline"
+                      width={40}
+                      height={40}
+                      color="primary.main"
+                    />
                     <Stack>
                       <Typography variant="h6">{selectedTemplate.name}</Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -685,12 +1022,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 </Paper>
               </Box>
             )}
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => setCurrentStep(1)}
-                sx={{ 
+                sx={{
                   borderRadius: '8px',
                   border: '1px solid #E7E7E7',
                   backgroundColor: '#FFFFFF',
@@ -707,12 +1044,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               >
                 Back
               </Button>
-              
+
               <Button
                 variant="contained"
                 onClick={() => setCurrentStep(3)}
                 disabled={!agreementTemplateId}
-                sx={{ 
+                sx={{
                   borderRadius: '8px',
                   backgroundColor: '#1340ff',
                   color: 'white',
@@ -731,23 +1068,23 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
             </Box>
           </Box>
         );
-        
+
       case 3: // Campaign Type
         return (
           <Box display="flex" flexDirection="column" gap={2} py={2}>
-            <Typography 
-              variant="h3" 
-              sx={{ 
+            <Typography
+              variant="h3"
+              sx={{
                 fontFamily: 'Instrument Serif',
                 textAlign: 'left',
-                fontWeight: 100
+                fontWeight: 100,
               }}
             >
               Select Campaign Type
             </Typography>
 
-            <Divider sx={{ mb: 1.5 }}/>
-            
+            <Divider sx={{ mb: 1.5 }} />
+
             <FormControl fullWidth error={!!errors.campaignType} sx={{ mb: 4 }}>
               <InputLabel>Campaign Type</InputLabel>
               <Select
@@ -764,16 +1101,14 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                   </MenuItem>
                 ))}
               </Select>
-              {errors.campaignType && (
-                <FormHelperText>{errors.campaignType}</FormHelperText>
-              )}
+              {errors.campaignType && <FormHelperText>{errors.campaignType}</FormHelperText>}
             </FormControl>
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => setCurrentStep(2)}
-                sx={{ 
+                sx={{
                   borderRadius: '8px',
                   border: '1px solid #E7E7E7',
                   backgroundColor: '#FFFFFF',
@@ -790,12 +1125,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
               >
                 Back
               </Button>
-              
+
               <Button
                 variant="contained"
                 onClick={() => setCurrentStep(4)}
                 disabled={!campaignType}
-                sx={{ 
+                sx={{
                   borderRadius: '8px',
                   backgroundColor: '#1340ff',
                   color: 'white',
@@ -814,23 +1149,23 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
             </Box>
           </Box>
         );
-        
+
       case 4: // Campaign Deliverables
         return (
           <FormProvider {...deliverablesForm}>
             <Box display="flex" flexDirection="column" gap={2} py={2}>
-              <Typography 
-                variant="h3" 
-                sx={{ 
+              <Typography
+                variant="h3"
+                sx={{
                   fontFamily: 'Instrument Serif',
                   textAlign: 'left',
-                fontWeight: 100
+                  fontWeight: 100,
                 }}
               >
                 Select Campaign Deliverables
               </Typography>
-              
-              <Divider sx={{ mb: 1 }}/>
+
+              <Divider sx={{ mb: 1 }} />
 
               <FormControl fullWidth error={!!errors.deliverables}>
                 <RHFMultiSelect
@@ -849,7 +1184,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 <Button
                   variant="outlined"
                   onClick={() => setCurrentStep(3)}
-                  sx={{ 
+                  sx={{
                     borderRadius: '8px',
                     border: '1px solid #E7E7E7',
                     backgroundColor: '#FFFFFF',
@@ -873,7 +1208,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                     setCurrentStep(5);
                   }}
                   disabled={!deliverablesWatch || deliverablesWatch.length === 0}
-                  sx={{ 
+                  sx={{
                     borderRadius: '8px',
                     backgroundColor: '#1340ff',
                     color: 'white',
@@ -893,25 +1228,27 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
             </Box>
           </FormProvider>
         );
-        
+
       case 5: // Posting Dates
         return (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Box display="flex" flexDirection="column" gap={2} py={2}>
-              <Typography 
-                variant="h3" 
-                sx={{ 
+              <Typography
+                variant="h3"
+                sx={{
                   fontFamily: 'Instrument Serif',
                   fontWeight: 100,
-                  textAlign: 'left'
+                  textAlign: 'left',
                 }}
               >
                 Set Creator Posting Period
               </Typography>
 
-              <Divider sx={{ mb: 0.5 }}/>
-              
-              <Typography variant='subtitle2' color="text.secondary" mb={-1}>Campaign Posting Period</Typography>
+              <Divider sx={{ mb: 0.5 }} />
+
+              <Typography variant="subtitle2" color="text.secondary" mb={-1}>
+                Campaign Posting Period
+              </Typography>
 
               <Stack spacing={1} direction="row" alignItems="center">
                 <DatePicker
@@ -945,12 +1282,12 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                   }}
                 />
               </Stack>
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
                 <Button
                   variant="outlined"
                   onClick={() => setCurrentStep(4)}
-                  sx={{ 
+                  sx={{
                     borderRadius: '8px',
                     border: '1px solid #E7E7E7',
                     backgroundColor: '#FFFFFF',
@@ -971,7 +1308,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                   variant="contained"
                   onClick={handleActivate}
                   disabled={submitting}
-                  sx={{ 
+                  sx={{
                     borderRadius: '8px',
                     backgroundColor: '#1340ff',
                     color: 'white',
@@ -991,18 +1328,22 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
             </Box>
           </LocalizationProvider>
         );
-        
+
       default:
         return null;
     }
   };
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={handleClose}
       fullWidth
-      maxWidth={currentStep > 2 ? 'sm' : 'md'}
+      maxWidth={(() => {
+        if (currentStep === 0) return 'sm';
+        if (currentStep > 2) return 'sm';
+        return 'md';
+      })()}
       PaperProps={{
         sx: {
           borderRadius: 2,
@@ -1022,7 +1363,7 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
       >
         <Iconify icon="eva:close-fill" width={30} />
       </IconButton>
-      
+
       <DialogContent sx={{ py: 3, px: 3 }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -1063,7 +1404,10 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                 <Box
                   key={template?.id}
                   sx={{
-                    border: selectedTemplate?.id === template?.id ? '3px solid #1340ff' : '1px solid #e0e0e0',
+                    border:
+                      selectedTemplate?.id === template?.id
+                        ? '3px solid #1340ff'
+                        : '1px solid #e0e0e0',
                     borderRadius: 2,
                     overflow: 'hidden',
                     cursor: 'pointer',
@@ -1091,7 +1435,9 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
                     }}
                   />
 
-                  <Box sx={{ width: '100%', height: '100%', overflow: 'auto', scrollbarWidth: 'none' }}>
+                  <Box
+                    sx={{ width: '100%', height: '100%', overflow: 'auto', scrollbarWidth: 'none' }}
+                  >
                     <Document
                       file={template?.url}
                       onLoadSuccess={({ numPages }) => setPages(numPages)}
@@ -1118,14 +1464,15 @@ export default function ActivateCampaignDialog({ open, onClose, campaignId, onSu
           <Button onClick={templateModal.onFalse}>Cancel</Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* PDF Editor Modal for creating new templates */}
       <PDFEditorModal
         open={pdfModal.value}
         onClose={() => {
           pdfModal.onFalse();
           // Refresh templates after creating a new one
-          axios.get('/api/campaign/template')
+          axios
+            .get('/api/campaign/template')
             .then((response) => {
               if (response.data) {
                 setAgreementTemplates(response.data);
@@ -1154,4 +1501,4 @@ ActivateCampaignDialog.propTypes = {
   onClose: PropTypes.func,
   campaignId: PropTypes.string,
   onSuccess: PropTypes.func,
-}; 
+};
