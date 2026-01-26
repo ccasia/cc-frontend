@@ -2,11 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 
-import { Box, Link, Chip, Stack, Avatar, Divider, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { Box, Link, Chip, Stack, Avatar, Divider, Typography, useMediaQuery } from '@mui/material';
 
 import { normalizeUrl } from 'src/utils/normalizeUrl';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -437,10 +436,12 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       </Typography>
                     </Box>
 
-                    <Box>
-                      <Typography sx={SectionTitleStyle}>Geographic Focus</Typography>
-                      <Typography sx={SectionBodyStyle}>{getGeographicFocus()}</Typography>
-                    </Box>
+                    {isPrimary && (
+                      <Box>
+                        <Typography sx={SectionTitleStyle}>Geographic Focus</Typography>
+                        <Typography sx={SectionBodyStyle}>{getGeographicFocus()}</Typography>
+                      </Box>
+                    )}
                   </Stack>
                 </Stack>
               );
@@ -1234,17 +1235,9 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       return uniqueIndustries.length > 0
                         ? uniqueIndustries.join(', ')
                         : 'Not specified';
-                    }
-                    // fallback for old structure (single brand)
-                    if (brands?.industries) {
-                      if (Array.isArray(brands.industries)) {
-                        return brands.industries.length > 0
-                          ? brands.industries.join(', ')
-                          : 'Not specified';
-                      }
-                      return brands.industries;
-                    }
-                    return 'Not specified';
+                    } 
+                      return campaign?.campaignBrief.industries
+                    
                   })(),
                 },
               ].map((item) => (

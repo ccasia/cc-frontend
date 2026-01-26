@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 import { useMemo, useState, useEffect } from 'react';
 import {
   format,
+  isValid,
   parseISO,
   isSameDay,
-  isValid,
   addMonths,
   subMonths,
   endOfWeek,
@@ -17,7 +17,7 @@ import {
 
 import { LoadingButton } from '@mui/lab';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider, DesktopTimePicker } from '@mui/x-date-pickers';
+import { DesktopTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import {
   Box,
   Grid,
@@ -26,19 +26,19 @@ import {
   Avatar,
   Dialog,
   Tooltip,
+  Divider,
   Typography,
   IconButton,
   createTheme,
   ThemeProvider,
   CircularProgress,
-  Divider,
 } from '@mui/material';
 
 import axiosInstance, { fetcher } from 'src/utils/axios';
+import { formatReservationSlot } from 'src/utils/reservation-time';
 
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import { formatReservationSlot } from 'src/utils/reservation-time';
 
 const parseLiteralToLocal = (isoStr) => {
   if (!isoStr) return null;
@@ -249,6 +249,11 @@ export default function AdminScheduleReservationDialog({
   const handleSchedule = async () => {
     setLoading(true);
     try {
+      if (startTime === null || endTime === null) {
+        enqueueSnackbar('Select a start and end time.', { variant: 'warning' });
+        return;
+      }
+
       const startPart = format(new Date(startTime), 'HH:mm:ss');
       const endPart = format(new Date(endTime), 'HH:mm:ss');
 
@@ -644,7 +649,7 @@ export default function AdminScheduleReservationDialog({
           variant="contained"
           onClick={handleSchedule}
           loading={loading}
-          disabled={hasConflict || endTime === null || startTime === null}
+          disabled={hasConflict}
           sx={{ height: 44, bgcolor: '#3A3A3C', px: 4, textTransform: 'none', fontWeight: 600 }}
         >
           Confirm

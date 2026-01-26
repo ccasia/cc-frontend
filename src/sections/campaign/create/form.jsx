@@ -37,9 +37,9 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
 import PackageCreateDialog from 'src/sections/packages/package-dialog';
-import LogisticRemarks from 'src/sections/campaign/create/steps/logistic-remarks';
-import CampaignLogistics from 'src/sections/campaign/create/steps/campaign-logistics';
-import ReservationSlotsV2 from 'src/sections/campaign/create/steps/reservation-slots';
+import LogisticRemarks from 'src/sections/campaign/create/stepsV2/logistic-remarks';
+import CampaignLogistics from 'src/sections/campaign/create/stepsV2/campaign-logistics';
+import ReservationSlotsV2 from 'src/sections/campaign/create/stepsV2/reservation-slots';
 import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
 
 import CreateBrand from './brandDialog';
@@ -62,7 +62,7 @@ const steps = [
   { title: 'Logistics (Optional)', logo: '📦', color: '#D8FF01' },
   { title: 'Reservation Slots', logo: '🗓️', color: '#D8FF01' },
   { title: 'Additional Logistic Remarks ( Optional )', logo: '✏️', color: '#D8FF01' },
-  { title: 'Finalise Campaign', logo: '🖇📝', color: '#FF3500' },
+  { title: 'Finalise Campaign', logo: '📝', color: '#FF3500' },
 ];
 
 const PDFEditor = lazy(() => import('./pdf-editor'));

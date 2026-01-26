@@ -22,7 +22,7 @@ import { VideoModal } from '../../../creator-stuff/submissions/firstDraft/media-
 
 // ----------------------------------------------------------------------
 
-export default function MobileRawFootageSubmission({ submission, campaign, onUpdate }) {
+export default function MobileRawFootageSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
@@ -453,6 +453,7 @@ export default function MobileRawFootageSubmission({ submission, campaign, onUpd
             handleApprove={handleApprove}
             handleRequestChanges={handleRequestChanges}
             onViewLogs={() => setShowFeedbackLogs(true)}
+            isDisabled={isDisabled}
           />
         </>
       )}
@@ -479,4 +480,5 @@ MobileRawFootageSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
   onUpdate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };

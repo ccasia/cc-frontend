@@ -33,6 +33,9 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
+  dashboard: {
+    stats: '/api/dashboard/stats',
+  },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
   },
@@ -95,6 +98,7 @@ export const endpoints = {
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',
+    getCreatorCount: '/api/creator/count',
     getCreatorById: '/api/creator/getCreatorByID',
     deleteCreator: '/api/creator/delete',
     updateCreator: '/api/creator/update-creator',
@@ -179,6 +183,7 @@ export const endpoints = {
   campaign: {
     total: '/api/campaign/total',
     createCampaign: '/api/campaign/createCampaign',
+    createCampaignV2: '/api/campaign/createCampaignV2',
     spreadsheet: '/api/campaign/spreadsheet',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
     updateOrCreateDefaultTimeline: '/api/campaign/updateOrCreateDefaultTimeline',
@@ -235,8 +240,12 @@ export const endpoints = {
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',
+    editCampaignObjectives: '/api/campaign/editCampaignObjectives',
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',
     editCampaignRequirements: '/api/campaign/editCampaignRequirements',
+    editCampaignLogistics: '/api/campaign/editCampaignLogistics',
+    editCampaignFinalise: '/api/campaign/editCampaignFinalise',
+    editCampaignAdditionalDetails: '/api/campaign/editCampaignAdditionalDetails',
     editCampaignDosAndDonts: '/api/campaign/editCampaignDosandDonts',
     editCampaignImages: (id) => `/api/campaign/editCampaignImages/${id}`,
     editCampaignAttachments: (id) => `/api/campaign/editCampaignAttachments/${id}`,
@@ -338,6 +347,8 @@ export const endpoints = {
     updateInvoice: '/api/invoice/update',
     create: '/api/invoice/create',
     getInvoicesByCampaignId: (id) => `/api/invoice/getInvoicesByCampaignId/${id}`,
+    getStats: '/api/invoice/stats', // Stats for all invoices
+    getStatsByCampaign: (campaignId) => `/api/invoice/stats/${campaignId}`, // Stats for specific campaign
     getInvoiceById: (id) => `/api/invoice/${id}`,
     getInvoicesByCreatorAndCampiagn: (creatorId, campaignId) =>
       `/api/invoice/creator/${creatorId}/campaign/${campaignId}`,

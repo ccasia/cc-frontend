@@ -39,7 +39,7 @@ import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
+export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus, showAdmins = false }) {
   console.log('CampaignItem rendered:', {
     campaignId: campaign?.id,
     campaignStatus: campaign?.status,
@@ -73,23 +73,53 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     setAnchorEl(null);
   };
 
-  // Handle open in new tab
+  // Check if tab exists (for menu item text)
+  const checkTabExists = () => {
+    if (typeof window !== 'undefined') {
+      if (!window.campaignTabs) {
+        try {
+          const storedTabs = localStorage.getItem('campaignTabs');
+          window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
+        } catch (error) {
+          console.error('Error loading campaign tabs from localStorage:', error);
+          window.campaignTabs = [];
+        }
+      }
+      return window.campaignTabs?.some((tab) => tab.id === campaign.id) || false;
+    }
+    return false;
+  };
+
+  // Handle open in new tab / close tab
   const handleOpenInNewTab = (event) => {
     event.stopPropagation();
 
     const campaignName = campaign?.name || 'Campaign Details';
 
+    // Initialize window.campaignTabs if it doesn't exist
+    if (typeof window !== 'undefined') {
+      if (!window.campaignTabs) {
+        try {
+          const storedTabs = localStorage.getItem('campaignTabs');
+          window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
+        } catch (error) {
+          console.error('Error loading campaign tabs from localStorage:', error);
+          window.campaignTabs = [];
+        }
+      }
+    }
+
     // Check if this campaign is already in campaignTabs
-    const tabExists = window.campaignTabs.some((tab) => tab.id === campaign.id);
+    const tabExists = window.campaignTabs?.some((tab) => tab.id === campaign.id) || false;
 
     if (tabExists) {
-      // If tab already exists, update the name to ensure it's current
-      window.campaignTabs = window.campaignTabs.map((tab) => {
-        if (tab.id === campaign.id) {
-          return { ...tab, name: campaignName };
-        }
-        return tab;
-      });
+      // If tab exists, close/remove it
+      window.campaignTabs = window.campaignTabs.filter((tab) => tab.id !== campaign.id);
+      
+      // Remove from status tracking
+      if (window.campaignTabsStatus && window.campaignTabsStatus[campaign.id]) {
+        delete window.campaignTabsStatus[campaign.id];
+      }
 
       // Save updated tabs to localStorage
       try {
@@ -99,10 +129,12 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       }
     } else {
       // If tab doesn't exist yet, add it to campaignTabs
-      window.campaignTabs.push({
-        id: campaign.id,
-        name: campaignName,
-      });
+      if (window.campaignTabs) {
+        window.campaignTabs.push({
+          id: campaign.id,
+          name: campaignName,
+        });
+      }
 
       // Update status tracking for tabs
       if (typeof window !== 'undefined') {
@@ -429,6 +461,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
           </Typography>
         </Stack>
 
+        {/* Calendar row - with menu button when admins are NOT shown */}
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Stack direction="row" alignItems="center" spacing={1.2}>
             <img
@@ -453,220 +486,295 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             </Typography>
           </Stack>
 
-          <IconButton
-            size="small"
-            onClick={handleClick}
-            sx={{
-              ml: 1,
-              p: 0.5,
-              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-            }}
-          >
-            <MoreHorizIcon fontSize="small" />
-          </IconButton>
-
-          <Menu
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleClose}
-            onClick={handleClose}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            slotProps={{
-              paper: {
-                sx: {
-                  backgroundColor: 'white',
-                  backgroundImage: 'none',
-                  boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '2px solid #e7e7e7',
-                  borderRadius: 1,
-                  mt: -1,
-                  width: 200,
-                  overflow: 'visible',
-                },
-              },
-            }}
-            MenuListProps={{
-              sx: {
-                backgroundColor: 'white',
-                p: 0.5,
-              },
-            }}
-          >
-            <MenuItem
-              onClick={handleOpenInNewTab}
+          {/* Show menu button when admins are NOT shown */}
+          {(!showAdmins || !campaign?.campaignAdmin?.length) && (
+            <IconButton
+              size="small"
+              onClick={handleClick}
               sx={{
-                borderRadius: 1,
-                backgroundColor: 'white',
-                color: 'black',
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                p: 1.5,
-                '&:hover': {
-                  backgroundColor: '#f5f5f5',
-                },
+                ml: 1,
+                p: 0.5,
+                '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
               }}
             >
-              Open in New Tab
-            </MenuItem>
+              <MoreHorizIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Stack>
 
-            {/* Activate Campaign - Different behavior based on user role and campaign status */}
-            {(() => {
-              // Show button for superadmin/CSL to assign admin (initial activation)
-              const showForInitialActivation =
-                canInitialActivate &&
-                (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED');
+        {/* Show managing admins - only in "All" tab - with menu button */}
+        {showAdmins && campaign?.campaignAdmin?.length > 0 && (() => {
+          // Helper to check if an admin is a Client (not CSM staff)
+          const isClientAdmin = (ca) => {
+            const roleName = ca.admin?.role?.name;
+            const userRole = ca.admin?.user?.role;
+            // Client admins have role.name === 'Client' OR user.role === 'client'
+            return roleName === 'Client' || userRole === 'client';
+          };
 
-              // Show button for assigned admin/CSM to complete activation
-              const showForCompleteActivation =
-                canCompleteActivation && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+          // Helper to check if an admin is a CSM
+          const isCSMAdmin = (ca) => {
+            const roleName = ca.admin?.role?.name;
+            return roleName === 'CSM' || roleName === 'Customer Success Manager';
+          };
 
-              // Show disabled button for superadmin/CSL after admin assignment (waiting for admin to complete)
-              const showDisabledForSuperadmin =
-                (isCSL || isSuperAdmin) &&
-                campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
-                !isUserAssignedToCampaign;
+          // First, filter to only CSM admins (exclude Client admins entirely)
+          const csmAdmins = campaign.campaignAdmin.filter((ca) => {
+            if (!ca.admin?.user) return false;
+            return isCSMAdmin(ca) && !isClientAdmin(ca);
+          });
 
-              // TEMPORARY: Always show button for admin/CSM when status is PENDING_ADMIN_ACTIVATION
-              const showTemporaryForAdmin =
-                (isAdmin || isCSM) && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+          // If no CSM admins, fall back to any non-client admin
+          const nonClientAdmins = campaign.campaignAdmin.filter((ca) => {
+            if (!ca.admin?.user) return false;
+            return !isClientAdmin(ca);
+          });
 
-              const shouldShow =
-                showForInitialActivation ||
-                showForCompleteActivation ||
-                showDisabledForSuperadmin ||
-                showTemporaryForAdmin;
+          const admins = csmAdmins.length > 0 ? csmAdmins : nonClientAdmins;
+          if (admins.length === 0) return null;
 
-              console.log('Menu condition check:', {
-                campaignStatus: campaign?.status,
-                canInitialActivate,
-                canCompleteActivation,
-                showForInitialActivation,
-                showForCompleteActivation,
-                showDisabledForSuperadmin,
-                showTemporaryForAdmin,
-                shouldShow,
-                isUserAssignedToCampaign,
-                userRole: user?.role,
-                adminMode: user?.admin?.mode,
-                adminRole: user?.admin?.role?.name,
-              });
+          const mainAdmin = admins[0];
+          const additionalCount = admins.length - 1;
 
-              return shouldShow;
-            })() && (
-              <MenuItem
-                onClick={(event) => {
-                  event.stopPropagation();
+          return (
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Avatar
+                  src={mainAdmin?.admin?.user?.photoURL}
+                  alt={mainAdmin?.admin?.user?.name}
+                  sx={{ width: 20, height: 20, fontSize: '0.625rem' }}
+                >
+                  {mainAdmin?.admin?.user?.name?.charAt(0)}
+                </Avatar>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#8e8e93',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  {mainAdmin?.admin?.user?.name}
+                  {additionalCount > 0 && ` +${additionalCount}`}
+                </Typography>
+              </Stack>
 
-                  // Don't do anything if disabled
-                  if (isDisabled) {
-                    return;
-                  }
-
-                  alert(
-                    `Activate Campaign clicked! User: ${user?.name}, Role: ${
-                      user?.role
-                    }, Admin Mode: ${user?.admin?.mode}`
-                  );
-
-                  console.log('Activate Campaign clicked:', {
-                    userRole: user?.role,
-                    adminMode: user?.admin?.mode,
-                    adminRole: user?.admin?.role?.name,
-                    campaignStatus: campaign?.status,
-                    canInitialActivate,
-                    canCompleteActivation,
-                    isCSL,
-                    isSuperAdmin,
-                    isCSM,
-                  });
-
-                  // For superadmin on pending campaigns: use initial activation (admin assignment only)
-                  if (
-                    canInitialActivate &&
-                    (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')
-                  ) {
-                    console.log('Opening InitialActivateDialog (admin assignment only)');
-                    setInitialActivateDialogOpen(true);
-                  } else if (campaign?.status === 'PENDING_ADMIN_ACTIVATION') {
-                    // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
-                    console.log('Opening ActivateDialog (full setup)');
-                    setActivateDialogOpen(true);
-                  }
-                  handleClose();
-                }}
-                disabled={isDisabled}
+              <IconButton
+                size="small"
+                onClick={handleClick}
                 sx={{
-                  borderRadius: 1,
-                  backgroundColor: 'white',
-                  color: isDisabled ? '#999' : 'black',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  p: 1.5,
-                  cursor: isDisabled ? 'not-allowed' : 'pointer',
-                  '&:hover': {
-                    backgroundColor: isDisabled ? 'white' : '#f5f5f5',
-                  },
-                  '&.Mui-disabled': {
-                    backgroundColor: 'white',
-                    color: '#999',
-                  },
+                  ml: 1,
+                  p: 0.5,
+                  '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
                 }}
               >
-                {isDisabled ? 'Waiting for Admin Activation' : 'Activate Campaign'}
-              </MenuItem>
-            )}
+                <MoreHorizIcon fontSize="small" />
+              </IconButton>
+            </Stack>
+          );
+        })()}
+
+        <Menu
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          onClick={handleClose}
+          anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          slotProps={{
+            paper: {
+              sx: {
+                backgroundColor: 'white',
+                backgroundImage: 'none',
+                boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.1)',
+                border: '1px solid #e7e7e7',
+                borderBottom: '2px solid #e7e7e7',
+                borderRadius: 1,
+                mt: -1,
+                width: 200,
+                overflow: 'visible',
+              },
+            },
+          }}
+          MenuListProps={{
+            sx: {
+              backgroundColor: 'white',
+              p: 0.5,
+            },
+          }}
+        >
+          <MenuItem
+            onClick={handleOpenInNewTab}
+            sx={{
+              borderRadius: 1,
+              backgroundColor: 'white',
+              color: checkTabExists() ? '#FF3B30' : 'black',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              p: 1.5,
+              '&:hover': {
+                backgroundColor: checkTabExists() ? '#FFEBEE' : '#f5f5f5',
+              },
+            }}
+          >
+            {checkTabExists() ? 'Close Tab' : 'Open in New Tab'}
+          </MenuItem>
+
+          {/* Activate Campaign - Different behavior based on user role and campaign status */}
+          {(() => {
+            // Show button for superadmin/CSL to assign admin (initial activation)
+            const showForInitialActivation =
+              canInitialActivate &&
+              (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED');
+
+            // Show button for assigned admin/CSM to complete activation
+            const showForCompleteActivation =
+              canCompleteActivation && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+
+            // Show disabled button for superadmin/CSL after admin assignment (waiting for admin to complete)
+            const showDisabledForSuperadmin =
+              (isCSL || isSuperAdmin) &&
+              campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
+              !isUserAssignedToCampaign;
+
+            // TEMPORARY: Always show button for admin/CSM when status is PENDING_ADMIN_ACTIVATION
+            const showTemporaryForAdmin =
+              (isAdmin || isCSM) && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+
+            const shouldShow =
+              showForInitialActivation ||
+              showForCompleteActivation ||
+              showDisabledForSuperadmin ||
+              showTemporaryForAdmin;
+
+            console.log('Menu condition check:', {
+              campaignStatus: campaign?.status,
+              canInitialActivate,
+              canCompleteActivation,
+              showForInitialActivation,
+              showForCompleteActivation,
+              showDisabledForSuperadmin,
+              showTemporaryForAdmin,
+              shouldShow,
+              isUserAssignedToCampaign,
+              userRole: user?.role,
+              adminMode: user?.admin?.mode,
+              adminRole: user?.admin?.role?.name,
+            });
+
+            return shouldShow;
+          })() && (
             <MenuItem
               onClick={(event) => {
                 event.stopPropagation();
-                setCampaignLogIsOpen(true);
+
+                // Don't do anything if disabled
+                if (isDisabled) {
+                  return;
+                }
+
+                alert(
+                  `Activate Campaign clicked! User: ${user?.name}, Role: ${
+                    user?.role
+                  }, Admin Mode: ${user?.admin?.mode}`
+                );
+
+                console.log('Activate Campaign clicked:', {
+                  userRole: user?.role,
+                  adminMode: user?.admin?.mode,
+                  adminRole: user?.admin?.role?.name,
+                  campaignStatus: campaign?.status,
+                  canInitialActivate,
+                  canCompleteActivation,
+                  isCSL,
+                  isSuperAdmin,
+                  isCSM,
+                });
+
+                // For superadmin on pending campaigns: use initial activation (admin assignment only)
+                if (
+                  canInitialActivate &&
+                  (campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'SCHEDULED')
+                ) {
+                  console.log('Opening InitialActivateDialog (admin assignment only)');
+                  setInitialActivateDialogOpen(true);
+                } else if (campaign?.status === 'PENDING_ADMIN_ACTIVATION') {
+                  // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
+                  console.log('Opening ActivateDialog (full setup)');
+                  setActivateDialogOpen(true);
+                }
                 handleClose();
               }}
+              disabled={isDisabled}
               sx={{
                 borderRadius: 1,
                 backgroundColor: 'white',
-                color: 'black',
+                color: isDisabled ? '#999' : 'black',
                 fontWeight: 600,
                 fontSize: '0.95rem',
                 p: 1.5,
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
                 '&:hover': {
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: isDisabled ? 'white' : '#f5f5f5',
+                },
+                '&.Mui-disabled': {
+                  backgroundColor: 'white',
+                  color: '#999',
                 },
               }}
             >
-              View Log
+              {isDisabled ? 'Waiting for Admin Activation' : 'Activate Campaign'}
             </MenuItem>
-            <MenuItem
-              onClick={(event) => {
-                event.stopPropagation();
-                handleCopyLink();
-              }}
-              sx={{
-                borderRadius: 1,
-                backgroundColor: 'white',
-                color: !isCopy.value ? 'black' : 'success.main',
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                p: 1.5,
-                '&:hover': {
-                  backgroundColor: '#f5f5f5',
-                },
-              }}
-            >
-              {isCopy.value && (
-                <Iconify icon="charm:tick" width={20} sx={{ mr: 1 }} color="success.main" />
-              )}
-              Copy Link
-            </MenuItem>
-          </Menu>
-        </Stack>
+          )}
+          <MenuItem
+            onClick={(event) => {
+              event.stopPropagation();
+              setCampaignLogIsOpen(true);
+              handleClose();
+            }}
+            sx={{
+              borderRadius: 1,
+              backgroundColor: 'white',
+              color: 'black',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              p: 1.5,
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+            }}
+          >
+            View Log
+          </MenuItem>
+          <MenuItem
+            onClick={(event) => {
+              event.stopPropagation();
+              handleCopyLink();
+            }}
+            sx={{
+              borderRadius: 1,
+              backgroundColor: 'white',
+              color: !isCopy.value ? 'black' : 'success.main',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              p: 1.5,
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+            }}
+          >
+            {isCopy.value && (
+              <Iconify icon="charm:tick" width={20} sx={{ mr: 1 }} color="success.main" />
+            )}
+            Copy Link
+          </MenuItem>
+        </Menu>
       </Stack>
     </Box>
   );
@@ -772,4 +880,5 @@ CampaignItem.propTypes = {
   campaign: PropTypes.object,
   status: PropTypes.bool,
   pitchStatus: PropTypes.string,
+  showAdmins: PropTypes.bool,
 };

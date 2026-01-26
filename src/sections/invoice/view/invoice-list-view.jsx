@@ -1,6 +1,6 @@
 import sumBy from 'lodash/sumBy';
 import PropTypes from 'prop-types';
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
@@ -28,6 +28,8 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
+import useGetInvoiceStats from 'src/hooks/use-get-invoice-stats';
+import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -77,7 +79,7 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceListView({ campId, invoices }) {
+export default function InvoiceListView({ campId, invoices, isDisabled: propIsDisabled = false }) {
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const settings = useSettingsContext();
@@ -94,9 +96,43 @@ export default function InvoiceListView({ campId, invoices }) {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(invoices?.campaigns ? invoices.campaigns : _invoices);
-
+  // Initialize filters state first (needed for hook calls below)
   const [filters, setFilters] = useState(defaultFilters);
+
+  // OPTIMIZED: Use invoice stats hook for tab counts
+  const { stats: invoiceStats, isLoading: statsLoading } = useGetInvoiceStats(campId);
+
+  // OPTIMIZED: Use optimized hook with pagination and filtering
+  const {
+    campaigns: invoicesData,
+    pagination,
+    isLoading: invoicesLoading,
+    mutate: mutateInvoices,
+  } = useGetInvoicesByCampId(campId, {
+    page: table.page + 1, // API uses 1-based pagination
+    limit: table.rowsPerPage,
+    status: filters.status !== 'all' ? filters.status : undefined,
+    currency: filters.currency || undefined,
+    search: filters.name || undefined,
+    startDate: filters.startDate ? filters.startDate.toISOString() : undefined,
+    endDate: filters.endDate ? filters.endDate.toISOString() : undefined,
+  });
+
+  // Use optimized data if available, otherwise fallback to prop
+  const [tableData, setTableData] = useState(() => {
+    if (invoices?.campaigns) return invoices.campaigns;
+    if (invoicesData?.length) return invoicesData;
+    return _invoices;
+  });
+
+  // OPTIMIZED: Update tableData when invoicesData changes
+  useEffect(() => {
+    if (invoicesData?.length && campId) {
+      setTableData(invoicesData);
+    } else if (invoices?.campaigns) {
+      setTableData(invoices.campaigns);
+    }
+  }, [invoicesData, invoices, campId]);
 
   const dateError = isAfter(filters.startDate, filters.endDate);
 
@@ -142,49 +178,79 @@ export default function InvoiceListView({ campId, invoices }) {
 
   const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
 
-  const getInvoiceLength = (status) => tableData.filter((item) => item.status === status).length;
+  // OPTIMIZED: Use stats from backend if available, otherwise calculate client-side
+  const getInvoiceLength = useCallback(
+    (status) => {
+      if (invoiceStats?.counts && campId) {
+        return invoiceStats.counts[status] || 0;
+      }
+      // Fallback to client-side calculation
+      let count = 0;
+      for (let i = 0; i < tableData.length; i += 1) {
+        if (tableData[i].status === status) {
+          count += 1;
+        }
+      }
+      return count;
+    },
+    [invoiceStats, campId, tableData]
+  );
 
-  const getTotalAmount = (status) =>
-    sumBy(
-      tableData.filter((item) => item.status === status),
-      'totalAmount'
-    );
+  // OPTIMIZED: Memoize total amount calculation
+  const getTotalAmount = useCallback(
+    (status) => {
+      if (invoiceStats?.amounts && campId) {
+        return invoiceStats.amounts[status] || 0;
+      }
+      // Fallback to client-side calculation
+      let total = 0;
+      for (let i = 0; i < tableData.length; i += 1) {
+        if (tableData[i].status === status) {
+          total += tableData[i].amount || tableData[i].totalAmount || 0;
+        }
+      }
+      return total;
+    },
+    [invoiceStats, campId, tableData]
+  );
 
-  const getPercentByStatus = (status) => (getInvoiceLength(status) / tableData.length) * 100;
-
-  const TABS = [
-    { value: 'all', label: 'All', color: 'default', count: tableData.length },
-    {
-      value: 'paid',
-      label: 'Paid',
-      color: 'success',
-      count: getInvoiceLength('paid'),
-    },
-    {
-      value: 'approved',
-      label: 'Approved',
-      color: 'success',
-      count: getInvoiceLength('approved'),
-    },
-    {
-      value: 'pending',
-      label: 'Pending',
-      color: 'warning',
-      count: getInvoiceLength('pending'),
-    },
-    {
-      value: 'overdue',
-      label: 'Overdue',
-      color: 'error',
-      count: getInvoiceLength('overdue'),
-    },
-    {
-      value: 'draft',
-      label: 'Draft',
-      color: 'default',
-      count: getInvoiceLength('draft'),
-    },
-  ];
+  // OPTIMIZED: Memoize TABS calculation
+  const TABS = useMemo(() => {
+    const totalCount = invoiceStats?.counts?.total || tableData.length;
+    return [
+      { value: 'all', label: 'All', color: 'default', count: totalCount },
+      {
+        value: 'paid',
+        label: 'Paid',
+        color: 'success',
+        count: getInvoiceLength('paid'),
+      },
+      {
+        value: 'approved',
+        label: 'Approved',
+        color: 'success',
+        count: getInvoiceLength('approved'),
+      },
+      {
+        value: 'pending',
+        label: 'Pending',
+        color: 'warning',
+        count: getInvoiceLength('pending'),
+      },
+      {
+        value: 'overdue',
+        label: 'Overdue',
+        color: 'error',
+        count: getInvoiceLength('overdue'),
+      },
+      {
+        value: 'draft',
+        label: 'Draft',
+        color: 'default',
+        count: getInvoiceLength('draft'),
+      },
+    ];
+  }, [invoiceStats, tableData.length, getInvoiceLength]);
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -417,6 +483,10 @@ export default function InvoiceListView({ campId, invoices }) {
       // Add the new invoice to the table data
       if (response.data) {
         setTableData((prevData) => [response.data, ...prevData]);
+        // OPTIMIZED: Invalidate cache to refetch data
+        if (mutateInvoices) {
+          mutateInvoices();
+        }
       }
       
       // Close the modal
@@ -432,10 +502,12 @@ export default function InvoiceListView({ campId, invoices }) {
 
   const smUp = useResponsive('up', 'sm');
 
-  const isDisabled = useMemo(
+  // Merge prop-based isDisabled with existing Finance role check
+  const financeDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+  const isDisabled = propIsDisabled || financeDisabled;
 
   console.log('creatorAgreement Data: ', data);
 
@@ -610,6 +682,7 @@ export default function InvoiceListView({ campId, invoices }) {
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}
               onClick={handleOpenNewInvoiceModal}
+              disabled={isDisabled}
               sx={{
                 width: { xs: 'auto', sm: '130px' },
                 height: 38,
@@ -621,6 +694,10 @@ export default function InvoiceListView({ campId, invoices }) {
                 boxShadow: '0px -3px 0px 0px #00000073 inset',
                 '&:hover': {
                   bgcolor: '#0035DF'
+                },
+                '&.Mui-disabled': {
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
                 },
                 textTransform: 'none',
                 fontWeight: 600,
@@ -722,7 +799,12 @@ export default function InvoiceListView({ campId, invoices }) {
                       </Tooltip>
 
                       <Tooltip title="Delete">
-                        <IconButton color="primary" onClick={confirm.onTrue} disabled={isDisabled}>
+                        <IconButton
+                          color="primary"
+                          onClick={confirm.onTrue}
+                          disabled={isDisabled}
+                          sx={{ '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
+                        >
                           <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                       </Tooltip>
@@ -984,6 +1066,7 @@ export default function InvoiceListView({ campId, invoices }) {
                               {/* Edit Button */}
                               <Button
                                 startIcon={<Iconify icon="solar:pen-bold" width={16} />}
+                                disabled={isDisabled}
                                 sx={{
                                   textTransform: 'none',
                                   fontWeight: 700,
@@ -997,6 +1080,10 @@ export default function InvoiceListView({ campId, invoices }) {
                                   color: '#221f20',
                                   minWidth: '65px',
                                   height: '32px',
+                                  '&.Mui-disabled': {
+                                    cursor: 'not-allowed',
+                                    pointerEvents: 'auto',
+                                  },
                                 }}
                                 onClick={() => handleEditRow(row.id)}
                               >
@@ -1005,6 +1092,7 @@ export default function InvoiceListView({ campId, invoices }) {
 
                               {/* Delete Button */}
                               <Button
+                                disabled={isDisabled}
                                 sx={{
                                   textTransform: 'none',
                                   fontWeight: 700,
@@ -1018,6 +1106,10 @@ export default function InvoiceListView({ campId, invoices }) {
                                   color: '#ff4842',
                                   minWidth: '65px',
                                   height: '32px',
+                                  '&.Mui-disabled': {
+                                    cursor: 'not-allowed',
+                                    pointerEvents: 'auto',
+                                  },
                                 }}
                                 onClick={() => {
                                   confirm.onTrue();
@@ -1054,7 +1146,7 @@ export default function InvoiceListView({ campId, invoices }) {
         </Box>
 
         <TablePaginationCustom
-          count={dataFiltered.length}
+          count={pagination?.total || dataFiltered.length}
           page={table.page}
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}
@@ -1090,6 +1182,12 @@ export default function InvoiceListView({ campId, invoices }) {
               handleDeleteRows();
               confirm.onFalse();
             }}
+            sx={{
+              '&.Mui-disabled': {
+                cursor: 'not-allowed',
+                pointerEvents: 'auto',
+              },
+            }}
           >
             Delete
           </Button>
@@ -1102,6 +1200,7 @@ export default function InvoiceListView({ campId, invoices }) {
 InvoiceListView.propTypes = {
   campId: PropTypes.string,
   invoices: PropTypes.object,
+  isDisabled: PropTypes.bool,
 };
 
 // ----------------------------------------------------------------------

@@ -17,7 +17,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 // Statuses that indicate the creator has been approved (for showing Withdraw vs Remove)
 const APPROVED_STATUSES = ['APPROVED', 'approved', 'AGREEMENT_PENDING', 'AGREEMENT_SUBMITTED'];
 
-const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved }) => {
+const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved, isDisabled = false }) => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
@@ -130,8 +130,9 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved }) => {
             variant="outlined"
             size="small"
             onClick={() => setConfirmDialogOpen(true)}
+            disabled={isDisabled}
             sx={{
-              cursor: 'pointer',
+              cursor: isDisabled ? 'not-allowed' : 'pointer',
               px: 2,
               py: 2,
               minWidth: '90px',
@@ -152,6 +153,14 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved }) => {
                 border: '1px solid #b71c1c',
                 borderBottom: '3px solid #7f0000',
               },
+              '&.Mui-disabled': {
+                bgcolor: '#bdbdbd',
+                color: '#fff',
+                border: '1px solid #bdbdbd',
+                borderBottom: '3px solid #9e9e9e',
+                cursor: 'not-allowed',
+                pointerEvents: 'auto',
+              },
             }}
           >
             Withdraw
@@ -162,8 +171,9 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved }) => {
             variant="outlined"
             size="small"
             onClick={() => setConfirmDialogOpen(true)}
+            disabled={isDisabled}
             sx={{
-              cursor: 'pointer',
+              cursor: isDisabled ? 'not-allowed' : 'pointer',
               px: 2,
               py: 2,
               minWidth: '90px',
@@ -183,6 +193,14 @@ const V3PitchActions = ({ pitch, onViewPitch, campaignId, onRemoved }) => {
                 bgcolor: '#3A3A3C',
                 border: '1px solid #3A3A3C',
                 borderBottom: '3px solid #00000073',
+              },
+              '&.Mui-disabled': {
+                bgcolor: '#bdbdbd',
+                color: '#fff',
+                border: '1px solid #bdbdbd',
+                borderBottom: '3px solid #9e9e9e',
+                cursor: 'not-allowed',
+                pointerEvents: 'auto',
               },
             }}
           >
@@ -311,4 +329,5 @@ V3PitchActions.propTypes = {
   onViewPitch: PropTypes.func.isRequired,
   campaignId: PropTypes.string.isRequired,
   onRemoved: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };

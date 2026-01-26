@@ -3,14 +3,42 @@ import { useMemo } from 'react';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
-export const useGetAllInvoices = () => {
-  const { data, isLoading } = useSWR(endpoints.invoice.getAll, fetcher, {
-    revalidateOnFocus: true,
-    revalidateOnMount: true,
-    revalidateOnReconnect: true,
+/**
+ * OPTIMIZED: Get all invoices with pagination and filtering
+ * @param {object} options - Query options (page, limit, status, currency, search, campaignName, startDate, endDate)
+ */
+export const useGetAllInvoices = (options = {}) => {
+  const { page = 1, limit = 50, status, currency, search, campaignName, startDate, endDate } = options;
+
+  // Build query string
+  const queryParams = new URLSearchParams();
+  if (page) queryParams.append('page', page);
+  if (limit) queryParams.append('limit', limit);
+  if (status) queryParams.append('status', status);
+  if (currency) queryParams.append('currency', currency);
+  if (search) queryParams.append('search', search);
+  if (campaignName) queryParams.append('campaignName', campaignName);
+  if (startDate) queryParams.append('startDate', startDate);
+  if (endDate) queryParams.append('endDate', endDate);
+
+  const queryString = queryParams.toString();
+  const url = `${endpoints.invoice.getAll}${queryString ? `?${queryString}` : ''}`;
+
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000, // Cache for 30 seconds
   });
 
-  const memoizedValue = useMemo(() => ({ data, isLoading }), [data, isLoading]);
+  const memoizedValue = useMemo(
+    () => ({
+      data: data?.data || [],
+      pagination: data?.pagination,
+      isLoading,
+      error,
+      mutate,
+    }),
+    [data, isLoading, error, mutate]
+  );
 
   return memoizedValue;
 };

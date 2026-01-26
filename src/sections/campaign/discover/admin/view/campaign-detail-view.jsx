@@ -32,6 +32,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -43,6 +44,7 @@ import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
+import ViewOnlyBanner from 'src/components/banner/view-only-banner';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
@@ -109,6 +111,12 @@ const CampaignDetailView = ({ id }) => {
   const [password, setPassword] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const { user } = useAuthContext();
+
+  // Use centralized permission hook for view-only restrictions
+  // Covers: Finance (advanced mode), CSM viewing non-managed campaigns
+  const { isViewOnly } = useCampaignPermissions(campaign, user);
+  const isDisabled = isViewOnly;
+
   const [pages, setPages] = useState(0);
   const lgUp = useResponsive('up', 'lg');
   const templateModal = useBoolean();
@@ -569,13 +577,13 @@ const CampaignDetailView = ({ id }) => {
     overview: isClient ? (
       <CampaignOverviewClient campaign={campaign} onUpdate={campaignMutate} />
     ) : (
-      <CampaignOverview campaign={campaign} onUpdate={campaignMutate} />
+      <CampaignOverview campaign={campaign} onUpdate={campaignMutate} isDisabled={isDisabled} />
     ),
     'campaign-content': <CampaignDetailContentClient campaign={campaign} />,
     'creator-master-list': (
       <CampaignCreatorMasterListClient campaign={campaign} campaignMutate={campaignMutate} />
     ),
-    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
+    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
     // HIDE: logistics
     logistics: isClient ? (
       <CampaignLogisticsView
@@ -590,6 +598,7 @@ const CampaignDetailView = ({ id }) => {
         openBulkAssign={openBulkAssign}
         setOpenBulkAssign={setOpenBulkAssign}
         isAdmin={!isClient}
+        isDisabled={isDisabled}
       />
     ),
     // logistics: isClient ? (
@@ -597,19 +606,19 @@ const CampaignDetailView = ({ id }) => {
     // ) : (
     //   <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />
     // ),
-    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
+    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
-    pitch: <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} />,
+    pitch: <CampaignV3PitchesWrapper campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
     deliverables: isClient ? (
       <CampaignCreatorDeliverablesClient campaign={campaign} campaignMutate={campaignMutate} />
     ) : (
-      <CampaignCreatorDeliverables campaign={campaign} />
+      <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
     ),
-    'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} />,
-    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} />,
+    'submissions-v4': <CampaignCreatorSubmissionsV4 campaign={campaign} isDisabled={isDisabled} />,
+    analytics: <CampaignAnalytics campaign={campaign} campaignMutate={campaignMutate} isDisabled={isDisabled} />,
   };
 
   const formatDate = (dateString) => {
@@ -699,11 +708,6 @@ const CampaignDetailView = ({ id }) => {
     setMenuAnchorEl(null);
   };
 
-  const isDisabled = useMemo(
-    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
-    [user]
-  );
-
   const isPendingCampaign = useMemo(
     () =>
       campaign?.status === 'SCHEDULED' ||
@@ -750,6 +754,10 @@ const CampaignDetailView = ({ id }) => {
               '&:hover': {
                 backgroundColor: '#0e2fd6',
               },
+              '&.Mui-disabled': {
+                cursor: 'not-allowed',
+                pointerEvents: 'auto',
+              },
             }}
           >
             Activate Campaign
@@ -777,15 +785,31 @@ const CampaignDetailView = ({ id }) => {
           sx={{
             height: 42,
             borderRadius: 1,
-            color: '#221f20',
+            color: isDisabled ? '#9e9e9e' : '#221f20',
             border: '1px solid #e7e7e7',
             borderBottom: '4px solid #e7e7e7',
             fontWeight: 600,
             fontSize: '0.95rem',
             px: 2,
             whiteSpace: 'nowrap',
+            opacity: isDisabled ? 0.6 : 1,
             '&:hover': {
               backgroundColor: 'rgba(34, 31, 32, 0.04)',
+              border: '1px solid #231F20',
+              borderBottom: '4px solid #231F20',
+            },
+            '&.Mui-disabled': {
+              cursor: 'not-allowed',
+              pointerEvents: 'auto',
+              color: '#9e9e9e',
+              border: '1px solid #e7e7e7',
+              borderBottom: '4px solid #e7e7e7',
+              backgroundColor: 'transparent',
+              '&:hover': {
+                backgroundColor: 'transparent',
+                border: '1px solid #e7e7e7',
+                borderBottom: '4px solid #e7e7e7',
+              },
             },
           }}
         >
@@ -866,7 +890,7 @@ const CampaignDetailView = ({ id }) => {
             direction={{ xs: 'column', sm: 'row' }}
             alignItems={{ xs: 'stretch', sm: 'center' }}
             spacing={{ xs: 1, sm: 0 }}
-            width={{ xs: '100%', sm: 'auto' }}
+            width={{ xs: '100%' }}
             justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
           >
             <Stack
@@ -993,8 +1017,9 @@ const CampaignDetailView = ({ id }) => {
                 //   )}
 
                 <Box
-                  onClick={handleMenuOpen}
+                  onClick={isDisabled ? undefined : handleMenuOpen}
                   component="button"
+                  disabled={isDisabled}
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
@@ -1002,16 +1027,17 @@ const CampaignDetailView = ({ id }) => {
                     height: 42,
                     width: 42,
                     borderRadius: 1,
-                    color: '#221f20',
+                    color: isDisabled ? '#9e9e9e' : '#221f20',
                     border: '1px solid #e7e7e7',
                     borderBottom: '4px solid #e7e7e7',
                     padding: 0,
                     backgroundColor: 'transparent',
-                    cursor: 'pointer',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    opacity: isDisabled ? 0.6 : 1,
                     '&:hover': {
-                      backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                      border: '1px solid #231F20',
-                      borderBottom: '4px solid #231F20',
+                      backgroundColor: isDisabled ? 'transparent' : 'rgba(34, 31, 32, 0.04)',
+                      border: isDisabled ? '1px solid #e7e7e7' : '1px solid #231F20',
+                      borderBottom: isDisabled ? '4px solid #e7e7e7' : '4px solid #231F20',
                     },
                   }}
                 >
@@ -1090,6 +1116,9 @@ const CampaignDetailView = ({ id }) => {
           </Stack>
         </Stack>
       </Stack>
+
+      {/* View-only banner for CSMs viewing non-managed campaigns */}
+      {isViewOnly && !isClient && <ViewOnlyBanner />}
 
       {renderTabs}
 

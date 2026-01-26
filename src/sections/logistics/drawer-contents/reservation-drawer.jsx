@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import useSWR from 'swr';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { config } from '@fullcalendar/core/internal';
-import useSWR from 'swr';
-import { fetcher } from 'src/utils/axios';
 
 import { Box, Stack, Badge, Button, Divider, Typography } from '@mui/material';
 
+import { fetcher } from 'src/utils/axios';
 import { formatReservationSlot } from 'src/utils/reservation-time';
 
 import Iconify from 'src/components/iconify';
@@ -21,6 +21,7 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
   const [openSchedule, setOpenSchedule] = useState(false);
   const [openAdminSchedule, setOpenAdminSchedule] = useState(false);
   const [openIssue, setOpenIssue] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const status = logistic?.status;
   const details = logistic?.reservationDetails;
@@ -36,6 +37,27 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
     campaignId && isReservation ? `/api/logistics/campaign/${campaignId}/reservation-config` : null,
     fetcher
   );
+
+  useEffect(() => {
+    if (logistic?.id) {
+      const storageKey = `badge_${logistic.id}`;
+      const storedValue = localStorage.getItem(storageKey);
+
+      if (storedValue === 'true') {
+        setHasInteracted(true);
+      } else {
+        setHasInteracted(false);
+      }
+    }
+  }, [logistic?.id]);
+
+  const handleBadgeClick = () => {
+    setHasInteracted(true);
+    if (logistic?.id) {
+      const storageKey = `badge_${logistic.id}`;
+      localStorage.setItem(storageKey, 'true');
+    }
+  };
 
   // --- Button Logic ---
   const renderActionButtons = () => {
@@ -57,33 +79,38 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
             spacing={2}
             width="100%"
           >
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={() => setOpenConfirm(true)}
-              sx={{
-                width: 'fit-content',
-                height: 44,
-                padding: { xs: '4px 8px', sm: '6px 10px' },
-                borderRadius: '8px',
-                boxShadow: '0px -4px 0px 0px #00000073 inset',
-                backgroundColor: '#3A3A3C',
-                color: '#FFFFFF',
-                fontSize: { xs: 12, sm: 14, md: 16 },
-                fontWeight: 600,
-                textTransform: 'none',
-                '&:hover': {
-                  backgroundColor: '#3a3a3ce1',
+            <Badge color="error" variant="dot" invisible={hasInteracted}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => {
+                  handleBadgeClick();
+                  setOpenConfirm(true);
+                }}
+                sx={{
+                  width: 'fit-content',
+                  height: 44,
+                  padding: { xs: '4px 8px', sm: '6px 10px' },
+                  borderRadius: '8px',
                   boxShadow: '0px -4px 0px 0px #00000073 inset',
-                },
-                '&:active': {
-                  boxShadow: '0px 0px 0px 0px #00000073 inset',
-                  transform: 'translateY(1px)',
-                },
-              }}
-            >
-              Confirm Details
-            </Button>
+                  backgroundColor: '#3A3A3C',
+                  color: '#FFFFFF',
+                  fontSize: { xs: 12, sm: 14, md: 16 },
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  '&:hover': {
+                    backgroundColor: '#3a3a3ce1',
+                    boxShadow: '0px -4px 0px 0px #00000073 inset',
+                  },
+                  '&:active': {
+                    boxShadow: '0px 0px 0px 0px #00000073 inset',
+                    transform: 'translateY(1px)',
+                  },
+                }}
+              >
+                Confirm Details
+              </Button>
+            </Badge>
             <Button
               fullWidth
               variant="contained"
@@ -132,14 +159,19 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
             >
               Edit Details
             </Button>
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={() => setOpenAdminSchedule(true)}
-              sx={buttonSx}
-            >
-              Schedule
-            </Button>
+            <Badge color="error" variant="dot" invisible={hasInteracted}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => {
+                  handleBadgeClick();
+                  setOpenAdminSchedule(true);
+                }}
+                sx={buttonSx}
+              >
+                Schedule
+              </Button>
+            </Badge>
           </Stack>
         );
       }
@@ -197,10 +229,13 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
       <Stack direction="row" justifyContent="center" alignItems="center" spacing={2} width="100%">
         {/* 1. Confirm Details Button (If not done) */}
         {!isDetailsConfirmed && (
-          <Badge color="error" variant="dot">
+          <Badge color="error" variant="dot" invisible={hasInteracted}>
             <Button
               variant="contained"
-              onClick={() => setOpenConfirm(true)}
+              onClick={() => {
+                handleBadgeClick();
+                setOpenConfirm(true);
+              }}
               sx={{
                 width: 'fit-content',
                 height: 44,
@@ -229,10 +264,13 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
 
         {/* 2. Schedule Button (If not done) */}
         {!isScheduled && !isAuto && status === 'PENDING_ASSIGNMENT' && (
-          <Badge color="error" variant="dot">
+          <Badge color="error" variant="dot" invisible={hasInteracted}>
             <Button
               variant="contained"
-              onClick={isAdmin ? () => setOpenAdminSchedule(true) : () => setOpenSchedule(true)}
+              onClick={() => {
+                handleBadgeClick();
+                isAdmin ? setOpenAdminSchedule(true) : setOpenSchedule(true);
+              }}
               sx={buttonSx} // Always Blue for Schedule
             >
               {isAdmin ? 'Schedule' : 'Confirm Slot'}

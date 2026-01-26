@@ -1,15 +1,15 @@
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
 
-import { Box, Badge, Stack, Button, Divider, Typography, Link } from '@mui/material';
+import { Box, Link, Badge, Stack, Button, Divider, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
 import LogisticsStepper from '../logistics-stepper';
 import ReviewIssueDialog from '../dialogs/review-issue-dialog';
-import AssignLogisticDialog, { AdminAssignLogisticDialog } from '../dialogs/assign-logistic-dialog';
 import ScheduleDeliveryDialog from '../dialogs/schedule-delivery-dialog';
 import AdminEditLogisticDialog from '../dialogs/admin-edit-logistic-dialog';
+import AssignLogisticDialog, { AdminAssignLogisticDialog } from '../dialogs/assign-logistic-dialog';
 
 export default function ProductDeliveryDrawer({
   onClose,
@@ -23,21 +23,46 @@ export default function ProductDeliveryDrawer({
   const [openIssue, setOpenIssue] = useState(false);
   const [openAdminEdit, setOpenAdminEdit] = useState(false);
   const [openAdminAssign, setOpenAdminAssign] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [openWithdrawConfirm, setOpenWithdrawConfirm] = useState(false);
 
   const status = logistic?.status;
   const creator = logistic?.creator;
   const deliveryDetails = logistic?.deliveryDetails;
 
+  useEffect(() => {
+    if (logistic?.id) {
+      const storageKey = `badge_${logistic.id}`;
+      const storedValue = localStorage.getItem(storageKey);
+
+      if (storedValue === 'true') {
+        setHasInteracted(true);
+      } else {
+        setHasInteracted(false);
+      }
+    }
+  }, [logistic?.id]);
+
+  const handleBadgeClick = () => {
+    setHasInteracted(true);
+    if (logistic?.id) {
+      const storageKey = `badge_${logistic.id}`;
+      localStorage.setItem(storageKey, 'true');
+    }
+  };
+
   const renderStepperAction = () => {
     if (isAdmin) {
       if (status === 'PENDING_ASSIGNMENT') {
         return (
-          <Badge color="error" variant="dot">
+          <Badge color="error" variant="dot" invisible={hasInteracted}>
             <Button
               fullWidth
               variant="contained"
-              onClick={() => setOpenAdminAssign(true)}
+              onClick={() => {
+                handleBadgeClick();
+                setOpenAdminAssign(true);
+              }}
               sx={{
                 width: 'fit-content',
                 height: 44,
@@ -67,11 +92,14 @@ export default function ProductDeliveryDrawer({
       }
       if (status === 'SCHEDULED') {
         return (
-          <Badge color="error" variant="dot">
+          <Badge color="error" variant="dot" invisible={hasInteracted}>
             <Button
               fullWidth
               variant="contained"
-              onClick={() => setOpenSchedule(true)}
+              onClick={() => {
+                handleBadgeClick();
+                setOpenSchedule(true);
+              }}
               sx={{
                 width: 'fit-content',
                 height: 44,
@@ -101,11 +129,14 @@ export default function ProductDeliveryDrawer({
       }
       if (status === 'ISSUE_REPORTED') {
         return (
-          <Badge color="error" variant="dot">
+          <Badge color="error" variant="dot" invisible={hasInteracted}>
             <Button
               fullWidth
               variant="contained"
-              onClick={() => setOpenIssue(true)}
+              onClick={() => {
+                handleBadgeClick();
+                setOpenIssue(true);
+              }}
               sx={{
                 width: 'fit-content',
                 height: 44,
@@ -137,11 +168,14 @@ export default function ProductDeliveryDrawer({
     }
     if (status === 'PENDING_ASSIGNMENT') {
       return (
-        <Badge color="error" variant="dot">
+        <Badge color="error" variant="dot" invisible={hasInteracted}>
           <Button
             fullWidth
             variant="contained"
-            onClick={() => setOpenAssign(true)}
+            onClick={() => {
+              handleBadgeClick();
+              setOpenAssign(true);
+            }}
             sx={{
               width: 'fit-content',
               height: 44,
@@ -171,11 +205,14 @@ export default function ProductDeliveryDrawer({
     }
     if (status === 'SCHEDULED') {
       return (
-        <Badge color="error" variant="dot">
+        <Badge color="error" variant="dot" invisible={hasInteracted}>
           <Button
             fullWidth
             variant="contained"
-            onClick={() => setOpenSchedule(true)}
+            onClick={() => {
+              setOpenSchedule(true);
+              handleBadgeClick();
+            }}
             sx={{
               width: 'fit-content',
               height: 44,
@@ -205,11 +242,14 @@ export default function ProductDeliveryDrawer({
     }
     if (status === 'ISSUE_REPORTED') {
       return (
-        <Badge color="error" variant="dot">
+        <Badge color="error" variant="dot" invisible={hasInteracted}>
           <Button
             fullWidth
             variant="contained"
-            onClick={() => setOpenIssue(true)}
+            onClick={() => {
+              handleBadgeClick();
+              setOpenIssue(true);
+            }}
             sx={{
               width: 'fit-content',
               height: 44,
@@ -437,9 +477,11 @@ export default function ProductDeliveryDrawer({
       </Box>
       {renderDietary}
       {renderDeliveryDetails}
-      <Stack alignItems="center" sx={{ mb: 3 }}>
-        {renderFooterActions()}
-      </Stack>
+      {isAdmin && (
+        <Stack alignItems="center" sx={{ mb: 3 }}>
+          {renderFooterActions()}
+        </Stack>
+      )}
 
       <AssignLogisticDialog
         open={openAssign}

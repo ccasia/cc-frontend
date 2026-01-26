@@ -1,6 +1,6 @@
+import { useMemo } from 'react';
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
 
 import { Box, Grid, Link, List, Stack, Avatar, Divider, ListItem, Typography } from '@mui/material';
 
@@ -346,7 +346,7 @@ export default function LogisticsScheduledList({
             </Box>
           </Box>
         ) : (
-          <Box sx={{ flexGrow: 0, overflowY: 'auto', height: 150, px: 0.5 }}>
+          <Box sx={{ flexGrow: 0, overflowY: 'auto', height: isReservation ? 150 : 280, px: 0.5 }}>
             <List disablePadding>
               {dayLogistics.map((item) => (
                 <ScheduledItem

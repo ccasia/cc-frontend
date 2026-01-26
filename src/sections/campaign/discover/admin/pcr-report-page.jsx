@@ -1,18 +1,18 @@
-import PropTypes from 'prop-types';
-import { useMemo, useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
-import { format } from 'date-fns';
-import { enqueueSnackbar } from 'notistack';
-import html2canvas from 'html2canvas';
 // eslint-disable-next-line new-cap
 import { jsPDF } from 'jspdf';
+import { format } from 'date-fns';
+import PropTypes from 'prop-types';
+import html2canvas from 'html2canvas';
+import { enqueueSnackbar } from 'notistack';
+import EmojiPicker from 'emoji-picker-react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 
-import { Box, Grid, Button, Typography, Avatar, Link, TextField, CircularProgress, Alert, IconButton, Popover, Snackbar } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
+import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import EmojiPicker from 'emoji-picker-react';
+import { Box, Grid, Link, Button, Avatar, Popover, Snackbar, TextField, Typography, IconButton, InputAdornment, CircularProgress } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -297,14 +297,29 @@ const PCRReportPage = ({ campaign, onBack }) => {
         anchorOrigin: { vertical: 'top', horizontal: 'center' }
       });
 
-      const canvas = await html2canvas(reportRef.current, {
+      // Get the parent element that includes the gradient border
+      const pdfContainer = reportRef.current.parentElement;
+      
+      // Hide buttons before capturing
+      const buttonsToHide = pdfContainer.querySelectorAll('.hide-in-pdf');
+      buttonsToHide.forEach(el => {
+        el.style.display = 'none';
+      });
+
+      const canvas = await html2canvas(pdfContainer, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: null,
+        windowWidth: 1078,
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      // Show buttons again after capturing
+      buttonsToHide.forEach(el => {
+        el.style.display = '';
+      });
+
+      const imgData = canvas.toDataURL('image/png', 1.0);
       // eslint-disable-next-line new-cap
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -719,9 +734,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
       console.log('Platform Chart - Submissions:', filteredSubmissions?.length);
       
       if (!filteredInsightsData || filteredInsightsData.length === 0) {
-        console.log('Platform Chart - No data, returning mock data');
-        // Hardcoded data for display
-        return { instagram: 5034, tiktok: 9203, total: 14237 };
+        console.log('Platform Chart - No data, returning zeros');
+        return { instagram: 0, tiktok: 0, total: 0 };
       }
 
       let instagramInteractions = 0;
@@ -771,19 +785,26 @@ const PCRReportPage = ({ campaign, onBack }) => {
     // Calculate percentages for the donut chart
     const instagramPercentage = platformData.total > 0 ? (platformData.instagram / platformData.total) * 100 : 0;
     const tiktokPercentage = platformData.total > 0 ? (platformData.tiktok / platformData.total) * 100 : 0;
-
-    // SVG donut chart parameters
-    const size = 200;
-    const strokeWidth = 20;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
     
-    // Calculate stroke dash arrays for the segments
-    const instagramStrokeDasharray = `${(instagramPercentage / 100) * circumference} ${circumference}`;
-    const tiktokStrokeDasharray = `${(tiktokPercentage / 100) * circumference} ${circumference}`;
+    // Add gap between segments (2 degrees gap = ~2.8 units at radius 80)
+    const gapDegrees = 2;
+    const gapLength = (gapDegrees / 360) * (80 * 2 * Math.PI);
     
-    // Calculate rotation for TikTok segment to start after Instagram
-    const tiktokRotation = (instagramPercentage / 100) * 360;
+    // Calculate angles for segments
+    // TikTok starts at -45 degrees (top-left), goes clockwise
+    const tiktokStartAngle = -45;
+    const tiktokSweepAngle = (tiktokPercentage / 100) * 360 - gapDegrees;
+    const tiktokEndAngle = tiktokStartAngle + tiktokSweepAngle;
+    
+    // Instagram starts at 135 degrees (bottom-right), goes counter-clockwise
+    const instagramStartAngle = 135;
+    const instagramSweepAngle = (instagramPercentage / 100) * 360 - gapDegrees;
+    const instagramEndAngle = instagramStartAngle - instagramSweepAngle;
+    
+    // Calculate path lengths for stroke-dasharray
+    const circumference = 80 * 2 * Math.PI;
+    const tiktokPathLength = (tiktokPercentage / 100) * circumference - gapLength;
+    const instagramPathLength = (instagramPercentage / 100) * circumference - gapLength;
 
     return (
       <Box
@@ -825,8 +846,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Typography>
 
         {/* Donut Chart with External Labels */}
-        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '280px' }}>
-          <svg width="280" height="240" viewBox="0 0 280 240">
+        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '280px', overflow: 'visible' }}>
+          <svg width="280" height="240" viewBox="0 0 280 240" style={{ overflow: 'visible' }}>
             {/* Background circle */}
             <circle
               cx="140"
@@ -837,45 +858,51 @@ const PCRReportPage = ({ campaign, onBack }) => {
               strokeWidth="18"
             />
             
-            {/* Instagram segment (pink) - starts from bottom */}
-            <circle
-              cx="140"
-              cy="120"
-              r="80"
-              fill="transparent"
-              stroke="#C13584"
-              strokeWidth="18"
-              strokeDasharray={`${(instagramPercentage / 100) * (80 * 2 * Math.PI)} ${80 * 2 * Math.PI}`}
-              strokeLinecap={platformData.tiktok === 0 ? "butt" : "round"}
-              transform="rotate(90 140 120)"
-            />
-            
-            {/* TikTok segment (black) - starts after Instagram - only show if TikTok has data */}
+            {/* TikTok segment (black) - connects to top-left arrow */}
             {platformData.tiktok > 0 && (
-              <>
-            <circle
-                  cx="140"
-                  cy="120"
-                  r="80"
-              fill="transparent"
-              stroke="#000000"
-                  strokeWidth="18"
-                  strokeDasharray={`${(tiktokPercentage / 100) * (80 * 2 * Math.PI)} ${80 * 2 * Math.PI}`}
-                  strokeLinecap={platformData.instagram === 0 ? "butt" : "round"}
-                  transform={`rotate(${90 + (instagramPercentage / 100) * 360} 140 120)`}
-            />
+              <circle
+                cx="140"
+                cy="120"
+                r="80"
+                fill="transparent"
+                stroke="#000000"
+                strokeWidth="18"
+                strokeDasharray={`${tiktokPathLength} ${circumference}`}
+                strokeLinecap="round"
+                // Start at -45 degrees (top-left where arrow connects)
+                transform="rotate(-45 140 120)"
+              />
+            )}
+            
+            {/* Instagram segment (magenta/pink) - connects to bottom-right arrow */}
+            {platformData.instagram > 0 && (
+              <circle
+                cx="140"
+                cy="120"
+                r="80"
+                fill="transparent"
+                stroke="#C13584"
+                strokeWidth="18"
+                strokeDasharray={`${instagramPathLength} ${circumference}`}
+                strokeLinecap="round"
+                // Start at 135 degrees (bottom-right where arrow connects)
+                transform="rotate(135 140 120)"
+              />
+            )}
             
             {/* TikTok leader line - top left */}
-                <line x1="85" y1="60" x2="50" y2="30" stroke="#000000" strokeWidth="1" />
-                <line x1="50" y1="30" x2="15" y2="30" stroke="#000000" strokeWidth="1" />
+            {platformData.tiktok > 0 && (
+              <>
+                <line x1="83" y1="63" x2="80" y2="30" stroke="#000000" strokeWidth="1.5" />
+                <line x1="80" y1="30" x2="15" y2="30" stroke="#000000" strokeWidth="1.5" />
               </>
             )}
             
-            {/* Instagram leader line - bottom right - only show if Instagram has data */}
+            {/* Instagram leader line - bottom right */}
             {platformData.instagram > 0 && (
               <>
-                <line x1="195" y1="180" x2="230" y2="210" stroke="#C13584" strokeWidth="1" />
-                <line x1="230" y1="210" x2="265" y2="210" stroke="#C13584" strokeWidth="1" />
+                <line x1="197" y1="177" x2="200" y2="210" stroke="#C13584" strokeWidth="1.5" />
+                <line x1="200" y1="210" x2="265" y2="210" stroke="#C13584" strokeWidth="1.5" />
               </>
             )}
           </svg>
@@ -921,16 +948,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
             </Typography>
           </Box>
 
-          {/* TikTok external label - positioned on the leader line - only show if TikTok has data */}
+          {/* TikTok external label - positioned on the leader line at top-left */}
           {platformData.tiktok > 0 && (
           <Box
             sx={{
               position: 'absolute',
-                top: '15px', // Positioned on the horizontal leader line
-                left: '10px',
+              top: '28px', 
+              left: '5px', 
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-start',
+              justifyContent: 'center',
             }}
           >
             <Typography
@@ -939,11 +967,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontWeight: 400,
                 fontStyle: 'italic',
                 fontSize: '12px',
-                lineHeight: '100%',
+                lineHeight: '14px',
                 letterSpacing: '0%',
                 color: '#000000B2',
-                textDecoration: 'underline',
-                mb: 0.5,
+                mb: 0,
+                pb: '6px', 
               }}
             >
               TikTok
@@ -954,9 +982,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontWeight: 400,
                 fontStyle: 'normal',
                 fontSize: '12px',
-                lineHeight: '100%',
+                lineHeight: '14px',
                 letterSpacing: '0%',
                 color: '#000000B2',
+                mt: 0,
+                pt: '6px', // Increased gap above the number (below the line)
               }}
             >
               {formatNumber(platformData.tiktok)}
@@ -964,16 +994,17 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </Box>
           )}
 
-          {/* Instagram external label - positioned on the leader line - only show if Instagram has data */}
+          {/* Instagram external label - positioned on the leader line at bottom-right */}
           {platformData.instagram > 0 && (
           <Box
             sx={{
               position: 'absolute',
-                bottom: '15px', // Positioned on the horizontal leader line
-                right: '10px',
+              bottom: '32px', 
+              right: '5px', 
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-end',
+              justifyContent: 'center',
             }}
           >
             <Typography
@@ -982,11 +1013,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontWeight: 400,
                 fontStyle: 'italic',
                 fontSize: '12px',
-                lineHeight: '100%',
+                lineHeight: '14px',
                 letterSpacing: '0%',
                 color: '#000000B2',
-                textDecoration: 'underline',
-                mb: 0.5,
+                mb: 0,
+                pb: '6px',
               }}
             >
               Instagram
@@ -997,9 +1028,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 fontWeight: 400,
                 fontStyle: 'normal',
                 fontSize: '12px',
-                lineHeight: '100%',
+                lineHeight: '14px',
                 letterSpacing: '0%',
                 color: '#000000B2',
+                mt: 0,
+                pt: '2px',
               }}
             >
               {formatNumber(platformData.instagram)}
@@ -1021,7 +1054,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
         return [];
       }
 
-      // Get actual post dates from Instagram/TikTok video data
       const actualPostDates = filteredInsightsData
         .filter(insight => insight.video?.timestamp || insight.video?.create_time)
         .map(insight => new Date(insight.video.timestamp || insight.video.create_time).getTime());
@@ -1031,19 +1063,16 @@ const PCRReportPage = ({ campaign, onBack }) => {
       
       console.log('Chart - Campaign Start:', campaignStart);
 
-      // Group views by week - based on actual Instagram/TikTok post dates
       const weeklyData = {};
       
       filteredInsightsData.forEach((insightData) => {
         if (insightData.insight && insightData.video) {
-          // Use actual post timestamp from Instagram/TikTok
           const actualPostTimestamp = insightData.video.timestamp || insightData.video.create_time;
           
           if (actualPostTimestamp) {
             const postDate = new Date(actualPostTimestamp);
             const views = getMetricValue(insightData.insight, 'views');
             
-            // Calculate which week this post belongs to
             const daysSinceStart = Math.floor((postDate - campaignStart) / (24 * 60 * 60 * 1000));
             const weekNumber = Math.min(6, Math.max(1, Math.floor(daysSinceStart / 7) + 1));
             
@@ -1085,7 +1114,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
         return [];
       }
 
-      // Find the earliest post date in the highest week
       const firstPostDate = new Date(Math.min(...highestWeek.posts.map(p => new Date(p.date).getTime())));
       const dayOfWeek = firstPostDate.getDay(); 
       
@@ -1103,8 +1131,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
       const totalWeekViews = highestWeek.totalViews;
       
-      // Simulate daily view distribution for the week
-      // This assumes views are concentrated in the first few days after posting
       const distributionPattern = [0.12, 0.15, 0.18, 0.22, 0.15, 0.10, 0.08]; 
       
       for (let i = 0; i < 7; i += 1) {
@@ -1499,7 +1525,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
   >
     {/* Loading overlay */}
     {isLoadingPCR && (
-      <Box sx={{ 
+      <Box className="hide-in-pdf" sx={{ 
         position: 'absolute', 
         top: 0, 
         left: 0, 
@@ -1537,7 +1563,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
 
     {/* Saving overlay */}
     {isSaving && (
-      <Box sx={{ 
+      <Box className="hide-in-pdf" sx={{ 
         position: 'absolute', 
         top: 0, 
         left: 0, 
@@ -1572,10 +1598,12 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Typography>
       </Box>
     )}
+    
+    {/* PDF Capture Wrapper - includes gradient border */}
+    <Box ref={reportRef}>
 
     {/* Inner white content container */}
     <Box
-      ref={reportRef}
       sx={{
         background: '#FFFFFF',
         borderRadius: '12px',
@@ -1587,7 +1615,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       }}
     >
     {/* Header with Back Button */}
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box className="hide-in-pdf" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
       <Button
         onClick={onBack}
         sx={{
@@ -1843,7 +1871,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
       </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography 
-          variant="h4" 
+          variant="h3" 
           sx={{ 
             fontFamily: 'Inter Display, sans-serif',
             fontWeight: 700,
@@ -1856,28 +1884,22 @@ const PCRReportPage = ({ campaign, onBack }) => {
         >
           {campaign?.name || 'Crafting Unforgettable Nights'}
         </Typography>
-        <Typography 
-          variant="h4"
-          sx={{
-            fontSize: '56px',
-            lineHeight: '100%'
-          }}
-        >
-          🍻
-        </Typography>
+
       </Box>
         </Box>
         
-        <Box
-          component="img"
-          src="/logo/CC.svg"
-          alt="Cult Creative"
-          sx={{
-            width: '187px',
-            height: '60px',
-            opacity: 0.8
-          }}
-        />
+        <Box sx={{ position: 'relative', right: '-20px' }}>
+          <Box
+            component="img"
+            src="/logo/CC.svg"
+            alt="Cult Creative"
+            sx={{
+              width: '187px',
+              height: '60px',
+              opacity: 0.8,
+            }}
+          />
+        </Box>
       </Box>
       
       {isEditMode ? (
@@ -1896,7 +1918,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
             </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -1932,7 +1953,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
           fontSize: '20px',
           lineHeight: '24px',
           letterSpacing: '0%',
-          color: '#231F20'
+          color: '#231F20',
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
+          whiteSpace: 'pre-line'
         }}
       >
           {editableContent.campaignDescription || (
@@ -2162,7 +2187,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
             </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -2200,6 +2224,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
           letterSpacing: '0%',
           color: '#231F20',
           mb: 3,
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
           '& strong': {
             fontFamily: 'Inter Display, sans-serif',
             fontWeight: 700,
@@ -2256,7 +2283,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
       </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -2291,7 +2317,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '20px',
             lineHeight: '24px',
             color: '#231F20',
-            mb: 3 
+            mb: 3,
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word'
           }}
         >
           {editableContent.noteworthyCreatorsDescription || (
@@ -2363,7 +2392,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2373,8 +2402,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2387,7 +2416,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2397,8 +2426,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2411,7 +2440,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2421,8 +2450,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2435,7 +2464,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2445,8 +2474,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2526,7 +2555,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2536,8 +2565,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2550,7 +2579,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2560,8 +2589,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2574,7 +2603,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2584,8 +2613,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2598,7 +2627,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2608,8 +2637,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2690,7 +2719,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2700,8 +2729,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2714,7 +2743,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2724,8 +2753,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2738,7 +2767,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2748,8 +2777,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2762,7 +2791,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Instrument Serif',
                         fontWeight: 400,
-                        fontSize: '20.42px',
+                        fontSize: '26px',
                         lineHeight: '31.9px',
                         textAlign: 'center',
                         color: '#1340FF'
@@ -2772,8 +2801,8 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       <Typography sx={{
                         fontFamily: 'Aileron',
                         fontWeight: 600,
-                        fontSize: '8px',
-                        lineHeight: '10.85px',
+                        fontSize: '12px',
+                        lineHeight: '14px',
                         textAlign: 'center',
                         color: '#636366'
                       }}>
@@ -2821,7 +2850,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
             </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -2856,7 +2884,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             lineHeight: '24px',
             color: '#374151',
             mb: 3,
-            whiteSpace: 'pre-line'
+            whiteSpace: 'pre-line',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word'
           }}
         >
           {editableContent.viewsDescription || (
@@ -2917,7 +2948,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
       </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -2951,7 +2981,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '16px',
             lineHeight: '24px',
             color: '#374151',
-            mb: 4 
+            mb: 4,
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word'
           }}
         >
           {editableContent.audienceSentimentDescription || (
@@ -2995,9 +3028,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
           >
             Positive Comments
           </Typography>
-          {isEditMode && (
-            <EditIcon sx={{ fontSize: '16px', color: '#10B981' }} />
-          )}
       </Box>
           {isEditMode ? (
             <>
@@ -3038,7 +3068,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     }
                   }}
                   onChange={(e) => {
-                    let value = e.target.value;
+                    let {value} = e.target;
                     // Remove spaces
                     value = value.replace(/\s/g, '');
                     // Ensure it always starts with @
@@ -3114,6 +3144,40 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     }
                   }
                 }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => {
+                          const username = document.getElementById('positive-username-input').value;
+                          const postlink = document.getElementById('positive-postlink-input').value;
+                          const comment = document.getElementById('positive-comment-input').value;
+                          
+                          if (username && username !== '@' && comment) {
+                            const newComments = [...editableContent.positiveComments, { username, comment }];
+                            setEditableContent({ ...editableContent, positiveComments: newComments });
+                            document.getElementById('positive-username-input').value = '@';
+                            document.getElementById('positive-postlink-input').value = '';
+                            document.getElementById('positive-comment-input').value = '';
+                          }
+                        }}
+                        disabled={editableContent.positiveComments.length >= 4}
+                        edge="end"
+                        sx={{
+                          color: '#1ABF66',
+                          '&:hover': {
+                            backgroundColor: 'rgba(26, 191, 102, 0.08)',
+                          },
+                          '&.Mui-disabled': {
+                            color: 'rgba(0, 0, 0, 0.12)',
+                          },
+                        }}
+                      >
+                        <SendIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </>
           ) : (
@@ -3176,9 +3240,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
           >
             Neutral Comments
         </Typography>
-          {isEditMode && (
-            <EditIcon sx={{ fontSize: '16px', color: '#F59E0B' }} />
-          )}
       </Box>
           {isEditMode ? (
             <>
@@ -3219,7 +3280,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     }
                   }}
                   onChange={(e) => {
-                    let value = e.target.value;
+                    let {value} = e.target;
                     // Remove spaces
                     value = value.replace(/\s/g, '');
                     // Ensure it always starts with @
@@ -3295,6 +3356,40 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     }
                   }
                 }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => {
+                          const username = document.getElementById('neutral-username-input').value;
+                          const postlink = document.getElementById('neutral-postlink-input').value;
+                          const comment = document.getElementById('neutral-comment-input').value;
+                          
+                          if (username && username !== '@' && comment) {
+                            const newComments = [...editableContent.neutralComments, { username, comment }];
+                            setEditableContent({ ...editableContent, neutralComments: newComments });
+                            document.getElementById('neutral-username-input').value = '@';
+                            document.getElementById('neutral-postlink-input').value = '';
+                            document.getElementById('neutral-comment-input').value = '';
+                          }
+                        }}
+                        disabled={editableContent.neutralComments.length >= 4}
+                        edge="end"
+                        sx={{
+                          color: '#FF9800',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 152, 0, 0.08)',
+                          },
+                          '&.Mui-disabled': {
+                            color: 'rgba(0, 0, 0, 0.12)',
+                          },
+                        }}
+                      >
+                        <SendIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </>
           ) : (
@@ -3359,7 +3454,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
             <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
               Editable
             </Typography>
-            <EditIcon sx={{ fontSize: '18px', color: '#3A3A3C' }} />
           </Box>
           <TextField
             fullWidth
@@ -3392,7 +3486,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
             fontSize: '16px',
             lineHeight: '24px',
             color: '#374151',
-            mb: 4 
+            mb: 4,
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word'
           }}
         >
           {editableContent.bestPerformingPersonasDescription || (
@@ -3408,22 +3505,24 @@ const PCRReportPage = ({ campaign, onBack }) => {
       <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: 'center' }}>
         {/* The Comic Card with Number */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 7 }}>
-          {/* Number - Outside the card */}
-          <Typography
-            sx={{
-              fontFamily: 'Instrument Serif, serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '40px',
-              lineHeight: '44px',
-              letterSpacing: '0%',
-              color: '#1340FF',
-              position: 'relative',
-              left: '-55px',
-            }}
-          >
-            1.
-          </Typography>
+          {/* Number - Outside the card - only show if educator card is visible */}
+          {showEducatorCard && (
+            <Typography
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontWeight: 400,
+                fontStyle: 'normal',
+                fontSize: '40px',
+                lineHeight: '44px',
+                letterSpacing: '0%',
+                color: '#1340FF',
+                position: 'relative',
+                left: '-55px',
+              }}
+            >
+              1.
+            </Typography>
+          )}
           
           {/* Card */}
           <Box
@@ -3479,7 +3578,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
                   Editable
                 </Typography>
-                <EditIcon sx={{ fontSize: '14px', color: '#3A3A3C' }} />
               </Box>
             )}
             {/* Inner gradient circle */}
@@ -3537,13 +3635,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                     Editable
                   </Typography>
-                  <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                 </Box>
               <TextField
                 value={editableContent.comicTitle}
                 onChange={(e) => setEditableContent({ ...editableContent, comicTitle: e.target.value })}
                   fullWidth
                   inputProps={{
+                    maxLength: 30,
                     style: {
                       fontFamily: 'Instrument Serif, serif',
                       fontWeight: 400,
@@ -3595,7 +3693,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <Typography
                 sx={{
                   fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 500,
+                  fontWeight: 700,
                   fontStyle: 'normal',
                   fontSize: '14px',
                   lineHeight: '18px',
@@ -3622,7 +3720,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                       Editable
                     </Typography>
-                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                   </Box>
                 <TextField
                   value={editableContent.comicContentStyle}
@@ -3630,6 +3727,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fullWidth
                     multiline
                     rows={2}
+                  inputProps={{
+                    maxLength: 50,
+                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -3658,6 +3758,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.comicContentStyle}
@@ -3669,7 +3773,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <Typography
                 sx={{
                   fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 500,
+                  fontWeight: 700,
                   fontStyle: 'normal',
                   fontSize: '14px',
                   lineHeight: '18px',
@@ -3696,7 +3800,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                       Editable
                     </Typography>
-                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                   </Box>
                 <TextField
                   value={editableContent.comicWhyWork}
@@ -3704,6 +3807,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fullWidth
                     multiline
                     rows={2}
+                  inputProps={{
+                    maxLength: 50,
+                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -3732,6 +3838,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.comicWhyWork}
@@ -3792,21 +3902,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
           </IconButton>
 
           {/* Number - Outside the card */}
-          <Typography
-            sx={{
-              fontFamily: 'Instrument Serif, serif',
-              fontWeight: 400,
-              fontStyle: 'normal',
-              fontSize: '40px',
-              lineHeight: '44px',
-              letterSpacing: '0%',
-              color: '#1340FF',
-              position: 'relative',
-              left: '-55px',
-            }}
-          >
-            2.
-          </Typography>
+          {showEducatorCard && (
+            <Typography
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontWeight: 400,
+                fontStyle: 'normal',
+                fontSize: '40px',
+                lineHeight: '44px',
+                letterSpacing: '0%',
+                color: '#1340FF',
+                position: 'relative',
+                left: '-55px',
+              }}
+            >
+              2.
+            </Typography>
+          )}
           
           {/* Card */}
           <Box
@@ -3862,7 +3974,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#3A3A3C' }}>
                   Editable
                 </Typography>
-                <EditIcon sx={{ fontSize: '14px', color: '#3A3A3C' }} />
               </Box>
             )}
             {/* Inner gradient circle */}
@@ -3920,13 +4031,13 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                     Editable
                   </Typography>
-                  <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                 </Box>
               <TextField
                 value={editableContent.educatorTitle}
                 onChange={(e) => setEditableContent({ ...editableContent, educatorTitle: e.target.value })}
                   fullWidth
                   inputProps={{
+                    maxLength: 30,
                     style: {
                       fontFamily: 'Instrument Serif, serif',
                       fontWeight: 400,
@@ -3978,7 +4089,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <Typography
                 sx={{
                   fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 500,
+                  fontWeight: 700,
                   fontStyle: 'normal',
                   fontSize: '14px',
                   lineHeight: '18px',
@@ -4005,7 +4116,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                       Editable
                     </Typography>
-                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                   </Box>
                 <TextField
                   value={editableContent.educatorContentStyle}
@@ -4013,6 +4123,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fullWidth
                     multiline
                     rows={2}
+                  inputProps={{
+                    maxLength: 50,
+                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -4041,6 +4154,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.educatorContentStyle}
@@ -4052,7 +4169,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
               <Typography
                 sx={{
                   fontFamily: 'Inter Display, sans-serif',
-                  fontWeight: 500,
+                  fontWeight: 700,
                   fontStyle: 'normal',
                   fontSize: '14px',
                   lineHeight: '18px',
@@ -4079,7 +4196,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                       Editable
                     </Typography>
-                    <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                   </Box>
                 <TextField
                   value={editableContent.educatorWhyWork}
@@ -4087,6 +4203,9 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   fullWidth
                     multiline
                     rows={2}
+                  inputProps={{
+                    maxLength: 50,
+                  }}
                   sx={{
                       bgcolor: '#E5E7EB',
                       borderRadius: '8px',
@@ -4115,6 +4234,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.educatorWhyWork}
@@ -4127,58 +4250,201 @@ const PCRReportPage = ({ campaign, onBack }) => {
         )}
         </Box>
       ) : (
-        // Non-edit Mode: Horizontal layout
-        <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+        // Non-edit Mode: Conditional layout based on number of personas
+        <Box sx={{ display: 'flex', gap: 17, justifyContent: 'flex-start', alignItems: showEducatorCard ? 'center' : 'flex-start' }}>
           {/* The Comic Card with Number */}
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3, ml: 0 }}>
-            {/* Number - Outside the card */}
-            <Typography
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontWeight: 400,
-                fontStyle: 'normal',
-                fontSize: '40px',
-                lineHeight: '44px',
-                letterSpacing: '0%',
-                color: '#1340FF',
-                mt: 12,
-              }}
-            >
-              1.
-            </Typography>
-            
-            {/* Emoji Circle */}
-            <Box
-              sx={{
-                width: '160px',
-                height: '160px',
-                borderRadius: '50%',
-                background: '#FFFFFF',
-                border: '10px solid #FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '-4px 4px 4px 0px #8E8E9340',
-                flexShrink: 0,
-                mt: 3,
-              }}
-            >
-              {/* Inner gradient circle */}
-              <Box
+          <Box sx={{ display: 'flex', alignItems: showEducatorCard ? 'center' : 'flex-start', gap: showEducatorCard ? 2 : 3, ml: showEducatorCard ? 7 : 0 }}>
+            {/* Number - Outside the card - only show if educator card is visible */}
+            {showEducatorCard && (
+              <Typography
                 sx={{
-                  width: '130px',
-                  height: '130px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '64px',
+                  fontFamily: 'Instrument Serif, serif',
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  fontSize: '40px',
+                  lineHeight: '44px',
+                  letterSpacing: '0%',
+                  color: '#1340FF',
+                  position: 'relative',
+                  left: '-55px',
                 }}
               >
-                {editableContent.comicEmoji}
+                1.
+              </Typography>
+            )}
+            
+            {showEducatorCard ? (
+              // Compact horizontal layout when there are 2 personas
+              <Box
+                sx={{
+                  width: '347px',
+                  height: '189px',
+                  borderRadius: '20px',
+                  background: '#F5F5F5',
+                  border: '10px solid #FFFFFF',
+                  boxShadow: '0px 4px 4px 0px #8E8E9340',
+                  position: 'relative',
+                }}
+              >
+                {/* Circle with Icon */}
+                <Box
+                  sx={{
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
+                    background: '#FFFFFF',
+                    border: '8px solid #FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'absolute',
+                    left: '-70px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    zIndex: 1,
+                    boxShadow: '-4px 4px 4px 0px #8E8E9340',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: '95px',
+                      height: '95px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '32px',
+                    }}
+                  >
+                    {editableContent.comicEmoji}
       </Box>
     </Box>
+
+                {/* Content */}
+                <Box 
+                  sx={{ 
+                    position: 'absolute',
+                    right: '12px',
+                    left: '70px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    maxWidth: 'calc(347px - 82px)',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: 'Instrument Serif, serif',
+                      fontWeight: 400,
+                      fontStyle: 'normal',
+                      fontSize: '36px',
+                      lineHeight: '40px',
+                      letterSpacing: '0%',
+                      color: '#0067D5',
+                      mb: 1.5,
+                      textAlign: 'center',
+                      ml: -3,
+                    }}
+                  >
+                    {editableContent.comicTitle}
+      </Typography>
+                  
+                  <Box sx={{ mb: 0.75, textAlign: 'left' }}>
+                    <Typography
+                      sx={{
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 500,
+                        fontStyle: 'normal',
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                        mb: 0.5,
+                      }}
+                    >
+                      Content Style
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 400,
+                        fontStyle: 'normal',
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                      }}
+                    >
+                      {editableContent.comicContentStyle}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography
+                      sx={{
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 500,
+                        fontStyle: 'normal',
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                        mb: 0.5,
+                      }}
+                    >
+                      Why They Work
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: 'Inter Display, sans-serif',
+                        fontWeight: 400,
+                        fontStyle: 'normal',
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                      }}
+                    >
+                      {editableContent.comicWhyWork}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            ) : (
+              // Large vertical layout when there's only 1 persona
+              <>
+                {/* Emoji Circle */}
+      <Box
+        sx={{
+                    width: '160px',
+                    height: '160px',
+                    borderRadius: '50%',
+                    background: '#FFFFFF',
+                    border: '10px solid #FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '-4px 4px 4px 0px #8E8E9340',
+                    flexShrink: 0,
+                    mt: 3,
+                  }}
+                >
+                  {/* Inner gradient circle */}
+                  <Box
+                    sx={{
+                      width: '130px',
+                      height: '130px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #8A5AFE 0%, #A855F7 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '64px',
+                    }}
+                  >
+                    {editableContent.comicEmoji}
+                  </Box>
+                </Box>
 
             {/* Content Box */}
             <Box sx={{ flex: 1, maxWidth: '950px', display: 'flex', gap: 3 }}>
@@ -4247,6 +4513,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '16px',
                       lineHeight: '24px',
                       color: '#000000',
+                      whiteSpace: 'pre-line',
                     }}
                   >
                     {editableContent.comicContentStyle}
@@ -4274,6 +4541,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                       fontSize: '16px',
                       lineHeight: '24px',
                       color: '#000000',
+                      whiteSpace: 'pre-line',
                     }}
                   >
                     {editableContent.comicWhyWork}
@@ -4281,27 +4549,31 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 </Box>
               </Box>
             </Box>
+              </>
+            )}
           </Box>
 
           {/* The Educator Card with Number - Only show if showEducatorCard is true */}
           {showEducatorCard && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {/* Number - Outside the card */}
-              <Typography
-                sx={{
-                  fontFamily: 'Instrument Serif, serif',
-                  fontWeight: 400,
-                  fontStyle: 'normal',
-                  fontSize: '40px',
-                  lineHeight: '44px',
-                  letterSpacing: '0%',
-                  color: '#1340FF',
-                  position: 'relative',
-                  left: '-55px',
-                }}
-              >
-              2.
-            </Typography>
+              {showEducatorCard && (
+                <Typography
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    fontSize: '40px',
+                    lineHeight: '44px',
+                    letterSpacing: '0%',
+                    color: '#1340FF',
+                    position: 'relative',
+                    left: '-55px',
+                  }}
+                >
+                  2.
+                </Typography>
+              )}
             
             {/* Card */}
       <Box
@@ -4384,7 +4656,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Typography
                   sx={{
                     fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 500,
+                    fontWeight: 700,
                     fontStyle: 'normal',
                     fontSize: '14px',
                     lineHeight: '18px',
@@ -4404,6 +4676,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.educatorContentStyle}
@@ -4414,7 +4690,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 <Typography
                   sx={{
                     fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 500,
+                    fontWeight: 700,
                     fontStyle: 'normal',
                     fontSize: '14px',
                     lineHeight: '18px',
@@ -4434,6 +4710,10 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     color: '#000000',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {editableContent.educatorWhyWork}
@@ -4460,16 +4740,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
               p: 2,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 1
             }}
           >
-            <Box sx={{ fontSize: '24px' }}>📋</Box>
+            <Box
+              component="img"
+              src="/assets/icons/pcr/problem.svg"
+              alt="Problem icon"
+              sx={{ width: '24px', height: '24px' }}
+            />
             <Typography 
               sx={{ 
                 fontFamily: 'Aileron',
                 fontWeight: 700,
                 fontSize: '18px',
-                color: 'white'
+                color: 'white',
+                textAlign: 'center'
               }}
             >
               What Could Be Improved
@@ -4499,7 +4786,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 key={index}
         sx={{
                   bgcolor: getImprovedInsightBgColor(index),
-                  p: 2.5, 
+                  p: 1, 
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -4513,10 +4800,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
           borderRadius: '12px',
-                    p: 2, 
+                    p: 2.5,
+                    px: 1,
                     flex: 1,
                     display: 'flex',
-                    gap: 1,
+                    gap: 0.5,
                   }}>
                     <Box sx={{ position: 'relative', flex: 1 }}>
                       <Box
@@ -4533,7 +4821,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                           Editable
         </Typography>
-                        <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
       </Box>
                       <TextField
                         value={insight}
@@ -4545,8 +4832,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fullWidth
                         multiline
                         rows={2}
+                        inputProps={{
+                          maxLength: 120,
+                        }}
                         sx={{
-                          mt: 2.5,
+                          mt: 1.5,
                           '& .MuiInputBase-root': {
                             fontFamily: 'Aileron',
                             fontSize: '12px',
@@ -4572,7 +4862,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     </IconButton>
                   </Box>
                 ) : (
-                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', lineHeight: '18px' }}>
+                  <Typography sx={{ 
+                    fontFamily: 'Aileron', 
+                    fontSize: '12px', 
+                    lineHeight: '18px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
+                  }}>
                     {insight}
                   </Typography>
                 )}
@@ -4616,16 +4914,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
               p: 2,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 1
             }}
           >
-            <Box sx={{ fontSize: '24px' }}>🏆</Box>
+            <Box
+              component="img"
+              src="/assets/icons/pcr/rewarded_ads.svg"
+              alt="Rewarded ads icon"
+              sx={{ width: '24px', height: '24px' }}
+            />
             <Typography 
               sx={{ 
                 fontFamily: 'Aileron',
                 fontWeight: 700,
                 fontSize: '18px',
-                color: 'white'
+                color: 'white',
+                textAlign: 'center'
               }}
             >
               What Worked Well
@@ -4657,7 +4962,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 sx={{ 
                   background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
                   opacity: getWorkedWellOpacity(index),
-                  p: 2.5, 
+                  p: 1, 
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -4671,10 +4976,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
           borderRadius: '12px',
-          p: 2,
+          p: 2.5,
+                    px: 1,
                     flex: 1,
                     display: 'flex',
-                    gap: 1,
+                    gap: 0.5,
                   }}>
                     <Box sx={{ position: 'relative', flex: 1 }}>
                       <Box
@@ -4691,7 +4997,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                           Editable
                         </Typography>
-                        <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
                       </Box>
                       <TextField
                         value={insight}
@@ -4703,8 +5008,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fullWidth
                         multiline
                         rows={2}
+                        inputProps={{
+                          maxLength: 120,
+                        }}
                         sx={{
-                          mt: 2.5,
+                          mt: 1.5,
                           '& .MuiInputBase-root': {
                             fontFamily: 'Aileron',
                             fontSize: '12px',
@@ -4730,7 +5038,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     </IconButton>
                   </Box>
                 ) : (
-                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', lineHeight: '18px' }}>
+                  <Typography sx={{ 
+                    fontFamily: 'Aileron', 
+                    fontSize: '12px', 
+                    lineHeight: '18px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
+                  }}>
                     {insight}
                   </Typography>
                 )}
@@ -4774,16 +5090,23 @@ const PCRReportPage = ({ campaign, onBack }) => {
               p: 2,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: 1
             }}
           >
-            <Box sx={{ fontSize: '24px' }}>🎯</Box>
+            <Box
+              component="img"
+              src="/assets/icons/pcr/ads_click.svg"
+              alt="Ads click icon"
+              sx={{ width: '24px', height: '24px' }}
+            />
             <Typography 
               sx={{ 
                 fontFamily: 'Aileron',
           fontWeight: 700,
                 fontSize: '18px',
-                color: 'white'
+                color: 'white',
+                textAlign: 'center'
         }}
       >
               What To Do Next
@@ -4813,7 +5136,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
                 key={index}
                 sx={{ 
                   bgcolor: index === 0 ? '#026D54D9' : '#026D54BF',
-                  p: 2.5, 
+                  p: 1, 
                   color: 'white', 
                   height: '120px', 
                   display: 'flex', 
@@ -4827,10 +5150,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                   <Box sx={{ 
                     bgcolor: '#E5E7EB', 
                     borderRadius: '12px', 
-                    p: 2, 
+                    p: 2.5,
+                    px: 1,
                     flex: 1,
                     display: 'flex',
-                    gap: 1,
+                    gap: 0.5,
                   }}>
                     <Box sx={{ position: 'relative', flex: 1 }}>
                       <Box
@@ -4847,7 +5171,6 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
                           Editable
                         </Typography>
-                        <EditIcon sx={{ fontSize: '12px', color: '#3A3A3C' }} />
     </Box>
                       <TextField
                         value={insight}
@@ -4859,8 +5182,11 @@ const PCRReportPage = ({ campaign, onBack }) => {
                         fullWidth
                         multiline
                         rows={2}
+                        inputProps={{
+                          maxLength: 120,
+                        }}
                         sx={{
-                          mt: 2.5,
+                          mt: 1.5,
                           '& .MuiInputBase-root': {
                             fontFamily: 'Aileron',
                             fontSize: '12px',
@@ -4886,7 +5212,15 @@ const PCRReportPage = ({ campaign, onBack }) => {
                     </IconButton>
                   </Box>
                 ) : (
-                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', lineHeight: '18px' }}>
+                  <Typography sx={{ 
+                    fontFamily: 'Aileron', 
+                    fontSize: '12px', 
+                    lineHeight: '18px',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-line',
+                  }}>
                     {insight}
                   </Typography>
                 )}
@@ -4985,6 +5319,7 @@ const PCRReportPage = ({ campaign, onBack }) => {
         </Box>
       </Box>
     </Snackbar>
+    </Box>
   </Box>
   );
 };

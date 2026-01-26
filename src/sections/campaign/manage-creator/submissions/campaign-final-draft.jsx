@@ -33,7 +33,7 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
-  LinearProgress,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -773,40 +773,76 @@ const CampaignFinalDraft = ({
                           <Typography variant="subtitle2" noWrap>
                             {truncateText(currentFile?.fileName, 50) || 'Uploading file...'}
                           </Typography>
-                          <Stack spacing={1}>
-                            <LinearProgress
-                              variant="determinate"
-                              value={currentFile?.progress || 0}
-                              sx={{
-                                height: 6,
-                                borderRadius: 1,
-                                bgcolor: 'background.paper',
-                                '& .MuiLinearProgress-bar': {
-                                  borderRadius: 1,
-                                  bgcolor: (currentFile?.progress || 0) === 100 ? 'success.main' : 'primary.main',
-                                },
-                              }}
-                            />
-                            <Stack
-                              direction="row"
-                              justifyContent="space-between"
-                              alignItems="center"
-                            >
-                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                {currentFile?.progress === 100 ? (
-                                  <Box
-                                    component="span"
-                                    sx={{ color: 'success.main', fontWeight: 600 }}
-                                  >
-                                    Upload Complete
-                                  </Box>
-                                ) : (
-                                  `${currentFile?.fileName || 'Uploading'}... ${currentFile?.progress || 0}%`
-                                )}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                {formatFileSize(currentFile?.fileSize || 0)}
-                              </Typography>
+                          <Stack direction="row" spacing={2} alignItems="center">
+                            <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                              <CircularProgress
+                                variant="determinate"
+                                value={100}
+                                size={56}
+                                thickness={4}
+                                sx={{
+                                  color: 'grey.200',
+                                  position: 'absolute',
+                                }}
+                              />
+                              <CircularProgress
+                                variant="determinate"
+                                value={currentFile?.progress || 0}
+                                size={56}
+                                thickness={4}
+                                sx={{
+                                  color: (currentFile?.progress || 0) === 100 ? 'success.main' : 'primary.main',
+                                  strokeLinecap: 'round',
+                                  transition: 'stroke-dashoffset 0.3s ease 0s',
+                                }}
+                              />
+                              <Box
+                                sx={{
+                                  top: 0,
+                                  left: 0,
+                                  bottom: 0,
+                                  right: 0,
+                                  position: 'absolute',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                <Typography
+                                  variant="caption"
+                                  component="div"
+                                  sx={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                    color: (currentFile?.progress || 0) === 100 ? 'success.main' : 'text.primary',
+                                  }}
+                                >
+                                  {`${Math.round(currentFile?.progress || 0)}%`}
+                                </Typography>
+                              </Box>
+                            </Box>
+                            <Stack spacing={0.5} flexGrow={1}>
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                              >
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {currentFile?.progress === 100 ? (
+                                    <Box
+                                      component="span"
+                                      sx={{ color: 'success.main', fontWeight: 600 }}
+                                    >
+                                      Upload Complete
+                                    </Box>
+                                  ) : (
+                                    `${currentFile?.fileName || 'Uploading'}...`
+                                  )}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {formatFileSize(currentFile?.fileSize || 0)}
+                                </Typography>
+                              </Stack>
                             </Stack>
                           </Stack>
                         </Stack>

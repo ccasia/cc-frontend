@@ -103,7 +103,7 @@ const closecampaignCreditAnimation = keyframes`
   to { width: 0 }
 `;
 
-const CampaignOverview = ({ campaign, onUpdate }) => {
+const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = false }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
@@ -522,6 +522,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                           size="small"
                           // color="primary"
                           onClick={handleEditCredit}
+                          disabled={propIsDisabled}
                         >
                           Edit Credits
                         </Button>
@@ -1057,4 +1058,5 @@ export default CampaignOverview;
 CampaignOverview.propTypes = {
   campaign: PropTypes.oneOfType([PropTypes.object, PropTypes.any]),
   onUpdate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };
