@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 
 import {
   Box,
@@ -17,6 +17,7 @@ import {
   DialogContent,
   TableContainer,
   Typography,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -32,6 +33,8 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
+import { useGetAllInvoices } from 'src/api/invoices';
+import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
 import InvoiceItem from './invoice-item';
 import InvoiceTableToolbar from './invoice-table-toolbar';
 import InvoiceNewEditForm from '../invoice/invoice-new-edit-form';
@@ -56,7 +59,7 @@ const TABLE_HEAD = [
   { id: 'action', label: '', width: 100, hideSortIcon: true },
 ];
 
-const InvoiceLists = ({ invoices }) => {
+const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const [filters, setFilters] = useState(defaultFilters);
 
   const editDialog = useBoolean();
@@ -64,24 +67,66 @@ const InvoiceLists = ({ invoices }) => {
   const [selectedData, setSelectedData] = useState();
 
   const smUp = useResponsive('up', 'sm');
+  const table = useTable({ defaultRowsPerPage: 5 }); // Default to 5
+  const denseHeight = table.dense ? 56 : 56 + 20;
+
+  // OPTIMIZED: Use paginated endpoint instead of fetching all invoices
+  const {
+    data: invoicesData,
+    pagination,
+    isLoading: invoicesLoading,
+    error: invoicesError,
+    mutate: mutateInvoices,
+  } = useGetAllInvoices({
+    page: table.page + 1, // API uses 1-based pagination
+    limit: table.rowsPerPage,
+    status: filters.status !== 'all' ? filters.status : undefined,
+    currency: filters.currency || undefined,
+    search: filters.name || undefined,
+    campaignName: filters.campaignName || undefined,
+  });
+
+  // Debug: Log error if API call fails
+  if (invoicesError && process.env.NODE_ENV === 'development') {
+    console.error('Error fetching invoices:', invoicesError);
+  }
+
+  // Use paginated data if available, otherwise fallback to prop
+  // Wait for data to load - if invoicesData is undefined, we're still loading
+  // Once loaded, invoicesData will be an array (empty or with items)
+  const invoices = invoicesData !== undefined 
+    ? invoicesData 
+    : (invoicesProp && invoicesProp.length > 0) 
+      ? invoicesProp 
+      : [];
 
   const campaigns = useMemo(() => {
     const data = invoices?.map((invoice) => invoice?.campaign?.name);
     return data.filter((item, index) => data.indexOf(item) === index);
   }, [invoices]);
 
-  const table = useTable();
-  const denseHeight = table.dense ? 56 : 56 + 20;
-
-  const dataFiltered = applyFilter({
-    inputData: invoices,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-  });
+  // OPTIMIZED: Client-side filtering only for display (server already filtered)
+  const dataFiltered = useMemo(() => {
+    if (!invoices?.length) return [];
+    return applyFilter({
+      inputData: invoices,
+      comparator: getComparator(table.order, table.orderBy),
+      filters: {
+        ...filters,
+        // Don't re-filter status/currency/search as they're already filtered server-side
+        status: 'all',
+        currency: '',
+        name: '',
+      },
+    });
+  }, [invoices, table.order, table.orderBy, filters]);
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered?.length && canReset) || !dataFiltered?.length;
+  // Show "No Data" if:
+  // 1. Not loading AND no filtered data AND filters are reset (no active filters)
+  // 2. Not loading AND no filtered data (even with filters)
+  const notFound = (!invoicesLoading && !dataFiltered?.length);
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -109,27 +154,37 @@ const InvoiceLists = ({ invoices }) => {
     console.log(data);
   }, []);
 
-  const filter = useCallback(
-    (name) => {
-      if (!name) return 0;
-      return invoices?.filter((invoice) => invoice?.status === name)?.length || 0;
-    },
-    [invoices]
-  );
+  // OPTIMIZED: Use invoice stats from backend for accurate counts
+  const { stats: invoiceStats, isLoading: statsLoading } = useGetAllInvoiceStats();
 
-  // Create TABS array similar to invoice-list-view.jsx
-  const TABS = useMemo(
-    () => [
-      { value: 'all', label: 'All', count: invoices?.length || 0 },
-      { value: 'paid', label: 'Paid', count: filter('paid') },
-      { value: 'approved', label: 'Approved', count: filter('approved') },
-      { value: 'pending', label: 'Pending', count: filter('pending') },
-      { value: 'overdue', label: 'Overdue', count: filter('overdue') },
-      { value: 'draft', label: 'Draft', count: filter('draft') },
-      { value: 'rejected', label: 'Rejected', count: filter('rejected') },
-    ],
-    [invoices, filter]
-  );
+  // Create TABS array using backend stats - always use backend stats for accuracy
+  const TABS = useMemo(() => {
+
+    // Check if stats are loaded and have counts
+    if (invoiceStats && invoiceStats.counts) {
+      const counts = invoiceStats.counts;
+      return [
+        { value: 'all', label: 'All', count: counts.total ?? 0 },
+        { value: 'paid', label: 'Paid', count: counts.paid ?? 0 },
+        { value: 'approved', label: 'Approved', count: counts.approved ?? 0 },
+        { value: 'pending', label: 'Pending', count: counts.pending ?? 0 },
+        { value: 'overdue', label: 'Overdue', count: counts.overdue ?? 0 },
+        { value: 'draft', label: 'Draft', count: counts.draft ?? 0 },
+        { value: 'rejected', label: 'Rejected', count: counts.rejected ?? 0 },
+      ];
+    }
+    
+    // Show 0 while loading or if there's an error (prevents showing incorrect counts)
+    return [
+      { value: 'all', label: 'All', count: 0 },
+      { value: 'paid', label: 'Paid', count: 0 },
+      { value: 'approved', label: 'Approved', count: 0 },
+      { value: 'pending', label: 'Pending', count: 0 },
+      { value: 'overdue', label: 'Overdue', count: 0 },
+      { value: 'draft', label: 'Draft', count: 0 },
+      { value: 'rejected', label: 'Rejected', count: 0 },
+    ];
+  }, [invoiceStats, statsLoading]);
 
   const openEditInvoice = useCallback(
     (id, data) => {
@@ -296,37 +351,42 @@ const InvoiceLists = ({ invoices }) => {
                 </TableHead>
 
                 <TableBody>
-                  {dataFiltered
-                    ?.slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((invoice) => (
-                      <InvoiceItem
-                        key={invoice.id}
-                        invoice={invoice}
-                        onChangeStatus={changeInvoiceStatus}
-                        selected={table.selected.includes(invoice.id)}
-                        onSelectRow={() => table.onSelectRow(invoice.id)}
-                        openEditInvoice={() => openEditInvoice(invoice.id)}
+                  {invoicesLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={TABLE_HEAD.length} align="center" sx={{ py: 5 }}>
+                        <CircularProgress />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <>
+                      {dataFiltered?.map((invoice) => (
+                        <InvoiceItem
+                          key={invoice.id}
+                          invoice={invoice}
+                          onChangeStatus={changeInvoiceStatus}
+                          selected={table.selected.includes(invoice.id)}
+                          onSelectRow={() => table.onSelectRow(invoice.id)}
+                          openEditInvoice={() => openEditInvoice(invoice.id)}
+                        />
+                      ))}
+
+                      <TableEmptyRows
+                        height={denseHeight}
+                        emptyRows={emptyRows(table.page, table.rowsPerPage, pagination?.total || dataFiltered.length)}
                       />
-                    ))}
 
-                  <TableEmptyRows
-                    height={denseHeight}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
-                  />
-
-                  <TableNoData
-                    notFound={notFound}
-                    sx={{
-                      ml: { xs: 0, md: -4 },
-                      '& .MuiTableCell-root': {
-                        p: 0,
-                        height: 300,
-                      },
-                    }}
-                  />
+                      <TableNoData
+                        notFound={notFound}
+                        sx={{
+                          ml: { xs: 0, md: -4 },
+                          '& .MuiTableCell-root': {
+                            p: 0,
+                            height: 300,
+                          },
+                        }}
+                      />
+                    </>
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -334,7 +394,7 @@ const InvoiceLists = ({ invoices }) => {
         </Box>
 
         <TablePaginationCustom
-          count={dataFiltered.length}
+          count={pagination?.total || dataFiltered.length}
           page={table.page}
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}

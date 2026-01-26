@@ -69,7 +69,7 @@ const getStatusText = (status, pitch, campaign) => {
   return statusTextMap[status] || status;
 };
 
-const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch, onRemoved }) => {
+const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, onViewPitch, onRemoved, isDisabled = false }) => {
   const smUp = useResponsive('up', 'sm');
 
   // Helper to extract username from stats or profile link
@@ -244,7 +244,7 @@ const PitchRow = ({ pitch, displayStatus, statusInfo, isGuestCreator, campaign, 
       </TableCell>
       <TableCell sx={{ padding: 0, paddingRight: 1 }}>
         {smUp ? (
-          <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} campaignId={campaign?.id} onRemoved={onRemoved} />
+          <V3PitchActions pitch={pitch} onViewPitch={onViewPitch} campaignId={campaign?.id} onRemoved={onRemoved} isDisabled={isDisabled} />
         ) : (
           <IconButton onClick={() => onViewPitch(pitch)}>
             <Iconify icon="hugeicons:view" />
@@ -263,6 +263,7 @@ PitchRow.propTypes = {
   campaign: PropTypes.object,
   onViewPitch: PropTypes.func.isRequired,
   onRemoved: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };
 
 export default PitchRow;

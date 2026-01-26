@@ -1,6 +1,7 @@
 import useSWR from 'swr';
 import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
+import { m, AnimatePresence } from 'framer-motion';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { useTheme } from '@mui/material/styles';
@@ -13,10 +14,14 @@ import {
   InputBase,
   Typography,
   CircularProgress,
+  Autocomplete,
+  TextField,
+  Avatar,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+// Removed useGetAdminsForSuperadmin - using direct SWR call to /api/user/alladmins for CSM access
 // import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { fetcher } from 'src/utils/axios';
@@ -55,6 +60,41 @@ const CampaignView = () => {
   const create = useBoolean();
 
   const [filter, setFilter] = useState('active');
+  const [showAllCampaigns, setShowAllCampaigns] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // Fetch admins list for filter dropdown - only when in "All" tab
+  // Using /api/user/alladmins endpoint which is accessible by all admins (not just superadmin)
+  const { data: adminsData, isLoading: adminsLoading } = useSWR(
+    showAllCampaigns ? '/api/user/alladmins' : null,
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+  // Filter admin options - only include CSM admins
+  const adminOptions = useMemo(() => {
+    if (!adminsData) return [];
+    return adminsData
+      .filter((adminUser) => {
+        // Only include users with names and admin record
+        if (!adminUser?.name || !adminUser?.admin) return false;
+        // Only include CSM admins
+        const roleName = adminUser.admin?.role?.name;
+        return roleName === 'CSM' || roleName === 'Customer Success Manager';
+      })
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+      .map((adminUser) => ({
+        id: adminUser.id,
+        name: adminUser.name || 'Unknown',
+        photoURL: adminUser.photoURL,
+        role: adminUser.admin?.role?.name || 'CSM',
+      }));
+  }, [adminsData]);
 
   const theme = useTheme();
 
@@ -75,27 +115,40 @@ const CampaignView = () => {
     [user]
   );
 
+  // Check if user is a CSM admin (not advanced mode)
+  const isCSM = useMemo(
+    () =>
+      (user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager') &&
+      user?.admin?.mode !== 'advanced',
+    [user]
+  );
+
   const getKey = (pageIndex, previousPageData) => {
+    // When showAllCampaigns is true, we're viewing other admins' campaigns
+    const excludeParam = showAllCampaigns ? '&excludeOwn=true' : '';
+    // Add filter by specific admin if selected
+    const filterAdminParam = selectedAdmin ? `&filterAdminId=${selectedAdmin.id}` : '';
+
     // If there's no previous page data, start from the first page
     if (pageIndex === 0) {
-      let status = filter.toUpperCase();
-      if (filter === 'pending') {
-              // For pending tab, we need to search for all pending statuses
-      status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
+      let status = showAllCampaigns ? '' : filter.toUpperCase();
+      if (filter === 'pending' && !showAllCampaigns) {
+        // For pending tab, we need to search for all pending statuses
+        status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
       }
-      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}`;
+      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}${excludeParam}${filterAdminParam}`;
     }
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
     // Otherwise, use the nextCursor to get the next page
-    let status = filter.toUpperCase();
-    if (filter === 'pending') {
+    let status = showAllCampaigns ? '' : filter.toUpperCase();
+    if (filter === 'pending' && !showAllCampaigns) {
       // For pending tab, we need to search for all pending statuses
       status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
     }
-    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}${excludeParam}${filterAdminParam}`;
   };
 
   const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher, {
@@ -131,11 +184,19 @@ const CampaignView = () => {
     { revalidateOnFocus: false }
   );
 
+  // Fetch count for "All Campaigns" (other admins' active campaigns) - only for CSM users
+  const { data: allCampaignsData } = useSWR(
+    isCSM ? `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=&excludeOwn=true&limit=500` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
   // Use independent datasets for counts so they persist regardless of the current tab
   const activeCount = activeData?.data?.campaigns?.length || 0;
   const completedCount = completedData?.data?.campaigns?.length || 0;
   const pausedCount = pausedData?.data?.campaigns?.length || 0;
   const pendingCount = pendingData?.data?.campaigns?.length || 0;
+  const allCampaignsCount = allCampaignsData?.data?.campaigns?.length || 0;
 
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
@@ -222,13 +283,17 @@ const CampaignView = () => {
             <Button
               disableRipple
               size="large"
-              onClick={() => setFilter('active')}
+              onClick={() => {
+                  setFilter('active');
+                  setShowAllCampaigns(false);
+                  setSelectedAdmin(null);
+                }}
               sx={{
                 px: 0.5,
                 py: 0.5,
                 pb: 1,
                 minWidth: 'fit-content',
-                color: filter === 'active' ? theme.palette.common : '#8e8e93',
+                color: filter === 'active' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
                 position: 'relative',
                 fontSize: '1.05rem',
                 fontWeight: 650,
@@ -248,7 +313,7 @@ const CampaignView = () => {
                   left: 0,
                   right: 0,
                   height: '2px',
-                  width: filter === 'active' ? '100%' : '0%',
+                  width: filter === 'active' && !showAllCampaigns ? '100%' : '0%',
                   bgcolor: '#1340ff',
                   transition: 'all 0.3s ease-in-out',
                   transform: 'scaleX(1)',
@@ -258,7 +323,7 @@ const CampaignView = () => {
                   bgcolor: 'transparent',
                   '&::after': {
                     width: '100%',
-                    opacity: filter === 'active' ? 1 : 0.5,
+                    opacity: filter === 'active' && !showAllCampaigns ? 1 : 0.5,
                   },
                 },
               }}
@@ -270,14 +335,18 @@ const CampaignView = () => {
               <Button
                 disableRipple
                 size="large"
-                onClick={() => setFilter('pending')}
+                onClick={() => {
+                    setFilter('pending');
+                    setShowAllCampaigns(false);
+                    setSelectedAdmin(null);
+                  }}
                 sx={{
                   px: 1,
                   py: 0.5,
                   pb: 1,
                   ml: 2,
                   minWidth: 'fit-content',
-                  color: filter === 'pending' ? theme.palette.common : '#8e8e93',
+                  color: filter === 'pending' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
                   position: 'relative',
                   fontSize: '1.05rem',
                   fontWeight: 650,
@@ -297,7 +366,7 @@ const CampaignView = () => {
                     left: 0,
                     right: 0,
                     height: '2px',
-                    width: filter === 'pending' ? '100%' : '0%',
+                    width: filter === 'pending' && !showAllCampaigns ? '100%' : '0%',
                     bgcolor: '#1340ff',
                     transition: 'all 0.3s ease-in-out',
                     transform: 'scaleX(1)',
@@ -307,7 +376,7 @@ const CampaignView = () => {
                     bgcolor: 'transparent',
                     '&::after': {
                       width: '100%',
-                      opacity: filter === 'pending' ? 1 : 0.5,
+                      opacity: filter === 'pending' && !showAllCampaigns ? 1 : 0.5,
                     },
                   },
                 }}
@@ -318,14 +387,18 @@ const CampaignView = () => {
             <Button
               disableRipple
               size="large"
-              onClick={() => setFilter('completed')}
+              onClick={() => {
+                  setFilter('completed');
+                  setShowAllCampaigns(false);
+                  setSelectedAdmin(null);
+                }}
               sx={{
                 px: 1,
                 py: 0.5,
                 pb: 1,
                 ml: 2,
                 minWidth: 'fit-content',
-                color: filter === 'completed' ? theme.palette.common : '#8e8e93',
+                color: filter === 'completed' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
                 position: 'relative',
                 fontSize: '1.05rem',
                 fontWeight: 650,
@@ -345,7 +418,7 @@ const CampaignView = () => {
                   left: 0,
                   right: 0,
                   height: '2px',
-                  width: filter === 'completed' ? '100%' : '0%',
+                  width: filter === 'completed' && !showAllCampaigns ? '100%' : '0%',
                   bgcolor: '#1340ff',
                   transition: 'all 0.3s ease-in-out',
                   transform: 'scaleX(1)',
@@ -355,7 +428,7 @@ const CampaignView = () => {
                   bgcolor: 'transparent',
                   '&::after': {
                     width: '100%',
-                    opacity: filter === 'completed' ? 1 : 0.5,
+                    opacity: filter === 'completed' && !showAllCampaigns ? 1 : 0.5,
                   },
                 },
               }}
@@ -365,14 +438,18 @@ const CampaignView = () => {
             <Button
               disableRipple
               size="large"
-              onClick={() => setFilter('paused')}
+              onClick={() => {
+                  setFilter('paused');
+                  setShowAllCampaigns(false);
+                  setSelectedAdmin(null);
+                }}
               sx={{
                 px: 1,
                 py: 0.5,
                 pb: 1,
                 ml: 2,
                 minWidth: 'fit-content',
-                color: filter === 'paused' ? theme.palette.common : '#8e8e93',
+                color: filter === 'paused' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
                 position: 'relative',
                 fontSize: '1.05rem',
                 fontWeight: 650,
@@ -392,7 +469,7 @@ const CampaignView = () => {
                   left: 0,
                   right: 0,
                   height: '2px',
-                  width: filter === 'paused' ? '100%' : '0%',
+                  width: filter === 'paused' && !showAllCampaigns ? '100%' : '0%',
                   bgcolor: '#1340ff',
                   transition: 'all 0.3s ease-in-out',
                   transform: 'scaleX(1)',
@@ -402,13 +479,66 @@ const CampaignView = () => {
                   bgcolor: 'transparent',
                   '&::after': {
                     width: '100%',
-                    opacity: filter === 'paused' ? 1 : 0.5,
+                    opacity: filter === 'paused' && !showAllCampaigns ? 1 : 0.5,
                   },
                 },
               }}
             >
               Paused ({pausedCount})
             </Button>
+            {/* All Campaigns tab - only visible to CSM admins */}
+            {isCSM && (
+              <Button
+                disableRipple
+                size="large"
+                onClick={() => {
+                  setFilter('');
+                  setShowAllCampaigns(true);
+                }}
+                sx={{
+                  px: 1,
+                  py: 0.5,
+                  pb: 1,
+                  ml: 2,
+                  minWidth: 'fit-content',
+                  color: showAllCampaigns ? theme.palette.common : '#8e8e93',
+                  position: 'relative',
+                  fontSize: '1.05rem',
+                  fontWeight: 650,
+                  transition: 'transform 0.1s ease-in-out',
+                  '&:focus': {
+                    outline: 'none',
+                    bgcolor: 'transparent',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.95)',
+                    bgcolor: 'transparent',
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '2px',
+                    width: showAllCampaigns ? '100%' : '0%',
+                    bgcolor: '#1340ff',
+                    transition: 'all 0.3s ease-in-out',
+                    transform: 'scaleX(1)',
+                    transformOrigin: 'left',
+                  },
+                  '&:hover': {
+                    bgcolor: 'transparent',
+                    '&::after': {
+                      width: '100%',
+                      opacity: showAllCampaigns ? 1 : 0.5,
+                    },
+                  },
+                }}
+              >
+                All ({allCampaignsCount})
+              </Button>
+            )}
           </Stack>
 
           <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
@@ -439,39 +569,148 @@ const CampaignView = () => {
         </Stack>
       </Box>
 
-      <Box
-        sx={{
-          width: '100%',
-          border: '1px solid',
-          borderBottom: '3.5px solid',
-          borderColor: 'divider',
-          borderRadius: 1,
-          bgcolor: 'background.paper',
-        }}
-      >
-        <InputBase
-          value={search.query}
-          onChange={(e) => {
-            setSearch((prev) => ({ ...prev, query: e.target.value }));
-            debouncedSetQuery(e.target.value);
-          }}
-          placeholder="Search"
-          startAdornment={
-            <Iconify
-              icon="eva:search-fill"
-              sx={{ width: 20, height: 20, mr: 1, color: 'text.disabled', ml: 1 }}
-            />
-          }
+      <Stack direction="row" sx={{ width: '100%', gap: 0 }}>
+        <Box
+          component={m.div}
+          layout="position"
+          transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
           sx={{
-            width: '100%',
-            color: 'text.primary',
-            '& input': {
-              py: 1,
-              px: 1,
-            },
+            flex: 1,
+            border: '1px solid',
+            borderBottom: '3.5px solid',
+            borderColor: isSearchFocused ? '#1340ff' : 'divider',
+            borderRadius: 1.5,
+            bgcolor: 'background.paper',
+            height: 44,
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'border-color 0.2s ease',
           }}
-        />
-      </Box>
+        >
+          <InputBase
+            value={search.query}
+            onChange={(e) => {
+              setSearch((prev) => ({ ...prev, query: e.target.value }));
+              debouncedSetQuery(e.target.value);
+            }}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            placeholder="Search"
+            startAdornment={
+              <Iconify
+                icon="eva:search-fill"
+                sx={{ width: 20, height: 20, mr: 1, ml: 1.5, color: 'text.disabled', flexShrink: 0 }}
+              />
+            }
+            sx={{
+              width: '100%',
+              height: '100%',
+              color: 'text.primary',
+              '& input': {
+                py: 0,
+                px: 0.5,
+              },
+            }}
+          />
+        </Box>
+
+        {/* Admin Filter Dropdown - only show in "All" tab for superadmin, god mode, and CSM admins */}
+        <AnimatePresence initial={false}>
+          {showAllCampaigns && (isSuperAdmin || user?.admin?.mode === 'advanced' || isCSM) && (
+            <m.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 262, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+              style={{ overflow: 'hidden', flexShrink: 0, display: 'flex' }}
+            >
+              <Autocomplete
+                size="small"
+                value={selectedAdmin}
+                onChange={(event, newValue) => {
+                  setSelectedAdmin(newValue);
+                }}
+                options={adminOptions}
+                getOptionLabel={(option) => option.name || ''}
+                isOptionEqualToValue={(option, value) => option.id === value?.id}
+                loading={adminsLoading}
+                renderOption={(props, option) => (
+                  <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Avatar
+                      src={option.photoURL}
+                      alt={option.name}
+                      sx={{ width: 24, height: 24, fontSize: '0.75rem' }}
+                    >
+                      {option.name?.charAt(0)}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {option.name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {option.role}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Filter by Admin"
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.5 }}>
+                          <Iconify
+                            icon="mdi:account-filter"
+                            sx={{ width: 20, height: 20, mr: 1, color: 'text.disabled', flexShrink: 0 }}
+                          />
+                          {selectedAdmin && (
+                            <Avatar
+                              src={selectedAdmin.photoURL}
+                              alt={selectedAdmin.name}
+                              sx={{ width: 20, height: 20, fontSize: '0.625rem', mr: 0.5, flexShrink: 0 }}
+                            >
+                              {selectedAdmin.name?.charAt(0)}
+                            </Avatar>
+                          )}
+                          {params.InputProps.startAdornment}
+                        </Box>
+                      ),
+                    }}
+                  />
+                )}
+                sx={{
+                  width: 250,
+                  minWidth: 250,
+                  ml: 1.5,
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'background.paper',
+                    borderRadius: 1.5,
+                    height: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    '& fieldset': {
+                      borderColor: selectedAdmin ? '#1340ff' : 'divider',
+                      borderWidth: '1px',
+                      borderBottomWidth: '3.5px',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: selectedAdmin ? '#1340ff' : 'divider',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#1340ff',
+                    },
+                  },
+                  '& .MuiInputBase-input': {
+                    padding: '0 8px',
+                  },
+                }}
+              />
+            </m.div>
+          )}
+        </AnimatePresence>
+      </Stack>
 
       {isLoading && (
         <Box sx={{ position: 'relative', top: 200, textAlign: 'center' }}>
@@ -489,7 +728,7 @@ const CampaignView = () => {
       {!isLoading &&
         (dataFiltered?.length > 0 ? (
           <Box mt={2}>
-            <CampaignLists campaigns={dataFiltered} />
+            <CampaignLists campaigns={dataFiltered} showAdmins={showAllCampaigns} />
             {isValidating && (
               <Box sx={{ textAlign: 'center', my: 2 }}>
                 <CircularProgress
@@ -505,13 +744,17 @@ const CampaignView = () => {
           </Box>
         ) : (
           <EmptyContent
-            title={`No ${(() => {
-              if (filter === 'active') return 'active';
-              if (filter === 'completed') return 'completed';
-              if (filter === 'pending') return 'pending';
-              if (filter === 'paused') return 'paused';
-              return filter;
-            })()} campaigns available`}
+            title={
+              showAllCampaigns
+                ? 'No campaigns from other admins'
+                : `No ${(() => {
+                    if (filter === 'active') return 'active';
+                    if (filter === 'completed') return 'completed';
+                    if (filter === 'pending') return 'pending';
+                    if (filter === 'paused') return 'paused';
+                    return filter;
+                  })()} campaigns available`
+            }
           />
         ))}
       {/* <CampaignFilter

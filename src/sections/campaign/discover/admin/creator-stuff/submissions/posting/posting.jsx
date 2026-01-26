@@ -36,11 +36,12 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-const Posting = ({ 
-  campaign, 
-  submission, 
-  creator, 
+const Posting = ({
+  campaign,
+  submission,
+  creator,
   isV3 = false,
+  isDisabled: propIsDisabled = false,
   // Individual client approval handlers (for consistency, but posting doesn't have individual media)
   handleClientApproveVideo,
   handleClientApprovePhoto,
@@ -187,10 +188,11 @@ const Posting = ({
     }
   }, [date]);
 
-  const isDisabled = useMemo(
-    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced' || submission?.status === 'APPROVED',
-    [user, submission?.status]
+  const financeDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
   );
+  const isDisabled = propIsDisabled || financeDisabled || submission?.status === 'APPROVED';
 
   // Check if user is admin (not superadmin) and can submit for creator
   const canAdminSubmit = useMemo(() => 
@@ -288,6 +290,10 @@ const Posting = ({
                     '&:disabled': {
                       display: 'none',
                     },
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Change Posting Date
@@ -335,7 +341,7 @@ const Posting = ({
                       onClick={onAdminSubmit}
                       variant="contained"
                       loading={adminSubmissionLoading.value}
-                      disabled={!adminPostingLinkValue}
+                      disabled={!adminPostingLinkValue || isDisabled}
                       startIcon={<Iconify icon="material-symbols:send" />}
                       sx={{
                         bgcolor: adminPostingLinkValue ? '#203ff5' : '#b0b0b1',
@@ -353,6 +359,10 @@ const Posting = ({
                         },
                         textTransform: 'none',
                         minWidth: { xs: '100%', sm: '160px' },
+                        '&.Mui-disabled': {
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
+                        },
                       }}
                     >
                       Submit for Creator
@@ -586,6 +596,10 @@ const Posting = ({
                         fontWeight: 600,
                         minWidth: '80px',
                         height: '45px',
+                        '&.Mui-disabled': {
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
+                        },
                       }}
                     >
                       Request a change
@@ -615,6 +629,10 @@ const Posting = ({
                         minWidth: '80px',
                         height: '45px',
                         textTransform: 'none',
+                        '&.Mui-disabled': {
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
+                        },
                       }}
                     >
                       Approve
@@ -662,6 +680,10 @@ const Posting = ({
                     fontWeight: 600,
                     minWidth: '80px',
                     height: '45px',
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Reject
@@ -691,6 +713,10 @@ const Posting = ({
                     minWidth: '80px',
                     height: '45px',
                     textTransform: 'none',
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Approve
@@ -1081,6 +1107,7 @@ Posting.propTypes = {
   submission: PropTypes.object.isRequired,
   creator: PropTypes.object.isRequired,
   isV3: PropTypes.bool,
+  isDisabled: PropTypes.bool,
   // Individual client approval handlers
   handleClientApproveVideo: PropTypes.func,
   handleClientApprovePhoto: PropTypes.func,

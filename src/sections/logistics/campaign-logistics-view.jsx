@@ -48,6 +48,7 @@ export default function CampaignLogisticsView({
   openBulkAssign,
   setOpenBulkAssign,
   isAdmin = false,
+  isDisabled = false,
 }) {
   const campaignLogisticsType = campaign?.logisticsType;
   const isReservation = campaignLogisticsType === 'RESERVATION';
@@ -339,4 +340,5 @@ CampaignLogisticsView.propTypes = {
   openBulkAssign: PropTypes.bool,
   setOpenBulkAssign: PropTypes.func,
   isAdmin: PropTypes.bool,
+  isDisabled: PropTypes.bool,
 };

@@ -31,7 +31,7 @@ import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
 import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
-export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
+export default function V4VideoSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
 
@@ -416,6 +416,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                             submission={submission}
                             onUpdate={onUpdate}
                             onViewLogs={() => setShowFeedbackLogs(true)}
+                            isDisabled={isDisabled}
                           />
                         ) : (
                           <FeedbackSection
@@ -444,6 +445,7 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
                         handleRequestChanges={handleRequestChanges}
                         hasPostingLink={hasPostingLink}
                         onViewLogs={() => setShowFeedbackLogs(true)}
+                        isDisabled={isDisabled}
                       />
                     </>
                   )}
@@ -777,5 +779,6 @@ export default function V4VideoSubmission({ submission, campaign, onUpdate }) {
 V4VideoSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   campaign: PropTypes.object,
-  onUpdate: PropTypes.func
+  onUpdate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };

@@ -34,12 +34,12 @@ import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 import { options_changes } from '../firstDraft/constants';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './confirmation-modals';
 
-const RawFootageCard = ({ 
-  rawFootageItem, 
-  index, 
-  submission, 
-  onRawFootageClick, 
-  handleApprove, 
+const RawFootageCard = ({
+  rawFootageItem,
+  index,
+  submission,
+  onRawFootageClick,
+  handleApprove,
   handleRequestChange,
   selectedRawFootagesForChange,
   handleRawFootageSelection,
@@ -57,6 +57,8 @@ const RawFootageCard = ({
   // V3 admin feedback handlers
   handleAdminEditFeedback,
   handleAdminSendToCreator,
+  // View-only mode
+  isDisabled = false,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -400,7 +402,7 @@ const RawFootageCard = ({
                     }}
                     size="small"
                     variant="contained"
-                    disabled={isProcessing}
+                    disabled={isProcessing || isDisabled}
                     sx={{
                       bgcolor: '#FFFFFF',
                       border: 1.5,
@@ -419,6 +421,10 @@ const RawFootageCard = ({
                       fontWeight: 600,
                       height: '40px',
                       flex: 2,
+                      '&.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
+                      },
                     }}
                   >
                     Request a Change
@@ -479,7 +485,8 @@ const RawFootageCard = ({
                       variant="contained"
                       size="small"
                       loading={isSubmitting || isProcessing}
-                      sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1 }}
+                      disabled={isDisabled}
+                      sx={{ bgcolor: '#FFFFFF', color: '#1ABF66', border: '1.5px solid', borderColor: '#e7e7e7', borderBottom: 3, borderBottomColor: '#e7e7e7', borderRadius: 1.15, py: 1.2, fontWeight: 600, fontSize: '0.9rem', height: '40px', textTransform: 'none', flex: 1, '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' } }}
                     >
                       Approve
                     </LoadingButton>
@@ -568,7 +575,7 @@ const RawFootageCard = ({
                   }}
                   size="small"
                   variant="contained"
-                  disabled={isProcessing}
+                  disabled={isProcessing || isDisabled}
                       sx={{
                         bgcolor: '#FFFFFF',
                     border: 1.5,
@@ -587,6 +594,10 @@ const RawFootageCard = ({
                     fontWeight: 600,
                         height: '40px',
                         flex: 1,
+                        '&.Mui-disabled': {
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
+                        },
                       }}
                     >
                   Back
@@ -597,6 +608,7 @@ const RawFootageCard = ({
                       variant="contained"
                       size="small"
                       loading={isSubmitting || isProcessing}
+                      disabled={isDisabled}
                       sx={{
                         bgcolor: '#FFFFFF',
                         color: '#1ABF66',
@@ -615,6 +627,10 @@ const RawFootageCard = ({
                         height: '40px',
                         textTransform: 'none',
                     flex: 2,
+                        '&.Mui-disabled': {
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
+                        },
                       }}
                     >
                   Submit Feedback
@@ -1010,6 +1026,8 @@ RawFootageCard.propTypes = {
   // V3 admin feedback handlers
   handleAdminEditFeedback: PropTypes.func,
   handleAdminSendToCreator: PropTypes.func,
+  // View-only mode
+  isDisabled: PropTypes.bool,
 };
 
 const RawFootages = ({
@@ -1260,8 +1278,8 @@ const RawFootages = ({
                   flexShrink: 0,
                 }}
               >
-                <RawFootageCard 
-                  rawFootageItem={footage} 
+                <RawFootageCard
+                  rawFootageItem={footage}
                   index={index}
                   submission={submission}
                   onRawFootageClick={onVideoClick}
@@ -1281,6 +1299,8 @@ const RawFootages = ({
                   // V3 admin feedback handlers
                   handleAdminEditFeedback={handleAdminEditFeedback}
                   handleAdminSendToCreator={handleAdminSendToCreator}
+                  // View-only mode
+                  isDisabled={isDisabled}
                 />
               </Box>
             );
@@ -1294,9 +1314,9 @@ const RawFootages = ({
             const isRawFootageApprovedByAdmin = footage.status === 'APPROVED';
             const isRawFootageApprovedByClient = footage.status === 'APPROVED';
             const hasRevisionRequested = footage.status === 'REVISION_REQUESTED';
-            const isPendingReview = submission?.status === 'PENDING_REVIEW' && 
-              (userRole === 'client' ? 
-                (!isRawFootageApprovedByClient && !hasRevisionRequested) : 
+            const isPendingReview = submission?.status === 'PENDING_REVIEW' &&
+              (userRole === 'client' ?
+                (!isRawFootageApprovedByClient && !hasRevisionRequested) :
                 (!isRawFootageApprovedByAdmin && !hasRevisionRequested)
               );
 
@@ -1306,7 +1326,7 @@ const RawFootages = ({
               if (footage.individualFeedback && footage.individualFeedback.length > 0) {
                 return footage.individualFeedback;
               }
-              
+
               // Fallback to submission-level feedback
               const allFeedbacks = [
                 ...(submission?.feedback || [])
@@ -1320,14 +1340,14 @@ const RawFootages = ({
             const rawFootageFeedback = getRawFootageFeedback();
 
             return (
-              <Grid 
-                item 
-                xs={12} 
-                md={8} 
+              <Grid
+                item
+                xs={12}
+                md={8}
                 key={footage.id || index}
               >
-                <RawFootageCard 
-                  rawFootageItem={footage} 
+                <RawFootageCard
+                  rawFootageItem={footage}
                   index={index}
                   submission={submission}
                   onRawFootageClick={onVideoClick}
@@ -1347,6 +1367,8 @@ const RawFootages = ({
                   // V3 admin feedback handlers
                   handleAdminEditFeedback={handleAdminEditFeedback}
                   handleAdminSendToCreator={handleAdminSendToCreator}
+                  // View-only mode
+                  isDisabled={isDisabled}
                 />
               </Grid>
             );

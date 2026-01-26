@@ -976,7 +976,7 @@ const inlineEditFieldStyle = {
 };
 
 // Manual creator entry card with inline editing
-const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete }) => {
+const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete, isDisabled = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editValues, setEditValues] = useState({
@@ -1507,6 +1507,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete }) => {
                   {/* Save (Checkmark) / Edit */}
                   <Box
                     onClick={() => {
+                      if (isDisabled) return;
                       if (isEditing) {
                         if (!isSaving) {
                           handleSaveEdit();
@@ -1524,9 +1525,10 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete }) => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: 'pointer',
+                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      opacity: isDisabled ? 0.5 : 1,
                       transition: 'all 0.2s ease',
-                      '&:hover': {
+                      '&:hover': isDisabled ? {} : {
                         bgcolor: '#f5f5f5',
                         borderColor: '#221f20',
                         borderBottom: '3px solid',
@@ -1569,6 +1571,7 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete }) => {
                   {/* Cancel (Cross) / Delete */}
                   <Box
                     onClick={() => {
+                      if (isDisabled && !isEditing) return;
                       if (isEditing) {
                         if (!isSaving) {
                           handleCancelEdit();
@@ -1586,9 +1589,10 @@ const ManualCreatorCard = ({ entry, campaignId, onUpdate, onDelete }) => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: 'pointer',
+                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      opacity: isDisabled ? 0.5 : 1,
                       transition: 'all 0.2s ease',
-                      '&:hover': {
+                      '&:hover': isDisabled ? {} : {
                         bgcolor: '#FEE2E2',
                         borderColor: '#EF4444',
                         borderBottom: '3px solid',
@@ -1874,9 +1878,10 @@ ManualCreatorCard.propTypes = {
   campaignId: PropTypes.string.isRequired,
   onUpdate: PropTypes.func,
   onDelete: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };
 
-const CampaignAnalytics = ({ campaign }) => {
+const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
   const campaignId = campaign?.id;
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
   const [selectedPlatform, setSelectedPlatform] = useState('ALL');
@@ -3226,6 +3231,7 @@ const CampaignAnalytics = ({ campaign }) => {
                 {!showAddCreatorForm ? (
                   <Button
                     onClick={() => setShowAddCreatorForm(true)}
+                    disabled={isDisabled}
                     sx={{
                       bgcolor: '#FFFFFF',
                       border: '1.5px solid #e7e7e7',
@@ -3242,6 +3248,10 @@ const CampaignAnalytics = ({ campaign }) => {
                         border: '1.5px solid #1340FF',
                         borderBottom: '3px solid #1340FF',
                         color: '#1340FF',
+                      },
+                      '&.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
                       },
                     }}
                     startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
@@ -3343,6 +3353,7 @@ const CampaignAnalytics = ({ campaign }) => {
                       campaignId={campaignId}
                       onUpdate={mutateManualEntries}
                       onDelete={handleDeleteClick}
+                      isDisabled={isDisabled}
                     />
                   ))}
 
@@ -3753,6 +3764,7 @@ CampaignAnalytics.propTypes = {
       })
     ),
   }),
+  isDisabled: PropTypes.bool,
 };
 
 export default CampaignAnalytics;
