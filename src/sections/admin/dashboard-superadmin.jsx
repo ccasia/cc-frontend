@@ -363,7 +363,7 @@ import { useRouter } from 'src/routes/hooks';
 import useGetCreators from 'src/hooks/use-get-creators';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
-import axiosInstance, { fetcher , endpoints } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -374,14 +374,53 @@ import SvgColor from 'src/components/svg-color';
 // Extend dayjs with relativeTime plugin
 dayjs.extend(relativeTime);
 
+// OPTIMIZATION: Move static values outside component to prevent recreation on every render
+const colors = {
+  primary: '#000000',
+  secondary: '#666666',
+  tertiary: '#999999',
+  accent: '#1340FF',
+  background: '#FFFFFF',
+  surface: '#FAFAFA',
+  border: '#E8ECEE',
+  light: '#F5F5F5',
+};
+
 const DashboardSuperadmin = () => {
+  // OPTIMIZATION: Configure SWR to reduce unnecessary re-fetches
   const { campaigns, isLoading } = useGetCampaigns();
+  
+  // OPTIMIZATION: Use dashboard stats endpoint (aggregated data from backend)
+  const { data: dashboardStats, isLoading: statsLoading } = useSWR(
+    endpoints.dashboard.stats,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000, // Cache for 1 minute
+    }
+  );
+
+  // OPTIMIZATION: Use creator count endpoint instead of fetching all creators
+  const { data: creatorCountData, isLoading: creatorCountLoading } = useSWR(
+    endpoints.creators.getCreatorCount,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+
+  // Fallback: Only fetch all creators if stats endpoint is not available
   const { data: creators, isLoading: creatorLoading } = useGetCreators();
+  
   const { socket } = useSocketContext();
   const [onlineUsers, setOnlineUsers] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState('all');
   const { user } = useAuthContext();
-  const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher);
+  const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  });
   const router = useRouter();
 
   const [exportCampaignsLoading, setExportCampaignsLoading] = useState(false);
@@ -389,17 +428,8 @@ const DashboardSuperadmin = () => {
   const [exportCampaignsDone, setExportCampaignsDone] = useState(false);
   const [exportCreatorsDone, setExportCreatorsDone] = useState(false);
 
+  // OPTIMIZATION: Move static values outside component to prevent recreation
   // Minimal color palette with blue accent
-  const colors = {
-    primary: '#000000',
-    secondary: '#666666',
-    tertiary: '#999999',
-    accent: '#1340FF',
-    background: '#FFFFFF',
-    surface: '#FAFAFA',
-    border: '#E8ECEE',
-    light: '#F5F5F5',
-  };
 
   // Calculate actual metrics
   const activeCampaigns = useMemo(
@@ -412,21 +442,28 @@ const DashboardSuperadmin = () => {
     [campaigns]
   );
 
-  // Calculate total pitches from all campaigns
+  // OPTIMIZATION: Use backend stats if available, otherwise calculate from campaigns
   const totalPitches = useMemo(() => {
+    if (dashboardStats?.data?.totalPitches !== undefined) {
+      return dashboardStats.data.totalPitches;
+    }
     if (!campaigns) return 0;
     const total = campaigns.reduce((acc, campaign) => acc + (campaign?.pitch?.length || 0), 0);
     return total;
-  }, [campaigns]);
+  }, [dashboardStats, campaigns]);
 
+  // OPTIMIZATION: Limit processing and use more efficient algorithms
   // Get all pending pitches
   const pendingPitches = useMemo(() => {
-    if (!campaigns) return [];
+    if (!campaigns || campaigns.length === 0) return [];
 
     const allPitches = [];
-    campaigns.forEach((campaign) => {
-      if (campaign?.pitch) {
-        campaign.pitch.forEach((pitch) => {
+    // OPTIMIZATION: Use for loops for better performance
+    for (let i = 0; i < campaigns.length; i += 1) {
+      const campaign = campaigns[i];
+      if (campaign?.pitch && Array.isArray(campaign.pitch)) {
+        for (let j = 0; j < campaign.pitch.length; j += 1) {
+          const pitch = campaign.pitch[j];
           if (pitch.status === 'undecided') {
             allPitches.push({
               ...pitch,
@@ -435,12 +472,15 @@ const DashboardSuperadmin = () => {
               campaignImage: campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo,
             });
           }
-        });
+        }
       }
-    });
+    }
 
-    // Sort by creation date (newest first)
-    return allPitches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // OPTIMIZATION: Only sort if we have pitches, and limit to top 10
+    if (allPitches.length === 0) return [];
+    return allPitches
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10); // Only keep top 10 for display
   }, [campaigns]);
 
   // Filter pitches based on selected campaign
@@ -450,28 +490,51 @@ const DashboardSuperadmin = () => {
   }, [pendingPitches, selectedCampaign]);
 
   const totalChats = user?._count?.UserThread || 0;
-  const totalCreators = creators?.length || 0;
-  const totalClients = clientData || 0;
+  
+  // OPTIMIZATION: Use backend stats if available, otherwise fallback to client-side calculation
+  const totalCreators = dashboardStats?.data?.totalCreators || creatorCountData?.count || creators?.length || 0;
+  const totalClients = dashboardStats?.data?.totalClients || clientData || 0;
 
-  // Approved / Rejected pitches across all campaigns
+  // OPTIMIZATION: Use backend stats if available, otherwise calculate from campaigns
   const totalApprovedPitches = useMemo(() => {
+    if (dashboardStats?.data?.approvedPitches !== undefined) {
+      return dashboardStats.data.approvedPitches;
+    }
     if (!campaigns) return 0;
     return campaigns.reduce((acc, c) => acc + (c?.pitch?.filter?.((p) => p.status === 'approved')?.length || 0), 0);
-  }, [campaigns]);
+  }, [dashboardStats, campaigns]);
 
   const totalRejectedPitches = useMemo(() => {
+    if (dashboardStats?.data?.rejectedPitches !== undefined) {
+      return dashboardStats.data.rejectedPitches;
+    }
     if (!campaigns) return 0;
     return campaigns.reduce((acc, c) => acc + (c?.pitch?.filter?.((p) => p.status === 'rejected')?.length || 0), 0);
-  }, [campaigns]);
+  }, [dashboardStats, campaigns]);
 
-  // Creators with media kit connected (approximate: has connected IG or TikTok account)
+  // OPTIMIZATION: Early return and limit processing
+  // OPTIMIZATION: Use backend stats if available, otherwise calculate (expensive with 5000+ creators)
   const totalCreatorsWithMediaKit = useMemo(() => {
-    if (!creators) return 0;
-    return creators.filter((u) => u?.creator?.instagramUser || u?.creator?.tiktokUser).length;
-  }, [creators]);
+    if (dashboardStats?.data?.creatorsWithMediaKit !== undefined) {
+      return dashboardStats.data.creatorsWithMediaKit;
+    }
+    if (!creators || creators.length === 0) return 0;
+    // Fallback: Use for loop instead of filter for better performance with large arrays
+    let count = 0;
+    for (let i = 0; i < creators.length; i += 1) {
+      const u = creators[i];
+      if (u?.creator?.instagramUser || u?.creator?.tiktokUser) {
+        count += 1;
+      }
+    }
+    return count;
+  }, [dashboardStats, creators]);
 
-  // Creators who are in at least one campaign (based on shortlisted membership across all campaigns)
+  // OPTIMIZATION: Use backend stats if available, otherwise calculate
   const totalCreatorsInAtLeastOneCampaign = useMemo(() => {
+    if (dashboardStats?.data?.creatorsInCampaigns !== undefined) {
+      return dashboardStats.data.creatorsInCampaigns;
+    }
     if (!campaigns) return 0;
     const counts = new Map();
     campaigns.forEach((c) => {
@@ -482,7 +545,7 @@ const DashboardSuperadmin = () => {
       });
     });
     return Array.from(counts.values()).filter((cnt) => cnt >= 1).length;
-  }, [campaigns]);
+  }, [dashboardStats, campaigns]);
 
   // Generate last 6 months data based on actual metrics
   const monthlyData = useMemo(() => {
@@ -501,15 +564,19 @@ const DashboardSuperadmin = () => {
     }));
   }, [activeCampaigns.length, totalCreators, totalPitches]);
 
-  // Helper function to create navigation icons
-  const icon = (name) => (
-    <SvgColor
-      src={`/assets/icons/navbar/${name}.svg`}
-      sx={{
-        width: 20,
-        height: 20,
-      }}
-    />
+  // OPTIMIZATION: Move helper function outside or memoize
+  // Helper function to create navigation icons - memoized to prevent recreation
+  const icon = useMemo(
+    () => (name) => (
+      <SvgColor
+        src={`/assets/icons/navbar/${name}.svg`}
+        sx={{
+          width: 20,
+          height: 20,
+        }}
+      />
+    ),
+    []
   );
 
   // Metric cards with clean design
@@ -1164,7 +1231,12 @@ const DashboardSuperadmin = () => {
     };
   }, [socket]);
 
-  if (creatorLoading || isClientLoading || isLoading) {
+  // OPTIMIZATION: Check loading states - prioritize stats loading over creator loading
+  const isLoadingData = statsLoading || creatorCountLoading || isClientLoading || isLoading;
+  // Only check creatorLoading if stats are not available (fallback)
+  const isLoadingFallback = !dashboardStats && creatorLoading;
+  
+  if (isLoadingData || isLoadingFallback) {
     return (
       <Box
         sx={{

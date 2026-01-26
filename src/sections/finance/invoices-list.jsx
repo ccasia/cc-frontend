@@ -4,27 +4,31 @@ import React, { useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
-  Tab,
+  Button,
   Card,
-  Tabs,
   Table,
-  alpha,
+  Stack,
   Dialog,
+  Checkbox,
   TableBody,
+  TableRow,
+  TableCell,
+  TableHead,
   DialogContent,
   TableContainer,
+  Typography,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 
-import Label from 'src/components/label';
 import Scrollbar from 'src/components/scrollbar';
+import Iconify from 'src/components/iconify';
 import {
   useTable,
   emptyRows,
   TableNoData,
   TableEmptyRows,
-  TableHeadCustom,
   TablePaginationCustom,
 } from 'src/components/table';
 
@@ -42,13 +46,14 @@ const defaultFilters = {
 };
 
 const TABLE_HEAD = [
+  { id: 'checkbox', label: '', width: 48, hideSortIcon: true },
   { id: 'invoiceNumber', label: 'Invoice ID', width: 180, hideSortIcon: false },
   { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
   { id: 'creatorName', label: 'Creator Name', width: 180, hideSortIcon: true },
-  { id: 'createdAt', label: 'Created At', width: 100, hideSortIcon: true },
-  { id: 'amount', label: 'Amount', width: 100, hideSortIcon: true },
-  { id: 'status', label: 'Status', width: 100, hideSortIcon: true },
-  { id: '', width: 80, hideSortIcon: true },
+  { id: 'createdAt', label: 'Created At', width: 120, hideSortIcon: true },
+  { id: 'amount', label: 'Amount', width: 120, hideSortIcon: true },
+  { id: 'status', label: 'Status', width: 120, hideSortIcon: true },
+  { id: 'action', label: '', width: 100, hideSortIcon: true },
 ];
 
 const InvoiceLists = ({ invoices }) => {
@@ -57,6 +62,8 @@ const InvoiceLists = ({ invoices }) => {
   const editDialog = useBoolean();
   const [selectedId, setSelectedId] = useState('');
   const [selectedData, setSelectedData] = useState();
+
+  const smUp = useResponsive('up', 'sm');
 
   const campaigns = useMemo(() => {
     const data = invoices?.map((invoice) => invoice?.campaign?.name);
@@ -104,11 +111,24 @@ const InvoiceLists = ({ invoices }) => {
 
   const filter = useCallback(
     (name) => {
-      if (!name) return [];
-
-      return invoices?.filter((invoice) => invoice?.status === name)?.length;
+      if (!name) return 0;
+      return invoices?.filter((invoice) => invoice?.status === name)?.length || 0;
     },
     [invoices]
+  );
+
+  // Create TABS array similar to invoice-list-view.jsx
+  const TABS = useMemo(
+    () => [
+      { value: 'all', label: 'All', count: invoices?.length || 0 },
+      { value: 'paid', label: 'Paid', count: filter('paid') },
+      { value: 'approved', label: 'Approved', count: filter('approved') },
+      { value: 'pending', label: 'Pending', count: filter('pending') },
+      { value: 'overdue', label: 'Overdue', count: filter('overdue') },
+      { value: 'draft', label: 'Draft', count: filter('draft') },
+      { value: 'rejected', label: 'Rejected', count: filter('rejected') },
+    ],
+    [invoices, filter]
   );
 
   const openEditInvoice = useCallback(
@@ -129,45 +149,65 @@ const InvoiceLists = ({ invoices }) => {
   return (
     <Box>
       <Card>
-        <Tabs
-          value={filters.status}
-          onChange={handleFilterStatus}
+        <Box
           sx={{
+            mb: 2,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             px: 2.5,
-            boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+            pt: 2.5,
           }}
         >
-          <Tab
-            value="all"
-            label="All"
-            iconPosition="end"
-            icon={<Label variant="filled">{invoices?.length}</Label>}
-          />
-          <Tab
-            value="draft"
-            label="Draft"
-            iconPosition="end"
-            icon={<Label color="warning">{filter('draft')}</Label>}
-          />
-          <Tab
-            value="approved"
-            label="Approved"
-            iconPosition="end"
-            icon={<Label color="success">{filter('approved')}</Label>}
-          />
-          <Tab
-            value="paid"
-            label="Paid"
-            iconPosition="end"
-            icon={<Label color="success">{filter('paid')}</Label>}
-          />
-          <Tab
-            value="rejected"
-            label="Rejected"
-            iconPosition="end"
-            icon={<Label color="error">{filter('rejected')}</Label>}
-          />
-        </Tabs>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: 0.5,
+              flexGrow: 1,
+              mr: 1,
+            }}
+          >
+            {TABS.map((tab) => (
+              <Button
+                key={tab.value}
+                fullWidth={!smUp}
+                onClick={() => handleFilters('status', tab.value)}
+                sx={{
+                  px: 1.25,
+                  py: 1.5,
+                  height: '38px',
+                  minWidth: 'auto',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  borderRadius: 1,
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  ...(filters.status === tab.value
+                    ? {
+                        color: '#203ff5',
+                        bgcolor: 'rgba(32, 63, 245, 0.04)',
+                      }
+                    : {
+                        color: '#637381',
+                        bgcolor: 'transparent',
+                      }),
+                  '&:hover': {
+                    bgcolor:
+                      filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                  },
+                }}
+              >
+                {`${tab.label} (${tab.count})`}
+              </Button>
+            ))}
+          </Box>
+        </Box>
 
         <InvoiceTableToolbar filters={filters} onFilters={handleFilters} campaigns={campaigns} />
 
@@ -183,56 +223,115 @@ const InvoiceLists = ({ invoices }) => {
           />
         )}
 
-        <TableContainer sx={{ position: 'relative', overflow: 'auto' }}>
+        <Box
+          sx={{
+            mb: 3,
+            ml: 0,
+            mr: 0,
+            mt: 1,
+            px: 2.5,
+          }}
+        >
           <Scrollbar>
-            <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-              <TableHeadCustom
-                order={table.order}
-                orderBy={table.orderBy}
-                headLabel={TABLE_HEAD}
-                rowCount={dataFiltered.length}
-                numSelected={table.selected.length}
-                onSort={(columnId) => {
-                  const column = TABLE_HEAD.find((col) => col.id === columnId);
-                  if (column && !column.hideSortIcon) {
-                    table.onSort(columnId);
-                  }
+            <TableContainer
+              sx={{
+                width: '100%',
+                minWidth: 1000,
+                position: 'relative',
+                bgcolor: 'transparent',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Table
+                sx={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
                 }}
-                onSelectAllRows={(checked) =>
-                  table.onSelectAllRows(
-                    checked,
-                    dataFiltered.map((row) => row.id)
-                  )
-                }
-              />
+              >
+                <TableHead>
+                  <TableRow>
+                    {TABLE_HEAD.map((headCell, index) => (
+                      <TableCell
+                        key={headCell.id}
+                        padding={headCell.id === 'checkbox' ? 'checkbox' : 'normal'}
+                        sx={{
+                          py: 1,
+                          color: '#221f20',
+                          fontWeight: 600,
+                          width: headCell.width,
+                          ...(index === 0 && {
+                            borderRadius: '10px 0 0 10px',
+                          }),
+                          ...(index === TABLE_HEAD.length - 1 && {
+                            borderRadius: '0 10px 10px 0',
+                          }),
+                          bgcolor: '#f5f5f5',
+                          whiteSpace: 'nowrap',
+                          borderBottom: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        {headCell.id === 'checkbox' ? (
+                          <Checkbox
+                            indeterminate={
+                              table.selected.length > 0 && table.selected.length < dataFiltered.length
+                            }
+                            checked={
+                              dataFiltered.length > 0 && table.selected.length === dataFiltered.length
+                            }
+                            onChange={(event) =>
+                              table.onSelectAllRows(
+                                event.target.checked,
+                                dataFiltered.map((row) => row.id)
+                              )
+                            }
+                          />
+                        ) : (
+                          headCell.label
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
 
-              <TableBody>
-                {dataFiltered
-                  ?.slice(
-                    table.page * table.rowsPerPage,
-                    table.page * table.rowsPerPage + table.rowsPerPage
-                  )
-                  .map((invoice) => (
-                    <InvoiceItem
-                      key={invoice.id}
-                      invoice={invoice}
-                      onChangeStatus={changeInvoiceStatus}
-                      selected={table.selected.includes(invoice.id)}
-                      onSelectRow={() => table.onSelectRow(invoice.id)}
-                      openEditInvoice={() => openEditInvoice(invoice.id)}
-                    />
-                  ))}
+                <TableBody>
+                  {dataFiltered
+                    ?.slice(
+                      table.page * table.rowsPerPage,
+                      table.page * table.rowsPerPage + table.rowsPerPage
+                    )
+                    .map((invoice) => (
+                      <InvoiceItem
+                        key={invoice.id}
+                        invoice={invoice}
+                        onChangeStatus={changeInvoiceStatus}
+                        selected={table.selected.includes(invoice.id)}
+                        onSelectRow={() => table.onSelectRow(invoice.id)}
+                        openEditInvoice={() => openEditInvoice(invoice.id)}
+                      />
+                    ))}
 
-                <TableEmptyRows
-                  height={denseHeight}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
-                />
+                  <TableEmptyRows
+                    height={denseHeight}
+                    emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
+                  />
 
-                <TableNoData notFound={notFound} />
-              </TableBody>
-            </Table>
+                  <TableNoData
+                    notFound={notFound}
+                    sx={{
+                      ml: { xs: 0, md: -4 },
+                      '& .MuiTableCell-root': {
+                        p: 0,
+                        height: 300,
+                      },
+                    }}
+                  />
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Scrollbar>
-        </TableContainer>
+        </Box>
 
         <TablePaginationCustom
           count={dataFiltered.length}
@@ -240,9 +339,9 @@ const InvoiceLists = ({ invoices }) => {
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}
           onRowsPerPageChange={table.onChangeRowsPerPage}
-          //
           dense={table.dense}
           onChangeDense={table.onChangeDense}
+          sx={{ py: 2, ml: { xs: 0, md: -4 }, px: 2.5 }}
         />
       </Card>
 
