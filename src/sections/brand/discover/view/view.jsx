@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useState } from 'react';
 
-import { Box, Button } from '@mui/material';
+import { Box, Stack, Button } from '@mui/material';
 import Container from '@mui/material/Container';
 
 import { paths } from 'src/routes/paths';
@@ -54,20 +54,46 @@ function DiscoverBrand() {
           { name: 'List' },
         ]}
         action={
-          <Button
-            variant="contained"
-            startIcon={<Iconify icon="eva:email-fill" width={18} />}
-            onClick={() => setInviteDialogOpen(true)}
-            sx={{
-              bgcolor: 'primary.main',
-              borderRadius: 0.6,
-              '&:hover': {
-                bgcolor: 'primary.dark',
-              },
-            }}
-          >
-            Invite Client
-          </Button>
+          <Stack direction="row" spacing={1.5}>
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="eva:plus-fill" width={18} />}
+              onClick={() => router.push(paths.dashboard.company.create)}
+              sx={{
+                bgcolor: '#1340FF',
+                border: '1px solid #1a32c4',
+                borderBottom: '3px solid #102387',
+                borderRadius: '8px',
+                fontWeight: 600,
+                px: 2,
+                py: 0.75,
+                '&:hover': {
+                  bgcolor: '#1a32c4',
+                },
+              }}
+            >
+              Create Client
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="eva:email-fill" width={18} />}
+              onClick={() => setInviteDialogOpen(true)}
+              sx={{
+                bgcolor: '#1340FF',
+                border: '1px solid #1a32c4',
+                borderBottom: '3px solid #102387',
+                borderRadius: '8px',
+                fontWeight: 600,
+                px: 2,
+                py: 0.75,
+                '&:hover': {
+                  bgcolor: '#1a32c4',
+                },
+              }}
+            >
+              Invite Client
+            </Button>
+          </Stack>
         }
         sx={{
           mb: { xs: 3, md: 5 },
