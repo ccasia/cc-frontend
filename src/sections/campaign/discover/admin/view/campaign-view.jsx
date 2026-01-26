@@ -17,6 +17,8 @@ import {
   Autocomplete,
   TextField,
   Avatar,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -200,9 +202,44 @@ const CampaignView = () => {
 
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
+  const mdDown = useResponsive('down', 'md');
+  
+  // Menu state for filter dropdown
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
+  const filterMenuOpen = Boolean(filterMenuAnchor);
 
   const handleNewCampaign = () => {
     create.onTrue();
+  };
+  
+  const handleFilterMenuOpen = (event) => {
+    setFilterMenuAnchor(event.currentTarget);
+  };
+  
+  const handleFilterMenuClose = () => {
+    setFilterMenuAnchor(null);
+  };
+  
+  const handleFilterSelect = (selectedFilter) => {
+    if (selectedFilter === 'all') {
+      setFilter('');
+      setShowAllCampaigns(true);
+    } else {
+      setFilter(selectedFilter);
+      setShowAllCampaigns(false);
+    }
+    setSelectedAdmin(null);
+    handleFilterMenuClose();
+  };
+  
+  // Get current filter label for dropdown
+  const getCurrentFilterLabel = () => {
+    if (showAllCampaigns) return `All (${allCampaignsCount})`;
+    if (filter === 'active') return `Active (${activeCount})`;
+    if (filter === 'pending') return `Pending (${pendingCount})`;
+    if (filter === 'completed') return `Completed (${completedCount})`;
+    if (filter === 'paused') return `Paused (${pausedCount})`;
+    return 'Select Filter';
   };
 
   useEffect(() => {
@@ -257,7 +294,9 @@ const CampaignView = () => {
       <Box sx={{ mb: 2.5 }}>
         <Stack
           direction="row"
-          spacing={0.5}
+          spacing={1}
+          alignItems="center"
+          justifyContent="space-between"
           sx={{
             position: 'relative',
             width: '100%',
@@ -269,17 +308,68 @@ const CampaignView = () => {
               right: 0,
               height: '1px',
               bgcolor: 'divider',
+              display: { xs: 'none', md: 'block' },
             },
           }}
         >
-          <Stack
-            direction="row"
-            spacing={0.5}
-            sx={{
-              width: { xs: '100%', sm: 'auto' },
-              flexWrap: 'wrap',
-            }}
-          >
+          {/* Mobile: Dropdown + New Campaign Button */}
+          {mdDown ? (
+            <Stack direction="row" spacing={1} sx={{ flex: 1 }}>
+              <Button
+                onClick={handleFilterMenuOpen}
+                endIcon={<Iconify icon="eva:arrow-down-fill" width={16} />}
+                sx={{
+                  flex: 1,
+                  justifyContent: 'space-between',
+                  px: 2,
+                  py: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  bgcolor: 'background.paper',
+                  color: 'text.primary',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
+                }}
+              >
+                {getCurrentFilterLabel()}
+              </Button>
+              <Button
+                onClick={handleNewCampaign}
+                disabled={isDisabled}
+                sx={{
+                  bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+                  color: isDisabled ? '#9e9e9e' : 'white',
+                  borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
+                  borderRadius: '8px',
+                  px: 2,
+                  py: 1,
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  '&:hover': {
+                    bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+                    opacity: isDisabled ? 1 : 0.9,
+                  },
+                }}
+              >
+                New Campaign
+              </Button>
+            </Stack>
+          ) : (
+            <>
+              <Stack
+                direction="row"
+                spacing={0.5}
+                sx={{
+                  width: { xs: '100%', sm: 'auto' },
+                  flexWrap: 'wrap',
+                }}
+              >
             <Button
               disableRipple
               size="large"
@@ -539,34 +629,103 @@ const CampaignView = () => {
                 All ({allCampaignsCount})
               </Button>
             )}
-          </Stack>
+              </Stack>
 
-          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-            <Button
-              onClick={handleNewCampaign}
-              disabled={isDisabled}
+              <Box>
+                <Button
+                  onClick={handleNewCampaign}
+                  disabled={isDisabled}
+                  sx={{
+                    bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+                    color: isDisabled ? '#9e9e9e' : 'white',
+                    borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
+                    borderRadius: '8px',
+                    px: 2.5,
+                    py: 1,
+                    fontSize: '0.9rem',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    '&:hover': {
+                      bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+                      opacity: isDisabled ? 1 : 0.9,
+                    },
+                  }}
+                >
+                  New Campaign
+                </Button>
+              </Box>
+            </>
+          )}
+        </Stack>
+        
+        {/* Filter Dropdown Menu */}
+        <Menu
+          anchorEl={filterMenuAnchor}
+          open={filterMenuOpen}
+          onClose={handleFilterMenuClose}
+          PaperProps={{
+            sx: {
+              mt: 1,
+              minWidth: 200,
+              borderRadius: 1,
+              boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            },
+          }}
+        >
+          <MenuItem
+            onClick={() => handleFilterSelect('active')}
+            selected={filter === 'active' && !showAllCampaigns}
+            sx={{
+              fontWeight: filter === 'active' && !showAllCampaigns ? 600 : 400,
+              color: filter === 'active' && !showAllCampaigns ? '#1340ff' : 'text.primary',
+            }}
+          >
+            Active ({activeCount})
+          </MenuItem>
+          {(isSuperAdmin || user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager') && (
+            <MenuItem
+              onClick={() => handleFilterSelect('pending')}
+              selected={filter === 'pending' && !showAllCampaigns}
               sx={{
-                bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
-                color: isDisabled ? '#9e9e9e' : 'white',
-                borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
-                borderRadius: '8px',
-                px: 2.5,
-                py: 1,
-                position: 'absolute',
-                right: 0,
-                top: -3,
-                fontSize: '0.9rem',
-                cursor: isDisabled ? 'not-allowed' : 'pointer',
-                '&:hover': {
-                  bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
-                  opacity: isDisabled ? 1 : 0.9,
-                },
+                fontWeight: filter === 'pending' && !showAllCampaigns ? 600 : 400,
+                color: filter === 'pending' && !showAllCampaigns ? '#1340ff' : 'text.primary',
               }}
             >
-              New Campaign
-            </Button>
-          </Box>
-        </Stack>
+              Pending ({pendingCount})
+            </MenuItem>
+          )}
+          <MenuItem
+            onClick={() => handleFilterSelect('completed')}
+            selected={filter === 'completed' && !showAllCampaigns}
+            sx={{
+              fontWeight: filter === 'completed' && !showAllCampaigns ? 600 : 400,
+              color: filter === 'completed' && !showAllCampaigns ? '#1340ff' : 'text.primary',
+            }}
+          >
+            Completed ({completedCount})
+          </MenuItem>
+          <MenuItem
+            onClick={() => handleFilterSelect('paused')}
+            selected={filter === 'paused' && !showAllCampaigns}
+            sx={{
+              fontWeight: filter === 'paused' && !showAllCampaigns ? 600 : 400,
+              color: filter === 'paused' && !showAllCampaigns ? '#1340ff' : 'text.primary',
+            }}
+          >
+            Paused ({pausedCount})
+          </MenuItem>
+          {isCSM && (
+            <MenuItem
+              onClick={() => handleFilterSelect('all')}
+              selected={showAllCampaigns}
+              sx={{
+                fontWeight: showAllCampaigns ? 600 : 400,
+                color: showAllCampaigns ? '#1340ff' : 'text.primary',
+              }}
+            >
+              All ({allCampaignsCount})
+            </MenuItem>
+          )}
+        </Menu>
       </Box>
 
       <Stack direction="row" sx={{ width: '100%', gap: 0 }}>
@@ -575,7 +734,9 @@ const CampaignView = () => {
           layout="position"
           transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
           sx={{
-            flex: 1,
+            flex: showAllCampaigns && (isSuperAdmin || user?.admin?.mode === 'advanced' || isCSM)
+              ? { xs: '0 0 60%', md: 1 }
+              : 1,
             border: '1px solid',
             borderBottom: '3.5px solid',
             borderColor: isSearchFocused ? '#1340ff' : 'divider',
@@ -619,7 +780,7 @@ const CampaignView = () => {
           {showAllCampaigns && (isSuperAdmin || user?.admin?.mode === 'advanced' || isCSM) && (
             <m.div
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 262, opacity: 1 }}
+              animate={{ width: mdDown ? '40%' : 262, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
               style={{ overflow: 'hidden', flexShrink: 0, display: 'flex' }}
@@ -681,9 +842,9 @@ const CampaignView = () => {
                   />
                 )}
                 sx={{
-                  width: 250,
-                  minWidth: 250,
-                  ml: 1.5,
+                  width: { xs: '100%', md: 250 },
+                  minWidth: { xs: 'auto', md: 250 },
+                  ml: { xs: 1, md: 1.5 },
                   '& .MuiOutlinedInput-root': {
                     bgcolor: 'background.paper',
                     borderRadius: 1.5,
