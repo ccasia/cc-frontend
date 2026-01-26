@@ -16,18 +16,19 @@ import MobileRawFootageSubmission from './mobile-raw-footage-submission';
 
 // ----------------------------------------------------------------------
 
-function MobileSubmissionRow({ 
-  type, 
-  label, 
-  icon, 
-  status, 
-  isExpanded, 
-  onToggle, 
-  submission, 
-  campaign, 
+function MobileSubmissionRow({
+  type,
+  label,
+  icon,
+  status,
+  isExpanded,
+  onToggle,
+  submission,
+  campaign,
   onUpdate,
   isClient,
-  campaignType 
+  campaignType,
+  isDisabled = false
 }) {
   // Status color
   const getClientStatusColor = (submissionStatus, submissionType = null) => {
@@ -114,6 +115,7 @@ function MobileSubmissionRow({
             submission={submission}
             campaign={campaign}
             onUpdate={onUpdate}
+            isDisabled={isDisabled}
           />
         );
       case 'photo':
@@ -122,6 +124,7 @@ function MobileSubmissionRow({
             submission={submission}
             campaign={campaign}
             onUpdate={onUpdate}
+            isDisabled={isDisabled}
           />
         );
       case 'rawFootage':
@@ -130,6 +133,7 @@ function MobileSubmissionRow({
             submission={submission}
             campaign={campaign}
             onUpdate={onUpdate}
+            isDisabled={isDisabled}
           />
         );
       default:
@@ -216,11 +220,12 @@ MobileSubmissionRow.propTypes = {
   onUpdate: PropTypes.func,
   isClient: PropTypes.bool,
   campaignType: PropTypes.string,
+  isDisabled: PropTypes.bool,
 };
 
 // ----------------------------------------------------------------------
 
-function MobileCreatorRow({ creator, campaign, isExpanded, onToggle }) {
+function MobileCreatorRow({ creator, campaign, isExpanded, onToggle, isDisabled = false }) {
   const { user } = useAuthContext();
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
   const isClient = userRole.toLowerCase() === 'client';
@@ -344,6 +349,7 @@ function MobileCreatorRow({ creator, campaign, isExpanded, onToggle }) {
                     onUpdate={submissionsMutate}
                     isClient={isClient}
                     campaignType={campaignType}
+                    isDisabled={isDisabled}
                   />
                 );
               })}
@@ -365,6 +371,7 @@ function MobileCreatorRow({ creator, campaign, isExpanded, onToggle }) {
                     onUpdate={submissionsMutate}
                     isClient={isClient}
                     campaignType={campaignType}
+                    isDisabled={isDisabled}
                   />
                 );
               })}
@@ -386,6 +393,7 @@ function MobileCreatorRow({ creator, campaign, isExpanded, onToggle }) {
                     onUpdate={submissionsMutate}
                     isClient={isClient}
                     campaignType={campaignType}
+                    isDisabled={isDisabled}
                   />
                 );
               })}
@@ -403,11 +411,12 @@ MobileCreatorRow.propTypes = {
   campaign: PropTypes.object.isRequired,
   isExpanded: PropTypes.bool.isRequired,
   onToggle: PropTypes.func.isRequired,
+  isDisabled: PropTypes.bool,
 };
 
 // ----------------------------------------------------------------------
 
-function MobileCreatorRowWithSubmissions({ creator, campaign, isExpanded, onToggle }) {
+function MobileCreatorRowWithSubmissions({ creator, campaign, isExpanded, onToggle, isDisabled = false }) {
   const { submissions, submissionsLoading } = useGetV4Submissions(campaign?.id, creator?.userId);
 
   // Don't render if loading or if no submissions exist
@@ -421,6 +430,7 @@ function MobileCreatorRowWithSubmissions({ creator, campaign, isExpanded, onTogg
       campaign={campaign}
       isExpanded={isExpanded}
       onToggle={onToggle}
+      isDisabled={isDisabled}
     />
   );
 }
@@ -430,11 +440,12 @@ MobileCreatorRowWithSubmissions.propTypes = {
   campaign: PropTypes.object.isRequired,
   isExpanded: PropTypes.bool.isRequired,
   onToggle: PropTypes.func.isRequired,
+  isDisabled: PropTypes.bool,
 };
 
 // ----------------------------------------------------------------------
 
-export default function MobileCreatorSubmissions({ campaign, creators, searchTerm }) {
+export default function MobileCreatorSubmissions({ campaign, creators, searchTerm, isDisabled = false }) {
   const [expandedCreator, setExpandedCreator] = useState(null);
 
   const handleCreatorToggle = useCallback((creatorId) => {
@@ -469,6 +480,7 @@ export default function MobileCreatorSubmissions({ campaign, creators, searchTer
           campaign={campaign}
           isExpanded={expandedCreator === creator.userId}
           onToggle={() => handleCreatorToggle(creator.userId)}
+          isDisabled={isDisabled}
         />
       ))}
     </Stack>
@@ -479,4 +491,5 @@ MobileCreatorSubmissions.propTypes = {
   campaign: PropTypes.object.isRequired,
   creators: PropTypes.array,
   searchTerm: PropTypes.string,
+  isDisabled: PropTypes.bool,
 };

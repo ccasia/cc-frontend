@@ -114,7 +114,7 @@ ScrollingName.propTypes = {
   name: PropTypes.string.isRequired,
 };
 
-function CreatorAccordionWithSubmissions({ creator, campaign }) {
+function CreatorAccordionWithSubmissions({ creator, campaign, isDisabled = false }) {
   // Get V4 submissions for this creator to check if they have any
   const { 
     submissions, 
@@ -129,14 +129,15 @@ function CreatorAccordionWithSubmissions({ creator, campaign }) {
   }
 
   return (
-    <CreatorAccordion 
-      creator={creator} 
-      campaign={campaign} 
+    <CreatorAccordion
+      creator={creator}
+      campaign={campaign}
+      isDisabled={isDisabled}
     />
   );
 }
 
-function CreatorAccordion({ creator, campaign }) {
+function CreatorAccordion({ creator, campaign, isDisabled = false }) {
   const { user } = useAuthContext();
   const [expandedSubmission, setExpandedSubmission] = useState(null);
 
@@ -637,6 +638,7 @@ function CreatorAccordion({ creator, campaign }) {
             index={grouped.videos.findIndex(v => v.id === id) + 1}
             onUpdate={submissionsMutate}
             expanded
+            isDisabled={isDisabled}
           />
         );
       }
@@ -653,6 +655,7 @@ function CreatorAccordion({ creator, campaign }) {
             index={grouped.photos.findIndex(p => p.id === id) + 1}
             onUpdate={submissionsMutate}
             expanded
+            isDisabled={isDisabled}
           />
         );
       }
@@ -669,6 +672,7 @@ function CreatorAccordion({ creator, campaign }) {
             index={grouped.rawFootage.findIndex(rf => rf.id === id) + 1}
             onUpdate={submissionsMutate}
             expanded
+            isDisabled={isDisabled}
           />
         );
       }
@@ -768,14 +772,16 @@ function CreatorAccordion({ creator, campaign }) {
 CreatorAccordionWithSubmissions.propTypes = {
   creator: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
+  isDisabled: PropTypes.bool,
 };
 
 CreatorAccordion.propTypes = {
   creator: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
+  isDisabled: PropTypes.bool,
 };
 
-export default function CampaignCreatorSubmissionsV4({ campaign }) {
+export default function CampaignCreatorSubmissionsV4({ campaign, isDisabled = false }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchTerm, setSearchTerm] = useState('');
@@ -877,10 +883,11 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
       {(() => {
           if (isMobile) {
           return (
-            <MobileCreatorSubmissions 
-              campaign={campaign} 
-              creators={sortedCreators} 
+            <MobileCreatorSubmissions
+              campaign={campaign}
+              creators={sortedCreators}
               searchTerm={searchTerm}
+              isDisabled={isDisabled}
             />
           );
         }
@@ -899,6 +906,7 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
                 key={creator.userId || index}
                 creator={creator}
                 campaign={campaign}
+                isDisabled={isDisabled}
               />
             ))}
           </Stack>
@@ -910,4 +918,5 @@ export default function CampaignCreatorSubmissionsV4({ campaign }) {
 
 CampaignCreatorSubmissionsV4.propTypes = {
   campaign: PropTypes.object,
+  isDisabled: PropTypes.bool,
 };

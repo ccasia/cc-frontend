@@ -29,7 +29,7 @@ import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
 import { VideoModal } from '../../creator-stuff/submissions/firstDraft/media-modals';
 
-export default function V4RawFootageSubmission({ submission, campaign, onUpdate }) {
+export default function V4RawFootageSubmission({ submission, campaign, onUpdate, isDisabled = false }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const userRole = user?.admin?.role?.name || user?.role?.name || user?.role || '';
@@ -437,6 +437,7 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
                         handleApprove={handleApprove}
                         handleRequestChanges={handleRequestChanges}
                         onViewLogs={() => setShowFeedbackLogs(true)}
+                        isDisabled={isDisabled}
                       />
                     </>
                   )}
@@ -782,5 +783,6 @@ export default function V4RawFootageSubmission({ submission, campaign, onUpdate 
 V4RawFootageSubmission.propTypes = {
   submission: PropTypes.object.isRequired,
   campaign: PropTypes.object.isRequired,
-  onUpdate: PropTypes.func
+  onUpdate: PropTypes.func,
+  isDisabled: PropTypes.bool,
 };

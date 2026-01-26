@@ -58,6 +58,8 @@ const PhotoCard = ({
   // V3 admin feedback handlers
   handleAdminEditFeedback,
   handleAdminSendToCreator,
+  // View-only mode
+  isDisabled = false,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -381,7 +383,7 @@ const PhotoCard = ({
                     }}
                     size="small"
                     variant="contained"
-                    disabled={isProcessing}
+                    disabled={isProcessing || isDisabled}
                     sx={{
                       bgcolor: '#FFFFFF',
                       border: 1.5,
@@ -400,6 +402,10 @@ const PhotoCard = ({
                       fontWeight: 600,
                       height: '40px',
                       flex: 2,
+                      '&.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
+                      },
                     }}
                   >
                     Request a Change
@@ -474,6 +480,7 @@ const PhotoCard = ({
                       variant="contained"
                       size="small"
                       loading={isSubmitting || isProcessing}
+                      disabled={isDisabled}
                       sx={{
                         bgcolor: '#FFFFFF',
                         color: '#1ABF66',
@@ -488,6 +495,10 @@ const PhotoCard = ({
                         height: '40px',
                         textTransform: 'none',
                         flex: 1,
+                        '&.Mui-disabled': {
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
+                        },
                       }}
                     >
                       Approve
@@ -519,7 +530,7 @@ const PhotoCard = ({
                   }}
                   size="small"
                   variant="contained"
-                  disabled={isProcessing}
+                  disabled={isProcessing || isDisabled}
                   sx={{
                     bgcolor: '#FFFFFF',
                     border: 1.5,
@@ -538,6 +549,10 @@ const PhotoCard = ({
                     fontWeight: 600,
                     height: '40px',
                     flex: 1,
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Approve
@@ -548,6 +563,7 @@ const PhotoCard = ({
                   variant="contained"
                   size="small"
                   loading={isSubmitting || isProcessing}
+                  disabled={isDisabled}
                   sx={{
                     bgcolor: '#FFFFFF',
                     color: '#D4321C',
@@ -566,6 +582,10 @@ const PhotoCard = ({
                     height: '40px',
                     textTransform: 'none',
                     flex: 2,
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Request Changes
@@ -947,6 +967,8 @@ PhotoCard.propTypes = {
   // V3 admin feedback handlers
   handleAdminEditFeedback: PropTypes.func,
   handleAdminSendToCreator: PropTypes.func,
+  // View-only mode
+  isDisabled: PropTypes.bool,
 };
 
 const Photos = ({
@@ -1188,6 +1210,8 @@ const Photos = ({
                 // V3 admin feedback handlers
                 handleAdminEditFeedback={handleAdminEditFeedback}
                 handleAdminSendToCreator={handleAdminSendToCreator}
+                // View-only mode
+                isDisabled={isDisabled}
               />
             </Box>
           ))}
@@ -1221,6 +1245,8 @@ const Photos = ({
                 // V3 admin feedback handlers
                 handleAdminEditFeedback={handleAdminEditFeedback}
                 handleAdminSendToCreator={handleAdminSendToCreator}
+                // View-only mode
+                isDisabled={isDisabled}
               />
             </Grid>
           ))}

@@ -58,6 +58,8 @@ const RawFootageCard = ({
   handleAdminSendToCreator,
   // State management for tracking sent items
   setParentSentToCreatorItems,
+  // View-only mode
+  isDisabled = false,
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -406,7 +408,7 @@ const RawFootageCard = ({
                     }}
                     size="small"
                     variant="contained"
-                    disabled={isProcessing}
+                    disabled={isProcessing || isDisabled}
                     sx={{
                       bgcolor: '#FFFFFF',
                       border: 1.5,
@@ -425,6 +427,10 @@ const RawFootageCard = ({
                       fontWeight: 600,
                       height: '40px',
                       flex: 2,
+                      '&.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
+                      },
                     }}
                   >
                     Request a Change
@@ -437,6 +443,7 @@ const RawFootageCard = ({
                     variant="contained"
                     size="small"
                     loading={isSubmitting || isProcessing}
+                    disabled={isDisabled}
                     sx={{
                       bgcolor: '#FFFFFF',
                       color: '#1ABF66',
@@ -451,6 +458,10 @@ const RawFootageCard = ({
                       height: '40px',
                       textTransform: 'none',
                       flex: 1,
+                      '&.Mui-disabled': {
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
+                      },
                     }}
                   >
                     Approve
@@ -541,7 +552,7 @@ const RawFootageCard = ({
                   }}
                   size="small"
                   variant="contained"
-                  disabled={isProcessing}
+                  disabled={isProcessing || isDisabled}
                   sx={{
                     bgcolor: '#FFFFFF',
                     border: 1.5,
@@ -560,6 +571,10 @@ const RawFootageCard = ({
                     fontWeight: 600,
                     height: '40px',
                     flex: 1,
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Back
@@ -570,6 +585,7 @@ const RawFootageCard = ({
                   variant="contained"
                   size="small"
                   loading={isSubmitting || isProcessing}
+                  disabled={isDisabled}
                   sx={{
                     bgcolor: '#FFFFFF',
                     color: '#1ABF66',
@@ -588,6 +604,10 @@ const RawFootageCard = ({
                     height: '40px',
                     textTransform: 'none',
                     flex: 2,
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
                   }}
                 >
                   Submit Feedback
@@ -1020,6 +1040,8 @@ RawFootageCard.propTypes = {
   handleAdminSendToCreator: PropTypes.func,
   // State management for tracking sent items
   setParentSentToCreatorItems: PropTypes.func,
+  // View-only mode
+  isDisabled: PropTypes.bool,
 };
 
 const RawFootages = ({
@@ -1470,6 +1492,8 @@ const RawFootages = ({
                   handleAdminSendToCreator={handleAdminSendToCreator}
                   // State management for tracking sent items
                   setParentSentToCreatorItems={setSentToCreatorItems}
+                  // View-only mode
+                  isDisabled={isDisabled}
                 />
               </Box>
             );
@@ -1531,6 +1555,8 @@ const RawFootages = ({
                   handleAdminSendToCreator={handleAdminSendToCreator}
                   // State management for tracking sent items
                   setParentSentToCreatorItems={setSentToCreatorItems}
+                  // View-only mode
+                  isDisabled={isDisabled}
                 />
               </Grid>
             );
