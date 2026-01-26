@@ -4,7 +4,7 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 const useGetInvoiceStats = (campaignId) => {
   const { data, isLoading, error } = useSWR(
-    campaignId ? endpoints.invoice.getInvoiceStats(campaignId) : null,
+    campaignId ? endpoints.invoice.getStatsByCampaign(campaignId) : null,
     fetcher,
     {
       revalidateOnFocus: false,
