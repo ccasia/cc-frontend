@@ -8,11 +8,13 @@ import { useAuthContext } from 'src/auth/hooks';
 const useGetOverview = () => {
   const { user } = useAuthContext();
 
+  // OPTIMIZED: Reduce unnecessary re-fetches for better performance
   const { data, isLoading } = useSWR(endpoints.overview.root(user?.id), fetcher, {
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnMount: true,
-    revalidateOnReconnect: true,
-    revalidateIfStale: true,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    dedupingInterval: 30000, // Cache for 30 seconds
   });
 
   const memoizedValue = useMemo(
