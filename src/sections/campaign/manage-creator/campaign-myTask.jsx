@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import { mutate } from 'swr';
 import PropTypes from 'prop-types';
+import { mutate } from 'swr';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 import { Box, Card, Stack, Typography, useMediaQuery, CircularProgress } from '@mui/material';
@@ -21,6 +21,7 @@ import MobileSubmissionLayout from './mobile-submission-layout';
 import CampaignAgreement from './submissions/campaign-agreement';
 import CampaignFirstDraft from './submissions/campaign-first-draft';
 import CampaignFinalDraft from './submissions/campaign-final-draft';
+import LogisticsForm from './submissions/campaign-logistics';
 
 /**
  * Campaign My Tasks Component
@@ -49,32 +50,41 @@ export const defaultSubmission = [
     stage: 1,
   },
   {
+    name: 'Product Delivery Info 📦',
+    value: 'Product Delivery',
+    type: 'PRODUCT_DELIVERY',
+    stage: 2,
+  },
+  {
     name: 'Draft Submission 📝',
     value: 'First Draft',
     type: 'FIRST_DRAFT',
-    stage: 2,
+    stage: 3,
   },
   {
     name: '2nd Draft Submission 📝',
     value: 'Final Draft',
     type: 'FINAL_DRAFT',
-    stage: 3,
+    stage: 4,
   },
   {
     name: 'Posting Link Submission 🔗',
     value: 'Posting',
     type: 'POSTING',
-    stage: 4,
+    stage: 5,
   },
 ];
 
-const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
+const CampaignMyTasks = ({ campaign, logistic, mutateLogistic, setCurrentTab, onConfirm }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
   const { data, isLoading, mutate: deliverableMutate } = useGetDeliverables(user?.id, campaign.id);
   const isMobile = useMediaQuery('(max-width: 900px)');
-  
+
+  const isLogisticsCompleted = !!logistic;
+  const isDelivery = campaign?.logisticsType === 'PRODUCT_DELIVERY';
+
   // Track if user has manually selected a stage (to prevent auto-selection from overriding)
   const hasManualSelection = useRef(false);
 
@@ -255,11 +265,36 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     stages.unshift({ ...defaultSubmission[0] });
     addedStages.add('AGREEMENT_FORM');
 
-    // Show First Draft if Agreement is approved
-    if ((agreementSubmission?.status === 'APPROVED' || agreementSubmission?.status === 'CLIENT_APPROVED') && !addedStages.has('FIRST_DRAFT')) {
+    // Show Product Delivery info if applicable and Agreement is approved
+    if (
+      isDelivery &&
+      (agreementSubmission?.status === 'APPROVED' ||
+        agreementSubmission?.status === 'CLIENT_APPROVED')
+    ) {
       stages.unshift({ ...defaultSubmission[1] });
+      addedStages.add('PRODUCT_DELIVERY');
+    }
+
+    // Show First Draft if Agreement is approved AND (if delivery campaign, delivery info must be submitted)
+    if (
+      (agreementSubmission?.status === 'APPROVED' ||
+        agreementSubmission?.status === 'CLIENT_APPROVED') &&
+      (!isDelivery || isLogisticsCompleted) &&
+      !addedStages.has('FIRST_DRAFT')
+    ) {
+      stages.unshift({ ...defaultSubmission.find((s) => s.type === 'FIRST_DRAFT') });
       addedStages.add('FIRST_DRAFT');
     }
+
+    // Show First Draft if Agreement is approved
+    // if (
+    //   (agreementSubmission?.status === 'APPROVED' ||
+    //     agreementSubmission?.status === 'CLIENT_APPROVED') &&
+    //   !addedStages.has('FIRST_DRAFT')
+    // ) {
+    //   stages.unshift({ ...defaultSubmission[1] });
+    //   addedStages.add('FIRST_DRAFT');
+    // }
 
     // Show Final Draft ONLY if First Draft is in CHANGES_REQUIRED status
     // OR if Final Draft already exists and is active
@@ -320,25 +355,30 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       ...stage,
       stage: stages.length - index, // This makes the bottom item Stage 01
     }));
-  }, [value]);
+  }, [value, isDelivery, isLogisticsCompleted]);
 
   // Helper function to check if a stage is completed (V2 only)
-  const isStageCompleted = useCallback((stageType) => {
-    const stageValue = value(stageType);
-    if (!stageValue) return false;
-    
-    // V2 statuses
-    if (stageValue.status === 'APPROVED') {
-      return true;
-    }
-    
-    // Special case for First Draft - CHANGES_REQUIRED means it's been reviewed and sent to creator
-    if (stageType === 'FIRST_DRAFT' && stageValue.status === 'CHANGES_REQUIRED') {
-      return true; // Show as completed so creator focuses on 2nd Draft
-    }
-    
-    return false;
-  }, [value]);
+  const isStageCompleted = useCallback(
+    (stageType) => {
+      if (stageType === 'PRODUCT_DELIVERY') return isLogisticsCompleted;
+
+      const stageValue = value(stageType);
+      if (!stageValue) return false;
+
+      // V2 statuses
+      if (stageValue.status === 'APPROVED') {
+        return true;
+      }
+
+      // Special case for First Draft - CHANGES_REQUIRED means it's been reviewed and sent to creator
+      if (stageType === 'FIRST_DRAFT' && stageValue.status === 'CHANGES_REQUIRED') {
+        return true; // Show as completed so creator focuses on 2nd Draft
+      }
+
+      return false;
+    },
+    [value, isLogisticsCompleted]
+  );
 
   // Helper function to check if a stage is in progress (V2 only)
   const isStageInProgress = useCallback((stageType) => {
@@ -371,80 +411,99 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   }, [value]);
 
   // Helper function to get status text for display
-  const getStatusText = useCallback((stageType) => {
-    const stageValue = value(stageType);
-    if (!stageValue) return 'Not Started';
-    
-    // Special handling for 1st Draft when 2nd Draft is active
-    // This prevents confusion about which stage creators should work on
-    if (stageType === 'FIRST_DRAFT') {
-      const finalDraftSubmission = value('FINAL_DRAFT');
-      
-      // If 2nd Draft exists and is active, show 1st Draft as "In Review" 
-      // to prevent confusion about which stage to work on
-      if (finalDraftSubmission && 
-          (finalDraftSubmission.status === 'IN_PROGRESS' || 
-           finalDraftSubmission.status === 'PENDING_REVIEW' ||
-           finalDraftSubmission.status === 'SENT_TO_CLIENT' ||
-           finalDraftSubmission.status === 'CLIENT_FEEDBACK' ||
-           finalDraftSubmission.status === 'CHANGES_REQUIRED')) {
-        return 'In Review';
+  const getStatusText = useCallback(
+    (stageType) => {
+      if (stageType === 'PRODUCT_DELIVERY')
+        return isLogisticsCompleted ? 'Completed' : 'In Progress';
+
+      const stageValue = value(stageType);
+      if (!stageValue) return 'Not Started';
+
+      // Special handling for 1st Draft when 2nd Draft is active
+      // This prevents confusion about which stage creators should work on
+      if (stageType === 'FIRST_DRAFT') {
+        const finalDraftSubmission = value('FINAL_DRAFT');
+
+        // If 2nd Draft exists and is active, show 1st Draft as "In Review"
+        // to prevent confusion about which stage to work on
+        if (
+          finalDraftSubmission &&
+          (finalDraftSubmission.status === 'IN_PROGRESS' ||
+            finalDraftSubmission.status === 'PENDING_REVIEW' ||
+            finalDraftSubmission.status === 'SENT_TO_CLIENT' ||
+            finalDraftSubmission.status === 'CLIENT_FEEDBACK' ||
+            finalDraftSubmission.status === 'CHANGES_REQUIRED')
+        ) {
+          return 'In Review';
+        }
+
+        // Special case: Show 1st Draft as "Completed" when it has changes required
+        // This makes creators focus on 2nd Draft instead
+        if (stageValue.status === 'CHANGES_REQUIRED') {
+          return 'Completed';
+        }
       }
-      
-      // Special case: Show 1st Draft as "Completed" when it has changes required
-      // This makes creators focus on 2nd Draft instead
-      if (stageValue.status === 'CHANGES_REQUIRED') {
-        return 'Completed';
+
+      switch (stageValue.status) {
+        case 'NOT_STARTED':
+          return 'Not Started';
+        case 'IN_PROGRESS':
+          return 'In Progress';
+        case 'PENDING_REVIEW':
+          return 'Pending Review';
+        case 'SENT_TO_CLIENT':
+          return 'In Review'; // For creators, SENT_TO_CLIENT means "In Review"
+        case 'CLIENT_FEEDBACK':
+          return 'In Review'; // For creators, CLIENT_FEEDBACK means "In Review" (client requested changes, admin reviewing)
+        case 'CHANGES_REQUIRED':
+          return 'Changes Required';
+        case 'APPROVED':
+          return 'Approved';
+        case 'CLIENT_APPROVED':
+          return 'Submission Approved!'; // Special message for client approval
+        case 'SENT_TO_ADMIN':
+          return 'In Review'; // For creators, SENT_TO_ADMIN also means "In Review"
+        default:
+          return stageValue.status;
       }
-    }
-    
-    switch (stageValue.status) {
-      case 'NOT_STARTED':
-        return 'Not Started';
-      case 'IN_PROGRESS':
-        return 'In Progress';
-      case 'PENDING_REVIEW':
-        return 'Pending Review';
-      case 'SENT_TO_CLIENT':
-        return 'In Review'; // For creators, SENT_TO_CLIENT means "In Review"
-      case 'CLIENT_FEEDBACK':
-        return 'In Review'; // For creators, CLIENT_FEEDBACK means "In Review" (client requested changes, admin reviewing)
-      case 'CHANGES_REQUIRED':
-        return 'Changes Required';
-      case 'APPROVED':
-        return 'Approved';
-      case 'CLIENT_APPROVED':
-        return 'Submission Approved!'; // Special message for client approval
-      case 'SENT_TO_ADMIN':
-        return 'In Review'; // For creators, SENT_TO_ADMIN also means "In Review"
-      default:
-        return stageValue.status;
-    }
-  }, [value]);
+    },
+    [value, isLogisticsCompleted]
+  );
 
   // Helper function to get status color for the label
-  const getStatusColor = useCallback((stageType) => {
-    const stageValue = value(stageType);
-    if (!stageValue) return '#f6c945'; // Default yellow for not started
-    
-    if (isStageCompleted(stageType)) {
-      return '#5abc6f'; // Green for completed
-    }
-    
-    return '#f6c945'; // Yellow for everything else (in progress, pending, etc.)
-  }, [value, isStageCompleted]);
+  const getStatusColor = useCallback(
+    (stageType) => {
+      if (stageType === 'PRODUCT_DELIVERY') return isLogisticsCompleted ? '#5abc6f' : '#f6c945';
+
+      const stageValue = value(stageType);
+      if (!stageValue) return '#f6c945'; // Default yellow for not started
+
+      if (isStageCompleted(stageType)) {
+        return '#5abc6f'; // Green for completed
+      }
+
+      return '#f6c945'; // Yellow for everything else (in progress, pending, etc.)
+    },
+    [value, isStageCompleted, isLogisticsCompleted]
+  );
 
   // Helper function to get status icon
-  const getStatusIcon = useCallback((stageType) => {
-    const stageValue = value(stageType);
-    if (!stageValue) return 'mdi:clock';
-    
-    if (isStageCompleted(stageType)) {
-      return 'mingcute:check-circle-fill';
-    }
-    
-    return 'mdi:clock';
-  }, [value, isStageCompleted]);
+  const getStatusIcon = useCallback(
+    (stageType) => {
+      if (stageType === 'PRODUCT_DELIVERY')
+        return isLogisticsCompleted ? 'mingcute:check-circle-fill' : 'mdi:clock';
+
+      const stageValue = value(stageType);
+      if (!stageValue) return 'mdi:clock';
+
+      if (isStageCompleted(stageType)) {
+        return 'mingcute:check-circle-fill';
+      }
+
+      return 'mdi:clock';
+    },
+    [value, isStageCompleted, isLogisticsCompleted]
+  );
 
   const handleStageClick = (stageType) => {
     console.log('Stage clicked:', stageType);
@@ -567,11 +626,14 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
         campaign={campaign}
         submissions={submissions}
         value={value}
+        user={user}
         getDependency={getDependency}
         getVisibleStages={getVisibleStages}
         getDueDate={getDueDate}
         agreementStatus={agreementStatus}
-        openLogisticTab={openLogisticTab}
+        logistic={logistic}
+        onConfirm={onConfirm}
+        mutateLogistic={mutateLogistic}
         setCurrentTab={setCurrentTab}
         deliverablesData={{ deliverables: data, deliverableMutate }}
         viewedStages={viewedStages}
@@ -682,7 +744,12 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                           }),
                         }}
                       >
-                        Due: {dayjs(getDueDate(item.type)).format('D MMMM, YYYY')}
+                        Due:{' '}
+                        {dayjs(
+                          item.type === 'PRODUCT_DELIVERY'
+                            ? getDueDate('AGREEMENT_FORM')
+                            : getDueDate(item.type)
+                        ).format('D MMMM, YYYY')}{' '}
                       </Typography>
                       
                       {/* Show status text */}
@@ -766,6 +833,19 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                   agreementStatus={agreementStatus}
                 />
               )}
+              {selectedStage === 'PRODUCT_DELIVERY' && (
+                <LogisticsForm
+                  user={user}
+                  isLogisticsCompleted={isLogisticsCompleted}
+                  submission={value('AGREEMENT_FORM')}
+                  onConfirm={onConfirm}
+                  campaignId={campaign.id}
+                  onUpdate={async () => {
+                    await mutateLogistic();
+                    await submissionMutate();
+                  }}
+                />
+              )}
               {selectedStage === 'FIRST_DRAFT' && (
                 <CampaignFirstDraft
                   campaign={campaign}
@@ -773,7 +853,6 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                   fullSubmission={submissions}
                   submission={value('FIRST_DRAFT')}
                   getDependency={getDependency}
-                  openLogisticTab={openLogisticTab}
                   setCurrentTab={setCurrentTab}
                   deliverablesData={{ deliverables: data, deliverableMutate }}
                 />
@@ -817,6 +896,7 @@ export default CampaignMyTasks;
 
 CampaignMyTasks.propTypes = {
   campaign: PropTypes.object,
-  openLogisticTab: PropTypes.func,
+  logistic: PropTypes.func,
+  mutateLogistic: PropTypes.func,
   setCurrentTab: PropTypes.func,
 };
