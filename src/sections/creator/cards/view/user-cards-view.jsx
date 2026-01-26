@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 import {
   Box,
@@ -7,6 +7,8 @@ import {
   InputBase,
   IconButton,
   InputAdornment,
+  Pagination,
+  Stack,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -28,14 +30,39 @@ export default function UserCardsView() {
   const settings = useSettingsContext();
   const { data: creators, isLoading } = useGetCreators();
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
   const router = useRouter();
 
-  const filteredCreators = creators?.filter((creator) =>
-    creator.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCreators = useMemo(
+    () =>
+      creators?.filter((creator) =>
+        creator.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ) || [],
+    [creators, searchTerm]
   );
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
+
+  const paginatedCreators = useMemo(() => {
+    const startIndex = (page - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredCreators.slice(startIndex, endIndex);
+  }, [filteredCreators, page, rowsPerPage]);
+
+  const totalPages = Math.ceil(filteredCreators.length / rowsPerPage);
 
   const handleClearSearch = () => {
     setSearchTerm('');
+  };
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // return (
@@ -139,7 +166,28 @@ export default function UserCardsView() {
           />
         </Box>
       ) : (
-        <UserCardList creators={filteredCreators} />
+        <>
+          <UserCardList creators={paginatedCreators} />
+          
+          {filteredCreators.length > rowsPerPage && (
+            <Stack alignItems="center" sx={{ mt: 5, mb: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+                size="large"
+                showFirstButton
+                showLastButton
+                sx={{
+                  '& .MuiPagination-ul': {
+                    justifyContent: 'center',
+                  },
+                }}
+              />
+            </Stack>
+          )}
+        </>
       )}
     </Container>
   );
