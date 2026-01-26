@@ -32,32 +32,48 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
   return (
     <TableRow
       key={invoice?.id}
-      component={Box}
+      hover
+      selected={selected}
       sx={{
-        cursor: 'pointer',
-        ':hover': {
-          bgcolor: (theme) => theme.palette.background.default,
+        bgcolor: 'transparent',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        '& td': {
+          py: 2,
+        },
+        '&:last-child': {
+          borderBottom: 'none',
+        },
+        '&:hover': {
+          bgcolor: 'action.hover',
         },
       }}
-      onClick={openEditInvoice}
     >
       <TableCell padding="checkbox">
         <Checkbox checked={selected} onClick={onSelectRow} />
       </TableCell>
       <TableCell>
-        <Label>{invoice?.invoiceNumber}</Label>
+        <Typography variant="body2" noWrap>
+          {invoice?.invoiceNumber}
+        </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="subtitle2">{invoice?.campaign?.name}</Typography>
+        <Typography variant="body2" noWrap>
+          {invoice?.campaign?.name}
+        </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="subtitle2">{invoice?.creator?.user?.name}</Typography>
+        <Typography variant="body2" noWrap>
+          {invoice?.creator?.user?.name}
+        </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="subtitle2">{dayjs(invoice?.createdAt).format('LL')}</Typography>
+        <Typography variant="body2" noWrap>
+          {dayjs(invoice?.createdAt).format('LL')}
+        </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="subtitle2">
+        <Typography variant="body2" noWrap>
           {formatCurrencyAmount(
             invoice?.amount, 
             currencyCode,
@@ -66,25 +82,65 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         </Typography>
       </TableCell>
       <TableCell>
-        <Label
-          color={
-            // eslint-disable-next-line no-nested-ternary
-            invoice?.status === 'approved'
-              ? 'success'
-              : invoice?.status === 'rejected'
-                ? 'error'
-                : 'warning'
-          }
+        <Typography
+          variant="body2"
+          sx={{
+            textTransform: 'uppercase',
+            fontWeight: 700,
+            display: 'inline-block',
+            px: 1.5,
+            py: 0.5,
+            fontSize: '0.75rem',
+            border: '1px solid',
+            borderBottom: '3px solid',
+            borderRadius: 0.8,
+            bgcolor: 'white',
+            ...(invoice?.status === 'paid' && {
+              color: '#2e6b55',
+              borderColor: '#2e6b55',
+            }),
+            ...(invoice?.status === 'approved' && {
+              color: '#1ABF66',
+              borderColor: '#1ABF66',
+            }),
+            ...(invoice?.status === 'pending' && {
+              color: '#f19f39',
+              borderColor: '#f19f39',
+            }),
+            ...(invoice?.status === 'overdue' && {
+              color: '#ff4842',
+              borderColor: '#ff4842',
+            }),
+            ...(invoice?.status === 'draft' && {
+              color: '#637381',
+              borderColor: '#637381',
+            }),
+            ...(invoice?.status === 'rejected' && {
+              color: '#ff4842',
+              borderColor: '#ff4842',
+            }),
+          }}
         >
-          {invoice?.status}
-        </Label>
+          {invoice?.status || 'pending'}
+        </Typography>
       </TableCell>
       <TableCell>
         <Button
-          size="small"
-          variant="contained"
-          // onClick={openEditInvoice}
-          sx={{ borderRadius: 1 / 2 }}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 700,
+            px: 1.5,
+            py: 0.5,
+            fontSize: '0.85rem',
+            border: '1px solid #e0e0e0',
+            borderBottom: '3px solid #e0e0e0',
+            borderRadius: 0.8,
+            bgcolor: 'white',
+            color: '#221f20',
+            minWidth: '65px',
+            height: '32px',
+          }}
+          onClick={openEditInvoice}
         >
           View
         </Button>

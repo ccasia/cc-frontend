@@ -44,6 +44,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { mutate } = useGetCampaignById(campaign.id);
   const navigate = useNavigate();
 
+  const [maybeOpen, setMaybeOpen] = useState(false);
   const [maybeReason, setMaybeReason] = useState('');
   const [maybeNote, setMaybeNote] = useState('');
   const [creatorProfileFull, setCreatorProfileFull] = useState(null);
@@ -301,6 +302,55 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
         reopenModal: { pitchId: currentPitch?.id, isV3: true },
       },
     });
+  };
+
+  const handleCloseMaybe = () => {
+    setMaybeOpen(false);
+    setMaybeReason('');
+    setMaybeNote('');
+  };
+
+  const handleMaybeSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+
+      if (campaign?.submissionVersion === 'v4' && user?.role === 'client') {
+        const v3PitchId = pitch.pitchId || pitch.id;
+
+        // Build request body
+        let body;
+        if (maybeReason === 'others') {
+          body = { customRejectionText: maybeNote.trim() };
+        } else {
+          const reasonLabel =
+            MAYBE_REASONS.find((r) => r.value === maybeReason)?.label || 'Unspecified';
+          body = { rejectionReason: reasonLabel };
+        }
+
+        // Call your endpoint
+        const response = await axiosInstance.patch(
+          endpoints.campaign.pitch.v3.maybeClient(v3PitchId),
+          body
+        );
+
+        // Update pitch status
+        const updatedPitch = { ...pitch, status: 'MAYBE' };
+        setCurrentPitch(updatedPitch);
+        onUpdate?.(updatedPitch);
+
+        enqueueSnackbar(response?.data?.message || 'Pitch marked as Maybe');
+        setMaybeOpen(false);
+        setMaybeReason('');
+        setMaybeNote('');
+      } else {
+        console.warn('Maybe action is only available for client-created campaigns by clients');
+      }
+    } catch (error) {
+      console.error('Error setting maybe:', error);
+      enqueueSnackbar('Error setting Maybe', { variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -904,28 +954,7 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
           currentPitch?.displayStatus === 'PENDING_REVIEW' ||
           currentPitch?.status === 'undecided' ||
           currentPitch?.displayStatus === 'undecided') && (
-          <DialogActions sx={{ p: 2 }}>
-            <Button
-              variant="outlined"
-              fullWidth
-              onClick={() => setConfirmDialog({ open: true, type: 'approve' })}
-              disabled={isDisabled || isSubmitting}
-              sx={{
-                bgcolor: '#fff',
-                color: '#1ABF66',
-                borderRadius: 1,
-                py: 1,
-                fontSize: 14,
-                fontWeight: 600,
-                textTransform: 'none',
-                '&:hover': {
-                  bgcolor: '#16a558',
-                },
-              }}
-            >
-              Approve
-            </Button>
-
+          <DialogActions sx={{ p: 2, gap: 1 }}>
             <Button
               variant="outlined"
               fullWidth
@@ -939,13 +968,76 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 fontSize: 14,
                 fontWeight: 600,
                 textTransform: 'none',
+                flex: 1,
                 '&:hover': {
-                  bgcolor: '#16a558',
+                  bgcolor: '#f5f5f5',
+                  border: '1.5px solid',
+                  borderColor: '#D4321C',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#D4321C',
                 },
               }}
             >
               Reject
             </Button>
+
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={() => setConfirmDialog({ open: true, type: 'approve' })}
+              disabled={isDisabled || isSubmitting}
+              sx={{
+                bgcolor: '#fff',
+                color: '#1ABF66',
+                borderRadius: 1,
+                py: 1,
+                fontSize: 14,
+                fontWeight: 600,
+                textTransform: 'none',
+                flex: 1,
+                '&:hover': {
+                  bgcolor: '#f5f5f5',
+                  border: '1.5px solid',
+                  borderColor: '#1ABF66',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#1ABF66',
+                },
+              }}
+            >
+              Approve
+            </Button>
+
+            {user?.role === 'client' && (
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => setMaybeOpen(true)}
+                disabled={isDisabled || isSubmitting}
+                sx={{
+                  bgcolor: '#ffffff',
+                  color: '#FFC702',
+                  border: '1.5px solid',
+                  borderColor: '#e7e7e7',
+                  borderBottom: '3px solid',
+                  borderBottomColor: '#e7e7e7',
+                  borderRadius: 1,
+                  py: 1,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  flex: 1,
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    border: '1.5px solid',
+                    borderColor: '#FFC702',
+                    borderBottom: '3px solid',
+                    borderBottomColor: '#FFC702',
+                  },
+                }}
+              >
+                Maybe
+              </Button>
+            )}
           </DialogActions>
         )}
       </Dialog>
@@ -1117,6 +1209,122 @@ const PitchModalMobile = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     ? 'Submit Reason'
                     : 'Yes, decline!'}
               </>
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Maybe Dialog */}
+      <Dialog open={maybeOpen} onClose={handleCloseMaybe} maxWidth="sm" fullWidth>
+        <DialogContent sx={{ pt: 3 }}>
+          <Stack spacing={1}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: { xs: '1.5rem', sm: '2rem' },
+                fontWeight: 550,
+              }}
+            >
+              Reason for Maybe
+            </Typography>
+
+            <Typography variant="caption" sx={{ fontWeight: 400 }}>
+              Selection Reason
+            </Typography>
+
+            <Box>
+              <Select
+                fullWidth
+                value={maybeReason}
+                onChange={(e) => setMaybeReason(e.target.value)}
+                displayEmpty
+              >
+                <MenuItem value="" disabled>
+                  Select Reason
+                </MenuItem>
+                {MAYBE_REASONS.map((r) => (
+                  <MenuItem key={r.value} value={r.value}>
+                    {r.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            {maybeReason === 'others' && (
+              <Stack spacing={1}>
+                <Typography variant="caption" sx={{ fontWeight: 400 }}>
+                  Selection Description
+                </Typography>
+                <TextField
+                  placeholder="Please describe the reason for your selection, so we can provide more creators more suited to your needs"
+                  multiline
+                  minRows={3}
+                  value={maybeNote}
+                  onChange={(e) => setMaybeNote(e.target.value)}
+                  fullWidth
+                  required
+                  error={!maybeNote.trim() && isSubmitting}
+                  helperText={!maybeNote.trim() && isSubmitting ? 'This field is required' : ''}
+                />
+              </Stack>
+            )}
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ pb: 3, px: 3 }}>
+          <Button
+            onClick={handleCloseMaybe}
+            disabled={isSubmitting}
+            sx={{
+              bgcolor: '#ffffff',
+              color: '#636366',
+              border: '1.5px solid',
+              borderColor: '#e7e7e7',
+              borderBottom: '3px solid',
+              borderBottomColor: '#e7e7e7',
+              borderRadius: 1.15,
+              py: 1.2,
+              flex: 1,
+              mr: 1,
+              fontWeight: 600,
+              '&:hover': { bgcolor: '#e7e7e7' },
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleMaybeSubmit}
+            disabled={
+              isSubmitting || !maybeReason || (maybeReason === 'others' && !maybeNote.trim())
+            }
+            sx={{
+              bgcolor: '#ffffff',
+              color: '#FFC702',
+              border: '1.5px solid',
+              borderColor: '#FFC702',
+              borderBottom: '3px solid',
+              borderBottomColor: '#FFC702',
+              borderRadius: 1.15,
+              py: 1.2,
+              flex: 1,
+              ml: 1,
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: '#f5f5f5',
+              },
+              '&:disabled': {
+                borderColor: '#e7e7e7',
+                borderBottomColor: '#e7e7e7',
+                color: '#8E8E93',
+              },
+            }}
+          >
+            {isSubmitting ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              'Submit Reason'
             )}
           </Button>
         </DialogActions>
