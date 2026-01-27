@@ -36,7 +36,6 @@ import Iconify from 'src/components/iconify';
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import ActivateCampaignDialog from './activate-campaign-dialog';
 import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
-import { RouterLink } from 'src/routes/components';
 
 // ----------------------------------------------------------------------
 

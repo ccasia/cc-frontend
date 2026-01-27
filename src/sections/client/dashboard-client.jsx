@@ -45,7 +45,6 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import CompanyCreationForm from './company-creation-form';
 import ClientCampaignCreateForm from './campaign-create/campaign-create-form';
 import ClientProfileCompletionModal from '../auth/client-profile-completion-modal';
-import { RouterLink } from 'src/routes/components';
 
 const ClientDashboard = () => {
   const { user } = useAuthContext();
