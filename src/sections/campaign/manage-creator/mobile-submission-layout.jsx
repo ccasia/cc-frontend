@@ -2,15 +2,7 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
-import {
-  Box,
-  Card,
-  Stack,
-  Collapse,
-  Typography,
-  IconButton,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Card, Stack, Collapse, Typography, IconButton, useMediaQuery } from '@mui/material';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -19,6 +11,7 @@ import CampaignPosting from './submissions/campaign-posting';
 import CampaignAgreement from './submissions/campaign-agreement';
 import CampaignFirstDraft from './submissions/campaign-first-draft';
 import CampaignFinalDraft from './submissions/campaign-final-draft';
+import LogisticsForm from './submissions/campaign-logistics';
 
 export const defaultSubmission = [
   {
@@ -27,6 +20,13 @@ export const defaultSubmission = [
     type: 'AGREEMENT_FORM',
     stage: 1,
     icon: 'solar:document-text-bold',
+  },
+  {
+    name: 'Product Delivery Info 📦',
+    value: 'Product Delivery',
+    type: 'PRODUCT_DELIVERY',
+    stage: 2,
+    icon: 'solar:box-bold',
   },
   {
     name: 'Draft Submission 📝',
@@ -59,15 +59,20 @@ const MobileSubmissionLayout = ({
   getVisibleStages,
   getDueDate,
   agreementStatus,
-  openLogisticTab,
   setCurrentTab,
   deliverablesData,
   viewedStages,
   setViewedStages,
   isNewStage,
+  user,
+  logistic,
+  mutateLogistic,
+  onConfirm,
 }) => {
   const isMobile = useMediaQuery('(max-width: 900px)');
   const [expandedStage, setExpandedStage] = useState(null);
+
+  const isLogisticsCompleted = !!logistic;
 
   if (!isMobile) {
     return null; // Only render on mobile
@@ -94,7 +99,11 @@ const MobileSubmissionLayout = ({
   };
 
   const getStageIcon = (stageType, status) => {
-    if (status === 'APPROVED' || (stageType === 'FIRST_DRAFT' && status === 'CHANGES_REQUIRED')) {
+    if (
+      status === 'APPROVED' ||
+      (stageType === 'FIRST_DRAFT' && status === 'CHANGES_REQUIRED') ||
+      (stageType === 'PRODUCT_DELIVERY' && isLogisticsCompleted)
+    ) {
       return (
         <Label
           sx={{
@@ -140,6 +149,20 @@ const MobileSubmissionLayout = ({
             agreementStatus={agreementStatus}
           />
         );
+      case 'PRODUCT_DELIVERY':
+        return (
+          <LogisticsForm
+            user={user}
+            isLogisticsCompleted={isLogisticsCompleted}
+            submission={value('AGREEMENT_FORM')}
+            onConfirm={onConfirm}
+            campaignId={campaign.id}
+            onUpdate={async () => {
+              await mutateLogistic();
+            }}
+          />
+        );
+
       case 'FIRST_DRAFT':
         return (
           <CampaignFirstDraft
@@ -148,7 +171,6 @@ const MobileSubmissionLayout = ({
             fullSubmission={submissions}
             submission={value('FIRST_DRAFT')}
             getDependency={getDependency}
-            openLogisticTab={openLogisticTab}
             setCurrentTab={setCurrentTab}
             deliverablesData={deliverablesData}
           />
@@ -234,13 +256,19 @@ const MobileSubmissionLayout = ({
                     display: 'block',
                     ...((value(stage.type)?.status === 'APPROVED' ||
                       (stage.type === 'FIRST_DRAFT' &&
-                        value(stage.type)?.status === 'CHANGES_REQUIRED')) && {
+                        value(stage.type)?.status === 'CHANGES_REQUIRED') ||
+                      (stage.type === 'PRODUCT_DELIVERY' && isLogisticsCompleted)) && {
                       textDecoration: 'line-through',
                       color: '#b0b0b0',
                     }),
                   }}
                 >
-                  Due: {dayjs(getDueDate(stage.type)).format('D MMMM, YYYY')}
+                  Due:{' '}
+                  {dayjs(
+                    stage.type === 'PRODUCT_DELIVERY'
+                      ? getDueDate('AGREEMENT_FORM')
+                      : getDueDate(stage.type)
+                  ).format('D MMMM, YYYY')}
                 </Typography>
               </Box>
 
@@ -343,10 +371,13 @@ MobileSubmissionLayout.propTypes = {
   getVisibleStages: PropTypes.func.isRequired,
   getDueDate: PropTypes.func.isRequired,
   agreementStatus: PropTypes.bool,
-  openLogisticTab: PropTypes.func,
   setCurrentTab: PropTypes.func,
   deliverablesData: PropTypes.object,
   viewedStages: PropTypes.array,
   setViewedStages: PropTypes.func,
   isNewStage: PropTypes.func,
-}; 
+  user: PropTypes.object,
+  logistic: PropTypes.object,
+  mutateLogistic: PropTypes.func,
+  onConfirm: PropTypes.func,
+};

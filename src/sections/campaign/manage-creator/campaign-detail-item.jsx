@@ -195,7 +195,9 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
           {currentTab === 'tasks' && (
             <CampaignMyTasks
               campaign={campaign}
-              openLogisticTab={openLogisticTab}
+              logistic={myLogistic}
+              mutateLogistic={mutateLogistic}
+              onConfirm={handleGoToLogistics}
               setCurrentTab={setCurrentTab}
             />
           )}
