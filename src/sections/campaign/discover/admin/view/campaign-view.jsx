@@ -211,11 +211,11 @@ const CampaignView = () => {
     };
   }, [handleScroll, mainRef, lgUp]);
 
-  // useEffect(() => {
-  //   if (pageSizing) {
-  //     setSize(Number(pageSizing));
-  //   }
-  // }, [setSize, pageSizing]);
+  useEffect(() => {
+    if (pageSizing) {
+      setSize(Number(pageSizing));
+    }
+  }, [setSize, pageSizing]);
 
   useEffect(() => {
     if (!isLoading && lastCampaignOpenId) {
@@ -241,7 +241,7 @@ const CampaignView = () => {
 
   useEffect(() => {
     const scrollContainer = mainRef?.current;
-    window.addEventListener('beforeunload', () => {
+    window.addEventListener('beforeunload', (event) => {
       localStorage.setItem('scrollTop', scrollContainer.scrollTop);
     });
   }, [mainRef]);
@@ -293,6 +293,7 @@ const CampaignView = () => {
               size="large"
               onClick={() => {
                 setFilter('active');
+                setSize(1);
               }}
               sx={{
                 px: 0.5,
