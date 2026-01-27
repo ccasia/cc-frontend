@@ -5,16 +5,17 @@ import {
   Box,
   Chip,
   Stack,
+  Avatar,
   Divider,
   Accordion,
   Typography,
   AccordionSummary,
   AccordionDetails,
-  Avatar,
 } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
 import { fDate } from 'src/utils/format-time';
+
+import Iconify from 'src/components/iconify';
 
 const ChipStyle = {
   bgcolor: '#EFEFEF',
@@ -663,48 +664,50 @@ const CampaignModalMobile = ({ campaign }) => {
         </Accordion>
 
         {/* Logistics */}
-        <Accordion
-          disableGutters
-          elevation={0}
-          sx={{
-            '&.MuiAccordion-root': {
-              border: 'none',
-              boxShadow: 'none',
-              '&:before': {
-                display: 'none',
-              },
-            },
-          }}
-        >
-          {renderAccordionSummary(
-            'panel1',
-            'material-symbols:inventory-2-outline-sharp',
-            'LOGISTICS',
-            '#CFB5F6'
-          )}
-          <AccordionDetails sx={{ pt: 2, px: 0.5 }}>
-            <Chip
-              label={getlogisticsTypeLabel(campaign?.logisticsType) || 'Not specified'}
-              size="small"
-              sx={{
-                bgcolor: '#F5F5F5',
-                borderRadius: 1,
-                color: '#231F20',
-                height: '32px',
-                '& .MuiChip-label': {
-                  fontWeight: 700,
-                  px: 1.5,
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginTop: '-3px',
+        {campaign?.logisticsType && (
+          <Accordion
+            disableGutters
+            elevation={0}
+            sx={{
+              '&.MuiAccordion-root': {
+                border: 'none',
+                boxShadow: 'none',
+                '&:before': {
+                  display: 'none',
                 },
-                '&:hover': { bgcolor: '#F5F5F5' },
-              }}
-            />
-          </AccordionDetails>
-        </Accordion>
+              },
+            }}
+          >
+            {renderAccordionSummary(
+              'panel1',
+              'material-symbols:inventory-2-outline-sharp',
+              'LOGISTICS',
+              '#CFB5F6'
+            )}
+            <AccordionDetails sx={{ pt: 2, px: 0.5 }}>
+              <Chip
+                label={getlogisticsTypeLabel(campaign?.logisticsType) || 'Not specified'}
+                size="small"
+                sx={{
+                  bgcolor: '#F5F5F5',
+                  borderRadius: 1,
+                  color: '#231F20',
+                  height: '32px',
+                  '& .MuiChip-label': {
+                    fontWeight: 700,
+                    px: 1.5,
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginTop: '-3px',
+                  },
+                  '&:hover': { bgcolor: '#F5F5F5' },
+                }}
+              />
+            </AccordionDetails>
+          </Accordion>
+        )}
 
         {/* Client Info */}
         <Accordion
