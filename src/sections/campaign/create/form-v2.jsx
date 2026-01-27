@@ -174,13 +174,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
       .required('Audience Gender is required.'),
     audienceAge: Yup.array().min(1, 'At least 1 option').required('Audience age is required.'),
     country: Yup.string().required('Country is required.'),
-    audienceLocation: Yup.array().when('country', {
-      is: 'Malaysia',
-      then: (schema) =>
-        schema.min(1, 'At least 1 option').required('Audience location is required.'),
-      otherwise: (schema) => schema.notRequired(),
-    }),
-    othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
       .min(1, 'At least 1 option')
       .required('Audience language is required.'),
@@ -343,7 +336,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     countries: [],
     audienceGender: [],
     audienceAge: [],
-    audienceLocation: [],
     audienceLanguage: [],
     audienceCreatorPersona: [],
     audienceUserPersona: '',
@@ -353,12 +345,10 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     // Target audience secondary
     secondaryAudienceGender: [],
     secondaryAudienceAge: [],
-    secondaryAudienceLocation: [],
     secondaryAudienceLanguage: [],
     secondaryAudienceCreatorPersona: [],
     secondaryAudienceUserPersona: '',
     secondaryCountry: '',
-    secondaryOthersAudienceLocation: '',
 
     // Logistics
     logisticsType: '',
@@ -687,7 +677,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
     // Build campaign data object
     const campaignData = {
       ...data,
-      audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
       rawFootage: data.deliverables.includes('RAW_FOOTAGES'),
       photos: data.deliverables.includes('PHOTOS'),
       ads: data.deliverables.includes('ADS'),
@@ -717,9 +706,6 @@ function CreateCampaignFormV2({ onClose, mutate: mutateCampaignList }) {
         : [],
       secondaryAudienceAge: Array.isArray(data.secondaryAudienceAge)
         ? data.secondaryAudienceAge
-        : [],
-      secondaryAudienceLocation: Array.isArray(data.secondaryAudienceLocation)
-        ? data.secondaryAudienceLocation.filter((item) => item !== 'Others')
         : [],
       secondaryAudienceLanguage: Array.isArray(data.secondaryAudienceLanguage)
         ? data.secondaryAudienceLanguage
