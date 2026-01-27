@@ -2,7 +2,7 @@
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import 'react-quill/dist/quill.snow.css';
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
 import { useTheme } from '@mui/material/styles';
@@ -114,15 +114,15 @@ const CampaignModal = ({
   // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const isShortlisted = useMemo(
-    () =>
-      user &&
-      user?.shortlisted &&
-      user?.shortlisted.some(
-        (item) => item.userId === user?.id && item.campaignId === campaign?.id
-      ),
-    [campaign, user]
-  );
+  // const isShortlisted = useMemo(
+  //   () =>
+  //     user &&
+  //     user?.shortlisted &&
+  //     user?.shortlisted.some(
+  //       (item) => item.userId === user?.id && item.campaignId === campaign?.id
+  //     ),
+  //   [campaign, user]
+  // );
 
   const handleImageClick = (event) => {
     // Prevent expansion if clicking on navigation buttons
@@ -889,7 +889,7 @@ const CampaignModal = ({
                           <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
                             <Box>
                               <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                Creator's Interest
+                                Creator&apos;s Interest
                               </Typography>
                               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                                 {requirement?.creator_persona.map((value, idx) => (
@@ -1174,8 +1174,7 @@ const CampaignModal = ({
 
                       {/* Campaign Secondary Audience */}
                       {hasSecondaryAudience && (
-                        <>
-                          <Box sx={{ mb: 2 }}>
+                        <Box sx={{ mb: 2 }}>
                             <Box
                               sx={{
                                 ...SectionBoxStyles,
@@ -1247,7 +1246,7 @@ const CampaignModal = ({
                               >
                                 <Box>
                                   <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                    Creator's Interest
+                                    Creator&apos;s Interest
                                   </Typography>
                                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                                     {requirement?.secondary_creator_persona.map((value, idx) => (
@@ -1271,7 +1270,6 @@ const CampaignModal = ({
                               </Box>
                             </Box>
                           </Box>
-                        </>
                       )}
                     </Stack>
                   </Paper>
