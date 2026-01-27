@@ -15,6 +15,7 @@ import {
   Button,
   Avatar,
   Divider,
+  Tooltip,
   TableRow,
   TableBody,
   TextField,
@@ -1035,6 +1036,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         open={platformCreatorOpen}
         onClose={() => setPlatformCreatorOpen(false)}
         campaign={campaign}
+        pitches={pitches}
         onUpdated={() => {
           onUpdate?.();
         }}
@@ -1289,16 +1291,22 @@ AddCreatorModal.propTypes = {
   campaign: PropTypes.object,
 };
 
-export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
+export function PlatformCreatorModal({ open, onClose, campaign, pitches, onUpdated }) {
   const { data, isLoading } = useGetAllCreators();
   const { enqueueSnackbar } = useSnackbar();
-  const [creatorRows, setCreatorRows] = useState([{ id: 1, creator: null, followerCount: '', hasMediaKit: false }]);
-  const [commentOpen, setCommentOpen] = useState(false);
-  const [commentText, setCommentText] = useState('');
+  const [creatorRows, setCreatorRows] = useState([{ id: 1, creator: null, followerCount: '', adminComments: '', hasMediaKit: false }]);
   const [submitting, setSubmitting] = useState(false);
 
   const shortlistedCreators = campaign?.shortlisted || [];
   const shortlistedIds = new Set(shortlistedCreators.map((c) => c.userId));
+
+  // Also exclude creators with existing pitches (any status means they're already in the workflow)
+  // This includes SENT_TO_CLIENT (V4 admin approved), PENDING_REVIEW (applied), APPROVED, etc.
+  const pitchUserIds = new Set(
+    (pitches || [])
+      .filter((p) => p.userId)
+      .map((p) => p.userId)
+  );
 
   // Determine if this is a credit tier campaign (controls follower count field visibility)
   const isCreditTier = campaign?.isCreditTier || false;
@@ -1332,14 +1340,14 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
 
     return (data || [])
       .filter((item) => item.status === 'active' && item?.creator?.isFormCompleted)
-      .filter((item) => !shortlistedIds.has(item.id))
+      .filter((item) => !shortlistedIds.has(item.id) && !pitchUserIds.has(item.id))
       .filter((item) => !selectedInOtherRows.includes(item.id));
   };
 
   // Add a new creator row (max 3)
   const handleAddCreatorRow = () => {
     if (creatorRows.length < 3) {
-      setCreatorRows([...creatorRows, { id: Date.now(), creator: null, followerCount: '', hasMediaKit: false }]);
+      setCreatorRows([...creatorRows, { id: Date.now(), creator: null, followerCount: '', adminComments: '', hasMediaKit: false }]);
     }
   };
 
@@ -1357,7 +1365,15 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
         const hasMediaKit = hasMediaKitLinked(selectedCreator);
         // Always use getHighestFollowerCount - it handles priority: media kit > manualFollowerCount
         const followerCount = getHighestFollowerCount(selectedCreator) || '';
-        return { ...row, creator: selectedCreator, followerCount, hasMediaKit };
+        // Only reset adminComments when clearing creator (null), preserve when switching creators
+        const shouldResetComments = selectedCreator === null;
+        return {
+          ...row,
+          creator: selectedCreator,
+          followerCount,
+          hasMediaKit,
+          adminComments: shouldResetComments ? '' : row.adminComments
+        };
       }
       return row;
     }));
@@ -1373,13 +1389,21 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
     }));
   };
 
+  // Update admin comments for a specific row
+  const handleAdminCommentsChange = (rowId, value) => {
+    setCreatorRows(rows => rows.map(row => {
+      if (row.id === rowId) {
+        return { ...row, adminComments: value };
+      }
+      return row;
+    }));
+  };
+
   // Get valid creators from rows
   const getValidCreatorsFromRows = () => creatorRows.filter(row => row.creator !== null).map(row => row.creator);
 
   const resetState = () => {
-    setCreatorRows([{ id: 1, creator: null, followerCount: '', hasMediaKit: false }]);
-    setCommentText('');
-    setCommentOpen(false);
+    setCreatorRows([{ id: 1, creator: null, followerCount: '', adminComments: '', hasMediaKit: false }]);
     setSubmitting(false);
   };
 
@@ -1388,15 +1412,21 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
     onClose?.();
   };
 
-  const handleContinue = () => {
-    // Open comment dialog (platform-only flow)
-    setCommentOpen(true);
-  };
-
-  const handleSubmitWithComment = async () => {
+  const handleSubmit = async () => {
     // Get valid rows (with creator selected)
     const validRows = creatorRows.filter(row => row.creator !== null);
     if (!validRows.length || !campaign?.id) return;
+
+    // Validate follower counts - max 10 billion
+    const MAX_FOLLOWER_COUNT = 10_000_000_000;
+    const invalidRow = validRows.find(row => {
+      const count = row.followerCount ? parseInt(row.followerCount, 10) : 0;
+      return count > MAX_FOLLOWER_COUNT;
+    });
+    if (invalidRow) {
+      enqueueSnackbar('Follower count is too large. Please enter a valid number.', { variant: 'error' });
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -1408,9 +1438,9 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
           return {
             id: row.creator.id,
             followerCount: !Number.isNaN(parsedFollowerCount) ? parsedFollowerCount : undefined,
+            adminComments: row.adminComments?.trim() || undefined,
           };
         }),
-        adminComments: commentText?.trim() || undefined,
       });
 
       enqueueSnackbar(
@@ -1438,12 +1468,14 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
       <Dialog
         open={open}
         onClose={handleCloseAll}
-        maxWidth="sm"
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: {
             borderRadius: 2,
             bgcolor: '#F4F4F4',
+            width: { xs: '95%', sm: '90%', md: '900px', lg: '1000px' },
+            maxWidth: { xs: '95%', sm: '90%', md: '900px', lg: '1000px' },
           },
         }}
       >
@@ -1476,7 +1508,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
             <>
               <AnimatePresence initial={false}>
                 {creatorRows.map((row) => (
-                  <Stack
+                  <Box
                     key={row.id}
                     component={m.div}
                     initial={{ opacity: 0, height: 0, marginBottom: 0 }}
@@ -1498,159 +1530,220 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
                         opacity: { duration: 0.15 },
                       },
                     }}
-                    direction="row"
-                    spacing={2}
-                    sx={{ overflow: 'hidden' }}
+                    sx={{
+                      borderBottom: '1px solid #e7e7e7',
+                      pb: 2,
+                      overflow: 'hidden',
+                    }}
                   >
-                    {/* Creator Autocomplete */}
-                    <Box flex={1}>
-                      <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
-                        Select Creators to add
-                      </Typography>
-                      <Autocomplete
-                        value={row.creator}
-                        onChange={(e, val) => handleCreatorRowChange(row.id, val)}
-                        options={getFilteredOptions(row.id)}
-                        getOptionLabel={(option) => option?.name || ''}
-                        isOptionEqualToValue={(option, value) => option?.id === value?.id}
-                        disableClearable={!!row.creator}
-                        popupIcon={<Iconify icon="eva:chevron-down-fill" width={20} sx={{ color: '#231F20' }} />}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            placeholder={row.creator ? '' : 'Search creator...'}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                bgcolor: '#fff',
-                                minHeight: 48,
-                                borderRadius: 1,
-                              },
-                              '& .MuiOutlinedInput-input': {
-                                display: row.creator ? 'none' : 'block',
-                              },
-                            }}
-                            InputProps={{
-                              ...params.InputProps,
-                              startAdornment: row.creator ? (
-                                <Box
-                                  sx={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    bgcolor: '#fff',
-                                    color: '#231F20',
-                                    border: '1px solid #E7E7E7',
-                                    borderBottom: '3px solid #E7E7E7',
-                                    borderRadius: 1,
-                                    px: 1.5,
-                                    py: 0.5,
-                                    fontWeight: 500,
-                                    fontSize: '0.875rem',
-                                    gap: 0.5,
-                                    maxWidth: 180,
-                                  }}
-                                >
+                    {/* Single Row: Creator Autocomplete + Conditional Follower Count + CS Comments */}
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                      {/* Creator Autocomplete */}
+                      <Box flex={1} sx={{ minWidth: { xs: '100%', md: 'auto' } }}>
+                        <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
+                          Select Creators to add
+                        </Typography>
+                        <Autocomplete
+                          value={row.creator}
+                          onChange={(e, val) => handleCreatorRowChange(row.id, val)}
+                          options={getFilteredOptions(row.id)}
+                          getOptionLabel={(option) => option?.name || ''}
+                          isOptionEqualToValue={(option, value) => option?.id === value?.id}
+                          disableClearable={!!row.creator}
+                          popupIcon={<Iconify icon="eva:chevron-down-fill" width={20} sx={{ color: '#231F20' }} />}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              placeholder={row.creator ? '' : 'Search creator...'}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  bgcolor: '#fff',
+                                  minHeight: 48,
+                                  borderRadius: 1,
+                                },
+                                '& .MuiOutlinedInput-input': {
+                                  display: row.creator ? 'none' : 'block',
+                                },
+                              }}
+                              InputProps={{
+                                ...params.InputProps,
+                                startAdornment: row.creator ? (
                                   <Box
-                                    component="span"
                                     sx={{
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      whiteSpace: 'nowrap',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      bgcolor: '#fff',
+                                      color: '#231F20',
+                                      border: '1px solid #E7E7E7',
+                                      borderBottom: '3px solid #E7E7E7',
+                                      borderRadius: 1,
+                                      px: 1.5,
+                                      py: 0.5,
+                                      fontWeight: 500,
+                                      fontSize: '0.875rem',
+                                      gap: 0.5,
+                                      maxWidth: 180,
                                     }}
                                   >
-                                    {row.creator.name}
+                                    <Box
+                                      component="span"
+                                      sx={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {row.creator.name}
+                                    </Box>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCreatorRowChange(row.id, null);
+                                      }}
+                                      sx={{ p: 0, ml: 0.5, flexShrink: 0 }}
+                                    >
+                                      <Iconify icon="mdi:close" width={16} sx={{ color: '#636366' }} />
+                                    </IconButton>
                                   </Box>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleCreatorRowChange(row.id, null);
-                                    }}
-                                    sx={{ p: 0, ml: 0.5, flexShrink: 0 }}
-                                  >
-                                    <Iconify icon="mdi:close" width={16} sx={{ color: '#636366' }} />
-                                  </IconButton>
-                                </Box>
-                              ) : null,
-                            }}
-                          />
-                        )}
-                        renderOption={({ key, ...optionProps }, option) => (
-                          <Box key={key} component="li" {...optionProps} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-                            <Avatar src={option?.photoURL} sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}>
-                              {option?.name?.charAt(0)}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body2" fontWeight={500}>{option?.name}</Typography>
-                              <Typography variant="caption" sx={{ color: '#636366' }}>{option?.email}</Typography>
+                                ) : null,
+                              }}
+                            />
+                          )}
+                          renderOption={({ key, ...optionProps }, option) => (
+                            <Box key={key} component="li" {...optionProps} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
+                              <Avatar src={option?.photoURL} sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}>
+                                {option?.name?.charAt(0)}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="body2" fontWeight={500}>{option?.name}</Typography>
+                                <Typography variant="caption" sx={{ color: '#636366' }}>{option?.email}</Typography>
+                              </Box>
                             </Box>
+                          )}
+                        />
+                      </Box>
+
+                      {/* Conditional Follower Count Field with Animation */}
+                      <AnimatePresence mode="wait">
+                        {row.creator && !row.hasMediaKit && (
+                          <Box
+                            key={`follower-${row.id}`}
+                            component={m.div}
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{
+                              opacity: 1,
+                              width: 'auto',
+                              transition: {
+                                width: { duration: 0.3, ease: 'easeOut' },
+                                opacity: { duration: 0.2, delay: 0.1 },
+                              },
+                            }}
+                            exit={{
+                              opacity: 0,
+                              width: 0,
+                              transition: {
+                                width: { duration: 0.25, ease: 'easeIn' },
+                                opacity: { duration: 0.15 },
+                              },
+                            }}
+                            sx={{ overflow: 'hidden', minWidth: 0 }}
+                          >
+                            <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
+                              Follower Count
+                            </Typography>
+                            <TextField
+                              value={row.followerCount}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                handleFollowerCountChange(row.id, val);
+                              }}
+                              placeholder="Instagram or TikTok"
+                              fullWidth
+                              inputProps={{
+                                inputMode: 'numeric',
+                                pattern: '[0-9]*',
+                              }}
+                              sx={{
+                                minWidth: 160,
+                                '& .MuiOutlinedInput-root': {
+                                  bgcolor: '#fff',
+                                  minHeight: 48,
+                                  borderRadius: 1,
+                                },
+                              }}
+                            />
                           </Box>
                         )}
-                      />
-                    </Box>
+                      </AnimatePresence>
 
-                    {/* Follower Count Field - Only for Credit Tier Campaigns */}
-                    {isCreditTier && (
-                      <Box flex={1}>
+                      {/* CS Comments (Optional) */}
+                      <Box sx={{ flex: { xs: 1, md: 1.5 }, minWidth: { xs: '100%', md: 'auto' } }}>
                         <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
-                          Follower Count
+                          CS Comments (Optional)
                         </Typography>
                         <TextField
-                          value={row.followerCount}
-                          onChange={(e) => handleFollowerCountChange(row.id, e.target.value)}
-                          placeholder="Instagram or TikTok"
                           fullWidth
-                          disabled={!row.creator || row.hasMediaKit}
+                          placeholder="Input comments about the creator that your clients might find helpful"
+                          value={row.adminComments}
+                          onChange={(e) => handleAdminCommentsChange(row.id, e.target.value)}
+                          disabled={!row.creator}
                           sx={{
                             '& .MuiOutlinedInput-root': {
-                              bgcolor: row.hasMediaKit ? '#e8e8e8' : '#fff',
+                              bgcolor: '#fff',
                               minHeight: 48,
                               borderRadius: 1,
                             },
                           }}
-                          InputProps={{
-                            readOnly: row.hasMediaKit,
-                          }}
                         />
                       </Box>
-                    )}
-                  </Stack>
+                    </Stack>
+                  </Box>
                 ))}
               </AnimatePresence>
 
               {/* Plus/Minus Buttons */}
               <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 2 }}>
-                <IconButton
-                  onClick={handleRemoveCreatorRow}
-                  disabled={creatorRows.length <= 1}
-                  sx={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 1,
-                    border: '1px solid #E7E7E7',
-                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                    bgcolor: '#fff',
-                    '&:hover': { bgcolor: '#f5f5f5' },
-                    '&:disabled': { opacity: 0.5 },
-                  }}
-                >
-                  <Iconify icon="eva:minus-fill" width={20} />
-                </IconButton>
-                <IconButton
-                  onClick={handleAddCreatorRow}
-                  disabled={creatorRows.length >= 3}
-                  sx={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 1,
-                    border: '1px solid #E7E7E7',
-                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                    bgcolor: '#fff',
-                    '&:hover': { bgcolor: '#f5f5f5' },
-                    '&:disabled': { opacity: 0.5 },
-                  }}
-                >
-                  <Iconify icon="eva:plus-fill" width={20} sx={{ color: '#1340FF' }} />
-                </IconButton>
+                <Tooltip title="Remove row" arrow>
+                  <span>
+                    <IconButton
+                      onClick={handleRemoveCreatorRow}
+                      disabled={creatorRows.length <= 1}
+                      sx={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 1,
+                        border: '1px solid #E7E7E7',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        bgcolor: '#fff',
+                        '&:hover': { bgcolor: '#f5f5f5' },
+                        '&:disabled': { opacity: 0.5 },
+                      }}
+                    >
+                      <Iconify icon="eva:minus-fill" width={20} />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Add row" arrow>
+                  <span>
+                    <IconButton
+                      onClick={handleAddCreatorRow}
+                      disabled={creatorRows.length >= 3}
+                      sx={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 1,
+                        border: '1px solid #E7E7E7',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        bgcolor: '#fff',
+                        '&:hover': { bgcolor: '#f5f5f5' },
+                        '&:disabled': { opacity: 0.5 },
+                      }}
+                    >
+                      <Iconify icon="eva:plus-fill" width={20} sx={{ color: '#1340FF' }} />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </Stack>
             </>
           )}
@@ -1682,90 +1775,28 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
           </Button>
 
           <LoadingButton
-            onClick={handleContinue}
+            onClick={handleSubmit}
             disabled={getValidCreatorsFromRows().length === 0}
-            loading={false}
-            sx={{
-              bgcolor: '#203ff5',
-              border: '1px solid #203ff5',
-              borderBottom: '3px solid #1933cc',
-              height: 44,
-              color: '#ffffff',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              px: 3,
-              '&:hover': { bgcolor: '#1933cc', opacity: 0.9 },
-              '&:disabled': {
-                bgcolor: '#e7e7e7',
-                color: '#999999',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #d1d1d1',
-              },
-            }}
-          >
-            Continue
-          </LoadingButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* COMMENT DIALOG (platform-only) */}
-      <Dialog open={commentOpen} onClose={() => setCommentOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle
-          sx={{
-            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-            fontSize: 24,
-          }}
-        >
-          CS Comments (Optional)
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-            CS Comments (Optional)
-          </Typography>
-          <TextField
-            fullWidth
-            multiline
-            minRows={3}
-            placeholder="Optional: Add comments about the creators that your clients might find helpful"
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            helperText="You can skip this step and proceed without adding comments"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setCommentOpen(false)}
-            sx={{
-              bgcolor: '#ffffff',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              height: 44,
-              color: '#221f20',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              px: 3,
-              textTransform: 'none',
-              '&:hover': { bgcolor: (theme) => alpha('#636366', 0.08), opacity: 0.9 },
-            }}
-          >
-            Back
-          </Button>
-          <LoadingButton
-            variant="contained"
-            onClick={handleSubmitWithComment}
             loading={submitting}
+            loadingIndicator={<CircularProgress size={20} sx={{ color: '#fff' }} />}
             sx={{
               bgcolor: '#203ff5',
               border: '1px solid #203ff5',
               borderBottom: '3px solid #1933cc',
               height: 44,
+              minWidth: 120,
               color: '#ffffff',
               fontSize: '0.875rem',
               fontWeight: 600,
               px: 3,
               textTransform: 'none',
               '&:hover': { bgcolor: '#1933cc', opacity: 0.9 },
-              '&:disabled': {
+              '&.MuiLoadingButton-loading': {
+                bgcolor: '#203ff5',
+                border: '1px solid #203ff5',
+                borderBottom: '3px solid #1933cc',
+              },
+              '&:disabled:not(.MuiLoadingButton-loading)': {
                 bgcolor: '#e7e7e7',
                 color: '#999999',
                 border: '1px solid #e7e7e7',
@@ -1773,7 +1804,7 @@ export function PlatformCreatorModal({ open, onClose, campaign, onUpdated }) {
               },
             }}
           >
-            {submitting ? 'Adding Creators…' : 'Confirm'}
+            Add Creators
           </LoadingButton>
         </DialogActions>
       </Dialog>
@@ -1785,6 +1816,7 @@ PlatformCreatorModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   campaign: PropTypes.object,
+  pitches: PropTypes.array,
   onUpdated: PropTypes.func,
 };
 
@@ -1844,6 +1876,17 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
       return;
     }
 
+    // Validate follower counts - max 10 billion
+    const MAX_FOLLOWER_COUNT = 10_000_000_000;
+    const invalidFollower = formValues.creators.find((c) => {
+      const count = c.followerCount ? parseInt(c.followerCount, 10) : 0;
+      return count > MAX_FOLLOWER_COUNT;
+    });
+    if (invalidFollower) {
+      enqueueSnackbar('Follower count is too large. Please enter a valid number.', { variant: 'error' });
+      return;
+    }
+
     const guestCreators = formValues.creators.map((creator) => ({
       name: creator.name.trim(),
       profileLink: creator.profileLink.trim(),
@@ -1894,18 +1937,20 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
       open={open}
       onClose={onClose}
       fullWidth
-      maxWidth="md"
+      maxWidth="lg"
       PaperProps={{
         sx: {
           borderRadius: 2,
           bgcolor: '#F4F4F4',
+          width: { xs: '95%', sm: '90%', md: '900px', lg: '1000px' },
+          maxWidth: { xs: '95%', sm: '90%', md: '900px', lg: '1000px' },
         },
       }}
     >
       <DialogTitle
         sx={{
           fontFamily: 'Instrument Serif',
-          fontSize: '40px !important',
+          fontSize: { xs: '28px !important', sm: '40px !important' },
           fontWeight: 400,
           display: 'flex',
           justifyContent: 'space-between',
@@ -1953,9 +1998,9 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                 overflow: 'hidden',
               }}
             >
-              <Stack flexDirection="row" flex={1} spacing={2} mb={2}>
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} mb={2}>
                 {/* Creator Name */}
-                <Box flex={1} alignSelf="flex-end">
+                <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
                   <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
                     Creator Name
                   </Typography>
@@ -1975,7 +2020,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                 </Box>
 
                 {/* Follower Count */}
-                <Box flex={1}>
+                <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
                   <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
                     Follower Count
                   </Typography>
@@ -1983,7 +2028,16 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                     fullWidth
                     placeholder="Follower Count"
                     value={creator.followerCount}
-                    onChange={handleCreatorChange(index, 'followerCount')}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      const updatedCreators = [...formValues.creators];
+                      updatedCreators[index].followerCount = val;
+                      setFormValues({ ...formValues, creators: updatedCreators });
+                    }}
+                    inputProps={{
+                      inputMode: 'numeric',
+                      pattern: '[0-9]*',
+                    }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         bgcolor: '#fff',
@@ -1995,7 +2049,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                 </Box>
 
                 {/* Profile Link */}
-                <Box flex={1}>
+                <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
                   <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
                     Profile Link
                   </Typography>
@@ -2015,8 +2069,8 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                 </Box>
               </Stack>
 
-              {/* CS Comments */}
-              <Box>
+              {/* CS Comments - separate row below */}
+              <Box sx={{ mt: 2 }}>
                 <Typography sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}>
                   CS Comments (Optional)
                 </Typography>
@@ -2040,38 +2094,46 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
 
         {/* Plus/Minus Buttons */}
         <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 2 }}>
-          <IconButton
-            onClick={handleRemoveCreator}
-            disabled={formValues.creators.length <= 1}
-            sx={{
-              width: 38,
-              height: 38,
-              borderRadius: 1,
-              border: '1px solid #E7E7E7',
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-              bgcolor: '#fff',
-              '&:hover': { bgcolor: '#f5f5f5' },
-              '&:disabled': { opacity: 0.5 },
-            }}
-          >
-            <Iconify icon="eva:minus-fill" width={20} />
-          </IconButton>
-          <IconButton
-            onClick={handleAddCreator}
-            disabled={formValues.creators.length >= 3}
-            sx={{
-              width: 38,
-              height: 38,
-              borderRadius: 1,
-              border: '1px solid #E7E7E7',
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-              bgcolor: '#fff',
-              '&:hover': { bgcolor: '#f5f5f5' },
-              '&:disabled': { opacity: 0.5 },
-            }}
-          >
-            <Iconify icon="eva:plus-fill" width={20} sx={{ color: '#1340FF' }} />
-          </IconButton>
+          <Tooltip title="Remove row" arrow>
+            <span>
+              <IconButton
+                onClick={handleRemoveCreator}
+                disabled={formValues.creators.length <= 1}
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 1,
+                  border: '1px solid #E7E7E7',
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  bgcolor: '#fff',
+                  '&:hover': { bgcolor: '#f5f5f5' },
+                  '&:disabled': { opacity: 0.5 },
+                }}
+              >
+                <Iconify icon="eva:minus-fill" width={20} />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Add row" arrow>
+            <span>
+              <IconButton
+                onClick={handleAddCreator}
+                disabled={formValues.creators.length >= 3}
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 1,
+                  border: '1px solid #E7E7E7',
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  bgcolor: '#fff',
+                  '&:hover': { bgcolor: '#f5f5f5' },
+                  '&:disabled': { opacity: 0.5 },
+                }}
+              >
+                <Iconify icon="eva:plus-fill" width={20} sx={{ color: '#1340FF' }} />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Stack>
       </DialogContent>
 

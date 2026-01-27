@@ -1703,38 +1703,59 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
       onClose={onClose}
       fullWidth
       maxWidth="md"
-      PaperProps={{ sx: { borderRadius: 2, backgroundColor: '#F4F4F4' } }}
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          bgcolor: '#F4F4F4',
+          width: { xs: '95%', sm: '90%', md: '900px' },
+          maxWidth: { xs: '95%', sm: '90%', md: '900px' },
+        },
+      }}
     >
       <DialogTitle
         sx={{
           fontFamily: 'Instrument Serif',
-          fontWeight: 500,
-          '&.MuiTypography-root': { fontSize: 36 },
+          fontSize: { xs: '28px !important', sm: '40px !important' },
+          fontWeight: 400,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          pb: 2,
+          lineHeight: 1.2,
         }}
       >
         {!showCreatorSelection ? 'Non-Platform Creator' : 'Link Non-Platform Creator'}
+        <IconButton onClick={onClose} size="small">
+          <Iconify icon="mdi:close" width={24} />
+        </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ bgcolor: '#F4F4F4' }}>
+      <Divider sx={{ borderColor: '#EBEBEB', mx: 3 }} />
+
+      <DialogContent sx={{ pt: 3 }}>
         <Box sx={{ pb: 2 }}>
-          <Box display="flex" gap={1} mb={2}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} mb={2}>
             {/* Creator Name */}
-            <Box flex={1}>
+            <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
               <Typography
-                variant="caption"
-                sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+                sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
               >
                 Creator Name
               </Typography>
               {isAdmin ? (
                 <TextField
                   fullWidth
-                  size="small"
                   placeholder="Creator Name"
                   value={formValues.name}
                   onChange={handleFieldChange('name')}
                   disabled={submitting}
-                  sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#fff',
+                      minHeight: 48,
+                      borderRadius: 1,
+                    },
+                  }}
                 />
               ) : (
                 <Typography variant="body2" sx={{ color: 'text.primary' }}>
@@ -1743,61 +1764,67 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
               )}
             </Box>
 
-            <Stack flex={1} spacing={1} flexDirection="row">
-              {/* Profile Link */}
-              <Box flex={1}>
-                <Typography
-                  variant="caption"
-                  sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
-                >
-                  Profile Link
-                </Typography>
-                {isAdmin ? (
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Profile Link"
-                    value={formValues.profileLink}
-                    onChange={handleFieldChange('profileLink')}
-                    disabled={submitting}
-                    sx={{ bgcolor: '#fff', borderRadius: 1 }}
-                  />
-                ) : formValues.profileLink ? (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: '#1340FF', textDecoration: 'underline', wordBreak: 'break-all' }}
-                    component="a"
-                    href={formValues.profileLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {formValues.profileLink}
-                  </Typography>
-                ) : (
-                  <Typography variant="body2">—</Typography>
-                )}
-              </Box>
-            </Stack>
-          </Box>
-
-          <Stack spacing={1} flexDirection="row" mb={2}>
-            {/* Follower Count */}
-            <Box flex={1}>
+            {/* Profile Link */}
+            <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
               <Typography
-                variant="caption"
-                sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+                sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
+              >
+                Profile Link
+              </Typography>
+              {isAdmin ? (
+                <TextField
+                  fullWidth
+                  placeholder="Profile Link"
+                  value={formValues.profileLink}
+                  onChange={handleFieldChange('profileLink')}
+                  disabled={submitting}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#fff',
+                      minHeight: 48,
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+              ) : formValues.profileLink ? (
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#1340FF', textDecoration: 'underline', wordBreak: 'break-all' }}
+                  component="a"
+                  href={formValues.profileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {formValues.profileLink}
+                </Typography>
+              ) : (
+                <Typography variant="body2">—</Typography>
+              )}
+            </Box>
+          </Stack>
+
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} mb={2}>
+            {/* Follower Count */}
+            <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
+              <Typography
+                sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
               >
                 Follower Count
               </Typography>
               {isAdmin ? (
                 <TextField
                   fullWidth
-                  size="small"
                   placeholder="Follower Count"
                   value={formValues.followerCount}
                   onChange={handleFieldChange('followerCount')}
                   disabled={submitting}
-                  sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#fff',
+                      minHeight: 48,
+                      borderRadius: 1,
+                    },
+                  }}
                 />
               ) : (
                 <Typography variant="body2" sx={{ color: 'text.primary' }}>
@@ -1807,22 +1834,26 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
             </Box>
 
             {/* Engagement Rate */}
-            <Box flex={1}>
+            <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
               <Typography
-                variant="caption"
-                sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+                sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
               >
                 Engagement Rate (%)
               </Typography>
               {isAdmin ? (
                 <TextField
                   fullWidth
-                  size="small"
                   placeholder="Engagement Rate"
                   value={formValues.engagementRate}
                   onChange={handleFieldChange('engagementRate')}
                   disabled={submitting}
-                  sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#fff',
+                      minHeight: 48,
+                      borderRadius: 1,
+                    },
+                  }}
                 />
               ) : (
                 <Typography variant="body2" sx={{ color: 'text.primary' }}>
@@ -1835,20 +1866,24 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
           {/* CS Comments */}
           <Box>
             <Typography
-              variant="caption"
-              sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+              sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
             >
               CS Comments (Optional)
             </Typography>
             {isAdmin ? (
               <TextField
                 fullWidth
-                size="small"
                 placeholder="Input comments about the creator that your clients might find helpful"
                 value={formValues.adminComments}
                 onChange={handleFieldChange('adminComments')}
                 disabled={submitting}
-                sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#fff',
+                    minHeight: 48,
+                    borderRadius: 1,
+                  },
+                }}
               />
             ) : (
               <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
@@ -1862,8 +1897,7 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
         {isAdmin && showCreatorSelection && (
           <Box>
             <Typography
-              variant="caption"
-              sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: '#636366' }}
+              sx={{ mb: 0.5, display: 'block', color: '#636366', fontSize: '14px !important', fontWeight: 600 }}
             >
               Select Platform Creator to Link
             </Typography>
@@ -1913,23 +1947,23 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
                   >
                     <Avatar
                       src={option?.photoURL}
-                      sx={{ width: 30, height: 30, borderRadius: 2, flexShrink: 0 }}
+                      sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}
                     >
                       {option?.name?.[0]?.toUpperCase()}
                     </Avatar>
-                    <Stack spacing={0}>
-                      <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 500 }}>
+                    <Box>
+                      <Typography variant="body2" fontWeight={500}>
                         {option?.name}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                      <Typography variant="caption" sx={{ color: '#636366' }}>
                         {option?.email}
                       </Typography>
                       {option?.creator?.instagram && (
-                        <Typography variant="caption" color="primary.main" sx={{ lineHeight: 1.2 }}>
+                        <Typography variant="caption" color="primary.main" sx={{ display: 'block' }}>
                           {option.creator.instagram}
                         </Typography>
                       )}
-                    </Stack>
+                    </Box>
                   </Box>
                 )}
                 renderInput={(params) => (
@@ -1944,7 +1978,13 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
                         </Box>
                       ),
                     }}
-                    sx={{ bgcolor: '#fff', borderRadius: 1 }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: '#fff',
+                        minHeight: 48,
+                        borderRadius: 1,
+                      },
+                    }}
                   />
                 )}
               />
@@ -1988,23 +2028,28 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
         )}
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
         {isAdmin && !showCreatorSelection && (
           <>
             <Button
               onClick={() => setShowCreatorSelection(true)}
               disabled={submitting || isDisabled}
               sx={{
-                bgcolor: '#ffffff',
-                color: 'text.primary',
-                border: '1px solid',
-                borderColor: '#e7e7e7',
-                borderBottom: '3px solid',
-                borderBottomColor: '#e7e7e7',
-                borderRadius: 1,
-                px: 2,
+                bgcolor: '#FFFFFF',
+                color: '#1340FF',
+                border: '1.5px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1.15,
+                height: 44,
+                px: 2.5,
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                textTransform: 'none',
                 '&:hover': {
-                  bgcolor: '#F7F7F7',
+                  bgcolor: 'rgba(19, 64, 255, 0.08)',
+                  border: '1.5px solid #1340FF',
+                  borderBottom: '3px solid #1340FF',
+                  color: '#1340FF',
                 },
                 '&.Mui-disabled': {
                   cursor: 'not-allowed',
@@ -2014,8 +2059,8 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
               startIcon={
                 <Iconify
                   icon="mdi:account-plus-outline"
-                  width={24}
-                  sx={{ color: 'text.primary' }}
+                  width={20}
+                  sx={{ color: 'inherit' }}
                 />
               }
             >
@@ -2026,15 +2071,21 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
               disabled={submitting || isDisabled}
               sx={{
                 bgcolor: '#203ff5',
+                border: '1px solid #203ff5',
+                borderBottom: '3px solid #1933cc',
+                height: 44,
+                minWidth: 100,
                 color: '#fff',
+                fontSize: '0.875rem',
                 fontWeight: 600,
-                px: 2,
-                borderBottom: '3px solid #000',
+                px: 3,
                 textTransform: 'none',
-                '&:hover': { bgcolor: '#1a32c4' },
+                '&:hover': { bgcolor: '#1933cc', opacity: 0.9 },
                 '&.Mui-disabled': {
                   bgcolor: '#C7C7CC',
                   color: '#fff',
+                  border: '1px solid #C7C7CC',
+                  borderBottom: '3px solid #0000001A',
                   cursor: 'not-allowed',
                   pointerEvents: 'auto',
                 },
@@ -2053,16 +2104,25 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
               }}
               disabled={submitting}
               sx={{
-                bgcolor: '#ffffff',
-                color: 'text.primary',
-                border: '1px solid',
-                borderColor: '#e7e7e7',
-                borderBottom: '3px solid',
-                borderBottomColor: '#e7e7e7',
-                borderRadius: 1,
-                px: 2,
+                bgcolor: '#FFFFFF',
+                border: '1.5px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1.15,
+                color: '#1340FF',
+                height: 44,
+                px: 2.5,
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                textTransform: 'none',
                 '&:hover': {
-                  bgcolor: '#F7F7F7',
+                  bgcolor: 'rgba(19, 64, 255, 0.08)',
+                  border: '1.5px solid #1340FF',
+                  borderBottom: '3px solid #1340FF',
+                  color: '#1340FF',
+                },
+                '&.Mui-disabled': {
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
                 },
               }}
             >
@@ -2072,19 +2132,24 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
               onClick={handleLinkCreator}
               disabled={submitting || !selectedPlatformCreator}
               sx={{
-                bgcolor: '#3A3A3C',
-                borderBottom: '3px solid #000',
+                bgcolor: '#203ff5',
+                border: '1px solid #203ff5',
+                borderBottom: '3px solid #1933cc',
+                height: 44,
+                minWidth: 100,
                 color: '#fff',
-                textTransform: 'none',
+                fontSize: '0.875rem',
                 fontWeight: 600,
-                '&:hover': {
-                  bgcolor: '#525151',
-                  borderBottom: '3px solid #000',
-                },
+                px: 3,
+                textTransform: 'none',
+                '&:hover': { bgcolor: '#1933cc', opacity: 0.9 },
                 '&.Mui-disabled': {
                   bgcolor: '#C7C7CC',
                   color: '#fff',
+                  border: '1px solid #C7C7CC',
                   borderBottom: '3px solid #0000001A',
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto',
                 },
               }}
             >
@@ -2096,10 +2161,21 @@ export function ViewGuestCreatorModal({ open, onClose, pitch, isAdmin, campaign,
           <Button
             onClick={onClose}
             sx={{
-              color: '#203ff5',
+              bgcolor: '#FFFFFF',
+              border: '1.5px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1.15,
+              color: '#1340FF',
+              height: 44,
+              px: 2.5,
               fontWeight: 600,
+              fontSize: '0.85rem',
               textTransform: 'none',
-              '&:hover': { bgcolor: 'rgba(32,63,245,0.08)' },
+              '&:hover': {
+                bgcolor: 'rgba(19, 64, 255, 0.08)',
+                border: '1.5px solid #1340FF',
+                borderBottom: '3px solid #1340FF',
+              },
             }}
           >
             Close
