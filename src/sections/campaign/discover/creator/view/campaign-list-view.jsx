@@ -25,6 +25,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fetcher } from 'src/utils/axios';
+import { shouldShowMediaKitPopup } from 'src/utils/media-kit-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -34,12 +35,10 @@ import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
-import { shouldShowMediaKitPopup } from 'src/utils/media-kit-utils';
-
 import CreatorForm from 'src/sections/creator/form/creatorForm';
 
-import MediaKitPopup from '../media-kit-popup';
 import CampaignLists from '../campaign-list';
+import MediaKitPopup from '../media-kit-popup';
 
 // ----------------------------------------------------------------------
 
@@ -120,31 +119,34 @@ export default function CampaignListView() {
   const { user } = useAuthContext();
   const dialog = useBoolean(!user?.creator?.isOnBoardingFormCompleted);
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
-  
+
   const [showMediaKitPopup, setShowMediaKitPopup] = useState(false);
-  
-  const targetUserIds = useMemo(() => [
-    'cm8gvqtcv01hwph01uof2u9xu',
-    'cm49lve6i00patrd2ax5fj67h',
-    'cm4132k9p00wb54qgcrs71v0t',
-    'cmauqo8oy03ioky0157sbr2jg',
-    'cm8jxuuvy0272ph01nr0h7din',
-    'cm5b5p0zu00r2ylfpo241kqki',
-    'cmewrex4p054ipx01u5xqkqhj',
-    'cm7oe0q15005bms010ujmjb3r',
-    'cm44lei3t00si132zq87a5lan',
-    'cm9kzqz1u00ziqe01q2tsdptg',
-    'cmfb25m4r003vqn01zoe9atng',
-    'cmj9pz1n40a3hs40154b31l90',
-    'cm8mh5ic5032sph011r87rw4e',
-    'cm40womsf001k54qg4epuacmu',
-    'cm4utxiyv02mu9wevfkpyt8qj',
-    'cmfwczmov0t5rqp01aq687n4a',
-    'cmj7kdxxi05sqs401pro45vik',
-    'cmj21yl0102ghpc01xmy9zkwa',
-    'cm3pyp3vm006qm9m8qm1ep02d',
-    'cm4ey6g9401w4trd2ip0zf1et',
-  ], []);
+
+  const targetUserIds = useMemo(
+    () => [
+      'cm8gvqtcv01hwph01uof2u9xu',
+      'cm49lve6i00patrd2ax5fj67h',
+      'cm4132k9p00wb54qgcrs71v0t',
+      'cmauqo8oy03ioky0157sbr2jg',
+      'cm8jxuuvy0272ph01nr0h7din',
+      'cm5b5p0zu00r2ylfpo241kqki',
+      'cmewrex4p054ipx01u5xqkqhj',
+      'cm7oe0q15005bms010ujmjb3r',
+      'cm44lei3t00si132zq87a5lan',
+      'cm9kzqz1u00ziqe01q2tsdptg',
+      'cmfb25m4r003vqn01zoe9atng',
+      'cmj9pz1n40a3hs40154b31l90',
+      'cm8mh5ic5032sph011r87rw4e',
+      'cm40womsf001k54qg4epuacmu',
+      'cm4utxiyv02mu9wevfkpyt8qj',
+      'cmfwczmov0t5rqp01aq687n4a',
+      'cmj7kdxxi05sqs401pro45vik',
+      'cmj21yl0102ghpc01xmy9zkwa',
+      'cm3pyp3vm006qm9m8qm1ep02d',
+      'cm4ey6g9401w4trd2ip0zf1et',
+    ],
+    []
+  );
 
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
@@ -173,15 +175,15 @@ export default function CampaignListView() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-  
+
   // Check if the media kit popup should be shown when the component mounts
   useEffect(() => {
     // Only proceed if user is logged in
     if (!user) return;
-    
+
     const popupShownInSession = sessionStorage.getItem('mediaKitPopupShown');
     const shouldShow = shouldShowMediaKitPopup(user, targetUserIds);
-    
+
     if (shouldShow && !popupShownInSession) {
       setShowMediaKitPopup(true);
       sessionStorage.setItem('mediaKitPopupShown', 'true');
@@ -1021,9 +1023,9 @@ export default function CampaignListView() {
         </Fab>
       )}
 
-      <MediaKitPopup 
-        open={showMediaKitPopup} 
-        onClose={() => setShowMediaKitPopup(false)} 
+      <MediaKitPopup
+        open={showMediaKitPopup}
+        onClose={() => setShowMediaKitPopup(false)}
         userId={user?.id || ''}
       />
 

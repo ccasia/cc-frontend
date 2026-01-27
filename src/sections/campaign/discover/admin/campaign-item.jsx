@@ -39,14 +39,6 @@ import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
-  console.log('CampaignItem rendered:', {
-    campaignId: campaign?.id,
-    campaignStatus: campaign?.status,
-    campaignName: campaign?.name,
-    hasCampaignAdmin: !!campaign?.campaignAdmin,
-    campaignAdminLength: campaign?.campaignAdmin?.length,
-  });
-
   const theme = useTheme();
   const { user } = useAuthContext();
   const ref = useRef(null);
@@ -154,26 +146,6 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   const isCSM =
     user?.admin?.role?.name === 'CSM' || user?.admin?.role?.name === 'Customer Success Manager';
 
-  // For debugging - log the actual user structure
-  console.log('User role structure:', {
-    userRole: user?.role,
-    adminRole: user?.admin?.role?.name,
-    adminMode: user?.admin?.mode,
-    isAdmin,
-    isCSM,
-  });
-
-  // Debug user details
-  console.log('User details:', {
-    userRole: user?.role,
-    adminMode: user?.admin?.mode,
-    adminRole: user?.admin?.role?.name,
-    isCSL,
-    isSuperAdmin,
-    isAdmin,
-    isCSM,
-  });
-
   // Check if user can perform initial activation (CSL or Superadmin)
   const canInitialActivate = isCSL || isSuperAdmin;
 
@@ -195,26 +167,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
     return adminIdMatch || adminUserIdMatch || adminUserMatch;
   });
+
   const canCompleteActivation =
     (isCSM || isAdmin) &&
     campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
     isUserAssignedToCampaign;
-
-  // Debug campaign admin assignment
-  console.log('Campaign admin check:', {
-    campaignId: campaign?.id,
-    campaignStatus: campaign?.status,
-    userId: user?.id,
-    campaignAdmins: campaign?.campaignAdmin?.map((admin) => ({
-      adminId: admin.adminId,
-      adminUserId: admin.admin?.userId,
-      adminUser: admin.admin?.user?.id,
-      role: admin.admin?.role?.name,
-      fullAdmin: admin.admin,
-    })),
-    isUserAssigned: isUserAssignedToCampaign,
-    canCompleteActivation,
-  });
 
   const isPendingReview =
     campaign?.status === 'PENDING_CSM_REVIEW' ||
@@ -731,7 +688,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       id={`campaign-${campaign?.id}`}
       ref={ref}
       onClick={() => {
-        localStorage.setItem('lastCampaignOpenId', campaign?.id);
+        const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
+        if (lastCampaignOpenId || lastCampaignOpenId !== campaign.id) {
+          localStorage.setItem('lastCampaignOpenId', campaign?.id);
+        }
+        localStorage.removeItem('scrollTop');
         router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
       }}
       sx={{

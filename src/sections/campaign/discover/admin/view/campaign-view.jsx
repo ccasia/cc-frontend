@@ -20,7 +20,6 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-// import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { fetcher } from 'src/utils/axios';
 
@@ -40,8 +39,8 @@ const CampaignView = () => {
   const settings = useSettingsContext();
 
   const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
-
-  console.log('LAST CAMPAIGN OPEN ID:', lastCampaignOpenId);
+  const pageSizing = localStorage.getItem('pageSizing');
+  const scrollTop = localStorage.getItem('scrollTop');
 
   const [search, setSearch] = useState({
     query: '',
@@ -99,6 +98,7 @@ const CampaignView = () => {
 
     // Otherwise, use the nextCursor to get the next page
     let status = filter.toUpperCase();
+
     if (filter === 'pending') {
       // For pending tab, we need to search for all pending statuses
       status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
@@ -110,6 +110,11 @@ const CampaignView = () => {
     revalidateFirstPage: false,
   });
 
+  const dataFiltered = useMemo(
+    () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
+    [data]
+  );
+
   // Make mutate function available globally for campaign activation
   useEffect(() => {
     window.swrMutate = mutate;
@@ -118,40 +123,16 @@ const CampaignView = () => {
     };
   }, [mutate]);
 
-  const dataFiltered = useMemo(
-    () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
-    [data]
-  );
-
-  // Persistent counts across tabs: fetch per-status counts independently of current filter
-  const buildCountKey = useCallback(
-    (statusString) =>
-      `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(
-        debouncedQuery
-      )}&status=${statusString}&limit=${500}`, // larger limit to approximate full count
-    [user?.id, debouncedQuery]
-  );
-
-  const { data: activeData } = useSWR(buildCountKey('ACTIVE'), fetcher, {
-    revalidateOnFocus: false,
-  });
-  const { data: completedData } = useSWR(buildCountKey('COMPLETED'), fetcher, {
-    revalidateOnFocus: false,
-  });
-  const { data: pausedData } = useSWR(buildCountKey('PAUSED'), fetcher, {
-    revalidateOnFocus: false,
-  });
-  const { data: pendingData } = useSWR(
-    buildCountKey('SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION'),
-    fetcher,
-    { revalidateOnFocus: false }
+  const { data: campaignStatusData, isLoading: campaignStatusLoading } = useSWR(
+    '/api/campaign/campaignStatus',
+    fetcher
   );
 
   // Use independent datasets for counts so they persist regardless of the current tab
-  const activeCount = activeData?.data?.campaigns?.length || 0;
-  const completedCount = completedData?.data?.campaigns?.length || 0;
-  const pausedCount = pausedData?.data?.campaigns?.length || 0;
-  const pendingCount = pendingData?.data?.campaigns?.length || 0;
+  const activeCount = campaignStatusData?.activeCampaigns || 0;
+  const completedCount = campaignStatusData?.completedCampaigns || 0;
+  const pausedCount = campaignStatusData?.pausedCampaigns || 0;
+  const pendingCount = campaignStatusData?.pendingCampaigns || 0;
 
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
@@ -170,17 +151,19 @@ const CampaignView = () => {
   };
 
   useEffect(() => {
-    // Debug: verify counts persist across tabs
-    console.log(
-      '[CampaignView] Counts -> Active:',
-      activeCount,
-      'Pending:',
-      pendingCount,
-      'Completed:',
-      completedCount,
-      'Paused:',
-      pausedCount
-    );
+    if (process.env.NODE_ENV !== 'production') {
+      // Debug: verify counts persist across tabs
+      console.log(
+        '[CampaignView] Counts -> Active:',
+        activeCount,
+        'Pending:',
+        pendingCount,
+        'Completed:',
+        completedCount,
+        'Paused:',
+        pausedCount
+      );
+    }
   }, [activeCount, pendingCount, completedCount, pausedCount]);
 
   // Reset filter if non-superadmin/non-CSM tries to access pending tab
@@ -196,18 +179,30 @@ const CampaignView = () => {
   }, [filter, isSuperAdmin, user]);
 
   const handleScroll = useCallback(() => {
-    const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
+    const scrollContainer = mainRef?.current;
 
     const bottom =
       scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
 
+    if (lastCampaignOpenId) {
+      localStorage.removeItem('lastCampaignOpenId');
+    }
+
     if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
       setSize(size + 1);
+      localStorage.setItem('pageSizing', size + 1);
     }
-  }, [data, isValidating, setSize, size, mainRef, lgUp]);
+  }, [data, isValidating, setSize, size, mainRef, lastCampaignOpenId]);
+
+  const handleChangeTab = (value) => {
+    setFilter(value);
+    if (scrollTop) {
+      localStorage.removeItem('scrollTop');
+    }
+  };
 
   useEffect(() => {
-    const scrollContainer = lgUp ? mainRef?.current : window;
+    const scrollContainer = mainRef?.current;
 
     scrollContainer.addEventListener('scroll', handleScroll);
 
@@ -216,17 +211,40 @@ const CampaignView = () => {
     };
   }, [handleScroll, mainRef, lgUp]);
 
+  // useEffect(() => {
+  //   if (pageSizing) {
+  //     setSize(Number(pageSizing));
+  //   }
+  // }, [setSize, pageSizing]);
+
   useEffect(() => {
-    if (lastCampaignOpenId) {
+    if (!isLoading && lastCampaignOpenId) {
       const el = document.getElementById(`campaign-${lastCampaignOpenId}`);
+
       if (!el) return;
 
       el.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       });
+    } else if (scrollTop) {
+      const main = mainRef?.current;
+
+      if (!main) return;
+
+      main.scrollTo({
+        behavior: 'auto',
+        top: Number(scrollTop),
+      });
     }
-  }, [mainRef, lastCampaignOpenId]);
+  }, [mainRef, lastCampaignOpenId, setSize, isLoading, scrollTop]);
+
+  useEffect(() => {
+    const scrollContainer = mainRef?.current;
+    window.addEventListener('beforeunload', () => {
+      localStorage.setItem('scrollTop', scrollContainer.scrollTop);
+    });
+  }, [mainRef]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
@@ -273,7 +291,9 @@ const CampaignView = () => {
             <Button
               disableRipple
               size="large"
-              onClick={() => setFilter('active')}
+              onClick={() => {
+                setFilter('active');
+              }}
               sx={{
                 px: 0.5,
                 py: 0.5,
@@ -323,7 +343,7 @@ const CampaignView = () => {
               <Button
                 disableRipple
                 size="large"
-                onClick={() => setFilter('pending')}
+                onClick={() => handleChangeTab('pending')}
                 sx={{
                   px: 1,
                   py: 0.5,
@@ -371,7 +391,7 @@ const CampaignView = () => {
             <Button
               disableRipple
               size="large"
-              onClick={() => setFilter('completed')}
+              onClick={() => handleChangeTab('completed')}
               sx={{
                 px: 1,
                 py: 0.5,
@@ -418,7 +438,7 @@ const CampaignView = () => {
             <Button
               disableRipple
               size="large"
-              onClick={() => setFilter('paused')}
+              onClick={() => handleChangeTab('paused')}
               sx={{
                 px: 1,
                 py: 0.5,
@@ -594,7 +614,7 @@ const CampaignView = () => {
         />
       </Box>
 
-      {isLoading && (
+      {(isLoading || campaignStatusLoading) && (
         <Box sx={{ position: 'relative', top: 200, textAlign: 'center' }}>
           <CircularProgress
             thickness={7}
