@@ -43,6 +43,7 @@ import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { OUTREACH_STATUS_OPTIONS } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
@@ -51,6 +52,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
+import usePitchSocket from './use-pitch-socket';
 import PitchModalMobile from '../../admin/pitch-modal-mobile';
 
 const countPitchesByStatus = (pitches, statusList) =>
@@ -63,6 +65,7 @@ const countPitchesByStatus = (pitches, statusList) =>
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisabled = false }) => {
   const { user } = useAuthContext();
+  const { socket } = useSocketContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
@@ -85,6 +88,14 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const smUp = useResponsive('up', 'sm');
   const smDown = useResponsive('down', 'sm');
   const mdUp = useResponsive('up', 'md');
+
+  // Listen for real-time outreach status updates
+  usePitchSocket({
+    socket,
+    campaignId: campaign?.id,
+    onOutreachUpdate: () => onUpdate?.(),
+    userId: user?.id,
+  });
 
   const shortlistedCreators = campaign?.shortlisted;
 
