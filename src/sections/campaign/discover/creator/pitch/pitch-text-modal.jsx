@@ -1,9 +1,9 @@
 import * as Yup from 'yup';
-import { mutate as globalMutate } from 'swr';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { mutate as globalMutate } from 'swr';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useMemo, useState, useEffect } from 'react';
 
@@ -14,10 +14,8 @@ import {
   Dialog,
   Typography,
   DialogTitle,
-  ListItemText,
   DialogActions,
   DialogContent,
-  TextField,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -31,8 +29,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { RHFEditor, RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
+import { RHFEditor, RHFTextField } from 'src/components/hook-form';
 
 const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack, mutate }) => {
   const smUp = useResponsive('sm', 'down');

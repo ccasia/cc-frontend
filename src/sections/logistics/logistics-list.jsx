@@ -146,7 +146,7 @@ export default function LogisticsList({
     setStatusTargetId(null);
   };
 
-  //pagination handle
+  // pagination handle
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 

@@ -11,14 +11,13 @@
  * 7. Virtualization - For large lists (if needed)
  */
 
-import { useMemo, useState, useEffect, memo, useCallback } from 'react';
-import PropTypes from 'prop-types';
 import useSWR from 'swr';
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { memo, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { LineChart } from '@mui/x-charts';
 import { Image, Person, Schedule, ArrowForward } from '@mui/icons-material';
 import {
   Box,
@@ -34,6 +33,7 @@ import {
   TableRow,
   MenuItem,
   ListItem,
+  Skeleton,
   TableHead,
   TableCell,
   TableBody,
@@ -45,7 +45,6 @@ import {
   ListItemAvatar,
   CircularProgress,
   ListItemSecondaryAction,
-  Skeleton,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
