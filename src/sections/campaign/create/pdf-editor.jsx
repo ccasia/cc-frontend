@@ -20,6 +20,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -41,6 +43,7 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
   const [signURL, setSignURL] = useState('');
   const [annotations, setAnnotations] = useState([]);
   const loading = useBoolean();
+  const [isForSurfShark, setIsForSurfShark] = useState(false);
 
   const smDown = useResponsive('down', 'sm');
 
@@ -65,7 +68,11 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
 
   const processPdf = async () => {
     const blob = await pdf(
-      <AgreementTemplate ADMIN_IC_NUMBER={icNumber} ADMIN_NAME={name} />
+      <AgreementTemplate
+        ADMIN_IC_NUMBER={icNumber}
+        ADMIN_NAME={name}
+        isForSurfShark={isForSurfShark}
+      />
     ).toBlob();
 
     const pdfUrl = URL.createObjectURL(blob);
@@ -196,6 +203,15 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
                 <Stack gap={1.5} py={2}>
                   <RHFTextField name="name" label="Name" />
                   <RHFTextField name="icNumber" label="IC Number" />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={isForSurfShark}
+                        onChange={(e) => setIsForSurfShark(e.target.checked)}
+                      />
+                    }
+                    label="For Surf Shark campaign"
+                  />
                 </Stack>
               )}
               {activeStep === 1 && (

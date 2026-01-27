@@ -239,6 +239,7 @@ const CampaignAgreementEdit = ({
           ADMIN_IC_NUMBER={extractAgremmentsInfo?.adminICNumber ?? 'Default'}
           ADMIN_NAME={extractAgremmentsInfo?.adminName ?? 'Default'}
           SIGNATURE={extractAgremmentsInfo?.signURL ?? 'Default'}
+          isForSurfShark={campaign?.isForSurfShark}
         />
       ).toBlob();
 
@@ -484,7 +485,7 @@ const CampaignAgreementEdit = ({
                     }}
                     disabled={maxCreditsAllowed === 0}
                     onChange={(e) => {
-                      const {value} = e.target;
+                      const { value } = e.target;
                       // Allow empty value (user is deleting)
                       if (value === '') {
                         setValue('ugcCredits', '');

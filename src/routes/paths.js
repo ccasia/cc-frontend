@@ -90,6 +90,7 @@ export const paths = {
         // Client profile tabs
         client: `${ROOTS.DASHBOARD}/user/profile/client`,
         accounts: `${ROOTS.DASHBOARD}/user/profile/accounts`,
+        agreement: `${ROOTS.DASHBOARD}/user/profile/agreements`,
       },
       myTasks: `${ROOTS.DASHBOARD}/tasks`,
     },

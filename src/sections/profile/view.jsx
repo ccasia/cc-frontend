@@ -4,6 +4,7 @@ import { mutate } from 'swr';
 import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
+import { PDFViewer } from '@react-pdf/renderer';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
@@ -33,6 +34,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { _userAbout } from 'src/_mock';
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
+import AgreementTemplate from 'src/template/agreement';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -82,6 +84,7 @@ const Profile = () => {
     if (path.includes('/preference')) return 'preference';
     if (path.includes('/client')) return 'client';
     if (path.includes('/accounts')) return 'accounts';
+    if (path.includes('/agreements')) return 'agreements';
 
     // Default to general/account tab
     if (user?.role === 'client') return 'client';
@@ -492,6 +495,55 @@ const Profile = () => {
             API
           </Button>
         )}
+
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.agreement}
+          disableRipple
+          size="large"
+          sx={{
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            ml: 2,
+            minWidth: 'fit-content',
+            color: currentTab === 'agreements' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'agreements' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'agreements' ? 1 : 0.5,
+              },
+            },
+          }}
+          startIcon={<Iconify icon="solar:settings-bold" width={20} />}
+        >
+          Agreement
+        </Button>
       </Stack>
 
       {/* Indicator for more tabs */}
@@ -992,7 +1044,6 @@ const Profile = () => {
         >
           Profile
         </Button>
-
         <Button
           component={Link}
           to={paths.dashboard.user.profileTabs.security}
@@ -1041,7 +1092,6 @@ const Profile = () => {
         >
           Security
         </Button>
-
         {/* Only show Accounts tab for parent clients (not child accounts) */}
         {user?.role === 'client' && user?.client && user?.isChildAccount !== true && (
           <Button
@@ -1094,41 +1144,6 @@ const Profile = () => {
           </Button>
         )}
       </Stack>
-
-      {/* Indicator for more tabs */}
-      {/* <Box
-        sx={{
-          position: 'absolute',
-          right: { xs: '15px', sm: '20px', md: 0 },
-          top: 0,
-          height: '100%',
-          background:
-            'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,1) 100%)',
-          width: { xs: '80px', sm: '100px' },
-          pointerEvents: 'none',
-          display: { xs: 'block', md: 'none' },
-          zIndex: 1,
-        }}
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            right: { xs: 5, sm: 10 },
-            top: '50%',
-            transform: 'translateY(-50%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#f0f0f0',
-            borderRadius: '50%',
-            width: 24,
-            height: 24,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          }}
-        >
-          <Iconify icon="eva:arrow-ios-forward-fill" width={16} color="#1340ff" />
-        </Box>
-      </Box> */}
     </Box>
   );
 
@@ -1145,6 +1160,26 @@ const Profile = () => {
       )}
       {(user?.admin?.role?.name === 'Finance' || user?.role === 'superadmin') &&
         currentTab === 'api' && <API />}
+
+      {currentTab === 'agreements' && (
+        <PDFViewer style={{ width: '100%', height: 600 }}>
+          <AgreementTemplate
+            DATE="asdas"
+            IC_NUMBER="ADSAD"
+            FREELANCER_FULL_NAME="adsad"
+            creatorPayment="ADSAD"
+            CREATOR_NAME="ADSAD"
+            CREATOR_ACCOUNT_NUMBER="ADSAD"
+            CREATOR_BANK_ACCOUNT_NAME="ADSAD"
+            CREATOR_BANK_NAME="ADSAD"
+            AGREEMENT_ENDDATE="ADSAD"
+            NOW_DATE="ADSAD"
+            ADMIN_IC_NUMBER="ADSAD"
+            ADMIN_NAME="ADSAD"
+            SIGNATURE="ADSAD"
+          />
+        </PDFViewer>
+      )}
     </>
   );
 
@@ -1170,7 +1205,10 @@ const Profile = () => {
     <>
       {currentTab === 'client' && <ClientProfile />}
       {currentTab === 'security' && <AccountSecurity />}
-      {currentTab === 'accounts' && user?.role === 'client' && user?.client && user?.isChildAccount !== true && <ChildAccounts />}
+      {currentTab === 'accounts' &&
+        user?.role === 'client' &&
+        user?.client &&
+        user?.isChildAccount !== true && <ChildAccounts />}
     </>
   );
 

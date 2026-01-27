@@ -109,6 +109,7 @@ export default function AgreementTemplate({
   ADMIN_IC_NUMBER,
   ADMIN_NAME,
   SIGNATURE,
+  isForSurfShark = false,
 }) {
   return (
     <Document pageLayout="singlePage">
@@ -140,10 +141,56 @@ export default function AgreementTemplate({
             located at 5-3A, Block A, Jaya One, 72A Jalan Profesor Diraja Ungku Aziz, PJS 13, 46200
             Petaling Jaya Selangor <Text style={{ fontWeight: 800 }}>(“Cult Creative”)</Text> and{' '}
             <Text style={{ fontWeight: 800 }}>{FREELANCER_FULL_NAME} </Text>
-            (NRIC/Passport No. :<Text style={{ fontWeight: 800 }}>{IC_NUMBER} </Text>) Cult Creative
-            and the Freelancer may each be referred to in this Agreement as a “Party” and
-            collectively as the “Parties”. It is hereby agreed between the parties as follows:
+            (NRIC/Passport No. :<Text style={{ fontWeight: 800 }}>{IC_NUMBER} </Text>)
           </Text>
+
+          {isForSurfShark && (
+            <View>
+              <Text
+                style={{
+                  fontSize: 13,
+                  textAlign: 'justify',
+                  marginTop: 20,
+                }}
+              >
+                For this campaign, the Parties are executing a separate{' '}
+                <Link src="https://docs.google.com/document/d/1RmvZhgvX2oCSE4fD45Uto0X3PbOQtYOcjHF9b1sQCjY/edit?usp=sharing">
+                  Campaign Addendum
+                </Link>{' '}
+                which supplements this Agreement. This Addendum is incorporated into and forms part
+                of this Agreement for the specific campaign and in the event of any conflict between
+                the Addendum and this Agreement, the Addendum shall prevail solely for this
+                campaign. All other terms of this Agreement remain in full force and effect unless
+                expressly modified by a campaign-specific addendum.
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  textAlign: 'justify',
+                  marginTop: 20,
+                }}
+              >
+                <Link src="https://surfshark.com/ambassadors-guide">“Campaign Creator Guide”</Link>{' '}
+                means the Surfshark Creator Guide attached to this agreement and also linked{' '}
+                <Link src="https://surfshark.com/ambassadors-guide">here</Link> which sets out
+                campaign-specific content guidance, product information, messaging considerations
+                and platform-specific best practices applicable solely to the Deliverables created
+                under this Agreement.
+              </Text>
+            </View>
+          )}
+
+          <Text
+            style={{
+              fontSize: 13,
+              textAlign: 'justify',
+              marginTop: 10,
+            }}
+          >
+            Cult Creative and the Freelancer may each be referred to in this Agreement as a “Party”
+            and collectively as the “Parties”. It is hereby agreed between the parties as follows:
+          </Text>
+
           <View style={styles.line} />
 
           {/* 1. Services */}
@@ -176,7 +223,7 @@ export default function AgreementTemplate({
           </View>
 
           {/* 2. Deliverables */}
-          <View style={{ ...styles.section, marginTop: 0 }}>
+          <View style={{ ...styles.section, marginTop: isForSurfShark ? 50 : 0 }}>
             <Text style={styles.titlee}>2. Deliverables</Text>
             <Text>
               The Freelancer agrees to provide Cult Creative the acceptable and approved
