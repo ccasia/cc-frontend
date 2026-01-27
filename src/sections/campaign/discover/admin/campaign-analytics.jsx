@@ -1881,6 +1881,9 @@ ManualCreatorCard.propTypes = {
   isDisabled: PropTypes.bool,
 };
 
+// Helper function to get localStorage key for this campaign
+const getReportStorageKey = (id) => `campaign-report-generated-${id}`;
+
 const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
   const campaignId = campaign?.id;
   const submissions = useMemo(() => campaign?.submission || [], [campaign?.submission]);
@@ -1901,6 +1904,21 @@ const CampaignAnalytics = ({ campaign, isDisabled = false }) => {
 
   // Fetch manual creator entries
   const { entries: manualEntries, mutate: mutateManualEntries } = useGetManualCreatorEntries(campaignId);
+
+  // Update reportState when campaignId changes (user switches campaigns)
+  useEffect(() => {
+    if (campaignId) {
+      const hasGenerated = localStorage.getItem(getReportStorageKey(campaignId)) === 'true';
+      setReportState(hasGenerated ? 'view' : 'generate');
+    }
+  }, [campaignId]);
+
+  // Save to localStorage when report is generated (state becomes 'view')
+  useEffect(() => {
+    if (campaignId && reportState === 'view') {
+      localStorage.setItem(getReportStorageKey(campaignId), 'true');
+    }
+  }, [campaignId, reportState]);
 
   // Extract posting submissions with URLs directly from campaign prop
   const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
