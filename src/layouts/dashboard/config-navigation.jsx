@@ -406,6 +406,15 @@ export function useNavData() {
         {
           title: (
             <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+              FAQ
+            </span>
+          ),
+          path: paths.dashboard.faq,
+          icon: <Iconify icon="material-symbols:help-outline" width={25} />,
+        },
+        {
+          title: (
+            <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
               Settings
             </span>
           ),
