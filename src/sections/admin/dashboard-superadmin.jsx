@@ -325,7 +325,7 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { LineChart } from '@mui/x-charts';
@@ -360,8 +360,8 @@ import {
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import useGetCreators from 'src/hooks/use-get-creators';
-import useGetCampaigns from 'src/hooks/use-get-campaigns';
+// REMOVED: useGetCreators - using stats endpoint instead
+// REMOVED: useGetCampaigns - using lightweight dashboard campaigns endpoint instead
 
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
@@ -387,8 +387,20 @@ const colors = {
 };
 
 const DashboardSuperadmin = () => {
-  // OPTIMIZATION: Configure SWR to reduce unnecessary re-fetches
-  const { campaigns, isLoading } = useGetCampaigns();
+  // OPTIMIZATION: Use lightweight dashboard campaigns endpoint instead of full campaigns
+  // No limit parameter - fetch all active campaigns (endpoint is optimized with minimal data)
+  const { data: campaignsData, isLoading: campaignsLoading } = useSWR(
+    endpoints.dashboard.campaigns,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 120000, // Cache for 2 minutes
+    }
+  );
+  
+  // Extract campaigns from response (backend returns array directly)
+  const campaigns = Array.isArray(campaignsData) ? campaignsData : campaignsData?.data || [];
   
   // OPTIMIZATION: Use dashboard stats endpoint (aggregated data from backend)
   const { data: dashboardStats, isLoading: statsLoading } = useSWR(
@@ -396,7 +408,8 @@ const DashboardSuperadmin = () => {
     fetcher,
     {
       revalidateOnFocus: false,
-      dedupingInterval: 60000, // Cache for 1 minute
+      revalidateOnReconnect: false,
+      dedupingInterval: 120000, // Cache for 2 minutes
     }
   );
 
@@ -406,20 +419,23 @@ const DashboardSuperadmin = () => {
     fetcher,
     {
       revalidateOnFocus: false,
-      dedupingInterval: 60000,
+      revalidateOnReconnect: false,
+      dedupingInterval: 120000, // Cache for 2 minutes
     }
   );
 
-  // Fallback: Only fetch all creators if stats endpoint is not available
-  const { data: creators, isLoading: creatorLoading } = useGetCreators();
+  // REMOVED: No longer fetching all creators - using stats endpoint instead
+  // const { data: creators, isLoading: creatorLoading } = useGetCreators();
   
   const { socket } = useSocketContext();
   const [onlineUsers, setOnlineUsers] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState('all');
   const { user } = useAuthContext();
+  // OPTIMIZATION: Use stats endpoint for client count instead of fetching all companies
   const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 60000,
+    revalidateOnReconnect: false,
+    dedupingInterval: 120000, // Cache for 2 minutes
   });
   const router = useRouter();
 
@@ -431,52 +447,45 @@ const DashboardSuperadmin = () => {
   // OPTIMIZATION: Move static values outside component to prevent recreation
   // Minimal color palette with blue accent
 
-  // Calculate actual metrics
+  // OPTIMIZATION: Backend already returns only ACTIVE campaigns, no filtering needed
   const activeCampaigns = useMemo(
-    () => campaigns?.filter((campaign) => campaign.status === 'ACTIVE') || [],
+    () => campaigns || [],
     [campaigns]
   );
 
+  // OPTIMIZATION: Completed campaigns count comes from stats endpoint
   const completedCampaigns = useMemo(
-    () => campaigns?.filter((campaign) => campaign.status === 'COMPLETED') || [],
-    [campaigns]
+    () => dashboardStats?.data?.completedCampaigns || 0,
+    [dashboardStats]
   );
 
-  // OPTIMIZATION: Use backend stats if available, otherwise calculate from campaigns
+  // OPTIMIZATION: Use backend stats only - no client-side calculation needed
   const totalPitches = useMemo(() => {
-    if (dashboardStats?.data?.totalPitches !== undefined) {
-      return dashboardStats.data.totalPitches;
-    }
-    if (!campaigns) return 0;
-    const total = campaigns.reduce((acc, campaign) => acc + (campaign?.pitch?.length || 0), 0);
-    return total;
-  }, [dashboardStats, campaigns]);
+    return dashboardStats?.data?.totalPitches || 0;
+  }, [dashboardStats]);
 
-  // OPTIMIZATION: Limit processing and use more efficient algorithms
-  // Get all pending pitches
+  // OPTIMIZATION: Pending pitches are already filtered and limited by backend
   const pendingPitches = useMemo(() => {
     if (!campaigns || campaigns.length === 0) return [];
 
     const allPitches = [];
-    // OPTIMIZATION: Use for loops for better performance
+    // OPTIMIZATION: Backend already filters to pending pitches, just map them
     for (let i = 0; i < campaigns.length; i += 1) {
       const campaign = campaigns[i];
       if (campaign?.pitch && Array.isArray(campaign.pitch)) {
         for (let j = 0; j < campaign.pitch.length; j += 1) {
           const pitch = campaign.pitch[j];
-          if (pitch.status === 'undecided') {
-            allPitches.push({
-              ...pitch,
-              campaignName: campaign.name,
-              campaignId: campaign.id,
-              campaignImage: campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo,
-            });
-          }
+          allPitches.push({
+            ...pitch,
+            campaignName: campaign.name,
+            campaignId: campaign.id,
+            campaignImage: campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo,
+          });
         }
       }
     }
 
-    // OPTIMIZATION: Only sort if we have pitches, and limit to top 10
+    // OPTIMIZATION: Sort and limit to top 10 (backend already limits to 10 per campaign)
     if (allPitches.length === 0) return [];
     return allPitches
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -491,61 +500,28 @@ const DashboardSuperadmin = () => {
 
   const totalChats = user?._count?.UserThread || 0;
   
-  // OPTIMIZATION: Use backend stats if available, otherwise fallback to client-side calculation
-  const totalCreators = dashboardStats?.data?.totalCreators || creatorCountData?.count || creators?.length || 0;
+  // OPTIMIZATION: Use backend stats if available, otherwise fallback to creator count endpoint
+  const totalCreators = dashboardStats?.data?.totalCreators || creatorCountData?.count || 0;
   const totalClients = dashboardStats?.data?.totalClients || clientData || 0;
 
-  // OPTIMIZATION: Use backend stats if available, otherwise calculate from campaigns
+  // OPTIMIZATION: Use backend stats only - no client-side calculation needed
   const totalApprovedPitches = useMemo(() => {
-    if (dashboardStats?.data?.approvedPitches !== undefined) {
-      return dashboardStats.data.approvedPitches;
-    }
-    if (!campaigns) return 0;
-    return campaigns.reduce((acc, c) => acc + (c?.pitch?.filter?.((p) => p.status === 'approved')?.length || 0), 0);
-  }, [dashboardStats, campaigns]);
+    return dashboardStats?.data?.approvedPitches || 0;
+  }, [dashboardStats]);
 
   const totalRejectedPitches = useMemo(() => {
-    if (dashboardStats?.data?.rejectedPitches !== undefined) {
-      return dashboardStats.data.rejectedPitches;
-    }
-    if (!campaigns) return 0;
-    return campaigns.reduce((acc, c) => acc + (c?.pitch?.filter?.((p) => p.status === 'rejected')?.length || 0), 0);
-  }, [dashboardStats, campaigns]);
+    return dashboardStats?.data?.rejectedPitches || 0;
+  }, [dashboardStats]);
 
-  // OPTIMIZATION: Early return and limit processing
-  // OPTIMIZATION: Use backend stats if available, otherwise calculate (expensive with 5000+ creators)
+  // OPTIMIZATION: Use backend stats only - no client-side calculation needed
   const totalCreatorsWithMediaKit = useMemo(() => {
-    if (dashboardStats?.data?.creatorsWithMediaKit !== undefined) {
-      return dashboardStats.data.creatorsWithMediaKit;
-    }
-    if (!creators || creators.length === 0) return 0;
-    // Fallback: Use for loop instead of filter for better performance with large arrays
-    let count = 0;
-    for (let i = 0; i < creators.length; i += 1) {
-      const u = creators[i];
-      if (u?.creator?.instagramUser || u?.creator?.tiktokUser) {
-        count += 1;
-      }
-    }
-    return count;
-  }, [dashboardStats, creators]);
+    return dashboardStats?.data?.creatorsWithMediaKit || 0;
+  }, [dashboardStats]);
 
-  // OPTIMIZATION: Use backend stats if available, otherwise calculate
+  // OPTIMIZATION: Use backend stats only - no client-side calculation needed
   const totalCreatorsInAtLeastOneCampaign = useMemo(() => {
-    if (dashboardStats?.data?.creatorsInCampaigns !== undefined) {
-      return dashboardStats.data.creatorsInCampaigns;
-    }
-    if (!campaigns) return 0;
-    const counts = new Map();
-    campaigns.forEach((c) => {
-      (c?.shortlisted || []).forEach((s) => {
-        const uid = s?.userId;
-        if (!uid) return;
-        counts.set(uid, (counts.get(uid) || 0) + 1);
-      });
-    });
-    return Array.from(counts.values()).filter((cnt) => cnt >= 1).length;
-  }, [dashboardStats, campaigns]);
+    return dashboardStats?.data?.creatorsInCampaigns || 0;
+  }, [dashboardStats]);
 
   // Generate last 6 months data based on actual metrics
   const monthlyData = useMemo(() => {
@@ -631,18 +607,20 @@ const DashboardSuperadmin = () => {
     },
   ];
 
-  const handleViewCampaign = (campaignId) => {
+  // OPTIMIZATION: Memoize handlers to prevent unnecessary re-renders
+  const handleViewCampaign = useCallback((campaignId) => {
     router.push(paths.dashboard.campaign.adminCampaignDetail(campaignId));
-  };
+  }, [router]);
 
-  const handleViewPitch = (pitch) => {
+  const handleViewPitch = useCallback((pitch) => {
     // Set the tab to pitch section before navigating
     localStorage.setItem('campaigndetail', 'pitch');
     // Navigate to the campaign's pitch section
     router.push(paths.dashboard.campaign.adminCampaignDetail(pitch.campaignId));
-  };
+  }, [router]);
 
-  const renderMetricCard = (metric, index) => (
+  // OPTIMIZATION: Memoize metric card render function
+  const renderMetricCard = useCallback((metric, index) => (
     <Grid item xs={6} md={3} key={index}>
       <Card
         sx={{
@@ -688,7 +666,7 @@ const DashboardSuperadmin = () => {
         </Stack>
       </Card>
     </Grid>
-  );
+  ), []);
 
   const renderPendingPitches = (
     <Card
@@ -1171,7 +1149,7 @@ const DashboardSuperadmin = () => {
                     </TableCell>
                     <TableCell align="center" sx={{ border: 'none', py: 2 }}>
                       <Chip
-                        label={campaign?.shortlisted.length}
+                        label={campaign?.shortlisted?.length || campaign?._count?.shortlisted || 0}
                         size="small"
                         sx={{
                           bgcolor: colors.light,
@@ -1189,7 +1167,7 @@ const DashboardSuperadmin = () => {
                     </TableCell>
                     <TableCell align="center" sx={{ border: 'none', py: 2 }}>
                       <Chip
-                        label={campaign?.pitch.length}
+                        label={campaign?._count?.pitch || campaign?.pitch?.length || 0}
                         size="small"
                         sx={{
                           bgcolor: colors.accent,
@@ -1231,12 +1209,10 @@ const DashboardSuperadmin = () => {
     };
   }, [socket]);
 
-  // OPTIMIZATION: Check loading states - prioritize stats loading over creator loading
-  const isLoadingData = statsLoading || creatorCountLoading || isClientLoading || isLoading;
-  // Only check creatorLoading if stats are not available (fallback)
-  const isLoadingFallback = !dashboardStats && creatorLoading;
+  // OPTIMIZATION: Check loading states - removed creator loading since we're not fetching creators
+  const isLoadingData = statsLoading || creatorCountLoading || isClientLoading || campaignsLoading;
   
-  if (isLoadingData || isLoadingFallback) {
+  if (isLoadingData) {
     return (
       <Box
         sx={{

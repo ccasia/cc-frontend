@@ -35,6 +35,7 @@ export const fetcher = async (args) => {
 export const endpoints = {
   dashboard: {
     stats: '/api/dashboard/stats',
+    campaigns: '/api/dashboard/campaigns',
   },
   overview: {
     root: (userId) => `/api/user/overview/${userId}`,
