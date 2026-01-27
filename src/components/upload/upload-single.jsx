@@ -151,8 +151,8 @@ export default function UploadSingle({
       size="small"
       onClick={onDelete}
       sx={{
-        top: 16,
-        right: 16,
+        top: 10,
+        right: 10,
         zIndex: 9,
         position: 'absolute',
         padding: 0.3,
@@ -160,13 +160,13 @@ export default function UploadSingle({
         color: (theme) => alpha(theme.palette.common.white, 0.8),
         bgcolor: '#FFFFFF',
         border: '1px solid #EBEBEB',
-        boxShadow: '0px 2px 0px #E7E7E7',
+        boxShadow: '0px 1px 0px #E7E7E7',
         '&:hover': {
           bgcolor: '#f2f2f2',
         },
       }}
     >
-      <Iconify icon="mingcute:close-fill" width={20} color="#636366" />
+      <Iconify icon="mingcute:close-fill" width={18} color="#636366" />
     </IconButton>
   );
 
