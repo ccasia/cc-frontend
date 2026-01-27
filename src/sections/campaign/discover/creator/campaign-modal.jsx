@@ -1178,7 +1178,7 @@ const CampaignModal = ({
                       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
                         <Box>
                           <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                            Creator's Interest
+                            Creator&apos;s Interest
                           </Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                             {requirement?.creator_persona.map((value, idx) => (
@@ -1455,8 +1455,7 @@ const CampaignModal = ({
 
                   {/* Campaign Secondary Audience */}
                   {hasSecondaryAudience && (
-                    <>
-                      <Box sx={{ mb: 2 }}>
+                    <Box sx={{ mb: 2 }}>
                         <Box
                           sx={{
                             ...SectionBoxStyles,
@@ -1521,7 +1520,7 @@ const CampaignModal = ({
                           <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
                             <Box>
                               <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                Creator's Interest
+                                Creator&apos;s Interest
                               </Typography>
                               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                                 {requirement?.secondary_creator_persona.map((value, idx) => (
@@ -1545,7 +1544,6 @@ const CampaignModal = ({
                           </Box>
                         </Box>
                       </Box>
-                    </>
                   )}
                 </Stack>
               </Paper>
