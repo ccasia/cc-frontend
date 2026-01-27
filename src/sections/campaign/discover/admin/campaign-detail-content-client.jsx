@@ -1220,7 +1220,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
               {[
                 {
                   label: 'About',
-                  value: campaign?.company?.about || campaign?.brand?.company?.about || 'None',
+                  value: campaign?.brandAbout || campaign?.brand?.company?.about || campaign?.company?.about || 'None',
                 },
                 {
                   label: 'Industry',
