@@ -540,8 +540,6 @@ const DashboardSuperadmin = () => {
     }));
   }, [activeCampaigns.length, totalCreators, totalPitches]);
 
-  // OPTIMIZATION: Move helper function outside or memoize
-  // Helper function to create navigation icons - memoized to prevent recreation
   const icon = useMemo(
     () => (name) => (
       <SvgColor
