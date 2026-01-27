@@ -43,8 +43,8 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
-import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 import ViewOnlyBanner from 'src/components/banner/view-only-banner';
+import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';

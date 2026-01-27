@@ -1,6 +1,6 @@
 import useSWR from 'swr';
-import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useState, useEffect } from 'react';
 import { config } from '@fullcalendar/core/internal';
 
 import { Box, Stack, Badge, Button, Divider, Typography } from '@mui/material';
@@ -59,7 +59,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
     }
   };
 
-  // --- Button Logic ---
   const renderActionButtons = () => {
     if (hasIssue) {
       return (
@@ -227,7 +226,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
 
     return (
       <Stack direction="row" justifyContent="center" alignItems="center" spacing={2} width="100%">
-        {/* 1. Confirm Details Button (If not done) */}
         {!isDetailsConfirmed && (
           <Badge color="error" variant="dot" invisible={hasInteracted}>
             <Button
@@ -262,16 +260,19 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           </Badge>
         )}
 
-        {/* 2. Schedule Button (If not done) */}
         {!isScheduled && !isAuto && status === 'PENDING_ASSIGNMENT' && (
           <Badge color="error" variant="dot" invisible={hasInteracted}>
             <Button
               variant="contained"
               onClick={() => {
                 handleBadgeClick();
-                isAdmin ? setOpenAdminSchedule(true) : setOpenSchedule(true);
+                if (isAdmin) {
+                  setOpenAdminSchedule(true);
+                } else {
+                  setOpenSchedule(true);
+                }
               }}
-              sx={buttonSx} // Always Blue for Schedule
+              sx={buttonSx}
             >
               {isAdmin ? 'Schedule' : 'Confirm Slot'}
             </Button>
@@ -299,7 +300,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
       <Divider sx={{ mb: 2 }} />
 
       <Stack spacing={2.5}>
-        {/* 1. Allocated Slot (Always Show) */}
         <Box>
           <Typography variant="caption" color="text.secondary">
             Allocated Slot
@@ -315,7 +315,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           )}
         </Box>
 
-        {/* 2. Location (Always Show) */}
         <Box>
           <Typography variant="caption" color="text.secondary">
             Location
@@ -325,9 +324,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           </Typography>
         </Box>
 
-        {/* --- CONDITIONAL FIELDS (Only show if filled by Client) --- */}
-
-        {/* Budget */}
         {details?.budget && (
           <Box>
             <Typography variant="caption" color="text.secondary">
@@ -337,7 +333,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           </Box>
         )}
 
-        {/* PIC */}
         {(details?.picName || details?.picContact) && (
           <Box>
             <Typography variant="caption" color="text.secondary">
@@ -349,7 +344,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           </Box>
         )}
 
-        {/* Promo */}
         {details?.promoCode && (
           <Box>
             <Typography variant="caption" color="text.secondary">
@@ -359,7 +353,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           </Box>
         )}
 
-        {/* Client Remarks */}
         {details?.clientRemarks && (
           <Box>
             <Typography variant="caption" color="text.secondary">
@@ -371,7 +364,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           </Box>
         )}
 
-        {/* 3. Creator Remarks (Always Show) */}
         <Box>
           <Typography variant="caption" color="text.secondary">
             Creator Remarks
@@ -396,7 +388,6 @@ export default function ReservationDrawer({ logistic, onUpdate, campaignId, isAd
           mb: 3,
         }}
       >
-        {/* Uses the Shared Stepper */}
         <LogisticsStepper logistic={logistic} onUpdate={onUpdate} isReservation />
 
         <Stack alignItems="center" sx={{ mt: 3 }}>

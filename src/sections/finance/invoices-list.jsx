@@ -1,30 +1,30 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
-  Button,
   Card,
   Table,
-  Stack,
+  Button,
   Dialog,
   Checkbox,
-  TableBody,
   TableRow,
+  TableBody,
   TableCell,
   TableHead,
   DialogContent,
   TableContainer,
-  Typography,
   CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
+
+import { useGetAllInvoices } from 'src/api/invoices';
 
 import Scrollbar from 'src/components/scrollbar';
-import Iconify from 'src/components/iconify';
 import {
   useTable,
   emptyRows,
@@ -33,8 +33,6 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import { useGetAllInvoices } from 'src/api/invoices';
-import useGetAllInvoiceStats from 'src/hooks/use-get-all-invoice-stats';
 import InvoiceItem from './invoice-item';
 import InvoiceTableToolbar from './invoice-table-toolbar';
 import InvoiceNewEditForm from '../invoice/invoice-new-edit-form';
@@ -70,7 +68,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
   const table = useTable({ defaultRowsPerPage: 5 }); // Default to 5
   const denseHeight = table.dense ? 56 : 56 + 20;
 
-  // OPTIMIZED: Use paginated endpoint instead of fetching all invoices
   const {
     data: invoicesData,
     pagination,
@@ -78,7 +75,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     error: invoicesError,
     mutate: mutateInvoices,
   } = useGetAllInvoices({
-    page: table.page + 1, // API uses 1-based pagination
+    page: table.page + 1,
     limit: table.rowsPerPage,
     status: filters.status !== 'all' ? filters.status : undefined,
     currency: filters.currency || undefined,
@@ -86,26 +83,25 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     campaignName: filters.campaignName || undefined,
   });
 
-  // Debug: Log error if API call fails
   if (invoicesError && process.env.NODE_ENV === 'development') {
     console.error('Error fetching invoices:', invoicesError);
   }
 
-  // Use paginated data if available, otherwise fallback to prop
-  // Wait for data to load - if invoicesData is undefined, we're still loading
-  // Once loaded, invoicesData will be an array (empty or with items)
-  const invoices = invoicesData !== undefined 
-    ? invoicesData 
-    : (invoicesProp && invoicesProp.length > 0) 
-      ? invoicesProp 
-      : [];
+  const invoices = useMemo(() => {
+    if (invoicesData !== undefined) {
+      return invoicesData;
+    }
+    if (invoicesProp && invoicesProp.length > 0) {
+      return invoicesProp;
+    }
+    return [];
+  }, [invoicesData, invoicesProp]);
 
   const campaigns = useMemo(() => {
     const data = invoices?.map((invoice) => invoice?.campaign?.name);
     return data.filter((item, index) => data.indexOf(item) === index);
   }, [invoices]);
 
-  // OPTIMIZED: Client-side filtering only for display (server already filtered)
   const dataFiltered = useMemo(() => {
     if (!invoices?.length) return [];
     return applyFilter({
@@ -113,7 +109,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       comparator: getComparator(table.order, table.orderBy),
       filters: {
         ...filters,
-        // Don't re-filter status/currency/search as they're already filtered server-side
         status: 'all',
         currency: '',
         name: '',
@@ -123,9 +118,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  // Show "No Data" if:
-  // 1. Not loading AND no filtered data AND filters are reset (no active filters)
-  // 2. Not loading AND no filtered data (even with filters)
   const notFound = (!invoicesLoading && !dataFiltered?.length);
 
   const handleFilters = useCallback(
@@ -154,15 +146,11 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     console.log(data);
   }, []);
 
-  // OPTIMIZED: Use invoice stats from backend for accurate counts
   const { stats: invoiceStats, isLoading: statsLoading } = useGetAllInvoiceStats();
 
-  // Create TABS array using backend stats - always use backend stats for accuracy
   const TABS = useMemo(() => {
-
-    // Check if stats are loaded and have counts
     if (invoiceStats && invoiceStats.counts) {
-      const counts = invoiceStats.counts;
+      const {counts} = invoiceStats;
       return [
         { value: 'all', label: 'All', count: counts.total ?? 0 },
         { value: 'paid', label: 'Paid', count: counts.paid ?? 0 },
@@ -174,7 +162,6 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       ];
     }
     
-    // Show 0 while loading or if there's an error (prevents showing incorrect counts)
     return [
       { value: 'all', label: 'All', count: 0 },
       { value: 'paid', label: 'Paid', count: 0 },
@@ -184,7 +171,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       { value: 'draft', label: 'Draft', count: 0 },
       { value: 'rejected', label: 'Rejected', count: 0 },
     ];
-  }, [invoiceStats, statsLoading]);
+  }, [invoiceStats]);
 
   const openEditInvoice = useCallback(
     (id, data) => {

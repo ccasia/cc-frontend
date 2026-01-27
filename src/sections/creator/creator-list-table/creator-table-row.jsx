@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
-import { Avatar, Stack, Typography } from '@mui/material';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import { Avatar, Typography } from '@mui/material';
 import ListItemText from '@mui/material/ListItemText';
 
 import { paths } from 'src/routes/paths';

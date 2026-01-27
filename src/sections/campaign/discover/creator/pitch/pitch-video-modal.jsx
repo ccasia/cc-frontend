@@ -1,11 +1,11 @@
 /* eslint-disable no-plusplus */
 import axios from 'axios';
 import * as Yup from 'yup';
-import { mutate as globalMutate } from 'swr';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { mutate as globalMutate } from 'swr';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 
@@ -17,7 +17,6 @@ import {
   Dialog,
   Typography,
   DialogTitle,
-  ListItemText,
   DialogActions,
   DialogContent,
 } from '@mui/material';

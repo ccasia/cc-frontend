@@ -21,6 +21,7 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -39,7 +40,15 @@ import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus, showAdmins = false }) {
+export default function CampaignItem({
+  campaign,
+  onView,
+  onEdit,
+  onDelete,
+  status,
+  pitchStatus,
+  showAdmins = false,
+}) {
   console.log('CampaignItem rendered:', {
     campaignId: campaign?.id,
     campaignStatus: campaign?.status,
@@ -63,6 +72,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
   // Handle menu open
   const handleClick = (event) => {
+    event.preventDefault();
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
@@ -115,7 +125,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     if (tabExists) {
       // If tab exists, close/remove it
       window.campaignTabs = window.campaignTabs.filter((tab) => tab.id !== campaign.id);
-      
+
       // Remove from status tracking
       if (window.campaignTabsStatus && window.campaignTabsStatus[campaign.id]) {
         delete window.campaignTabsStatus[campaign.id];
@@ -503,76 +513,78 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         </Stack>
 
         {/* Show managing admins - only in "All" tab - with menu button */}
-        {showAdmins && campaign?.campaignAdmin?.length > 0 && (() => {
-          // Helper to check if an admin is a Client (not CSM staff)
-          const isClientAdmin = (ca) => {
-            const roleName = ca.admin?.role?.name;
-            const userRole = ca.admin?.user?.role;
-            // Client admins have role.name === 'Client' OR user.role === 'client'
-            return roleName === 'Client' || userRole === 'client';
-          };
+        {showAdmins &&
+          campaign?.campaignAdmin?.length > 0 &&
+          (() => {
+            // Helper to check if an admin is a Client (not CSM staff)
+            const isClientAdmin = (ca) => {
+              const roleName = ca.admin?.role?.name;
+              const userRole = ca.admin?.user?.role;
+              // Client admins have role.name === 'Client' OR user.role === 'client'
+              return roleName === 'Client' || userRole === 'client';
+            };
 
-          // Helper to check if an admin is a CSM
-          const isCSMAdmin = (ca) => {
-            const roleName = ca.admin?.role?.name;
-            return roleName === 'CSM' || roleName === 'Customer Success Manager';
-          };
+            // Helper to check if an admin is a CSM
+            const isCSMAdmin = (ca) => {
+              const roleName = ca.admin?.role?.name;
+              return roleName === 'CSM' || roleName === 'Customer Success Manager';
+            };
 
-          // First, filter to only CSM admins (exclude Client admins entirely)
-          const csmAdmins = campaign.campaignAdmin.filter((ca) => {
-            if (!ca.admin?.user) return false;
-            return isCSMAdmin(ca) && !isClientAdmin(ca);
-          });
+            // First, filter to only CSM admins (exclude Client admins entirely)
+            const csmAdmins = campaign.campaignAdmin.filter((ca) => {
+              if (!ca.admin?.user) return false;
+              return isCSMAdmin(ca) && !isClientAdmin(ca);
+            });
 
-          // If no CSM admins, fall back to any non-client admin
-          const nonClientAdmins = campaign.campaignAdmin.filter((ca) => {
-            if (!ca.admin?.user) return false;
-            return !isClientAdmin(ca);
-          });
+            // If no CSM admins, fall back to any non-client admin
+            const nonClientAdmins = campaign.campaignAdmin.filter((ca) => {
+              if (!ca.admin?.user) return false;
+              return !isClientAdmin(ca);
+            });
 
-          const admins = csmAdmins.length > 0 ? csmAdmins : nonClientAdmins;
-          if (admins.length === 0) return null;
+            const admins = csmAdmins.length > 0 ? csmAdmins : nonClientAdmins;
+            if (admins.length === 0) return null;
 
-          const mainAdmin = admins[0];
-          const additionalCount = admins.length - 1;
+            const mainAdmin = admins[0];
+            const additionalCount = admins.length - 1;
 
-          return (
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Avatar
-                  src={mainAdmin?.admin?.user?.photoURL}
-                  alt={mainAdmin?.admin?.user?.name}
-                  sx={{ width: 20, height: 20, fontSize: '0.625rem' }}
-                >
-                  {mainAdmin?.admin?.user?.name?.charAt(0)}
-                </Avatar>
-                <Typography
-                  variant="caption"
+            return (
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Avatar
+                    src={mainAdmin?.admin?.user?.photoURL}
+                    alt={mainAdmin?.admin?.user?.name}
+                    sx={{ width: 20, height: 20, fontSize: '0.625rem' }}
+                  >
+                    {mainAdmin?.admin?.user?.name?.charAt(0)}
+                  </Avatar>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#8e8e93',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {mainAdmin?.admin?.user?.name}
+                    {additionalCount > 0 && ` +${additionalCount}`}
+                  </Typography>
+                </Stack>
+
+                <IconButton
+                  size="small"
+                  onClick={handleClick}
                   sx={{
-                    color: '#8e8e93',
-                    fontSize: '0.875rem',
-                    fontWeight: 500,
+                    ml: 1,
+                    p: 0.5,
+                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
                   }}
                 >
-                  {mainAdmin?.admin?.user?.name}
-                  {additionalCount > 0 && ` +${additionalCount}`}
-                </Typography>
+                  <MoreHorizIcon fontSize="small" />
+                </IconButton>
               </Stack>
-
-              <IconButton
-                size="small"
-                onClick={handleClick}
-                sx={{
-                  ml: 1,
-                  p: 0.5,
-                  '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-                }}
-              >
-                <MoreHorizIcon fontSize="small" />
-              </IconButton>
-            </Stack>
-          );
-        })()}
+            );
+          })()}
 
         <Menu
           anchorEl={anchorEl}
@@ -610,7 +622,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
           }}
         >
           <MenuItem
-            onClick={handleOpenInNewTab}
+            component={RouterLink}
+            href={paths.dashboard.campaign.adminCampaignDetail(campaign.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => handleClose()}
             sx={{
               borderRadius: 1,
               backgroundColor: 'white',
@@ -781,11 +797,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
   return (
     <Card
-      onClick={() => {
-        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
-      }}
+      component={RouterLink}
+      href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       sx={{
         overflow: 'hidden',
+        textDecoration: 'none',
         cursor: 'pointer',
         transition: 'all 0.3s',
         bgcolor: 'background.default',
@@ -850,7 +866,12 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       )}
       {renderImages}
       {renderTexts}
-      <Box onClick={(e) => e.stopPropagation()}>
+      <Box
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+      >
         <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
         <ActivateCampaignDialog
           open={activateDialogOpen}

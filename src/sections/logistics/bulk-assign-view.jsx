@@ -454,7 +454,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
           </Box>
         </Box>
         <Box fullWidth>
-          <Stack alignItems="center" sx={{ flexGrow: 1, mb: 1 }}>
+          <Stack alignItems="center" sx={{ flexGrow: 1, mb: 1, px: { xs: 2, md: 0 } }}>
             <Box
               sx={{
                 width: 56,
@@ -473,13 +473,16 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
             <Typography variant="h3" sx={{ fontFamily: 'instrument serif', color: '#231F20' }}>
               Edit & Bulk Assign Logistics
             </Typography>
-            <Typography variant="body2" sx={{ color: '#231F20' }}>
+            <Typography
+              variant="body2"
+              sx={{ fontSize: { xs: 12, md: 14 }, color: '#231F20', textAlign: 'center' }}
+            >
               Select products and creators to assign.
             </Typography>
-            <Typography variant="body2" sx={{ color: '#231F20' }}>
-              You can set different product quantities under Product List.
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#231F20' }}>
+            <Typography
+              variant="body2"
+              sx={{ fontSize: { xs: 12, md: 14 }, color: '#231F20', textAlign: 'center' }}
+            >
               Only creators that are{' '}
               <Box
                 sx={{
@@ -526,29 +529,66 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
               </Box>{' '}
               will appear here.
             </Typography>
+            <Typography
+              variant="body2"
+              sx={{ fontSize: { xs: 12, md: 14 }, color: '#231F20', textAlign: 'center' }}
+            >
+              Assigning new products to a creator replaces the previous products assigned.{' '}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ fontSize: { xs: 12, md: 14 }, color: '#231F20', textAlign: 'center' }}
+            >
+              You can edit product quantity for individual creators after assigning here{' '}
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  width: '28px',
+                  height: '20px',
+                  borderRadius: '12px',
+                  border: '1.5px solid #1340FF',
+                  textAlign: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  color: '#000000',
+                  backgroundColor: '#FFFFFF',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  justifyContent: 'center',
+                }}
+              >
+                1
+              </Box>
+            </Typography>
           </Stack>
 
           {/* --- MAIN CONTENT AREA --- */}
-          <Box sx={{ flexGrow: 1, px: 4, p: 4, overflow: 'hidden', display: 'flex' }}>
+          <Box
+            sx={{ flexGrow: 1, px: { xs: 2, md: 4 }, p: 4, overflow: 'hidden', display: 'flex' }}
+          >
             <Grid container sx={{ height: '100%' }} spacing={0}>
               {/* COLUMN 1: STEP 1 (Left Sidebar) */}
               <Grid
                 item
-                xs={6}
-                md={3}
+                xs={12}
+                md={4}
                 sx={{
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
+                  alignItems: { xs: 'flex-start', md: 'flex-end' },
                   pr: 3,
-                  pl: 12,
+                  // pl: 12,
                 }}
               >
-                <Box sx={{ height: 40, mb: 2 }} /> {/* Spacer to align with search bar */}
-                <Stack alignItems="flex-start">
+                <Stack
+                  alignItems="flex-start"
+                  spacing={1}
+                  sx={{ overflowY: 'auto', flexGrow: 1, pb: 2 }}
+                >
                   <Typography
                     variant="caption"
-                    sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1 }}
+                    sx={{ fontWeight: 700, color: 'text.secondary', display: 'block' }}
                   >
                     STEP 1 <br />
                     <Typography component="span" variant="subtitle2" color="text.primary">
@@ -556,198 +596,227 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                     </Typography>{' '}
                     ({selectedProductIds.length} Selected)
                   </Typography>
-                </Stack>
-                <Stack
-                  alignItems="flex-start"
-                  spacing={1}
-                  sx={{ overflowY: 'auto', flexGrow: 1, pb: 2 }}
-                >
-                  {products?.map((product) => (
-                    <Stack direction="row" spacing={0.5}>
-                      <Box
-                        key={product.id}
-                        onClick={() => handleSelectProduct(product)}
-                        sx={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: 'fit-content',
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: '8px',
-                          transition: 'all 0.2s ease',
-                          bgcolor: selectedProductIds.includes(product.id) ? '#1340FF' : '#FFFFFF',
-                          color: selectedProductIds.includes(product.id) ? '#FFFFFF' : '#231F20',
-                          border: selectedProductIds.includes(product.id)
-                            ? '1px solid #1340FF'
-                            : '1px solid #D6D6D6',
-                          boxShadow: selectedProductIds.includes(product.id)
-                            ? 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)'
-                            : 'inset 0px -3px 0px #D6D6D6',
-                          '&:hover': {
-                            bgcolor: selectedProductIds.includes(product.id)
-                              ? '#133effd8'
-                              : '#F9FAFB',
-                          },
-                          '&:active': {
-                            boxShadow: selectedProductIds.includes(product.id)
-                              ? '0px 0px 0px 0px #0B2DAD inset'
-                              : '0px 0px 0px 0px #F4F4F4 inset',
-                            transform: 'translateY(1px)',
-                          },
-                        }}
-                      >
-                        <Typography
-                          variant="body2"
+                  <Stack
+                    spacing={1}
+                    useFlexGap
+                    flexWrap="wrap"
+                    direction={{ xs: 'row', md: 'column' }}
+                  >
+                    {products?.map((product) => (
+                      <Stack direction="row" spacing={{ xs: 0, md: 0.5 }}>
+                        <Box
+                          key={product.id}
+                          onClick={() => handleSelectProduct(product)}
                           sx={{
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            flex: 1,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 'fit-content',
+                            px: { xs: 0.5, md: 1.5 },
+                            py: { xs: 0, md: 0.5 },
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            bgcolor: selectedProductIds.includes(product.id)
+                              ? '#1340FF'
+                              : '#FFFFFF',
+                            color: selectedProductIds.includes(product.id) ? '#FFFFFF' : '#231F20',
+                            border: selectedProductIds.includes(product.id)
+                              ? '1px solid #1340FF'
+                              : '1px solid #D6D6D6',
+                            boxShadow: selectedProductIds.includes(product.id)
+                              ? 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)'
+                              : 'inset 0px -3px 0px #D6D6D6',
+                            '&:hover': {
+                              bgcolor: selectedProductIds.includes(product.id)
+                                ? '#133effd8'
+                                : '#F9FAFB',
+                            },
+                            '&:active': {
+                              boxShadow: selectedProductIds.includes(product.id)
+                                ? '0px 0px 0px 0px #0B2DAD inset'
+                                : '0px 0px 0px 0px #F4F4F4 inset',
+                              transform: 'translateY(1px)',
+                            },
                           }}
                         >
-                          {product.productName}
-                        </Typography>
-                        {selectedProductIds.includes(product.id) &&
-                          (getProductQuantity(product.id) > 0 ||
-                            editingProductId === product.id ||
-                            selectedCreatorIds.length === 0) &&
-                          (editingProductId === product.id ? (
-                            <Box
-                              sx={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                ml: 1,
-                              }}
-                            >
-                              <input
-                                ref={(input) => input && input.focus()}
-                                type="text"
-                                value={tempQuantity}
-                                onClick={(e) => e.stopPropagation()}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontSize: { xs: 12, md: 16 },
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              flex: 1,
+                            }}
+                          >
+                            {product.productName}
+                          </Typography>
+                          {selectedProductIds.includes(product.id) &&
+                            (getProductQuantity(product.id) > 0 ||
+                              editingProductId === product.id ||
+                              selectedCreatorIds.length === 0) &&
+                            (editingProductId === product.id ? (
+                              <Box
+                                sx={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  ml: 1,
+                                }}
+                              >
+                                <input
+                                  ref={(input) => input && input.focus()}
+                                  type="text"
+                                  value={tempQuantity}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onChange={handleQuantityChange}
+                                  onBlur={() => handleQuantitySubmit(product.id)}
+                                  style={{
+                                    width: '30px',
+                                    height: '22px',
+                                    borderRadius: '14px', // More curvy/rounded
+                                    border: '1px solid #EBEBEB',
+                                    textAlign: 'center',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    color: '#000000', // Black font color
+                                    backgroundColor: '#FFFFFF',
+                                    outline: 'none',
+                                    boxSizing: 'border-box',
+                                    transition: 'width 0.1s ease',
+                                  }}
+                                />
+                              </Box>
+                            ) : (
+                              <Box
+                                onClick={(e) => handleQuantityClick(product.id, e)}
                                 onMouseDown={(e) => e.stopPropagation()}
-                                onChange={handleQuantityChange}
-                                onBlur={() => handleQuantitySubmit(product.id)}
-                                style={{
-                                  width: '30px',
-                                  height: '22px',
-                                  borderRadius: '14px', // More curvy/rounded
+                                sx={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: { xs: '20px', md: '30px' },
+                                  height: { xs: '18px', md: '22px' },
+                                  bgcolor: '#FFFFFF',
+                                  color: '#000000',
+                                  borderRadius: '14px',
                                   border: '1px solid #EBEBEB',
-                                  textAlign: 'center',
                                   fontSize: '0.75rem',
                                   fontWeight: 700,
-                                  color: '#000000', // Black font color
-                                  backgroundColor: '#FFFFFF',
-                                  outline: 'none',
+                                  ml: 1,
+                                  cursor: 'pointer',
+                                  opacity: 1,
                                   boxSizing: 'border-box',
-                                  transition: 'width 0.1s ease',
+                                  zIndex: 10,
+                                  position: 'relative',
+                                  '&:hover': {
+                                    bgcolor: '#f5f5f5',
+                                  },
                                 }}
-                              />
-                            </Box>
-                          ) : (
-                            <Box
-                              onClick={(e) => handleQuantityClick(product.id, e)}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              sx={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '30px',
-                                height: '22px',
-                                bgcolor: '#FFFFFF',
-                                color: '#000000',
-                                borderRadius: '14px',
-                                border: '1px solid #EBEBEB',
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                ml: 1,
-                                cursor: 'pointer',
-                                opacity: 1,
-                                boxSizing: 'border-box',
-                                zIndex: 10,
-                                position: 'relative',
-                                '&:hover': {
-                                  bgcolor: '#f5f5f5',
-                                },
-                              }}
-                            >
-                              {getProductQuantity(product.id) || 1}
-                            </Box>
-                          ))}
-                      </Box>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setProductToDelete({ id: product.id, name: product.productName });
-                        }}
-                        sx={{
-                          width: 40,
-                          borderRadius: 1,
-                          '&:hover': { bgcolor: '#FFF5F5' },
-                        }}
+                              >
+                                {getProductQuantity(product.id) || 1}
+                              </Box>
+                            ))}
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProductToDelete({ id: product.id, name: product.productName });
+                          }}
+                          sx={{
+                            width: 40,
+                            borderRadius: 1,
+                            '&:hover': { bgcolor: '#FFF5F5' },
+                          }}
+                        >
+                          <Iconify icon="eva:trash-2-outline" color="#FF3030" width={20} />
+                        </IconButton>
+                      </Stack>
+                    ))}
+                    <Box
+                      onClick={() => setOpenAddProduct(true)}
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 'fit-content',
+                        px: 1.5,
+                        py: 0.5,
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        transition: 'all 0.2s ease',
+                        boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)',
+                        bgcolor: '#FFFFFF',
+                        color: '#B0B0B0',
+                        border: '1px solid #D6D6D6',
+                        '&:hover': {
+                          bgcolor: '#F9FAFB',
+                        },
+                        '&:active': {
+                          boxShadow: '0px 0px 0px 0px #F4F4F4 inset',
+                          transform: 'translateY(1px)',
+                        },
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{ fontSize: { xs: 11, md: 16 }, fontWeight: 600 }}
                       >
-                        <Iconify icon="eva:trash-2-outline" color="#FF3030" width={20} />
+                        New
+                      </Typography>
+                      <IconButton size="small" sx={{ color: '#fff' }}>
+                        <Iconify
+                          icon="eva:plus-outline"
+                          width={16}
+                          sx={{
+                            color: '#919EAB',
+                            display: 'block',
+                          }}
+                        />
                       </IconButton>
-                    </Stack>
-                  ))}
-                  <Box
-                    onClick={() => setOpenAddProduct(true)}
-                    sx={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 'fit-content',
-                      px: 1.5,
-                      py: 0.5,
-                      cursor: 'pointer',
-                      borderRadius: '8px',
-                      transition: 'all 0.2s ease',
-                      boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)',
-                      bgcolor: '#FFFFFF',
-                      color: '#B0B0B0',
-                      border: '1px solid #D6D6D6',
-                      '&:hover': {
-                        bgcolor: '#F9FAFB',
-                      },
-                      '&:active': {
-                        boxShadow: '0px 0px 0px 0px #F4F4F4 inset',
-                        transform: 'translateY(1px)',
-                      },
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      New
-                    </Typography>
-                    <IconButton size="small" sx={{ color: '#fff' }}>
-                      <Iconify
-                        icon="eva:plus-outline"
-                        width={16}
-                        sx={{
-                          color: '#919EAB',
-                          display: 'block',
-                        }}
-                      />
-                    </IconButton>
-                  </Box>
+                    </Box>
+                  </Stack>
                 </Stack>
               </Grid>
 
               {/* COLUMNS 2 & 3: THE SYNCED WORKSPACE */}
-              <Grid item xs={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Grid
+                item
+                xs={12}
+                md={8}
+                sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+              >
                 {/* 2A: STATIC HEADER (Step 2 & 3 titles) */}
                 <Grid container spacing={0}>
                   {/* Step 2 Header */}
                   <Grid
                     item
-                    xs={6}
+                    xs={7.5}
+                    md={4.5}
                     sx={{
-                      pl: 3,
-                      pr: 3,
+                      pl: { xs: 0, md: 3 },
+                      // pr: 3,
                       pb: 0,
-                      borderRight: '1px solid #EAEAEA',
-                      borderLeft: '1px solid #EAEAEA',
+                      borderLeft: { xs: 'none', md: '1px solid #EAEAEA' },
                     }}
                   >
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ pb: 1 }}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{ fontWeight: 700, color: 'text.secondary' }}
+                      >
+                        STEP 2 <br />{' '}
+                        <Typography component="span" variant="subtitle2" color="text.primary">
+                          Assigning to
+                        </Typography>{' '}
+                        ({selectedCreatorIds.length} Selected)
+                      </Typography>
+                    </Stack>
                     <TextField
                       fullWidth
                       size="small"
@@ -763,7 +832,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         sx: { height: 40, borderRadius: 1.5, bgcolor: '#F9FAFB' },
                       }}
                       sx={{
-                        mb: 2,
+                        mb: 1,
                         height: '40px',
                         bgcolor: '#FFFFFF',
                         '& .MuiOutlinedInput-root': {
@@ -787,17 +856,55 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         },
                       }}
                     />
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                      <Typography
-                        variant="caption"
-                        sx={{ fontWeight: 700, color: 'text.secondary' }}
-                      >
-                        STEP 2 <br />{' '}
-                        <Typography component="span" variant="subtitle2" color="text.primary">
-                          Assigning to
-                        </Typography>{' '}
-                        ({selectedCreatorIds.length} Selected)
+                    <Box display="flex" alignItems="center" sx={{ ml: -1 }}>
+                      <Checkbox
+                        size="small"
+                        checked={
+                          selectedCreatorIds.length === creators.length && creators.length > 0
+                        }
+                        onChange={handleSelectAllCreators}
+                      />
+                      <Typography variant="caption" fontWeight={600}>
+                        Select all
                       </Typography>
+                    </Box>
+                  </Grid>
+
+                  {/* Step 3 Header */}
+                  <Grid item xs={4.5} md={7.5} sx={{ pl: 2 }}>
+                    <Box sx={{ height: 40, mb: 1, display: 'flex', alignItems: 'center' }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={handleAssign}
+                        disabled={
+                          selectedCreatorIds.length === 0 || selectedProductIds.length === 0
+                        }
+                        sx={{
+                          width: 140,
+                          height: 36,
+                          padding: { xs: '4px 8px', sm: '6px 10px' },
+                          borderRadius: '8px',
+                          boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
+                          backgroundColor: '#1340FF',
+                          color: '#FFFFFF',
+                          fontSize: { xs: 12, sm: 14, md: 16 },
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          '&:hover': {
+                            backgroundColor: '#133effd3',
+                            boxShadow: '0px -3px 0px 0px #0c2aa6 inset',
+                          },
+                          '&:active': {
+                            boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
+                            transform: 'translateY(1px)',
+                          },
+                        }}
+                      >
+                        Assign
+                      </Button>
+                    </Box>
+                    <Box sx={{ height: 40, mb: 2, display: 'flex' }}>
                       <Select
                         size="small"
                         value={filterStatus}
@@ -817,7 +924,8 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                           />
                         )}
                         sx={{
-                          height: 32,
+                          height: 40,
+                          width: 140,
                           bgcolor: '#fff',
                           borderColor: '#EBEBEB',
                           borderRadius: '8px',
@@ -829,62 +937,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         <MenuItem value="assigned">Assigned</MenuItem>
                         <MenuItem value="unassigned">Unassigned</MenuItem>
                       </Select>
-                    </Stack>
-                    <Box display="flex" alignItems="center" sx={{ ml: -1 }}>
-                      <Checkbox
-                        size="small"
-                        checked={
-                          selectedCreatorIds.length === creators.length && creators.length > 0
-                        }
-                        onChange={handleSelectAllCreators}
-                      />
-                      <Typography variant="caption" fontWeight={600}>
-                        Select all
-                      </Typography>
                     </Box>
-                  </Grid>
-
-                  {/* Step 3 Header */}
-                  <Grid item xs={6} sx={{ pl: 3, pb: 2 }}>
-                    <Box sx={{ height: 40, mb: 2, display: 'flex', alignItems: 'center' }}>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        onClick={handleAssign}
-                        disabled={
-                          selectedCreatorIds.length === 0 || selectedProductIds.length === 0
-                        }
-                        sx={{
-                          width: 'fit-content',
-                          height: 40,
-                          padding: { xs: '4px 8px', sm: '6px 10px' },
-                          borderRadius: '8px',
-                          boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-                          backgroundColor: '#1340FF',
-                          color: '#FFFFFF',
-                          fontSize: { xs: 12, sm: 14, md: 16 },
-                          fontWeight: 600,
-                          textTransform: 'none',
-                          '&:hover': {
-                            backgroundColor: '#133effd3',
-                            boxShadow: '0px -4px 0px 0px #0c2aa6 inset',
-                          },
-                          '&:active': {
-                            boxShadow: '0px 0px 0px 0px #0c2aa6 inset',
-                            transform: 'translateY(1px)',
-                          },
-                        }}
-                      >
-                        <Iconify icon="eva:save-outline" width={20} sx={{ mr: 1 }} />
-                        Save
-                      </Button>
-                    </Box>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
-                      STEP 3 <br />{' '}
-                      <Typography component="span" variant="subtitle2" color="text.primary">
-                        Products
-                      </Typography>
-                    </Typography>
                   </Grid>
                 </Grid>
 
@@ -909,32 +962,45 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         <Grid
                           item
                           xs={6}
+                          md={4.5}
                           sx={{
                             display: 'flex',
                             alignItems: 'center',
+                            ml: { xs: -1, md: 0 },
                             py: 1,
-                            px: 2,
-                            borderRight: '1px solid #EAEAEA',
-                            borderLeft: '1px solid #EAEAEA',
+                            px: { xs: 0, md: 2 },
+                            borderLeft: { xs: 'none', md: '1px solid #EAEAEA' },
                           }}
                         >
                           <Checkbox
                             checked={isSelected}
                             onChange={() => handleSelectCreator(creator.id)}
                             sx={{
-                              mr: 1,
+                              mr: { xs: 0, md: 1 },
                               color: '#1340FF',
                               '&.Mui-checked': {
                                 color: '#1340FF',
                               },
                             }}
                           />
-                          <Avatar src={creator.photoURL} sx={{ width: 40, height: 40, mr: 2 }} />
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="subtitle2" sx={{ lineHeight: 0.5 }}>
+                          <Avatar
+                            src={creator.photoURL}
+                            sx={{ width: { xs: 36, md: 40 }, height: { xs: 36, md: 40 }, mr: 2 }}
+                          />
+                          <Box sx={{ minWidth: 10 }}>
+                            <Typography
+                              variant="subtitle2"
+                              noWrap
+                              sx={{ fontSize: { xs: 12, md: 16 }, lineHeight: 0.8 }}
+                            >
                               {creator.name}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" noWrap>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              noWrap
+                              sx={{ fontSize: { xs: 11, md: 14 }, lineHeight: 0.8 }}
+                            >
                               {creator.handle}
                             </Typography>
                           </Box>
@@ -944,7 +1010,14 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                         <Grid
                           item
                           xs={6}
-                          sx={{ display: 'flex', alignItems: 'center', pl: 3, py: 2 }}
+                          md={7.5}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            pl: { xs: 0, md: 3 },
+                            py: { xs: 0, md: 2 },
+                            justifyContent: { xs: 'center', md: 'start' },
+                          }}
                         >
                           {assigned.length > 0 ? (
                             <Box
@@ -966,7 +1039,11 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                                   >
                                     <Typography
                                       variant="body2"
-                                      sx={{ color: '#231F20', fontWeight: 500 }}
+                                      sx={{
+                                        fontSize: { xs: 11, md: 16 },
+                                        color: '#231F20',
+                                        fontWeight: 500,
+                                      }}
                                     >
                                       {item.name}
                                     </Typography>
@@ -993,7 +1070,7 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                                           borderRadius: '12px',
                                           border: '1.5px solid #1340FF',
                                           textAlign: 'center',
-                                          fontSize: '0.75rem',
+                                          fontSize: { xs: 11, md: '0.75rem' },
                                           fontWeight: 700,
                                           color: '#000000',
                                           backgroundColor: '#FFFFFF',
@@ -1016,13 +1093,13 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                                           display: 'inline-flex',
                                           alignItems: 'center',
                                           justifyContent: 'center',
-                                          width: '30px',
-                                          height: '22px',
+                                          width: { xs: '25px', md: '30px' },
+                                          height: { xs: '18px', md: '22px' },
                                           bgcolor: '#FFFFFF',
                                           color: '#000000',
                                           borderRadius: '12px',
                                           border: '1.5px solid #133eff70',
-                                          fontSize: '0.75rem',
+                                          fontSize: { xs: 11, md: '0.75rem' },
                                           fontWeight: 700,
                                           cursor: 'pointer',
                                           opacity: 1,
@@ -1047,9 +1124,9 @@ export default function BulkAssignView({ open, onClose, campaign, logistics, onU
                             <Typography
                               variant="caption"
                               color="text.disabled"
-                              sx={{ fontSize: 18 }}
+                              sx={{ fontSize: { xs: 12, md: '16px' } }}
                             >
-                              -
+                              Unassigned
                             </Typography>
                           )}
                         </Grid>
