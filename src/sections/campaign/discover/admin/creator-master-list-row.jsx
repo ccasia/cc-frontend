@@ -6,6 +6,8 @@ import { Box, Link, Stack, Avatar, Button, Tooltip, TableRow, TableCell, Typogra
 
 import { formatNumber, createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
+import { getOutreachStatusConfig } from 'src/contants/outreach';
+
 import Iconify from 'src/components/iconify';
 
 /**
@@ -133,6 +135,59 @@ const CreatorMasterListRow = ({ pitch, getStatusInfo, onViewPitch, campaign, isC
           </Avatar>
           <Typography variant="body2">{pitch.user?.name}</Typography>
         </Stack>
+      </TableCell>
+      <TableCell>
+        {(() => {
+          const outreachConfig = getOutreachStatusConfig(pitch.outreachStatus);
+
+          if (!outreachConfig) {
+            // Not Set - dashed style
+            return (
+              <Box
+                sx={{
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  py: 0.5,
+                  px: 1,
+                  fontSize: 12,
+                  color: '#8E8E93',
+                  border: '1px dashed #D0D0D0',
+                  borderRadius: 0.8,
+                  bgcolor: 'white',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Not Set
+              </Box>
+            );
+          }
+
+          // Status is set - colored chip
+          return (
+            <Box
+              sx={{
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                py: 0.5,
+                px: 1,
+                fontSize: 12,
+                border: '1px solid',
+                borderBottom: '3px solid',
+                borderRadius: 0.8,
+                bgcolor: 'white',
+                whiteSpace: 'nowrap',
+                color: outreachConfig.color,
+                borderColor: outreachConfig.color,
+              }}
+            >
+              {outreachConfig.label}
+            </Box>
+          );
+        })()}
       </TableCell>
       <TableCell>
         {hasPlatformLinks ? (
