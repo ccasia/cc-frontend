@@ -594,7 +594,8 @@ const CampaignDetailView = ({ id }) => {
         campaign={campaign}
         openBulkAssign={openBulkAssign}
         setOpenBulkAssign={setOpenBulkAssign}
-        isAdmin={!isClient} // not client > admin
+        isAdmin={!isClient}
+        isSuperAdmin={isSuperAdmin}
       />
     ) : (
       <CampaignLogisticsView
@@ -603,6 +604,7 @@ const CampaignDetailView = ({ id }) => {
         setOpenBulkAssign={setOpenBulkAssign}
         isAdmin={!isClient}
         isDisabled={isDisabled}
+        isSuperAdmin={isSuperAdmin}
       />
     ),
     // logistics: isClient ? (

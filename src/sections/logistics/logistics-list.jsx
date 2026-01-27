@@ -64,6 +64,7 @@ const getStatusOption = (isReservation) =>
 export default function LogisticsList({
   campaignId,
   isAdmin,
+  isSuperAdmin,
   logistics: propLogistics,
   isReservation,
   onClick,
@@ -189,7 +190,7 @@ export default function LogisticsList({
                   row={row}
                   isReservation={isReservation}
                   onClick={() => handleClick(row.id)}
-                  onEditStatus={isAdmin ? (e) => handleEditStatus(e, row.id) : null}
+                  onEditStatus={isSuperAdmin ? (e) => handleEditStatus(e, row.id) : null}
                 />
               ))}
 
@@ -218,7 +219,7 @@ export default function LogisticsList({
         />
       </Card>
 
-      {isAdmin && (
+      {isSuperAdmin && (
         <Popover
           open={Boolean(statusAnchorEl)}
           anchorEl={statusAnchorEl}
@@ -309,7 +310,7 @@ export default function LogisticsList({
         </Popover>
       )}
 
-      {isAdmin && statusLogistic && (
+      {isSuperAdmin && statusLogistic && (
         <ConfirmStatusChangeDialog
           open={confirmDialogOpen}
           onClose={handleCancelStatusChange}
@@ -328,6 +329,7 @@ LogisticsList.propTypes = {
   campaignId: PropTypes.string,
   logistics: PropTypes.array,
   isAdmin: PropTypes.bool,
+  isSuperAdmin: PropTypes.bool,
   isReservation: PropTypes.bool,
   onClick: PropTypes.func,
 };
