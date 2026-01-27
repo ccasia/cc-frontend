@@ -847,7 +847,9 @@ const CampaignModal = ({
                             <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
                               Product / Service Name
                             </Typography>
-                            <Typography variant="body2">{campaign?.productName}</Typography>
+                            <Typography variant="body2">
+                              {campaign?.productName || 'Not specified'}
+                            </Typography>
                           </Box>
                           <Box>
                             <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
@@ -888,7 +890,7 @@ const CampaignModal = ({
                             </Typography>
                           </Stack>
                         </Box>
-                        <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
                           <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
                             {[
                               {
@@ -1063,54 +1065,58 @@ const CampaignModal = ({
                       </Box>
 
                       {/* Campaign Logistics */}
-                      <Box sx={{ mb: 2 }}>
-                        <Box
-                          sx={{
-                            ...SectionBoxStyles,
-                            border: '1px solid #CFB5F6',
-                            borderBottom: '3px solid #CFB5F6',
-                          }}
-                        >
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="material-symbols:inventory-2-outline-sharp"
-                              sx={{
-                                color: '#CFB5F6',
-                                width: 20,
-                                height: 20,
-                              }}
-                            />
-                            <Typography
-                              sx={{
-                                ...SectionTitleStyles,
-                                color: '#CFB5F6',
-                              }}
-                            >
-                              LOGISTICS
-                            </Typography>
-                          </Stack>
+                      {campaign?.logisticsType && (
+                        <Box sx={{ mb: 2 }}>
+                          <Box
+                            sx={{
+                              ...SectionBoxStyles,
+                              border: '1px solid #CFB5F6',
+                              borderBottom: '3px solid #CFB5F6',
+                            }}
+                          >
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Iconify
+                                icon="material-symbols:inventory-2-outline-sharp"
+                                sx={{
+                                  color: '#CFB5F6',
+                                  width: 20,
+                                  height: 20,
+                                }}
+                              />
+                              <Typography
+                                sx={{
+                                  ...SectionTitleStyles,
+                                  color: '#CFB5F6',
+                                }}
+                              >
+                                LOGISTICS
+                              </Typography>
+                            </Stack>
+                          </Box>
+                          <Chip
+                            label={
+                              getlogisticsTypeLabel(campaign?.logisticsType) || 'Not specified'
+                            }
+                            size="small"
+                            sx={{
+                              bgcolor: '#F5F5F5',
+                              borderRadius: 1,
+                              color: '#231F20',
+                              height: '32px',
+                              '& .MuiChip-label': {
+                                fontWeight: 700,
+                                px: 1.5,
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginTop: '-3px',
+                              },
+                              '&:hover': { bgcolor: '#F5F5F5' },
+                            }}
+                          />
                         </Box>
-                        <Chip
-                          label={getlogisticsTypeLabel(campaign?.logisticsType) || 'Not specified'}
-                          size="small"
-                          sx={{
-                            bgcolor: '#F5F5F5',
-                            borderRadius: 1,
-                            color: '#231F20',
-                            height: '32px',
-                            '& .MuiChip-label': {
-                              fontWeight: 700,
-                              px: 1.5,
-                              height: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginTop: '-3px',
-                            },
-                            '&:hover': { bgcolor: '#F5F5F5' },
-                          }}
-                        />
-                      </Box>
+                      )}
 
                       {/* Client Info */}
                       <Box sx={{ mb: 2 }}>
@@ -1207,101 +1213,97 @@ const CampaignModal = ({
                       {/* Campaign Secondary Audience */}
                       {hasSecondaryAudience && (
                         <Box sx={{ mb: 2 }}>
-                            <Box
-                              sx={{
-                                ...SectionBoxStyles,
-                                border: '1px solid #FF3500',
-                                borderBottom: '3px solid #FF3500',
-                              }}
-                            >
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Iconify
-                                  icon="material-symbols-light:groups-outline"
-                                  sx={{
-                                    color: '#FF3500',
-                                    width: 25,
-                                    height: 25,
-                                    mt: -0.5,
-                                    ml: 0.5,
-                                  }}
-                                />
-                                <Typography
-                                  sx={{
-                                    ...SectionTitleStyles,
-                                    color: '#FF3500',
-                                  }}
-                                >
-                                  SECONDARY AUDIENCE
-                                </Typography>
-                              </Stack>
-                            </Box>
-                            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                              <Box
-                                sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}
+                          <Box
+                            sx={{
+                              ...SectionBoxStyles,
+                              border: '1px solid #FF3500',
+                              borderBottom: '3px solid #FF3500',
+                            }}
+                          >
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Iconify
+                                icon="material-symbols-light:groups-outline"
+                                sx={{
+                                  color: '#FF3500',
+                                  width: 25,
+                                  height: 25,
+                                  mt: -0.5,
+                                  ml: 0.5,
+                                }}
+                              />
+                              <Typography
+                                sx={{
+                                  ...SectionTitleStyles,
+                                  color: '#FF3500',
+                                }}
                               >
-                                {[
-                                  {
-                                    label: 'Gender',
-                                    data: campaign?.campaignRequirement?.secondary_gender?.map(
-                                      capitalizeFirstLetter
-                                    ),
-                                  },
-                                  {
-                                    label: 'Age',
-                                    data: campaign?.campaignRequirement?.secondary_age,
-                                  },
-                                  {
-                                    label: 'Country',
-                                    data: campaign?.campaignRequirement?.secondary_country
-                                      ? [campaign.campaignRequirement.secondary_country]
-                                      : [],
-                                  },
-                                  {
-                                    label: 'Language',
-                                    data: campaign?.campaignRequirement?.secondary_language,
-                                  },
-                                ].map((item, index) => (
-                                  <Box key={index}>
-                                    <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                      {item.label}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                                      {item.data?.map((value, idx) => (
-                                        <Chip key={idx} label={value} size="small" sx={ChipStyle} />
-                                      ))}
-                                    </Box>
-                                  </Box>
-                                ))}
-                              </Box>
-                              <Box
-                                sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}
-                              >
-                                <Box>
+                                SECONDARY AUDIENCE
+                              </Typography>
+                            </Stack>
+                          </Box>
+                          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
+                              {[
+                                {
+                                  label: 'Gender',
+                                  data: campaign?.campaignRequirement?.secondary_gender?.map(
+                                    capitalizeFirstLetter
+                                  ),
+                                },
+                                {
+                                  label: 'Age',
+                                  data: campaign?.campaignRequirement?.secondary_age,
+                                },
+                                {
+                                  label: 'Country',
+                                  data: campaign?.campaignRequirement?.secondary_country
+                                    ? [campaign.campaignRequirement.secondary_country]
+                                    : [],
+                                },
+                                {
+                                  label: 'Language',
+                                  data: campaign?.campaignRequirement?.secondary_language,
+                                },
+                              ].map((item, index) => (
+                                <Box key={index}>
                                   <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                    Creator&apos;s Interest
+                                    {item.label}
                                   </Typography>
                                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                                    {requirement?.secondary_creator_persona.map((value, idx) => (
-                                      <Chip
-                                        key={idx}
-                                        label={getProperCase(value)}
-                                        size="small"
-                                        sx={ChipStyle}
-                                      />
+                                    {item.data?.map((value, idx) => (
+                                      <Chip key={idx} label={value} size="small" sx={ChipStyle} />
                                     ))}
                                   </Box>
                                 </Box>
-                                <Box>
-                                  <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
-                                    User Persona
-                                  </Typography>
-                                  <Typography variant="body2">
-                                    {requirement?.secondary_user_persona}
-                                  </Typography>
+                              ))}
+                            </Box>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2 }}>
+                              <Box>
+                                <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                  Creator&apos;s Interest
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                                  {requirement?.secondary_creator_persona.map((value, idx) => (
+                                    <Chip
+                                      key={idx}
+                                      label={getProperCase(value)}
+                                      size="small"
+                                      sx={ChipStyle}
+                                    />
+                                  ))}
                                 </Box>
+                              </Box>
+                              <Box>
+                                <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
+                                  User Persona
+                                </Typography>
+                                <Typography variant="body2">
+                                  {requirement?.secondary_user_persona}
+                                </Typography>
                               </Box>
                             </Box>
                           </Box>
+                        </Box>
                       )}
                     </Stack>
                   </Paper>
