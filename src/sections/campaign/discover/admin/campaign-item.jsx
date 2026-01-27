@@ -36,6 +36,7 @@ import Iconify from 'src/components/iconify';
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import ActivateCampaignDialog from './activate-campaign-dialog';
 import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
+import { RouterLink } from 'src/routes/components';
 
 // ----------------------------------------------------------------------
 
@@ -813,20 +814,11 @@ export default function CampaignItem({
     //   }}
     // >
     <Card
-      component={Box}
-      id={`campaign-${campaign?.id}`}
-      ref={ref}
+      component={RouterLink}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
-      onClick={() => {
-        const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
-        if (lastCampaignOpenId || lastCampaignOpenId !== campaign.id) {
-          localStorage.setItem('lastCampaignOpenId', campaign?.id);
-        }
-        localStorage.removeItem('scrollTop');
-        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
-      }}
       sx={{
         overflow: 'hidden',
+        textDecoration: 'none',
         cursor: 'pointer',
         transition: 'all 0.3s',
         bgcolor: 'background.default',
