@@ -643,13 +643,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                 color: '#8E8E93',
                 borderColor: '#D0D0D0',
                 cursor: 'pointer',
-                transition: 'opacity 0.15s ease',
+                transition: 'all 0.15s ease',
                 boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
                 ...(outreachStatusFilter.includes('NOT_SET') && {
                   boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px rgba(142, 142, 147, 0.2)',
                 }),
                 '&:hover': {
-                  opacity: 0.85,
+                  bgcolor: '#F5F5F5',
                 },
               }}
             >
@@ -680,13 +680,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                   color: option.color,
                   borderColor: option.color,
                   cursor: 'pointer',
-                  transition: 'opacity 0.15s ease',
+                  transition: 'all 0.15s ease',
                   boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
                   ...(outreachStatusFilter.includes(option.value) && {
                     boxShadow: `0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px ${option.color}20`,
                   }),
                   '&:hover': {
-                    opacity: 0.85,
+                    bgcolor: '#F5F5F5',
                   },
                 }}
               >
